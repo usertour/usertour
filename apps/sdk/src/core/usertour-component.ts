@@ -157,7 +157,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       return null;
     }
 
-    const customData = this.getCustomStoreData();
+    const customData = this.getCustomStoreData(baseData);
 
     return {
       ...baseData,
@@ -177,16 +177,17 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
 
     // Extract common properties
     const { userAttributes, assets, globalStyle, themeSettings } = newStore;
-
-    // Get custom store data
-    const customData = this.getCustomStoreData();
-
-    // Update store with common and specific data
-    this.updateStore({
+    const baseData = {
       userAttributes,
       assets,
       globalStyle,
       themeSettings,
+    };
+    const customData = this.getCustomStoreData(baseData);
+
+    // Update store with common and specific data
+    this.updateStore({
+      ...baseData,
       ...customData,
     });
   }
@@ -264,9 +265,10 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
 
   /**
    * Gets custom store data - can be overridden by subclasses
+   * @param baseData - The base store data that can be used for custom logic
    * @protected
    */
-  protected getCustomStoreData(): Partial<TStore> {
+  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<TStore> {
     return {};
   }
 

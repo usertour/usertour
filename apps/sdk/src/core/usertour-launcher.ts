@@ -5,7 +5,7 @@ import {
   contentStartReason,
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
-import { LauncherStore } from '@/types/store';
+import { LauncherStore, BaseStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import {
@@ -101,13 +101,15 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   // === Store Management ===
   /**
    * Gets custom launcher store data
+   * @param baseData - The base store data that can be used for custom logic
    * @protected
    */
-  protected getCustomStoreData(): Partial<LauncherStore> {
+  protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<LauncherStore> {
     const launcherData = this.getLauncherData();
+    const zIndex = launcherData?.zIndex ?? baseData?.zIndex;
     return {
       launcherData,
-      triggerRef: undefined,
+      ...(zIndex ? { zIndex } : {}),
     };
   }
 

@@ -1251,19 +1251,17 @@ export const getChecklistInitialDisplay = (
 
 /**
  * Checks if a checklist item is clicked
- * @param content - The content to check
+ * @param bizEvents - The biz events from the latest session
  * @param checklistItem - The checklist item to check
  * @returns True if the checklist item is clicked, false otherwise
  */
 const checklistItemIsClicked = (
-  customContentVersion: CustomContentVersion,
+  bizEvents: BizEventWithEvent[] | undefined,
   checklistItem: ChecklistItemType,
 ) => {
-  const latestSession = customContentVersion.session.latestSession;
-  if (!latestSession) {
+  if (!bizEvents || checklistIsDimissed(bizEvents)) {
     return false;
   }
-  const bizEvents = latestSession.bizEvent || [];
   return !!bizEvents.find(
     (event) =>
       event.event?.codeName === BizEvents.CHECKLIST_TASK_CLICKED &&
@@ -1273,21 +1271,18 @@ const checklistItemIsClicked = (
 
 /**
  * Checks if a checklist item should show animation
- * @param checklist - The checklist to check
+ * @param bizEvents - The biz events from the latest session
  * @param checklistItem - The checklist item to check
  * @returns True if the checklist item should show animation, false otherwise
  */
 const checklistIsShowAnimation = (
-  customContentVersion: CustomContentVersion,
+  bizEvents: BizEventWithEvent[] | undefined,
   checklistItem: ChecklistItemType,
 ) => {
-  const latestSession = customContentVersion.session.latestSession;
   // If there is no latest session or the checklist is dismissed, don't show animation
-  if (!latestSession || checklistIsDimissed(latestSession.bizEvent)) {
+  if (!bizEvents || checklistIsDimissed(bizEvents)) {
     return false;
   }
-
-  const bizEvents = latestSession.bizEvent || [];
 
   const taskCompletedEvents = bizEvents.filter(
     (event) =>
@@ -1342,7 +1337,7 @@ const checklistIsShowAnimation = (
 
 /**
  * Checks if a checklist item is completed
- * @param content - The content to check
+ * @param bizEvents - The biz events from the latest session
  * @param checklistItem - The checklist item to check
  * @returns True if the checklist item is completed, false otherwise
  */
@@ -1350,6 +1345,10 @@ const checklistItemIsCompleted = (
   bizEvents: BizEventWithEvent[] | undefined,
   checklistItem: ChecklistItemType,
 ) => {
+  if (!bizEvents || checklistIsDimissed(bizEvents)) {
+    return false;
+  }
+
   return !!bizEvents?.find(
     (event) =>
       event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
@@ -1402,7 +1401,8 @@ export const evaluateChecklistItems = async (
   const processedItems: ChecklistItemType[] = [];
 
   for (const item of items) {
-    const isClicked = checklistItemIsClicked(customContentVersion, item) || item.isClicked || false;
+    const bizEvents = customContentVersion.session.latestSession?.bizEvent || [];
+    const isClicked = checklistItemIsClicked(bizEvents, item) || item.isClicked || false;
 
     // Check completion conditions using item's isClicked state
     const activeConditions = await evaluateRulesConditions(item.completeConditions, {
@@ -1412,7 +1412,7 @@ export const evaluateChecklistItems = async (
       },
     });
 
-    const isShowAnimation = checklistIsShowAnimation(customContentVersion, item);
+    const isShowAnimation = checklistIsShowAnimation(bizEvents, item);
 
     // For ordered completion, we need to check against the current state of items
     // Use the processed items so far plus the original remaining items
@@ -1422,8 +1422,7 @@ export const evaluateChecklistItems = async (
     ];
 
     const isCompleted: boolean =
-      item.isCompleted ||
-      checklistItemIsCompleted(customContentVersion.session.latestSession?.bizEvent, item)
+      item.isCompleted || checklistItemIsCompleted(bizEvents, item)
         ? true
         : canCompleteChecklistItem(checklistData.completionOrder, currentItemsState, item) &&
           isConditionsActived(activeConditions);
@@ -1550,12 +1549,12 @@ export const extractChecklistNewCompletedItems = (
 ) => {
   // Get visible completed item IDs from previous collapsed state
   const previousCompletedIds = new Set<string>(
-    previousItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+    previousItems.filter((item) => item.isCompleted).map((item) => item.id),
   );
 
   // Get visible completed item IDs from current state
   const currentCompletedIds = new Set<string>(
-    currentItems.filter((item) => item.isCompleted && item.isVisible).map((item) => item.id),
+    currentItems.filter((item) => item.isCompleted).map((item) => item.id),
   );
 
   return Array.from(currentCompletedIds).filter((id) => !previousCompletedIds.has(id));

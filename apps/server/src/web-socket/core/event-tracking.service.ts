@@ -931,6 +931,49 @@ export class EventTrackingService {
   }
 
   /**
+   * Track checklist task completed event
+   * @param sessionId - The session ID
+   * @param taskId - The task ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistTaskCompletedEvent(
+    sessionId: string,
+    taskId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+    const checklistData = version.data as unknown as ChecklistData;
+    const checklistItem = checklistData.items.find((item) => item.id === taskId);
+    if (!checklistItem) return false;
+    const eventData = {
+      [EventAttributes.CHECKLIST_ID]: content.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+      [EventAttributes.CHECKLIST_TASK_ID]: checklistItem.id,
+      [EventAttributes.CHECKLIST_TASK_NAME]: checklistItem.name,
+    };
+    const externalUserId = String(bizSession.bizUser.externalId);
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.CHECKLIST_TASK_COMPLETED,
+      bizSession.id,
+      eventData,
+      clientContext,
+    );
+  }
+
+  /**
    * Track checklist hidden event
    * @param sessionId - The session ID
    * @param environment - The environment

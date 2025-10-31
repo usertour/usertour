@@ -1,5 +1,6 @@
 export const SDK_CSS_LOADED = 'css-loaded';
 export const SDK_DOM_LOADED = 'dom-loaded';
+export const CHECKLIST_EXPANDED_CHANGE = 'checklist-expanded-change';
 export const SDK_CSS_LOADED_FAILED = 'css-loaded-failed';
 export const SDK_CONTENT_CHANGED = 'content-changed';
 // WebSocket related client-internal events for server message processing results

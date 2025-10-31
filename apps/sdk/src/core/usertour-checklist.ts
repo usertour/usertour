@@ -4,10 +4,11 @@ import {
   ContentEditorClickableElement,
   contentEndReason,
 } from '@usertour/types';
-import { ChecklistStore } from '@/types/store';
+import { ChecklistStore, BaseStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
+import { CHECKLIST_EXPANDED_CHANGE } from '@usertour-packages/constants';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   // === Abstract Methods Implementation ===
@@ -51,35 +52,57 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
+   * Gets the initial display of the checklist
+   * @returns The initial display of the checklist
+   */
+  isInitialDisplayExpanded(): boolean {
+    return this.getStoreData()?.checklistData?.initialDisplay === ChecklistInitialDisplay.EXPANDED;
+  }
+
+  /**
+   * Gets the items of the checklist
+   * @returns The items of the checklist
+   */
+  getItems(): ChecklistItemType[] {
+    const checklistData = this.getChecklistData();
+    if (!checklistData) {
+      return [];
+    }
+    return checklistData.items;
+  }
+
+  /**
    * Expands or collapses the checklist
    * @param isExpanded - Whether the checklist should be expanded or collapsed
    * @returns Promise that resolves when the state update is complete
    */
-  expand(isExpanded: boolean) {
+  expand(expanded: boolean) {
     const store = this.getStoreData();
     if (!store) {
       return;
     }
     // Check if the component is already in the target state
-    if (store.expanded === isExpanded) {
+    if (store.expanded === expanded) {
       return;
     }
+    const sessionId = this.getSessionId();
+    this.trigger(CHECKLIST_EXPANDED_CHANGE, { expanded, sessionId });
     // Update store to trigger component state change
-    this.updateStore({
-      expanded: isExpanded,
-    });
+    this.updateStore({ expanded });
   }
 
   // === Store Management ===
   /**
    * Gets custom checklist store data
+   * @param baseData - The base store data that can be used for custom logic
    * @protected
    */
-  protected getCustomStoreData(): Partial<ChecklistStore> {
+  protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<ChecklistStore> {
     const checklistData = this.getChecklistData();
+    const zIndex = baseData?.themeSettings?.checklist?.zIndex ?? baseData?.zIndex;
     return {
       checklistData,
-      expanded: false,
+      ...(zIndex ? { zIndex: zIndex + 100 } : {}),
     };
   }
 
@@ -114,9 +137,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * @param expanded - Whether the checklist is expanded
    */
   handleExpandedChange(expanded: boolean) {
-    this.updateStore({
-      expanded,
-    });
+    this.expand(expanded);
   }
 
   /**

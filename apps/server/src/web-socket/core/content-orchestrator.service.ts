@@ -13,7 +13,6 @@ import {
   extractClientConditionWaitTimers,
   sessionIsAvailable,
   extractChecklistNewCompletedItems,
-  extractChecklistShowAnimationItems,
   extractChecklistTrackConditions,
   hasContentSessionChanges,
   filterAvailableLauncherContentVersions,
@@ -325,20 +324,38 @@ export class ContentOrchestratorService {
    */
   private async activateChecklistSession(params: ActivateSessionParams) {
     const { socket, session, postTracks, socketData } = params;
+    const { environment, clientContext } = socketData;
     const options = {
       trackConditions: postTracks,
       cleanupContentTypes: [ContentDataType.CHECKLIST],
     };
-    const currentSession = extractSessionByContentType(socketData, ContentDataType.CHECKLIST);
-    const newCompletedItems = currentSession
-      ? extractChecklistNewCompletedItems(
-          session.version.checklist?.items || [],
-          currentSession?.version.checklist?.items || [],
-        )
-      : extractChecklistShowAnimationItems(session.version.checklist?.items || []);
+    const previousSession = extractSessionByContentType(socketData, ContentDataType.CHECKLIST);
+    const newCompletedItems = extractChecklistNewCompletedItems(
+      session?.version?.checklist?.items ?? [],
+      previousSession?.version?.checklist?.items ?? [],
+    );
 
     if (newCompletedItems.length > 0) {
+      // Track events for each completed task
+      const trackingPromises = newCompletedItems.map((taskId) =>
+        this.eventTrackingService.trackChecklistTaskCompletedEvent(
+          session.id,
+          taskId,
+          environment,
+          clientContext,
+        ),
+      );
+      await Promise.all(trackingPromises);
+      // Emit events for all tasks
       this.socketOperationService.emitChecklistTasksCompleted(socket, newCompletedItems);
+    }
+    const checklistData = session.version.checklist;
+    if (checklistData) {
+      const items = checklistData.items.filter((item) => item.isVisible);
+      session.version.checklist = {
+        ...checklistData,
+        items,
+      };
     }
     return await this.socketOperationService.activateChecklistSession(
       socket as unknown as Socket,

@@ -1,4 +1,5 @@
 import {
+  CHECKLIST_EXPANDED_CHANGE,
   COMPONENT_CLOSED,
   MESSAGE_START_FLOW_WITH_TOKEN,
   SDK_DOM_LOADED,
@@ -72,6 +73,7 @@ export class UsertourCore extends Evented {
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
+  taskIsUnacked = new Set<string>();
 
   // === Private Properties ===
   private baseZIndex = 1000000;
@@ -600,6 +602,7 @@ export class UsertourCore extends Evented {
       UnsetFlowSession: (payload) => this.handleUnsetFlowSession(payload),
       SetChecklistSession: (payload) => this.handleSetChecklistSession(payload),
       UnsetChecklistSession: (payload) => this.handleUnsetChecklistSession(payload),
+      ChecklistTasksCompleted: (payload) => this.handleChecklistTasksCompleted(payload),
       AddLauncher: (payload) => this.handleAddLauncher(payload),
       RemoveLauncher: (payload) => this.handleRemoveLauncher(payload),
       TrackClientCondition: (payload) => this.handleTrackClientCondition(payload),
@@ -671,6 +674,17 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Handles ChecklistTasksCompleted message - handles checklist tasks completed
+   * @param payload - The checklist tasks completed data
+   * @returns boolean - True if tasks were completed successfully
+   */
+  private handleChecklistTasksCompleted(payload: unknown): boolean {
+    const { taskId } = payload as { taskId: string };
+    this.taskIsUnacked.add(taskId);
+    return true;
+  }
+
+  /**
    * Handles AddLauncher message - adds a launcher to the application
    * @param payload - The launcher session data
    * @returns boolean - True if launcher was added successfully
@@ -733,6 +747,7 @@ export class UsertourCore extends Evented {
    */
   private setFlowSession(session: CustomContentSession): boolean {
     const contentId = session.content.id;
+    const hasActivatedTour = this.activatedTour !== null;
 
     if (this.activatedTour) {
       if (this.activatedTour.getContentId() === contentId) {
@@ -744,18 +759,22 @@ export class UsertourCore extends Evented {
     }
 
     // Create new tour
-    const targetTour = new UsertourTour(this, new UsertourSession(session));
-    targetTour.on(COMPONENT_CLOSED, () => {
+    const usertourTour = new UsertourTour(this, new UsertourSession(session));
+    usertourTour.on(COMPONENT_CLOSED, () => {
       this.cleanupActivatedTour();
+      this.toggleUI();
     });
-    this.activatedTour = targetTour;
+    this.activatedTour = usertourTour;
     // Sync store
     this.syncToursStore([this.activatedTour]);
     // Show tour from the session current step
     if (session.currentStep?.cvid) {
-      targetTour.showStepByCvid(session.currentStep?.cvid);
+      usertourTour.showStepByCvid(session.currentStep?.cvid);
     } else {
-      targetTour.showStepByIndex(0);
+      usertourTour.showStepByIndex(0);
+    }
+    if (!hasActivatedTour && this.activatedTour) {
+      this.collapseChecklist();
     }
     return true;
   }
@@ -769,6 +788,7 @@ export class UsertourCore extends Evented {
       return false;
     }
     this.cleanupActivatedTour();
+    this.toggleUI();
     return true;
   }
 
@@ -797,9 +817,6 @@ export class UsertourCore extends Evented {
       if (this.activatedChecklist.getContentId() === contentId) {
         this.activatedChecklist.updateSession(session);
         this.activatedChecklist.refreshStoreData();
-        if (!this.activatedTour) {
-          this.activatedChecklist.expand(true);
-        }
         return true;
       }
       this.cleanupActivatedChecklist();
@@ -809,6 +826,12 @@ export class UsertourCore extends Evented {
     this.activatedChecklist = new UsertourChecklist(this, new UsertourSession(session));
     this.activatedChecklist.on(COMPONENT_CLOSED, () => {
       this.cleanupActivatedChecklist();
+    });
+    this.activatedChecklist.on(CHECKLIST_EXPANDED_CHANGE, (payload: unknown) => {
+      const { sessionId, expanded } = payload as { sessionId: string; expanded: boolean };
+      if (expanded) {
+        this.removeChecklistUnackedTasks(sessionId);
+      }
     });
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
@@ -826,6 +849,47 @@ export class UsertourCore extends Evented {
       return false;
     }
     this.cleanupActivatedChecklist();
+    return true;
+  }
+
+  /**
+   * Toggles the UI to expand or collapse the checklist
+   */
+  private toggleUI() {
+    if (!this.activatedTour && this.activatedChecklist) {
+      if (
+        this.activatedChecklist?.getItems().some((r) => this.taskIsUnacked.has(r.id)) ||
+        this.activatedChecklist?.isInitialDisplayExpanded()
+      ) {
+        this.activatedChecklist.expand(true);
+      }
+    }
+  }
+
+  /**
+   * Hides the activated checklist
+   */
+  private collapseChecklist() {
+    if (this.activatedChecklist) {
+      this.activatedChecklist.expand(false);
+    }
+  }
+
+  /**
+   * Removes the unacked tasks from the checklist
+   * @param sessionId - The session ID to remove the unacked tasks from
+   * @returns True if the unacked tasks were removed, false otherwise
+   */
+  private removeChecklistUnackedTasks(sessionId: string): boolean {
+    if (sessionId !== this.activatedChecklist?.getSessionId()) {
+      return false;
+    }
+    const items = this.activatedChecklist.getItems();
+    for (const item of items) {
+      if (this.taskIsUnacked.has(item.id)) {
+        this.taskIsUnacked.delete(item.id);
+      }
+    }
     return true;
   }
 

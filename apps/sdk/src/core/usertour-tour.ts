@@ -6,7 +6,7 @@ import {
 } from '@usertour-packages/shared-editor';
 import { RulesCondition, StepContentType, contentEndReason } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
-import { TourStore } from '@/types/store';
+import { TourStore, BaseStore } from '@/types/store';
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTrigger } from '@/core/usertour-trigger';
@@ -133,12 +133,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   // === Store Management ===
   /**
    * Gets custom tour store data
+   * @param baseData - The base store data that can be used for custom logic
    * @protected
    */
-  protected getCustomStoreData(): Partial<TourStore> {
+  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<TourStore> {
     const currentStep = this.getCurrentStep();
     return {
-      triggerRef: null,
       currentStep,
     };
   }
