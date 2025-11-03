@@ -79,6 +79,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   expand(expanded: boolean) {
     const store = this.getStoreData();
+    const sessionId = this.getSessionId();
     if (!store) {
       return;
     }
@@ -87,7 +88,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       return;
     }
     this.updateExpandedStateStorage(expanded);
-    const sessionId = this.getSessionId();
     this.trigger(SDKClientEvents.CHECKLIST_EXPANDED_CHANGE, { expanded, sessionId });
     // Update store to trigger component state change
     this.updateStore({ expanded });
