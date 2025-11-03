@@ -87,7 +87,9 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     if (store.expanded === expanded) {
       return;
     }
+    // Update session storage
     this.updateExpandedStateStorage(expanded);
+    // Trigger the expanded change event
     this.trigger(SDKClientEvents.CHECKLIST_EXPANDED_CHANGE, { expanded, sessionId });
     // Update store to trigger component state change
     this.updateStore({ expanded });
@@ -100,7 +102,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   private updateExpandedStateStorage(expanded: boolean): void {
     const key = `${StorageKeys.CHECKLIST_EXPANDED}-${this.getSessionId()}`;
     if (expanded) {
-      storage.setSessionStorage(key, 1);
+      storage.setSessionStorage(key, true);
     } else {
       storage.removeSessionStorage(key);
     }
