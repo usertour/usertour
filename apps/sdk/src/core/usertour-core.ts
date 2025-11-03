@@ -93,13 +93,13 @@ export class UsertourCore extends Evented {
     autoBind(this);
     this.socketService = new UsertourSocket();
     this.attributeManager = new UsertourAttributeManager();
+    this.serverMessageHandlerManager = new ServerMessageHandlerManager();
     this.uiManager = new UsertourUIManager({
       containerId: 'usertour-widget',
       maxRetries: 20,
       retryDelay: 1000,
     });
     this.id = uuidV4();
-    this.serverMessageHandlerManager = new ServerMessageHandlerManager();
     this.initializeEventListeners();
     this.initializeSocketEventListeners();
     this.initializeConditionsMonitor();
