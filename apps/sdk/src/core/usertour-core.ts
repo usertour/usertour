@@ -767,7 +767,7 @@ export class UsertourCore extends Evented {
     const usertourTour = new UsertourTour(this, new UsertourSession(session));
     usertourTour.on(SDKClientEvents.COMPONENT_CLOSED, () => {
       this.cleanupActivatedTour();
-      this.toggleUI();
+      this.expandChecklist();
     });
     this.activatedTour = usertourTour;
     // Sync store
@@ -793,7 +793,7 @@ export class UsertourCore extends Evented {
       return false;
     }
     this.cleanupActivatedTour();
-    this.toggleUI();
+    this.expandChecklist();
     return true;
   }
 
@@ -856,9 +856,9 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Toggles the UI to expand or collapse the checklist
+   * Expands the checklist
    */
-  private toggleUI() {
+  private expandChecklist() {
     if (!this.activatedTour && this.activatedChecklist) {
       if (
         this.activatedChecklist?.getItems().some((r) => this.taskIsUnacked.has(r.id)) ||
