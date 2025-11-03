@@ -260,12 +260,23 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   /**
    * Clears all unacked tasks that belong to this checklist
    */
-  clearUnackedTasks(): void {
+  private clearUnackedTasks(): void {
     const items = this.getItems();
     for (const item of items) {
       if (this.taskIsUnacked.has(item.id)) {
         this.taskIsUnacked.delete(item.id);
       }
     }
+  }
+
+  // === Lifecycle Hooks ===
+
+  /**
+   * Checklist-specific reset logic
+   * @protected
+   */
+  protected onReset(): void {
+    // Clear all unacked tasks
+    this.clearUnackedTasks();
   }
 }
