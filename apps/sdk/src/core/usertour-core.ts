@@ -541,6 +541,9 @@ export class UsertourCore extends Evented {
     if (window) {
       on(window, 'message', this.handlePreviewMessage);
     }
+
+    // Subscribe to succeeded server message to refresh credentials immediately
+    this.on(SERVER_MESSAGE_SUCCEEDED, this.handleServerMessageSucceeded);
   }
 
   /**
@@ -548,18 +551,7 @@ export class UsertourCore extends Evented {
    * This method sets up all WebSocket event handlers after socket is initialized
    */
   private initializeSocketEventListeners(): void {
-    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, async (message: unknown) => {
-      const { kind, payload } = message as { kind: string; payload: unknown };
-      const ok = await this.handleServerMessage(kind, payload);
-      this.trigger(ok ? SERVER_MESSAGE_SUCCEEDED : SERVER_MESSAGE_FAILED, { kind, payload });
-      return ok;
-    });
-
-    // Subscribe to succeeded server message to refresh credentials immediately
-    this.on(SERVER_MESSAGE_SUCCEEDED, () => {
-      this.syncSocketCredentials();
-      return true;
-    });
+    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, this.handleServerMessage);
   }
 
   // === Message Handling ===
@@ -591,38 +583,51 @@ export class UsertourCore extends Evented {
 
   /**
    * Handle server message by routing to appropriate handler
-   * @param kind - The message type identifier
-   * @param payload - The message payload data
+   * @param message - The server message containing kind and payload
    * @returns Promise<boolean> - True if message was handled successfully
    */
-  private async handleServerMessage(kind: string, payload: unknown): Promise<boolean> {
+  private async handleServerMessage(message: unknown): Promise<boolean> {
+    const { kind, payload } = message as { kind: string; payload: unknown };
     const handlers: Record<string, (payload: unknown) => boolean | Promise<boolean>> = {
-      SetFlowSession: (payload) => this.handleSetFlowSession(payload),
-      ForceGoToStep: (payload) => this.handleForceGoToStep(payload),
-      UnsetFlowSession: (payload) => this.handleUnsetFlowSession(payload),
-      SetChecklistSession: (payload) => this.handleSetChecklistSession(payload),
-      UnsetChecklistSession: (payload) => this.handleUnsetChecklistSession(payload),
-      ChecklistTasksCompleted: (payload) => this.handleChecklistTasksCompleted(payload),
-      AddLauncher: (payload) => this.handleAddLauncher(payload),
-      RemoveLauncher: (payload) => this.handleRemoveLauncher(payload),
-      TrackClientCondition: (payload) => this.handleTrackClientCondition(payload),
-      UntrackClientCondition: (payload) => this.handleUntrackClientCondition(payload),
-      StartConditionWaitTimer: (payload) => this.handleStartConditionWaitTimer(payload),
-      CancelConditionWaitTimer: (payload) => this.handleCancelConditionWaitTimer(payload),
+      SetFlowSession: this.handleSetFlowSession,
+      ForceGoToStep: this.handleForceGoToStep,
+      UnsetFlowSession: this.handleUnsetFlowSession,
+      SetChecklistSession: this.handleSetChecklistSession,
+      UnsetChecklistSession: this.handleUnsetChecklistSession,
+      ChecklistTasksCompleted: this.handleChecklistTasksCompleted,
+      AddLauncher: this.handleAddLauncher,
+      RemoveLauncher: this.handleRemoveLauncher,
+      TrackClientCondition: this.handleTrackClientCondition,
+      UntrackClientCondition: this.handleUntrackClientCondition,
+      StartConditionWaitTimer: this.handleStartConditionWaitTimer,
+      CancelConditionWaitTimer: this.handleCancelConditionWaitTimer,
     };
 
     const handler = handlers[kind];
     if (!handler) {
       logger.warn(`No handler found for server message kind: ${kind}`);
+      this.trigger(SERVER_MESSAGE_FAILED, { kind, payload });
       return false;
     }
 
     try {
-      return await handler(payload);
+      const ok = await handler(payload);
+      this.trigger(ok ? SERVER_MESSAGE_SUCCEEDED : SERVER_MESSAGE_FAILED, { kind, payload });
+      return ok;
     } catch (error) {
       logger.error(`Error handling server message kind ${kind}:`, error);
+      this.trigger(SERVER_MESSAGE_FAILED, { kind, payload });
       return false;
     }
+  }
+
+  /**
+   * Handles server message succeeded event - refreshes socket credentials
+   * @param _payload - Contains kind and payload from the succeeded message (unused)
+   * @returns void
+   */
+  private handleServerMessageSucceeded(_payload: unknown) {
+    this.syncSocketCredentials();
   }
 
   /**
@@ -827,12 +832,7 @@ export class UsertourCore extends Evented {
     this.activatedChecklist.on(COMPONENT_CLOSED, () => {
       this.cleanupActivatedChecklist();
     });
-    this.activatedChecklist.on(CHECKLIST_EXPANDED_CHANGE, (payload: unknown) => {
-      const { sessionId, expanded } = payload as { sessionId: string; expanded: boolean };
-      if (expanded) {
-        this.removeChecklistUnackedTasks(sessionId);
-      }
-    });
+    this.activatedChecklist.on(CHECKLIST_EXPANDED_CHANGE, this.handleChecklistExpandedChange);
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
     // Show checklist
@@ -891,6 +891,18 @@ export class UsertourCore extends Evented {
       }
     }
     return true;
+  }
+
+  /**
+   * Handles the expanded change event of the checklist
+   * @param payload - Contains sessionId and expanded state
+   * @returns void
+   */
+  private handleChecklistExpandedChange(payload: unknown) {
+    const { sessionId, expanded } = payload as { sessionId: string; expanded: boolean };
+    if (expanded) {
+      this.removeChecklistUnackedTasks(sessionId);
+    }
   }
 
   // === Launcher Management ===
