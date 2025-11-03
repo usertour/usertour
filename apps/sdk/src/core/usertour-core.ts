@@ -1,7 +1,7 @@
 import {
   SDKClientEvents,
   MESSAGE_START_FLOW_WITH_TOKEN,
-  STORAGE_IDENTIFY_ANONYMOUS,
+  StorageKeys,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { storage, uuidV4 } from '@usertour/helpers';
@@ -159,7 +159,7 @@ export class UsertourCore extends Evented {
    * @param attributes - Optional user attributes
    */
   async identifyAnonymous(attributes?: UserTourTypes.Attributes): Promise<void> {
-    const key = STORAGE_IDENTIFY_ANONYMOUS;
+    const key = StorageKeys.IDENTIFY_ANONYMOUS;
     const storageData = storage.getLocalStorage(key) as { userId: string } | undefined;
     let userId = '';
     if (!this.useCurrentUser()) {

@@ -8,7 +8,7 @@ import { ChecklistStore, BaseStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
-import { SDKClientEvents } from '@usertour-packages/constants';
+import { SDKClientEvents, StorageKeys } from '@usertour-packages/constants';
 import { storage } from '@usertour/helpers';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
@@ -98,7 +98,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * @param expanded - Whether the checklist is expanded
    */
   private updateExpandedStateStorage(expanded: boolean): void {
-    const key = `checklist-expanded-${this.getSessionId()}`;
+    const key = `${StorageKeys.CHECKLIST_EXPANDED}-${this.getSessionId()}`;
     if (expanded) {
       storage.setSessionStorage(key, 1);
     } else {
