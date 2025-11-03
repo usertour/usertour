@@ -876,6 +876,18 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Handles the expanded change event of the checklist
+   * @param payload - Contains sessionId and expanded state
+   * @returns void
+   */
+  private handleChecklistExpandedChange(payload: unknown) {
+    const { sessionId, expanded } = payload as { sessionId: string; expanded: boolean };
+    if (expanded) {
+      this.removeChecklistUnackedTasks(sessionId);
+    }
+  }
+
+  /**
    * Removes the unacked tasks from the checklist
    * @param sessionId - The session ID to remove the unacked tasks from
    * @returns True if the unacked tasks were removed, false otherwise
@@ -891,18 +903,6 @@ export class UsertourCore extends Evented {
       }
     }
     return true;
-  }
-
-  /**
-   * Handles the expanded change event of the checklist
-   * @param payload - Contains sessionId and expanded state
-   * @returns void
-   */
-  private handleChecklistExpandedChange(payload: unknown) {
-    const { sessionId, expanded } = payload as { sessionId: string; expanded: boolean };
-    if (expanded) {
-      this.removeChecklistUnackedTasks(sessionId);
-    }
   }
 
   // === Launcher Management ===
