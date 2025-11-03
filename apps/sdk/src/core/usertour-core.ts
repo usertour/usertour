@@ -70,7 +70,6 @@ export class UsertourCore extends Evented {
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
-  taskIsUnacked = new Set<string>();
 
   // === Private Properties ===
   private baseZIndex = 1000000;
@@ -685,8 +684,7 @@ export class UsertourCore extends Evented {
    */
   private handleChecklistTaskCompleted(payload: unknown): boolean {
     const { taskId } = payload as { taskId: string };
-    this.taskIsUnacked.add(taskId);
-    return true;
+    return this.activatedChecklist?.addUnackedTask(taskId) ?? false;
   }
 
   /**
@@ -832,10 +830,6 @@ export class UsertourCore extends Evented {
     this.activatedChecklist.on(SDKClientEvents.COMPONENT_CLOSED, () => {
       this.cleanupActivatedChecklist();
     });
-    this.activatedChecklist.on(
-      SDKClientEvents.CHECKLIST_EXPANDED_CHANGE,
-      this.handleChecklistExpandedChange,
-    );
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
     // Show checklist
@@ -860,10 +854,7 @@ export class UsertourCore extends Evented {
    */
   private expandChecklist() {
     if (!this.activatedTour && this.activatedChecklist) {
-      if (
-        this.activatedChecklist?.getItems().some((r) => this.taskIsUnacked.has(r.id)) ||
-        this.activatedChecklist?.isExpanded()
-      ) {
+      if (this.activatedChecklist.hasUnackedTasks() || this.activatedChecklist.isExpanded()) {
         this.activatedChecklist.expand(true, true);
       }
     }
@@ -876,36 +867,6 @@ export class UsertourCore extends Evented {
     if (this.activatedChecklist) {
       this.activatedChecklist.expand(false, false);
     }
-  }
-
-  /**
-   * Handles the expanded change event of the checklist
-   * @param payload - Contains sessionId and expanded state
-   * @returns void
-   */
-  private handleChecklistExpandedChange(payload: unknown) {
-    const { sessionId, expanded } = payload as { sessionId: string; expanded: boolean };
-    if (expanded) {
-      this.removeChecklistUnackedTasks(sessionId);
-    }
-  }
-
-  /**
-   * Removes the unacked tasks from the checklist
-   * @param sessionId - The session ID to remove the unacked tasks from
-   * @returns True if the unacked tasks were removed, false otherwise
-   */
-  private removeChecklistUnackedTasks(sessionId: string): boolean {
-    if (sessionId !== this.activatedChecklist?.getSessionId()) {
-      return false;
-    }
-    const items = this.activatedChecklist.getItems();
-    for (const item of items) {
-      if (this.taskIsUnacked.has(item.id)) {
-        this.taskIsUnacked.delete(item.id);
-      }
-    }
-    return true;
   }
 
   // === Launcher Management ===

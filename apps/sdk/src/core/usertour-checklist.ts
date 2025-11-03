@@ -7,10 +7,13 @@ import { ChecklistStore, BaseStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
-import { SDKClientEvents, StorageKeys } from '@usertour-packages/constants';
+import { StorageKeys } from '@usertour-packages/constants';
 import { storage } from '@usertour/helpers';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
+  // === Private Properties ===
+  private taskIsUnacked = new Set<string>();
+
   // === Abstract Methods Implementation ===
   /**
    * Initialize action handlers for checklist
@@ -88,10 +91,12 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     if (store.expanded === expanded) {
       return;
     }
+    // Clear unacked tasks when expanding
+    if (expanded) {
+      this.clearUnackedTasks();
+    }
     // Update session storage
     this.setExpandedStateStorage(sessionId, expanded);
-    // Trigger the expanded change event
-    this.trigger(SDKClientEvents.CHECKLIST_EXPANDED_CHANGE, { expanded, sessionId });
     // Update store to trigger component state change
     this.updateStore({ expanded, openState: true });
     // Report the expanded change event
@@ -229,5 +234,38 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       },
       { batch: true },
     );
+  }
+
+  // === Unacked Tasks Management ===
+  /**
+   * Adds a task ID to the unacked tasks set
+   * @param taskId - The task ID to add
+   * @returns True if the task was added successfully
+   */
+  addUnackedTask(taskId: string): boolean {
+    this.taskIsUnacked.add(taskId);
+    return true;
+  }
+
+  /**
+   * Checks if there are any unacked tasks
+   * @returns True if there are unacked tasks, false otherwise
+   */
+  hasUnackedTasks(): boolean {
+    return (
+      this.taskIsUnacked.size > 0 && this.getItems().some((item) => this.taskIsUnacked.has(item.id))
+    );
+  }
+
+  /**
+   * Clears all unacked tasks that belong to this checklist
+   */
+  clearUnackedTasks(): void {
+    const items = this.getItems();
+    for (const item of items) {
+      if (this.taskIsUnacked.has(item.id)) {
+        this.taskIsUnacked.delete(item.id);
+      }
+    }
   }
 }
