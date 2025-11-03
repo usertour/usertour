@@ -591,7 +591,7 @@ export class UsertourCore extends Evented {
       UnsetFlowSession: this.handleUnsetFlowSession,
       SetChecklistSession: this.handleSetChecklistSession,
       UnsetChecklistSession: this.handleUnsetChecklistSession,
-      ChecklistTasksCompleted: this.handleChecklistTasksCompleted,
+      ChecklistTaskCompleted: this.handleChecklistTaskCompleted,
       AddLauncher: this.handleAddLauncher,
       RemoveLauncher: this.handleRemoveLauncher,
       TrackClientCondition: this.handleTrackClientCondition,
@@ -679,11 +679,11 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Handles ChecklistTasksCompleted message - handles checklist tasks completed
-   * @param payload - The checklist tasks completed data
-   * @returns boolean - True if tasks were completed successfully
+   * Handles ChecklistTaskCompleted message - handles checklist task completed
+   * @param payload - The checklist task completed data
+   * @returns boolean - True if task was completed successfully
    */
-  private handleChecklistTasksCompleted(payload: unknown): boolean {
+  private handleChecklistTaskCompleted(payload: unknown): boolean {
     const { taskId } = payload as { taskId: string };
     this.taskIsUnacked.add(taskId);
     return true;
