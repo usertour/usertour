@@ -1,5 +1,4 @@
 import {
-  ChecklistInitialDisplay,
   ChecklistItemType,
   ContentEditorClickableElement,
   contentEndReason,
@@ -41,23 +40,25 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     if (!baseStoreData?.checklistData) {
       return;
     }
-    const initialDisplay = baseStoreData?.checklistData.initialDisplay;
-    const expanded = initialDisplay === ChecklistInitialDisplay.EXPANDED;
     // Process items to determine their status
-    const store = {
-      ...baseStoreData,
-      expanded,
-      openState: true,
-    };
-    this.setStoreData(store);
+    this.setStoreData(baseStoreData);
+    // Expand the checklist if it is expanded
+    const expanded = this.isExpanded();
+    const isExpandPending = this.session.isExpandPending();
+    const reportEvent = expanded && isExpandPending;
+    //If expanded, report the expanded change event, otherwise don't report
+    await this.expand(expanded, reportEvent);
   }
 
   /**
-   * Gets the initial display of the checklist
-   * @returns The initial display of the checklist
+   * Gets the expanded state of the checklist
+   * @returns The expanded state of the checklist
    */
-  isInitialDisplayExpanded(): boolean {
-    return this.getStoreData()?.checklistData?.initialDisplay === ChecklistInitialDisplay.EXPANDED;
+  isExpanded(): boolean {
+    const isExpandPending = this.session.isExpandPending();
+    const isExpandedStorage = this.getExpandedStateStorage(this.getSessionId());
+
+    return Boolean(isExpandPending || isExpandedStorage);
   }
 
   /**
@@ -77,35 +78,50 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * @param expanded - Whether the checklist should be expanded or collapsed
    * @returns Promise that resolves when the state update is complete
    */
-  expand(expanded: boolean) {
+  async expand(expanded: boolean, reportEvent = false): Promise<void> {
     const store = this.getStoreData();
     const sessionId = this.getSessionId();
     if (!store) {
       return;
     }
-    // Check if the component is already in the target state
+    // If the expanded state is the same as the requested state, don't do anything
     if (store.expanded === expanded) {
       return;
     }
     // Update session storage
-    this.updateExpandedStateStorage(sessionId, expanded);
+    this.setExpandedStateStorage(sessionId, expanded);
     // Trigger the expanded change event
     this.trigger(SDKClientEvents.CHECKLIST_EXPANDED_CHANGE, { expanded, sessionId });
     // Update store to trigger component state change
-    this.updateStore({ expanded });
+    this.updateStore({ expanded, openState: true });
+    // Report the expanded change event
+    if (reportEvent) {
+      await this.reportExpandedChangeEvent(expanded);
+    }
   }
 
   /**
-   * Updates session storage to persist checklist expanded state
+   * Sets the expanded state in storage
+   * @param sessionId - The session ID
    * @param expanded - Whether the checklist is expanded
    */
-  private updateExpandedStateStorage(sessionId: string, expanded: boolean): void {
+  private setExpandedStateStorage(sessionId: string, expanded: boolean): void {
     const key = `${StorageKeys.CHECKLIST_EXPANDED}-${sessionId}`;
     if (expanded) {
       storage.setSessionStorage(key, true);
     } else {
       storage.removeSessionStorage(key);
     }
+  }
+
+  /**
+   * Gets the expanded state from storage
+   * @param sessionId - The session ID
+   * @returns The expanded state
+   */
+  private getExpandedStateStorage(sessionId: string): boolean {
+    const key = `${StorageKeys.CHECKLIST_EXPANDED}-${sessionId}`;
+    return (storage.getSessionStorage(key) as boolean | undefined) ?? false;
   }
 
   // === Store Management ===
@@ -153,8 +169,8 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * Triggers the appropriate event based on the open state.
    * @param expanded - Whether the checklist is expanded
    */
-  handleExpandedChange(expanded: boolean) {
-    this.expand(expanded);
+  async handleExpandedChange(expanded: boolean): Promise<void> {
+    await this.expand(expanded, true);
   }
 
   /**

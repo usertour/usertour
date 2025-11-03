@@ -16,8 +16,8 @@ import {
   extractThemeVariationsAttributeIds,
   getAttributeValue,
   evaluateChecklistItems,
-  getChecklistInitialDisplay,
   extractLauncherAttrCodes,
+  isExpandPending,
 } from '@/utils/content-utils';
 import {
   SessionAttribute,
@@ -302,8 +302,8 @@ export class SessionBuilderService {
     });
     const checklistData = customContentVersion.data as unknown as ChecklistData;
 
-    const initialDisplay = getChecklistInitialDisplay(customContentVersion);
-    session.version.checklist = { ...checklistData, items, initialDisplay };
+    session.expandPending = isExpandPending(customContentVersion);
+    session.version.checklist = { ...checklistData, items };
     return session;
   }
 

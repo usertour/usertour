@@ -35,8 +35,7 @@ type ChecklistWidgetCoreProps = {
   handleItemClick: (item: ChecklistItemType, index: number) => void;
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
   handleDismiss: () => Promise<void>;
-  handleExpandedChange: (expanded: boolean) => void;
-  reportExpandedChangeEvent: (expanded: boolean) => Promise<void>;
+  handleExpandedChange: (expanded: boolean) => Promise<void>;
   removeBranding: boolean;
   zIndex: number;
   expanded: boolean;
@@ -110,7 +109,6 @@ const ChecklistWidgetCore = ({
   handleOnClick,
   handleDismiss,
   handleExpandedChange,
-  reportExpandedChangeEvent,
   removeBranding,
   zIndex,
   expanded,
@@ -121,7 +119,6 @@ const ChecklistWidgetCore = ({
     expanded={expanded}
     onDismiss={handleDismiss}
     onExpandedChange={handleExpandedChange}
-    reportExpandedChangeEvent={reportExpandedChangeEvent}
     zIndex={zIndex}
   >
     <ChecklistPopperUseIframe zIndex={zIndex} assets={assets}>
@@ -171,7 +168,6 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
       handleOnClick={checklist.handleOnClick}
       handleDismiss={checklist.handleDismiss}
       handleExpandedChange={checklist.handleExpandedChange}
-      reportExpandedChangeEvent={checklist.reportExpandedChangeEvent}
       removeBranding={removeBranding}
       zIndex={zIndex}
       expanded={expanded}

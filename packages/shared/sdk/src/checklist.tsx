@@ -74,8 +74,7 @@ interface ChecklistRootProps {
   defaultOpen?: boolean;
   expanded?: boolean;
   onDismiss?: () => Promise<void>;
-  onExpandedChange?: (expanded: boolean) => void;
-  reportExpandedChangeEvent?: (expanded: boolean) => Promise<void>;
+  onExpandedChange?: (expanded: boolean) => Promise<void>;
   zIndex: number;
 }
 
@@ -87,7 +86,6 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     expanded,
     onDismiss,
     onExpandedChange,
-    reportExpandedChangeEvent,
     zIndex,
     themeSettings,
   } = props;
@@ -110,10 +108,9 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
   //manual control open state
   const handleExpandedChange = useCallback(
     async (open: boolean) => {
-      onExpandedChange?.(open);
-      await reportExpandedChangeEvent?.(open);
+      await onExpandedChange?.(open);
     },
-    [reportExpandedChangeEvent],
+    [onExpandedChange],
   );
 
   // Track completion changes and add to pending animations if checklist is closed

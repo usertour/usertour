@@ -862,9 +862,9 @@ export class UsertourCore extends Evented {
     if (!this.activatedTour && this.activatedChecklist) {
       if (
         this.activatedChecklist?.getItems().some((r) => this.taskIsUnacked.has(r.id)) ||
-        this.activatedChecklist?.isInitialDisplayExpanded()
+        this.activatedChecklist?.isExpanded()
       ) {
-        this.activatedChecklist.expand(true);
+        this.activatedChecklist.expand(true, true);
       }
     }
   }
@@ -874,7 +874,7 @@ export class UsertourCore extends Evented {
    */
   private collapseChecklist() {
     if (this.activatedChecklist) {
-      this.activatedChecklist.expand(false);
+      this.activatedChecklist.expand(false, false);
     }
   }
 
