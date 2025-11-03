@@ -1,8 +1,6 @@
 import {
-  CHECKLIST_EXPANDED_CHANGE,
-  COMPONENT_CLOSED,
+  SDKClientEvents,
   MESSAGE_START_FLOW_WITH_TOKEN,
-  SDK_DOM_LOADED,
   STORAGE_IDENTIFY_ANONYMOUS,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
@@ -44,7 +42,6 @@ import {
   ConditionWaitTimer,
   ClientCondition,
 } from '@/types';
-import { SERVER_MESSAGE_SUCCEEDED, SERVER_MESSAGE_FAILED } from '@usertour-packages/constants';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
 
@@ -520,7 +517,7 @@ export class UsertourCore extends Evented {
    * Initializes DOM event listeners for the application
    */
   private initializeEventListeners() {
-    this.once(SDK_DOM_LOADED, async () => {
+    this.once(SDKClientEvents.DOM_LOADED, async () => {
       const initialized = await this.uiManager.initialize({
         toursStore: this.toursStore,
         checklistsStore: this.checklistsStore,
@@ -532,10 +529,10 @@ export class UsertourCore extends Evented {
     });
 
     if (document?.readyState !== 'loading') {
-      this.trigger(SDK_DOM_LOADED);
+      this.trigger(SDKClientEvents.DOM_LOADED);
     } else if (document) {
       on(document, 'DOMContentLoaded', () => {
-        this.trigger(SDK_DOM_LOADED);
+        this.trigger(SDKClientEvents.DOM_LOADED);
       });
     }
     if (window) {
@@ -543,7 +540,7 @@ export class UsertourCore extends Evented {
     }
 
     // Subscribe to succeeded server message to refresh credentials immediately
-    this.on(SERVER_MESSAGE_SUCCEEDED, this.handleServerMessageSucceeded);
+    this.on(SDKClientEvents.SERVER_MESSAGE_SUCCEEDED, this.handleServerMessageSucceeded);
   }
 
   /**
@@ -606,17 +603,20 @@ export class UsertourCore extends Evented {
     const handler = handlers[kind];
     if (!handler) {
       logger.warn(`No handler found for server message kind: ${kind}`);
-      this.trigger(SERVER_MESSAGE_FAILED, { kind, payload });
+      this.trigger(SDKClientEvents.SERVER_MESSAGE_FAILED, { kind, payload });
       return false;
     }
 
     try {
       const ok = await handler(payload);
-      this.trigger(ok ? SERVER_MESSAGE_SUCCEEDED : SERVER_MESSAGE_FAILED, { kind, payload });
+      this.trigger(
+        ok ? SDKClientEvents.SERVER_MESSAGE_SUCCEEDED : SDKClientEvents.SERVER_MESSAGE_FAILED,
+        { kind, payload },
+      );
       return ok;
     } catch (error) {
       logger.error(`Error handling server message kind ${kind}:`, error);
-      this.trigger(SERVER_MESSAGE_FAILED, { kind, payload });
+      this.trigger(SDKClientEvents.SERVER_MESSAGE_FAILED, { kind, payload });
       return false;
     }
   }
@@ -765,7 +765,7 @@ export class UsertourCore extends Evented {
 
     // Create new tour
     const usertourTour = new UsertourTour(this, new UsertourSession(session));
-    usertourTour.on(COMPONENT_CLOSED, () => {
+    usertourTour.on(SDKClientEvents.COMPONENT_CLOSED, () => {
       this.cleanupActivatedTour();
       this.toggleUI();
     });
@@ -829,10 +829,13 @@ export class UsertourCore extends Evented {
 
     // Create new checklist
     this.activatedChecklist = new UsertourChecklist(this, new UsertourSession(session));
-    this.activatedChecklist.on(COMPONENT_CLOSED, () => {
+    this.activatedChecklist.on(SDKClientEvents.COMPONENT_CLOSED, () => {
       this.cleanupActivatedChecklist();
     });
-    this.activatedChecklist.on(CHECKLIST_EXPANDED_CHANGE, this.handleChecklistExpandedChange);
+    this.activatedChecklist.on(
+      SDKClientEvents.CHECKLIST_EXPANDED_CHANGE,
+      this.handleChecklistExpandedChange,
+    );
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
     // Show checklist
@@ -923,7 +926,7 @@ export class UsertourCore extends Evented {
       return true;
     }
     const launcher = new UsertourLauncher(this, new UsertourSession(session));
-    launcher.on(COMPONENT_CLOSED, () => {
+    launcher.on(SDKClientEvents.COMPONENT_CLOSED, () => {
       this.removeLauncher(contentId);
     });
     this.launchers.push(launcher);

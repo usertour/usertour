@@ -8,11 +8,7 @@ import { isUndefined } from '@usertour/helpers';
 import { LauncherStore, BaseStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { logger } from '@/utils';
-import {
-  ELEMENT_CHANGED,
-  ELEMENT_FOUND,
-  ELEMENT_FOUND_TIMEOUT,
-} from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour-packages/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
 
@@ -140,19 +136,19 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     }
 
     // Handle element found
-    this.watcher.once(ELEMENT_FOUND, (el) => {
+    this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {
         this.handleElementFound(el, store);
       }
     });
 
     // Handle element not found
-    this.watcher.once(ELEMENT_FOUND_TIMEOUT, () => {
+    this.watcher.once(SDKClientEvents.ELEMENT_FOUND_TIMEOUT, () => {
       this.handleElementNotFound();
     });
 
     // Handle element changed
-    this.watcher.on(ELEMENT_CHANGED, (el) => {
+    this.watcher.on(SDKClientEvents.ELEMENT_CHANGED, (el) => {
       if (el instanceof Element) {
         this.handleElementChanged(el);
       }

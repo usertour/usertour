@@ -8,7 +8,8 @@ import { ChecklistStore, BaseStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
-import { CHECKLIST_EXPANDED_CHANGE } from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour-packages/constants';
+import { storage } from '@usertour/helpers';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   // === Abstract Methods Implementation ===
@@ -73,7 +74,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
 
   /**
    * Expands or collapses the checklist
-   * @param isExpanded - Whether the checklist should be expanded or collapsed
+   * @param expanded - Whether the checklist should be expanded or collapsed
    * @returns Promise that resolves when the state update is complete
    */
   expand(expanded: boolean) {
@@ -85,10 +86,24 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     if (store.expanded === expanded) {
       return;
     }
+    this.updateExpandedStateStorage(expanded);
     const sessionId = this.getSessionId();
-    this.trigger(CHECKLIST_EXPANDED_CHANGE, { expanded, sessionId });
+    this.trigger(SDKClientEvents.CHECKLIST_EXPANDED_CHANGE, { expanded, sessionId });
     // Update store to trigger component state change
     this.updateStore({ expanded });
+  }
+
+  /**
+   * Updates session storage to persist checklist expanded state
+   * @param expanded - Whether the checklist is expanded
+   */
+  private updateExpandedStateStorage(expanded: boolean): void {
+    const key = `checklist-expanded-${this.getSessionId()}`;
+    if (expanded) {
+      storage.setSessionStorage(key, 1);
+    } else {
+      storage.removeSessionStorage(key);
+    }
   }
 
   // === Store Management ===

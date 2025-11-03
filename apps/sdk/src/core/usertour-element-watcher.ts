@@ -4,11 +4,7 @@ import { ElementSelectorPropsData } from '@usertour/types';
 import { document, Evented } from '@/utils';
 import { isVisible } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
-import {
-  ELEMENT_FOUND,
-  ELEMENT_FOUND_TIMEOUT,
-  ELEMENT_CHANGED,
-} from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour-packages/constants';
 import { uuidV4 } from '@usertour/helpers';
 
 // === Types ===
@@ -64,7 +60,7 @@ export class UsertourElementWatcher extends Evented {
     timerManager.clearTimeout(`${this.id}-retry`);
 
     if (retryTimes >= RETRY_LIMIT || retryTimes * RETRY_DELAY > this.targetMissingSeconds * 1000) {
-      this.trigger(ELEMENT_FOUND_TIMEOUT);
+      this.trigger(SDKClientEvents.ELEMENT_FOUND_TIMEOUT);
       return;
     }
 
@@ -80,7 +76,7 @@ export class UsertourElementWatcher extends Evented {
     }
 
     this.element = el;
-    this.trigger(ELEMENT_FOUND, el);
+    this.trigger(SDKClientEvents.ELEMENT_FOUND, el);
   }
 
   /**
@@ -115,7 +111,7 @@ export class UsertourElementWatcher extends Evented {
       if (el) {
         // Found a new element that matches our selector
         this.element = el;
-        this.trigger(ELEMENT_CHANGED, el);
+        this.trigger(SDKClientEvents.ELEMENT_CHANGED, el);
       }
     }
 

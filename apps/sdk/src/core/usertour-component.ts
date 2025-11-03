@@ -18,7 +18,7 @@ import { uuidV4, isEqual } from '@usertour/helpers';
 import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 import { ActionManager, ActionHandler } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
-import { COMPONENT_CLOSED } from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour-packages/constants';
 import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
 
 /**
@@ -499,7 +499,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     // Hide the component
     this.hide();
     // Trigger the component closed event
-    this.trigger(COMPONENT_CLOSED, { sessionId });
+    this.trigger(SDKClientEvents.COMPONENT_CLOSED, { sessionId });
     // Destroy the component
     this.destroy();
     // End the content session

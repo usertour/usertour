@@ -1,8 +1,4 @@
-import {
-  SDK_CSS_LOADED,
-  SDK_CSS_LOADED_FAILED,
-  SDK_CONTAINER_CREATED,
-} from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour-packages/constants';
 import ReactDOM from 'react-dom/client';
 import { render } from '@/components';
 import { Evented } from '@/utils/evented';
@@ -160,7 +156,7 @@ export class UsertourUIManager extends Evented {
       try {
         const success = await loadCSSResource(cssFile, document);
         if (success) {
-          this.trigger(SDK_CSS_LOADED);
+          this.trigger(SDKClientEvents.CSS_LOADED);
           return true;
         }
 
@@ -176,7 +172,7 @@ export class UsertourUIManager extends Evented {
       }
     }
 
-    this.trigger(SDK_CSS_LOADED_FAILED);
+    this.trigger(SDKClientEvents.CSS_LOADED_FAILED);
     return false;
   }
 
@@ -200,7 +196,7 @@ export class UsertourUIManager extends Evented {
       }
 
       this.container = container;
-      this.trigger(SDK_CONTAINER_CREATED);
+      this.trigger(SDKClientEvents.CONTAINER_CREATED);
       return true;
     } catch (error) {
       logger.error('Failed to create container:', error);

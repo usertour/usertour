@@ -12,11 +12,7 @@ import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { logger } from '@/utils';
 import { createQuestionAnswerEventData } from '@/core/usertour-helper';
-import {
-  ELEMENT_FOUND,
-  ELEMENT_FOUND_TIMEOUT,
-  ELEMENT_CHANGED,
-} from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour-packages/constants';
 import { SessionStep, SessionTheme } from '@/types';
 import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
 
@@ -332,19 +328,19 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     // Handle element found
-    this.watcher.once(ELEMENT_FOUND, (el) => {
+    this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {
         this.handleElementFound(el, step, store);
       }
     });
 
     // Handle element not found
-    this.watcher.once(ELEMENT_FOUND_TIMEOUT, async () => {
+    this.watcher.once(SDKClientEvents.ELEMENT_FOUND_TIMEOUT, async () => {
       await this.handleElementNotFound(step);
     });
 
     // Handle element changed
-    this.watcher.on(ELEMENT_CHANGED, (el) => {
+    this.watcher.on(SDKClientEvents.ELEMENT_CHANGED, (el) => {
       if (el instanceof Element) {
         this.handleElementChanged(el, step);
       }
