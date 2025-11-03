@@ -44,6 +44,10 @@ import {
 } from '@/types';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
+import {
+  ServerMessageHandlerManager,
+  ServerMessageHandlerContext,
+} from './server-message-handlers';
 
 interface AppStartOptions {
   environmentId?: string;
@@ -81,6 +85,7 @@ export class UsertourCore extends Evented {
   private conditionsMonitor: UsertourConditionsMonitor | null = null;
   private waitTimerMonitor: ConditionWaitTimersMonitor | null = null;
   private urlMonitor: UsertourURLMonitor | null = null;
+  private serverMessageHandlerManager: ServerMessageHandlerManager;
 
   // === Constructor ===
   constructor() {
@@ -94,6 +99,7 @@ export class UsertourCore extends Evented {
       retryDelay: 1000,
     });
     this.id = uuidV4();
+    this.serverMessageHandlerManager = new ServerMessageHandlerManager();
     this.initializeEventListeners();
     this.initializeSocketEventListeners();
     this.initializeConditionsMonitor();
@@ -583,41 +589,39 @@ export class UsertourCore extends Evented {
    * @returns Promise<boolean> - True if message was handled successfully
    */
   private async handleServerMessage(message: unknown): Promise<boolean> {
-    const { kind, payload } = message as { kind: string; payload: unknown };
-    const handlers: Record<string, (payload: unknown) => boolean | Promise<boolean>> = {
-      SetFlowSession: this.handleSetFlowSession,
-      ForceGoToStep: this.handleForceGoToStep,
-      UnsetFlowSession: this.handleUnsetFlowSession,
-      SetChecklistSession: this.handleSetChecklistSession,
-      UnsetChecklistSession: this.handleUnsetChecklistSession,
-      ChecklistTaskCompleted: this.handleChecklistTaskCompleted,
-      AddLauncher: this.handleAddLauncher,
-      RemoveLauncher: this.handleRemoveLauncher,
-      TrackClientCondition: this.handleTrackClientCondition,
-      UntrackClientCondition: this.handleUntrackClientCondition,
-      StartConditionWaitTimer: this.handleStartConditionWaitTimer,
-      CancelConditionWaitTimer: this.handleCancelConditionWaitTimer,
+    const context = this.createServerMessageHandlerContext();
+    const success = await this.serverMessageHandlerManager.handleServerMessage(message, context);
+
+    // Trigger appropriate event based on result
+    const event = success
+      ? SDKClientEvents.SERVER_MESSAGE_SUCCEEDED
+      : SDKClientEvents.SERVER_MESSAGE_FAILED;
+    this.trigger(event, message);
+
+    return success;
+  }
+
+  /**
+   * Creates a context object for server message handlers
+   * @returns ServerMessageHandlerContext with bound methods
+   */
+  private createServerMessageHandlerContext(): ServerMessageHandlerContext {
+    return {
+      setFlowSession: (session: CustomContentSession) => this.setFlowSession(session),
+      forceGoToStep: (sessionId: string, stepId: string) => this.forceGoToStep(sessionId, stepId),
+      unsetFlowSession: (sessionId: string) => this.unsetFlowSession(sessionId),
+      setChecklistSession: (session: CustomContentSession) => this.setChecklistSession(session),
+      unsetChecklistSession: (sessionId: string) => this.unsetChecklistSession(sessionId),
+      addLauncher: (session: CustomContentSession) => this.addLauncher(session),
+      removeLauncher: (contentId: string) => this.removeLauncher(contentId),
+      trackClientCondition: (condition: TrackCondition) => this.trackClientCondition(condition),
+      removeConditions: (conditionIds: string[]) => this.removeConditions(conditionIds),
+      startConditionWaitTimer: (condition: ConditionWaitTimer) =>
+        this.startConditionWaitTimer(condition),
+      cancelConditionWaitTimer: (condition: ConditionWaitTimer) =>
+        this.cancelConditionWaitTimer(condition),
+      getActivatedChecklist: () => this.activatedChecklist,
     };
-
-    const handler = handlers[kind];
-    if (!handler) {
-      logger.warn(`No handler found for server message kind: ${kind}`);
-      this.trigger(SDKClientEvents.SERVER_MESSAGE_FAILED, { kind, payload });
-      return false;
-    }
-
-    try {
-      const ok = await handler(payload);
-      this.trigger(
-        ok ? SDKClientEvents.SERVER_MESSAGE_SUCCEEDED : SDKClientEvents.SERVER_MESSAGE_FAILED,
-        { kind, payload },
-      );
-      return ok;
-    } catch (error) {
-      logger.error(`Error handling server message kind ${kind}:`, error);
-      this.trigger(SDKClientEvents.SERVER_MESSAGE_FAILED, { kind, payload });
-      return false;
-    }
   }
 
   /**
@@ -627,120 +631,6 @@ export class UsertourCore extends Evented {
    */
   private handleServerMessageSucceeded(_payload: unknown) {
     this.syncSocketCredentials();
-  }
-
-  /**
-   * Handles SetFlowSession message - creates or updates a flow session
-   * @param payload - The flow session data
-   * @returns boolean - True if session was set successfully
-   */
-  private handleSetFlowSession(payload: unknown): boolean {
-    return this.setFlowSession(payload as CustomContentSession);
-  }
-
-  /**
-   * Handles ForceGoToStep message - forces navigation to a specific step
-   * @param payload - Contains sessionId and stepId
-   * @returns boolean - True if step navigation was successful
-   */
-  private handleForceGoToStep(payload: unknown): boolean {
-    const { sessionId, stepId } = payload as { sessionId: string; stepId: string };
-    return this.forceGoToStep(sessionId, stepId);
-  }
-
-  /**
-   * Handles UnsetFlowSession message - removes a flow session
-   * @param payload - Contains sessionId to remove
-   * @returns boolean - True if session was removed successfully
-   */
-  private handleUnsetFlowSession(payload: unknown): boolean {
-    const { sessionId } = payload as { sessionId: string };
-    return this.unsetFlowSession(sessionId);
-  }
-
-  /**
-   * Handles SetChecklistSession message - creates or updates a checklist session
-   * @param payload - The checklist session data
-   * @returns boolean - True if session was set successfully
-   */
-  private handleSetChecklistSession(payload: unknown): boolean {
-    return this.setChecklistSession(payload as CustomContentSession);
-  }
-
-  /**
-   * Handles UnsetChecklistSession message - removes a checklist session
-   * @param payload - Contains sessionId to remove
-   * @returns boolean - True if session was removed successfully
-   */
-  private handleUnsetChecklistSession(payload: unknown): boolean {
-    const { sessionId } = payload as { sessionId: string };
-    return this.unsetChecklistSession(sessionId);
-  }
-
-  /**
-   * Handles ChecklistTaskCompleted message - handles checklist task completed
-   * @param payload - The checklist task completed data
-   * @returns boolean - True if task was completed successfully
-   */
-  private handleChecklistTaskCompleted(payload: unknown): boolean {
-    const { taskId } = payload as { taskId: string };
-    return this.activatedChecklist?.addUnackedTask(taskId) ?? false;
-  }
-
-  /**
-   * Handles AddLauncher message - adds a launcher to the application
-   * @param payload - The launcher session data
-   * @returns boolean - True if launcher was added successfully
-   */
-  private async handleAddLauncher(payload: unknown): Promise<boolean> {
-    return await this.addLauncher(payload as CustomContentSession);
-  }
-
-  /**
-   * Handles RemoveLauncher message - removes a launcher from the application
-   * @param payload - Contains sessionId to remove
-   * @returns boolean - True if launcher was removed successfully
-   */
-  private handleRemoveLauncher(payload: unknown): boolean {
-    const { contentId } = payload as { contentId: string };
-    return this.removeLauncher(contentId);
-  }
-
-  /**
-   * Handles TrackClientCondition message - starts tracking a client condition
-   * @param payload - The condition to track
-   * @returns boolean - True if condition tracking was started successfully
-   */
-  private handleTrackClientCondition(payload: unknown): boolean {
-    return this.trackClientCondition(payload as TrackCondition);
-  }
-
-  /**
-   * Handles UntrackClientCondition message - stops tracking a client condition
-   * @param payload - Contains conditionId to stop tracking
-   * @returns boolean - True if condition tracking was stopped successfully
-   */
-  private handleUntrackClientCondition(payload: unknown): boolean {
-    const { conditionId } = payload as { conditionId: string };
-    return this.removeConditions([conditionId]);
-  }
-
-  /**
-   * Handles StartConditionWaitTimer message - starts a condition wait timer
-   * @param payload - The wait timer configuration
-   * @returns boolean - True if timer was started successfully
-   */
-  private handleStartConditionWaitTimer(payload: unknown): boolean {
-    return this.startConditionWaitTimer(payload as ConditionWaitTimer);
-  }
-
-  /**
-   * Handles CancelConditionWaitTimer message - cancels a condition wait timer
-   * @param payload - The wait timer configuration to cancel
-   * @returns boolean - True if timer was cancelled successfully
-   */
-  private handleCancelConditionWaitTimer(payload: unknown): boolean {
-    return this.cancelConditionWaitTimer(payload as ConditionWaitTimer);
   }
 
   // === Session Management ===
