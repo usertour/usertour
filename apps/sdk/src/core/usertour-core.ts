@@ -522,6 +522,18 @@ export class UsertourCore extends Evented {
    * Initializes DOM event listeners for the application
    */
   private initializeEventListeners() {
+    this.setupUIManagerInitialization();
+    this.setupDOMReadyTrigger();
+    this.setupPreviewMessageListener();
+
+    // Subscribe to succeeded server message to refresh credentials immediately
+    this.on(SDKClientEvents.SERVER_MESSAGE_SUCCEEDED, this.handleServerMessageSucceeded);
+  }
+
+  /**
+   * Sets up UI manager initialization when DOM is loaded
+   */
+  private setupUIManagerInitialization() {
     this.once(SDKClientEvents.DOM_LOADED, async () => {
       const initialized = await this.uiManager.initialize({
         toursStore: this.toursStore,
@@ -532,7 +544,12 @@ export class UsertourCore extends Evented {
         logger.error('Failed to initialize UI manager');
       }
     });
+  }
 
+  /**
+   * Sets up DOM ready state checking and triggers DOM_LOADED event
+   */
+  private setupDOMReadyTrigger() {
     if (document?.readyState !== 'loading') {
       this.trigger(SDKClientEvents.DOM_LOADED);
     } else if (document) {
@@ -540,12 +557,15 @@ export class UsertourCore extends Evented {
         this.trigger(SDKClientEvents.DOM_LOADED);
       });
     }
+  }
+
+  /**
+   * Sets up window message listener for preview messages
+   */
+  private setupPreviewMessageListener() {
     if (window) {
       on(window, 'message', this.handlePreviewMessage);
     }
-
-    // Subscribe to succeeded server message to refresh credentials immediately
-    this.on(SDKClientEvents.SERVER_MESSAGE_SUCCEEDED, this.handleServerMessageSucceeded);
   }
 
   /**
