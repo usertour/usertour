@@ -9,13 +9,13 @@ import {
   extractClientTrackConditions,
   evaluateCustomContentVersion,
   findAvailableSessionId,
-  findLatestStepCvid,
   extractClientConditionWaitTimers,
   sessionIsAvailable,
   extractChecklistNewCompletedItems,
   extractChecklistTrackConditions,
   hasContentSessionChanges,
   filterAvailableLauncherContentVersions,
+  findCurrentStepCvid,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -283,12 +283,15 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateSocketSession(params: ActivateSessionParams) {
-    const { socketData, session } = params;
+    const { socketData, session, forceGoToStep } = params;
     if (!socketData || !session) {
       return false;
     }
     const contentType = session.content.type as ContentDataType;
     if (contentType === ContentDataType.FLOW) {
+      if (forceGoToStep && session.currentStep?.id) {
+        await this.sessionBuilderService.updateCurrentStepId(session.id, session.currentStep.id);
+      }
       return await this.activateFlowSession(params);
     }
     if (contentType === ContentDataType.CHECKLIST) {
@@ -695,11 +698,18 @@ export class ContentOrchestratorService {
       contentType,
       evaluatedContentVersion,
     );
+    const steps = latestActivatedContentVersion?.steps ?? [];
+    const stepCvid = options?.stepCvid || steps?.[0]?.cvid;
 
     return await this.handleContentVersion(
-      context,
+      {
+        ...context,
+        options: {
+          ...options,
+          stepCvid,
+        },
+      },
       latestActivatedContentVersion,
-      true, // createNewSession
     );
   }
 
@@ -723,11 +733,7 @@ export class ContentOrchestratorService {
       return { success: false, reason: 'No custom content version found' };
     }
 
-    const result = await this.handleContentVersion(
-      context,
-      customContentVersion,
-      false, // don't create new session
-    );
+    const result = await this.handleContentVersion(context, customContentVersion);
     if (!result.success) {
       return result;
     }
@@ -803,11 +809,7 @@ export class ContentOrchestratorService {
       latestActivatedContentVersion,
     );
 
-    const result = await this.handleContentVersion(
-      context,
-      customContentVersion,
-      false, // don't create new session
-    );
+    const result = await this.handleContentVersion(context, customContentVersion);
 
     return {
       ...result,
@@ -839,11 +841,7 @@ export class ContentOrchestratorService {
       };
     }
 
-    const result = await this.handleContentVersion(
-      context,
-      autoStartContentVersion,
-      true, // create new session for auto-start
-    );
+    const result = await this.handleContentVersion(context, autoStartContentVersion);
 
     return {
       ...result,
@@ -913,9 +911,10 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Create a new business session
+   * Prepare business session info (find existing or create new) and track auto-start event
+   * Returns sessionId and currentStepCvid for content session initialization
    */
-  private async createBizSession(
+  private async prepareBizSessionInfo(
     customContentVersion: CustomContentVersion,
     socketData: SocketData,
     startOptions?: StartContentOptions,
@@ -923,6 +922,18 @@ export class ContentOrchestratorService {
     const { environment, externalUserId, externalCompanyId, clientContext } = socketData;
     const startReason = startOptions?.startReason;
     const versionId = customContentVersion.id;
+
+    const session = customContentVersion.session;
+    const contentType = customContentVersion.content.type as ContentDataType;
+    const currentStepCvid = findCurrentStepCvid(customContentVersion, startOptions);
+    const sessionId = findAvailableSessionId(session.latestSession, contentType);
+    if (sessionId) {
+      return {
+        success: true,
+        sessionId,
+        currentStepCvid,
+      };
+    }
     const bizSession = await this.sessionBuilderService.createBizSession(
       environment,
       externalUserId,
@@ -937,8 +948,6 @@ export class ContentOrchestratorService {
       };
     }
     const steps = customContentVersion?.steps ?? [];
-    const stepCvid = startOptions?.stepCvid;
-    const currentStepCvid = stepCvid || steps?.[0]?.cvid;
     const stepId = steps.find((step) => step.cvid === currentStepCvid)?.id ?? null;
 
     const result = await this.eventTrackingService.trackAutoStartEvent(
@@ -966,53 +975,16 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Find existing session
-   */
-  private findExistingSession(
-    customContentVersion: CustomContentVersion,
-    startOptions?: StartContentOptions,
-  ): ContentStartResult & { sessionId?: string; currentStepCvid?: string } {
-    const session = customContentVersion.session;
-    const contentType = customContentVersion.content.type as ContentDataType;
-    const { stepCvid, contentId } = startOptions ?? {};
-    const sessionId = findAvailableSessionId(session.latestSession, contentType);
-    const firstStepCvid = customContentVersion.steps[0]?.cvid;
-    const currentStepCvid =
-      stepCvid ||
-      (contentId && firstStepCvid) ||
-      findLatestStepCvid(session.latestSession?.bizEvent);
-
-    if (!sessionId) {
-      return {
-        success: false,
-        reason: 'No available session found',
-      };
-    }
-
-    return {
-      success: true,
-      sessionId,
-      currentStepCvid,
-    };
-  }
-
-  /**
    * Handles content version validation, session initialization and tracking conditions setup
    */
   private async handleContentVersion(
     context: ContentStartContext,
     customContentVersion: CustomContentVersion,
-    createNewSession = false,
   ): Promise<ContentStartResult> {
     const { options, socketData } = context;
 
     // Handle session initialization
-    const session = await this.initializeSession(
-      customContentVersion,
-      socketData,
-      options,
-      createNewSession,
-    );
+    const session = await this.initializeSession(customContentVersion, socketData, options);
 
     if (!session) {
       return {
@@ -1045,32 +1017,30 @@ export class ContentOrchestratorService {
     customContentVersion: CustomContentVersion,
     socketData: SocketData,
     options?: StartContentOptions,
-    createNewSession = false,
     skipBizSession = false,
   ): Promise<CustomContentSession | null> {
     let sessionId: string | undefined;
     let currentStepCvid: string | undefined;
     if (!skipBizSession) {
-      const sessionResult = createNewSession
-        ? await this.createBizSession(customContentVersion, socketData, options)
-        : this.findExistingSession(customContentVersion, options);
-
+      const sessionResult = await this.prepareBizSessionInfo(
+        customContentVersion,
+        socketData,
+        options,
+      );
       if (!sessionResult.success) {
         return null;
       }
-      currentStepCvid = sessionResult.currentStepCvid ?? undefined;
-      sessionId = sessionResult.sessionId ?? undefined;
+      currentStepCvid = sessionResult.currentStepCvid;
+      sessionId = sessionResult.sessionId;
     }
 
     // Create content session
-    const session = await this.sessionBuilderService.createContentSession(
+    return await this.sessionBuilderService.createContentSession(
       customContentVersion,
       socketData,
       sessionId,
       currentStepCvid,
     );
-
-    return session;
   }
 
   /**
@@ -1185,7 +1155,7 @@ export class ContentOrchestratorService {
     if (!customContentVersion || customContentVersion.session.latestSession.id !== sessionId) {
       return null;
     }
-    return await this.initializeSession(customContentVersion, socketData, undefined, false);
+    return await this.initializeSession(customContentVersion, socketData, undefined);
   }
 
   /**
@@ -1283,14 +1253,12 @@ export class ContentOrchestratorService {
       const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
 
       // Skip bizSession processing when session is not available and no versionId is specified
-      const createNewSession = !isAvailable;
       const skipBizSession = !isAvailable && !versionId;
 
       const result = await this.initializeSession(
         contentVersion,
         socketData,
         { startReason },
-        createNewSession,
         skipBizSession,
       );
 

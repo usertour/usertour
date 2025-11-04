@@ -480,6 +480,7 @@ model BizSession {
   version       Version      @relation(fields: [versionId], references: [id])
   versionId     String
   bizEvent      BizEvent[]
+  currentStepId String?      @default("")
 
   @@index([bizUserId])
   @@index([contentId])

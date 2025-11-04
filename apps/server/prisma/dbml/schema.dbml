@@ -462,6 +462,7 @@ Table BizSession {
   version Version [not null]
   versionId String [not null]
   bizEvent BizEvent [not null]
+  currentStepId String [default: '']
 }
 
 Table BizEvent {

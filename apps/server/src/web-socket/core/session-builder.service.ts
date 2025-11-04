@@ -94,6 +94,19 @@ export class SessionBuilderService {
   }
 
   /**
+   * Update the current step ID for a biz session
+   * @param sessionId - The session ID
+   * @param currentStepId - The current step ID
+   * @returns The updated biz session or null if not found
+   */
+  async updateCurrentStepId(sessionId: string, currentStepId: string): Promise<BizSession | null> {
+    return await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: { currentStepId },
+    });
+  }
+
+  /**
    * Get theme settings
    * @param themes - The themes
    * @param themeId - The theme ID

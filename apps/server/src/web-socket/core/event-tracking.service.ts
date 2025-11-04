@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Tx } from '@/common/types/schema';
-import { getEventProgress, getEventState, isValidEvent } from '@/utils/event-v2';
+import { getCurrentStepId, getEventProgress, getEventState, isValidEvent } from '@/utils/event-v2';
 import {
   BizEvents,
   CompanyAttributes,
@@ -373,8 +373,8 @@ export class EventTrackingService {
     // Update seen attributes
     await this.updateSeenAttributes(tx, bizUser, bizSession.bizCompanyId);
 
-    // Update session progress and state
-    await this.updateSessionProgressAndState(tx, bizSession, eventCodeName, events);
+    // Update biz session
+    await this.updateBizSession(tx, bizSession, eventCodeName, events);
 
     return true;
   }
@@ -387,21 +387,25 @@ export class EventTrackingService {
    * @param events - Event data containing flow_step_progress
    * @returns Promise<void>
    */
-  private async updateSessionProgressAndState(
+  private async updateBizSession(
     tx: Tx,
-    bizSession: { id: string; progress: number; state: number },
+    bizSession: BizSession,
     eventCodeName: string,
-    events?: { flow_step_progress?: number },
+    events?: Record<string, unknown>,
   ): Promise<void> {
     // Calculate progress and state
     const newProgress =
-      events?.flow_step_progress !== undefined
-        ? getEventProgress(eventCodeName, events.flow_step_progress)
+      events?.[EventAttributes.FLOW_STEP_PROGRESS] !== undefined
+        ? getEventProgress(eventCodeName, events?.[EventAttributes.FLOW_STEP_PROGRESS] as number)
         : null;
     const newState = getEventState(eventCodeName);
+    const currentStepId = getCurrentStepId(
+      eventCodeName,
+      events?.[EventAttributes.FLOW_STEP_ID] as string,
+    );
 
     // Prepare update data only if there are changes
-    const updateData: Partial<{ progress: number; state: number }> = {};
+    const updateData: Partial<{ progress: number; state: number; currentStepId: string }> = {};
 
     if (newProgress !== null) {
       const maxProgress = Math.max(newProgress, bizSession.progress);
@@ -412,6 +416,10 @@ export class EventTrackingService {
 
     if (newState !== bizSession.state) {
       updateData.state = newState;
+    }
+
+    if (currentStepId) {
+      updateData.currentStepId = currentStepId;
     }
 
     // Update session only if there are changes
@@ -612,6 +620,7 @@ export class EventTrackingService {
     const eventData = {
       [EventAttributes.FLOW_VERSION_ID]: version.id,
       [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.FLOW_STEP_ID]: step.id,
       [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
       [EventAttributes.FLOW_STEP_CVID]: step.cvid,
       [EventAttributes.FLOW_STEP_NAME]: step.name,
@@ -1080,6 +1089,7 @@ export class EventTrackingService {
     const eventData = {
       [EventAttributes.FLOW_VERSION_ID]: version.id,
       [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.FLOW_STEP_ID]: step.id,
       [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
       [EventAttributes.FLOW_STEP_CVID]: step.cvid,
       [EventAttributes.FLOW_STEP_NAME]: step.name,

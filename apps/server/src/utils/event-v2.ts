@@ -34,6 +34,13 @@ export const getEventState = (eventCodeName: string) => {
   return 0;
 };
 
+export const getCurrentStepId = (eventCodeName: string, customStepId?: string): string | null => {
+  if (eventCodeName === BizEvents.FLOW_STEP_SEEN) {
+    return customStepId;
+  }
+  return null;
+};
+
 /**
  * Validates paired events to ensure they alternate properly
  * @param bizEvents - All business events in the session

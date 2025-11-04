@@ -30,6 +30,7 @@ import {
   Step,
   TrackCondition,
   CustomContentSession,
+  StartContentOptions,
 } from '@/common/types';
 import {
   differenceInDays,
@@ -324,6 +325,35 @@ export const findLatestStepCvid = (
   } catch (_) {
     return undefined;
   }
+};
+
+/**
+ * Finds the current step CVID
+ * @param customContentVersion - The custom content version
+ * @param options - The start content options
+ * @returns The current step CVID
+ */
+export const findCurrentStepCvid = (
+  customContentVersion: CustomContentVersion,
+  options?: StartContentOptions,
+): string | undefined => {
+  const { stepCvid } = options ?? {};
+  const steps = customContentVersion?.steps ?? [];
+  const session = customContentVersion.session;
+  const contentType = customContentVersion.content.type as ContentDataType;
+
+  if (stepCvid) {
+    return stepCvid;
+  }
+
+  if (!sessionIsAvailable(session.latestSession, contentType)) {
+    return steps?.[0]?.cvid;
+  }
+
+  const currentStepId = session.latestSession.currentStepId;
+  const currentStepCvid = steps.find((step) => step.id === currentStepId)?.cvid ?? null;
+
+  return currentStepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
 };
 
 export const findLatestStepSeenEvent = (
@@ -1031,7 +1061,7 @@ export const extractLauncherAttrCodes = (launcher: LauncherData): string[] => {
  * @param newAttributes - The new attributes
  * @returns True if there are differences
  */
-export const hasSessionAttributeChanges = (
+const hasSessionAttributeChanges = (
   oldAttributes: SessionAttribute[],
   newAttributes: SessionAttribute[],
 ): boolean => {
@@ -1074,7 +1104,7 @@ const hasThemeVariationChanges = (
  * @param newTheme - The new theme
  * @returns True if there are differences
  */
-export const hasSessionThemeChanges = (
+const hasSessionThemeChanges = (
   oldTheme: SessionTheme | undefined,
   newTheme: SessionTheme | undefined,
 ): boolean => {
@@ -1110,18 +1140,24 @@ export const hasSessionThemeChanges = (
  * @param newSteps - The new steps
  * @returns True if there are differences
  */
-export const hasSessionStepChanges = (
-  oldSteps: SessionStep[],
-  newSteps: SessionStep[],
-): boolean => {
+const hasSessionStepChanges = (oldSteps: SessionStep[], newSteps: SessionStep[]): boolean => {
   if (oldSteps.length !== newSteps.length) {
     return true;
   }
 
-  const sortedOld = [...oldSteps].sort((a, b) => a.cvid.localeCompare(b.cvid));
-  const sortedNew = [...newSteps].sort((a, b) => a.cvid.localeCompare(b.cvid));
+  // Use id-based lookup to find corresponding steps, similar to hasChecklistItemChanges
+  // This avoids issues with array comparison by using isEqual on individual steps
+  return oldSteps.some((oldStep) => {
+    const newStep = newSteps.find((step) => step.id === oldStep.id);
 
-  return !isEqual(sortedOld, sortedNew);
+    // If step not found in newSteps, it's a change
+    if (!newStep) {
+      return true;
+    }
+
+    // Compare entire step objects using isEqual
+    return !isEqual(oldStep, newStep);
+  });
 };
 
 /**
@@ -1130,10 +1166,7 @@ export const hasSessionStepChanges = (
  * @param newItems - The new items
  * @returns True if there are differences
  */
-export const hasChecklistItemChanges = (
-  oldItems: ChecklistItemType[],
-  newItems: ChecklistItemType[],
-) => {
+const hasChecklistItemChanges = (oldItems: ChecklistItemType[], newItems: ChecklistItemType[]) => {
   if (oldItems.length !== newItems.length) {
     return true;
   }
@@ -1156,10 +1189,7 @@ export const hasChecklistItemChanges = (
  * @param newLauncher - The new launcher data
  * @returns True if there are differences
  */
-export const hasLauncherDataChanges = (
-  oldLauncher: LauncherData,
-  newLauncher: LauncherData,
-): boolean => {
+const hasLauncherDataChanges = (oldLauncher: LauncherData, newLauncher: LauncherData): boolean => {
   return !isEqual(oldLauncher, newLauncher);
 };
 
@@ -1594,9 +1624,15 @@ export const extractChecklistShowAnimationItems = (items: ChecklistItemType[]) =
  * @returns True if there are changes in theme, attributes, or steps theme
  */
 export const hasContentSessionChanges = (
-  oldSession: CustomContentSession,
-  newSession: CustomContentSession,
+  oldCustomSession: CustomContentSession,
+  newCustomSession: CustomContentSession,
 ): boolean => {
+  const normalize = (obj: any): any => {
+    return JSON.parse(JSON.stringify(obj));
+  };
+  const oldSession = normalize(oldCustomSession) as CustomContentSession;
+  const newSession = normalize(newCustomSession) as CustomContentSession;
+
   // Basic validation - should be comparing the same session
   if (oldSession.id !== newSession.id) {
     return true;
