@@ -666,7 +666,7 @@ export class UsertourCore extends Evented {
     } else {
       usertourTour.showStepByIndex(0);
     }
-    if (!hasActivatedTour && this.activatedTour) {
+    if (!hasActivatedTour) {
       this.collapseChecklist();
     }
     return true;
