@@ -33,7 +33,7 @@ import {
   sendPreviewSuccessMessage,
   timerManager,
 } from '@/utils';
-import { buildNavigateUrl, getClientContext } from '@/core/usertour-helper';
+import { getClientContext } from '@/core/usertour-helper';
 import {
   WebSocketEvents,
   ErrorMessages,
@@ -451,25 +451,6 @@ export class UsertourCore extends Evented {
   }
 
   // === Public API: Utilities ===
-  /**
-   * Handles the navigation
-   * @param data - The data to navigate
-   */
-  handleNavigate(data: any) {
-    const userAttributes = this.getUserAttributes();
-    const url = buildNavigateUrl(data.value, userAttributes);
-
-    // Check if custom navigation function is set
-    const customNavigate = this.getCustomNavigate();
-    if (customNavigate) {
-      // Use custom navigation function
-      customNavigate(url);
-    } else {
-      // Use default behavior
-      window?.top?.open(url, data?.openType === 'same' ? '_self' : '_blank');
-    }
-  }
-
   /**
    * Gets user attributes from attribute manager
    * @returns Current user attributes

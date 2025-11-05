@@ -19,7 +19,8 @@ import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } fro
 import { ActionManager, ActionHandler } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
 import { SDKClientEvents } from '@usertour-packages/constants';
-import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
+import { convertToAttributeEvaluationOptions, buildNavigateUrl } from '@/core/usertour-helper';
+import { window } from '@/utils';
 
 /**
  * Options for component initialization
@@ -470,6 +471,26 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   protected getCalculatedZIndex(): number {
     const baseZIndex = this.instance.getBaseZIndex() ?? 0;
     return baseZIndex + UsertourComponent.Z_INDEX_OFFSET;
+  }
+
+  /**
+   * Handles the navigation
+   * @param data - The data to navigate
+   */
+  handleNavigate(data: any): void {
+    const contentSession = this.getSessionAttributes();
+    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
+    const url = buildNavigateUrl(data.value, userAttributes);
+
+    // Check if custom navigation function is set
+    const customNavigate = this.instance.getCustomNavigate();
+    if (customNavigate) {
+      // Use custom navigation function
+      customNavigate(url);
+    } else {
+      // Use default behavior
+      window?.top?.open(url, data?.openType === 'same' ? '_self' : '_blank');
+    }
   }
 
   // === Lifecycle Hooks ===

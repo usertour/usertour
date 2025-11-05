@@ -21,7 +21,7 @@ export class CommonActionHandler extends BaseActionHandler {
         evalCode(action.data.value);
         break;
       case ContentActionsItemType.PAGE_NAVIGATE:
-        context.instance.handleNavigate(action.data);
+        context.handleNavigate(action.data);
         break;
     }
   }
