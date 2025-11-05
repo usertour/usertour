@@ -1,5 +1,6 @@
 import { ContentActionsItemType, RulesCondition, contentEndReason } from '@usertour/types';
 import { evalCode } from '@usertour/helpers';
+import { ErrorMessages } from '@/types/error-messages';
 import { BaseActionHandler, ActionHandlerContext } from './action-handler.interface';
 
 /**
@@ -70,13 +71,13 @@ export class TourActionHandler extends BaseActionHandler {
     switch (action.type) {
       case ContentActionsItemType.STEP_GOTO:
         if (!context.showStepByCvid) {
-          throw new Error('showStepByCvid is not available in this context');
+          throw new Error(ErrorMessages.SHOW_STEP_BY_CVID_NOT_AVAILABLE);
         }
         await context.showStepByCvid(action.data.stepCvid);
         break;
       case ContentActionsItemType.FLOW_DISMIS:
         if (!context.handleDismiss) {
-          throw new Error('handleDismiss is not available in this context');
+          throw new Error(ErrorMessages.HANDLE_DISMISS_NOT_AVAILABLE);
         }
         await context.handleDismiss(contentEndReason.USER_CLOSED);
         break;

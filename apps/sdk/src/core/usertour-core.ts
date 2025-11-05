@@ -381,7 +381,7 @@ export class UsertourCore extends Evented {
    */
   setTargetMissingSeconds(seconds: number) {
     if (seconds > 10) {
-      throw new Error('Target missing time cannot exceed 10 seconds');
+      throw new Error(ErrorMessages.TARGET_MISSING_TIME_EXCEEDED);
     }
     this.targetMissingSeconds = seconds;
   }

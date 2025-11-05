@@ -4,6 +4,7 @@ import { render } from '@/components';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
 import { document, loadCSSResource, logger } from '@/utils';
+import { ErrorMessages } from '@/types/error-messages';
 import { getMainCss } from '@/core/usertour-env';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourChecklist } from './usertour-checklist';
@@ -69,19 +70,19 @@ export class UsertourUIManager extends Evented {
       // Step 1: Load CSS with retry mechanism
       const cssLoaded = await this.loadCssWithRetry();
       if (!cssLoaded) {
-        throw new Error('Failed to load CSS after maximum retries');
+        throw new Error(ErrorMessages.FAILED_TO_LOAD_CSS);
       }
 
       // Step 2: Create container
       const containerCreated = this.createContainer();
       if (!containerCreated) {
-        throw new Error('Failed to create container');
+        throw new Error(ErrorMessages.FAILED_TO_CREATE_CONTAINER);
       }
 
       // Step 3: Create React root
       const rootCreated = await this.createRoot(props);
       if (!rootCreated) {
-        throw new Error('Failed to create React root');
+        throw new Error(ErrorMessages.FAILED_TO_CREATE_REACT_ROOT);
       }
 
       this.isInitialized = true;
