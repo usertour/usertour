@@ -28,6 +28,7 @@ import { SessionActionDropdownMenu } from '@/components/molecules/session-action
 import { contentTypesConfig } from '@usertour-packages/shared-editor';
 import { SessionResponse } from '@/components/molecules/session-detail';
 import { ContentLoading } from '@/components/molecules/content-loading';
+import { deduplicateAnswerEvents } from '@/utils/session';
 
 const SessionItemContainer = ({
   children,
@@ -113,9 +114,7 @@ const SessionDetailContentInner = ({
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  const answerEvents = session?.bizEvent?.filter(
-    (bizEvent: BizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
-  );
+  const answerEvents = deduplicateAnswerEvents(bizEvents);
 
   const getStartReasonTitle = (startEvent: BizEvent | undefined) => {
     try {
