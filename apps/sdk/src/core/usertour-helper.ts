@@ -16,7 +16,6 @@ import {
   BizUserInfo,
   UserTourTypes,
   RulesTypeControl,
-  ClientContext,
 } from '@usertour/types';
 import {
   ContentEditorQuestionElement,
@@ -582,11 +581,7 @@ export const evaluateConditions = async (
     [RulesType.TIME]: true,
     ...(attributes ? { [RulesType.USER_ATTR]: true } : {}),
   };
-  const clientContext: ClientContext = {
-    pageUrl: location?.href ?? '',
-    viewportWidth: window?.innerWidth ?? 0,
-    viewportHeight: window?.innerHeight ?? 0,
-  };
+  const clientContext = getClientContext();
 
   return await evaluateRulesConditions(conditions, {
     clientContext,

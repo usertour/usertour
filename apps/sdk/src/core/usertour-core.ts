@@ -157,6 +157,7 @@ export class UsertourCore extends Evented {
     if (attributes) {
       this.attributeManager.setUserAttributes(attributes);
     }
+    this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, { userId, attributes });
   }
 
   /**
@@ -313,7 +314,7 @@ export class UsertourCore extends Evented {
     contentId: string,
     startReason: contentStartReason,
     opts?: UserTourTypes.StartOptions,
-    batch = true,
+    batch = false,
   ) {
     // Build start options
     const startOptions = {
@@ -332,6 +333,30 @@ export class UsertourCore extends Evented {
    */
   async startTour(contentId: string, opts?: UserTourTypes.StartOptions) {
     await this.startContent(contentId, contentStartReason.START_FROM_ACTION, opts);
+  }
+
+  /**
+   * Checks URL for 'usertour' parameter and starts the content if found
+   * Removes the parameter from URL after processing
+   */
+  async checkUrlAndStartContent(): Promise<void> {
+    if (!window?.location) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    const contentId = url.searchParams.get('usertour');
+
+    if (!contentId) {
+      return;
+    }
+
+    // Start the content with URL start reason
+    await this.startContent(contentId, contentStartReason.START_FROM_URL);
+
+    // Remove the parameter from URL and update browser history
+    url.searchParams.delete('usertour');
+    window.history.replaceState({}, '', url.toString());
   }
 
   // === Public API: Configuration ===
@@ -528,6 +553,7 @@ export class UsertourCore extends Evented {
 
     // Subscribe to succeeded server message to refresh credentials immediately
     this.on(SDKClientEvents.SERVER_MESSAGE_SUCCEEDED, this.handleServerMessageSucceeded);
+    this.once(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, this.handleUserFirstIdentified);
   }
 
   /**
@@ -651,6 +677,13 @@ export class UsertourCore extends Evented {
    */
   private handleServerMessageSucceeded(_payload: unknown) {
     this.syncSocketCredentials();
+  }
+
+  /**
+   * Handles user identified event - checks URL for 'usertour' parameter and starts the content if found
+   */
+  private handleUserFirstIdentified() {
+    this.checkUrlAndStartContent();
   }
 
   // === Session Management ===
@@ -917,9 +950,10 @@ export class UsertourCore extends Evented {
     });
 
     // Listen for URL change events
-    this.urlMonitor.on('url-changed', () => {
+    this.urlMonitor.on('url-changed', async () => {
       const clientContext = getClientContext();
-      this.socketService.updateClientContext(clientContext, { batch: true });
+      await this.socketService.updateClientContext(clientContext, { batch: true });
+      await this.checkUrlAndStartContent();
     });
   }
 

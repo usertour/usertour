@@ -23,6 +23,8 @@ export enum SDKClientEvents {
   SERVER_MESSAGE_FAILED = 'server-message:failed',
   // Event tracking
   EVENT_REPORTED = 'event-reported',
+  // User identified events
+  USER_IDENTIFIED_SUCCEEDED = 'user-identified-succeeded',
 }
 
 /**
