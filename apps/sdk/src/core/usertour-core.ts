@@ -113,9 +113,7 @@ export class UsertourCore extends Evented {
    * @param startOptions - Configuration options for starting the app
    */
   init(startOptions: AppStartOptions) {
-    if (!this.isPreview()) {
-      this.startOptions = Object.assign({}, startOptions);
-    }
+    this.startOptions = Object.assign({}, startOptions);
   }
 
   // === Public API: User Management ===
@@ -126,7 +124,7 @@ export class UsertourCore extends Evented {
    */
   async identify(userId: string, attributes?: UserTourTypes.Attributes): Promise<void> {
     const { token } = this.startOptions;
-    if (!token || !this.useCurrentUser()) {
+    if (!token) {
       return;
     }
 
@@ -173,9 +171,6 @@ export class UsertourCore extends Evented {
     const key = StorageKeys.IDENTIFY_ANONYMOUS;
     const storageData = storage.getLocalStorage(key) as { userId: string } | undefined;
     let userId = '';
-    if (!this.useCurrentUser()) {
-      return;
-    }
     if (storageData?.userId) {
       userId = storageData.userId;
     } else {
@@ -191,7 +186,7 @@ export class UsertourCore extends Evented {
    */
   async updateUser(attributes: UserTourTypes.Attributes): Promise<void> {
     const { token } = this.startOptions;
-    if (!token || !this.externalUserId || !this.useCurrentUser()) {
+    if (!token || !this.externalUserId) {
       return;
     }
 
@@ -229,7 +224,7 @@ export class UsertourCore extends Evented {
     opts?: UserTourTypes.GroupOptions,
   ): Promise<void> {
     const { token } = this.startOptions;
-    if (!token || !this.externalUserId || !this.useCurrentUser()) {
+    if (!token || !this.externalUserId) {
       return;
     }
 
@@ -268,7 +263,7 @@ export class UsertourCore extends Evented {
     opts?: UserTourTypes.GroupOptions,
   ): Promise<void> {
     const { token } = this.startOptions;
-    if (!token || !this.externalCompanyId || !this.externalUserId || !this.useCurrentUser()) {
+    if (!token || !this.externalCompanyId || !this.externalUserId) {
       return;
     }
 
@@ -415,17 +410,6 @@ export class UsertourCore extends Evented {
    */
   isPreview() {
     return this.startOptions.mode === SDKSettingsMode.PREVIEW;
-  }
-
-  /**
-   * Determines if current user should be used
-   * @returns False if in preview mode, true otherwise
-   */
-  useCurrentUser() {
-    if (this.isPreview()) {
-      return false;
-    }
-    return true;
   }
 
   /**
