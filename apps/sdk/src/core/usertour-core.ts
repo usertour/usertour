@@ -174,7 +174,7 @@ export class UsertourCore extends Evented {
     if (storageData?.userId) {
       userId = storageData.userId;
     } else {
-      userId = uuidV4();
+      userId = `anon-${uuidV4()}`;
       storage.setLocalStorage(key, { userId });
     }
     await this.identify(userId, attributes);

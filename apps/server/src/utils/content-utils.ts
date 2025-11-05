@@ -1288,9 +1288,10 @@ export const isExpandPending = (customContentVersion: CustomContentVersion): boo
   const latestSession = customContentVersion.session.latestSession;
   const checklistData = customContentVersion.data as unknown as ChecklistData;
   // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
-  const seenEvents = latestSession.bizEvent?.filter(
-    (event) => event.event?.codeName === BizEvents.CHECKLIST_SEEN,
-  );
+  const seenEvents =
+    latestSession?.bizEvent?.filter(
+      (event) => event.event?.codeName === BizEvents.CHECKLIST_SEEN,
+    ) ?? [];
   if (!latestSession || checklistIsDimissed(latestSession.bizEvent) || seenEvents.length === 0) {
     return checklistData.initialDisplay === ChecklistInitialDisplay.EXPANDED;
   }
