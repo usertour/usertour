@@ -72,6 +72,50 @@ const createBuildPlugins = (env: 'development' | 'production') => [
   visualizer(),
 ];
 
+// Helper function for code splitting
+// Separates @usertour-packages into its own chunk and keeps core initialization code with main bundle
+const createManualChunks = (moduleName: string): string | undefined => {
+  // Internal Usertour packages - separate chunk
+  if (moduleName.includes('@usertour-packages') || moduleName.includes('@usertour/')) {
+    return 'vendor-usertour';
+  }
+
+  // Other third-party dependencies
+  if (moduleName.includes('node_modules')) {
+    return 'vendor';
+  }
+
+  // Keep core initialization code with main bundle to increase its size
+  // Include all core modules that are needed for initialization
+  if (
+    moduleName.includes('/src/utils/') ||
+    moduleName.includes('/src/types/') ||
+    moduleName.includes('/src/core/')
+  ) {
+    // Return undefined to keep all core modules with main bundle
+    return undefined;
+  }
+
+  // React components - split lazy loaded components separately
+  if (moduleName.includes('/src/components/')) {
+    // Split each lazy loaded component into its own chunk
+    if (moduleName.includes('/src/components/tour')) {
+      return 'tour';
+    }
+    if (moduleName.includes('/src/components/checklist')) {
+      return 'checklist';
+    }
+    if (moduleName.includes('/src/components/launcher')) {
+      return 'launcher';
+    }
+    // index.tsx stays with main bundle (it's the entry point for components)
+    return undefined;
+  }
+
+  // Other business code stays with main bundle
+  return undefined;
+};
+
 // Base configuration shared across all modes
 const baseConfig = {
   resolve: {
@@ -158,12 +202,7 @@ export default defineConfig(({ command, mode }) => {
       rollupOptions: {
         output: {
           inlineDynamicImports: false,
-          manualChunks: (moduleName) => {
-            if (moduleName.includes('node_modules')) {
-              return 'vendor';
-            }
-            return undefined;
-          },
+          manualChunks: createManualChunks,
           chunkFileNames: '[name]-[hash].js',
         },
       },
