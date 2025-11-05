@@ -327,15 +327,6 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Starts a tour with given content ID
-   * @param contentId - content ID to start specific tour
-   * @param opts - Optional start options
-   */
-  async startTour(contentId: string, opts?: UserTourTypes.StartOptions) {
-    await this.startContent(contentId, contentStartReason.START_FROM_ACTION, opts);
-  }
-
-  /**
    * Checks URL for 'usertour' parameter and starts the content if found
    * Removes the parameter from URL after processing
    */

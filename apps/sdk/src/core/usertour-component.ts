@@ -9,14 +9,16 @@ import { autoBind } from '@/utils';
 import {
   ChecklistData,
   contentEndReason,
+  contentStartReason,
   LauncherData,
   Step,
   RulesCondition,
   ThemeTypesSetting,
+  UserTourTypes,
 } from '@usertour/types';
 import { uuidV4, isEqual } from '@usertour/helpers';
 import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
-import { ActionManager, ActionHandler } from '@/core/action-handlers';
+import { ActionManager, ActionHandler, ActionHandlerContext } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
 import { SDKClientEvents } from '@usertour-packages/constants';
 import { convertToAttributeEvaluationOptions, buildNavigateUrl } from '@/core/usertour-helper';
@@ -198,7 +200,22 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    * @param actions - The actions to handle
    */
   async handleActions(actions: RulesCondition[]): Promise<void> {
-    await this.actionManager.handleActions(actions, this);
+    const context = this.createActionHandlerContext();
+    await this.actionManager.handleActions(actions, context);
+  }
+
+  /**
+   * Creates an action handler context with component methods
+   * @returns ActionHandlerContext object with mapped methods
+   * @protected
+   */
+  protected createActionHandlerContext(): ActionHandlerContext {
+    return {
+      startTour: (contentId: string, opts?: UserTourTypes.StartOptions) =>
+        this.startTour(contentId, opts),
+      handleNavigate: (data: any) => this.handleNavigate(data),
+      close: (reason: contentEndReason) => this.close(reason),
+    };
   }
 
   /**
@@ -491,6 +508,15 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       // Use default behavior
       window?.top?.open(url, data?.openType === 'same' ? '_self' : '_blank');
     }
+  }
+
+  /**
+   * Starts a tour with given content ID
+   * @param contentId - content ID to start specific tour
+   * @param opts - Optional start options
+   */
+  async startTour(contentId: string, opts?: UserTourTypes.StartOptions): Promise<void> {
+    await this.instance.startContent(contentId, contentStartReason.START_FROM_ACTION, opts);
   }
 
   // === Lifecycle Hooks ===

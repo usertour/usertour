@@ -1,5 +1,5 @@
 import { ContentActionsItemType, RulesCondition } from '@usertour/types';
-import { ActionHandler } from './action-handler.interface';
+import { ActionHandler, ActionHandlerContext } from './action-handler.interface';
 
 /**
  * Manages action handlers and executes actions
@@ -33,9 +33,9 @@ export class ActionManager {
   /**
    * Handle a list of actions
    * @param actions - The actions to handle
-   * @param context - The context object (component instance)
+   * @param context - The context object with component methods
    */
-  async handleActions(actions: RulesCondition[], context: any): Promise<void> {
+  async handleActions(actions: RulesCondition[], context: ActionHandlerContext): Promise<void> {
     // Separate actions by type
     const pageNavigateActions = actions.filter(
       (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
@@ -52,9 +52,12 @@ export class ActionManager {
   /**
    * Execute a list of actions in sequence
    * @param actions - The actions to execute
-   * @param context - The context object (component instance)
+   * @param context - The context object with component methods
    */
-  private async executeActions(actions: RulesCondition[], context: any): Promise<void> {
+  private async executeActions(
+    actions: RulesCondition[],
+    context: ActionHandlerContext,
+  ): Promise<void> {
     for (const action of actions) {
       await this.executeAction(action, context);
     }
@@ -63,9 +66,12 @@ export class ActionManager {
   /**
    * Execute a single action
    * @param action - The action to execute
-   * @param context - The context object (component instance)
+   * @param context - The context object with component methods
    */
-  private async executeAction(action: RulesCondition, context: any): Promise<void> {
+  private async executeAction(
+    action: RulesCondition,
+    context: ActionHandlerContext,
+  ): Promise<void> {
     const handler = this.findHandler(action.type as ContentActionsItemType);
     if (handler) {
       await handler.handle(action, context);

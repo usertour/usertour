@@ -1,4 +1,36 @@
-import { ContentActionsItemType, RulesCondition } from '@usertour/types';
+import {
+  ContentActionsItemType,
+  RulesCondition,
+  contentEndReason,
+  UserTourTypes,
+} from '@usertour/types';
+
+/**
+ * Context object passed to action handlers
+ * Provides access to component methods needed by handlers
+ */
+export interface ActionHandlerContext {
+  /**
+   * Starts a tour with given content ID
+   */
+  startTour: (contentId: string, opts?: UserTourTypes.StartOptions) => Promise<void>;
+  /**
+   * Handles the navigation
+   */
+  handleNavigate: (data: any) => void;
+  /**
+   * Closes the component with the specified reason
+   */
+  close: (reason: contentEndReason) => Promise<void>;
+  /**
+   * Shows a step by cvid (Tour-specific)
+   */
+  showStepByCvid?: (stepCvid: string) => Promise<void>;
+  /**
+   * Handles dismiss action (Tour-specific)
+   */
+  handleDismiss?: (reason: contentEndReason) => Promise<void>;
+}
 
 /**
  * Interface for handling specific action types
@@ -14,10 +46,10 @@ export interface ActionHandler {
   /**
    * Handle the action
    * @param action - The action to handle
-   * @param context - The context object (component instance)
+   * @param context - The context object with component methods
    * @returns Promise that resolves when the action is handled
    */
-  handle(action: RulesCondition, context: any): Promise<void>;
+  handle(action: RulesCondition, context: ActionHandlerContext): Promise<void>;
 }
 
 /**
@@ -39,5 +71,5 @@ export abstract class BaseActionHandler implements ActionHandler {
   /**
    * Handle the action - must be implemented by subclasses
    */
-  abstract handle(action: RulesCondition, context: any): Promise<void>;
+  abstract handle(action: RulesCondition, context: ActionHandlerContext): Promise<void>;
 }

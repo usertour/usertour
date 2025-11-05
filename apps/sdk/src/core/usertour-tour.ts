@@ -31,6 +31,19 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
+   * Creates an action handler context with tour-specific methods
+   * @returns ActionHandlerContext object with mapped methods including tour-specific ones
+   */
+  protected createActionHandlerContext() {
+    const baseContext = super.createActionHandlerContext();
+    return {
+      ...baseContext,
+      showStepByCvid: (stepCvid: string) => this.showStepByCvid(stepCvid),
+      handleDismiss: (reason?: contentEndReason) => this.handleDismiss(reason),
+    };
+  }
+
+  /**
    * Checks the tour
    */
   async check(): Promise<void> {

@@ -1,4 +1,8 @@
-export type { ActionHandler, BaseActionHandler } from './action-handler.interface';
+export type {
+  ActionHandler,
+  BaseActionHandler,
+  ActionHandlerContext,
+} from './action-handler.interface';
 export {
   CommonActionHandler,
   LauncherActionHandler,
