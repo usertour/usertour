@@ -300,7 +300,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private async showHidden(step: SessionStep): Promise<void> {
+    // Report step seen event
     await this.reportStepSeen(step);
+    // Process trigger conditions
+    await this.stepTrigger?.process();
   }
 
   // === Element Watcher ===
