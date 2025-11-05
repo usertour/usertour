@@ -80,8 +80,20 @@ const createManualChunks = (moduleName: string): string | undefined => {
     return 'vendor-usertour';
   }
 
-  // Other third-party dependencies
+  // Split third-party dependencies by category for better analysis and caching
   if (moduleName.includes('node_modules')) {
+    // lodash is typically very large (70-100KB gzip), split it separately
+    if (moduleName.includes('lodash')) {
+      return 'vendor-lodash';
+    }
+
+    // socket.io-client is typically large (40-60KB gzip) and relatively independent
+    if (moduleName.includes('socket.io')) {
+      return 'vendor-socket';
+    }
+
+    // Keep React and all other dependencies together to avoid React instance conflicts
+    // @usertour-packages may also use React, so keeping them together is safer
     return 'vendor';
   }
 
