@@ -432,13 +432,16 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Checks if a content has been started
+   * Checks if a content is currently active
    * @param contentId - The content ID to check
-   * @returns True if the content has been started, false otherwise
+   * @returns True if the content is currently active, false otherwise
    */
   isStarted(contentId: string) {
-    console.log('isStarted', contentId);
-    return false;
+    return (
+      this.activatedChecklist?.getContentId() === contentId ||
+      this.activatedTour?.getContentId() === contentId ||
+      this.launchers.some((launcher) => launcher.getContentId() === contentId)
+    );
   }
 
   // === Public API: Utilities ===
@@ -504,6 +507,8 @@ export class UsertourCore extends Evented {
     this.cleanupActivatedTour();
     // Cleanup activated checklist
     this.cleanupActivatedChecklist();
+    // Cleanup launchers
+    this.cleanupLaunchers();
     // Cleanup condition monitor
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
@@ -1034,6 +1039,18 @@ export class UsertourCore extends Evented {
     this.activatedChecklist?.destroy();
     this.activatedChecklist = null;
     this.checklistsStore.setData(undefined);
+  }
+
+  /**
+   * Cleans up all launchers from the application
+   */
+  private cleanupLaunchers() {
+    // Cleanup all launchers
+    for (const launcher of this.launchers) {
+      launcher.destroy();
+    }
+    this.launchers = [];
+    this.launchersStore.setData([]);
   }
 
   /**
