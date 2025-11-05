@@ -2,6 +2,7 @@
  * Error messages used throughout the application
  */
 export enum ErrorMessages {
+  INVALID_TOKEN = 'usertour.init() was called but missing Usertour.js Token. Value received: {value}',
   FAILED_TO_IDENTIFY_USER = 'Failed to identify user',
   FAILED_TO_UPDATE_USER = 'Failed to update user',
   FAILED_TO_UPDATE_COMPANY = 'Failed to update company',

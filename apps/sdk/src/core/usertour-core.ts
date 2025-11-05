@@ -114,6 +114,12 @@ export class UsertourCore extends Evented {
    * @param startOptions - Configuration options for starting the app
    */
   init(startOptions: AppStartOptions) {
+    if (isNullish(startOptions.token) || isEmptyString(startOptions.token)) {
+      throw new Error(formatErrorMessage(ErrorMessages.INVALID_TOKEN, startOptions.token));
+    }
+    if (this.startOptions.token !== startOptions.token) {
+      this.reset();
+    }
     this.startOptions = Object.assign({}, startOptions);
   }
 
