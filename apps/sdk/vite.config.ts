@@ -69,7 +69,12 @@ const createBuildPlugins = (env: 'development' | 'production') => [
     banner,
   }),
   filesize(),
-  visualizer(),
+  visualizer({
+    filename: 'dist/stats.html',
+    open: false,
+    gzipSize: true,
+    brotliSize: true,
+  }),
 ];
 
 // Helper function for code splitting
@@ -82,6 +87,16 @@ const createManualChunks = (moduleName: string): string | undefined => {
 
   // Split third-party dependencies by category for better analysis and caching
   if (moduleName.includes('node_modules')) {
+    // codemirror is typically very large and relatively independent
+    if (moduleName.includes('codemirror')) {
+      return 'vendor-codemirror';
+    }
+
+    // slate is typically very large, may have its own React dependencies
+    if (moduleName.includes('slate')) {
+      return 'vendor-slate';
+    }
+
     // lodash is typically very large (70-100KB gzip), split it separately
     if (moduleName.includes('lodash')) {
       return 'vendor-lodash';
@@ -92,7 +107,17 @@ const createManualChunks = (moduleName: string): string | undefined => {
       return 'vendor-socket';
     }
 
-    // Keep React and all other dependencies together to avoid React instance conflicts
+    // Split utility libraries that don't depend on React
+    if (
+      moduleName.includes('date-fns') ||
+      moduleName.includes('fast-deep-equal') ||
+      moduleName.includes('deepmerge-ts')
+    ) {
+      return 'vendor-utils';
+    }
+
+    // Keep React and all React-dependent libraries together to avoid React instance conflicts
+    // This includes @radix-ui, @floating-ui, react-use, etc.
     // @usertour-packages may also use React, so keeping them together is safer
     return 'vendor';
   }
