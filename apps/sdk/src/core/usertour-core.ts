@@ -4,7 +4,7 @@ import {
   StorageKeys,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
-import { storage, uuidV4 } from '@usertour/helpers';
+import { isEmptyString, isNullish, storage, uuidV4 } from '@usertour/helpers';
 import { contentStartReason, SDKSettingsMode } from '@usertour/types';
 import { UserTourTypes } from '@usertour/types';
 import { Evented } from '@/utils/evented';
@@ -42,6 +42,7 @@ import {
   ConditionWaitTimer,
   ClientCondition,
 } from '@/types';
+import { formatErrorMessage } from '@/types/error-messages';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
 import {
@@ -123,9 +124,12 @@ export class UsertourCore extends Evented {
    * @param attributes - Optional user attributes
    */
   async identify(userId: string, attributes?: UserTourTypes.Attributes): Promise<void> {
+    // Ensure the SDK has been initialized before calling identify
+    this.ensureInit();
+
     const { token } = this.startOptions;
-    if (!token) {
-      return;
+    if (isNullish(userId) || isEmptyString(userId)) {
+      throw new Error(formatErrorMessage(ErrorMessages.INVALID_USER_ID, userId));
     }
 
     // Only reset if userId or token has changed
@@ -168,6 +172,9 @@ export class UsertourCore extends Evented {
    * @param attributes - Optional user attributes
    */
   async identifyAnonymous(attributes?: UserTourTypes.Attributes): Promise<void> {
+    // Ensure the SDK has been initialized before calling identifyAnonymous
+    this.ensureInit();
+
     const key = StorageKeys.IDENTIFY_ANONYMOUS;
     const storageData = storage.getLocalStorage(key) as { userId: string } | undefined;
     let userId = '';
@@ -185,18 +192,14 @@ export class UsertourCore extends Evented {
    * @param attributes - New user attributes to update
    */
   async updateUser(attributes: UserTourTypes.Attributes): Promise<void> {
-    const { token } = this.startOptions;
-    if (!token || !this.externalUserId) {
-      return;
-    }
+    // Ensure the SDK has been initialized before calling updateUser
+    const externalUserId = this.ensureIdentify();
 
     // Check if attributes have actually changed to avoid unnecessary API calls
     if (!this.attributeManager.userAttrsChanged(attributes)) {
       return; // No changes detected, skip the update
     }
-
     // First call API with new attributes
-    const externalUserId = this.externalUserId;
     const result = await this.socketService.upsertUser(
       {
         externalUserId,
@@ -223,13 +226,14 @@ export class UsertourCore extends Evented {
     attributes?: UserTourTypes.Attributes,
     opts?: UserTourTypes.GroupOptions,
   ): Promise<void> {
-    const { token } = this.startOptions;
-    if (!token || !this.externalUserId) {
-      return;
+    // Ensure the SDK has been initialized before calling group
+    const externalUserId = this.ensureIdentify();
+
+    // Validate company ID
+    if (isNullish(companyId) || isEmptyString(companyId)) {
+      throw new Error(formatErrorMessage(ErrorMessages.INVALID_COMPANY_ID, companyId));
     }
 
-    // First call API with new attributes
-    const externalUserId = this.externalUserId;
     const result = await this.socketService.upsertCompany(
       {
         externalUserId,
@@ -262,10 +266,8 @@ export class UsertourCore extends Evented {
     attributes?: UserTourTypes.Attributes,
     opts?: UserTourTypes.GroupOptions,
   ): Promise<void> {
-    const { token } = this.startOptions;
-    if (!token || !this.externalCompanyId || !this.externalUserId) {
-      return;
-    }
+    const externalUserId = this.ensureIdentify();
+    const externalCompanyId = this.ensureGroup();
 
     // Check if attributes have actually changed to avoid unnecessary API calls
     const hasCompanyChanged = attributes && this.attributeManager.companyAttrsChanged(attributes);
@@ -277,8 +279,6 @@ export class UsertourCore extends Evented {
     }
 
     // First call API with new attributes
-    const externalUserId = this.externalUserId;
-    const externalCompanyId = this.externalCompanyId;
     const result = await this.socketService.upsertCompany(
       {
         externalUserId,
@@ -316,6 +316,13 @@ export class UsertourCore extends Evented {
     opts?: UserTourTypes.StartOptions,
     batch = false,
   ) {
+    // Ensure the SDK has been initialized before calling startContent
+    this.ensureIdentify();
+    // Validate content ID
+    if (isNullish(contentId) || isEmptyString(contentId)) {
+      throw new Error(formatErrorMessage(ErrorMessages.INVALID_CONTENT_ID, contentId));
+    }
+
     // Build start options
     const startOptions = {
       stepCvid: opts?.cvid,
@@ -418,6 +425,42 @@ export class UsertourCore extends Evented {
    */
   isIdentified() {
     return Boolean(this.externalUserId);
+  }
+
+  /**
+   * Ensures that the SDK has been initialized
+   * @throws {Error} If init() has not been called
+   */
+  ensureInit() {
+    if (!this.startOptions.token) {
+      throw new Error(ErrorMessages.MUST_INIT_FIRST);
+    }
+  }
+
+  /**
+   * Ensures that a user has been identified
+   * @returns The external user ID
+   * @throws {Error} If init() or identify() has not been called
+   */
+  ensureIdentify() {
+    this.ensureInit();
+    if (!this.externalUserId) {
+      throw new Error(ErrorMessages.MUST_IDENTIFY_FIRST);
+    }
+    return this.externalUserId;
+  }
+
+  /**
+   * Ensures that a group has been set
+   * @returns The external company ID
+   * @throws {Error} If init(), identify(), or group() has not been called
+   */
+  ensureGroup() {
+    this.ensureIdentify();
+    if (!this.externalCompanyId) {
+      throw new Error(ErrorMessages.MUST_GROUP_FIRST);
+    }
+    return this.externalCompanyId;
   }
 
   /**
