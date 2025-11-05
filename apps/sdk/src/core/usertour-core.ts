@@ -130,7 +130,12 @@ export class UsertourCore extends Evented {
       return;
     }
 
-    this.reset();
+    // Only reset if userId or token has changed
+    if (this.socketService.hasCredentialsChanged(userId, token)) {
+      this.reset();
+    }
+
+    // Start monitors (idempotent, safe to call multiple times)
     this.startConditionsMonitor();
     this.startURLMonitor();
 
