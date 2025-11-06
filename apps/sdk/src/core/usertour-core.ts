@@ -133,7 +133,6 @@ export class UsertourCore extends Evented {
     // Ensure the SDK has been initialized before calling identify
     this.ensureInit();
 
-    const { token } = this.startOptions;
     if (isNullish(userId) || isEmptyString(userId)) {
       throw new Error(formatErrorMessage(ErrorMessages.INVALID_USER_ID, userId));
     }
@@ -147,6 +146,7 @@ export class UsertourCore extends Evented {
     this.startConditionsMonitor();
     this.startURLMonitor();
 
+    const { token } = this.startOptions;
     // Use dedicated initialization method
     if (!(await this.socketService.connect(userId, token))) {
       logger.error('Failed to initialize socket');
