@@ -37,7 +37,7 @@ export class UsertourUIManager extends Evented {
     super();
     this.config = {
       containerId: 'usertour-widget',
-      maxRetries: 20,
+      maxRetries: 60,
       retryDelay: 1000,
       ...config,
     };

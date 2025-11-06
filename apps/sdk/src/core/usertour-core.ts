@@ -466,6 +466,22 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Ensures that the UI manager has been initialized
+   * @throws {Error} If UI manager initialization fails
+   */
+  async ensureUIManagerInitialized(): Promise<void> {
+    const initialized = await this.uiManager.initialize({
+      toursStore: this.toursStore,
+      checklistsStore: this.checklistsStore,
+      launchersStore: this.launchersStore,
+    });
+
+    if (!initialized) {
+      throw new Error(ErrorMessages.UI_INITIALIZATION_MAX_RETRIES_EXCEEDED);
+    }
+  }
+
+  /**
    * Checks if a content is currently active
    * @param contentId - The content ID to check
    * @returns True if the content is currently active, false otherwise
@@ -572,14 +588,7 @@ export class UsertourCore extends Evented {
    */
   private setupUIManagerInitialization() {
     this.once(SDKClientEvents.DOM_LOADED, async () => {
-      const initialized = await this.uiManager.initialize({
-        toursStore: this.toursStore,
-        checklistsStore: this.checklistsStore,
-        launchersStore: this.launchersStore,
-      });
-      if (!initialized) {
-        logger.error('Failed to initialize UI manager');
-      }
+      await this.ensureUIManagerInitialized();
     });
   }
 
