@@ -151,6 +151,14 @@ export class UsertourAttributeManager extends Evented {
    */
   cleanup(): void {
     this.userAttributes = {};
+    this.clearCompanyAndMembershipAttributes();
+  }
+
+  /**
+   * Clears company and membership attributes only
+   * Useful when switching to a different company group
+   */
+  clearCompanyAndMembershipAttributes(): void {
     this.companyAttributes = {};
     this.membershipAttributes = {};
   }

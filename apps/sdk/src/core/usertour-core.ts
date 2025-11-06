@@ -237,6 +237,11 @@ export class UsertourCore extends Evented {
       throw new Error(formatErrorMessage(ErrorMessages.INVALID_COMPANY_ID, companyId));
     }
 
+    // Clear company and membership attributes if company ID has changed
+    if (this.externalCompanyId !== companyId) {
+      this.attributeManager.clearCompanyAndMembershipAttributes();
+    }
+
     const result = await this.socketService.upsertCompany(
       {
         externalUserId,
