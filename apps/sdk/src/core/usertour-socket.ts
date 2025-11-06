@@ -83,7 +83,6 @@ export interface IUsertourSocket {
 
   // Auth management
   updateCredentials(authInfo: Partial<AuthCredentials>): void;
-  hasCredentialsChanged(externalUserId: string, token: string): boolean;
 
   // Event management with acknowledgment support
   on(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
@@ -127,7 +126,7 @@ export class UsertourSocket implements IUsertourSocket {
   async connect(externalUserId: string, token: string): Promise<boolean> {
     try {
       // Check if credentials changed
-      if (this.authCredentials && this.hasCredentialsChanged(externalUserId, token)) {
+      if (this.hasCredentialsChanged(externalUserId, token)) {
         this.handleCredentialChange(externalUserId, token);
         return true;
       }
@@ -212,11 +211,13 @@ export class UsertourSocket implements IUsertourSocket {
    * @param token - The token to check
    * @returns True if credentials don't exist or have changed (any difference)
    */
-  hasCredentialsChanged(externalUserId: string, token: string): boolean {
+  private hasCredentialsChanged(externalUserId: string, token: string): boolean {
+    if (!this.authCredentials) {
+      return false;
+    }
     // Check if externalUserId or token has changed
     return (
-      this.authCredentials?.externalUserId !== externalUserId ||
-      this.authCredentials?.token !== token
+      this.authCredentials.externalUserId !== externalUserId || this.authCredentials.token !== token
     );
   }
 

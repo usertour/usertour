@@ -138,8 +138,8 @@ export class UsertourCore extends Evented {
       throw new Error(formatErrorMessage(ErrorMessages.INVALID_USER_ID, userId));
     }
 
-    // Only reset if userId or token has changed
-    if (this.socketService.hasCredentialsChanged(userId, token)) {
+    // Reset if user ID has changed
+    if (this.externalUserId !== userId) {
       this.reset();
     }
 
