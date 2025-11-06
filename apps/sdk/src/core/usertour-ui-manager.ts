@@ -8,6 +8,7 @@ import { getMainCss } from '@/core/usertour-env';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
+import { SDKClientEvents } from '@usertour-packages/constants';
 
 // === Interfaces ===
 export interface UIManagerConfig {
@@ -54,8 +55,8 @@ export class UsertourUIManager extends Evented {
     if (this.isInitializing) {
       // Wait for current initialization to complete
       return new Promise((resolve) => {
-        this.once('initialization-complete', () => resolve(true));
-        this.once('initialization-failed', () => resolve(false));
+        this.once(SDKClientEvents.INITIALIZATION_COMPLETE, () => resolve(true));
+        this.once(SDKClientEvents.INITIALIZATION_FAILED, () => resolve(false));
       });
     }
 
@@ -70,7 +71,7 @@ export class UsertourUIManager extends Evented {
         this.initializeUI(props);
         // Success
         this.isInitializing = false;
-        this.trigger('initialization-complete');
+        this.trigger(SDKClientEvents.INITIALIZATION_COMPLETE);
         return true;
       } catch (error) {
         logger.error(ErrorMessages.UI_INITIALIZATION_FAILED, error);
@@ -78,7 +79,7 @@ export class UsertourUIManager extends Evented {
         const isLastAttempt = attempt >= this.config.maxRetries;
         if (isLastAttempt) {
           this.isInitializing = false;
-          this.trigger('initialization-failed', error);
+          this.trigger(SDKClientEvents.INITIALIZATION_FAILED, error);
           return false;
         }
 

@@ -4,6 +4,7 @@ import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
 import { ConditionWaitTimer } from '@/types/sdk';
+import { SDKClientEvents } from '@usertour-packages/constants';
 
 // === Interfaces ===
 /**
@@ -233,7 +234,7 @@ export class ConditionWaitTimersMonitor extends Evented {
       };
 
       // Emit event for external listeners
-      this.trigger('wait-timer-state-changed', eventData);
+      this.trigger(SDKClientEvents.WAIT_TIMER_STATE_CHANGED, eventData);
 
       // Log for debugging
       logger.info(`Wait timer ${state}:`, eventData);

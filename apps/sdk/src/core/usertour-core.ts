@@ -914,7 +914,7 @@ export class UsertourCore extends Evented {
     this.conditionsMonitor = new UsertourConditionsMonitor({ autoStart: false });
 
     // Listen for condition state change events
-    this.conditionsMonitor.on('condition-state-changed', (eventData: unknown) => {
+    this.conditionsMonitor.on(SDKClientEvents.CONDITION_STATE_CHANGED, (eventData: unknown) => {
       const changeEvent = eventData as ConditionStateChangeEvent;
       const { trackCondition, state } = changeEvent;
 
@@ -943,14 +943,15 @@ export class UsertourCore extends Evented {
     this.waitTimerMonitor = new ConditionWaitTimersMonitor({ autoStart: true });
 
     // Listen for wait timer state change events
-    this.waitTimerMonitor.on('wait-timer-state-changed', async (eventData: unknown) => {
-      const changeEvent = eventData as WaitTimerStateChangeEvent;
-      if (!changeEvent?.condition?.versionId) {
-        return;
-      }
+    this.waitTimerMonitor.on(
+      SDKClientEvents.WAIT_TIMER_STATE_CHANGED,
+      async (eventData: unknown) => {
+        const changeEvent = eventData as WaitTimerStateChangeEvent;
+        if (!changeEvent?.condition?.versionId || changeEvent.state !== 'fired') {
+          return;
+        }
 
-      // Handle timer firing - could trigger next step or other actions
-      if (changeEvent.state === 'fired') {
+        // Handle timer firing - could trigger next step or other actions
         const result = await this.socketService.fireConditionWaitTimer(
           {
             versionId: changeEvent.condition.versionId,
@@ -962,8 +963,8 @@ export class UsertourCore extends Evented {
             `Failed to fire wait timer for versionId: ${changeEvent.condition.versionId}`,
           );
         }
-      }
-    });
+      },
+    );
   }
 
   /**
@@ -976,7 +977,7 @@ export class UsertourCore extends Evented {
     });
 
     // Listen for URL change events
-    this.urlMonitor.on('url-changed', async () => {
+    this.urlMonitor.on(SDKClientEvents.URL_CHANGED, async () => {
       const clientContext = getClientContext();
       await this.socketService.updateClientContext(clientContext, { batch: true });
       await this.checkUrlAndStartContent();

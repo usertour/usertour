@@ -5,6 +5,7 @@ import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
 import { uuidV4, isConditionsActived } from '@usertour/helpers';
 import { TrackCondition } from '@/types';
+import { SDKClientEvents } from '@usertour-packages/constants';
 
 // === Interfaces ===
 /**
@@ -271,7 +272,7 @@ export class UsertourConditionsMonitor extends Evented {
       };
 
       // Emit event for external listeners
-      this.trigger('condition-state-changed', eventData);
+      this.trigger(SDKClientEvents.CONDITION_STATE_CHANGED, eventData);
 
       // Log for debugging
       logger.info(`Condition ${state}:`, eventData);

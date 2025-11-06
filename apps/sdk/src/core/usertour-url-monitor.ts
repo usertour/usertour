@@ -4,6 +4,7 @@ import { timerManager } from '@/utils/timer-manager';
 import { uuidV4 } from '@usertour/helpers';
 import { window } from '@/utils/globals';
 import { on, off } from '@/utils/listener';
+import { SDKClientEvents } from '@usertour-packages/constants';
 
 // === Interfaces ===
 /**
@@ -137,7 +138,7 @@ export class UsertourURLMonitor extends Evented {
       const oldUrl = this.currentUrl;
       this.currentUrl = newUrl;
 
-      this.trigger('url-changed', {
+      this.trigger(SDKClientEvents.URL_CHANGED, {
         oldUrl,
         newUrl,
         timestamp: Date.now(),

@@ -25,6 +25,13 @@ export enum SDKClientEvents {
   EVENT_REPORTED = 'event-reported',
   // User identified events
   USER_IDENTIFIED_SUCCEEDED = 'user-identified-succeeded',
+  // Monitor state change events
+  CONDITION_STATE_CHANGED = 'condition-state-changed',
+  WAIT_TIMER_STATE_CHANGED = 'wait-timer-state-changed',
+  URL_CHANGED = 'url-changed',
+  // UI initialization events
+  INITIALIZATION_COMPLETE = 'initialization-complete',
+  INITIALIZATION_FAILED = 'initialization-failed',
 }
 
 /**
