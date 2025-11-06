@@ -29,6 +29,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   async check(): Promise<void> {
     try {
+      await this.checkTargetVisibility();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
       logger.error('Error in launcher checking:', error);
@@ -194,6 +195,30 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     this.updateStore({
       triggerRef: el,
     });
+  }
+
+  // === Visibility Checking ===
+  /**
+   * Checks and updates the visibility of the target element
+   * @private
+   */
+  private async checkTargetVisibility(): Promise<void> {
+    const store = this.getStoreData();
+    if (!store || !this.watcher) {
+      return;
+    }
+
+    const { openState } = store;
+    const { isHidden } = await this.watcher.checkVisibility();
+
+    if (!isHidden) {
+      if (!openState) {
+        this.open();
+      }
+      return;
+    }
+
+    this.hide();
   }
 
   // === Event Reporting ===

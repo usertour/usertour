@@ -48,8 +48,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   async check(): Promise<void> {
     try {
-      // Check if the current step is visible
-      await this.checkTooltipVisibility();
+      // Check if the target element of the current step is visible
+      await this.checkTargetVisibility();
       // Process triggers
       await this.checkAndProcessTrigger();
       // Check and update theme settings if needed
@@ -442,30 +442,25 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
   // === Visibility Checking ===
   /**
-   * Checks and updates the visibility of a tooltip step
+   * Checks and updates the visibility of the target element
    * @private
    */
-  private async checkTooltipVisibility(): Promise<void> {
+  private async checkTargetVisibility(): Promise<void> {
     const store = this.getStoreData();
     if (!store) {
       return;
     }
-    const { triggerRef, currentStep, openState } = store;
 
-    // Early return if not a tooltip or missing required data
-    if (
-      !triggerRef ||
-      !this.watcher ||
-      !currentStep?.cvid ||
-      currentStep.type !== StepContentType.TOOLTIP
-    ) {
+    const { triggerRef, currentStep, openState } = store;
+    const isTooltipStep = currentStep?.type === StepContentType.TOOLTIP;
+    const hasRequiredData = triggerRef && this.watcher && currentStep?.cvid;
+
+    if (!isTooltipStep || !hasRequiredData || !this.watcher) {
       return;
     }
 
-    // Check element visibility
     const { isHidden, isTimeout } = await this.watcher.checkVisibility();
 
-    // Update visibility state
     if (!isHidden) {
       if (!openState) {
         this.open();
@@ -473,12 +468,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       return;
     }
 
-    // Handle timeout or hidden state
     if (isTimeout) {
       await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
-    } else {
-      this.hide();
+      return;
     }
+
+    this.hide();
   }
 
   // === Event Reporting ===
