@@ -2,7 +2,7 @@ import ReactDOM from 'react-dom/client';
 import { render } from '@/components';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
-import { document, loadCSSResource, logger } from '@/utils';
+import { document, loadStylesheet, logger } from '@/utils';
 import { ErrorMessages } from '@/types/error-messages';
 import { getMainCss } from '@/core/usertour-env';
 import { UsertourTour } from '@/core/usertour-tour';
@@ -137,20 +137,13 @@ export class UsertourUIManager extends Evented {
   // === Stylesheet Loading ===
   /**
    * Ensures stylesheet is loaded
-   * Checks DOM to avoid duplicate loading, loads if not present
    * @throws Error if stylesheet loading fails
    */
   private async ensureStylesheet(): Promise<void> {
     const doc = this.ensureDocument();
     const cssFile = getMainCss();
 
-    // Check if stylesheet already exists in DOM
-    const existingLink = doc.head.querySelector(`link[href="${cssFile}"]`);
-    if (existingLink) {
-      return;
-    }
-
-    const success = await loadCSSResource(cssFile, doc);
+    const success = await loadStylesheet(cssFile, doc);
     if (!success) {
       throw new Error(ErrorMessages.FAILED_TO_LOAD_CSS);
     }
