@@ -1,4 +1,3 @@
-import { SDKClientEvents } from '@usertour-packages/constants';
 import ReactDOM from 'react-dom/client';
 import { render } from '@/components';
 import { Evented } from '@/utils/evented';
@@ -29,8 +28,7 @@ interface UIManagerInitializeProps {
 export class UsertourUIManager extends Evented {
   // === Properties ===
   private container?: HTMLDivElement;
-  private root: ReactDOM.Root | undefined;
-  private isInitialized = false;
+  private root?: ReactDOM.Root;
   private isInitializing = false;
   private readonly config: Required<UIManagerConfig>;
 
@@ -39,7 +37,7 @@ export class UsertourUIManager extends Evented {
     super();
     this.config = {
       containerId: 'usertour-widget',
-      maxRetries: 3,
+      maxRetries: 20,
       retryDelay: 1000,
       ...config,
     };
@@ -47,61 +45,57 @@ export class UsertourUIManager extends Evented {
 
   // === Public API ===
   /**
-   * Initializes the UI manager
+   * Initializes the UI manager with retry mechanism
+   * This is the critical entry point for React rendering, so it supports retries
    * @param props - The properties to pass to the React root
    * @returns True if the UI manager is initialized, false otherwise
    */
   async initialize(props: UIManagerInitializeProps): Promise<boolean> {
-    if (this.isInitialized) {
-      return true;
-    }
-
     if (this.isInitializing) {
       // Wait for current initialization to complete
       return new Promise((resolve) => {
-        this.once('initialization-complete', () => resolve(this.isInitialized));
+        this.once('initialization-complete', () => resolve(true));
         this.once('initialization-failed', () => resolve(false));
       });
     }
 
     this.isInitializing = true;
 
-    try {
-      // Step 1: Load CSS with retry mechanism
-      const cssLoaded = await this.loadCssWithRetry();
-      if (!cssLoaded) {
-        throw new Error(ErrorMessages.FAILED_TO_LOAD_CSS);
-      }
+    // Retry the entire initialization process to ensure success
+    for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
+      try {
+        // Step 1: Ensure stylesheet is loaded
+        await this.ensureStylesheet();
+        // Step 2: Initialize UI
+        this.initializeUI(props);
+        // Success
+        this.isInitializing = false;
+        this.trigger('initialization-complete');
+        return true;
+      } catch (error) {
+        logger.error(ErrorMessages.UI_INITIALIZATION_FAILED, error);
 
-      // Step 2: Create container
-      const containerCreated = this.createContainer();
-      if (!containerCreated) {
-        throw new Error(ErrorMessages.FAILED_TO_CREATE_CONTAINER);
-      }
+        const isLastAttempt = attempt >= this.config.maxRetries;
+        if (isLastAttempt) {
+          this.isInitializing = false;
+          this.trigger('initialization-failed', error);
+          return false;
+        }
 
-      // Step 3: Create React root
-      const rootCreated = await this.createRoot(props);
-      if (!rootCreated) {
-        throw new Error(ErrorMessages.FAILED_TO_CREATE_REACT_ROOT);
+        await this.wait(this.config.retryDelay);
       }
-
-      this.isInitialized = true;
-      this.isInitializing = false;
-      this.trigger('initialization-complete');
-      return true;
-    } catch (error) {
-      logger.error('UI initialization failed:', error);
-      this.isInitializing = false;
-      this.trigger('initialization-failed', error);
-      return false;
     }
+
+    // This should never be reached, but TypeScript requires it
+    this.isInitializing = false;
+    return false;
   }
 
   /**
    * Check if UI is ready
    */
   isReady(): boolean {
-    return this.isInitialized && Boolean(this.container) && Boolean(this.root);
+    return Boolean(this.container) && Boolean(this.root);
   }
 
   /**
@@ -122,117 +116,132 @@ export class UsertourUIManager extends Evented {
    * Clean up UI resources
    */
   destroy(): void {
-    try {
-      // Unmount React root
-      if (this.root) {
-        this.root.unmount();
-        this.root = undefined;
-      }
-
-      // Remove container
-      if (this.container?.parentNode) {
-        this.container.parentNode.removeChild(this.container);
-        this.container = undefined;
-      }
-
-      this.isInitialized = false;
-      this.isInitializing = false;
-    } catch (error) {
-      logger.error('Error during UI cleanup:', error);
-    }
+    this.cleanupRoot();
+    this.cleanupContainer();
+    this.isInitializing = false;
   }
 
-  // === CSS Loading ===
+  // === Document Validation ===
   /**
-   * Load CSS with retry mechanism
+   * Ensures document is available
+   * @returns The document object
+   * @throws Error if document is not available
    */
-  private async loadCssWithRetry(): Promise<boolean> {
+  private ensureDocument(): Document {
+    if (!document) {
+      throw new Error(ErrorMessages.DOCUMENT_NOT_FOUND);
+    }
+    return document;
+  }
+
+  // === Stylesheet Loading ===
+  /**
+   * Ensures stylesheet is loaded
+   * Checks DOM to avoid duplicate loading, loads if not present
+   * @throws Error if stylesheet loading fails
+   */
+  private async ensureStylesheet(): Promise<void> {
+    const doc = this.ensureDocument();
     const cssFile = getMainCss();
-    if (!document) {
-      logger.error('Document not available for CSS loading');
-      return false;
+
+    // Check if stylesheet already exists in DOM
+    const existingLink = doc.head.querySelector(`link[href="${cssFile}"]`);
+    if (existingLink) {
+      return;
     }
 
-    for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
-      try {
-        const success = await loadCSSResource(cssFile, document);
-        if (success) {
-          this.trigger(SDKClientEvents.CSS_LOADED);
-          return true;
-        }
-
-        if (attempt < this.config.maxRetries) {
-          logger.warn(`CSS loading attempt ${attempt} failed, retrying...`);
-          await this.delay(this.config.retryDelay);
-        }
-      } catch (error) {
-        logger.error(`CSS loading attempt ${attempt} failed:`, error);
-        if (attempt < this.config.maxRetries) {
-          await this.delay(this.config.retryDelay);
-        }
-      }
-    }
-
-    this.trigger(SDKClientEvents.CSS_LOADED_FAILED);
-    return false;
-  }
-
-  // === Container Management ===
-  /**
-   * Create container element with proper error handling
-   */
-  private createContainer(): boolean {
-    if (!document) {
-      logger.error('Document not found for container creation');
-      return false;
-    }
-
-    try {
-      let container = document.getElementById(this.config.containerId) as HTMLDivElement;
-
-      if (!container) {
-        container = document.createElement('div');
-        container.id = this.config.containerId;
-        document.body.appendChild(container);
-      }
-
-      this.container = container;
-      this.trigger(SDKClientEvents.CONTAINER_CREATED);
-      return true;
-    } catch (error) {
-      logger.error('Failed to create container:', error);
-      return false;
+    const success = await loadCSSResource(cssFile, doc);
+    if (!success) {
+      throw new Error(ErrorMessages.FAILED_TO_LOAD_CSS);
     }
   }
 
-  // === React Root Management ===
+  // === Container and Root Management ===
   /**
-   * Create React root with proper error handling
+   * Initialize UI by setting up container and React root
+   * If container changes, root will be recreated to ensure they are bound together
+   * @throws Error if container creation or root initialization fails
    */
-  private async createRoot(props: UIManagerInitializeProps): Promise<boolean> {
+  private initializeUI(props: UIManagerInitializeProps): void {
+    const doc = this.ensureDocument();
+
+    // Get existing container from DOM
+    const existingContainer = doc.getElementById(this.config.containerId);
+
+    // If existing container is different from current, cleanup first
+    if (existingContainer && existingContainer !== this.container) {
+      // Remove existing container and cleanup old state
+      if (existingContainer.parentNode) {
+        existingContainer.parentNode.removeChild(existingContainer);
+      }
+      this.cleanupContainer();
+      this.cleanupRoot();
+    }
+
+    // Create container if it doesn't exist
     if (!this.container) {
-      logger.error('Container not available for React root creation');
-      return false;
+      const targetContainer = doc.createElement('div');
+      targetContainer.id = this.config.containerId;
+      doc.body.appendChild(targetContainer);
+      this.container = targetContainer;
     }
 
-    try {
-      if (!this.root) {
-        this.root = ReactDOM.createRoot(this.container);
-      }
+    // If root already exists, skip creation
+    if (this.root) {
+      return;
+    }
 
-      await render(this.root, props);
-      return true;
+    // Create root
+    try {
+      this.root = ReactDOM.createRoot(this.container);
+      render(this.root, props);
     } catch (error) {
-      logger.error('Failed to create React root:', error);
-      return false;
+      this.cleanupRoot();
+      throw error;
     }
   }
 
-  // === Utilities ===
+  // === Cleanup Utilities ===
   /**
-   * Utility method for delays
+   * Clean up React root
    */
-  private delay(ms: number): Promise<void> {
+  private cleanupRoot(): void {
+    if (!this.root) {
+      return;
+    }
+
+    try {
+      this.root.unmount();
+    } catch (error) {
+      logger.error(ErrorMessages.ERROR_UNMOUNTING_REACT_ROOT, error);
+    } finally {
+      this.root = undefined;
+    }
+  }
+
+  /**
+   * Clean up container element
+   */
+  private cleanupContainer(): void {
+    if (!this.container) {
+      return;
+    }
+
+    if (this.container.parentNode) {
+      try {
+        this.container.parentNode.removeChild(this.container);
+      } catch (error) {
+        logger.error(ErrorMessages.ERROR_REMOVING_CONTAINER, error);
+      }
+    }
+
+    this.container = undefined;
+  }
+
+  /**
+   * Wait for specified milliseconds
+   */
+  private wait(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

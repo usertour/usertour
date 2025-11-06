@@ -58,6 +58,6 @@ const App = ({ toursStore, checklistsStore, launchersStore }: AppProps) => {
 };
 
 // Update render function to use the App component
-export const render = async (root: ReactDOM.Root, props: AppProps) => {
-  return root.render(<App {...props} />);
+export const render = (root: ReactDOM.Root, props: AppProps): void => {
+  root.render(<App {...props} />);
 };

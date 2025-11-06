@@ -19,6 +19,14 @@ export enum ErrorMessages {
   FAILED_TO_LOAD_CSS = 'Unable to load CSS stylesheet after maximum retries. Please check your network connection and ensure the CSS file is accessible.',
   FAILED_TO_CREATE_CONTAINER = 'Unable to create UI container element. This may be due to a conflict with existing DOM elements or insufficient permissions.',
   FAILED_TO_CREATE_REACT_ROOT = 'Unable to create React root for rendering. This may indicate a React version compatibility issue or a problem with the DOM structure.',
+  DOCUMENT_NOT_FOUND = 'Document not found for container creation. This may indicate that the SDK is running in an environment without a DOM.',
+  CONTAINER_NOT_AVAILABLE = 'Container not available for React root creation. Please ensure the container is created before attempting to create the React root.',
+  ERROR_UNMOUNTING_REACT_ROOT = 'Error unmounting React root during cleanup.',
+  ERROR_REMOVING_CONTAINER = 'Error removing container element during cleanup.',
+  UI_INITIALIZATION_FAILED = 'UI initialization failed.',
+  UI_INITIALIZATION_RETRYING = 'UI initialization retrying...',
+  UI_INITIALIZATION_MAX_RETRIES_EXCEEDED = 'UI initialization failed after maximum retries. Please check your network connection and ensure the SDK is properly initialized.',
+  DOCUMENT_NOT_AVAILABLE_FOR_CSS = 'Document not available for CSS loading. This may indicate that the SDK is running in an environment without a DOM.',
 }
 
 /**
