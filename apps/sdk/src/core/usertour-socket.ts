@@ -21,6 +21,7 @@ import { getWsUri } from '@/core/usertour-env';
 import { WebSocketEvents, ClientMessageKind } from '@/types';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
 import { getClientContext } from '@/core/usertour-helper';
+import { uuidV4 } from '@usertour/helpers';
 
 // === Interfaces ===
 // Batch options interface for consistency
@@ -232,7 +233,7 @@ export class UsertourSocket implements IUsertourSocket {
     await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
       kind: ClientMessageKind.BEGIN_BATCH,
       payload: {},
-      requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      requestId: uuidV4(),
     });
   }
 
@@ -249,7 +250,7 @@ export class UsertourSocket implements IUsertourSocket {
       await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
         kind: ClientMessageKind.END_BATCH,
         payload: {},
-        requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        requestId: uuidV4(),
       });
     }
   }
@@ -288,7 +289,7 @@ export class UsertourSocket implements IUsertourSocket {
         const result = (await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
           kind,
           payload,
-          requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          requestId: uuidV4(),
         })) as boolean;
         await this.endBatch();
         return result;
@@ -305,7 +306,7 @@ export class UsertourSocket implements IUsertourSocket {
     return await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
       kind,
       payload,
-      requestId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      requestId: uuidV4(),
     });
   }
 
