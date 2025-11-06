@@ -65,13 +65,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   /**
    * Shows a specific step in the tour by its id
    * @param id - The id of the step to show
-   * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
+   * @returns Promise that resolves when the step is shown
    */
   async showStepById(id: string): Promise<void> {
     const step = this.getStepById(id);
     if (!step) {
-      logger.error('Step not found', { id });
-      await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
     return await this.show(step);
@@ -80,13 +78,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   /**
    * Shows a specific step in the tour by its cvid
    * @param cvid - The cvid of the step to show
-   * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
+   * @returns Promise that resolves when the step is shown
    */
   async showStepByCvid(cvid: string): Promise<void> {
     const step = this.getStepByCvid(cvid);
     if (!step) {
-      logger.error('Step not found', { cvid });
-      await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
     return await this.show(step);
@@ -95,12 +91,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   /**
    * Shows a specific step in the tour by its index
    * @param index - The index of the step to show
-   * @returns Promise that resolves when the step is shown, or rejects if the tour cannot be shown
+   * @returns Promise that resolves when the step is shown
    */
   async showStepByIndex(index: number): Promise<void> {
     const steps = this.getSteps();
     if (!steps.length || index < 0 || index >= steps.length) {
-      await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
     return await this.show(steps[index]);
