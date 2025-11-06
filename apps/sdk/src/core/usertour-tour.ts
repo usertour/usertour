@@ -99,7 +99,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   async showStepByIndex(index: number): Promise<void> {
     const steps = this.getSteps();
-    if (!steps.length) {
+    if (!steps.length || index < 0 || index >= steps.length) {
       await this.close(contentEndReason.STEP_NOT_FOUND);
       return;
     }
