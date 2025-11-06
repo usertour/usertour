@@ -2,6 +2,7 @@ import {
   SDKClientEvents,
   MESSAGE_START_FLOW_WITH_TOKEN,
   StorageKeys,
+  WidgetZIndex,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { isEmptyString, isNullish, storage, uuidV4 } from '@usertour/helpers';
@@ -77,7 +78,7 @@ export class UsertourCore extends Evented {
   externalCompanyId: string | undefined;
 
   // === Private Properties ===
-  private baseZIndex = 1000000;
+  private baseZIndex = WidgetZIndex.BASE;
   private targetMissingSeconds = 6;
   private customNavigate: ((url: string) => void) | null = null;
   private readonly id: string;
@@ -372,7 +373,7 @@ export class UsertourCore extends Evented {
    * Gets the current base z-index value
    * @returns The current base z-index
    */
-  getBaseZIndex() {
+  getBaseZIndex(): number {
     return this.baseZIndex;
   }
 

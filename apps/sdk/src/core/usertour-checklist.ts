@@ -7,7 +7,7 @@ import { ChecklistStore, BaseStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
-import { StorageKeys } from '@usertour-packages/constants';
+import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
 import { storage } from '@usertour/helpers';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
@@ -137,10 +137,13 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<ChecklistStore> {
     const checklistData = this.getChecklistData();
-    const zIndex = baseData?.themeSettings?.checklist?.zIndex ?? baseData?.zIndex;
+    const zIndex =
+      baseData?.themeSettings?.checklist?.zIndex ||
+      (baseData?.zIndex ? baseData?.zIndex + WidgetZIndex.CHECKLIST_OFFSET : undefined);
+
     return {
       checklistData,
-      ...(zIndex ? { zIndex: zIndex + 100 } : {}),
+      ...(zIndex ? { zIndex } : {}),
     };
   }
 

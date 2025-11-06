@@ -12,7 +12,7 @@ import { UsertourComponent } from '@/core/usertour-component';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { logger } from '@/utils';
 import { createQuestionAnswerEventData } from '@/core/usertour-helper';
-import { SDKClientEvents } from '@usertour-packages/constants';
+import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
 import { SessionStep, SessionTheme } from '@/types';
 import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
 
@@ -145,10 +145,13 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param baseData - The base store data that can be used for custom logic
    * @protected
    */
-  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<TourStore> {
+  protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<TourStore> {
     const currentStep = this.getCurrentStep();
+    const zIndex = baseData?.zIndex ? baseData?.zIndex + WidgetZIndex.TOUR_OFFSET : undefined;
+
     return {
       currentStep,
+      ...(zIndex ? { zIndex } : {}),
     };
   }
 

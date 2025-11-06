@@ -8,7 +8,7 @@ import { isUndefined } from '@usertour/helpers';
 import { LauncherStore, BaseStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { logger } from '@/utils';
-import { SDKClientEvents } from '@usertour-packages/constants';
+import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
 
@@ -102,7 +102,10 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<LauncherStore> {
     const launcherData = this.getLauncherData();
-    const zIndex = launcherData?.zIndex ?? baseData?.zIndex;
+    const zIndex =
+      launcherData?.zIndex ||
+      (baseData?.zIndex ? baseData?.zIndex + WidgetZIndex.LAUNCHER_OFFSET : undefined);
+
     return {
       launcherData,
       ...(zIndex ? { zIndex } : {}),

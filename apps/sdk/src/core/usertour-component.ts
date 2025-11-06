@@ -39,9 +39,6 @@ interface ComponentOptions {
  * Provides common functionality and enforces a consistent interface
  */
 export abstract class UsertourComponent<TStore extends BaseStore> extends Evented {
-  // === Static Members ===
-  protected static readonly Z_INDEX_OFFSET = 200;
-
   // === Properties ===
   protected readonly instance: UsertourCore;
   protected readonly session: UsertourSession;
@@ -305,7 +302,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     const contentSession = this.getSessionAttributes();
     const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
     const removeBranding = this.isRemoveBranding();
-    const zIndex = this.getCalculatedZIndex();
+    const zIndex = this.getBaseZIndex();
 
     return {
       removeBranding,
@@ -485,9 +482,8 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    * Calculates the z-index for the component
    * @protected
    */
-  protected getCalculatedZIndex(): number {
-    const baseZIndex = this.instance.getBaseZIndex() ?? 0;
-    return baseZIndex + UsertourComponent.Z_INDEX_OFFSET;
+  protected getBaseZIndex(): number {
+    return this.instance.getBaseZIndex();
   }
 
   /**
