@@ -126,9 +126,8 @@ export class UsertourSocket implements IUsertourSocket {
   async connect(externalUserId: string, token: string): Promise<boolean> {
     try {
       // Check if credentials changed
-      if (this.hasCredentialsChanged(externalUserId, token)) {
-        this.handleCredentialChange(externalUserId, token);
-        return true;
+      if (this.requiresReconnect(externalUserId, token)) {
+        return await this.reconnectWithNewCredentials(externalUserId, token);
       }
 
       // If credentials haven't changed and already connected, no action needed
@@ -190,9 +189,12 @@ export class UsertourSocket implements IUsertourSocket {
 
   // === Credential Management ===
   /**
-   * Handle credential change by reconnecting with new credentials
+   * Reconnect socket with new credentials
    */
-  private handleCredentialChange(externalUserId: string, token: string): void {
+  private async reconnectWithNewCredentials(
+    externalUserId: string,
+    token: string,
+  ): Promise<boolean> {
     logger.info('Credentials changed, reconnecting socket...');
 
     // Disconnect first
@@ -202,16 +204,16 @@ export class UsertourSocket implements IUsertourSocket {
     this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
 
     // Connect with new credentials
-    this.socket.connect();
+    return await this.connectWithPromise();
   }
 
   /**
-   * Check if credentials have changed (public method for external use)
+   * Check if reconnection is required due to credential changes
    * @param externalUserId - The external user ID to check
    * @param token - The token to check
-   * @returns True if credentials don't exist or have changed (any difference)
+   * @returns True if credentials exist and are different from stored ones
    */
-  private hasCredentialsChanged(externalUserId: string, token: string): boolean {
+  private requiresReconnect(externalUserId: string, token: string): boolean {
     if (!this.authCredentials) {
       return false;
     }
