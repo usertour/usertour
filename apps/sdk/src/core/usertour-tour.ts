@@ -374,11 +374,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
-
     // Update store
-    this.updateStore({
-      triggerRef: el,
-    });
+    this.updateStore({ triggerRef: el });
   }
 
   /**
