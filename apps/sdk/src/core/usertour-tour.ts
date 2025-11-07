@@ -457,10 +457,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private async reportStepSeen(step: SessionStep) {
-    const currentStepInSession = this.getCurrentStepFromSession();
-    if (currentStepInSession?.cvid === step.cvid) {
-      return;
-    }
     await this.socketService.goToStep({
       sessionId: this.getSessionId(),
       stepId: String(step.id),
