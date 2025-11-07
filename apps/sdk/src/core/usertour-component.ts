@@ -303,7 +303,9 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     const contentSession = this.getSessionAttributes();
     const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
     const removeBranding = this.isRemoveBranding();
-    const zIndex = this.getBaseZIndex();
+
+    // Calculate final zIndex using subclass implementation
+    const zIndex = this.getZIndex(themeSettings);
 
     return {
       removeBranding,
@@ -494,11 +496,22 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
 
   // === Utilities ===
   /**
-   * Calculates the z-index for the component
+   * Gets the base z-index from the core instance
    * @protected
    */
   protected getBaseZIndex(): number {
     return this.instance.getBaseZIndex();
+  }
+
+  /**
+   * Gets the z-index for the component
+   * Subclasses can override this method to implement custom z-index calculation logic
+   * @param _themeSettings - The theme settings that may contain component-specific z-index (optional, only Checklist needs it)
+   * @returns The calculated z-index, or undefined if not applicable
+   * @protected
+   */
+  protected getZIndex(_themeSettings?: ThemeTypesSetting): number | undefined {
+    return this.getBaseZIndex();
   }
 
   /**

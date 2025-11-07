@@ -139,18 +139,21 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
   // === Store Management ===
   /**
-   * Gets custom tour store data
-   * @param baseData - The base store data that can be used for custom logic
+   * Gets the z-index for the tour component
    * @protected
    */
-  protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<TourStore> {
-    const currentStep = this.getCurrentStep();
-    const zIndex = baseData?.zIndex ? baseData?.zIndex + WidgetZIndex.TOUR_OFFSET : undefined;
+  protected getZIndex(): number {
+    return this.getBaseZIndex() + WidgetZIndex.TOUR_OFFSET;
+  }
 
-    return {
-      currentStep,
-      ...(zIndex ? { zIndex } : {}),
-    };
+  /**
+   * Gets custom tour store data
+   * @param _baseData - The base store data that can be used for custom logic
+   * @protected
+   */
+  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<TourStore> {
+    const currentStep = this.getCurrentStep();
+    return { currentStep };
   }
 
   // === Theme Management ===

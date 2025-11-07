@@ -1,6 +1,7 @@
 import {
   ChecklistItemType,
   ContentEditorClickableElement,
+  ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
 import { ChecklistStore, BaseStore } from '@/types/store';
@@ -131,19 +132,27 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
 
   // === Store Management ===
   /**
+   * Gets the z-index for the checklist component
+   * @param themeSettings - The theme settings that may contain checklist z-index
+   * @protected
+   */
+  protected getZIndex(themeSettings?: ThemeTypesSetting): number {
+    const themeZIndex = themeSettings?.checklist?.zIndex;
+    if (themeZIndex != null) {
+      return themeZIndex;
+    }
+    return this.getBaseZIndex() + WidgetZIndex.CHECKLIST_OFFSET;
+  }
+
+  /**
    * Gets custom checklist store data
    * @param baseData - The base store data that can be used for custom logic
    * @protected
    */
-  protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<ChecklistStore> {
+  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<ChecklistStore> {
     const checklistData = this.getChecklistData();
-    const zIndex =
-      baseData?.themeSettings?.checklist?.zIndex ||
-      (baseData?.zIndex ? baseData?.zIndex + WidgetZIndex.CHECKLIST_OFFSET : undefined);
-
     return {
       checklistData,
-      ...(zIndex ? { zIndex } : {}),
     };
   }
 

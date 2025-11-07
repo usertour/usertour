@@ -97,19 +97,26 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
 
   // === Store Management ===
   /**
+   * Gets the z-index for the launcher component
+   * @protected
+   */
+  protected getZIndex(): number {
+    const launcherData = this.getLauncherData();
+    if (launcherData?.zIndex != null) {
+      return launcherData.zIndex;
+    }
+    return this.getBaseZIndex() + WidgetZIndex.LAUNCHER_OFFSET;
+  }
+
+  /**
    * Gets custom launcher store data
    * @param baseData - The base store data that can be used for custom logic
    * @protected
    */
-  protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<LauncherStore> {
+  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<LauncherStore> {
     const launcherData = this.getLauncherData();
-    const zIndex =
-      launcherData?.zIndex ||
-      (baseData?.zIndex ? baseData?.zIndex + WidgetZIndex.LAUNCHER_OFFSET : undefined);
-
     return {
       launcherData,
-      ...(zIndex ? { zIndex } : {}),
     };
   }
 
