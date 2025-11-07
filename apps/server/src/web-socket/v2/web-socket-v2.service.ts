@@ -235,13 +235,16 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async answerQuestion(context: WebSocketContext, params: AnswerQuestionDto): Promise<boolean> {
-    const { socketData } = context;
+    const { socketData, server, socket } = context;
     const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackQuestionAnsweredEvent(
+    const success = await this.eventTrackingService.trackQuestionAnsweredEvent(
       params,
       environment,
       clientContext,
     );
+    await this.toggleContents(server, socket, [ContentDataType.FLOW]);
+
+    return success;
   }
 
   /**
@@ -342,7 +345,12 @@ export class WebSocketV2Service {
   async endBatch(context: WebSocketContext): Promise<boolean> {
     const { server, socket } = context;
 
-    return await this.toggleContents(server, socket);
+    const contentTypes = [
+      ContentDataType.CHECKLIST,
+      ContentDataType.FLOW,
+      ContentDataType.LAUNCHER,
+    ];
+    return await this.toggleContents(server, socket, contentTypes);
   }
 
   /**
@@ -436,19 +444,17 @@ export class WebSocketV2Service {
 
   /**
    * Toggle contents for the socket
-   * This method will start FLOW and CHECKLIST content, handling session cleanup and restart
+   * This method will start content types specified by the caller, handling session cleanup and restart
    * @param server - The server instance
    * @param socket - The socket instance
-   * @param socketData - Optional socket client data, will be fetched if not provided
+   * @param contentTypes - Array of content types to toggle
    * @returns True if the contents were toggled successfully
    */
-  async toggleContents(server: Server, socket: Socket): Promise<boolean> {
-    const contentTypes = [
-      ContentDataType.CHECKLIST,
-      ContentDataType.FLOW,
-      ContentDataType.LAUNCHER,
-    ];
-
+  async toggleContents(
+    server: Server,
+    socket: Socket,
+    contentTypes: ContentDataType[],
+  ): Promise<boolean> {
     // Start content asynchronously without waiting for completion
     // This allows toggleContents to return immediately while startContent runs in background
     const context = {
