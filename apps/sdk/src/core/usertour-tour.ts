@@ -175,6 +175,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Reset tour state and set new step
     this.reset();
     this.currentStepCvid = step.cvid;
+    // Report step seen event
+    await this.reportStepSeen(step);
     // Create trigger for this step if it has triggers
     if (step.trigger?.length && step.trigger.length > 0) {
       this.stepTrigger = new UsertourTrigger(
@@ -208,13 +210,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
     if (step.type === StepContentType.TOOLTIP) {
       await this.showPopper(step);
-    } else if (step.type === StepContentType.MODAL) {
+    }
+    if (step.type === StepContentType.MODAL) {
       await this.showModal(step);
-    } else if (step.type === StepContentType.HIDDEN) {
-      await this.showHidden(step);
-    } else {
-      logger.error('Step type not found', { step });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
     }
   }
 
@@ -261,9 +259,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private async showPopper(step: SessionStep): Promise<void> {
-    // Report step seen event
-    await this.reportStepSeen(step);
-
     // Set up element watcher
     const baseStoreData = await this.buildStoreData();
     if (!baseStoreData?.currentStep) {
@@ -293,29 +288,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       return;
     }
     const stepInfo = this.getStepInfo(step);
-
-    // Report step seen event
-    await this.reportStepSeen(step);
-
     // Set up modal state
     this.setStoreData({
       ...baseStoreData,
       ...stepInfo,
       openState: true,
     });
-  }
-
-  /**
-   * Displays a hidden step in the tour
-   * This method handles:
-   * 1. Reporting the step seen event
-   * 2. Reporting the completion event if it's the last step
-   *
-   * @private
-   */
-  private async showHidden(step: SessionStep): Promise<void> {
-    // Report step seen event
-    await this.reportStepSeen(step);
   }
 
   // === Element Watcher ===
