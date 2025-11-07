@@ -159,8 +159,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @protected
    */
   protected getCustomTheme(): SessionTheme | undefined {
-    const currentStep = this.getCurrentStep();
-    return currentStep?.theme;
+    return this.getCurrentStep()?.theme;
   }
 
   // === Step Management ===
