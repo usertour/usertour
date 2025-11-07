@@ -180,6 +180,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
         () => this.getSessionAttributes(), // Simple function that gets fresh attributes
         (actions) => this.handleActions(actions),
       );
+      await this.stepTrigger.process();
     }
 
     // Show step based on its type
@@ -200,6 +201,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private async showStep(step: SessionStep): Promise<void> {
+    if (step.cvid !== this.currentStepCvid) {
+      return;
+    }
     if (step.type === StepContentType.TOOLTIP) {
       await this.showPopper(step);
     } else if (step.type === StepContentType.MODAL) {
@@ -258,9 +262,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Report step seen event
     await this.reportStepSeen(step);
 
-    // Process trigger conditions
-    await this.stepTrigger?.process();
-
     // Set up element watcher
     const baseStoreData = await this.buildStoreData();
     if (!baseStoreData?.currentStep) {
@@ -294,9 +295,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Report step seen event
     await this.reportStepSeen(step);
 
-    // Process trigger conditions
-    await this.stepTrigger?.process();
-
     // Set up modal state
     this.setStoreData({
       ...baseStoreData,
@@ -316,8 +314,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private async showHidden(step: SessionStep): Promise<void> {
     // Report step seen event
     await this.reportStepSeen(step);
-    // Process trigger conditions
-    await this.stepTrigger?.process();
   }
 
   // === Element Watcher ===
