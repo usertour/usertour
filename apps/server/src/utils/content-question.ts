@@ -1,9 +1,9 @@
 import {
-  Step,
   ContentEditorElementType,
   ContentEditorQuestionElement,
   ContentEditorRoot,
 } from '@usertour/types';
+import { Step } from '@/common/types';
 
 export const questionTypes = [
   ContentEditorElementType.NPS,
@@ -26,14 +26,17 @@ export const aggregationQuestionTypes = [
 ];
 
 /**
- * Extract question data from step if it's a valid question for analytics
+ * Extract the first question from step if it matches the specified question types
  */
-export const extractQuestionForAnalytics = (step: Step) => {
+export const extractStepQuestion = (
+  step: Step,
+  types: ContentEditorElementType[] = aggregationQuestionTypes,
+) => {
   const questionData = extractQuestionData(step.data as unknown as ContentEditorRoot[]);
   if (questionData.length === 0) return null;
 
   const question = questionData[0];
-  if (!aggregationQuestionTypes.includes(question.type)) return null;
+  if (!types.includes(question.type)) return null;
 
   return question;
 };
@@ -52,6 +55,23 @@ export const extractBindToAttribute = (step: Step): string | null => {
     return question.data?.selectedAttribute || null;
   }
 
+  return null;
+};
+
+/**
+ * Extract bindToAttribute from step if it's a valid question for analytics
+ * @param steps - The steps to extract the bindToAttribute from
+ * @param questionCvid - The question CVID to extract the bindToAttribute from
+ * @returns The bindToAttribute or null if not found
+ */
+export const extractStepBindToAttribute = (steps: Step[], questionCvid: string): string | null => {
+  for (const step of steps) {
+    const questions = extractQuestionData(step.data as unknown as ContentEditorRoot[]);
+    const question = questions.find((question) => question.data?.cvid === questionCvid);
+    if (question.data?.bindToAttribute === true) {
+      return question.data?.selectedAttribute || null;
+    }
+  }
   return null;
 };
 

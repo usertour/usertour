@@ -1,5 +1,5 @@
 import { CustomContentSession, SessionStep, SessionTheme } from '@/types/sdk';
-import { LauncherData } from '@usertour/types';
+import { AttributeBizTypes, LauncherData } from '@usertour/types';
 
 /**
  * Session data access class
@@ -145,5 +145,18 @@ export class UsertourSession {
    */
   getAttributes() {
     return this.session.attributes;
+  }
+
+  /**
+   * Updates an attribute in session
+   * @param bizType - The business type of the attribute
+   * @param codeName - The code name of the attribute
+   * @param value - The value of the attribute
+   */
+  updateAttribute(bizType: AttributeBizTypes, codeName: string, value: unknown): void {
+    const attributes = this.getAttributes();
+    this.session.attributes = attributes?.map((attr) =>
+      attr.codeName === codeName && attr.bizType === bizType ? { ...attr, value } : attr,
+    );
   }
 }

@@ -24,6 +24,8 @@ import {
 import { CustomContentVersion } from '@/common/types/content';
 import { deepmerge } from 'deepmerge-ts';
 import { isUndefined } from '@usertour/helpers';
+import { extractStepBindToAttribute } from '@/utils/content-question';
+import { BizService } from '@/biz/biz.service';
 
 /**
  * Parameters for tracking question answered events
@@ -42,7 +44,10 @@ type QuestionAnsweredParams = {
 export class EventTrackingService {
   private readonly logger = new Logger(EventTrackingService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bizService: BizService,
+  ) {}
 
   /**
    * Filter event data based on allowed attributes for the event
@@ -863,7 +868,7 @@ export class EventTrackingService {
   ): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: params.sessionId },
-      include: { bizUser: true },
+      include: { bizUser: true, version: { include: { steps: true } } },
     });
     if (!bizSession) return false;
 
@@ -873,25 +878,45 @@ export class EventTrackingService {
       [EventAttributes.QUESTION_TYPE]: params.questionType,
     };
 
+    let answer = null;
+
     if (!isUndefined(params.listAnswer)) {
       eventData[EventAttributes.LIST_ANSWER] = params.listAnswer;
+      answer = params.listAnswer;
     }
     if (!isUndefined(params.numberAnswer)) {
       eventData[EventAttributes.NUMBER_ANSWER] = params.numberAnswer;
+      answer = params.numberAnswer;
     }
     if (!isUndefined(params.textAnswer)) {
       eventData[EventAttributes.TEXT_ANSWER] = params.textAnswer;
+      answer = params.textAnswer;
     }
     const externalUserId = String(bizSession.bizUser.externalId);
-
-    return await this.trackEvent(
-      environment,
-      externalUserId,
-      BizEvents.QUESTION_ANSWERED,
-      bizSession.id,
-      eventData,
-      clientContext,
+    const bindToAttribute = extractStepBindToAttribute(
+      bizSession.version.steps as unknown as Step[],
+      params.questionCvid,
     );
+
+    return await this.prisma.$transaction(async (tx) => {
+      if (bindToAttribute && answer) {
+        await this.bizService.upsertBizUsers(
+          tx,
+          externalUserId,
+          { [bindToAttribute]: answer },
+          environment.id,
+        );
+      }
+      return await this.executeEventTransaction(
+        tx,
+        environment,
+        externalUserId,
+        BizEvents.QUESTION_ANSWERED,
+        bizSession.id,
+        eventData,
+        clientContext,
+      );
+    });
   }
 
   /**

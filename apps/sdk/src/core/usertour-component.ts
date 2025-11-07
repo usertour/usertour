@@ -15,6 +15,7 @@ import {
   RulesCondition,
   ThemeTypesSetting,
   UserTourTypes,
+  AttributeBizTypes,
 } from '@usertour/types';
 import { uuidV4, isEqual } from '@usertour/helpers';
 import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
@@ -366,6 +367,20 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected getSessionAttributes(): SessionAttribute[] {
     return this.session.getAttributes();
+  }
+
+  /**
+   * Updates an attribute in session
+   * @param bizType - The business type of the attribute
+   * @param codeName - The code name of the attribute
+   * @param value - The value of the attribute
+   */
+  protected updateSessionAttribute(
+    bizType: AttributeBizTypes,
+    codeName: string,
+    value: unknown,
+  ): void {
+    this.session.updateAttribute(bizType, codeName, value);
   }
 
   /**

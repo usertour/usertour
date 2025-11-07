@@ -1,4 +1,4 @@
-import { BizEvents, ContentEditorRoot, EventAttributes } from '@usertour/types';
+import { BizEvents, EventAttributes } from '@usertour/types';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -11,11 +11,7 @@ import { AnalyticsQuery } from './dto/analytics-query.input';
 import { toZonedTime } from 'date-fns-tz';
 import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
-import {
-  aggregationQuestionTypes,
-  extractQuestionData,
-  numberQuestionTypes,
-} from '@/utils/content-question';
+import { extractStepQuestion, numberQuestionTypes } from '@/utils/content-question';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
 import { PaginationConnection } from '@/common/openapi/pagination';
@@ -283,7 +279,7 @@ export class AnalyticsService {
 
     const ret = [];
     for (const step of version.steps) {
-      const questionData = this.extractQuestionForAnalytics(step);
+      const questionData = extractStepQuestion(step);
       if (!questionData) continue;
       let rollingWindow = 365;
       if (questionData.type === ContentEditorElementType.NPS) {
@@ -320,19 +316,6 @@ export class AnalyticsService {
         editedVersion: { include: { steps: true } },
       },
     });
-  }
-
-  /**
-   * Extract question data from step if it's a valid question for analytics
-   */
-  private extractQuestionForAnalytics(step: any) {
-    const questionData = extractQuestionData(step.data as unknown as ContentEditorRoot[]);
-    if (questionData.length === 0) return null;
-
-    const question = questionData[0];
-    if (!aggregationQuestionTypes.includes(question.type)) return null;
-
-    return question;
   }
 
   /**

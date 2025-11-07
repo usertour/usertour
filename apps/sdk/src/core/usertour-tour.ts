@@ -4,7 +4,12 @@ import {
   ContentEditorQuestionElement,
   isQuestionElement,
 } from '@usertour-packages/shared-editor';
-import { RulesCondition, StepContentType, contentEndReason } from '@usertour/types';
+import {
+  AttributeBizTypes,
+  RulesCondition,
+  StepContentType,
+  contentEndReason,
+} from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { TourStore, BaseStore } from '@/types/store';
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
@@ -123,9 +128,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     if (isQuestionElement(element)) {
       const el = element as ContentEditorQuestionElement;
       if (el?.data?.bindToAttribute && el?.data?.selectedAttribute) {
-        await this.instance.updateUser({
-          [el.data.selectedAttribute]: value,
-        });
+        this.updateSessionAttribute(AttributeBizTypes.User, el.data.selectedAttribute, value);
       }
       await this.reportQuestionAnswer(el, value);
     }
@@ -516,7 +519,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   private async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
     const eventData = createQuestionAnswerEventData(element, value, this.getSessionId());
-    await this.socketService.answerQuestion(eventData, { batch: true });
+    await this.socketService.answerQuestion(eventData);
   }
 
   // === Lifecycle Hooks ===
