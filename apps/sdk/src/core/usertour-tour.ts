@@ -260,13 +260,13 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   private async showPopper(step: SessionStep): Promise<void> {
     // Set up element watcher
-    const baseStoreData = await this.buildStoreData();
-    if (!baseStoreData) {
+    const storeData = await this.buildStoreData();
+    if (!storeData) {
       logger.error('Store not found', { step });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
-    this.setupElementWatcher(step, { ...baseStoreData, triggerRef: null });
+    this.setupElementWatcher(step, { ...storeData, triggerRef: null });
   }
 
   /**
@@ -282,8 +282,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   private async showModal(step: SessionStep): Promise<void> {
     // Build store data and get step information
-    const baseStoreData = await this.buildStoreData();
-    if (!baseStoreData) {
+    const storeData = await this.buildStoreData();
+    if (!storeData) {
       logger.error('Store not found', { step });
       await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
@@ -291,7 +291,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const stepInfo = this.getStepInfo(step);
     // Set up modal state
     this.setStoreData({
-      ...baseStoreData,
+      ...storeData,
       ...stepInfo,
       openState: true,
     });
