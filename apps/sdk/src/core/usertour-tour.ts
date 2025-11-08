@@ -261,8 +261,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private async showPopper(step: SessionStep): Promise<void> {
     // Set up element watcher
     const baseStoreData = await this.buildStoreData();
-    if (!baseStoreData?.currentStep) {
+    if (!baseStoreData) {
       logger.error('Store not found', { step });
+      await this.close(contentEndReason.SYSTEM_CLOSED);
       return;
     }
     this.setupElementWatcher(step, { ...baseStoreData, triggerRef: null });
