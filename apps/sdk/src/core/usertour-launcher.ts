@@ -42,12 +42,12 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    * This method sets up the initial state of the launcher without displaying it.
    */
   async show() {
-    const baseStoreData = await this.buildStoreData();
-    if (!baseStoreData?.launcherData) {
+    const storeData = await this.buildStoreData();
+    if (!storeData?.launcherData) {
       return;
     }
     const store = {
-      ...baseStoreData,
+      ...storeData,
       triggerRef: undefined,
     } as LauncherStore;
     this.setupElementWatcher(store);
