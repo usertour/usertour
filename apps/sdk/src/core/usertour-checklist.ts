@@ -40,12 +40,12 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * This method sets up the initial state of the checklist without displaying it.
    */
   async show() {
-    const baseStoreData = await this.buildStoreData();
-    if (!baseStoreData?.checklistData) {
+    const storeData = await this.buildStoreData();
+    if (!storeData?.checklistData) {
       return;
     }
     // Process items to determine their status
-    this.setStoreData(baseStoreData);
+    this.setStoreData(storeData);
     // Expand the checklist if it is expanded
     const expanded = this.isExpanded();
     const isExpandPending = this.session.isExpandPending();
