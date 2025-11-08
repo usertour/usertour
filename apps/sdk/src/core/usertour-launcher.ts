@@ -60,11 +60,11 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    * 2. Auto-dismisses the launcher after activation if configured
    */
   async handleActivate() {
-    const store = this.getStoreData();
-    if (!store) {
+    const storeData = this.getStoreData();
+    if (!storeData) {
       return;
     }
-    const launcherData = store.launcherData;
+    const launcherData = storeData.launcherData;
     const tooltip = launcherData?.tooltip;
     await this.reportActivateEvent();
     // Auto-dismiss after activation if configured
