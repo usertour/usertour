@@ -418,12 +418,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private async checkTargetVisibility(): Promise<void> {
-    const store = this.getStoreData();
-    if (!store) {
+    const storeData = this.getStoreData();
+    if (!storeData) {
       return;
     }
 
-    const { triggerRef, currentStep, openState } = store;
+    const { triggerRef, currentStep, openState } = storeData;
     const isTooltipStep = currentStep?.type === StepContentType.TOOLTIP;
     const hasRequiredData = triggerRef && this.watcher && currentStep?.cvid;
 
