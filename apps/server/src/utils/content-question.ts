@@ -1,4 +1,5 @@
 import {
+  ContentEditorElement,
   ContentEditorElementType,
   ContentEditorQuestionElement,
   ContentEditorRoot,
@@ -73,6 +74,15 @@ export const extractStepBindToAttribute = (steps: Step[], questionCvid: string):
     }
   }
   return null;
+};
+
+/**
+ * Check if the element is a question element
+ * @param element - The element to check
+ * @returns True if the element is a question element, false otherwise
+ */
+export const isQuestionElement = (element: ContentEditorElement) => {
+  return questionTypes.includes(element.type as ContentEditorElementType);
 };
 
 /**
