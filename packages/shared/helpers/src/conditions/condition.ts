@@ -3,6 +3,7 @@ import isEqual from 'fast-deep-equal';
 import { evaluateUrlCondition } from './url';
 import { evaluateTimeCondition } from './time';
 import { evaluateAttributeCondition } from './attribute';
+import { cuid } from '../helper';
 
 const conditionsIsSame = (rr1: RulesCondition[], rr2: RulesCondition[]) => {
   return isEqual(rr1, rr2);
@@ -143,6 +144,42 @@ const evaluateRulesConditions = async (
   return results;
 };
 
+/**
+ * Assign unique IDs to rules that don't have them
+ * @param conditions - Array of rules conditions to process
+ * @returns Array of rules conditions with IDs assigned (only for those missing IDs)
+ */
+const assignConditionIds = (conditions: RulesCondition[]): RulesCondition[] => {
+  return conditions.map((condition) => ({
+    ...condition,
+    id: condition.id ?? cuid(),
+    conditions: condition.conditions ? assignConditionIds(condition.conditions) : undefined,
+  }));
+};
+
+/**
+ * Check if all conditions have IDs (including nested conditions)
+ * @param conditions - Array of rules conditions to check
+ * @returns true if all conditions have IDs, false otherwise
+ */
+const allConditionsHaveIds = (conditions: RulesCondition[]): boolean => {
+  if (!conditions || conditions.length === 0) return true;
+
+  for (const condition of conditions) {
+    // Check if current rule has ID
+    if (!condition.id) {
+      return false;
+    }
+    // If it's a group with nested conditions, recursively check them
+    if (condition.type === 'group' && condition.conditions) {
+      if (!allConditionsHaveIds(condition.conditions)) {
+        return false;
+      }
+    }
+  }
+  return true;
+};
+
 export {
   isEqual,
   conditionsIsSame,
@@ -150,4 +187,6 @@ export {
   isConditionsActived,
   evaluateRule,
   evaluateRulesConditions,
+  allConditionsHaveIds,
+  assignConditionIds,
 };

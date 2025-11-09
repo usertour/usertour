@@ -88,8 +88,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/shared/tailwind
       '@usertour/helpers':
-        specifier: ^0.0.30
-        version: 0.0.30(typescript@5.1.6)
+        specifier: ^0.0.31
+        version: 0.0.31(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.22
         version: 0.0.22
@@ -335,8 +335,8 @@ importers:
         specifier: ^4.7.1
         version: 4.7.4
       '@usertour/helpers':
-        specifier: ^0.0.30
-        version: 0.0.30(typescript@4.9.5)
+        specifier: ^0.0.31
+        version: 0.0.31(typescript@4.9.5)
       '@usertour/license':
         specifier: ^0.0.1
         version: 0.0.1
@@ -735,11 +735,11 @@ importers:
         specifier: workspace:^
         version: link:../../packages/components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.30
-        version: 0.0.30(typescript@5.1.6)
+        specifier: ^0.0.31
+        version: 0.0.31(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.20
-        version: 0.0.20
+        specifier: ^0.0.22
+        version: 0.0.22
       apollo3-cache-persist:
         specifier: ^0.14.1
         version: 0.14.1(@apollo/client@3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))
@@ -3674,8 +3674,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.29
-        version: 0.0.29(typescript@5.1.6)
+        specifier: ^0.0.31
+        version: 0.0.31(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.17
         version: 0.0.17
@@ -8566,8 +8566,8 @@ packages:
   '@usertour/helpers@0.0.29':
     resolution: {integrity: sha512-n1FgCdvpMW/LywqE/cew5gI4v+Spyklq9U88FPimSspuS+HNzVUK0Grii3DZHT2CPxYcmySJ/2wKKONV9dZyRQ==}
 
-  '@usertour/helpers@0.0.30':
-    resolution: {integrity: sha512-uR267KV6M5q1tLUvexA+wQgX30gzprhJEuSE3n8ZW1Hqr2CYgHyZBMRcjYjDHvjkVsPRmueV8liJvCpLe9G/VA==}
+  '@usertour/helpers@0.0.31':
+    resolution: {integrity: sha512-pP8CMC5GFTthWaFbDNNiZjzCg3SyY/8R2o4yjGzvpNH2G7g9RuWMHczX0V+7HNYJ082oXk3VK4jPc4hU23eLhQ==}
 
   '@usertour/license@0.0.1':
     resolution: {integrity: sha512-FGzPpdCQa13fjU65d3YYhgtI0trG+u04ahJbJH9IWc4U/AqXR0nbaA27vrDHq8oKMRwkl7/XpOhxpf2HtuvcTw==}
@@ -8577,9 +8577,6 @@ packages:
 
   '@usertour/types@0.0.19':
     resolution: {integrity: sha512-22IzFlgs5w8FPKaE+jcWfpGMcJxHicsQplfHglmY0LmYnaqSYdFdSZ/dgRe6JDLGro79u5vC0KBPsyGmOb/5bw==}
-
-  '@usertour/types@0.0.20':
-    resolution: {integrity: sha512-rGPC6bVIMGf1nVmciVEYAirgCRLneRha0RvMU2n3fNWMAG7DeExYQ6gV5Zt5NDEJI4f7Zu4IFuP1ZPszVAkg0A==}
 
   '@usertour/types@0.0.22':
     resolution: {integrity: sha512-5BMXCvsu93pkX3OjcWTM1ua+tQPKhQrJpUfHFvqXhesm45xLYjgyEf/3fGKqambaKJdnNuhbPex/lWNNFoMXag==}
@@ -20532,7 +20529,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.30(typescript@4.9.5)':
+  '@usertour/helpers@0.0.31(typescript@4.9.5)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@usertour/types': 0.0.19
@@ -20547,7 +20544,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.30(typescript@5.1.6)':
+  '@usertour/helpers@0.0.31(typescript@5.1.6)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@usertour/types': 0.0.19
@@ -20569,8 +20566,6 @@ snapshots:
   '@usertour/types@0.0.17': {}
 
   '@usertour/types@0.0.19': {}
-
-  '@usertour/types@0.0.20': {}
 
   '@usertour/types@0.0.22': {}
 

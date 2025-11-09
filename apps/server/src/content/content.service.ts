@@ -10,7 +10,7 @@ import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
-import { regenerateConditionIds } from '@/utils/content-utils';
+import { regenerateConditionIds } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';
 
 @Injectable()
