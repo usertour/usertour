@@ -35,9 +35,9 @@ import {
   CancelSessionParams,
   ActivateSessionParams,
   ContentStartResult,
-  TryAutoStartContentOptions,
   ConditionExtractionMode,
   Environment,
+  TryAutoStartContentOptions,
 } from '@/common/types';
 import { DistributedLockService } from './distributed-lock.service';
 import { DataResolverService } from './data-resolver.service';
@@ -106,7 +106,11 @@ export class ContentOrchestratorService {
     }
 
     // Strategy 3: Try to auto start content
-    return await this.tryAutoStartContent(context);
+    const strategyResult = await this.tryAutoStartContent(context);
+    return await this.handleContentStartResult(context, {
+      ...strategyResult,
+      isActivateOtherSockets: true,
+    });
   }
 
   /**
@@ -187,25 +191,25 @@ export class ContentOrchestratorService {
       return false;
     }
     const excludeContentIds = [currentSession?.content?.id].filter(Boolean) as string[];
-    const tryAutoStartContentOptions: TryAutoStartContentOptions = {
-      isActivateOtherSockets: false,
-    };
 
-    // Execute content start strategies with fallback behavior
-    const strategyResult = await this.tryAutoStartContent(context, {
-      ...tryAutoStartContentOptions,
+    // First attempt: Try to auto start content excluding current session's content
+    const excludedResult = await this.tryAutoStartContent(context, {
       excludeContentIds,
       allowWaitTimers: false,
       fallback: false,
     });
-
-    // If the strategy result is successful, return it
-    if (strategyResult) {
-      return true;
+    // Only handle if there's a session to activate
+    if (excludedResult.session) {
+      await this.handleContentStartResult(context, {
+        ...excludedResult,
+        isActivateOtherSockets: false,
+      });
     }
 
+    // Second attempt: Try to auto start content with all available content
+    const result = await this.tryAutoStartContent(context);
     // Cleanup current session if exists
-    if (currentSession) {
+    if (currentSession && !result.session) {
       if (!(await this.cleanupSocketSession(currentSession, params))) {
         return false;
       }
@@ -215,8 +219,12 @@ export class ContentOrchestratorService {
       }
       context.socketData = newSocketData;
     }
-    // Execute content start strategies and handle the result
-    return await this.tryAutoStartContent(context, tryAutoStartContentOptions);
+
+    // handleContentStartResult will check success internally
+    return await this.handleContentStartResult(context, {
+      ...result,
+      isActivateOtherSockets: false,
+    });
   }
 
   /**
@@ -455,21 +463,13 @@ export class ContentOrchestratorService {
     }
   }
 
-  /**
-   * Try to auto start content with configurable fallback behavior
-   * @param context - The content start context
-   * @param contentType - The content type
-   * @param options - Configuration options for the strategy execution
-   * @returns Promise<boolean> - True if the content was started successfully
-   */
   private async tryAutoStartContent(
     context: ContentStartContext,
     options: TryAutoStartContentOptions = {},
-  ): Promise<boolean> {
+  ): Promise<ContentStartResult> {
     const { socketData, contentType } = context;
     const {
       excludeContentIds = extractExcludedContentIds(socketData, contentType),
-      isActivateOtherSockets = true,
       allowWaitTimers = true,
       fallback = true,
     } = options;
@@ -480,96 +480,101 @@ export class ContentOrchestratorService {
       contentType,
     );
 
+    // Early return if no content versions available
+    if (evaluatedContentVersions.length === 0) {
+      return {
+        success: false,
+        reason: 'No content versions available',
+      };
+    }
+
     // First attempt: Try with excluded content IDs if any exist
     if (excludeContentIds.length > 0) {
-      const result = await this.executeContentStartStrategies(
+      const excludedResult = await this.executeContentStartStrategies(
         context,
         contentType,
         evaluatedContentVersions,
         excludeContentIds,
       );
 
-      const { success, session, waitTimers } = result;
-      if (success) {
-        const shouldAllowWaitTimers = allowWaitTimers && waitTimers?.length;
-        if (session || shouldAllowWaitTimers) {
-          return await this.handleContentStartResult(context, {
-            ...result,
-            isActivateOtherSockets,
-          });
-        }
+      // Return result if it has actionable content (session or wait timers)
+      const { success, session, waitTimers } = excludedResult;
+      const canReturnWithSession = success && session;
+      const canReturnWithWaitTimers = success && allowWaitTimers && waitTimers?.length;
+
+      if (canReturnWithSession || canReturnWithWaitTimers) {
+        return excludedResult;
       }
+      // Otherwise, continue to fallback
     }
 
     // Skip second attempt if fallback is disabled
     if (!fallback) {
-      return false;
+      return {
+        success: false,
+        reason: 'No actionable content found and fallback is disabled',
+      };
     }
 
     // Second attempt: Try with all content versions (no exclusions)
-    const result = await this.executeContentStartStrategies(
-      context,
-      contentType,
-      evaluatedContentVersions,
-    );
-
-    return await this.handleContentStartResult(context, { ...result, isActivateOtherSockets });
+    return await this.executeContentStartStrategies(context, contentType, evaluatedContentVersions);
   }
 
   /**
-   * Execute content start strategies with pre-fetched content versions
-   * This method avoids duplicate database queries by accepting pre-fetched versions
+   * Attempts to start content using multiple strategies in priority order
+   * Uses pre-fetched content versions to avoid duplicate database queries
+   * @param context - The content start context
+   * @param contentType - The content type to start
+   * @param evaluatedContentVersions - Pre-evaluated content versions to consider
+   * @param excludedContentIds - Optional list of content IDs to exclude from this attempt
+   * @returns Promise<ContentStartResult> - The result of the strategy execution
    */
   private async executeContentStartStrategies(
     context: ContentStartContext,
     contentType: ContentDataType,
     evaluatedContentVersions: CustomContentVersion[],
-    excludeContentIds: string[] = [],
+    excludedContentIds: string[] = [],
   ): Promise<ContentStartResult> {
     const { socketData } = context;
 
     // Filter out excluded content IDs if provided
-    const filteredContentVersions =
-      excludeContentIds.length > 0
+    const availableVersions =
+      excludedContentIds.length > 0
         ? evaluatedContentVersions.filter(
-            (contentVersion) => !excludeContentIds.includes(contentVersion.content.id),
+            (version) => !excludedContentIds.includes(version.content.id),
           )
         : evaluatedContentVersions;
 
-    // Strategy 3: Try to start by latest activated content version
+    // Strategy 1: Try to start by latest activated content version
     const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
       context,
-      filteredContentVersions,
+      availableVersions,
     );
-
-    this.logger.debug(`Latest version result: ${latestVersionResult.reason}`);
-
+    this.logger.debug(`Latest version strategy result: ${latestVersionResult.reason}`);
     if (latestVersionResult.success) {
       return latestVersionResult;
     }
 
-    // Strategy 4: Try to start by auto start conditions
-    const autoStartResult = await this.tryStartByAutoStartConditions(
-      context,
-      filteredContentVersions,
-    );
-    this.logger.debug(`Auto start result: ${autoStartResult.reason}`);
+    // Strategy 2: Try to start by auto-start conditions
+    const autoStartResult = await this.tryStartByAutoStartConditions(context, availableVersions);
+    this.logger.debug(`Auto-start strategy result: ${autoStartResult.reason}`);
     if (autoStartResult.success) {
       return autoStartResult;
     }
 
-    // Strategy 5: Setup wait timer conditions for future activation
+    // Strategy 3: Setup wait timer conditions for future activation
     const waitTimerResult = this.prepareConditionWaitTimersResult(
-      filteredContentVersions,
+      availableVersions,
       contentType,
       socketData.clientConditions,
     );
-    this.logger.debug(`Wait timer result: ${waitTimerResult.reason}`);
+    this.logger.debug(`Wait timer strategy result: ${waitTimerResult.reason}`);
     if (waitTimerResult.success) {
       return waitTimerResult;
     }
 
-    return await this.extractClientConditions(contentType, filteredContentVersions);
+    // Strategy 4: Extract and setup tracking conditions for future activation
+    return await this.extractClientConditions(contentType, availableVersions);
   }
 
   /**

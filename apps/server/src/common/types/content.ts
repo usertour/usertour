@@ -102,7 +102,6 @@ export interface ActivateSessionParams {
  */
 export interface TryAutoStartContentOptions {
   excludeContentIds?: string[];
-  isActivateOtherSockets?: boolean;
   allowWaitTimers?: boolean;
   fallback?: boolean;
 }
