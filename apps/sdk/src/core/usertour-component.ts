@@ -300,8 +300,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     }
 
     const themeData = UsertourTheme.createThemeData(themeSettings);
-    const contentSession = this.getSessionAttributes();
-    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
+    const userAttributes = this.getUserAttributes();
     const removeBranding = this.isRemoveBranding();
 
     // Calculate final zIndex using subclass implementation
@@ -369,6 +368,17 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected getSessionAttributes(): SessionAttribute[] {
     return this.session.getAttributes();
+  }
+
+  /**
+   * Gets user attributes from session attributes
+   * Converts session attributes to user attributes format for evaluation
+   * @returns User attributes object
+   */
+  protected getUserAttributes(): UserTourTypes.Attributes {
+    const contentSession = this.getSessionAttributes();
+    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
+    return userAttributes ?? {};
   }
 
   /**
@@ -519,8 +529,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    * @param data - The data to navigate
    */
   handleNavigate(data: any): void {
-    const contentSession = this.getSessionAttributes();
-    const { userAttributes } = convertToAttributeEvaluationOptions(contentSession);
+    const userAttributes = this.getUserAttributes();
     const url = buildNavigateUrl(data.value, userAttributes);
 
     // Check if custom navigation function is set
