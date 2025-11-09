@@ -194,7 +194,7 @@ export class ContentOrchestratorService {
     // Execute content start strategies with fallback behavior
     const strategyResult = await this.tryAutoStartContent(context, {
       ...tryAutoStartContentOptions,
-      excludeContentIds: excludeContentIds,
+      excludeContentIds,
       allowWaitTimers: false,
       fallback: false,
     });
