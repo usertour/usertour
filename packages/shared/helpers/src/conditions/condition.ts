@@ -145,6 +145,19 @@ const evaluateRulesConditions = async (
 };
 
 /**
+ * Regenerates IDs for each item in RulesCondition array using cuid
+ * @param conditions - Array of rules conditions to process
+ * @returns Array of rules conditions with new IDs
+ */
+export const regenerateConditionIds = (conditions: RulesCondition[]): RulesCondition[] => {
+  return conditions.map((condition) => ({
+    ...condition,
+    id: cuid(),
+    conditions: condition.conditions ? regenerateConditionIds(condition.conditions) : undefined,
+  }));
+};
+
+/**
  * Assign unique IDs to rules that don't have them
  * @param conditions - Array of rules conditions to process
  * @returns Array of rules conditions with IDs assigned (only for those missing IDs)

@@ -198,6 +198,9 @@ export const ContentActionsGroup = () => {
           if (data) {
             condition.data = data;
           }
+          if (!condition.id) {
+            condition.id = cuid();
+          }
           condition.operators = conditionType;
         }
         return condition;

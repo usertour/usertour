@@ -1,4 +1,4 @@
-import { uuidV4 } from '@usertour/helpers';
+import { isArray, regenerateConditionIds, uuidV4 } from '@usertour/helpers';
 import {
   ContentEditorClickableElement,
   ContentEditorElement,
@@ -9,7 +9,7 @@ import {
   ContentEditorRootElement,
 } from '../types/editor';
 import { isEmptyString } from '@usertour/helpers';
-import { Step } from '@usertour/types';
+import { Step, StepTrigger } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 
 export const EmptyGroup = {
@@ -1039,50 +1039,134 @@ export const getDefaultDataForType = (type: string) => {
   }
 };
 
-// Helper function to create a copy of a step
-export const createStepCopy = (originalStep: Step, sequence: number): Step => {
-  const { id, cvid, updatedAt, data, createdAt, ...rest } = originalStep;
+/**
+ * Process question elements in content editor data to replace cvid with new cuid
+ * Also process actions field in all elements (button and question elements) to regenerate condition IDs
+ * @param contents - The content editor root array to process
+ * @returns A new array with question element cvids replaced by new cuids and actions regenerated
+ */
+export const processQuestionElements = (
+  contents: ContentEditorRoot[] | undefined,
+): ContentEditorRoot[] => {
+  if (!contents || !isArray(contents) || contents.length === 0) {
+    return [];
+  }
+  return contents.map((group) => ({
+    ...group,
+    children: group.children.map((column) => ({
+      ...column,
+      children: column.children.map((item) => {
+        const element = item.element;
 
-  // Process question elements to replace cvid with new cuid
-  const processQuestionElements = (contents: ContentEditorRoot[]): ContentEditorRoot[] => {
-    return contents.map((group) => ({
-      ...group,
-      children: group.children.map((column) => ({
-        ...column,
-        children: column.children.map((item) => {
-          if (isQuestionElement(item.element)) {
-            const questionElement = item.element as ContentEditorQuestionElement;
+        // Process question elements: regenerate cvid and actions
+        if (isQuestionElement(element)) {
+          const questionElement = element as ContentEditorQuestionElement;
+          const updatedElement = {
+            ...questionElement,
+            data: {
+              ...questionElement.data,
+              cvid: cuid(),
+              ...(questionElement.data?.actions && isArray(questionElement.data.actions)
+                ? { actions: regenerateConditionIds(questionElement.data.actions) }
+                : {}),
+            },
+          } as ContentEditorQuestionElement;
+
+          return {
+            ...item,
+            element: updatedElement,
+          };
+        }
+
+        // Process button elements: regenerate actions
+        if (element.type === ContentEditorElementType.BUTTON) {
+          const buttonElement = element;
+          if (buttonElement.data?.actions && isArray(buttonElement.data.actions)) {
             return {
               ...item,
               element: {
-                ...questionElement,
+                ...buttonElement,
                 data: {
-                  ...questionElement.data,
-                  cvid: cuid(),
+                  ...buttonElement.data,
+                  actions: regenerateConditionIds(buttonElement.data.actions),
                 },
-              } as ContentEditorQuestionElement,
+              },
             };
           }
-          return item;
-        }),
-      })),
-    }));
-  };
+        }
 
-  // Check if data exists and is an array that can be processed
-  let processedData = data;
-  try {
-    processedData = data && Array.isArray(data) ? processQuestionElements(data) : data;
-  } catch (error) {
-    console.error('Error processing step data during copy:', error);
-    // Fallback to original data if processing fails
-    processedData = data;
+        return item;
+      }),
+    })),
+  }));
+};
+
+export const regenerateTrigger = (trigger: StepTrigger[]): StepTrigger[] => {
+  return trigger.map((t) => ({
+    ...t,
+    id: cuid(),
+    conditions: regenerateConditionIds(t.conditions),
+    actions: regenerateConditionIds(t.actions),
+  }));
+};
+
+/**
+ * Process target to regenerate condition IDs in actions field
+ * @param target - The target object to process
+ * @returns A new target object with regenerated action condition IDs, or undefined if target is undefined
+ */
+export const regenerateTarget = (target: Step['target']): Step['target'] => {
+  if (!target) {
+    return undefined;
   }
+
+  if (target.actions && isArray(target.actions)) {
+    return {
+      ...target,
+      actions: regenerateConditionIds(target.actions),
+    };
+  }
+
+  return target;
+};
+
+/**
+ * Generate a unique copy name based on the original name and existing names
+ * @param originalName - The original name to base the copy name on
+ * @param existingNames - Optional array of existing names to check against
+ * @returns A unique name in the format "Name (copy)", "Name (copy 2)", etc.
+ */
+export const generateUniqueCopyName = (originalName: string, existingNames?: string[]): string => {
+  let name = `${originalName} (copy)`;
+  if (existingNames?.includes(name)) {
+    let number = 2;
+    while (existingNames.includes(`${originalName} (copy ${number})`)) {
+      number++;
+    }
+    name = `${originalName} (copy ${number})`;
+  }
+  return name;
+};
+
+// Helper function to create a copy of a step
+export const createStepCopy = (
+  originalStep: Step,
+  sequence: number,
+  existingStepNames?: string[],
+): Step => {
+  const { id, cvid, updatedAt, createdAt, ...rest } = originalStep;
+
+  const name = generateUniqueCopyName(originalStep?.name, existingStepNames);
+  const trigger = originalStep?.trigger ? regenerateTrigger(originalStep?.trigger) : [];
+  const data = originalStep?.data ? processQuestionElements(originalStep?.data) : [];
+  const target = regenerateTarget(originalStep?.target);
 
   return {
     ...rest,
-    data: processedData,
-    name: `${originalStep.name} (copy)`,
+    data,
+    trigger,
+    target,
+    name,
     sequence,
   };
 };
