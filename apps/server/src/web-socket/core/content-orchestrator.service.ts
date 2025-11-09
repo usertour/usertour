@@ -284,7 +284,7 @@ export class ContentOrchestratorService {
     const { server, socket: currentSocket } = params;
     try {
       const sockets = await server.in(roomId).fetchSockets();
-      if (sockets.length === 0 || sockets.length > 100) {
+      if (sockets.length === 0) {
         return false;
       }
 
@@ -441,7 +441,7 @@ export class ContentOrchestratorService {
       const { server, socket: currentSocket } = params;
       const sockets = await server.in(roomId).fetchSockets();
 
-      if (sockets.length === 0 || sockets.length > 100) {
+      if (sockets.length === 0) {
         return false;
       }
 
