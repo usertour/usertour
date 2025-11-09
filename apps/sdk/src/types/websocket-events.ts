@@ -31,6 +31,7 @@ export enum ClientMessageKind {
   ACTIVATE_LAUNCHER = 'ActivateLauncher',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
+  END_ALL_CONTENT = 'EndAllContent',
 }
 
 /**

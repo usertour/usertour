@@ -31,16 +31,17 @@ export enum contentEndReason {
   PROGRAM_STARTED_OTHER_CONTENT = 'program_started_other_content',
   STEP_NOT_FOUND = 'step_not_found',
   UNPUBLISHED_CONTENT = 'unpublished_content',
+  END_FROM_PROGRAM = 'end_from_program',
 }
 
 export enum contentStartReason {
-  START_FROM_CONDITION = 'start_condition',
+  START_FROM_CONDITION = 'start_from_condition',
   START_FROM_URL = 'start_from_url',
   START_FROM_SESSION = 'start_from_session',
-  START_FROM_MANUAL = 'manual_start',
+  START_FROM_MANUAL = 'start_from_manual',
   START_FROM_PROGRAM = 'start_from_program',
   START_FROM_CONTENT_ID = 'start_from_content_id',
-  START_FROM_ACTION = 'action',
+  START_FROM_ACTION = 'start_from_action',
 }
 
 export const flowReasonTitleMap = {

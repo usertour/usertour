@@ -56,6 +56,7 @@ export interface IUsertourSocket {
   // Content operations
   startContent(params: StartContentDto, options?: BatchOptions): Promise<boolean>;
   endContent(params: EndContentDto, options?: BatchOptions): Promise<boolean>;
+  endAllContent(options?: BatchOptions): Promise<boolean>;
   goToStep(params: GoToStepDto, options?: BatchOptions): Promise<boolean>;
 
   // Question operations
@@ -331,6 +332,10 @@ export class UsertourSocket implements IUsertourSocket {
 
   async endContent(params: EndContentDto, options?: BatchOptions): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.END_CONTENT, params, options);
+  }
+
+  async endAllContent(options?: BatchOptions): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.END_ALL_CONTENT, {}, options);
   }
 
   async goToStep(params: GoToStepDto, options?: BatchOptions): Promise<boolean> {

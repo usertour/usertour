@@ -60,6 +60,11 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
+      ClientMessageKind.END_ALL_CONTENT,
+      async (context, _payload) => await this.service.endAllContent(context),
+    );
+
+    register(
       ClientMessageKind.TOGGLE_CLIENT_CONDITION,
       async (context, payload) => await this.service.toggleClientCondition(context, payload),
     );

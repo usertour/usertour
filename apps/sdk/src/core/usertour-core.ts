@@ -549,8 +549,8 @@ export class UsertourCore extends Evented {
   /**
    * Ends all active content and resets the application
    */
-  async endAll() {
-    this.reset();
+  async endAll(): Promise<void> {
+    await this.socketService.endAllContent();
   }
 
   /**
@@ -718,11 +718,10 @@ export class UsertourCore extends Evented {
    * @param session - The SDK content session to set
    */
   private setFlowSession(session: CustomContentSession): boolean {
-    const contentId = session.content.id;
     const hasActivatedTour = this.activatedTour !== null;
 
     if (this.activatedTour) {
-      if (this.activatedTour.getContentId() === contentId) {
+      if (this.activatedTour.getSessionId() === session.id) {
         this.activatedTour.updateSession(session);
         this.activatedTour.refreshStoreData();
         return true;
@@ -783,10 +782,8 @@ export class UsertourCore extends Evented {
    * @param session - The SDK content session to set
    */
   private setChecklistSession(session: CustomContentSession): boolean {
-    const contentId = session.content.id;
-
     if (this.activatedChecklist) {
-      if (this.activatedChecklist.getContentId() === contentId) {
+      if (this.activatedChecklist.getSessionId() === session.id) {
         this.activatedChecklist.updateSession(session);
         this.activatedChecklist.refreshStoreData();
         return true;

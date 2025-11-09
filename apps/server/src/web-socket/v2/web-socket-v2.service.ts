@@ -19,10 +19,15 @@ import {
   SocketAuthData,
   ActivateLauncherDto,
 } from './web-socket-v2.dto';
-import { ContentDataType, ClientContext, contentStartReason } from '@usertour/types';
+import {
+  ContentDataType,
+  ClientContext,
+  contentStartReason,
+  contentEndReason,
+} from '@usertour/types';
 import { Server, Socket } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
-import { ContentStartContext, SocketData } from '@/common/types/content';
+import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { ClientCondition, CustomContentSession } from '@/common/types/sdk';
@@ -394,52 +399,53 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async endContent(context: WebSocketContext, endContentDto: EndContentDto): Promise<boolean> {
-    const { server, socket, socketData } = context;
-    const { externalUserId, environment, clientContext } = socketData;
-
+    const { server, socket } = context;
     const { sessionId, endReason } = endContentDto;
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { content: true },
-    });
-    if (!bizSession) return false;
-    const contentType = bizSession.content.type as ContentDataType;
-    if (contentType === ContentDataType.FLOW) {
-      // Track flow ended event
-      const isEventTracked = await this.eventTrackingService.trackFlowEndedEvent(
-        bizSession,
-        environment,
-        externalUserId,
-        endReason,
-        clientContext,
-      );
-      if (!isEventTracked) return false;
-    }
-    if (contentType === ContentDataType.CHECKLIST) {
-      // Track checklist dismissed event
-      const trackResult = await this.eventTrackingService.trackChecklistDismissedEvent(
-        sessionId,
-        environment,
-        clientContext,
-        endReason,
-      );
-      if (!trackResult) return false;
-    }
-    if (contentType === ContentDataType.LAUNCHER) {
-      // Track launcher dismissed event
-      return await this.eventTrackingService.trackLauncherDismissedEvent(
-        sessionId,
-        environment,
-        clientContext,
-        endReason,
-      );
-    }
+
     return await this.contentOrchestratorService.cancelContent({
       server,
       socket,
       sessionId,
+      unsetCurrentSession: false,
       cancelOtherSessions: true,
+      endReason,
     });
+  }
+
+  /**
+   * End all content
+   * @param context - The web socket context
+   * @returns True if the all content was ended successfully
+   */
+  async endAllContent(context: WebSocketContext): Promise<boolean> {
+    const { server, socket, socketData } = context;
+    const { flowSession, checklistSession, launcherSessions } = socketData;
+    const endContentContext: Omit<ContentCancelContext, 'sessionId'> = {
+      server,
+      socket,
+      endReason: contentEndReason.END_FROM_PROGRAM,
+      unsetCurrentSession: true,
+      cancelOtherSessions: true,
+    };
+    if (flowSession) {
+      await this.contentOrchestratorService.cancelContent({
+        ...endContentContext,
+        sessionId: flowSession.id,
+      });
+    }
+    if (checklistSession) {
+      await this.contentOrchestratorService.cancelContent({
+        ...endContentContext,
+        sessionId: checklistSession.id,
+      });
+    }
+    for (const launcherSession of launcherSessions) {
+      await this.contentOrchestratorService.cancelContent({
+        ...endContentContext,
+        sessionId: launcherSession.id,
+      });
+    }
+    return true;
   }
 
   /**

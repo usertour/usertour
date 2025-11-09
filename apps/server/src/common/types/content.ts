@@ -63,6 +63,8 @@ export interface ContentCancelContext {
   socket: Socket;
   sessionId: string;
   cancelOtherSessions?: boolean;
+  unsetCurrentSession?: boolean;
+  endReason: string;
 }
 
 export interface ContentStartResult {

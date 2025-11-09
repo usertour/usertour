@@ -1211,4 +1211,64 @@ export class EventTrackingService {
       clientContext,
     );
   }
+
+  /**
+   * Track content ended event based on content type
+   * This method abstracts the logic of tracking different content end events
+   * based on the content type (FLOW, CHECKLIST, or LAUNCHER)
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param clientContext - The client context
+   * @param endReason - The end reason
+   * @returns True if the event was tracked successfully, false otherwise
+   */
+  async trackContentEndedEvent(
+    sessionId: string,
+    environment: Environment,
+    externalUserId: string,
+    clientContext: ClientContext,
+    endReason: string,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { content: true },
+    });
+
+    if (!bizSession) {
+      return false;
+    }
+
+    const contentType = bizSession.content.type as ContentDataType;
+
+    if (contentType === ContentDataType.FLOW) {
+      return await this.trackFlowEndedEvent(
+        bizSession,
+        environment,
+        externalUserId,
+        endReason,
+        clientContext,
+      );
+    }
+
+    if (contentType === ContentDataType.CHECKLIST) {
+      return await this.trackChecklistDismissedEvent(
+        sessionId,
+        environment,
+        clientContext,
+        endReason,
+      );
+    }
+
+    if (contentType === ContentDataType.LAUNCHER) {
+      return await this.trackLauncherDismissedEvent(
+        sessionId,
+        environment,
+        clientContext,
+        endReason,
+      );
+    }
+
+    return false;
+  }
 }

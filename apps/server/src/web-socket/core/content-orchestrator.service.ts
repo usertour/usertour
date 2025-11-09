@@ -116,13 +116,34 @@ export class ContentOrchestratorService {
    * @returns True if the content was canceled successfully
    */
   async cancelContent(context: ContentCancelContext): Promise<boolean> {
-    const { server, socket, sessionId, cancelOtherSessions = true } = context;
+    const {
+      server,
+      socket,
+      sessionId,
+      cancelOtherSessions = true,
+      unsetCurrentSession = false,
+      endReason,
+    } = context;
 
     const socketData = await this.getSocketData(socket);
     if (!socketData) {
       return false;
     }
-    const { environment, externalUserId } = socketData;
+    const { environment, externalUserId, clientContext } = socketData;
+
+    // Track content ended event
+    const isEventTracked = await this.eventTrackingService.trackContentEndedEvent(
+      sessionId,
+      environment,
+      externalUserId,
+      clientContext,
+      endReason,
+    );
+
+    if (!isEventTracked) {
+      return false;
+    }
+
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
 
     // Define common cancel session parameters
@@ -135,7 +156,7 @@ export class ContentOrchestratorService {
     };
 
     // Cleanup socket session
-    await this.cancelSocketSession({ ...cancelSessionParams, unsetSession: false });
+    await this.cancelSocketSession({ ...cancelSessionParams, unsetSession: unsetCurrentSession });
     // Cleanup other sockets in room
     if (cancelOtherSessions) {
       await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
