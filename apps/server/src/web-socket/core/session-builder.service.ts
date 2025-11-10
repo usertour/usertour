@@ -6,7 +6,6 @@ import {
   ContentDataType,
   LauncherData,
   RulesType,
-  Step as SDKStep,
   ThemeTypesSetting,
   ThemeVariation,
 } from '@usertour/types';
@@ -152,7 +151,7 @@ export class SessionBuilderService {
    * @returns The session steps
    */
   async createSessionSteps(
-    steps: SDKStep[],
+    steps: Step[],
     themes: Theme[],
     environment: Environment,
     externalUserId: string,
@@ -200,14 +199,14 @@ export class SessionBuilderService {
     // Process steps with cached themes
     const results: SessionStep[] = steps.map((step) => {
       if (!step.themeId) {
-        return step;
+        return step as unknown as SessionStep;
       }
 
       const sessionTheme = themeCache.get(step.themeId);
       return {
         ...step,
         theme: sessionTheme,
-      };
+      } as unknown as SessionStep;
     });
 
     return results;
@@ -349,7 +348,7 @@ export class SessionBuilderService {
     );
     session.attributes = attributes;
 
-    const versionSteps = customContentVersion.steps as unknown as SDKStep[];
+    const versionSteps = customContentVersion.steps;
     const sessionSteps = await this.createSessionSteps(
       versionSteps,
       themes,
