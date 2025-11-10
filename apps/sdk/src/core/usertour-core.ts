@@ -773,7 +773,7 @@ export class UsertourCore extends Evented {
     if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
       return false;
     }
-    this.activatedTour.showStepById(stepId);
+    this.activatedTour.showStepById(stepId, false);
     return true;
   }
 
