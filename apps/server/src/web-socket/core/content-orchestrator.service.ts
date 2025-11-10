@@ -197,7 +197,7 @@ export class ContentOrchestratorService {
     });
     // Only handle if there's a session to activate
     if (excludedResult.session) {
-      await this.handleContentStartResult(context, {
+      return await this.handleContentStartResult(context, {
         ...excludedResult,
         isActivateOtherSockets: false,
       });
@@ -593,6 +593,7 @@ export class ContentOrchestratorService {
 
     // Early return if operation failed
     if (!success) {
+      this.logger.warn(`Handle content start result, failed, reason: ${result.reason}`);
       return false;
     }
 
