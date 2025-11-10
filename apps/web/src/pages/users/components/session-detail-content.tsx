@@ -202,7 +202,7 @@ const SessionDetailContentInner = ({
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">User</span>
             <Link
-              className="text-primary"
+              className="text-primary hover:underline underline-offset-2"
               to={`/env/${environmentId}/user/${session?.bizUser?.id}`}
             >
               {session?.bizUser?.data?.name ??
@@ -214,7 +214,7 @@ const SessionDetailContentInner = ({
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60 capitalize">{content.type}</span>
             <Link
-              className=" text-primary"
+              className="text-primary hover:underline underline-offset-2"
               to={`/env/${environmentId}/${content.type}s/${session?.content?.id}/detail`}
             >
               {session?.content?.name}
@@ -223,7 +223,7 @@ const SessionDetailContentInner = ({
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">Version</span>
             <Link
-              className="text-primary"
+              className="text-primary hover:underline underline-offset-2"
               to={`/env/${environmentId}/flows/${session?.content?.id}/versions`}
             >
               V{session?.version?.sequence}
