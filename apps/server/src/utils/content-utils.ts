@@ -132,11 +132,7 @@ const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
   return 0;
 };
 
-const getLatestEvent = (
-  currentContent: CustomContentVersion,
-  contents: CustomContentVersion[],
-  eventCodeName: string,
-) => {
+const getLatestEvent = (currentContent: CustomContentVersion, contents: CustomContentVersion[]) => {
   const bizEvents: BizEventWithEvent[] = [];
   const contentId = currentContent.id;
   const contentType = currentContent.content.type;
@@ -147,7 +143,7 @@ const getLatestEvent = (
     }
     const sessionBizEvents = content.session.latestSession?.bizEvent;
     if (sessionBizEvents && sessionBizEvents.length > 0) {
-      bizEvents.push(...sessionBizEvents.filter((e) => e?.event?.codeName === eventCodeName));
+      bizEvents.push(...sessionBizEvents);
     }
   }
   return findLatestEvent(bizEvents);
@@ -167,10 +163,10 @@ export const findLatestEvent = (bizEvents: BizEventWithEvent[]) => {
   return lastEvent;
 };
 
-const showEventMapping = {
-  [ContentDataType.FLOW]: BizEvents.FLOW_STEP_SEEN,
-  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_SEEN,
-  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_SEEN,
+const dismissedEventMapping = {
+  [ContentDataType.FLOW]: BizEvents.FLOW_ENDED,
+  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_DISMISSED,
+  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_DISMISSED,
 };
 
 const isGreaterThenDuration = (
@@ -226,13 +222,9 @@ export const isAllowedByAutoStartRulesSetting = (
     return true;
   }
 
-  const contentType = customContentVersion.content.type as
-    | ContentDataType.FLOW
-    | ContentDataType.LAUNCHER
-    | ContentDataType.CHECKLIST;
+  const contentType = customContentVersion.content.type as ContentDataType;
 
-  const lastEventName = showEventMapping[contentType];
-  const lastEvent = getLatestEvent(customContentVersion, customContentVersions, lastEventName);
+  const lastEvent = getLatestEvent(customContentVersion, customContentVersions);
   const contentEvents = customContentVersion.session.latestSession?.bizEvent;
 
   if (
@@ -257,18 +249,14 @@ export const isAllowedByAutoStartRulesSetting = (
     return true;
   }
 
-  const showEventName = showEventMapping[contentType];
-  const showEvents = contentEvents?.filter(
-    (e) =>
-      e?.event?.codeName === showEventName &&
-      (contentType === ContentDataType.FLOW ? (e?.data as any)?.flow_step_number === 0 : true),
-  );
-  if (!showEvents || showEvents.length === 0) {
+  const dismissedEventName = dismissedEventMapping[contentType];
+  const dismissedEvent = contentEvents?.find((e) => e?.event?.codeName === dismissedEventName);
+
+  if (!dismissedEvent) {
     return true;
   }
 
-  const lastShowEvent = findLatestEvent(showEvents);
-  const lastShowEventDate = new Date(lastShowEvent.createdAt);
+  const dismissedEventDate = new Date(dismissedEvent.createdAt);
 
   if (frequency.frequency === Frequency.MULTIPLE) {
     if (frequency.every.times && dismissedSessions >= frequency.every.times) {
@@ -277,7 +265,12 @@ export const isAllowedByAutoStartRulesSetting = (
   }
   if (frequency.frequency === Frequency.MULTIPLE || frequency.frequency === Frequency.UNLIMITED) {
     if (
-      !isGreaterThenDuration(now, lastShowEventDate, frequency.every.unit, frequency.every.duration)
+      !isGreaterThenDuration(
+        now,
+        dismissedEventDate,
+        frequency.every.unit,
+        frequency.every.duration,
+      )
     ) {
       return false;
     }
