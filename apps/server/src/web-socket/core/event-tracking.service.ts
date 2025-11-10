@@ -1,7 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Tx } from '@/common/types/schema';
-import { getCurrentStepId, getEventProgress, getEventState, isValidEvent } from '@/utils/event-v2';
+import {
+  getCurrentStepId,
+  getEventProgress,
+  getEventState,
+  isValidEvent,
+  buildFlowStartEventData,
+  buildChecklistStartEventData,
+  buildLauncherSeenEventData,
+  buildGoToStepEventData,
+} from '@/utils/event-v2';
 import {
   BizEvents,
   CompanyAttributes,
@@ -9,7 +18,6 @@ import {
   EventAttributes,
   UserAttributes,
   ClientContext,
-  StepSettings,
   ChecklistData,
 } from '@usertour/types';
 import {
@@ -17,7 +25,6 @@ import {
   BizSession,
   BizUser,
   Environment,
-  VersionWithSteps,
   Step,
   BizSessionWithEvents,
 } from '@/common/types/schema';
@@ -48,6 +55,19 @@ export class EventTrackingService {
     private readonly prisma: PrismaService,
     private readonly bizService: BizService,
   ) {}
+
+  /**
+   * Find business session with user and version steps
+   * @param client - Prisma client or transaction client
+   * @param sessionId - Session ID
+   * @returns Business session with user and version steps, or null if not found
+   */
+  private async findBizSessionWithUserAndSteps(client: Tx | PrismaService, sessionId: string) {
+    return await client.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, version: { include: { steps: { orderBy: { sequence: 'asc' } } } } },
+    });
+  }
 
   /**
    * Filter event data based on allowed attributes for the event
@@ -467,61 +487,6 @@ export class EventTrackingService {
   }
 
   /**
-   * Build event data for flow start events
-   * @param customContentVersion - The custom content version
-   * @param startReason - The start reason
-   * @returns Flow start event data
-   */
-  private buildFlowStartEventData(
-    customContentVersion: CustomContentVersion,
-    startReason: string,
-  ): Record<string, any> {
-    return {
-      [EventAttributes.FLOW_START_REASON]: startReason,
-      [EventAttributes.FLOW_VERSION_ID]: customContentVersion.id,
-      [EventAttributes.FLOW_VERSION_NUMBER]: customContentVersion.sequence,
-    };
-  }
-
-  /**
-   * Build event data for checklist start events
-   * @param customContentVersion - The custom content version
-   * @param startReason - The start reason
-   * @returns Checklist start event data
-   */
-  private buildChecklistStartEventData(
-    customContentVersion: CustomContentVersion,
-    startReason: string,
-  ): Record<string, any> {
-    return {
-      [EventAttributes.CHECKLIST_ID]: customContentVersion.content.id,
-      [EventAttributes.CHECKLIST_NAME]: customContentVersion.content.name,
-      [EventAttributes.CHECKLIST_START_REASON]: startReason,
-      [EventAttributes.CHECKLIST_VERSION_ID]: customContentVersion.id,
-      [EventAttributes.CHECKLIST_VERSION_NUMBER]: customContentVersion.sequence,
-    };
-  }
-
-  /**
-   * Build event data for launcher seen events
-   * @param customContentVersion - The custom content version
-   * @param startReason - The start reason
-   * @returns Launcher seen event data
-   */
-  private buildLauncherSeenEventData(
-    customContentVersion: CustomContentVersion,
-    startReason: string,
-  ): Record<string, any> {
-    return {
-      [EventAttributes.LAUNCHER_ID]: customContentVersion.content.id,
-      [EventAttributes.LAUNCHER_NAME]: customContentVersion.content.name,
-      [EventAttributes.LAUNCHER_START_REASON]: startReason,
-      [EventAttributes.LAUNCHER_VERSION_ID]: customContentVersion.id,
-      [EventAttributes.LAUNCHER_VERSION_NUMBER]: customContentVersion.sequence,
-    };
-  }
-
-  /**
    * Get event name and data for auto start events
    * @param customContentVersion - The custom content version
    * @param startReason - The start reason
@@ -536,21 +501,21 @@ export class EventTrackingService {
     if (contentType === ContentDataType.FLOW) {
       return {
         eventName: BizEvents.FLOW_STARTED,
-        eventData: this.buildFlowStartEventData(customContentVersion, startReason),
+        eventData: buildFlowStartEventData(customContentVersion, startReason),
       };
     }
 
     if (contentType === ContentDataType.CHECKLIST) {
       return {
         eventName: BizEvents.CHECKLIST_STARTED,
-        eventData: this.buildChecklistStartEventData(customContentVersion, startReason),
+        eventData: buildChecklistStartEventData(customContentVersion, startReason),
       };
     }
 
     if (contentType === ContentDataType.LAUNCHER) {
       return {
         eventName: BizEvents.LAUNCHER_SEEN,
-        eventData: this.buildLauncherSeenEventData(customContentVersion, startReason),
+        eventData: buildLauncherSeenEventData(customContentVersion, startReason),
       };
     }
 
@@ -595,47 +560,6 @@ export class EventTrackingService {
   }
 
   /**
-   * Build go to step event data
-   * @param bizSession - The business session
-   * @param stepId - The step ID
-   * @returns Object containing event data and completion status, or null if validation fails
-   */
-  private async buildGoToStepEventData(
-    version: VersionWithSteps,
-    stepId: string,
-  ): Promise<{
-    eventData: Record<string, any>;
-    isComplete: boolean;
-  } | null> {
-    const stepIndex = version.steps.findIndex((step: Step) => step.id === stepId);
-
-    if (stepIndex === -1) {
-      return null;
-    }
-
-    const step = version.steps[stepIndex];
-    const total = version.steps.length;
-    const progress = Math.round(((stepIndex + 1) / total) * 100);
-    const isExplicitCompletionStep = (step.setting as StepSettings).explicitCompletionStep;
-    const isComplete = isExplicitCompletionStep
-      ? isExplicitCompletionStep
-      : stepIndex + 1 === total;
-
-    // Build event data
-    const eventData = {
-      [EventAttributes.FLOW_VERSION_ID]: version.id,
-      [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.FLOW_STEP_ID]: step.id,
-      [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
-      [EventAttributes.FLOW_STEP_CVID]: step.cvid,
-      [EventAttributes.FLOW_STEP_NAME]: step.name,
-      [EventAttributes.FLOW_STEP_PROGRESS]: Math.round(progress),
-    };
-
-    return { eventData, isComplete };
-  }
-
-  /**
    * Execute go to step event
    * @param tx - The transaction client
    * @param sessionId - The session ID
@@ -652,16 +576,13 @@ export class EventTrackingService {
     clientContext: ClientContext,
   ): Promise<void> {
     // Find the business session with related data
-    const bizSession = await tx.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, version: { include: { steps: true } } },
-    });
+    const bizSession = await this.findBizSessionWithUserAndSteps(tx, sessionId);
 
     if (!bizSession) {
       return;
     }
     // Build go to step event data
-    const eventDataResult = await this.buildGoToStepEventData(bizSession.version, stepId);
+    const eventDataResult = buildGoToStepEventData(bizSession.version, stepId);
     if (!eventDataResult) {
       return;
     }
@@ -829,7 +750,7 @@ export class EventTrackingService {
     if (!environment) return false;
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+      include: { bizUser: true, content: true, version: true },
     });
     if (!bizSession) return false;
     const content = bizSession.content;
@@ -866,10 +787,7 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: params.sessionId },
-      include: { bizUser: true, version: { include: { steps: true } } },
-    });
+    const bizSession = await this.findBizSessionWithUserAndSteps(this.prisma, params.sessionId);
     if (!bizSession) return false;
 
     const eventData: any = {
@@ -935,7 +853,7 @@ export class EventTrackingService {
   ): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+      include: { bizUser: true, content: true, version: true },
     });
     if (!bizSession) return false;
     const content = bizSession.content;
@@ -980,7 +898,7 @@ export class EventTrackingService {
   ): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+      include: { bizUser: true, content: true, version: true },
     });
     if (!bizSession) return false;
     const content = bizSession.content;
@@ -1021,7 +939,7 @@ export class EventTrackingService {
   ): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+      include: { bizUser: true, content: true, version: true },
     });
     if (!bizSession) return false;
     const content = bizSession.content;
@@ -1059,7 +977,7 @@ export class EventTrackingService {
   ): Promise<boolean> {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { bizUser: true, content: true, version: { include: { steps: true } } },
+      include: { bizUser: true, content: true, version: true },
     });
     if (!bizSession) return false;
     const content = bizSession.content;
@@ -1097,30 +1015,16 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, version: { include: { steps: true } } },
-    });
+    const bizSession = await this.findBizSessionWithUserAndSteps(this.prisma, sessionId);
     if (!bizSession) return false;
     const version = bizSession.version;
-    const step = version.steps.find((s) => s.id === stepId);
-    if (!step) return false;
-    const stepIndex = version.steps.findIndex((s) => s.id === step.id);
-    if (stepIndex === -1) return false;
 
-    const total = version.steps.length;
-    const progress = Math.round(((stepIndex + 1) / total) * 100);
+    const eventDataResult = buildGoToStepEventData(version, stepId);
+    if (!eventDataResult) {
+      return false;
+    }
 
-    const eventData = {
-      [EventAttributes.FLOW_VERSION_ID]: version.id,
-      [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.FLOW_STEP_ID]: step.id,
-      [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
-      [EventAttributes.FLOW_STEP_CVID]: step.cvid,
-      [EventAttributes.FLOW_STEP_NAME]: step.name,
-      [EventAttributes.FLOW_STEP_PROGRESS]: progress,
-    };
-
+    const { eventData } = eventDataResult;
     const externalUserId = String(bizSession.bizUser.externalId);
     return await this.trackEvent(
       environment,

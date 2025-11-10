@@ -1,5 +1,7 @@
-import { BizEvents, EventAttributes } from '@usertour/types';
+import { BizEvents, EventAttributes, StepSettings } from '@usertour/types';
 import { Prisma } from '@prisma/client';
+import { VersionWithSteps, Step } from '@/common/types/schema';
+import { CustomContentVersion } from '@/common/types/content';
 
 type BizSession = Prisma.BizSessionGetPayload<{
   include: {
@@ -184,4 +186,100 @@ export const isValidEvent = (eventName: string, bizSession: BizSession, events: 
   }
 
   return true;
+};
+
+/**
+ * Build event data for flow start events
+ * @param customContentVersion - The custom content version
+ * @param startReason - The start reason
+ * @returns Flow start event data
+ */
+export const buildFlowStartEventData = (
+  customContentVersion: CustomContentVersion,
+  startReason: string,
+): Record<string, any> => {
+  return {
+    [EventAttributes.FLOW_START_REASON]: startReason,
+    [EventAttributes.FLOW_VERSION_ID]: customContentVersion.id,
+    [EventAttributes.FLOW_VERSION_NUMBER]: customContentVersion.sequence,
+  };
+};
+
+/**
+ * Build event data for checklist start events
+ * @param customContentVersion - The custom content version
+ * @param startReason - The start reason
+ * @returns Checklist start event data
+ */
+export const buildChecklistStartEventData = (
+  customContentVersion: CustomContentVersion,
+  startReason: string,
+): Record<string, any> => {
+  return {
+    [EventAttributes.CHECKLIST_ID]: customContentVersion.content.id,
+    [EventAttributes.CHECKLIST_NAME]: customContentVersion.content.name,
+    [EventAttributes.CHECKLIST_START_REASON]: startReason,
+    [EventAttributes.CHECKLIST_VERSION_ID]: customContentVersion.id,
+    [EventAttributes.CHECKLIST_VERSION_NUMBER]: customContentVersion.sequence,
+  };
+};
+
+/**
+ * Build event data for launcher seen events
+ * @param customContentVersion - The custom content version
+ * @param startReason - The start reason
+ * @returns Launcher seen event data
+ */
+export const buildLauncherSeenEventData = (
+  customContentVersion: CustomContentVersion,
+  startReason: string,
+): Record<string, any> => {
+  return {
+    [EventAttributes.LAUNCHER_ID]: customContentVersion.content.id,
+    [EventAttributes.LAUNCHER_NAME]: customContentVersion.content.name,
+    [EventAttributes.LAUNCHER_START_REASON]: startReason,
+    [EventAttributes.LAUNCHER_VERSION_ID]: customContentVersion.id,
+    [EventAttributes.LAUNCHER_VERSION_NUMBER]: customContentVersion.sequence,
+  };
+};
+
+/**
+ * Build go to step event data
+ * Steps are sorted by sequence in descending order before calculation
+ * @param version - The version with steps
+ * @param stepId - The step ID
+ * @returns Object containing event data and completion status, or null if validation fails
+ */
+export const buildGoToStepEventData = (
+  version: VersionWithSteps,
+  stepId: string,
+): {
+  eventData: Record<string, any>;
+  isComplete: boolean;
+} | null => {
+  const steps = version.steps;
+  const stepIndex = steps.findIndex((step: Step) => step.id === stepId);
+
+  if (stepIndex === -1) {
+    return null;
+  }
+
+  const step = steps[stepIndex];
+  const total = steps.length;
+  const progress = Math.round(((stepIndex + 1) / total) * 100);
+  const isExplicitCompletionStep = (step.setting as StepSettings).explicitCompletionStep;
+  const isComplete = isExplicitCompletionStep ? isExplicitCompletionStep : stepIndex + 1 === total;
+
+  // Build event data
+  const eventData = {
+    [EventAttributes.FLOW_VERSION_ID]: version.id,
+    [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+    [EventAttributes.FLOW_STEP_ID]: step.id,
+    [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
+    [EventAttributes.FLOW_STEP_CVID]: step.cvid,
+    [EventAttributes.FLOW_STEP_NAME]: step.name,
+    [EventAttributes.FLOW_STEP_PROGRESS]: progress,
+  };
+
+  return { eventData, isComplete };
 };
