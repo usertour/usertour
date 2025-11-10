@@ -286,11 +286,11 @@ const initialValue: RulesFrequencyValue = {
   every: {
     times: 0,
     duration: 0,
-    unit: FrequencyUnits.DAYES,
+    unit: FrequencyUnits.MINUTES,
   },
   atLeast: {
     duration: 0,
-    unit: FrequencyUnits.DAYES,
+    unit: FrequencyUnits.MINUTES,
   },
 };
 
