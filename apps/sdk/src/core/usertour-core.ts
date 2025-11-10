@@ -740,9 +740,9 @@ export class UsertourCore extends Evented {
     this.syncToursStore([this.activatedTour]);
     // Show tour from the session current step
     if (session.currentStep?.cvid) {
-      usertourTour.showStepByCvid(session.currentStep?.cvid);
+      usertourTour.showStepByCvid(session.currentStep?.cvid, false);
     } else {
-      usertourTour.showStepByIndex(0);
+      usertourTour.showStepByIndex(0, false);
     }
     if (!hasActivatedTour) {
       this.collapseChecklist();

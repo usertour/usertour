@@ -3,7 +3,7 @@ import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
-import { AttributeBizTypes, BizUser } from '@usertour/types';
+import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserSessions } from './user-sessions';
@@ -52,6 +52,38 @@ const TooltipIcon = ({
   </TooltipProvider>
 );
 
+// Helper function to check if a value is a valid date
+const isValidDate = (value: any): boolean => {
+  if (!value) {
+    return false;
+  }
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime());
+};
+
+// Component to display date with formatDistanceToNow and tooltip showing original date
+const DateDisplay = ({ dateValue }: { dateValue: string | Date }) => {
+  if (!dateValue) {
+    return null;
+  }
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) {
+    return <span>{String(dateValue)}</span>;
+  }
+  const relativeTime = formatDistanceToNow(date);
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="cursor-help">{relativeTime} ago</span>
+        </TooltipTrigger>
+        <TooltipContent>{String(dateValue)}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 // Loading wrapper component to handle all loading states
 const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
   const { loading: userListLoading } = useUserListContext();
@@ -99,9 +131,16 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           attrs.push({
             name: userAttr.displayName || userAttr.codeName,
             value,
+            dataType: userAttr.dataType,
           });
         }
       }
+      // Sort attributes by name in alphabetical order (a-z)
+      attrs.sort((a, b) => {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
       setBizUserAttributes(attrs);
     }
   }, [bizUser, attributeList]);
@@ -177,9 +216,11 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 </div>
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={CalendarIcon} tooltip="Created" />
-                  <span>
-                    {bizUser?.createdAt && formatDistanceToNow(new Date(bizUser?.createdAt))} ago
-                  </span>
+                  {bizUser?.createdAt ? (
+                    <DateDisplay dateValue={bizUser.createdAt} />
+                  ) : (
+                    <span>-</span>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -196,16 +237,25 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 <div className="w-1/2 ">Name</div>
                 <div className="w-1/2 ">Value</div>
               </div>
-              {bizUserAttributes.map(({ name, value }, key) => (
-                <div className="flex flex-row py-2 text-sm" key={key}>
-                  <div className="w-1/2">
-                    <TruncatedText text={name} maxLength={15} />
+              {bizUserAttributes.map(({ name, value, dataType }, key) => {
+                const isDateTime = dataType === AttributeDataType.DateTime;
+                const shouldFormatAsDate = isDateTime && isValidDate(value);
+
+                return (
+                  <div className="flex flex-row py-2 text-sm" key={key}>
+                    <div className="w-1/2">
+                      <TruncatedText text={name} maxLength={15} />
+                    </div>
+                    <div className="w-1/2">
+                      {shouldFormatAsDate ? (
+                        <DateDisplay dateValue={value} />
+                      ) : (
+                        <TruncatedText text={`${value}`} maxLength={25} />
+                      )}
+                    </div>
                   </div>
-                  <div className="w-1/2">
-                    <TruncatedText text={`${value}`} maxLength={25} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </div>

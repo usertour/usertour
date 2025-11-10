@@ -70,40 +70,43 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   /**
    * Shows a specific step in the tour by its id
    * @param id - The id of the step to show
+   * @param reportStepSeen - Whether to report the step seen event
    * @returns Promise that resolves when the step is shown
    */
-  async showStepById(id: string): Promise<void> {
+  async showStepById(id: string, reportStepSeen = true): Promise<void> {
     const step = this.getStepById(id);
     if (!step) {
       return;
     }
-    return await this.show(step);
+    return await this.show(step, reportStepSeen);
   }
 
   /**
    * Shows a specific step in the tour by its cvid
    * @param cvid - The cvid of the step to show
+   * @param reportStepSeen - Whether to report the step seen event
    * @returns Promise that resolves when the step is shown
    */
-  async showStepByCvid(cvid: string): Promise<void> {
+  async showStepByCvid(cvid: string, reportStepSeen = true): Promise<void> {
     const step = this.getStepByCvid(cvid);
     if (!step) {
       return;
     }
-    return await this.show(step);
+    return await this.show(step, reportStepSeen);
   }
 
   /**
    * Shows a specific step in the tour by its index
    * @param index - The index of the step to show
+   * @param reportStepSeen - Whether to report the step seen event
    * @returns Promise that resolves when the step is shown
    */
-  async showStepByIndex(index: number): Promise<void> {
+  async showStepByIndex(index: number, reportStepSeen = true): Promise<void> {
     const steps = this.getSteps();
     if (!steps.length || index < 0 || index >= steps.length) {
       return;
     }
-    return await this.show(steps[index]);
+    return await this.show(steps[index], reportStepSeen);
   }
 
   /**
@@ -171,12 +174,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param step - The step to show
    * @private
    */
-  private async show(step: SessionStep): Promise<void> {
+  private async show(step: SessionStep, reportStepSeen = true): Promise<void> {
     // Reset tour state and set new step
     this.reset();
     this.currentStepCvid = step.cvid;
     // Report step seen event
-    await this.reportStepSeen(step);
+    if (reportStepSeen) {
+      await this.reportStepSeen(step);
+    }
     // Create trigger for this step if it has triggers
     if (step.trigger?.length && step.trigger.length > 0) {
       this.stepTrigger = new UsertourTrigger(

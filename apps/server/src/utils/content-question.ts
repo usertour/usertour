@@ -69,7 +69,7 @@ export const extractStepBindToAttribute = (steps: Step[], questionCvid: string):
   for (const step of steps) {
     const questions = extractQuestionData(step.data as unknown as ContentEditorRoot[]);
     const question = questions.find((question) => question.data?.cvid === questionCvid);
-    if (question.data?.bindToAttribute === true) {
+    if (question?.data?.bindToAttribute === true) {
       return question.data?.selectedAttribute || null;
     }
   }
