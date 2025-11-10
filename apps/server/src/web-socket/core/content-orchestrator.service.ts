@@ -314,6 +314,12 @@ export class ContentOrchestratorService {
       return false;
     }
     const contentType = session.content.type as ContentDataType;
+    const currentSession = extractSessionByContentType(socketData, contentType);
+    const isNotChanged = currentSession && !hasContentSessionChanges(currentSession, session);
+    if (isNotChanged) {
+      this.logger.debug(`Session is not changed, session: ${session.id}`);
+      return true;
+    }
     if (contentType === ContentDataType.FLOW) {
       if (forceGoToStep && session.currentStep?.id) {
         await this.sessionBuilderService.updateCurrentStepId(session.id, session.currentStep.id);
@@ -616,13 +622,7 @@ export class ContentOrchestratorService {
   ): Promise<boolean> {
     const { server, socketData, socket } = context;
     const { environment, externalUserId } = socketData;
-    const {
-      session,
-      postTracks,
-      forceGoToStep = false,
-      isActivateOtherSockets = true,
-      activate = true,
-    } = result;
+    const { session, postTracks, forceGoToStep = false, isActivateOtherSockets = true } = result;
 
     if (!session) {
       this.logger.warn(
@@ -645,13 +645,11 @@ export class ContentOrchestratorService {
       `Handle session activation, session: ${session.id}, reason: ${result.reason}`,
     );
 
-    if (activate) {
-      if (!(await this.activateSocketSession(activateSessionParams))) {
-        return false;
-      }
-      if (isActivateOtherSockets) {
-        await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
-      }
+    if (!(await this.activateSocketSession(activateSessionParams))) {
+      return false;
+    }
+    if (isActivateOtherSockets) {
+      await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
     }
     // Check hide conditions and cancel content if necessary
     return await this.checkHideConditions(context, session);
@@ -761,14 +759,10 @@ export class ContentOrchestratorService {
       return result;
     }
 
-    // Check if session has changes
-    const isChanged = hasContentSessionChanges(session, result.session);
-
     // Handle active session cases
     return {
       ...result,
-      activate: isChanged,
-      reason: isChanged ? 'Existing active session with changes' : 'Existing active session',
+      reason: 'Existing active session',
     };
   }
 

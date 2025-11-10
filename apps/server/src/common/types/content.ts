@@ -69,7 +69,6 @@ export interface ContentCancelContext {
 
 export interface ContentStartResult {
   success: boolean;
-  activate?: boolean;
   session?: CustomContentSession;
   preTracks?: TrackCondition[];
   postTracks?: TrackCondition[];
