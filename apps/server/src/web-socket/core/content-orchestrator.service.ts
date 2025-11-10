@@ -93,9 +93,6 @@ export class ContentOrchestratorService {
     // Strategy 1: Try to start by specific contentId
     if (contentId) {
       const result = await this.tryStartByContentId(context);
-      if (!result.success) {
-        return false;
-      }
       return await this.handleContentStartResult(context, { ...result, forceGoToStep: true });
     }
 
