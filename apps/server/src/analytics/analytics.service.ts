@@ -263,7 +263,7 @@ export class AnalyticsService {
 
     const version = await this.prisma.version.findUnique({
       where: { id: publishedVersionId },
-      include: { steps: true },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
     });
 
     if (!version) {
@@ -312,8 +312,8 @@ export class AnalyticsService {
     return await this.prisma.content.findUnique({
       where: { id: contentId },
       include: {
-        publishedVersion: { include: { steps: true } },
-        editedVersion: { include: { steps: true } },
+        publishedVersion: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+        editedVersion: { include: { steps: { orderBy: { sequence: 'asc' } } } },
       },
     });
   }
@@ -467,7 +467,7 @@ export class AnalyticsService {
     const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
-      include: { steps: true },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
     });
     if (!version || !version.steps || version.steps.length === 0) {
       return false;
@@ -525,7 +525,7 @@ export class AnalyticsService {
     const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
-      include: { steps: true },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
     });
     if (!version || !version.data) {
       return false;
