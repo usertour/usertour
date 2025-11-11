@@ -1209,10 +1209,15 @@ export class AnalyticsService {
       .reduce((sum, item) => sum + item.count, 0);
 
     const total = promoters + passives + detractors;
-    const promotersPercentage = Math.round((promoters / total) * 100);
+    // Calculate exact percentages for NPS calculation (no rounding)
+    const promotersPercentageExact = (promoters / total) * 100;
+    const detractorsPercentageExact = (detractors / total) * 100;
+    // Calculate NPS using exact percentages, then round the final result
+    const npsScore = Math.round(promotersPercentageExact - detractorsPercentageExact);
+    // Round percentages for display
+    const promotersPercentage = Math.round(promotersPercentageExact);
     const passivesPercentage = Math.round((passives / total) * 100);
-    const detractorsPercentage = Math.round((detractors / total) * 100);
-    const npsScore = promotersPercentage - detractorsPercentage;
+    const detractorsPercentage = Math.round(detractorsPercentageExact);
 
     return {
       promoters: {
