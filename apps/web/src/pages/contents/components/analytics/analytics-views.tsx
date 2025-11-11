@@ -34,7 +34,7 @@ const AnalyticsCard = ({ title, tooltip, value, icon }: AnalyticsCardProps) => (
 
 const calculateCompletionRate = (completions: number, views: number): string => {
   if (!views) return '0%';
-  return `${Math.floor((completions / views) * 100)}%`;
+  return `${Math.round((completions / views) * 100)}%`;
 };
 
 interface AnalyticsViewsGridProps {
