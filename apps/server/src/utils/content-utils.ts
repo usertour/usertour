@@ -1659,7 +1659,11 @@ export const hasContentSessionChanges = (
     return true;
   }
 
-  if (oldSession.expandPending !== newSession.expandPending) {
+  if (!isEqual(oldSession.expandPending, newSession.expandPending)) {
+    return true;
+  }
+
+  if (!isEqual(oldSession.currentStep, newSession.currentStep)) {
     return true;
   }
 

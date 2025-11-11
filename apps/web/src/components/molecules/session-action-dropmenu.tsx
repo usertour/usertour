@@ -24,12 +24,13 @@ import {
   ZoomInIcon,
 } from '@usertour-packages/icons';
 import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour-packages/shared-hooks';
-import { BizEvent, BizEvents, BizSession } from '@usertour/types';
+import { BizEvent, BizSession } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { Fragment, ReactNode, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour-packages/dialog';
 import { SessionResponse } from '@/components/molecules/session-detail';
+import { deduplicateAnswerEvents } from '@/utils/session';
 
 // Create a custom hook for form handling
 const useSessionForm = (
@@ -93,20 +94,6 @@ type SessionActionDropdownMenuProps = {
   showViewResponse?: boolean;
   onDeleteSuccess?: () => void;
   onEndSuccess?: () => void;
-};
-
-// Custom hook to handle session events
-// Returns filtered and sorted answer events from session bizEvents
-const useSessionEvents = (session?: BizSession) => {
-  const bizEvents = session?.bizEvent?.sort((a, b) => {
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  });
-
-  const answerEvents = bizEvents?.filter(
-    (bizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
-  );
-
-  return { answerEvents };
 };
 
 // Dialog component for displaying session responses
@@ -255,7 +242,8 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
 
   const { isViewOnly, environment } = useAppContext();
   const navigate = useNavigate();
-  const { answerEvents } = useSessionEvents(session);
+
+  const answerEvents = deduplicateAnswerEvents(session?.bizEvent);
 
   // State for controlling different dialogs
   const [deleteOpen, setDeleteOpen] = useState(false);

@@ -41,8 +41,23 @@ export const deduplicateAnswerEvents = (bizEvents: BizEvent[] | undefined | null
   }
 
   return Array.from(eventMap.values()).sort((a, b) => {
-    const timeA = new Date(a.createdAt).getTime();
-    const timeB = new Date(b.createdAt).getTime();
-    return timeA - timeB;
+    const stepNumberA = a.data?.[EventAttributes.FLOW_STEP_NUMBER];
+    const stepNumberB = b.data?.[EventAttributes.FLOW_STEP_NUMBER];
+
+    // Handle cases where FLOW_STEP_NUMBER might be missing or undefined
+    if (stepNumberA === undefined && stepNumberB === undefined) {
+      return 0;
+    }
+    if (stepNumberA === undefined) {
+      return 1; // Put undefined values at the end
+    }
+    if (stepNumberB === undefined) {
+      return -1; // Put undefined values at the end
+    }
+
+    // Convert to numbers and sort ascending
+    const numA = Number(stepNumberA);
+    const numB = Number(stepNumberB);
+    return numA - numB;
   });
 };

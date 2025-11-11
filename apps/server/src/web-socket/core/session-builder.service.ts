@@ -403,61 +403,6 @@ export class SessionBuilderService {
   }
 
   /**
-   * Rebuild content session with regenerated data
-   * @param contentSession - The existing content session
-   * @param customContentVersion - The custom content version
-   * @param socketData - The client data
-   * @returns Rebuilt content session or null if rebuild fails
-   */
-  async rebuildContentSession(
-    customContentVersion: CustomContentVersion,
-    contentSession: CustomContentSession,
-    socketData: SocketData,
-  ): Promise<CustomContentSession | null> {
-    const { environment, externalUserId, externalCompanyId } = socketData;
-
-    // Get themes for session theme creation
-    const themes = await this.dataResolverService.fetchThemes(
-      environment,
-      externalUserId,
-      externalCompanyId,
-    );
-    const themeId = customContentVersion.themeId;
-
-    // Regenerate session theme
-    const sessionTheme = await this.createSessionTheme(
-      themes,
-      themeId,
-      environment,
-      externalUserId,
-      externalCompanyId,
-    );
-
-    if (!sessionTheme) {
-      this.logger.error(`Failed to create session theme for themeId ${themeId}`);
-      return null;
-    }
-    const contentType = contentSession.type as ContentDataType;
-
-    // Create a deep copy of the content session to avoid mutating the original
-    const newSession: CustomContentSession = {
-      ...contentSession,
-      version: {
-        ...contentSession.version,
-        theme: sessionTheme,
-      },
-    };
-    if (contentType === ContentDataType.FLOW) {
-      return await this.processFlowSession(newSession, customContentVersion, socketData, themes);
-    }
-    if (contentType === ContentDataType.CHECKLIST) {
-      return await this.processChecklistSession(newSession, customContentVersion, socketData);
-    }
-
-    return newSession;
-  }
-
-  /**
    * Extract steps attributes
    * @param steps - The steps
    * @param environment - The environment
