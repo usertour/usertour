@@ -94,6 +94,7 @@ const SessionDetailContentInner = ({
   const startEvent = session?.bizEvent?.find(
     (bizEvent: BizEvent) =>
       bizEvent.event?.codeName === BizEvents.FLOW_STARTED ||
+      bizEvent.event?.codeName === BizEvents.LAUNCHER_SEEN ||
       bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED,
   );
 
@@ -120,7 +121,8 @@ const SessionDetailContentInner = ({
     try {
       const reason =
         startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||
-        startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON];
+        startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON] ||
+        startEvent?.data?.[EventAttributes.LAUNCHER_START_REASON];
       return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason;
     } catch (_) {
       return '';
@@ -130,7 +132,8 @@ const SessionDetailContentInner = ({
   const getFieldValue = (key: string, value: any) => {
     if (
       key === EventAttributes.FLOW_START_REASON ||
-      key === EventAttributes.CHECKLIST_START_REASON
+      key === EventAttributes.CHECKLIST_START_REASON ||
+      key === EventAttributes.LAUNCHER_START_REASON
     ) {
       return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
     }
