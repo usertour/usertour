@@ -8,13 +8,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuerySessionDetailQuery } from '@usertour-packages/shared-hooks';
 import { Table, TableBody, TableCell, TableRow } from '@usertour-packages/table';
-import {
-  BizEvent,
-  BizEvents,
-  ContentDataType,
-  EventAttributes,
-  flowReasonTitleMap,
-} from '@usertour/types';
+import { BizEvent, BizEvents, ContentDataType } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
@@ -25,10 +19,15 @@ import { ChecklistProgressColumn } from '@/components/molecules/session';
 import { cn } from '@usertour/helpers';
 import { Button } from '@usertour-packages/button';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
-import { contentTypesConfig } from '@usertour-packages/shared-editor';
 import { SessionResponse } from '@/components/molecules/session-detail';
 import { ContentLoading } from '@/components/molecules/content-loading';
-import { deduplicateAnswerEvents } from '@/utils/session';
+import {
+  deduplicateAnswerEvents,
+  getEventDisplaySuffix,
+  getFieldValue,
+  getStartReasonTitle,
+  sortEventDataEntries,
+} from '@/utils/session';
 
 const SessionItemContainer = ({
   children,
@@ -116,58 +115,6 @@ const SessionDetailContentInner = ({
   });
 
   const answerEvents = deduplicateAnswerEvents(bizEvents);
-
-  const getStartReasonTitle = (startEvent: BizEvent | undefined) => {
-    try {
-      const reason =
-        startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||
-        startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON] ||
-        startEvent?.data?.[EventAttributes.LAUNCHER_START_REASON];
-      return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason;
-    } catch (_) {
-      return '';
-    }
-  };
-
-  const getFieldValue = (key: string, value: any) => {
-    if (
-      key === EventAttributes.FLOW_START_REASON ||
-      key === EventAttributes.CHECKLIST_START_REASON ||
-      key === EventAttributes.LAUNCHER_START_REASON
-    ) {
-      return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
-    }
-    if (key === EventAttributes.FLOW_END_REASON || key === EventAttributes.CHECKLIST_END_REASON) {
-      return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
-    }
-    return key === 'question_type'
-      ? contentTypesConfig.find((config) => config.element.type === value)?.name
-      : typeof value === 'string'
-        ? value
-        : JSON.stringify(value);
-  };
-
-  const sortEventDataEntries = (data: Record<string, any>, attributes: typeof attributeList) => {
-    return Object.entries(data || {}).sort(([keyA], [keyB]) => {
-      // Find attributes in attributeList to determine order
-      const attrA = attributes?.find((attr) => attr.codeName === keyA);
-      const attrB = attributes?.find((attr) => attr.codeName === keyB);
-
-      // If both are in attributeList, sort by their order in the list
-      if (attrA && attrB && attributes) {
-        const indexA = attributes.indexOf(attrA);
-        const indexB = attributes.indexOf(attrB);
-        return indexA - indexB;
-      }
-
-      // If only one is in attributeList, prioritize the one in the list
-      if (attrA && !attrB) return -1;
-      if (!attrA && attrB) return 1;
-
-      // If neither is in attributeList, sort alphabetically
-      return keyA.localeCompare(keyB);
-    });
-  };
 
   return (
     <>
@@ -273,45 +220,53 @@ const SessionDetailContentInner = ({
             <Table>
               <TableBody>
                 {bizEvents ? (
-                  bizEvents.map((bizEvent: BizEvent) => (
-                    <Fragment key={bizEvent.id}>
-                      <TableRow
-                        className="cursor-pointer  h-10 group"
-                        onClick={() => handleRowClick(bizEvent.id)}
-                      >
-                        <TableCell className="w-1/4">
-                          {format(new Date(bizEvent.createdAt), 'yyyy-MM-dd HH:mm:ss')}
-                        </TableCell>
-                        <TableCell className="flex justify-between items-center">
-                          {bizEvent.event?.displayName}
-                          {expandedRowId === bizEvent.id ? (
-                            <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          ) : (
-                            <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                      {expandedRowId === bizEvent.id && bizEvent.data && (
-                        <TableRow>
-                          <TableCell colSpan={2} className="bg-gray-50 p-4">
-                            <div className="text-sm">
-                              {sortEventDataEntries(bizEvent.data, attributeList || []).map(
-                                ([key, value]) => (
-                                  <div key={key} className="py-2 border-b flex flex-row">
-                                    <span className="font-medium w-[200px] flex-none">
-                                      {attributeList?.find((attr) => attr.codeName === key)
-                                        ?.displayName || key}
-                                    </span>
-                                    <span className="grow">{getFieldValue(key, value)}</span>
-                                  </div>
-                                ),
+                  bizEvents.map((bizEvent: BizEvent) => {
+                    const displaySuffix = getEventDisplaySuffix(bizEvent, session);
+                    return (
+                      <Fragment key={bizEvent.id}>
+                        <TableRow
+                          className="cursor-pointer  h-10 group"
+                          onClick={() => handleRowClick(bizEvent.id)}
+                        >
+                          <TableCell className="w-1/4">
+                            {format(new Date(bizEvent.createdAt), 'yyyy-MM-dd HH:mm:ss')}
+                          </TableCell>
+                          <TableCell className="flex justify-between items-center">
+                            <span>
+                              {bizEvent.event?.displayName}
+                              {displaySuffix && (
+                                <span className="text-muted-foreground ml-1">{displaySuffix}</span>
                               )}
-                            </div>
+                            </span>
+                            {expandedRowId === bizEvent.id ? (
+                              <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            ) : (
+                              <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            )}
                           </TableCell>
                         </TableRow>
-                      )}
-                    </Fragment>
-                  ))
+                        {expandedRowId === bizEvent.id && bizEvent.data && (
+                          <TableRow>
+                            <TableCell colSpan={2} className="bg-gray-50 p-4">
+                              <div className="text-sm">
+                                {sortEventDataEntries(bizEvent.data, attributeList || []).map(
+                                  ([key, value]) => (
+                                    <div key={key} className="py-2 border-b flex flex-row">
+                                      <span className="font-medium w-[200px] flex-none">
+                                        {attributeList?.find((attr) => attr.codeName === key)
+                                          ?.displayName || key}
+                                      </span>
+                                      <span className="grow">{getFieldValue(key, value)}</span>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell className="h-24 text-center">No events found.</TableCell>
