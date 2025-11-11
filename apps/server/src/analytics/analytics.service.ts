@@ -1186,7 +1186,7 @@ export class AnalyticsService {
       (sum, item) => sum + Number(item.answer) * item.count,
       0,
     );
-    const average = total > 0 ? Number((weightedSum / total).toFixed(2)) : 0;
+    const average = total > 0 ? Math.round((weightedSum / total) * 10) / 10 : 0;
 
     return {
       average,
