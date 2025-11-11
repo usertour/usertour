@@ -179,6 +179,9 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
               <p>
                 The {contentType} may auto-start up to {data.times} times, with at least{' '}
                 {data.duration} {data.unit} passing in between.
+                <br />
+                <br />
+                Note that manual and programmatic starts are included in the limit.
               </p>
             </TooltipContent>
           </Tooltip>

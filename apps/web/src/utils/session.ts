@@ -40,5 +40,9 @@ export const deduplicateAnswerEvents = (bizEvents: BizEvent[] | undefined | null
     }
   }
 
-  return Array.from(eventMap.values());
+  return Array.from(eventMap.values()).sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+    return timeA - timeB;
+  });
 };

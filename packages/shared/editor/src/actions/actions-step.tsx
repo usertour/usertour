@@ -312,14 +312,19 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
     () => (
       <DropdownMenuRadioGroup value={stepCvid}>
         <ScrollArea className={cn(availableSteps.length > 9 ? 'h-72' : '')}>
-          {availableSteps.map((item: Step, index: number) => (
-            <StepItem
-              key={item.cvid}
-              item={item}
-              index={index}
-              onSelect={() => handleSelectStep(item.cvid as string)}
-            />
-          ))}
+          {availableSteps.map((item: Step) => {
+            // Find the real step index in the original steps array
+            const realStepIndex =
+              currentVersion?.steps?.findIndex((step: Step) => step.cvid === item.cvid) ?? 0;
+            return (
+              <StepItem
+                key={item.cvid}
+                item={item}
+                index={realStepIndex}
+                onSelect={() => handleSelectStep(item.cvid as string)}
+              />
+            );
+          })}
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="cursor-pointer">Add new step</DropdownMenuSubTrigger>
             <DropdownMenuSubContent>

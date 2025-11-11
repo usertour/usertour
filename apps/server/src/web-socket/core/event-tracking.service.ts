@@ -30,7 +30,7 @@ import {
 } from '@/common/types/schema';
 import { CustomContentVersion } from '@/common/types/content';
 import { deepmerge } from 'deepmerge-ts';
-import { isUndefined } from '@usertour/helpers';
+import { isNullish } from '@usertour/helpers';
 import { extractStepBindToAttribute } from '@/utils/content-question';
 import { BizService } from '@/biz/biz.service';
 
@@ -268,13 +268,14 @@ export class EventTrackingService {
     };
 
     // Map answer fields based on the original implementation
-    if (events[EventAttributes.NUMBER_ANSWER]) {
+    // Use isNullish to handle falsy values like 0, empty string, or empty array
+    if (!isNullish(events[EventAttributes.NUMBER_ANSWER])) {
       answerData.numberAnswer = events[EventAttributes.NUMBER_ANSWER] as number;
     }
-    if (events[EventAttributes.TEXT_ANSWER]) {
+    if (!isNullish(events[EventAttributes.TEXT_ANSWER])) {
       answerData.textAnswer = events[EventAttributes.TEXT_ANSWER] as string;
     }
-    if (events[EventAttributes.LIST_ANSWER]) {
+    if (!isNullish(events[EventAttributes.LIST_ANSWER])) {
       answerData.listAnswer = events[EventAttributes.LIST_ANSWER] as string[];
     }
 
@@ -798,15 +799,15 @@ export class EventTrackingService {
 
     let answer = null;
 
-    if (!isUndefined(params.listAnswer)) {
+    if (!isNullish(params.listAnswer)) {
       eventData[EventAttributes.LIST_ANSWER] = params.listAnswer;
       answer = params.listAnswer;
     }
-    if (!isUndefined(params.numberAnswer)) {
+    if (!isNullish(params.numberAnswer)) {
       eventData[EventAttributes.NUMBER_ANSWER] = params.numberAnswer;
       answer = params.numberAnswer;
     }
-    if (!isUndefined(params.textAnswer)) {
+    if (!isNullish(params.textAnswer)) {
       eventData[EventAttributes.TEXT_ANSWER] = params.textAnswer;
       answer = params.textAnswer;
     }
