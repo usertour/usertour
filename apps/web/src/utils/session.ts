@@ -150,17 +150,17 @@ export const getEventDisplaySuffix = (
 
   // Handle QUESTION_ANSWERED event
   if (eventCodeName === BizEvents.QUESTION_ANSWERED) {
-    const questionType = bizEvent.data?.[EventAttributes.QUESTION_TYPE];
-    const questionTypeName = questionType
-      ? contentTypesConfig.find((config) => config.element.type === questionType)?.name
-      : '';
+    const questionName = bizEvent.data?.[EventAttributes.QUESTION_NAME];
+    // const questionTypeName = questionType
+    //   ? contentTypesConfig.find((config) => config.element.type === questionType)?.name
+    //   : '';
     const answerValue = getQuestionAnswerValue(bizEvent);
 
-    if (questionTypeName && answerValue) {
-      return ` ${questionTypeName}: ${answerValue}`;
+    if (questionName && answerValue) {
+      return ` ${questionName}: ${answerValue}`;
     }
-    if (questionTypeName) {
-      return ` ${questionTypeName}`;
+    if (questionName) {
+      return ` ${questionName}`;
     }
     if (answerValue) {
       return ` ${answerValue}`;
