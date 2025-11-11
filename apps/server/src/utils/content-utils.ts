@@ -210,7 +210,7 @@ export const isAllowedByAutoStartRulesSetting = (
 
   const { frequency, startIfNotComplete } = customContentVersion.config.autoStartRulesSetting;
   const completedSessions = customContentVersion.session.completedSessions;
-  const dismissedSessions = customContentVersion.session.dismissedSessions;
+  const totalSessions = customContentVersion.session.totalSessions;
 
   // if the content is completed, it will not be shown again when startIfNotComplete is true
   if (startIfNotComplete && completedSessions > 0) {
@@ -243,7 +243,7 @@ export const isAllowedByAutoStartRulesSetting = (
 
   if (frequency.frequency === Frequency.ONCE) {
     //if the content is dismissed, it will not be shown again when the frequency is once
-    if (dismissedSessions > 0) {
+    if (totalSessions > 0) {
       return false;
     }
     return true;
@@ -259,7 +259,7 @@ export const isAllowedByAutoStartRulesSetting = (
   const dismissedEventDate = new Date(dismissedEvent.createdAt);
 
   if (frequency.frequency === Frequency.MULTIPLE) {
-    if (frequency.every.times && dismissedSessions >= frequency.every.times) {
+    if (frequency.every.times && totalSessions >= frequency.every.times) {
       return false;
     }
   }
