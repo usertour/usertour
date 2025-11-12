@@ -111,18 +111,6 @@ export const getEventDisplaySuffix = (
 ): string => {
   const eventCodeName = bizEvent.event?.codeName;
 
-  // Events that should display session content name
-  const contentNameEvents = [
-    BizEvents.FLOW_STARTED,
-    BizEvents.LAUNCHER_SEEN,
-    BizEvents.CHECKLIST_STARTED,
-    BizEvents.FLOW_ENDED,
-    BizEvents.FLOW_COMPLETED,
-    BizEvents.CHECKLIST_DISMISSED,
-    BizEvents.CHECKLIST_COMPLETED,
-    BizEvents.LAUNCHER_DISMISSED,
-  ];
-
   // Events that should display flow step name
   const flowStepNameEvents = [
     BizEvents.FLOW_STEP_SEEN,
@@ -130,22 +118,15 @@ export const getEventDisplaySuffix = (
     BizEvents.FLOW_STEP_COMPLETED,
   ];
 
-  if (contentNameEvents.includes(eventCodeName as BizEvents)) {
-    return session?.content?.name ? ` ${session.content.name}` : '';
-  }
-
   if (flowStepNameEvents.includes(eventCodeName as BizEvents)) {
     const flowStepName = bizEvent.data?.[EventAttributes.FLOW_STEP_NAME];
     const flowStepNumber = bizEvent.data?.[EventAttributes.FLOW_STEP_NUMBER];
 
-    if (flowStepName) {
-      const stepNumberDisplay =
-        flowStepNumber !== undefined && flowStepNumber !== null
-          ? ` ${Number(flowStepNumber) + 1}`
-          : '';
-      return ` ${flowStepName}${stepNumberDisplay}`;
-    }
-    return '';
+    const stepNumberDisplay =
+      flowStepNumber !== undefined && flowStepNumber !== null
+        ? `${Number(flowStepNumber) + 1}`
+        : '';
+    return ` Step ${stepNumberDisplay}${flowStepName ? `. ${flowStepName}` : ''}`;
   }
 
   // Handle QUESTION_ANSWERED event
@@ -166,7 +147,7 @@ export const getEventDisplaySuffix = (
     return '';
   }
 
-  return '';
+  return session?.content?.name ? ` ${session.content.name}` : '';
 };
 
 /**
