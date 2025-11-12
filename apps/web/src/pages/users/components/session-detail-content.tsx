@@ -188,7 +188,7 @@ const SessionDetailContentInner = ({
               className="text-primary hover:underline underline-offset-2"
               to={`/env/${environmentId}/${routeContentTypes}/${session?.content?.id}/versions`}
             >
-              V{session?.version?.sequence}
+              V{session?.version?.sequence + 1}
             </Link>
           </div>
           <div className="border-b flex flex-col pb-1">

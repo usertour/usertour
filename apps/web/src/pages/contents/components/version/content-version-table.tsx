@@ -58,7 +58,7 @@ export const ContentVersionTable = () => {
             <TableRow key={version.id} onClick={() => {}}>
               <TableCell>
                 <div className="flex flex-row items-center">
-                  <div>v{version.sequence}</div>
+                  <div>v{version.sequence + 1}</div>
                   {getPublishedEnvironmentsForVersion(version.id)?.map((name) => (
                     <div
                       key={name}
