@@ -12,7 +12,7 @@ import { BizEvent, BizEvents, ContentDataType } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { LauncherProgressColumn } from '@/components/molecules/session';
+import { ChecklistItemsColumn, LauncherProgressColumn } from '@/components/molecules/session';
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
@@ -35,7 +35,7 @@ const SessionItemContainer = ({
 }: { children: React.ReactNode; className?: string }) => {
   return (
     <div
-      className={cn('flex flex-col w-full px-4 py-6 grow shadow bg-white rounded-lg', className)}
+      className={cn('flex flex-col w-full px-6 py-6 grow shadow bg-white rounded-lg', className)}
     >
       {children}
     </div>
@@ -193,7 +193,10 @@ const SessionDetailContentInner = ({
         <SessionItemContainer>
           <div className="mb-2 flex flex-row items-center font-bold	">Progress</div>
           {contentType === ContentDataType.CHECKLIST && (
-            <ChecklistProgressColumn original={session} eventList={eventList} version={version} />
+            <div className="flex flex-col gap-8">
+              <ChecklistProgressColumn original={session} eventList={eventList} version={version} />
+              <ChecklistItemsColumn original={session} eventList={eventList} version={version} />
+            </div>
           )}
 
           {contentType === ContentDataType.FLOW && (

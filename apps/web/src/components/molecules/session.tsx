@@ -1,4 +1,4 @@
-import { CancelIcon } from '@usertour-packages/icons';
+import { CancelIcon, CheckmarkIcon } from '@usertour-packages/icons';
 import { TooltipContent } from '@usertour-packages/tooltip';
 import { PlayIcon } from '@usertour-packages/icons';
 import { Tooltip, TooltipTrigger } from '@usertour-packages/tooltip';
@@ -6,6 +6,7 @@ import { TooltipProvider } from '@usertour-packages/tooltip';
 import { BizEvents, BizSession, ChecklistData, ContentVersion } from '@usertour/types';
 import { Event } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
+import { cn } from '@usertour/helpers';
 
 const LauncherProgressColumn = ({
   original,
@@ -109,6 +110,50 @@ const ChecklistProgressColumn = ({
 };
 ChecklistProgressColumn.displayName = 'ChecklistProgressColumn';
 
+const ChecklistItemsColumn = ({
+  original,
+  eventList,
+  version,
+}: { original: BizSession; eventList: Event[]; version: ContentVersion }) => {
+  const { bizEvent } = original;
+  const data = version?.data as ChecklistData;
+
+  if (!eventList || !bizEvent || bizEvent.length === 0 || !data) {
+    return <></>;
+  }
+  const checklistItemIds = bizEvent
+    .filter((e) => e.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED)
+    .map((e) => e.data?.checklist_task_id);
+
+  return (
+    <>
+      <div className="flex flex-col gap-2">
+        {data.items.map((item) => (
+          <div key={item.id} className={cn('flex items-center')}>
+            <span
+              className={cn(
+                'flex-none w-8 h-8 border-2 border-transparent rounded-full flex justify-center items-center mr-3 text-sm text-white',
+                checklistItemIds.includes(item.id)
+                  ? 'bg-success'
+                  : 'border border-foreground/25 bg-background',
+              )}
+            >
+              {checklistItemIds.includes(item.id) && (
+                <CheckmarkIcon className="w-5 h-5 stroke-white" />
+              )}
+            </span>
+            <div className={cn('grow flex flex-col')}>
+              <span className="font-bold">{item.name}</span>
+              {item.description && <span className="text-xs opacity-75">{item.description}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
+ChecklistItemsColumn.displayName = 'ChecklistItemsColumn';
+
 const FlowProgressColumn = ({
   original,
   eventList,
@@ -168,4 +213,9 @@ const FlowProgressColumn = ({
 };
 FlowProgressColumn.displayName = 'FlowProgressColumn';
 
-export { LauncherProgressColumn, ChecklistProgressColumn, FlowProgressColumn };
+export {
+  LauncherProgressColumn,
+  ChecklistProgressColumn,
+  FlowProgressColumn,
+  ChecklistItemsColumn,
+};
