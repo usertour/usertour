@@ -6,6 +6,7 @@ import {
   flowReasonTitleMap,
 } from '@usertour/types';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
+import { formatDistanceStrict } from 'date-fns';
 
 /**
  * Deduplicates answer events by QUESTION_CVID, keeping the latest event for each unique question.
@@ -255,4 +256,60 @@ export const getFieldValue = (key: string, value: any): string | number => {
     : typeof value === 'string'
       ? value
       : JSON.stringify(value);
+};
+
+/**
+ * Get progress status information from business events
+ * Extracts completion status, dismissal status, and calculates completion duration
+ * Supports both Flow and Checklist content types with different event code names
+ *
+ * @param bizEvents - Array of business events to analyze
+ * @param completedEventCodeName - Event code name for completion (e.g., FLOW_COMPLETED or CHECKLIST_COMPLETED)
+ * @param dismissedEventCodeName - Event code name for dismissal (e.g., FLOW_ENDED or CHECKLIST_DISMISSED)
+ * @returns Object containing completion status, dismissal status, events, and formatted completion date
+ */
+export const getProgressStatus = (
+  bizEvents: BizEvent[] | undefined | null,
+  completedEventCodeName: BizEvents,
+  dismissedEventCodeName: BizEvents,
+): {
+  completeBizEvent: BizEvent | undefined;
+  firstEvent: BizEvent | undefined;
+  dismissedBizEvent: BizEvent | undefined;
+  completeDate: string | null;
+  isComplete: boolean;
+  isDismissed: boolean;
+} => {
+  if (!bizEvents || bizEvents.length === 0) {
+    return {
+      completeBizEvent: undefined,
+      firstEvent: undefined,
+      dismissedBizEvent: undefined,
+      completeDate: null,
+      isComplete: false,
+      isDismissed: false,
+    };
+  }
+
+  const completeBizEvent = bizEvents.find((e) => e.event?.codeName === completedEventCodeName);
+  const dismissedBizEvent = bizEvents.find((e) => e.event?.codeName === dismissedEventCodeName);
+
+  // Sort events by creation time to get the first event (create a copy to avoid mutating the original array)
+  const firstEvent = [...bizEvents].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  )[0];
+
+  const completeDate =
+    completeBizEvent && firstEvent
+      ? formatDistanceStrict(new Date(completeBizEvent.createdAt), new Date(firstEvent.createdAt))
+      : null;
+
+  return {
+    completeBizEvent,
+    firstEvent,
+    dismissedBizEvent,
+    completeDate,
+    isComplete: !!completeBizEvent,
+    isDismissed: !!dismissedBizEvent,
+  };
 };

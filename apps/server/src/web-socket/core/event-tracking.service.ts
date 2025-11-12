@@ -62,10 +62,23 @@ export class EventTrackingService {
    * @param sessionId - Session ID
    * @returns Business session with user and version steps, or null if not found
    */
-  private async findBizSessionWithUserAndSteps(client: Tx | PrismaService, sessionId: string) {
+  async findBizSessionWithUserAndSteps(client: Tx | PrismaService, sessionId: string) {
     return await client.bizSession.findUnique({
       where: { id: sessionId },
       include: { bizUser: true, version: { include: { steps: { orderBy: { sequence: 'asc' } } } } },
+    });
+  }
+
+  /**
+   * Find business session with user and events
+   * @param client - Prisma client or transaction client
+   * @param sessionId - Session ID
+   * @returns Business session with user and events, or null if not found
+   */
+  async findBizSessionWithEvents(sessionId: string): Promise<BizSessionWithEvents | null> {
+    return await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, version: true, bizEvent: { include: { event: true } } },
     });
   }
 
@@ -996,6 +1009,42 @@ export class EventTrackingService {
       environment,
       externalUserId,
       BizEvents.CHECKLIST_SEEN,
+      bizSession.id,
+      eventData,
+      clientContext,
+    );
+  }
+
+  /**
+   * Track checklist completed event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistCompletedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, content: true, version: true },
+    });
+    if (!bizSession) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
+    const eventData = {
+      [EventAttributes.CHECKLIST_ID]: content.id,
+      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+      [EventAttributes.CHECKLIST_NAME]: content.name,
+    };
+    const externalUserId = String(bizSession.bizUser.externalId);
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      BizEvents.CHECKLIST_COMPLETED,
       bizSession.id,
       eventData,
       clientContext,

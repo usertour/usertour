@@ -16,6 +16,7 @@ import {
   hasContentSessionChanges,
   filterAvailableLauncherContentVersions,
   findCurrentStepCvid,
+  isSendChecklistCompletedEvent,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -365,9 +366,11 @@ export class ContentOrchestratorService {
       cleanupContentTypes: [ContentDataType.CHECKLIST],
     };
     const previousSession = extractSessionByContentType(socketData, ContentDataType.CHECKLIST);
+    const currentItems = session?.version?.checklist?.items;
+    const previousItems = previousSession?.version?.checklist?.items;
     const newCompletedItems = extractChecklistNewCompletedItems(
-      session?.version?.checklist?.items ?? [],
-      previousSession?.version?.checklist?.items ?? [],
+      currentItems ?? [],
+      previousItems ?? [],
     );
 
     if (newCompletedItems.length > 0) {
@@ -383,6 +386,18 @@ export class ContentOrchestratorService {
       await Promise.all(trackingPromises);
       // Emit events for all tasks
       this.socketOperationService.emitChecklistTasksCompleted(socket, newCompletedItems);
+    }
+    const latestSession = await this.eventTrackingService.findBizSessionWithEvents(session.id);
+    if (isSendChecklistCompletedEvent(currentItems, latestSession)) {
+      const sendChecklistCompletedEvent =
+        await this.eventTrackingService.trackChecklistCompletedEvent(
+          session.id,
+          environment,
+          clientContext,
+        );
+      if (!sendChecklistCompletedEvent) {
+        return false;
+      }
     }
     const checklistData = session.version.checklist;
     if (checklistData) {

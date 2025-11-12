@@ -5,7 +5,7 @@ import { Tooltip, TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import { BizEvents, BizSession, ChecklistData, ContentVersion } from '@usertour/types';
 import { Event } from '@usertour/types';
-import { formatDistanceStrict } from 'date-fns';
+import { getProgressStatus } from '@/utils/session';
 
 const LauncherProgressColumn = ({
   original,
@@ -62,17 +62,11 @@ const ChecklistProgressColumn = ({
     return <></>;
   }
 
-  const completeBizEvent = bizEvent.find(
-    (e) => e.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
+  const { completeDate, isComplete, isDismissed } = getProgressStatus(
+    bizEvent,
+    BizEvents.CHECKLIST_COMPLETED,
+    BizEvents.CHECKLIST_DISMISSED,
   );
-  const dismissedBizEvent = bizEvent.find(
-    (e) => e.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
-  );
-
-  // Sort events by creation time
-  const firstEvent = bizEvent.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  )[0];
 
   const checklistItemIds = bizEvent
     .filter((e) => e.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED)
@@ -81,13 +75,6 @@ const ChecklistProgressColumn = ({
   const completedItemIds = data.items.filter((item) => checklistItemIds.includes(item.id));
 
   const progress = Math.floor((completedItemIds.length / data.items.length) * 100);
-
-  const completeDate =
-    completeBizEvent && firstEvent
-      ? formatDistanceStrict(new Date(completeBizEvent.createdAt), new Date(firstEvent.createdAt))
-      : null;
-  const isComplete = !!completeBizEvent;
-  const isDismissed = !!dismissedBizEvent;
 
   return (
     <div className="flex flex-row items-center space-x-3">
@@ -131,24 +118,15 @@ const FlowProgressColumn = ({
     return <></>;
   }
 
-  const completeBizEvent = bizEvent.find((e) => e.event?.codeName === BizEvents.FLOW_COMPLETED);
+  const { completeDate, isComplete, isDismissed } = getProgressStatus(
+    bizEvent,
+    BizEvents.FLOW_COMPLETED,
+    BizEvents.FLOW_ENDED,
+  );
+
   const lastSeenBizEvent = bizEvent
     .filter((e) => e.event?.codeName === BizEvents.FLOW_STEP_SEEN)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-
-  // Sort events by creation time
-  const firstEvent = bizEvent.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  )[0];
-
-  const endedBizEvent = bizEvent.find((e) => e.event?.codeName === BizEvents.FLOW_ENDED);
-
-  const completeDate =
-    completeBizEvent && firstEvent
-      ? formatDistanceStrict(new Date(completeBizEvent.createdAt), new Date(firstEvent.createdAt))
-      : null;
-  const isComplete = !!completeBizEvent;
-  const isDismissed = !!endedBizEvent;
 
   return (
     <div className="flex flex-row items-center space-x-3">

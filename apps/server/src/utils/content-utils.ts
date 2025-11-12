@@ -1669,3 +1669,76 @@ export const hasContentSessionChanges = (
 
   return false;
 };
+
+/**
+ * Checks the number of visible items
+ * @param items - The items to check
+ * @returns The number of visible items
+ */
+export const checklistVisibleItemsCount = (items: ChecklistItemType[]): number => {
+  return items.filter((item) => item.isVisible).length;
+};
+
+/**
+ * Checks the number of completed items
+ * @param items - The items to check
+ * @returns The number of completed items
+ */
+export const checklistCompletedItemsCount = (items: ChecklistItemType[]): number => {
+  return items.filter((item) => item.isVisible).filter((item) => item.isCompleted).length;
+};
+
+export const isValidChecklistCompletedEvent = (bizEvents: BizEventWithEvent[] | undefined) => {
+  // Find the latest CHECKLIST_TASK_COMPLETED event
+  const taskCompletedEvents =
+    bizEvents?.filter((event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED) ||
+    [];
+
+  if (taskCompletedEvents.length === 0) {
+    return false;
+  }
+
+  const latestTaskCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
+    return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+  });
+
+  // Find all events that occurred after the latest CHECKLIST_TASK_COMPLETED
+  const eventsAfterTaskCompleted =
+    bizEvents?.filter(
+      (event) => new Date(event.createdAt) > new Date(latestTaskCompletedEvent.createdAt),
+    ) || [];
+
+  // Check if there's no CHECKLIST_COMPLETED event after the latest CHECKLIST_TASK_COMPLETED
+  const hasChecklistCompletedAfter = eventsAfterTaskCompleted.some(
+    (event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
+  );
+
+  return !hasChecklistCompletedAfter;
+};
+
+/**
+ * Checks if a checklist is all completed
+ * @param content - The content to check
+ * @returns True if the checklist is all completed, false otherwise
+ */
+export const isSendChecklistCompletedEvent = (
+  items: ChecklistItemType[] = [],
+  latestSession?: BizSessionWithEvents | undefined,
+) => {
+  const visibleItemsCount = checklistVisibleItemsCount(items);
+  const completedItemsCount = checklistCompletedItemsCount(items);
+
+  if (completedItemsCount === 0) {
+    return false;
+  }
+
+  if (!isValidChecklistCompletedEvent(latestSession?.bizEvent)) {
+    return false;
+  }
+
+  if (visibleItemsCount === completedItemsCount) {
+    return true;
+  }
+
+  return false;
+};
