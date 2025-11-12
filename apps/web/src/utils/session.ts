@@ -151,9 +151,6 @@ export const getEventDisplaySuffix = (
   // Handle QUESTION_ANSWERED event
   if (eventCodeName === BizEvents.QUESTION_ANSWERED) {
     const questionName = bizEvent.data?.[EventAttributes.QUESTION_NAME];
-    // const questionTypeName = questionType
-    //   ? contentTypesConfig.find((config) => config.element.type === questionType)?.name
-    //   : '';
     const answerValue = getQuestionAnswerValue(bizEvent);
 
     if (questionName && answerValue) {
