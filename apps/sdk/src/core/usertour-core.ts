@@ -821,7 +821,7 @@ export class UsertourCore extends Evented {
   private expandChecklist() {
     if (!this.activatedTour && this.activatedChecklist) {
       if (this.activatedChecklist.hasUnackedTasks() || this.activatedChecklist.isExpanded()) {
-        this.activatedChecklist.expand(true, true);
+        this.activatedChecklist.expand(true);
       }
     }
   }
@@ -831,7 +831,7 @@ export class UsertourCore extends Evented {
    */
   private collapseChecklist() {
     if (this.activatedChecklist) {
-      this.activatedChecklist.expand(false, false);
+      this.activatedChecklist.expand(false);
     }
   }
 

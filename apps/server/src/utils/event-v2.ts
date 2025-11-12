@@ -122,15 +122,15 @@ const EVENT_VALIDATION_RULES = {
       return !hasChecklistCompletedAfter;
     },
   },
-  [BizEvents.CHECKLIST_TASK_CLICKED]: {
-    validate: (bizEvents: BizSession['bizEvent'], events: any) =>
-      !bizEvents?.some(
-        (event) =>
-          event.event?.codeName === BizEvents.CHECKLIST_TASK_CLICKED &&
-          event.data?.[EventAttributes.CHECKLIST_TASK_ID] ===
-            events[EventAttributes.CHECKLIST_TASK_ID],
-      ),
-  },
+  // [BizEvents.CHECKLIST_TASK_CLICKED]: {
+  //   validate: (bizEvents: BizSession['bizEvent'], events: any) =>
+  //     !bizEvents?.some(
+  //       (event) =>
+  //         event.event?.codeName === BizEvents.CHECKLIST_TASK_CLICKED &&
+  //         event.data?.[EventAttributes.CHECKLIST_TASK_ID] ===
+  //           events[EventAttributes.CHECKLIST_TASK_ID],
+  //     ),
+  // },
   [BizEvents.CHECKLIST_TASK_COMPLETED]: {
     validate: (bizEvents: BizSession['bizEvent'], events: any) =>
       !bizEvents?.some(

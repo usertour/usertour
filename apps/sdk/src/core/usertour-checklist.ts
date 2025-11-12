@@ -82,7 +82,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * @param expanded - Whether the checklist should be expanded or collapsed
    * @returns Promise that resolves when the state update is complete
    */
-  async expand(expanded: boolean, reportEvent = false): Promise<void> {
+  async expand(expanded: boolean, reportEvent = true): Promise<void> {
     const store = this.getStoreData();
     const sessionId = this.getSessionId();
     if (!store) {
@@ -187,7 +187,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * @param expanded - Whether the checklist is expanded
    */
   async handleExpandedChange(expanded: boolean): Promise<void> {
-    await this.expand(expanded, true);
+    await this.expand(expanded);
   }
 
   /**

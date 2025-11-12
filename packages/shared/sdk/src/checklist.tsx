@@ -750,15 +750,22 @@ const ChecklistItem = (props: ChecklistItemProps) => {
     }
   }, [isCompleted]);
 
+  // Calculate cursor and interaction styles
+  const cursorStyle = useMemo(() => {
+    if (!isClickable) {
+      return 'cursor-not-allowed opacity-50';
+    }
+    if (item.isCompleted && !item?.clickedActions?.length) {
+      return 'cursor-default';
+    }
+    return 'cursor-pointer';
+  }, [isClickable, item.isCompleted, item?.clickedActions?.length]);
+
   return (
     <div
       className={cn(
-        'flex items-center cursor-pointer px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
-        isClickable
-          ? item.isCompleted
-            ? 'cursor-default'
-            : 'cursor-pointer'
-          : 'cursor-not-allowed opacity-50',
+        'flex items-center px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
+        cursorStyle,
       )}
       onClick={() => (isClickable ? onClick(item, index) : undefined)}
     >
