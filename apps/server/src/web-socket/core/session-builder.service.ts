@@ -106,6 +106,22 @@ export class SessionBuilderService {
   }
 
   /**
+   * Update the version ID for a biz session
+   * @param sessionId - The session ID
+   * @param versionId - The version ID
+   * @returns The updated biz session or null if not found
+   */
+  async updateBizSessionVersionId(
+    sessionId: string,
+    versionId: string,
+  ): Promise<BizSession | null> {
+    return await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: { versionId },
+    });
+  }
+
+  /**
    * Get theme settings
    * @param themes - The themes
    * @param themeId - The theme ID
@@ -400,6 +416,32 @@ export class SessionBuilderService {
 
     session.version.launcher = { ...launcher };
     return session;
+  }
+
+  /**
+   * Sync session version ID if published version differs from custom version
+   * This ensures the biz session's versionId is updated to match the published version
+   * when the content is using a draft/custom version that differs from published
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   */
+  async syncSessionVersionIfNeeded(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+  ): Promise<void> {
+    if (!session.id) {
+      return;
+    }
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: session.id },
+    });
+    if (!bizSession) {
+      return;
+    }
+
+    if (bizSession.versionId !== customContentVersion.id) {
+      await this.updateBizSessionVersionId(bizSession.id, customContentVersion.id);
+    }
   }
 
   /**

@@ -126,6 +126,7 @@ const SessionDetailContentInner = ({
 
   const startReason = getStartReasonTitle(contentType, startEvent);
   const endReason = getEndReasonTitle(contentType, endEvent);
+  const routeContentTypes = `${contentType}s`;
 
   return (
     <>
@@ -176,7 +177,7 @@ const SessionDetailContentInner = ({
             <span className="text-sm text-foreground/60 capitalize">{content.type}</span>
             <Link
               className="text-primary hover:underline underline-offset-2"
-              to={`/env/${environmentId}/${content.type}s/${session?.content?.id}/detail`}
+              to={`/env/${environmentId}/${routeContentTypes}/${session?.content?.id}/detail`}
             >
               {session?.content?.name}
             </Link>
@@ -185,7 +186,7 @@ const SessionDetailContentInner = ({
             <span className="text-sm text-foreground/60">Version</span>
             <Link
               className="text-primary hover:underline underline-offset-2"
-              to={`/env/${environmentId}/flows/${session?.content?.id}/versions`}
+              to={`/env/${environmentId}/${routeContentTypes}/${session?.content?.id}/versions`}
             >
               V{session?.version?.sequence}
             </Link>

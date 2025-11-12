@@ -790,6 +790,7 @@ export class ContentOrchestratorService {
     contentType: ContentDataType,
     evaluatedContentVersion: CustomContentVersion,
   ): Promise<CustomContentVersion> {
+    // For checklist, always return the evaluated content version (the new published version)
     if (
       !sessionIsAvailable(evaluatedContentVersion.session.latestSession, contentType) ||
       contentType === ContentDataType.CHECKLIST
@@ -1071,12 +1072,28 @@ export class ContentOrchestratorService {
     }
 
     // Create content session
-    return await this.sessionBuilderService.createContentSession(
+    const session = await this.sessionBuilderService.createContentSession(
       customContentVersion,
       socketData,
       sessionId,
       currentStepCvid,
     );
+
+    if (!session) {
+      return null;
+    }
+
+    // Sync session version ID for content types that require it
+    // This ensures biz session versionId matches the published version
+    // Only sync when biz session exists (not skipped)
+    if (!skipBizSession) {
+      const contentType = customContentVersion.content.type as ContentDataType;
+      if (contentType === ContentDataType.CHECKLIST || contentType === ContentDataType.LAUNCHER) {
+        await this.sessionBuilderService.syncSessionVersionIfNeeded(session, customContentVersion);
+      }
+    }
+
+    return session;
   }
 
   /**
