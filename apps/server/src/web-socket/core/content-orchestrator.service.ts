@@ -775,7 +775,10 @@ export class ContentOrchestratorService {
     contentType: ContentDataType,
     evaluatedContentVersion: CustomContentVersion,
   ): Promise<CustomContentVersion> {
-    if (!sessionIsAvailable(evaluatedContentVersion.session.latestSession, contentType)) {
+    if (
+      !sessionIsAvailable(evaluatedContentVersion.session.latestSession, contentType) ||
+      contentType === ContentDataType.CHECKLIST
+    ) {
       return evaluatedContentVersion;
     }
     const latestActivatedContentVersionId =
