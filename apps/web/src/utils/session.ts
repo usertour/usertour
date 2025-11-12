@@ -2,6 +2,7 @@ import {
   Attribute,
   BizEvent,
   BizEvents,
+  ContentDataType,
   EventAttributes,
   flowReasonTitleMap,
 } from '@usertour/types';
@@ -217,7 +218,13 @@ export const sortEventDataEntries = (
  * @param startEvent - Business event containing start reason data
  * @returns Formatted start reason title or empty string
  */
-export const getStartReasonTitle = (startEvent: BizEvent | undefined): string => {
+export const getStartReasonTitle = (
+  contentType: ContentDataType,
+  startEvent: BizEvent | undefined,
+): string => {
+  if (contentType === ContentDataType.LAUNCHER) {
+    return 'Launcher seen';
+  }
   try {
     const reason =
       startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||

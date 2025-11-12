@@ -187,7 +187,7 @@ const SessionDetailContentInner = ({
           </div>
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">Start reason</span>
-            <span>{getStartReasonTitle(startEvent)}</span>
+            <span>{getStartReasonTitle(contentType, startEvent)}</span>
           </div>
         </SessionItemContainer>
         <SessionItemContainer>
