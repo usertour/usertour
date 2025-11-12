@@ -235,7 +235,7 @@ const SessionDetailContentInner = ({
                             <span>
                               {bizEvent.event?.displayName}
                               {displaySuffix && (
-                                <span className="text-muted-foreground ml-1">{displaySuffix}</span>
+                                <span className="text-muted-foreground ml-2">{displaySuffix}</span>
                               )}
                             </span>
                             {expandedRowId === bizEvent.id ? (

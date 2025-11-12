@@ -98,12 +98,21 @@ export const getQuestionAnswerValue = (answerEvent: BizEvent): string => {
 };
 
 /**
+ * Events that should display flow step information
+ */
+const FLOW_STEP_DISPLAY_EVENTS = [
+  BizEvents.FLOW_STEP_SEEN,
+  BizEvents.TOOLTIP_TARGET_MISSING,
+  BizEvents.FLOW_STEP_COMPLETED,
+] as const;
+
+/**
  * Get display suffix for event based on event type
  * Returns additional information to display after event name
  *
  * @param bizEvent - Business event to get suffix for
  * @param session - Session object containing content information
- * @returns Display suffix string (with leading space) or empty string
+ * @returns Display suffix string or empty string
  */
 export const getEventDisplaySuffix = (
   bizEvent: BizEvent,
@@ -111,22 +120,30 @@ export const getEventDisplaySuffix = (
 ): string => {
   const eventCodeName = bizEvent.event?.codeName;
 
-  // Events that should display flow step name
-  const flowStepNameEvents = [
-    BizEvents.FLOW_STEP_SEEN,
-    BizEvents.TOOLTIP_TARGET_MISSING,
-    BizEvents.FLOW_STEP_COMPLETED,
-  ];
+  if (!eventCodeName) {
+    return session?.content?.name ?? '';
+  }
 
-  if (flowStepNameEvents.includes(eventCodeName as BizEvents)) {
+  // Handle flow step events
+  if (
+    FLOW_STEP_DISPLAY_EVENTS.includes(eventCodeName as (typeof FLOW_STEP_DISPLAY_EVENTS)[number])
+  ) {
     const flowStepName = bizEvent.data?.[EventAttributes.FLOW_STEP_NAME];
     const flowStepNumber = bizEvent.data?.[EventAttributes.FLOW_STEP_NUMBER];
 
-    const stepNumberDisplay =
-      flowStepNumber !== undefined && flowStepNumber !== null
-        ? `${Number(flowStepNumber) + 1}`
-        : '';
-    return ` Step ${stepNumberDisplay}${flowStepName ? `. ${flowStepName}` : ''}`;
+    const hasStepNumber = flowStepNumber !== undefined && flowStepNumber !== null;
+    const stepNumberDisplay = hasStepNumber ? `${Number(flowStepNumber) + 1}` : '';
+
+    if (stepNumberDisplay && flowStepName) {
+      return `Step ${stepNumberDisplay}. ${flowStepName}`;
+    }
+    if (stepNumberDisplay) {
+      return `Step ${stepNumberDisplay}`;
+    }
+    if (flowStepName) {
+      return flowStepName;
+    }
+    return '';
   }
 
   // Handle QUESTION_ANSWERED event
@@ -135,19 +152,27 @@ export const getEventDisplaySuffix = (
     const answerValue = getQuestionAnswerValue(bizEvent);
 
     if (questionName && answerValue) {
-      return ` ${questionName}: ${answerValue}`;
+      return `${questionName}: ${answerValue}`;
     }
     if (questionName) {
-      return ` ${questionName}`;
+      return questionName;
     }
     if (answerValue) {
-      return ` ${answerValue}`;
+      return answerValue;
     }
-
     return '';
   }
 
-  return session?.content?.name ? ` ${session.content.name}` : '';
+  // Handle checklist task events
+  if (
+    eventCodeName === BizEvents.CHECKLIST_TASK_CLICKED ||
+    eventCodeName === BizEvents.CHECKLIST_TASK_COMPLETED
+  ) {
+    return bizEvent.data?.[EventAttributes.CHECKLIST_TASK_NAME] ?? '';
+  }
+
+  // Default: return session content name for other events
+  return session?.content?.name ?? '';
 };
 
 /**
