@@ -116,6 +116,11 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
+      ClientMessageKind.DISMISS_LAUNCHER,
+      async (context, payload) => await this.service.dismissLauncher(context, payload),
+    );
+
+    register(
       ClientMessageKind.END_BATCH,
       async (context, _payload) => await this.service.endBatch(context),
     );

@@ -18,12 +18,14 @@ import {
   WebSocketContext,
   SocketAuthData,
   ActivateLauncherDto,
+  DismissLauncherDto,
 } from './web-socket-v2.dto';
 import {
   ContentDataType,
   ClientContext,
   contentStartReason,
   contentEndReason,
+  LauncherData,
 } from '@usertour/types';
 import { Server, Socket } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
@@ -339,6 +341,44 @@ export class WebSocketV2Service {
       environment,
       clientContext,
     );
+  }
+
+  /**
+   * Dismiss launcher
+   * @param socket - The socket instance
+   * @param params - The parameters for the dismiss launcher event
+   * @returns True if the event was tracked successfully
+   */
+  async dismissLauncher(context: WebSocketContext, params: DismissLauncherDto): Promise<boolean> {
+    const { server, socket, socketData } = context;
+    const { environment, clientContext } = socketData;
+    const { sessionId, endReason } = params;
+    const sessionData = await this.eventTrackingService.findSessionWithPublishedVersion(
+      sessionId,
+      environment,
+    );
+    if (!sessionData) {
+      return await this.toggleContents(server, socket, [ContentDataType.LAUNCHER]);
+    }
+    const { publishedVersion } = sessionData;
+    if (!publishedVersion) {
+      return await this.toggleContents(server, socket, [ContentDataType.LAUNCHER]);
+    }
+    const launcher = publishedVersion.data as unknown as LauncherData;
+    // Auto-dismiss after tooltip is closed if configured
+    if (launcher.tooltip?.settings?.dismissAfterFirstActivation) {
+      const success = await this.eventTrackingService.trackLauncherDismissedEvent(
+        sessionId,
+        environment,
+        clientContext,
+        endReason,
+      );
+      if (success) {
+        return await this.toggleContents(server, socket, [ContentDataType.LAUNCHER]);
+      }
+      return false;
+    }
+    return true;
   }
 
   /**

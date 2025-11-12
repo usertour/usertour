@@ -13,6 +13,7 @@ import {
   TooltipTargetMissingDto,
   FireConditionWaitTimerDto,
   ActivateLauncherDto,
+  DismissLauncherDto,
 } from '@/types/websocket';
 
 import { Socket, logger, window } from '@/utils';
@@ -396,6 +397,10 @@ export class UsertourSocket implements IUsertourSocket {
 
   async activateLauncher(params: ActivateLauncherDto, options?: BatchOptions): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.ACTIVATE_LAUNCHER, params, options);
+  }
+
+  async dismissLauncher(params: DismissLauncherDto, options?: BatchOptions): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.DISMISS_LAUNCHER, params, options);
   }
 
   // === Status Methods ===

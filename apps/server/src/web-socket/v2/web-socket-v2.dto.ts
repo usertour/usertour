@@ -44,6 +44,7 @@ export enum ClientMessageKind {
   TOGGLE_CLIENT_CONDITION = 'ToggleClientCondition',
   FIRE_CONDITION_WAIT_TIMER = 'FireConditionWaitTimer',
   ACTIVATE_LAUNCHER = 'ActivateLauncher',
+  DISMISS_LAUNCHER = 'DismissLauncher',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
   END_ALL_CONTENT = 'EndAllContent',
@@ -177,6 +178,11 @@ export type FireConditionWaitTimerDto = {
 
 export type ActivateLauncherDto = {
   sessionId: string;
+};
+
+export type DismissLauncherDto = {
+  sessionId: string;
+  endReason: string;
 };
 
 /**

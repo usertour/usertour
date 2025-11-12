@@ -158,6 +158,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
   const { project, userInfo } = useAppContext();
   const { type } = useParams();
   const projectId = project?.id;
+  const subscriptionId = project?.subscriptionId;
   useUserTracking(userInfo);
 
   if (!projectId) {
@@ -168,7 +169,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     <>
       <EnvironmentListProvider projectId={projectId}>
         <AttributeListProvider projectId={projectId}>
-          <SubscriptionProvider projectId={projectId}>
+          <SubscriptionProvider projectId={projectId} subscriptionId={subscriptionId}>
             <Helmet>
               <title>Usertour App</title>
               <body

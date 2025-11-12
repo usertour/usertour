@@ -258,6 +258,11 @@ export class BizService {
       where: { bizUserId: { in: deleteIds } },
     });
 
+    // Delete user answers
+    await tx.bizAnswer.deleteMany({
+      where: { bizUserId: { in: deleteIds } },
+    });
+
     // Delete user events
     await tx.bizEvent.deleteMany({
       where: { bizUserId: { in: deleteIds } },

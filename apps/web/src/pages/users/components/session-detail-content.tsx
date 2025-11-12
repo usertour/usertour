@@ -23,6 +23,7 @@ import { SessionResponse } from '@/components/molecules/session-detail';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import {
   deduplicateAnswerEvents,
+  getEndReasonTitle,
   getEventDisplaySuffix,
   getFieldValue,
   getStartReasonTitle,
@@ -97,6 +98,13 @@ const SessionDetailContentInner = ({
       bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED,
   );
 
+  const endEvent = session?.bizEvent?.find(
+    (bizEvent: BizEvent) =>
+      bizEvent.event?.codeName === BizEvents.FLOW_ENDED ||
+      bizEvent.event?.codeName === BizEvents.CHECKLIST_DISMISSED ||
+      bizEvent.event?.codeName === BizEvents.LAUNCHER_DISMISSED,
+  );
+
   if (!eventList || !content || !version) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
@@ -115,6 +123,9 @@ const SessionDetailContentInner = ({
   });
 
   const answerEvents = deduplicateAnswerEvents(bizEvents);
+
+  const startReason = getStartReasonTitle(contentType, startEvent);
+  const endReason = getEndReasonTitle(contentType, endEvent);
 
   return (
     <>
@@ -187,8 +198,14 @@ const SessionDetailContentInner = ({
           </div>
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">Start reason</span>
-            <span>{getStartReasonTitle(contentType, startEvent)}</span>
+            <span>{startReason}</span>
           </div>
+          {endEvent && (
+            <div className="border-b flex flex-col pb-1">
+              <span className="text-sm text-foreground/60">End reason</span>
+              <span>{endReason}</span>
+            </div>
+          )}
         </SessionItemContainer>
         <SessionItemContainer>
           <div className="mb-2 flex flex-row items-center font-bold	">Progress</div>

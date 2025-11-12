@@ -237,6 +237,31 @@ export const getStartReasonTitle = (
 };
 
 /**
+ * Get end reason title from end event
+ * Extracts the end reason from FLOW_ENDED, CHECKLIST_ENDED, or LAUNCHER_ENDED events
+ *
+ * @param endEvent - Business event containing end reason data
+ * @returns Formatted end reason title or empty string
+ */
+export const getEndReasonTitle = (
+  contentType: ContentDataType,
+  endEvent: BizEvent | undefined,
+): string => {
+  if (contentType === ContentDataType.LAUNCHER) {
+    return 'Launcher deactivated';
+  }
+  try {
+    const reason =
+      endEvent?.data?.[EventAttributes.FLOW_END_REASON] ||
+      endEvent?.data?.[EventAttributes.CHECKLIST_END_REASON] ||
+      endEvent?.data?.[EventAttributes.LAUNCHER_END_REASON];
+    return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason || '';
+  } catch (_) {
+    return '';
+  }
+};
+
+/**
  * Get formatted field value based on field key
  * Handles special formatting for various event attributes like reasons, step numbers, question types, etc.
  *

@@ -49,6 +49,11 @@ export type BizSessionWithContentAndVersion = BizSession & {
   content: Content;
   version: Version;
 };
+export type BizSessionWithBizUserContentAndVersion = BizSession & {
+  bizUser: BizUser;
+  content: Content;
+  version: Version;
+};
 
 // Transaction client type alias for shorter usage
 export type Tx = Prisma.TransactionClient;

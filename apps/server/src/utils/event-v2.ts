@@ -244,6 +244,45 @@ export const buildLauncherSeenEventData = (
 };
 
 /**
+ * Build event data for launcher activated events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @returns Launcher activated event data
+ */
+export const buildLauncherActivatedEventData = (
+  content: { id: string; name: string },
+  version: { id: string; sequence: number },
+): Record<string, any> => {
+  return {
+    [EventAttributes.LAUNCHER_ID]: content.id,
+    [EventAttributes.LAUNCHER_NAME]: content.name,
+    [EventAttributes.LAUNCHER_VERSION_ID]: version.id,
+    [EventAttributes.LAUNCHER_VERSION_NUMBER]: version.sequence,
+  };
+};
+
+/**
+ * Build event data for launcher dismissed events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @param endReason - The end reason
+ * @returns Launcher dismissed event data
+ */
+export const buildLauncherDismissedEventData = (
+  content: { id: string; name: string },
+  version: { id: string; sequence: number },
+  endReason: string,
+): Record<string, any> => {
+  return {
+    [EventAttributes.LAUNCHER_ID]: content.id,
+    [EventAttributes.LAUNCHER_NAME]: content.name,
+    [EventAttributes.LAUNCHER_VERSION_ID]: version.id,
+    [EventAttributes.LAUNCHER_VERSION_NUMBER]: version.sequence,
+    [EventAttributes.LAUNCHER_END_REASON]: endReason,
+  };
+};
+
+/**
  * Build go to step event data
  * Steps are sorted by sequence in descending order before calculation
  * @param version - The version with steps

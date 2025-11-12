@@ -32,6 +32,7 @@ export enum contentEndReason {
   STEP_NOT_FOUND = 'step_not_found',
   UNPUBLISHED_CONTENT = 'unpublished_content',
   END_FROM_PROGRAM = 'end_from_program',
+  LAUNCHER_DEACTIVATED = 'launcher_deactivated',
 }
 
 export enum contentStartReason {
@@ -63,6 +64,8 @@ export const flowReasonTitleMap = {
   [contentEndReason.STEP_NOT_FOUND]: 'Step not found',
   [contentEndReason.AUTO_DISMISSED]: 'Auto dismissed',
   [contentEndReason.UNPUBLISHED_CONTENT]: 'Unpublished content',
+  [contentEndReason.END_FROM_PROGRAM]: 'Ended from program',
+  [contentEndReason.LAUNCHER_DEACTIVATED]: 'Launcher deactivated',
 };
 
 export interface SDKConfig {

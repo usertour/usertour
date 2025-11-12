@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { Tx } from '@/common/types/schema';
+import { BizSessionWithBizUserContentAndVersion, Tx, Version } from '@/common/types/schema';
 import {
   getCurrentStepId,
   getEventProgress,
@@ -9,6 +9,8 @@ import {
   buildFlowStartEventData,
   buildChecklistStartEventData,
   buildLauncherSeenEventData,
+  buildLauncherActivatedEventData,
+  buildLauncherDismissedEventData,
   buildGoToStepEventData,
 } from '@/utils/event-v2';
 import {
@@ -80,6 +82,35 @@ export class EventTrackingService {
       where: { id: sessionId },
       include: { bizUser: true, version: true, bizEvent: { include: { event: true } } },
     });
+  }
+
+  /**
+   * Find session with published version if available, otherwise fallback to session version
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @returns Object containing bizSession, publishedVersion, or null if session not found
+   */
+  async findSessionWithPublishedVersion(
+    sessionId: string,
+    environment: Environment,
+  ): Promise<{
+    bizSession: BizSessionWithBizUserContentAndVersion;
+    publishedVersion: Version | null;
+  } | null> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      include: { bizUser: true, content: true, version: true },
+    });
+    if (!bizSession) return null;
+
+    const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
+      where: { contentId: bizSession.contentId, environmentId: environment.id, published: true },
+      include: {
+        publishedVersion: true,
+      },
+    });
+
+    return { bizSession, publishedVersion: contentOnEnvironment?.publishedVersion };
   }
 
   /**
@@ -1098,20 +1129,14 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, content: true, version: true },
-    });
-    if (!bizSession) return false;
-    const content = bizSession.content;
-    const version = bizSession.version;
+    const sessionData = await this.findSessionWithPublishedVersion(sessionId, environment);
+    if (!sessionData) return false;
 
-    const eventData = {
-      [EventAttributes.LAUNCHER_ID]: content.id,
-      [EventAttributes.LAUNCHER_NAME]: content.name,
-      [EventAttributes.LAUNCHER_VERSION_ID]: version.id,
-      [EventAttributes.LAUNCHER_VERSION_NUMBER]: version.sequence,
-    };
+    const { bizSession, publishedVersion } = sessionData;
+    const content = bizSession.content;
+    const version = publishedVersion || bizSession.version;
+
+    const eventData = buildLauncherActivatedEventData(content, version);
 
     const externalUserId = String(bizSession.bizUser.externalId);
     return await this.trackEvent(
@@ -1138,22 +1163,14 @@ export class EventTrackingService {
     clientContext: ClientContext,
     endReason: string,
   ): Promise<boolean> {
-    if (!environment) return false;
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, content: true, version: true },
-    });
-    if (!bizSession) return false;
-    const content = bizSession.content;
-    const version = bizSession.version;
+    const sessionData = await this.findSessionWithPublishedVersion(sessionId, environment);
+    if (!sessionData) return false;
 
-    const eventData = {
-      [EventAttributes.LAUNCHER_ID]: content.id,
-      [EventAttributes.LAUNCHER_NAME]: content.name,
-      [EventAttributes.LAUNCHER_VERSION_ID]: version.id,
-      [EventAttributes.LAUNCHER_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.LAUNCHER_END_REASON]: endReason,
-    };
+    const { bizSession, publishedVersion } = sessionData;
+    const version = publishedVersion || bizSession.version;
+    const content = bizSession.content;
+
+    const eventData = buildLauncherDismissedEventData(content, version, endReason);
 
     const externalUserId = String(bizSession.bizUser.externalId);
     return await this.trackEvent(

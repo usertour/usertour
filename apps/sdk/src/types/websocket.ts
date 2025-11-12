@@ -83,3 +83,8 @@ export type FireConditionWaitTimerDto = {
 export type ActivateLauncherDto = {
   sessionId: string;
 };
+
+export type DismissLauncherDto = {
+  sessionId: string;
+  endReason: string;
+};

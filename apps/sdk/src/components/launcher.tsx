@@ -38,6 +38,7 @@ type LauncherWidgetCoreProps = {
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
   userAttributes: UserTourTypes.Attributes;
   handleActivate: () => void;
+  onTooltipClose: () => void;
   removeBranding: boolean;
 };
 
@@ -205,12 +206,14 @@ const LauncherWidgetCore = ({
   handleOnClick,
   userAttributes,
   handleActivate,
+  onTooltipClose,
   removeBranding,
 }: LauncherWidgetCoreProps) => {
   const actionType = data?.behavior?.actionType;
   const [open, setOpen] = useState(false);
   const popperRef = useRef<HTMLDivElement>(null);
   const launcherRef = useRef<HTMLDivElement>(null);
+  const prevOpenRef = useRef(open);
 
   const triggerRef = useMemo(() => {
     const ref = { current: null as HTMLElement | null };
@@ -219,6 +222,14 @@ const LauncherWidgetCore = ({
     }
     return ref;
   }, [el]);
+
+  // Handle tooltip close callback when open changes from true to false
+  useEffect(() => {
+    if (prevOpenRef.current && !open) {
+      onTooltipClose();
+    }
+    prevOpenRef.current = open;
+  }, [open, onTooltipClose]);
 
   const handlers = useLauncherHandlers(
     data,
@@ -291,6 +302,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
       zIndex={zIndex}
       handleOnClick={launcher.handleOnClick}
       userAttributes={userAttributes}
+      onTooltipClose={launcher.onTooltipClose}
       el={triggerRef}
       removeBranding={removeBranding}
     />

@@ -55,23 +55,26 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
 
   /**
    * Handles the activation of the launcher
-   * This method:
-   * 1. Reports the activation event
-   * 2. Auto-dismisses the launcher after activation if configured
+   * This method reports the activation event
    */
   async handleActivate() {
+    await this.reportActivateEvent();
+  }
+
+  /**
+   * Handles the tooltip close event
+   * This method checks if auto-dismiss is configured and closes the launcher after a delay
+   */
+  async onTooltipClose() {
     const storeData = this.getStoreData();
     if (!storeData) {
       return;
     }
     const launcherData = storeData.launcherData;
     const tooltip = launcherData?.tooltip;
-    await this.reportActivateEvent();
-    // Auto-dismiss after activation if configured
+    // Auto-dismiss after tooltip is closed if configured
     if (tooltip?.settings?.dismissAfterFirstActivation) {
-      setTimeout(() => {
-        this.close();
-      }, 2000);
+      await this.reportDismissEvent();
     }
   }
 
@@ -236,6 +239,17 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   private async reportActivateEvent() {
     await this.socketService.activateLauncher({
       sessionId: this.getSessionId(),
+    });
+  }
+
+  /**
+   * Reports when the launcher is dismissed by the user
+   * Deletes the current tracking session after dismissal
+   */
+  private async reportDismissEvent() {
+    await this.socketService.dismissLauncher({
+      sessionId: this.getSessionId(),
+      endReason: contentEndReason.LAUNCHER_DEACTIVATED,
     });
   }
 
