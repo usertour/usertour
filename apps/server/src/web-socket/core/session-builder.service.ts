@@ -37,10 +37,15 @@ import { DataResolverService } from './data-resolver.service';
 @Injectable()
 export class SessionBuilderService {
   private readonly logger = new Logger(SessionBuilderService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly dataResolverService: DataResolverService,
   ) {}
+
+  // ============================================================================
+  // Public API Methods
+  // ============================================================================
 
   /**
    * Create a biz session
@@ -122,110 +127,20 @@ export class SessionBuilderService {
   }
 
   /**
-   * Get theme settings
-   * @param themes - The themes
-   * @param themeId - The theme ID
-   * @returns The theme settings or null if not found
+   * Get biz session
+   * @param sessionId - The session ID
+   * @returns The biz session or null if not found
    */
-  async createSessionTheme(
-    themes: Theme[],
-    themeId: string,
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
-  ): Promise<SessionTheme | null> {
-    const theme = themes.find((theme) => theme.id === themeId);
-    if (!theme) {
-      return null;
-    }
-
-    const settings = theme.settings as ThemeTypesSetting;
-    const variations = (theme.variations as ThemeVariation[]) || [];
-
-    const attrIds = extractThemeVariationsAttributeIds(variations);
-    const attributes = await this.extractAttributes(
-      attrIds,
-      environment,
-      externalUserId,
-      externalCompanyId,
-    );
-
-    return {
-      settings,
-      variations,
-      attributes,
-    };
-  }
-
-  /**
-   * Create session steps
-   * @param steps - The steps
-   * @param themes - The themes
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
-   * @param externalCompanyId - The external company ID
-   * @returns The session steps
-   */
-  async createSessionSteps(
-    steps: Step[],
-    themes: Theme[],
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
-  ): Promise<SessionStep[]> {
-    // Early return for empty steps
-    if (!steps.length) {
-      return [];
-    }
-
-    // Create a cache for session themes to avoid duplicate processing
-    const themeCache = new Map<string, SessionTheme | null>();
-
-    // Collect unique theme IDs that need processing
-    const uniqueThemeIds = new Set<string>();
-    for (const step of steps) {
-      if (step.themeId) {
-        uniqueThemeIds.add(step.themeId);
-      }
-    }
-
-    // Batch process all unique themes
-    const themePromises = Array.from(uniqueThemeIds).map(async (themeId) => {
-      try {
-        const sessionTheme = await this.createSessionTheme(
-          themes,
-          themeId,
-          environment,
-          externalUserId,
-          externalCompanyId,
-        );
-        themeCache.set(themeId, sessionTheme);
-      } catch (error) {
-        this.logger.error({
-          message: `Failed to create session theme for themeId ${themeId}:`,
-          error,
-        });
-        themeCache.set(themeId, null);
-      }
+  async getBizSessionWithContentAndVersion(
+    sessionId: string,
+  ): Promise<BizSessionWithContentAndVersion | null> {
+    return await this.prisma.bizSession.findUnique({
+      where: { id: sessionId, state: 0 },
+      include: {
+        content: true,
+        version: true,
+      },
     });
-
-    // Wait for all theme processing to complete
-    await Promise.all(themePromises);
-
-    // Process steps with cached themes
-    const results: SessionStep[] = steps.map((step) => {
-      if (!step.themeId) {
-        return step as unknown as SessionStep;
-      }
-
-      const sessionTheme = themeCache.get(step.themeId);
-      return {
-        ...step,
-        theme: sessionTheme,
-      } as unknown as SessionStep;
-    });
-
-    return results;
   }
 
   /**
@@ -296,6 +211,109 @@ export class SessionBuilderService {
   }
 
   /**
+   * Sync session version ID if published version differs from custom version
+   * This ensures the biz session's versionId is updated to match the published version
+   * when the content is using a draft/custom version that differs from published
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   */
+  async syncSessionVersionIfNeeded(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+  ): Promise<void> {
+    if (!session.id) {
+      return;
+    }
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: session.id },
+    });
+    if (!bizSession) {
+      return;
+    }
+
+    if (bizSession.versionId !== customContentVersion.id) {
+      await this.updateBizSessionVersionId(bizSession.id, customContentVersion.id);
+    }
+  }
+
+  /**
+   * Query user attribute value based on attribute business type
+   * @param attr - Attribute definition
+   * @param environment - Environment context
+   * @param externalUserId - External user ID
+   * @param externalCompanyId - Optional company ID
+   * @returns User attribute value
+   */
+  async queryUserAttributeValue(
+    attr: Attribute,
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<any> {
+    const environmentId = environment.id;
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: {
+        environmentId,
+        externalId: String(externalUserId),
+      },
+      select: {
+        data: true,
+        id: true,
+      },
+    });
+
+    if (!bizUser) return null;
+
+    if (attr.bizType === AttributeBizType.USER) {
+      if (bizUser?.data) {
+        return getAttributeValue(bizUser.data, attr.codeName);
+      }
+      return null;
+    }
+
+    if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
+      if (!externalCompanyId) return null;
+
+      const bizCompany = await this.prisma.bizCompany.findFirst({
+        where: {
+          externalId: String(externalCompanyId),
+          environmentId,
+        },
+      });
+
+      if (!bizCompany) return null;
+
+      const userOnCompany = await this.prisma.bizUserOnCompany.findFirst({
+        where: {
+          bizUserId: bizUser.id,
+          bizCompanyId: bizCompany.id,
+        },
+        select: {
+          data: true,
+        },
+      });
+
+      if (!userOnCompany) return null;
+
+      if (attr.bizType === AttributeBizType.COMPANY) {
+        return getAttributeValue(bizCompany.data, attr.codeName);
+      }
+
+      if (attr.bizType === AttributeBizType.MEMBERSHIP) {
+        return getAttributeValue(userOnCompany.data, attr.codeName);
+      }
+
+      return null;
+    }
+
+    return null;
+  }
+
+  // ============================================================================
+  // Content Type Processing Methods
+  // ============================================================================
+
+  /**
    * Process CHECKLIST content type session
    * @param session - The content session
    * @param customContentVersion - The custom content version
@@ -339,10 +357,8 @@ export class SessionBuilderService {
    * Process FLOW content type session
    * @param session - The content session
    * @param customContentVersion - The custom content version
+   * @param socketData - The socket data
    * @param themes - The themes array
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
-   * @param externalCompanyId - The external company ID
    * @param stepCvid - The step CVID
    * @returns The processed session or null if current step not found
    */
@@ -418,31 +434,123 @@ export class SessionBuilderService {
     return session;
   }
 
+  // ============================================================================
+  // Theme and Step Processing Methods
+  // ============================================================================
+
   /**
-   * Sync session version ID if published version differs from custom version
-   * This ensures the biz session's versionId is updated to match the published version
-   * when the content is using a draft/custom version that differs from published
-   * @param session - The content session
-   * @param customContentVersion - The custom content version
+   * Get theme settings
+   * @param themes - The themes
+   * @param themeId - The theme ID
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @returns The theme settings or null if not found
    */
-  async syncSessionVersionIfNeeded(
-    session: CustomContentSession,
-    customContentVersion: CustomContentVersion,
-  ): Promise<void> {
-    if (!session.id) {
-      return;
-    }
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: session.id },
-    });
-    if (!bizSession) {
-      return;
+  private async createSessionTheme(
+    themes: Theme[],
+    themeId: string,
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SessionTheme | null> {
+    const theme = themes.find((theme) => theme.id === themeId);
+    if (!theme) {
+      return null;
     }
 
-    if (bizSession.versionId !== customContentVersion.id) {
-      await this.updateBizSessionVersionId(bizSession.id, customContentVersion.id);
-    }
+    const settings = theme.settings as ThemeTypesSetting;
+    const variations = (theme.variations as ThemeVariation[]) || [];
+
+    const attrIds = extractThemeVariationsAttributeIds(variations);
+    const attributes = await this.extractAttributes(
+      attrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+
+    return {
+      settings,
+      variations,
+      attributes,
+    };
   }
+
+  /**
+   * Create session steps
+   * @param steps - The steps
+   * @param themes - The themes
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @returns The session steps
+   */
+  private async createSessionSteps(
+    steps: Step[],
+    themes: Theme[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SessionStep[]> {
+    // Early return for empty steps
+    if (!steps.length) {
+      return [];
+    }
+
+    // Create a cache for session themes to avoid duplicate processing
+    const themeCache = new Map<string, SessionTheme | null>();
+
+    // Collect unique theme IDs that need processing
+    const uniqueThemeIds = new Set<string>();
+    for (const step of steps) {
+      if (step.themeId) {
+        uniqueThemeIds.add(step.themeId);
+      }
+    }
+
+    // Batch process all unique themes
+    const themePromises = Array.from(uniqueThemeIds).map(async (themeId) => {
+      try {
+        const sessionTheme = await this.createSessionTheme(
+          themes,
+          themeId,
+          environment,
+          externalUserId,
+          externalCompanyId,
+        );
+        themeCache.set(themeId, sessionTheme);
+      } catch (error) {
+        this.logger.error({
+          message: `Failed to create session theme for themeId ${themeId}:`,
+          error,
+        });
+        themeCache.set(themeId, null);
+      }
+    });
+
+    // Wait for all theme processing to complete
+    await Promise.all(themePromises);
+
+    // Process steps with cached themes
+    const results: SessionStep[] = steps.map((step) => {
+      if (!step.themeId) {
+        return step as unknown as SessionStep;
+      }
+
+      const sessionTheme = themeCache.get(step.themeId);
+      return {
+        ...step,
+        theme: sessionTheme,
+      } as unknown as SessionStep;
+    });
+
+    return results;
+  }
+
+  // ============================================================================
+  // Attribute Extraction Methods
+  // ============================================================================
 
   /**
    * Extract steps attributes
@@ -531,95 +639,5 @@ export class SessionBuilderService {
     }
 
     return results;
-  }
-
-  /**
-   * Query user attribute value based on attribute business type
-   * @param attr - Attribute definition
-   * @param environment - Environment context
-   * @param bizUser - Business user
-   * @param externalCompanyId - Optional company ID
-   * @returns User attribute value
-   */
-  async queryUserAttributeValue(
-    attr: Attribute,
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
-  ): Promise<any> {
-    const environmentId = environment.id;
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: {
-        environmentId,
-        externalId: String(externalUserId),
-      },
-      select: {
-        data: true,
-        id: true,
-      },
-    });
-
-    if (!bizUser) return null;
-
-    if (attr.bizType === AttributeBizType.USER) {
-      if (bizUser?.data) {
-        return getAttributeValue(bizUser.data, attr.codeName);
-      }
-      return null;
-    }
-
-    if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
-      if (!externalCompanyId) return null;
-
-      const bizCompany = await this.prisma.bizCompany.findFirst({
-        where: {
-          externalId: String(externalCompanyId),
-          environmentId,
-        },
-      });
-
-      if (!bizCompany) return null;
-
-      const userOnCompany = await this.prisma.bizUserOnCompany.findFirst({
-        where: {
-          bizUserId: bizUser.id,
-          bizCompanyId: bizCompany.id,
-        },
-        select: {
-          data: true,
-        },
-      });
-
-      if (!userOnCompany) return null;
-
-      if (attr.bizType === AttributeBizType.COMPANY) {
-        return getAttributeValue(bizCompany.data, attr.codeName);
-      }
-
-      if (attr.bizType === AttributeBizType.MEMBERSHIP) {
-        return getAttributeValue(userOnCompany.data, attr.codeName);
-      }
-
-      return null;
-    }
-
-    return null;
-  }
-
-  /**
-   * Get biz session
-   * @param sessionId - The session ID
-   * @returns The biz session or null if not found
-   */
-  async getBizSessionWithContentAndVersion(
-    sessionId: string,
-  ): Promise<BizSessionWithContentAndVersion | null> {
-    return await this.prisma.bizSession.findUnique({
-      where: { id: sessionId, state: 0 },
-      include: {
-        content: true,
-        version: true,
-      },
-    });
   }
 }
