@@ -71,10 +71,15 @@ export class EventTrackingService {
   /**
    * Find business session with user, content and version
    * @param sessionId - Session ID
+   * @param client - Optional Prisma client or transaction client (defaults to this.prisma)
    * @returns Business session with user, content and version, or null if not found
    */
-  async findBizSessionWithRelations(sessionId: string): Promise<BizSessionWithRelations | null> {
-    return await this.prisma.bizSession.findUnique({
+  async findBizSessionWithRelations(
+    sessionId: string,
+    client?: PrismaService | Tx,
+  ): Promise<BizSessionWithRelations | null> {
+    const prismaClient = client ?? this.prisma;
+    return await prismaClient.bizSession.findUnique({
       where: { id: sessionId },
       include: {
         bizUser: true,
@@ -585,7 +590,7 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<void> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    const bizSession = await this.findBizSessionWithRelations(sessionId, tx);
     if (!bizSession || !bizSession.content || !bizSession.version) {
       return;
     }
