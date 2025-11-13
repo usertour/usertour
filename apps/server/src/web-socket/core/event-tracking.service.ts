@@ -383,15 +383,12 @@ export class EventTrackingService {
     tx: Tx,
     bizSession: BizSession,
     eventCodeName: string,
-    events?: Record<string, unknown>,
+    events: Record<string, unknown>,
   ): Promise<void> {
     // Calculate progress and state
     const newProgress = calculateSessionProgress(events, eventCodeName, bizSession.progress);
-    const newState = getEventState(eventCodeName);
-    const currentStepId = getCurrentStepId(
-      eventCodeName,
-      events?.[EventAttributes.FLOW_STEP_ID] as string,
-    );
+    const newState = getEventState(eventCodeName, bizSession.state);
+    const newCurrentStepId = getCurrentStepId(events, eventCodeName, bizSession.currentStepId);
 
     // Prepare update data only if there are changes
     const updateData: Partial<{ progress: number; state: number; currentStepId: string }> = {};
@@ -400,12 +397,12 @@ export class EventTrackingService {
       updateData.progress = newProgress;
     }
 
-    if (newState !== bizSession.state) {
+    if (newState !== null) {
       updateData.state = newState;
     }
 
-    if (currentStepId) {
-      updateData.currentStepId = currentStepId;
+    if (newCurrentStepId !== null) {
+      updateData.currentStepId = newCurrentStepId;
     }
 
     // Update session only if there are changes

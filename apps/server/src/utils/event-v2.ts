@@ -5,7 +5,7 @@ import {
   ChecklistData,
   ClientContext,
 } from '@usertour/types';
-import { isNullish } from '@usertour/helpers';
+import { isEmptyString, isNullish } from '@usertour/helpers';
 import {
   VersionWithSteps,
   Step,
@@ -254,7 +254,7 @@ export const isValidEvent = (
  * @returns The calculated progress to update, or null if no update is needed
  */
 export const calculateSessionProgress = (
-  events: Record<string, unknown> | undefined,
+  events: Record<string, unknown>,
   eventCodeName: string,
   currentProgress: number,
 ): number | null => {
@@ -269,15 +269,33 @@ export const calculateSessionProgress = (
   return maxProgress !== currentProgress ? maxProgress : null;
 };
 
-export const getEventState = (eventCodeName: string) => {
+export const getEventState = (eventCodeName: string, currentState: number): number | null => {
   // Reuse DISMISSED_EVENTS constant for consistency
-  return DISMISSED_EVENTS.includes(eventCodeName as (typeof DISMISSED_EVENTS)[number]) ? 1 : 0;
+  const newState = DISMISSED_EVENTS.includes(eventCodeName as (typeof DISMISSED_EVENTS)[number])
+    ? 1
+    : 0;
+
+  // Return the calculated state only if it's different from current state
+  return newState !== currentState ? newState : null;
 };
 
-export const getCurrentStepId = (eventCodeName: string, customStepId?: string): string | null => {
+export const getCurrentStepId = (
+  events: Record<string, unknown>,
+  eventCodeName: string,
+  currentStepId?: string | null,
+): string | null => {
   if (eventCodeName === BizEvents.FLOW_STEP_SEEN) {
-    return customStepId;
+    const newStepId = events[EventAttributes.FLOW_STEP_ID] as string | undefined;
+
+    // If newStepId is missing or empty, keep current value (return null means no update)
+    if (isNullish(newStepId) || isEmptyString(newStepId)) {
+      return null;
+    }
+
+    // Return the new stepId only if it's different from current stepId
+    return newStepId !== currentStepId ? newStepId : null;
   }
+  // For other events, no update needed
   return null;
 };
 
