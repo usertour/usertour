@@ -43,17 +43,15 @@ export const calculateSessionProgress = (
   return maxProgress !== currentProgress ? maxProgress : null;
 };
 
+// Events that set state to 1 (dismissed/ended)
+const DISMISSED_STATE_EVENTS = new Set([
+  BizEvents.FLOW_ENDED,
+  BizEvents.CHECKLIST_DISMISSED,
+  BizEvents.LAUNCHER_DISMISSED,
+]);
+
 export const getEventState = (eventCodeName: string) => {
-  if (eventCodeName === BizEvents.FLOW_ENDED) {
-    return 1;
-  }
-  if (eventCodeName === BizEvents.CHECKLIST_DISMISSED) {
-    return 1;
-  }
-  if (eventCodeName === BizEvents.LAUNCHER_DISMISSED) {
-    return 1;
-  }
-  return 0;
+  return DISMISSED_STATE_EVENTS.has(eventCodeName as BizEvents) ? 1 : 0;
 };
 
 export const getCurrentStepId = (eventCodeName: string, customStepId?: string): string | null => {
@@ -590,20 +588,24 @@ export const buildQuestionAnsweredEventData = (
   return eventData;
 };
 
+// Answer attribute keys in priority order
+const ANSWER_ATTRIBUTES = [
+  EventAttributes.LIST_ANSWER,
+  EventAttributes.NUMBER_ANSWER,
+  EventAttributes.TEXT_ANSWER,
+] as const;
+
 /**
  * Get answer from event data
  * @param event - The event data
  * @returns The answer
  */
 export const getAnswer = (event: Record<string, any>) => {
-  if (!isNullish(event[EventAttributes.LIST_ANSWER])) {
-    return event[EventAttributes.LIST_ANSWER];
-  }
-  if (!isNullish(event[EventAttributes.NUMBER_ANSWER])) {
-    return event[EventAttributes.NUMBER_ANSWER];
-  }
-  if (!isNullish(event[EventAttributes.TEXT_ANSWER])) {
-    return event[EventAttributes.TEXT_ANSWER];
+  for (const attr of ANSWER_ATTRIBUTES) {
+    const value = event[attr];
+    if (!isNullish(value)) {
+      return value;
+    }
   }
   return null;
 };
