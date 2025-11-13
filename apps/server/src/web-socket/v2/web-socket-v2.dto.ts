@@ -4,6 +4,10 @@ import { Server, Socket } from 'socket.io';
 import { SocketData } from '@/common/types/content';
 import { ClientCondition } from '@/common/types/sdk';
 
+// ============================================================================
+// Type Definitions and Interfaces
+// ============================================================================
+
 export type ProjectConfig = {
   removeBranding: boolean;
   planType: string;
@@ -23,6 +27,20 @@ export interface SocketAuthData {
   flowSessionId?: string;
   checklistSessionId?: string;
 }
+
+/**
+ * WebSocket context containing server, socket, and client data
+ * Used to pass common parameters to message handlers
+ */
+export interface WebSocketContext {
+  server: Server;
+  socket: Socket;
+  socketData: SocketData;
+}
+
+// ============================================================================
+// Message Kind Enums
+// ============================================================================
 
 /**
  * Client message kinds (Client -> Server)
@@ -69,6 +87,10 @@ export enum ServerMessageKind {
   CHECKLIST_TASK_COMPLETED = 'ChecklistTaskCompleted',
 }
 
+// ============================================================================
+// Message DTO Classes
+// ============================================================================
+
 /**
  * Unified client message structure (Client -> Server)
  * All messages are executed in order to maintain Socket.IO's ordering semantics
@@ -101,13 +123,21 @@ export class ServerMessageDto {
   messageId?: string;
 }
 
-// Upsert user request
+// ============================================================================
+// Business Data Operation DTOs
+// ============================================================================
+
+/**
+ * Upsert user request
+ */
 export type UpsertUserDto = {
   externalUserId: string;
   attributes?: Record<string, any>;
 };
 
-// Upsert company request
+/**
+ * Upsert company request
+ */
 export type UpsertCompanyDto = {
   externalCompanyId: string;
   externalUserId: string;
@@ -115,7 +145,34 @@ export type UpsertCompanyDto = {
   membership?: Record<string, any>;
 };
 
-// Track event request
+// ============================================================================
+// Content Management DTOs
+// ============================================================================
+
+/**
+ * Start content request
+ */
+export type StartContentDto = {
+  contentId: string;
+  startReason: contentStartReason;
+  stepCvid?: string;
+};
+
+/**
+ * End content request
+ */
+export type EndContentDto = {
+  sessionId: string;
+  endReason: string;
+};
+
+// ============================================================================
+// Event Tracking DTOs
+// ============================================================================
+
+/**
+ * Track event request
+ */
 export type TrackEventDto = {
   externalUserId: string;
   eventName: string;
@@ -123,64 +180,77 @@ export type TrackEventDto = {
   eventData: Record<string, any>;
 };
 
-// Identity request (for testing)
-export type IdentityDto = {
-  data: number;
-};
-
-export type StartContentDto = {
-  contentId: string;
-  startReason: contentStartReason;
-  stepCvid?: string;
-};
-
-export type EndContentDto = {
-  sessionId: string;
-  endReason: string;
-};
-
+/**
+ * Go to step request
+ */
 export type GoToStepDto = {
   sessionId: string;
   stepId: string;
 };
 
+/**
+ * Click checklist task request
+ */
 export type ClickChecklistTaskDto = {
   sessionId: string;
   taskId: string;
 };
 
+/**
+ * Hide checklist request
+ */
 export type HideChecklistDto = {
   sessionId: string;
 };
 
+/**
+ * Show checklist request
+ */
 export type ShowChecklistDto = {
   sessionId: string;
 };
 
+/**
+ * Report tooltip target missing request
+ */
 export type TooltipTargetMissingDto = {
   sessionId: string;
   stepId: string;
 };
 
+// ============================================================================
+// Condition and Launcher DTOs
+// ============================================================================
+
+/**
+ * Fire condition wait timer request
+ */
 export type FireConditionWaitTimerDto = {
   versionId: string;
 };
 
+/**
+ * Activate launcher request
+ */
 export type ActivateLauncherDto = {
   sessionId: string;
 };
 
+/**
+ * Dismiss launcher request
+ */
 export type DismissLauncherDto = {
   sessionId: string;
   endReason: string;
 };
 
+// ============================================================================
+// Testing DTOs
+// ============================================================================
+
 /**
- * WebSocket context containing server, socket, and client data
- * Used to pass common parameters to message handlers
+ * Identity request (for testing)
  */
-export interface WebSocketContext {
-  server: Server;
-  socket: Socket;
-  socketData: SocketData;
-}
+export type IdentityDto = {
+  data: number;
+};
