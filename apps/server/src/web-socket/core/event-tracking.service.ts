@@ -8,15 +8,12 @@ import {
   buildFlowStartEventData,
   buildChecklistStartEventData,
   buildLauncherSeenEventData,
-  buildLauncherActivatedEventData,
+  buildLauncherBaseEventData,
   buildLauncherDismissedEventData,
   buildStepEventData,
   buildChecklistDismissedEventData,
-  buildChecklistSeenEventData,
-  buildChecklistHiddenEventData,
-  buildChecklistCompletedEventData,
-  buildChecklistTaskClickedEventData,
-  buildChecklistTaskCompletedEventData,
+  buildChecklistBaseEventData,
+  buildChecklistTaskEventData,
   buildFlowEndedEventData,
   buildQuestionAnsweredEventData,
   getAnswer,
@@ -28,7 +25,6 @@ import {
   EventAttributes,
   UserAttributes,
   ClientContext,
-  ChecklistData,
 } from '@usertour/types';
 import {
   BizCompany,
@@ -54,6 +50,10 @@ export class EventTrackingService {
     private readonly prisma: PrismaService,
     private readonly bizService: BizService,
   ) {}
+
+  // ============================================================================
+  // Database Query Methods
+  // ============================================================================
 
   /**
    * Find business session with user and events
@@ -109,6 +109,10 @@ export class EventTrackingService {
     return bizSession;
   }
 
+  // ============================================================================
+  // Event Data Processing Methods
+  // ============================================================================
+
   /**
    * Filter event data based on allowed attributes for the event
    * @param eventId - The ID of the event
@@ -154,6 +158,25 @@ export class EventTrackingService {
     // Return filtered data only if we have valid attributes
     return Object.keys(filteredData).length > 0 ? filteredData : false;
   }
+
+  /**
+   * Add client context to event data
+   */
+  private addClientContextToEventData(data: Record<string, unknown>, clientContext: ClientContext) {
+    if (clientContext) {
+      return {
+        ...data,
+        [EventAttributes.PAGE_URL]: clientContext.pageUrl,
+        [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
+        [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
+      };
+    }
+    return data;
+  }
+
+  // ============================================================================
+  // User and Company Attribute Update Methods
+  // ============================================================================
 
   /**
    * Update seen timestamps for a data record
@@ -238,7 +261,7 @@ export class EventTrackingService {
    * Update user and company seen attributes
    * @param tx - Database transaction
    * @param user - Business user
-   * @param bizSession - Business session
+   * @param bizCompanyId - Business company ID
    * @returns Promise<void>
    */
   private async updateSeenAttributes(tx: Tx, user: BizUser, bizCompanyId?: string): Promise<void> {
@@ -258,20 +281,9 @@ export class EventTrackingService {
     await Promise.all(updateOperations);
   }
 
-  /**
-   * Add client context to event data
-   */
-  private addClientContextToEventData(data: Record<string, unknown>, clientContext: ClientContext) {
-    if (clientContext) {
-      return {
-        ...data,
-        [EventAttributes.PAGE_URL]: clientContext.pageUrl,
-        [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
-        [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
-      };
-    }
-    return data;
-  }
+  // ============================================================================
+  // Event Creation and Processing Methods
+  // ============================================================================
 
   /**
    * Handle question answer creation or update for question answered events
@@ -369,6 +381,60 @@ export class EventTrackingService {
     return true;
   }
 
+  // ============================================================================
+  // Session Update Methods
+  // ============================================================================
+
+  /**
+   * Update session progress and state based on event data
+   * @param tx - Prisma transaction
+   * @param bizSession - Business session to update
+   * @param eventCodeName - Event code name
+   * @param events - Event data containing flow_step_progress
+   * @returns Promise<void>
+   */
+  private async updateBizSession(
+    tx: Tx,
+    bizSession: BizSession,
+    eventCodeName: string,
+    events?: Record<string, unknown>,
+  ): Promise<void> {
+    // Calculate progress and state
+    const newProgress = calculateSessionProgress(events, eventCodeName, bizSession.progress);
+    const newState = getEventState(eventCodeName);
+    const currentStepId = getCurrentStepId(
+      eventCodeName,
+      events?.[EventAttributes.FLOW_STEP_ID] as string,
+    );
+
+    // Prepare update data only if there are changes
+    const updateData: Partial<{ progress: number; state: number; currentStepId: string }> = {};
+
+    if (newProgress !== null) {
+      updateData.progress = newProgress;
+    }
+
+    if (newState !== bizSession.state) {
+      updateData.state = newState;
+    }
+
+    if (currentStepId) {
+      updateData.currentStepId = currentStepId;
+    }
+
+    // Update session only if there are changes
+    if (Object.keys(updateData).length > 0) {
+      await tx.bizSession.update({
+        where: { id: bizSession.id },
+        data: updateData,
+      });
+    }
+  }
+
+  // ============================================================================
+  // Transaction Execution Methods
+  // ============================================================================
+
   /**
    * Execute event tracking transaction
    */
@@ -436,51 +502,9 @@ export class EventTrackingService {
     return true;
   }
 
-  /**
-   * Update session progress and state based on event data
-   * @param tx - Prisma transaction
-   * @param bizSession - Business session to update
-   * @param eventCodeName - Event code name
-   * @param events - Event data containing flow_step_progress
-   * @returns Promise<void>
-   */
-  private async updateBizSession(
-    tx: Tx,
-    bizSession: BizSession,
-    eventCodeName: string,
-    events?: Record<string, unknown>,
-  ): Promise<void> {
-    // Calculate progress and state
-    const newProgress = calculateSessionProgress(events, eventCodeName, bizSession.progress);
-    const newState = getEventState(eventCodeName);
-    const currentStepId = getCurrentStepId(
-      eventCodeName,
-      events?.[EventAttributes.FLOW_STEP_ID] as string,
-    );
-
-    // Prepare update data only if there are changes
-    const updateData: Partial<{ progress: number; state: number; currentStepId: string }> = {};
-
-    if (newProgress !== null) {
-      updateData.progress = newProgress;
-    }
-
-    if (newState !== bizSession.state) {
-      updateData.state = newState;
-    }
-
-    if (currentStepId) {
-      updateData.currentStepId = currentStepId;
-    }
-
-    // Update session only if there are changes
-    if (Object.keys(updateData).length > 0) {
-      await tx.bizSession.update({
-        where: { id: bizSession.id },
-        data: updateData,
-      });
-    }
-  }
+  // ============================================================================
+  // Generic Event Tracking Methods
+  // ============================================================================
 
   /**
    * Track an event
@@ -545,10 +569,10 @@ export class EventTrackingService {
       return false;
     }
 
-    // Step 4: Get external user ID from session
+    // Step 3: Get external user ID from session
     const externalUserId = String(bizSession.bizUser.externalId);
 
-    // Step 5: Track event
+    // Step 4: Track event
     return await this.trackEvent(
       environment,
       externalUserId,
@@ -558,6 +582,298 @@ export class EventTrackingService {
       clientContext,
     );
   }
+
+  // ============================================================================
+  // Flow Event Tracking Methods
+  // ============================================================================
+
+  /**
+   * Track flow ended event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param endReason - The end reason
+   * @param clientContext - The client context
+   * @returns The tracked event or false if tracking failed
+   */
+  async trackFlowEndedEvent(
+    sessionId: string,
+    environment: Environment,
+    endReason: string,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.FLOW_ENDED,
+      (session) =>
+        buildFlowEndedEventData(session.content, session.version, session.currentStepId, endReason),
+    );
+  }
+
+  /**
+   * Track tooltip target missing event
+   * @param sessionId - The session ID
+   * @param stepId - The step ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackTooltipTargetMissingEvent(
+    sessionId: string,
+    stepId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.TOOLTIP_TARGET_MISSING,
+      (session) => buildStepEventData(session.content, session.version, stepId),
+    );
+  }
+
+  // ============================================================================
+  // Checklist Event Tracking Methods
+  // ============================================================================
+
+  /**
+   * Track checklist seen event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistSeenEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.CHECKLIST_SEEN,
+      (session) => buildChecklistBaseEventData(session.content, session.version),
+    );
+  }
+
+  /**
+   * Track checklist hidden event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistHiddenEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.CHECKLIST_HIDDEN,
+      (session) => buildChecklistBaseEventData(session.content, session.version),
+    );
+  }
+
+  /**
+   * Track checklist completed event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistCompletedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.CHECKLIST_COMPLETED,
+      (session) => buildChecklistBaseEventData(session.content, session.version),
+    );
+  }
+
+  /**
+   * Track checklist dismissed event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @param endReason - The end reason
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistDismissedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+    endReason: string,
+  ): Promise<boolean> {
+    if (!environment) return false;
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.CHECKLIST_DISMISSED,
+      (session) => buildChecklistDismissedEventData(session.content, session.version, endReason),
+    );
+  }
+
+  /**
+   * Track checklist task clicked event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @param taskId - The task ID
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistTaskClickedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+    taskId: string,
+  ): Promise<boolean> {
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.CHECKLIST_TASK_CLICKED,
+      (session) => buildChecklistTaskEventData(session.content, session.version, taskId),
+    );
+  }
+
+  /**
+   * Track checklist task completed event
+   * @param sessionId - The session ID
+   * @param taskId - The task ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackChecklistTaskCompletedEvent(
+    sessionId: string,
+    taskId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.CHECKLIST_TASK_COMPLETED,
+      (session) => buildChecklistTaskEventData(session.content, session.version, taskId),
+    );
+  }
+
+  // ============================================================================
+  // Launcher Event Tracking Methods
+  // ============================================================================
+
+  /**
+   * Track launcher activated event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackLauncherActivatedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.LAUNCHER_ACTIVATED,
+      (session) => buildLauncherBaseEventData(session.content, session.version),
+    );
+  }
+
+  /**
+   * Track launcher dismissed event
+   * @param sessionId - The session ID
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @param endReason - The end reason
+   * @returns True if the event was tracked successfully
+   */
+  async trackLauncherDismissedEvent(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+    endReason: string,
+  ): Promise<boolean> {
+    return this.trackEventWithSession(
+      sessionId,
+      environment,
+      clientContext,
+      BizEvents.LAUNCHER_DISMISSED,
+      (session) => buildLauncherDismissedEventData(session.content, session.version, endReason),
+    );
+  }
+
+  // ============================================================================
+  // Question Event Tracking Methods
+  // ============================================================================
+
+  /**
+   * Track question answered event
+   * @param params - The parameters for the question answered event
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackQuestionAnsweredEvent(
+    params: AnswerQuestionDto,
+    environment: Environment,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    const bizSession = await this.getTrackingSession(params.sessionId);
+    if (!bizSession) return false;
+
+    const eventData = buildQuestionAnsweredEventData(
+      bizSession.content,
+      bizSession.version,
+      params,
+    );
+    const answer = getAnswer(eventData);
+    const externalUserId = String(bizSession.bizUser.externalId);
+    const bindToAttribute = extractStepBindToAttribute(
+      bizSession.version.steps as unknown as Step[],
+      params.questionCvid,
+    );
+
+    return await this.prisma.$transaction(async (tx) => {
+      if (bindToAttribute && answer) {
+        await this.bizService.upsertBizUsers(
+          tx,
+          externalUserId,
+          { [bindToAttribute]: answer },
+          environment.id,
+        );
+      }
+      return await this.executeEventTransaction(
+        tx,
+        environment,
+        externalUserId,
+        BizEvents.QUESTION_ANSWERED,
+        bizSession.id,
+        eventData,
+        clientContext,
+      );
+    });
+  }
+
+  // ============================================================================
+  // Auto Start and Go To Step Methods
+  // ============================================================================
 
   /**
    * Get event name and data for auto start events
@@ -763,291 +1079,9 @@ export class EventTrackingService {
     }
   }
 
-  /**
-   * Track flow ended event
-   * @param sessionId - The session ID
-   * @param environment - The environment
-   * @param endReason - The end reason
-   * @param clientContext - The client context
-   * @returns The tracked event or false if tracking failed
-   */
-  async trackFlowEndedEvent(
-    sessionId: string,
-    environment: Environment,
-    endReason: string,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.FLOW_ENDED,
-      (session) =>
-        buildFlowEndedEventData(session.content, session.version, session.currentStepId, endReason),
-    );
-  }
-
-  /**
-   * Track checklist dismissed event
-   * @param sessionId - The session ID
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @param endReason - The end reason
-   * @returns True if the event was tracked successfully
-   */
-  async trackChecklistDismissedEvent(
-    sessionId: string,
-    environment: Environment,
-    clientContext: ClientContext,
-    endReason: string,
-  ): Promise<boolean> {
-    if (!environment) return false;
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.CHECKLIST_DISMISSED,
-      (session) => buildChecklistDismissedEventData(session.content, session.version, endReason),
-    );
-  }
-
-  /**
-   * Track question answered event
-   * @param params - The parameters for the question answered event
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @returns True if the event was tracked successfully
-   */
-  async trackQuestionAnsweredEvent(
-    params: AnswerQuestionDto,
-    environment: Environment,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    const bizSession = await this.getTrackingSession(params.sessionId);
-    if (!bizSession) return false;
-
-    const eventData = buildQuestionAnsweredEventData(
-      bizSession.content,
-      bizSession.version,
-      params,
-    );
-    const answer = getAnswer(eventData);
-    const externalUserId = String(bizSession.bizUser.externalId);
-    const bindToAttribute = extractStepBindToAttribute(
-      bizSession.version.steps as unknown as Step[],
-      params.questionCvid,
-    );
-
-    return await this.prisma.$transaction(async (tx) => {
-      if (bindToAttribute && answer) {
-        await this.bizService.upsertBizUsers(
-          tx,
-          externalUserId,
-          { [bindToAttribute]: answer },
-          environment.id,
-        );
-      }
-      return await this.executeEventTransaction(
-        tx,
-        environment,
-        externalUserId,
-        BizEvents.QUESTION_ANSWERED,
-        bizSession.id,
-        eventData,
-        clientContext,
-      );
-    });
-  }
-
-  /**
-   * Track checklist task clicked event
-   * @param sessionId - The session ID
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @param taskId - The task ID
-   * @returns True if the event was tracked successfully
-   */
-  async trackChecklistTaskClickedEvent(
-    sessionId: string,
-    environment: Environment,
-    clientContext: ClientContext,
-    taskId: string,
-  ): Promise<boolean> {
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.CHECKLIST_TASK_CLICKED,
-      (session) => {
-        const checklistData = session.version.data as unknown as ChecklistData;
-        const checklistItem = checklistData.items.find((item) => item.id === taskId);
-        if (!checklistItem) return null;
-        return buildChecklistTaskClickedEventData(session.content, session.version, checklistItem);
-      },
-    );
-  }
-
-  /**
-   * Track checklist task completed event
-   * @param sessionId - The session ID
-   * @param taskId - The task ID
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @returns True if the event was tracked successfully
-   */
-  async trackChecklistTaskCompletedEvent(
-    sessionId: string,
-    taskId: string,
-    environment: Environment,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.CHECKLIST_TASK_COMPLETED,
-      (session) => {
-        const checklistData = session.version.data as unknown as ChecklistData;
-        const checklistItem = checklistData.items.find((item) => item.id === taskId);
-        if (!checklistItem) return null;
-        return buildChecklistTaskCompletedEventData(
-          session.content,
-          session.version,
-          checklistItem,
-        );
-      },
-    );
-  }
-
-  /**
-   * Track checklist hidden event
-   * @param sessionId - The session ID
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @returns True if the event was tracked successfully
-   */
-  async trackChecklistHiddenEvent(
-    sessionId: string,
-    environment: Environment,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.CHECKLIST_HIDDEN,
-      (session) => buildChecklistHiddenEventData(session.content, session.version),
-    );
-  }
-
-  /**
-   * Track checklist seen event
-   * @param sessionId - The session ID
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @returns True if the event was tracked successfully
-   */
-  async trackChecklistSeenEvent(
-    sessionId: string,
-    environment: Environment,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.CHECKLIST_SEEN,
-      (session) => buildChecklistSeenEventData(session.content, session.version),
-    );
-  }
-
-  /**
-   * Track checklist completed event
-   * @param sessionId - The session ID
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @returns True if the event was tracked successfully
-   */
-  async trackChecklistCompletedEvent(
-    sessionId: string,
-    environment: Environment,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.CHECKLIST_COMPLETED,
-      (session) => buildChecklistCompletedEventData(session.content, session.version),
-    );
-  }
-
-  /**
-   * Track tooltip target missing event
-   * @param sessionId - The session ID
-   * @param stepId - The step ID
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @returns True if the event was tracked successfully
-   */
-  async trackTooltipTargetMissingEvent(
-    sessionId: string,
-    stepId: string,
-    environment: Environment,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.TOOLTIP_TARGET_MISSING,
-      (session) => buildStepEventData(session.content, session.version, stepId),
-    );
-  }
-
-  /**
-   * Track launcher activated event
-   * @param sessionId - The session ID
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @returns True if the event was tracked successfully
-   */
-  async trackLauncherActivatedEvent(
-    sessionId: string,
-    environment: Environment,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.LAUNCHER_ACTIVATED,
-      (session) => buildLauncherActivatedEventData(session.content, session.version),
-    );
-  }
-
-  /**
-   * Track launcher dismissed event
-   * @param sessionId - The session ID
-   * @param environment - The environment
-   * @param clientContext - The client context
-   * @param endReason - The end reason
-   * @returns True if the event was tracked successfully
-   */
-  async trackLauncherDismissedEvent(
-    sessionId: string,
-    environment: Environment,
-    clientContext: ClientContext,
-    endReason: string,
-  ): Promise<boolean> {
-    return this.trackEventWithSession(
-      sessionId,
-      environment,
-      clientContext,
-      BizEvents.LAUNCHER_DISMISSED,
-      (session) => buildLauncherDismissedEventData(session.content, session.version, endReason),
-    );
-  }
+  // ============================================================================
+  // Generic Content Methods
+  // ============================================================================
 
   /**
    * Track content ended event based on content type
