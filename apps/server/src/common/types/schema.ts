@@ -49,10 +49,10 @@ export type BizSessionWithContentAndVersion = BizSession & {
   content: Content;
   version: Version;
 };
-export type BizSessionWithBizUserContentAndVersion = BizSession & {
+export type BizSessionWithRelations = BizSession & {
   bizUser: BizUser;
   content: Content;
-  version: Version;
+  version: VersionWithSteps;
 };
 
 // Transaction client type alias for shorter usage

@@ -485,6 +485,10 @@ export const defaultEvents = [
     displayName: 'Question Answered',
     codeName: BizEvents.QUESTION_ANSWERED,
     attributes: [
+      EventAttributes.FLOW_ID,
+      EventAttributes.FLOW_NAME,
+      EventAttributes.FLOW_VERSION_ID,
+      EventAttributes.FLOW_VERSION_NUMBER,
       EventAttributes.LIST_ANSWER,
       EventAttributes.NUMBER_ANSWER,
       EventAttributes.QUESTION_CVID,

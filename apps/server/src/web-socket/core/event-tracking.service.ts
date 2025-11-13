@@ -1,23 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { BizSessionWithBizUserContentAndVersion, Tx } from '@/common/types/schema';
 import {
   getCurrentStepId,
-  getEventProgress,
   getEventState,
   isValidEvent,
+  calculateSessionProgress,
   buildFlowStartEventData,
   buildChecklistStartEventData,
   buildLauncherSeenEventData,
   buildLauncherActivatedEventData,
   buildLauncherDismissedEventData,
-  buildGoToStepEventData,
+  buildStepEventData,
   buildChecklistDismissedEventData,
   buildChecklistSeenEventData,
   buildChecklistHiddenEventData,
   buildChecklistCompletedEventData,
   buildChecklistTaskClickedEventData,
   buildChecklistTaskCompletedEventData,
+  buildFlowEndedEventData,
+  buildQuestionAnsweredEventData,
+  getAnswer,
 } from '@/utils/event-v2';
 import {
   BizEvents,
@@ -35,25 +37,14 @@ import {
   Environment,
   Step,
   BizSessionWithEvents,
+  BizSessionWithRelations,
+  Tx,
 } from '@/common/types/schema';
 import { CustomContentVersion } from '@/common/types/content';
-import { deepmerge } from 'deepmerge-ts';
 import { isNullish } from '@usertour/helpers';
 import { extractStepBindToAttribute } from '@/utils/content-question';
 import { BizService } from '@/biz/biz.service';
-
-/**
- * Parameters for tracking question answered events
- */
-type QuestionAnsweredParams = {
-  sessionId: string;
-  questionCvid: string;
-  questionName: string;
-  questionType: string;
-  listAnswer?: string[];
-  numberAnswer?: number;
-  textAnswer?: string;
-};
+import type { AnswerQuestionDto } from '@usertour/types';
 
 @Injectable()
 export class EventTrackingService {
@@ -95,12 +86,14 @@ export class EventTrackingService {
    * @param sessionId - Session ID
    * @returns Business session with user, content and version, or null if not found
    */
-  private async findBizSessionWithRelations(
-    sessionId: string,
-  ): Promise<BizSessionWithBizUserContentAndVersion | null> {
+  async findBizSessionWithRelations(sessionId: string): Promise<BizSessionWithRelations | null> {
     return await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { bizUser: true, content: true, version: true },
+      include: {
+        bizUser: true,
+        content: true,
+        version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+      },
     });
   }
 
@@ -455,10 +448,7 @@ export class EventTrackingService {
     events?: Record<string, unknown>,
   ): Promise<void> {
     // Calculate progress and state
-    const newProgress =
-      events?.[EventAttributes.FLOW_STEP_PROGRESS] !== undefined
-        ? getEventProgress(eventCodeName, events?.[EventAttributes.FLOW_STEP_PROGRESS] as number)
-        : null;
+    const newProgress = calculateSessionProgress(events, eventCodeName, bizSession.progress);
     const newState = getEventState(eventCodeName);
     const currentStepId = getCurrentStepId(
       eventCodeName,
@@ -469,10 +459,7 @@ export class EventTrackingService {
     const updateData: Partial<{ progress: number; state: number; currentStepId: string }> = {};
 
     if (newProgress !== null) {
-      const maxProgress = Math.max(newProgress, bizSession.progress);
-      if (maxProgress !== bizSession.progress) {
-        updateData.progress = maxProgress;
-      }
+      updateData.progress = newProgress;
     }
 
     if (newState !== bizSession.state) {
@@ -611,19 +598,18 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<void> {
-    // Find the business session with related data
-    const bizSession = await this.findBizSessionWithUserAndSteps(tx, sessionId);
-
-    if (!bizSession) {
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) {
       return;
     }
+    const content = bizSession.content;
+    const version = bizSession.version;
     // Build go to step event data
-    const eventDataResult = buildGoToStepEventData(bizSession.version, stepId);
-    if (!eventDataResult) {
+    const eventData = buildStepEventData(content, version, stepId);
+    if (!eventData) {
       return;
     }
 
-    const { eventData, isComplete } = eventDataResult;
     const externalUserId = String(bizSession.bizUser.externalId);
 
     // Track the FLOW_STEP_SEEN event
@@ -638,7 +624,7 @@ export class EventTrackingService {
     );
 
     // Track the FLOW_COMPLETED event if the step is complete
-    if (isComplete) {
+    if (eventData[EventAttributes.FLOW_STEP_PROGRESS] === 100) {
       await this.executeEventTransaction(
         tx,
         environment,
@@ -729,41 +715,39 @@ export class EventTrackingService {
 
   /**
    * Track flow ended event
-   * @param bizSession - The business session
+   * @param sessionId - The session ID
    * @param environment - The environment
    * @param externalUserId - The external user ID
    * @param endReason - The end reason
+   * @param clientContext - The client context
    * @returns The tracked event or false if tracking failed
    */
   async trackFlowEndedEvent(
-    bizSession: BizSession,
+    sessionId: string,
     environment: Environment,
     externalUserId: string,
     endReason: string,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const latestStepSeenEvent = await this.prisma.bizEvent.findFirst({
-      where: {
-        bizSessionId: bizSession.id,
-        event: {
-          codeName: BizEvents.FLOW_STEP_SEEN,
-        },
-      },
-      include: { event: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    const seenData = (latestStepSeenEvent?.data as any) ?? {};
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) {
+      return false;
+    }
+    const content = bizSession.content;
+    const version = bizSession.version;
+    const currentStepId = bizSession.currentStepId;
 
-    const eventData: Record<string, any> = deepmerge({}, seenData, {
-      [EventAttributes.FLOW_END_REASON]: endReason,
-    });
+    const eventData = buildFlowEndedEventData(content, version, currentStepId, endReason);
+    if (!eventData) {
+      return false;
+    }
     const eventName = BizEvents.FLOW_ENDED;
 
     return await this.trackEvent(
       environment,
       externalUserId,
       eventName,
-      bizSession.id,
+      sessionId,
       eventData,
       clientContext,
     );
@@ -810,33 +794,19 @@ export class EventTrackingService {
    * @returns True if the event was tracked successfully
    */
   async trackQuestionAnsweredEvent(
-    params: QuestionAnsweredParams,
+    params: AnswerQuestionDto,
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithUserAndSteps(this.prisma, params.sessionId);
-    if (!bizSession) return false;
+    const bizSession = await this.findBizSessionWithRelations(params.sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) return false;
+    const content = bizSession.content;
+    const version = bizSession.version;
 
-    const eventData: any = {
-      [EventAttributes.QUESTION_CVID]: params.questionCvid,
-      [EventAttributes.QUESTION_NAME]: params.questionName,
-      [EventAttributes.QUESTION_TYPE]: params.questionType,
-    };
+    const eventData = buildQuestionAnsweredEventData(content, version, params);
 
-    let answer = null;
+    const answer = getAnswer(eventData);
 
-    if (!isNullish(params.listAnswer)) {
-      eventData[EventAttributes.LIST_ANSWER] = params.listAnswer;
-      answer = params.listAnswer;
-    }
-    if (!isNullish(params.numberAnswer)) {
-      eventData[EventAttributes.NUMBER_ANSWER] = params.numberAnswer;
-      answer = params.numberAnswer;
-    }
-    if (!isNullish(params.textAnswer)) {
-      eventData[EventAttributes.TEXT_ANSWER] = params.textAnswer;
-      answer = params.textAnswer;
-    }
     const externalUserId = String(bizSession.bizUser.externalId);
     const bindToAttribute = extractStepBindToAttribute(
       bizSession.version.steps as unknown as Step[],
@@ -1034,16 +1004,18 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithUserAndSteps(this.prisma, sessionId);
-    if (!bizSession) return false;
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) {
+      return false;
+    }
+    const content = bizSession.content;
     const version = bizSession.version;
 
-    const eventDataResult = buildGoToStepEventData(version, stepId);
-    if (!eventDataResult) {
+    const eventData = buildStepEventData(content, version, stepId);
+    if (!eventData) {
       return false;
     }
 
-    const { eventData } = eventDataResult;
     const externalUserId = String(bizSession.bizUser.externalId);
     return await this.trackEvent(
       environment,
@@ -1142,7 +1114,7 @@ export class EventTrackingService {
       include: { content: true },
     });
 
-    if (!bizSession) {
+    if (!bizSession?.content) {
       return false;
     }
 
@@ -1150,7 +1122,7 @@ export class EventTrackingService {
 
     if (contentType === ContentDataType.FLOW) {
       return await this.trackFlowEndedEvent(
-        bizSession,
+        sessionId,
         environment,
         externalUserId,
         endReason,

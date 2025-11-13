@@ -1,26 +1,45 @@
 import { BizEvents, EventAttributes, StepSettings } from '@usertour/types';
-import { Prisma } from '@prisma/client';
-import { VersionWithSteps, Step, Content, Version } from '@/common/types/schema';
+import { isNullish } from '@usertour/helpers';
+import {
+  VersionWithSteps,
+  Step,
+  Content,
+  Version,
+  BizEventWithEvent,
+  BizSessionWithEvents,
+} from '@/common/types/schema';
 import { CustomContentVersion } from '@/common/types/content';
+import type { AnswerQuestionDto } from '@usertour/types';
 
-type BizSession = Prisma.BizSessionGetPayload<{
-  include: {
-    bizEvent: {
-      include: {
-        event: true;
-      };
-    };
-  };
-}>;
+const isCompletedEvent = (eventCodeName: string) => {
+  return [
+    BizEvents.FLOW_COMPLETED,
+    BizEvents.CHECKLIST_COMPLETED,
+    BizEvents.LAUNCHER_ACTIVATED,
+  ].includes(eventCodeName as BizEvents);
+};
 
-export const getEventProgress = (eventCodeName: string, customProgress: number) => {
-  if (eventCodeName === BizEvents.FLOW_COMPLETED) {
-    return 100;
-  }
-  if (eventCodeName === BizEvents.FLOW_STEP_SEEN) {
-    return customProgress;
-  }
-  return 0;
+/**
+ * Calculate session progress based on event data and current progress
+ * @param eventCodeName - The event code name
+ * @param events - The event data object (may be undefined)
+ * @param currentProgress - The current session progress
+ * @returns The calculated progress to update, or null if no update is needed
+ */
+export const calculateSessionProgress = (
+  events: Record<string, unknown> | undefined,
+  eventCodeName: string,
+  currentProgress: number,
+): number | null => {
+  const stepProgress = (events?.[EventAttributes.FLOW_STEP_PROGRESS] as number | undefined) ?? 0;
+  // Calculate new progress from event
+  const newProgress = isCompletedEvent(eventCodeName) ? 100 : stepProgress;
+
+  // Calculate max progress: take the maximum of newProgress and currentProgress, but cap at 100
+  const maxProgress = Math.min(Math.max(newProgress, currentProgress), 100);
+
+  // Return the calculated progress only if it's different from current progress
+  return maxProgress !== currentProgress ? maxProgress : null;
 };
 
 export const getEventState = (eventCodeName: string) => {
@@ -51,7 +70,7 @@ export const getCurrentStepId = (eventCodeName: string, customStepId?: string): 
  * @returns true if the current event is valid, false otherwise
  */
 const validatePairedEvent = (
-  bizEvents: BizSession['bizEvent'],
+  bizEvents: BizEventWithEvent[],
   currentEventType: string,
   pairedEventType: string,
 ) => {
@@ -83,17 +102,17 @@ const validatePairedEvent = (
 // Event validation rules
 const EVENT_VALIDATION_RULES = {
   [BizEvents.CHECKLIST_SEEN]: {
-    validate: (bizEvents: BizSession['bizEvent']) => {
+    validate: (bizEvents: BizEventWithEvent[]) => {
       return validatePairedEvent(bizEvents, BizEvents.CHECKLIST_SEEN, BizEvents.CHECKLIST_HIDDEN);
     },
   },
   [BizEvents.CHECKLIST_HIDDEN]: {
-    validate: (bizEvents: BizSession['bizEvent']) => {
+    validate: (bizEvents: BizEventWithEvent[]) => {
       return validatePairedEvent(bizEvents, BizEvents.CHECKLIST_HIDDEN, BizEvents.CHECKLIST_SEEN);
     },
   },
   [BizEvents.CHECKLIST_COMPLETED]: {
-    validate: (bizEvents: BizSession['bizEvent']) => {
+    validate: (bizEvents: BizEventWithEvent[]) => {
       // Find the latest CHECKLIST_TASK_COMPLETED event
       const taskCompletedEvents =
         bizEvents?.filter(
@@ -123,7 +142,7 @@ const EVENT_VALIDATION_RULES = {
     },
   },
   // [BizEvents.CHECKLIST_TASK_CLICKED]: {
-  //   validate: (bizEvents: BizSession['bizEvent'], events: any) =>
+  //   validate: (bizEvents: BizEventWithEvent[], events: any) =>
   //     !bizEvents?.some(
   //       (event) =>
   //         event.event?.codeName === BizEvents.CHECKLIST_TASK_CLICKED &&
@@ -132,7 +151,7 @@ const EVENT_VALIDATION_RULES = {
   //     ),
   // },
   [BizEvents.CHECKLIST_TASK_COMPLETED]: {
-    validate: (bizEvents: BizSession['bizEvent'], events: any) =>
+    validate: (bizEvents: BizEventWithEvent[], events: any) =>
       !bizEvents?.some(
         (event) =>
           event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED &&
@@ -160,13 +179,13 @@ const DISMISSED_EVENTS = [
   BizEvents.FLOW_ENDED,
 ] as const;
 
-export const hasDismissedEvent = (bizEvents: BizSession['bizEvent']) => {
+export const hasDismissedEvent = (bizEvents: BizEventWithEvent[]) => {
   return bizEvents?.some((event) =>
     DISMISSED_EVENTS.includes(event.event?.codeName as (typeof DISMISSED_EVENTS)[number]),
   );
 };
 
-export const isValidEvent = (eventName: string, bizSession: BizSession, events: any) => {
+export const isValidEvent = (eventName: string, bizSession: BizSessionWithEvents, events: any) => {
   const bizEvents = bizSession.bizEvent;
 
   // Check if any dismissed event has occurred
@@ -199,6 +218,8 @@ export const buildFlowStartEventData = (
   startReason: string,
 ): Record<string, any> => {
   return {
+    [EventAttributes.FLOW_ID]: customContentVersion.content.id,
+    [EventAttributes.FLOW_NAME]: customContentVersion.content.name,
     [EventAttributes.FLOW_START_REASON]: startReason,
     [EventAttributes.FLOW_VERSION_ID]: customContentVersion.id,
     [EventAttributes.FLOW_VERSION_NUMBER]: customContentVersion.sequence,
@@ -293,19 +314,68 @@ export const buildLauncherDismissedEventData = (
 };
 
 /**
+ * Calculate step progress percentage
+ * @param steps - The array of steps
+ * @param stepIndex - The current step index (0-based)
+ * @returns Progress percentage (0-100), or -1 if the calculation is invalid
+ */
+const calculateStepProgress = (steps: Step[], stepIndex: number): number => {
+  // Validate inputs: stepIndex must be valid
+  if (stepIndex < 0 || stepIndex >= steps.length) {
+    return -1;
+  }
+
+  const step = steps[stepIndex];
+
+  // Find the first explicit completion step
+  const firstExplicitCompletionStepIndex = steps.findIndex(
+    (s: Step) => (s.setting as StepSettings)?.explicitCompletionStep === true,
+  );
+
+  // Calculate total: if any step has explicitCompletionStep, use the first one as completion step
+  // Otherwise, use the total number of steps
+  const total =
+    firstExplicitCompletionStepIndex !== -1 ? firstExplicitCompletionStepIndex + 1 : steps.length;
+
+  // Validate total
+  if (total <= 1) {
+    return -1;
+  }
+
+  // If there's an explicit completion step and current step is after it, it's not complete
+  if (firstExplicitCompletionStepIndex !== -1 && stepIndex > firstExplicitCompletionStepIndex) {
+    return -1;
+  }
+
+  // Check if current step has explicitCompletionStep setting
+  const isExplicitCompletionStep = (step.setting as StepSettings)?.explicitCompletionStep;
+
+  // Calculate isComplete:
+  // - If step has explicitCompletionStep, it's complete
+  // - Otherwise, check if it's the last step (stepIndex + 1 === total)
+  const isComplete = isExplicitCompletionStep || stepIndex + 1 === total;
+
+  // If complete, progress is always 100%
+  if (isComplete) {
+    return 100;
+  }
+
+  // Calculate progress: stepIndex / (total - 1) to ensure first step is 0% and last step is 100%
+  return Math.round((stepIndex / (total - 1)) * 100);
+};
+
+/**
  * Build go to step event data
  * Steps are sorted by sequence in descending order before calculation
  * @param version - The version with steps
  * @param stepId - The step ID
  * @returns Object containing event data and completion status, or null if validation fails
  */
-export const buildGoToStepEventData = (
+export const buildStepEventData = (
+  content: Pick<Content, 'id' | 'name'>,
   version: VersionWithSteps,
   stepId: string,
-): {
-  eventData: Record<string, any>;
-  isComplete: boolean;
-} | null => {
+): Record<string, any> | null => {
   const steps = version.steps;
   const stepIndex = steps.findIndex((step: Step) => step.id === stepId);
 
@@ -314,23 +384,44 @@ export const buildGoToStepEventData = (
   }
 
   const step = steps[stepIndex];
-  const total = steps.length;
-  const progress = Math.round(((stepIndex + 1) / total) * 100);
-  const isExplicitCompletionStep = (step.setting as StepSettings).explicitCompletionStep;
-  const isComplete = isExplicitCompletionStep ? isExplicitCompletionStep : stepIndex + 1 === total;
+
+  // Calculate progress using the extracted function
+  const progress = calculateStepProgress(steps, stepIndex);
 
   // Build event data
   const eventData = {
+    [EventAttributes.FLOW_ID]: content.id,
+    [EventAttributes.FLOW_NAME]: content.name,
     [EventAttributes.FLOW_VERSION_ID]: version.id,
     [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
     [EventAttributes.FLOW_STEP_ID]: step.id,
     [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
     [EventAttributes.FLOW_STEP_CVID]: step.cvid,
     [EventAttributes.FLOW_STEP_NAME]: step.name,
-    [EventAttributes.FLOW_STEP_PROGRESS]: progress,
   };
 
-  return { eventData, isComplete };
+  if (progress !== -1) {
+    eventData[EventAttributes.FLOW_STEP_PROGRESS] = progress;
+  }
+
+  return eventData;
+};
+
+export const buildFlowEndedEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: VersionWithSteps,
+  currentStepId: string,
+  endReason: string,
+): Record<string, any> | null => {
+  const eventData = buildStepEventData(content, version, currentStepId);
+  if (!eventData) {
+    return null;
+  }
+
+  return {
+    ...eventData,
+    [EventAttributes.FLOW_END_REASON]: endReason,
+  };
 };
 
 /**
@@ -455,4 +546,57 @@ export const buildChecklistTaskCompletedEventData = (
   checklistItem: { id: string; name: string },
 ): Record<string, any> => {
   return buildChecklistTaskEventData(content, version, checklistItem);
+};
+
+/**
+ * Build event data for question answered events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @param params - The parameters for the question answered event (sessionId will be ignored)
+ * @returns Question answered event data
+ */
+export const buildQuestionAnsweredEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+  params: AnswerQuestionDto,
+): Record<string, any> => {
+  const eventData: Record<string, any> = {
+    [EventAttributes.FLOW_ID]: content.id,
+    [EventAttributes.FLOW_NAME]: content.name,
+    [EventAttributes.FLOW_VERSION_ID]: version.id,
+    [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+    [EventAttributes.QUESTION_CVID]: params.questionCvid,
+    [EventAttributes.QUESTION_NAME]: params.questionName,
+    [EventAttributes.QUESTION_TYPE]: params.questionType,
+  };
+
+  if (!isNullish(params.listAnswer)) {
+    eventData[EventAttributes.LIST_ANSWER] = params.listAnswer;
+  }
+  if (!isNullish(params.numberAnswer)) {
+    eventData[EventAttributes.NUMBER_ANSWER] = params.numberAnswer;
+  }
+  if (!isNullish(params.textAnswer)) {
+    eventData[EventAttributes.TEXT_ANSWER] = params.textAnswer;
+  }
+
+  return eventData;
+};
+
+/**
+ * Get answer from event data
+ * @param event - The event data
+ * @returns The answer
+ */
+export const getAnswer = (event: Record<string, any>) => {
+  if (!isNullish(event[EventAttributes.LIST_ANSWER])) {
+    return event[EventAttributes.LIST_ANSWER];
+  }
+  if (!isNullish(event[EventAttributes.NUMBER_ANSWER])) {
+    return event[EventAttributes.NUMBER_ANSWER];
+  }
+  if (!isNullish(event[EventAttributes.TEXT_ANSWER])) {
+    return event[EventAttributes.TEXT_ANSWER];
+  }
+  return null;
 };

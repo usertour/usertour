@@ -6,7 +6,6 @@ import {
   UpsertUserDto,
   UpsertCompanyDto,
   GoToStepDto,
-  AnswerQuestionDto,
   ClickChecklistTaskDto,
   HideChecklistDto,
   ShowChecklistDto,
@@ -25,6 +24,7 @@ import {
   ClientContext,
   contentStartReason,
   contentEndReason,
+  AnswerQuestionDto,
 } from '@usertour/types';
 import { Server, Socket } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';

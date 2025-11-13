@@ -144,16 +144,6 @@ export type GoToStepDto = {
   stepId: string;
 };
 
-export type AnswerQuestionDto = {
-  questionCvid: string;
-  questionName: string;
-  questionType: string;
-  sessionId: string;
-  listAnswer?: string[];
-  numberAnswer?: number;
-  textAnswer?: string;
-};
-
 export type ClickChecklistTaskDto = {
   sessionId: string;
   taskId: string;
