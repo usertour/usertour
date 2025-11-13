@@ -1083,14 +1083,9 @@ export class ContentOrchestratorService {
       return null;
     }
 
-    // Sync session version ID for content types that require it
-    // This ensures biz session versionId matches the published version
-    // Only sync when biz session exists (not skipped)
+    // Sync session version ID if published version differs from custom version
     if (!skipBizSession) {
-      const contentType = customContentVersion.content.type as ContentDataType;
-      if (contentType === ContentDataType.CHECKLIST || contentType === ContentDataType.LAUNCHER) {
-        await this.sessionBuilderService.syncSessionVersionIfNeeded(session, customContentVersion);
-      }
+      await this.sessionBuilderService.syncSessionVersionIfNeeded(session, customContentVersion);
     }
 
     return session;
