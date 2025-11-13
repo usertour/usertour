@@ -358,10 +358,19 @@ export const findLatestStepSeenEvent = (
     return null;
   }
 
-  const stepSeenEvents = bizEvents
-    .filter((event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  return stepSeenEvents[0] ?? null;
+  // Use reduce to find the latest event instead of sorting the entire array
+  // This is more efficient (O(n) vs O(n log n)) when we only need the latest one
+  const stepSeenEvents = bizEvents.filter(
+    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
+  );
+
+  if (!stepSeenEvents.length) {
+    return null;
+  }
+
+  return stepSeenEvents.reduce((latest, current) => {
+    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
+  });
 };
 
 export const checklistIsDimissed = (bizEvents: BizEventWithEvent[] | undefined) => {
