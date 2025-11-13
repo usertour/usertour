@@ -12,6 +12,31 @@ import { CustomContentVersion } from '@/common/types/content';
 import type { AnswerQuestionDto } from '@usertour/types';
 import { isAfter } from 'date-fns';
 
+// Answer attribute keys in priority order
+const ANSWER_ATTRIBUTES = [
+  EventAttributes.LIST_ANSWER,
+  EventAttributes.NUMBER_ANSWER,
+  EventAttributes.TEXT_ANSWER,
+] as const;
+
+// Events that should only occur once
+const SINGLE_OCCURRENCE_EVENTS = [
+  BizEvents.FLOW_STARTED,
+  BizEvents.FLOW_COMPLETED,
+  BizEvents.FLOW_ENDED,
+  // BizEvents.CHECKLIST_COMPLETED,
+  BizEvents.CHECKLIST_DISMISSED,
+  BizEvents.CHECKLIST_STARTED,
+  BizEvents.LAUNCHER_DISMISSED,
+] as const;
+
+// Events that should invalidate subsequent events
+const DISMISSED_EVENTS = [
+  BizEvents.CHECKLIST_DISMISSED,
+  BizEvents.LAUNCHER_DISMISSED,
+  BizEvents.FLOW_ENDED,
+] as const;
+
 const isCompletedEvent = (eventCodeName: string) => {
   return [
     BizEvents.FLOW_COMPLETED,
@@ -43,15 +68,9 @@ export const calculateSessionProgress = (
   return maxProgress !== currentProgress ? maxProgress : null;
 };
 
-// Events that set state to 1 (dismissed/ended)
-const DISMISSED_STATE_EVENTS = new Set([
-  BizEvents.FLOW_ENDED,
-  BizEvents.CHECKLIST_DISMISSED,
-  BizEvents.LAUNCHER_DISMISSED,
-]);
-
 export const getEventState = (eventCodeName: string) => {
-  return DISMISSED_STATE_EVENTS.has(eventCodeName as BizEvents) ? 1 : 0;
+  // Reuse DISMISSED_EVENTS constant for consistency
+  return DISMISSED_EVENTS.includes(eventCodeName as (typeof DISMISSED_EVENTS)[number]) ? 1 : 0;
 };
 
 export const getCurrentStepId = (eventCodeName: string, customStepId?: string): string | null => {
@@ -165,24 +184,6 @@ const EVENT_VALIDATION_RULES = {
       ),
   },
 };
-
-// Events that should only occur once
-const SINGLE_OCCURRENCE_EVENTS = [
-  BizEvents.FLOW_STARTED,
-  BizEvents.FLOW_COMPLETED,
-  BizEvents.FLOW_ENDED,
-  // BizEvents.CHECKLIST_COMPLETED,
-  BizEvents.CHECKLIST_DISMISSED,
-  BizEvents.CHECKLIST_STARTED,
-  BizEvents.LAUNCHER_DISMISSED,
-] as const;
-
-// Events that should invalidate subsequent events
-const DISMISSED_EVENTS = [
-  BizEvents.CHECKLIST_DISMISSED,
-  BizEvents.LAUNCHER_DISMISSED,
-  BizEvents.FLOW_ENDED,
-] as const;
 
 export const hasDismissedEvent = (bizEvents: BizEventWithEvent[]) => {
   return bizEvents?.some((event) =>
@@ -587,13 +588,6 @@ export const buildQuestionAnsweredEventData = (
 
   return eventData;
 };
-
-// Answer attribute keys in priority order
-const ANSWER_ATTRIBUTES = [
-  EventAttributes.LIST_ANSWER,
-  EventAttributes.NUMBER_ANSWER,
-  EventAttributes.TEXT_ANSWER,
-] as const;
 
 /**
  * Get answer from event data
