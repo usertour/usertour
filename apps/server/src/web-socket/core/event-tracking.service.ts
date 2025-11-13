@@ -56,19 +56,6 @@ export class EventTrackingService {
   ) {}
 
   /**
-   * Find business session with user and version steps
-   * @param client - Prisma client or transaction client
-   * @param sessionId - Session ID
-   * @returns Business session with user and version steps, or null if not found
-   */
-  private async findBizSessionWithUserAndSteps(client: Tx | PrismaService, sessionId: string) {
-    return await client.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, version: { include: { steps: { orderBy: { sequence: 'asc' } } } } },
-    });
-  }
-
-  /**
    * Find business session with user and events
    * @param client - Prisma client or transaction client
    * @param sessionId - Session ID
