@@ -36,6 +36,7 @@ import { ClientCondition, CustomContentSession } from '@/common/types/sdk';
 @Injectable()
 export class WebSocketV2Service {
   private readonly logger = new Logger(WebSocketV2Service.name);
+
   constructor(
     private prisma: PrismaService,
     private bizService: BizService,
@@ -43,6 +44,10 @@ export class WebSocketV2Service {
     private readonly contentOrchestratorService: ContentOrchestratorService,
     private readonly socketDataService: SocketDataService,
   ) {}
+
+  // ============================================================================
+  // Socket Data Management Methods
+  // ============================================================================
 
   /**
    * Get socket data from Redis
@@ -61,87 +66,6 @@ export class WebSocketV2Service {
    */
   private async updateSocketData(socket: Socket, updates: Partial<SocketData>): Promise<boolean> {
     return await this.socketDataService.set(socket.id, updates, true);
-  }
-
-  /**
-   * Upsert business users
-   * @param data - The data to upsert
-   * @returns The upserted business users
-   */
-  async upsertBizUsers(context: WebSocketContext, data: UpsertUserDto): Promise<boolean> {
-    const { socket, socketData } = context;
-    const { environment } = socketData;
-
-    const { externalUserId, attributes } = data;
-    const bizUser = await this.bizService.upsertBizUsers(
-      this.prisma,
-      externalUserId,
-      attributes,
-      environment.id,
-    );
-    if (!bizUser) return false;
-    return await this.updateSocketData(socket, { externalUserId });
-  }
-
-  /**
-   * Upsert business companies
-   * @param socket - The socket instance
-   * @param data - The data to upsert
-   * @returns The upserted business companies
-   */
-  async upsertBizCompanies(context: WebSocketContext, data: UpsertCompanyDto): Promise<boolean> {
-    const { socket, socketData } = context;
-    const { environment } = socketData;
-
-    const { externalCompanyId, externalUserId, attributes, membership } = data;
-    const bizCompany = await this.bizService.upsertBizCompanies(
-      this.prisma,
-      externalCompanyId,
-      externalUserId,
-      attributes,
-      environment.id,
-      membership,
-    );
-
-    if (!bizCompany) return false;
-    return await this.updateSocketData(socket, { externalCompanyId });
-  }
-
-  /**
-   * Update socket context
-   * @param socket - The socket instance
-   * @param clientContext - The socket context
-   * @returns True if the socket context was updated successfully
-   */
-  async updateClientContext(
-    context: WebSocketContext,
-    clientContext: ClientContext,
-  ): Promise<boolean> {
-    const { socket } = context;
-    return await this.updateSocketData(socket, { clientContext });
-  }
-
-  /**
-   * Track event
-   * @param socket - The socket instance
-   * @param trackEventDto - The track event DTO
-   * @returns True if the event was tracked successfully
-   */
-  async trackEvent(context: WebSocketContext, trackEventDto: TrackEventDto): Promise<boolean> {
-    const { socketData } = context;
-    const { environment, externalUserId, clientContext } = socketData;
-
-    const { eventName, sessionId, eventData } = trackEventDto;
-    return Boolean(
-      await this.eventTrackingService.trackEvent(
-        environment,
-        externalUserId,
-        eventName,
-        sessionId,
-        eventData,
-        clientContext,
-      ),
-    );
   }
 
   /**
@@ -217,172 +141,76 @@ export class WebSocketV2Service {
     return socketData;
   }
 
+  // ============================================================================
+  // Business Data Operation Methods
+  // ============================================================================
+
   /**
-   * Go to step
-   * @param socket - The socket instance
-   * @param params - The parameters for the go to step event
-   * @returns True if the event was tracked successfully
+   * Upsert business users
+   * @param context - The web socket context
+   * @param data - The data to upsert
+   * @returns The upserted business users
    */
-  async goToStep(context: WebSocketContext, params: GoToStepDto): Promise<boolean> {
-    const { socketData } = context;
-    const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackGoToStepEvent(
-      params.sessionId,
-      params.stepId,
-      environment,
-      clientContext,
+  async upsertBizUsers(context: WebSocketContext, data: UpsertUserDto): Promise<boolean> {
+    const { socket, socketData } = context;
+    const { environment } = socketData;
+
+    const { externalUserId, attributes } = data;
+    const bizUser = await this.bizService.upsertBizUsers(
+      this.prisma,
+      externalUserId,
+      attributes,
+      environment.id,
     );
+    if (!bizUser) return false;
+    return await this.updateSocketData(socket, { externalUserId });
   }
 
   /**
-   * Answer question
-   * @param socket - The socket instance
-   * @param params - The parameters for the answer question event
-   * @returns True if the event was tracked successfully
+   * Upsert business companies
+   * @param context - The web socket context
+   * @param data - The data to upsert
+   * @returns The upserted business companies
    */
-  async answerQuestion(context: WebSocketContext, params: AnswerQuestionDto): Promise<boolean> {
-    const { socketData, server, socket } = context;
-    const { environment, clientContext } = socketData;
-    const success = await this.eventTrackingService.trackQuestionAnsweredEvent(
-      params,
-      environment,
-      clientContext,
-    );
-    await this.toggleContents(server, socket, [ContentDataType.FLOW]);
+  async upsertBizCompanies(context: WebSocketContext, data: UpsertCompanyDto): Promise<boolean> {
+    const { socket, socketData } = context;
+    const { environment } = socketData;
 
-    return success;
+    const { externalCompanyId, externalUserId, attributes, membership } = data;
+    const bizCompany = await this.bizService.upsertBizCompanies(
+      this.prisma,
+      externalCompanyId,
+      externalUserId,
+      attributes,
+      environment.id,
+      membership,
+    );
+
+    if (!bizCompany) return false;
+    return await this.updateSocketData(socket, { externalCompanyId });
   }
 
   /**
-   * Click checklist task
-   * @param socket - The socket instance
-   * @param params - The parameters for the click checklist task event
-   * @returns True if the event was tracked successfully
+   * Update socket context
+   * @param context - The web socket context
+   * @param clientContext - The socket context
+   * @returns True if the socket context was updated successfully
    */
-  async clickChecklistTask(
+  async updateClientContext(
     context: WebSocketContext,
-    params: ClickChecklistTaskDto,
+    clientContext: ClientContext,
   ): Promise<boolean> {
-    const { socketData } = context;
-    const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackChecklistTaskClickedEvent(
-      params.sessionId,
-      environment,
-      clientContext,
-      params.taskId,
-    );
+    const { socket } = context;
+    return await this.updateSocketData(socket, { clientContext });
   }
 
-  /**
-   * Hide checklist
-   * @param socket - The socket instance
-   * @param params - The parameters for the hide checklist event
-   * @returns True if the event was tracked successfully
-   */
-  async hideChecklist(context: WebSocketContext, params: HideChecklistDto): Promise<boolean> {
-    const { socketData } = context;
-    const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackChecklistHiddenEvent(
-      params.sessionId,
-      environment,
-      clientContext,
-    );
-  }
-
-  /**
-   * Show checklist
-   * @param socket - The socket instance
-   * @param params - The parameters for the show checklist event
-   * @returns True if the event was tracked successfully
-   */
-  async showChecklist(context: WebSocketContext, params: ShowChecklistDto): Promise<boolean> {
-    const { socketData } = context;
-    const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackChecklistSeenEvent(
-      params.sessionId,
-      environment,
-      clientContext,
-    );
-  }
-
-  /**
-   * Report tooltip target missing
-   * @param socket - The socket instance
-   * @param params - The parameters for the tooltip target missing event
-   * @returns True if the event was tracked successfully
-   */
-  async reportTooltipTargetMissing(
-    context: WebSocketContext,
-    params: TooltipTargetMissingDto,
-  ): Promise<boolean> {
-    const { socketData } = context;
-    const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackTooltipTargetMissingEvent(
-      params.sessionId,
-      params.stepId,
-      environment,
-      clientContext,
-    );
-  }
-
-  /**
-   * Activate launcher
-   * @param socket - The socket instance
-   * @param params - The parameters for the activate launcher event
-   * @returns True if the event was tracked successfully
-   */
-  async activateLauncher(context: WebSocketContext, params: ActivateLauncherDto): Promise<boolean> {
-    const { socketData } = context;
-    const { environment, clientContext } = socketData;
-    const { sessionId } = params;
-    return await this.eventTrackingService.trackLauncherActivatedEvent(
-      sessionId,
-      environment,
-      clientContext,
-    );
-  }
-
-  /**
-   * Dismiss launcher
-   * @param socket - The socket instance
-   * @param params - The parameters for the dismiss launcher event
-   * @returns True if the launcher was dismissed successfully
-   */
-  async dismissLauncher(context: WebSocketContext, params: DismissLauncherDto): Promise<boolean> {
-    const { server, socket, socketData } = context;
-    const { environment, clientContext } = socketData;
-    const { sessionId, endReason } = params;
-    const success = await this.eventTrackingService.trackLauncherDismissedEvent(
-      sessionId,
-      environment,
-      clientContext,
-      endReason,
-    );
-    await this.toggleContents(server, socket, [ContentDataType.LAUNCHER]);
-    return success;
-  }
-
-  /**
-   * End batch
-   * @param server - The server instance
-   * @param socket - The socket instance
-   * @returns True if the batch was ended successfully
-   */
-  async endBatch(context: WebSocketContext): Promise<boolean> {
-    const { server, socket } = context;
-
-    const contentTypes = [
-      ContentDataType.CHECKLIST,
-      ContentDataType.FLOW,
-      ContentDataType.LAUNCHER,
-    ];
-    return await this.toggleContents(server, socket, contentTypes);
-  }
+  // ============================================================================
+  // Content Management Methods
+  // ============================================================================
 
   /**
    * Start content
-   * @param server - The server instance
-   * @param socket - The socket instance
+   * @param context - The web socket context
    * @param startContentDto - The parameters for the start content event
    * @returns True if the content was started successfully
    */
@@ -415,7 +243,7 @@ export class WebSocketV2Service {
 
   /**
    * End content
-   * @param socket - The socket instance
+   * @param context - The web socket context
    * @param endContentDto - The end content DTO
    * @returns True if the event was tracked successfully
    */
@@ -470,6 +298,22 @@ export class WebSocketV2Service {
   }
 
   /**
+   * End batch
+   * @param context - The web socket context
+   * @returns True if the batch was ended successfully
+   */
+  async endBatch(context: WebSocketContext): Promise<boolean> {
+    const { server, socket } = context;
+
+    const contentTypes = [
+      ContentDataType.CHECKLIST,
+      ContentDataType.FLOW,
+      ContentDataType.LAUNCHER,
+    ];
+    return await this.toggleContents(server, socket, contentTypes);
+  }
+
+  /**
    * Toggle contents for the socket
    * This method will start content types specified by the caller, handling session cleanup and restart
    * @param server - The server instance
@@ -512,12 +356,187 @@ export class WebSocketV2Service {
     return true;
   }
 
+  // ============================================================================
+  // Event Tracking Methods
+  // ============================================================================
+
+  /**
+   * Track event
+   * @param context - The web socket context
+   * @param trackEventDto - The track event DTO
+   * @returns True if the event was tracked successfully
+   */
+  async trackEvent(context: WebSocketContext, trackEventDto: TrackEventDto): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, externalUserId, clientContext } = socketData;
+
+    const { eventName, sessionId, eventData } = trackEventDto;
+    return Boolean(
+      await this.eventTrackingService.trackEvent(
+        environment,
+        externalUserId,
+        eventName,
+        sessionId,
+        eventData,
+        clientContext,
+      ),
+    );
+  }
+
+  /**
+   * Go to step
+   * @param context - The web socket context
+   * @param params - The parameters for the go to step event
+   * @returns True if the event was tracked successfully
+   */
+  async goToStep(context: WebSocketContext, params: GoToStepDto): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackGoToStepEvent(
+      params.sessionId,
+      params.stepId,
+      environment,
+      clientContext,
+    );
+  }
+
+  /**
+   * Answer question
+   * @param context - The web socket context
+   * @param params - The parameters for the answer question event
+   * @returns True if the event was tracked successfully
+   */
+  async answerQuestion(context: WebSocketContext, params: AnswerQuestionDto): Promise<boolean> {
+    const { socketData, server, socket } = context;
+    const { environment, clientContext } = socketData;
+    const success = await this.eventTrackingService.trackQuestionAnsweredEvent(
+      params,
+      environment,
+      clientContext,
+    );
+    await this.toggleContents(server, socket, [ContentDataType.FLOW]);
+
+    return success;
+  }
+
+  /**
+   * Click checklist task
+   * @param context - The web socket context
+   * @param params - The parameters for the click checklist task event
+   * @returns True if the event was tracked successfully
+   */
+  async clickChecklistTask(
+    context: WebSocketContext,
+    params: ClickChecklistTaskDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackChecklistTaskClickedEvent(
+      params.sessionId,
+      environment,
+      clientContext,
+      params.taskId,
+    );
+  }
+
+  /**
+   * Hide checklist
+   * @param context - The web socket context
+   * @param params - The parameters for the hide checklist event
+   * @returns True if the event was tracked successfully
+   */
+  async hideChecklist(context: WebSocketContext, params: HideChecklistDto): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackChecklistHiddenEvent(
+      params.sessionId,
+      environment,
+      clientContext,
+    );
+  }
+
+  /**
+   * Show checklist
+   * @param context - The web socket context
+   * @param params - The parameters for the show checklist event
+   * @returns True if the event was tracked successfully
+   */
+  async showChecklist(context: WebSocketContext, params: ShowChecklistDto): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackChecklistSeenEvent(
+      params.sessionId,
+      environment,
+      clientContext,
+    );
+  }
+
+  /**
+   * Report tooltip target missing
+   * @param context - The web socket context
+   * @param params - The parameters for the tooltip target missing event
+   * @returns True if the event was tracked successfully
+   */
+  async reportTooltipTargetMissing(
+    context: WebSocketContext,
+    params: TooltipTargetMissingDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackTooltipTargetMissingEvent(
+      params.sessionId,
+      params.stepId,
+      environment,
+      clientContext,
+    );
+  }
+
+  /**
+   * Activate launcher
+   * @param context - The web socket context
+   * @param params - The parameters for the activate launcher event
+   * @returns True if the event was tracked successfully
+   */
+  async activateLauncher(context: WebSocketContext, params: ActivateLauncherDto): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    const { sessionId } = params;
+    return await this.eventTrackingService.trackLauncherActivatedEvent(
+      sessionId,
+      environment,
+      clientContext,
+    );
+  }
+
+  /**
+   * Dismiss launcher
+   * @param context - The web socket context
+   * @param params - The parameters for the dismiss launcher event
+   * @returns True if the launcher was dismissed successfully
+   */
+  async dismissLauncher(context: WebSocketContext, params: DismissLauncherDto): Promise<boolean> {
+    const { server, socket, socketData } = context;
+    const { environment, clientContext } = socketData;
+    const { sessionId, endReason } = params;
+    const success = await this.eventTrackingService.trackLauncherDismissedEvent(
+      sessionId,
+      environment,
+      clientContext,
+      endReason,
+    );
+    await this.toggleContents(server, socket, [ContentDataType.LAUNCHER]);
+    return success;
+  }
+
+  // ============================================================================
+  // Condition Management Methods
+  // ============================================================================
+
   /**
    * Toggle the isActive status of a specific socket condition by condition ID
    * Handles timing issues by creating the condition if it doesn't exist yet
    * Now simplified as message queue ensures ordered execution
-   * @param socket - The socket instance
-   * @param socketData - The socket client data
+   * @param context - The web socket context
    * @param clientCondition - The client condition
    * @returns True if the condition was toggled successfully
    */
@@ -549,8 +568,7 @@ export class WebSocketV2Service {
 
   /**
    * Fire condition wait timer
-   * @param socket - The socket instance
-   * @param socketData - The socket client data
+   * @param context - The web socket context
    * @param fireConditionWaitTimerDto - The DTO containing the version ID
    * @returns True if the wait timer was fired successfully
    */
@@ -583,6 +601,10 @@ export class WebSocketV2Service {
     });
   }
 
+  // ============================================================================
+  // Session Initialization Methods
+  // ============================================================================
+
   /**
    * Initialize content session
    * @param socketData - The socket client data
@@ -599,7 +621,7 @@ export class WebSocketV2Service {
   /**
    * Initialize launcher sessions by content IDs
    * @param socketData - The socket client data
-   * @param contentIds - Array of content IDs
+   * @param launcherIds - Array of launcher content IDs
    * @returns Array of initialized sessions
    */
   async initializeLauncherSessions(
