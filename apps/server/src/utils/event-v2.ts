@@ -1,4 +1,10 @@
-import { BizEvents, EventAttributes, StepSettings, ChecklistData } from '@usertour/types';
+import {
+  BizEvents,
+  EventAttributes,
+  StepSettings,
+  ChecklistData,
+  ClientContext,
+} from '@usertour/types';
 import { isNullish } from '@usertour/helpers';
 import {
   VersionWithSteps,
@@ -560,4 +566,22 @@ export const getAnswer = (event: Record<string, any>) => {
     }
   }
   return null;
+};
+
+/**
+ * Assign client context to event data
+ * @param data - The event data
+ * @param clientContext - The client context
+ * @returns Event data with client context assigned
+ */
+export const assignClientContext = (
+  data: Record<string, unknown>,
+  clientContext: ClientContext,
+): Record<string, unknown> => {
+  return {
+    ...data,
+    [EventAttributes.PAGE_URL]: clientContext.pageUrl,
+    [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
+    [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
+  };
 };

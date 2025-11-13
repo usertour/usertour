@@ -17,6 +17,7 @@ import {
   buildFlowEndedEventData,
   buildQuestionAnsweredEventData,
   getAnswer,
+  assignClientContext,
 } from '@/utils/event-v2';
 import {
   BizEvents,
@@ -157,21 +158,6 @@ export class EventTrackingService {
 
     // Return filtered data only if we have valid attributes
     return Object.keys(filteredData).length > 0 ? filteredData : false;
-  }
-
-  /**
-   * Add client context to event data
-   */
-  private addClientContextToEventData(data: Record<string, unknown>, clientContext: ClientContext) {
-    if (clientContext) {
-      return {
-        ...data,
-        [EventAttributes.PAGE_URL]: clientContext.pageUrl,
-        [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
-        [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
-      };
-    }
-    return data;
   }
 
   // ============================================================================
@@ -472,7 +458,7 @@ export class EventTrackingService {
       return false;
     }
 
-    const eventData = this.addClientContextToEventData(data, clientContext);
+    const eventData = assignClientContext(data, clientContext);
     // Filter event data
     const events = await this.filterEventDataByAttributes(event.id, eventData);
     if (!events) {
@@ -483,7 +469,7 @@ export class EventTrackingService {
     // Type assertion is safe because bizSession includes bizEvent with event relation
     const isEventCreated = await this.handleEventCreation(
       tx,
-      bizSession as BizSessionWithEvents,
+      bizSession,
       event.id,
       eventCodeName,
       events,
