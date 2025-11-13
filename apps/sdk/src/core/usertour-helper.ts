@@ -40,6 +40,10 @@ import {
 import { SessionAttribute } from '@/types/sdk';
 import { AttributeBizTypes, RulesEvaluationOptions } from '@usertour/types';
 
+// ============================================================================
+// Constants
+// ============================================================================
+
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
   ContentPriority.HIGH,
@@ -48,6 +52,15 @@ export const PRIORITIES = [
   ContentPriority.LOWEST,
 ];
 
+// ============================================================================
+// Element Visibility and Interaction Functions
+// ============================================================================
+
+/**
+ * Check if an element is visible in the viewport
+ * @param el - The HTML element to check
+ * @returns True if the element is visible, false otherwise
+ */
 export const isVisible = async (el: HTMLElement) => {
   if (!document?.body) {
     return false;
@@ -62,8 +75,16 @@ export const isVisible = async (el: HTMLElement) => {
   return true;
 };
 
+/**
+ * Cache for tracking clicked elements
+ */
 const cache = new Map();
 
+/**
+ * Check if an element has been clicked
+ * @param el - The HTML element to check
+ * @returns True if the element has been clicked, false otherwise
+ */
 const isClicked = (el: HTMLElement) => {
   if (cache.has(el)) {
     return cache.get(el);
@@ -77,6 +98,20 @@ const isClicked = (el: HTMLElement) => {
   return false;
 };
 
+/**
+ * Cache for tracking text fill events
+ */
+const fillCache = new Map();
+
+// ============================================================================
+// Rule Evaluation Functions
+// ============================================================================
+
+/**
+ * Check if element-based rules are active
+ * @param rules - The rules condition to check
+ * @returns True if the rules are active, false otherwise
+ */
 const isActiveRulesByElement = async (rules: RulesCondition) => {
   const { data } = rules;
   if (!document) {
@@ -104,6 +139,11 @@ const isActiveRulesByElement = async (rules: RulesCondition) => {
   }
 };
 
+/**
+ * Check if text input-based rules are active
+ * @param rules - The rules condition to check
+ * @returns True if the rules are active, false otherwise
+ */
 const isActiveRulesByTextInput = async (rules: RulesCondition) => {
   const {
     data: { elementData, logic, value },
@@ -142,8 +182,11 @@ const isActiveRulesByTextInput = async (rules: RulesCondition) => {
   }
 };
 
-const fillCache = new Map();
-
+/**
+ * Check if text fill-based rules are active
+ * @param rules - The rules condition to check
+ * @returns True if the rules are active, false otherwise
+ */
 const isActiveRulesByTextFill = async (rules: RulesCondition) => {
   const {
     data: { elementData },
@@ -178,6 +221,75 @@ const isActiveRulesByTextFill = async (rules: RulesCondition) => {
   return false;
 };
 
+/**
+ * Evaluate rules conditions by session attributes
+ * @param conditions - Rules conditions to evaluate
+ * @param attributes - Session attributes to evaluate
+ * @returns Evaluation result
+ */
+export const evaluateConditions = async (
+  conditions: RulesCondition[],
+  attributes?: SessionAttribute[],
+) => {
+  const typeControl: RulesTypeControl = {
+    [RulesType.CURRENT_PAGE]: true,
+    [RulesType.TIME]: true,
+    ...(attributes ? { [RulesType.USER_ATTR]: true } : {}),
+  };
+  const clientContext = getClientContext();
+
+  return await evaluateRulesConditions(conditions, {
+    clientContext,
+    typeControl,
+    customEvaluators: {
+      [RulesType.ELEMENT]: isActiveRulesByElement,
+      [RulesType.TEXT_INPUT]: isActiveRulesByTextInput,
+      [RulesType.TEXT_FILL]: isActiveRulesByTextFill,
+    },
+    ...(attributes ? convertToAttributeEvaluationOptions(attributes) : {}),
+  });
+};
+
+/**
+ * Convert SessionAttribute array to RulesEvaluationOptions format
+ * @param sessionAttributes - Array of session attributes to convert
+ * @returns Partial RulesEvaluationOptions for attribute evaluation
+ */
+export const convertToAttributeEvaluationOptions = (sessionAttributes: SessionAttribute[]) => {
+  const attributes: RulesEvaluationOptions['attributes'] = [];
+  const userAttributes: RulesEvaluationOptions['userAttributes'] = {};
+  const companyAttributes: RulesEvaluationOptions['companyAttributes'] = {};
+  const membershipAttributes: RulesEvaluationOptions['membershipAttributes'] = {};
+
+  for (const sessionAttr of sessionAttributes) {
+    const { value, ...attributeDefinition } = sessionAttr;
+
+    // Add to attributes definition array (exclude value field)
+    attributes?.push(attributeDefinition);
+
+    // Distribute values by business type
+    const { codeName, bizType } = sessionAttr;
+    if (bizType === AttributeBizTypes.Company) {
+      companyAttributes![codeName] = value;
+    } else if (bizType === AttributeBizTypes.Membership) {
+      membershipAttributes![codeName] = value;
+    } else {
+      userAttributes![codeName] = value; // Default for User and unknown types
+    }
+  }
+
+  return { attributes, userAttributes, companyAttributes, membershipAttributes };
+};
+
+// ============================================================================
+// Content Filtering and Validation Functions
+// ============================================================================
+
+/**
+ * Check if content is active based on auto-start rules
+ * @param content - The SDK content to check
+ * @returns True if the content is active, false otherwise
+ */
 export const isActiveContent = (content: SDKContent) => {
   const { enabledAutoStartRules, autoStartRules } = content.config;
   if (!enabledAutoStartRules || !isConditionsActived(autoStartRules)) {
@@ -186,6 +298,12 @@ export const isActiveContent = (content: SDKContent) => {
   return true;
 };
 
+/**
+ * Compare two contents by priority
+ * @param a - The first content
+ * @param b - The second content
+ * @returns Comparison result
+ */
 const priorityCompare = (a: SDKContent, b: SDKContent) => {
   const a1 = a?.config?.autoStartRulesSetting?.priority;
   const a2 = b?.config?.autoStartRulesSetting?.priority;
@@ -203,6 +321,12 @@ const priorityCompare = (a: SDKContent, b: SDKContent) => {
   return 0;
 };
 
+/**
+ * Filter auto-start content by type
+ * @param contents - Array of SDK contents
+ * @param type - The content type to filter
+ * @returns Filtered and sorted contents
+ */
 export const filterAutoStartContent = (contents: SDKContent[], type: string) => {
   return contents
     .filter((content) => {
@@ -213,6 +337,12 @@ export const filterAutoStartContent = (contents: SDKContent[], type: string) => 
     .sort(priorityCompare);
 };
 
+/**
+ * Check if two content arrays are the same
+ * @param source - The source content array
+ * @param dest - The destination content array
+ * @returns True if the arrays are the same, false otherwise
+ */
 export const isSameContents = (source: SDKContent[], dest: SDKContent[]) => {
   if (!source || !dest || source.length !== dest.length) {
     return false;
@@ -230,47 +360,23 @@ export const isSameContents = (source: SDKContent[], dest: SDKContent[]) => {
   return true;
 };
 
-const getLatestEvent = (
-  currentContent: SDKContent,
-  contents: SDKContent[],
-  eventCodeName: string,
-) => {
-  const bizEvents: BizEvent[] = [];
-  const contentId = currentContent.id;
-  const contentType = currentContent.type;
-  for (let index = 0; index < contents.length; index++) {
-    const content = contents[index];
-    if (content.id === contentId || content.type !== contentType) {
-      continue;
-    }
-    const sessionBizEvents = content.latestSession?.bizEvent;
-    if (sessionBizEvents && sessionBizEvents.length > 0) {
-      bizEvents.push(...sessionBizEvents.filter((e) => e?.event?.codeName === eventCodeName));
-    }
-  }
-  return findLatestEvent(bizEvents);
-};
-
-export const findLatestEvent = (bizEvents: BizEvent[]) => {
-  const initialValue = bizEvents[0];
-  const lastEvent = bizEvents.reduce(
-    (accumulator: typeof initialValue, currentValue: typeof initialValue) => {
-      if (isAfter(new Date(currentValue.createdAt), new Date(accumulator.createdAt))) {
-        return currentValue;
-      }
-      return accumulator;
-    },
-    initialValue,
-  );
-  return lastEvent;
-};
-
+/**
+ * Mapping of content types to their show event names
+ */
 const showEventMapping = {
   [ContentDataType.FLOW]: BizEvents.FLOW_STEP_SEEN,
   [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_SEEN,
   [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_SEEN,
 };
 
+/**
+ * Check if duration between two dates is greater than specified duration
+ * @param dateLeft - The left date
+ * @param dateRight - The right date
+ * @param unit - The unit of time
+ * @param duration - The duration value
+ * @returns True if the duration is greater, false otherwise
+ */
 const isGreaterThenDuration = (
   dateLeft: Date,
   dateRight: Date,
@@ -304,34 +410,12 @@ const isGreaterThenDuration = (
   }
 };
 
-export const checklistIsDimissed = (latestSession?: BizSession) => {
-  return latestSession?.bizEvent?.find(
-    (event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
-  );
-};
-
-export const flowIsDismissed = (latestSession?: BizSession) => {
-  return latestSession?.bizEvent?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
-};
-
-export const launcherIsDismissed = (latestSession?: BizSession) => {
-  return latestSession?.bizEvent?.find(
-    (event) => event?.event?.codeName === BizEvents.LAUNCHER_DISMISSED,
-  );
-};
-
-export const flowIsSeen = (latestSession?: BizSession) => {
-  return latestSession?.bizEvent?.find(
-    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
-  );
-};
-
-export const checklistIsSeen = (latestSession?: BizSession) => {
-  return latestSession?.bizEvent?.find(
-    (event) => event?.event?.codeName === BizEvents.CHECKLIST_SEEN,
-  );
-};
-
+/**
+ * Validate if content is valid based on various criteria
+ * @param content - The SDK content to validate
+ * @param contents - Array of all SDK contents for context
+ * @returns True if the content is valid, false otherwise
+ */
 export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   const now = new Date();
   if (content.type === ContentDataType.FLOW) {
@@ -423,6 +507,124 @@ export const isValidContent = (content: SDKContent, contents: SDKContent[]) => {
   return true;
 };
 
+// ============================================================================
+// Event Finding Functions
+// ============================================================================
+
+/**
+ * Get the latest event from other content versions
+ * @param currentContent - The current content
+ * @param contents - Array of all contents
+ * @param eventCodeName - The event code name to filter
+ * @returns The latest event or undefined
+ */
+const getLatestEvent = (
+  currentContent: SDKContent,
+  contents: SDKContent[],
+  eventCodeName: string,
+) => {
+  const bizEvents: BizEvent[] = [];
+  const contentId = currentContent.id;
+  const contentType = currentContent.type;
+  for (let index = 0; index < contents.length; index++) {
+    const content = contents[index];
+    if (content.id === contentId || content.type !== contentType) {
+      continue;
+    }
+    const sessionBizEvents = content.latestSession?.bizEvent;
+    if (sessionBizEvents && sessionBizEvents.length > 0) {
+      bizEvents.push(...sessionBizEvents.filter((e) => e?.event?.codeName === eventCodeName));
+    }
+  }
+  return findLatestEvent(bizEvents);
+};
+
+/**
+ * Find the latest event from an array of business events
+ * @param bizEvents - Array of business events to search through
+ * @returns The latest event based on creation date
+ */
+export const findLatestEvent = (bizEvents: BizEvent[]) => {
+  const initialValue = bizEvents[0];
+  const lastEvent = bizEvents.reduce(
+    (accumulator: typeof initialValue, currentValue: typeof initialValue) => {
+      if (isAfter(new Date(currentValue.createdAt), new Date(accumulator.createdAt))) {
+        return currentValue;
+      }
+      return accumulator;
+    },
+    initialValue,
+  );
+  return lastEvent;
+};
+
+// ============================================================================
+// Content Status Checking Functions
+// ============================================================================
+
+/**
+ * Check if a checklist is dismissed
+ * @param latestSession - The latest business session
+ * @returns The dismissed event if found, undefined otherwise
+ */
+export const checklistIsDimissed = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
+  );
+};
+
+/**
+ * Check if a flow is dismissed
+ * @param latestSession - The latest business session
+ * @returns The dismissed event if found, undefined otherwise
+ */
+export const flowIsDismissed = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
+};
+
+/**
+ * Check if a launcher is dismissed
+ * @param latestSession - The latest business session
+ * @returns The dismissed event if found, undefined otherwise
+ */
+export const launcherIsDismissed = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.LAUNCHER_DISMISSED,
+  );
+};
+
+/**
+ * Check if a flow is seen
+ * @param latestSession - The latest business session
+ * @returns The seen event if found, undefined otherwise
+ */
+export const flowIsSeen = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
+  );
+};
+
+/**
+ * Check if a checklist is seen
+ * @param latestSession - The latest business session
+ * @returns The seen event if found, undefined otherwise
+ */
+export const checklistIsSeen = (latestSession?: BizSession) => {
+  return latestSession?.bizEvent?.find(
+    (event) => event?.event?.codeName === BizEvents.CHECKLIST_SEEN,
+  );
+};
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Build navigate URL from value array with user attributes support
+ * @param value - Array of URL segments
+ * @param userAttributes - Optional user attributes for substitution
+ * @returns The built URL string
+ */
 export function buildNavigateUrl(value: any[], userAttributes?: UserTourTypes.Attributes): string {
   let url = '';
 
@@ -460,6 +662,11 @@ export const hasAttributesChanged = (
   return !isEqual(currentAttributes, mergedAttributes);
 };
 
+/**
+ * Create a mock user for testing purposes
+ * @param userId - Optional user ID
+ * @returns Mock user information
+ */
 export const createMockUser = (userId?: string): BizUserInfo => {
   const now = new Date().toISOString();
   return {
@@ -478,6 +685,10 @@ export const createMockUser = (userId?: string): BizUserInfo => {
   };
 };
 
+/**
+ * Check if the extension is running
+ * @returns True if the extension is running, false otherwise
+ */
 export const extensionIsRunning = () => {
   const el = document?.querySelector('#usertour-iframe-container') as HTMLIFrameElement;
 
@@ -533,66 +744,6 @@ export const createQuestionAnswerEventData = (
   }
 
   return eventData;
-};
-
-/**
- * Convert SessionAttribute array to RulesEvaluationOptions format
- * @param sessionAttributes - Array of session attributes to convert
- * @returns Partial RulesEvaluationOptions for attribute evaluation
- */
-export const convertToAttributeEvaluationOptions = (sessionAttributes: SessionAttribute[]) => {
-  const attributes: RulesEvaluationOptions['attributes'] = [];
-  const userAttributes: RulesEvaluationOptions['userAttributes'] = {};
-  const companyAttributes: RulesEvaluationOptions['companyAttributes'] = {};
-  const membershipAttributes: RulesEvaluationOptions['membershipAttributes'] = {};
-
-  for (const sessionAttr of sessionAttributes) {
-    const { value, ...attributeDefinition } = sessionAttr;
-
-    // Add to attributes definition array (exclude value field)
-    attributes?.push(attributeDefinition);
-
-    // Distribute values by business type
-    const { codeName, bizType } = sessionAttr;
-    if (bizType === AttributeBizTypes.Company) {
-      companyAttributes![codeName] = value;
-    } else if (bizType === AttributeBizTypes.Membership) {
-      membershipAttributes![codeName] = value;
-    } else {
-      userAttributes![codeName] = value; // Default for User and unknown types
-    }
-  }
-
-  return { attributes, userAttributes, companyAttributes, membershipAttributes };
-};
-
-/**
- * Evaluate rules conditions by session attributes
- * @param conditions - Rules conditions to evaluate
- * @param attributes - Session attributes to evaluate
- * @returns Evaluation result
- */
-export const evaluateConditions = async (
-  conditions: RulesCondition[],
-  attributes?: SessionAttribute[],
-) => {
-  const typeControl: RulesTypeControl = {
-    [RulesType.CURRENT_PAGE]: true,
-    [RulesType.TIME]: true,
-    ...(attributes ? { [RulesType.USER_ATTR]: true } : {}),
-  };
-  const clientContext = getClientContext();
-
-  return await evaluateRulesConditions(conditions, {
-    clientContext,
-    typeControl,
-    customEvaluators: {
-      [RulesType.ELEMENT]: isActiveRulesByElement,
-      [RulesType.TEXT_INPUT]: isActiveRulesByTextInput,
-      [RulesType.TEXT_FILL]: isActiveRulesByTextFill,
-    },
-    ...(attributes ? convertToAttributeEvaluationOptions(attributes) : {}),
-  });
 };
 
 /**
