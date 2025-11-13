@@ -74,7 +74,7 @@ export class EventTrackingService {
    * @param client - Optional Prisma client or transaction client (defaults to this.prisma)
    * @returns Business session with user, content and version, or null if not found
    */
-  async findBizSessionWithRelations(
+  private async findBizSessionWithRelations(
     sessionId: string,
     client?: PrismaService | Tx,
   ): Promise<BizSessionWithRelations | null> {
@@ -92,10 +92,14 @@ export class EventTrackingService {
   /**
    * Get business session for event tracking
    * @param sessionId - Session ID
+   * @param client - Optional Prisma client or transaction client (defaults to this.prisma)
    * @returns Business session with relations, or null if invalid
    */
-  private async getTrackingSession(sessionId: string): Promise<BizSessionWithRelations | null> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
+  private async getTrackingSession(
+    sessionId: string,
+    client?: PrismaService | Tx,
+  ): Promise<BizSessionWithRelations | null> {
+    const bizSession = await this.findBizSessionWithRelations(sessionId, client);
 
     // Standard validation: session must exist and have content and version
     if (!bizSession || !bizSession.content || !bizSession.version) {
@@ -644,8 +648,8 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<void> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId, tx);
-    if (!bizSession || !bizSession.content || !bizSession.version) {
+    const bizSession = await this.getTrackingSession(sessionId, tx);
+    if (!bizSession) {
       return;
     }
     const content = bizSession.content;
