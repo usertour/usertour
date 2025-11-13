@@ -7,10 +7,9 @@ import {
 } from '@/common/types/sdk';
 import { SocketData } from '@/common/types/content';
 
-/**
- * WebSocket utility functions
- * Contains pure functions for WebSocket-related operations
- */
+// ============================================================================
+// ID/Key Building Functions
+// ============================================================================
 
 /**
  * Build the socket lock key for distributed locking
@@ -31,6 +30,10 @@ export const buildSocketLockKey = (socketId: string): string => {
 export const buildExternalUserRoomId = (environmentId: string, externalUserId: string): string => {
   return `user:${environmentId}:${externalUserId}`;
 };
+
+// ============================================================================
+// Session Extraction Functions
+// ============================================================================
 
 /**
  * Extract content session from socket client data by content type
@@ -91,6 +94,10 @@ export const extractExcludedContentIds = (
     contentType === ContentDataType.CHECKLIST && lastDismissedChecklistId,
   ].filter(Boolean) as string[];
 };
+
+// ============================================================================
+// Condition Categorization and Processing Functions
+// ============================================================================
 
 /**
  * Categorize client conditions into preserved, untrack, and track groups
@@ -211,6 +218,10 @@ export const convertToClientConditions = (trackConditions: TrackCondition[]): Cl
     isActive: false, // Default to inactive state
   }));
 };
+
+// ============================================================================
+// Launcher Session Functions
+// ============================================================================
 
 /**
  * Efficiently categorize launcher sessions into new, removed, and preserved groups
