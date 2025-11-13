@@ -49,6 +49,10 @@ import {
   isArray,
 } from '@usertour/helpers';
 
+// ============================================================================
+// Constants
+// ============================================================================
+
 export const PRIORITIES = [
   ContentPriority.HIGHEST,
   ContentPriority.HIGH,
@@ -56,6 +60,36 @@ export const PRIORITIES = [
   ContentPriority.LOW,
   ContentPriority.LOWEST,
 ];
+
+// ============================================================================
+// Rule Checking Functions
+// ============================================================================
+
+/**
+ * Checks if the auto-start rules are enabled for a custom content version
+ * @param customContentVersion - The custom content version to check
+ * @returns True if the auto-start rules are enabled, false otherwise
+ */
+export const isEnabledAutoStartRules = (customContentVersion: CustomContentVersion) => {
+  const { enabledAutoStartRules, autoStartRules } = customContentVersion.config;
+  if (!enabledAutoStartRules || autoStartRules.length === 0) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Checks if the hide rules are enabled for a custom content version
+ * @param customContentVersion - The custom content version to check
+ * @returns True if the hide rules are enabled, false otherwise
+ */
+export const isEnabledHideRules = (customContentVersion: CustomContentVersion) => {
+  const { enabledHideRules, hideRules } = customContentVersion.config;
+  if (!enabledHideRules || hideRules.length === 0) {
+    return false;
+  }
+  return true;
+};
 
 /**
  * Checks if the auto-start rules are activated for a custom content version
@@ -83,31 +117,168 @@ export const isActivedHideRules = (customContentVersion: CustomContentVersion) =
   return true;
 };
 
+// ============================================================================
+// Event Finding Functions
+// ============================================================================
+
 /**
- * Checks if the hide rules are enabled for a custom content version
- * @param customContentVersion - The custom content version to check
- * @returns True if the hide rules are enabled, false otherwise
+ * Finds the latest event from an array of business events
+ * @param bizEvents - Array of business events to search through
+ * @returns The latest event based on creation date
  */
-export const isEnabledHideRules = (customContentVersion: CustomContentVersion) => {
-  const { enabledHideRules, hideRules } = customContentVersion.config;
-  if (!enabledHideRules || hideRules.length === 0) {
-    return false;
-  }
-  return true;
+export const findLatestEvent = (bizEvents: BizEventWithEvent[]) => {
+  const initialValue = bizEvents[0];
+  const lastEvent = bizEvents.reduce(
+    (accumulator: typeof initialValue, currentValue: typeof initialValue) => {
+      const currentDate = new Date(currentValue.createdAt);
+      const accumulatorDate = new Date(accumulator.createdAt);
+      if (isAfter(currentDate, accumulatorDate)) {
+        return currentValue;
+      }
+      return accumulator;
+    },
+    initialValue,
+  );
+  return lastEvent;
 };
 
 /**
- * Checks if the auto-start rules are enabled for a custom content version
- * @param customContentVersion - The custom content version to check
- * @returns True if the auto-start rules are enabled, false otherwise
+ * Finds the latest step number from step seen events
+ * @param bizEvents Array of business events to search through
+ * @returns The latest step number or -1 if no steps were seen
  */
-export const isEnabledAutoStartRules = (customContentVersion: CustomContentVersion) => {
-  const { enabledAutoStartRules, autoStartRules } = customContentVersion.config;
-  if (!enabledAutoStartRules || autoStartRules.length === 0) {
-    return false;
+export const findLatestStepNumber = (bizEvents: BizEventWithEvent[] | undefined): number => {
+  if (!bizEvents?.length || flowIsDismissed(bizEvents)) {
+    return -1;
   }
-  return true;
+  const latestStepSeenEvent = findLatestStepSeenEvent(bizEvents);
+  if (!latestStepSeenEvent) {
+    return -1;
+  }
+  const data = latestStepSeenEvent.data as any;
+
+  if (isUndefined(data.flow_step_number)) {
+    return -1;
+  }
+  return data.flow_step_number;
 };
+
+/**
+ * Finds the latest step CVID from step seen events
+ * @param bizEvents - Array of business events to search through
+ * @returns The latest step CVID or undefined if not found
+ */
+export const findLatestStepCvid = (
+  bizEvents: BizEventWithEvent[] | undefined,
+): string | undefined => {
+  try {
+    if (!bizEvents?.length || flowIsDismissed(bizEvents)) {
+      return undefined;
+    }
+    const latestStepSeenEvent = findLatestStepSeenEvent(bizEvents);
+    if (!latestStepSeenEvent) {
+      return undefined;
+    }
+    const data = latestStepSeenEvent.data as Record<string, unknown>;
+    if (isUndefined(data[EventAttributes.FLOW_STEP_CVID])) {
+      return undefined;
+    }
+    return data[EventAttributes.FLOW_STEP_CVID] as string;
+  } catch (_) {
+    return undefined;
+  }
+};
+
+/**
+ * Finds the current step CVID
+ * @param customContentVersion - The custom content version
+ * @param options - The start content options
+ * @returns The current step CVID
+ */
+export const findCurrentStepCvid = (
+  customContentVersion: CustomContentVersion,
+  options?: StartContentOptions,
+): string | undefined => {
+  const { stepCvid } = options ?? {};
+  const steps = customContentVersion?.steps ?? [];
+  const session = customContentVersion.session;
+  const contentType = customContentVersion.content.type as ContentDataType;
+
+  if (stepCvid) {
+    return stepCvid;
+  }
+
+  if (!sessionIsAvailable(session.latestSession, contentType)) {
+    return steps?.[0]?.cvid;
+  }
+
+  const currentStepId = session.latestSession.currentStepId;
+  const currentStepCvid = steps.find((step) => step.id === currentStepId)?.cvid ?? null;
+
+  return currentStepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
+};
+
+/**
+ * Finds the latest step seen event from business events
+ * @param bizEvents - Array of business events to search through
+ * @returns The latest step seen event or null if not found
+ */
+export const findLatestStepSeenEvent = (
+  bizEvents: BizEventWithEvent[] | undefined,
+): BizEventWithEvent | null => {
+  if (!bizEvents?.length) {
+    return null;
+  }
+
+  // Use reduce to find the latest event instead of sorting the entire array
+  // This is more efficient (O(n) vs O(n log n)) when we only need the latest one
+  const stepSeenEvents = bizEvents.filter(
+    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
+  );
+
+  if (!stepSeenEvents.length) {
+    return null;
+  }
+
+  return stepSeenEvents.reduce((latest, current) => {
+    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
+  });
+};
+
+// ============================================================================
+// Content Status Checking Functions
+// ============================================================================
+
+/**
+ * Checks if a checklist is dismissed based on business events
+ * @param bizEvents - Array of business events to check
+ * @returns The dismissed event if found, undefined otherwise
+ */
+export const checklistIsDimissed = (bizEvents: BizEventWithEvent[] | undefined) => {
+  return bizEvents?.find((event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED);
+};
+
+/**
+ * Checks if a flow is dismissed based on business events
+ * @param bizEvents - Array of business events to check
+ * @returns The dismissed event if found, undefined otherwise
+ */
+export const flowIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
+  return bizEvents?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
+};
+
+/**
+ * Checks if a launcher is dismissed based on business events
+ * @param bizEvents - Array of business events to check
+ * @returns The dismissed event if found, undefined otherwise
+ */
+export const launcherIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
+  return bizEvents?.find((event) => event?.event?.codeName === BizEvents.LAUNCHER_DISMISSED);
+};
+
+// ============================================================================
+// Content Filtering Functions
+// ============================================================================
 
 /**
  * Compares two custom content versions based on their priority
@@ -132,6 +303,12 @@ const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
   return 0;
 };
 
+/**
+ * Gets the latest event from other content versions
+ * @param currentContent - The current content version
+ * @param contents - Array of all content versions
+ * @returns The latest event from other content versions
+ */
 const getLatestEvent = (currentContent: CustomContentVersion, contents: CustomContentVersion[]) => {
   const bizEvents: BizEventWithEvent[] = [];
   const contentId = currentContent.id;
@@ -149,28 +326,23 @@ const getLatestEvent = (currentContent: CustomContentVersion, contents: CustomCo
   return findLatestEvent(bizEvents);
 };
 
-export const findLatestEvent = (bizEvents: BizEventWithEvent[]) => {
-  const initialValue = bizEvents[0];
-  const lastEvent = bizEvents.reduce(
-    (accumulator: typeof initialValue, currentValue: typeof initialValue) => {
-      const currentDate = new Date(currentValue.createdAt);
-      const accumulatorDate = new Date(accumulator.createdAt);
-      if (isAfter(currentDate, accumulatorDate)) {
-        return currentValue;
-      }
-      return accumulator;
-    },
-    initialValue,
-  );
-  return lastEvent;
-};
-
+/**
+ * Mapping of content types to their dismissed event names
+ */
 const dismissedEventMapping = {
   [ContentDataType.FLOW]: BizEvents.FLOW_ENDED,
   [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_DISMISSED,
   [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_DISMISSED,
 };
 
+/**
+ * Checks if the duration between two dates is greater than the specified duration
+ * @param dateLeft - The left date
+ * @param dateRight - The right date
+ * @param unit - The unit of time
+ * @param duration - The duration value
+ * @returns True if the duration is greater, false otherwise
+ */
 const isGreaterThenDuration = (
   dateLeft: Date,
   dateRight: Date,
@@ -204,6 +376,12 @@ const isGreaterThenDuration = (
   }
 };
 
+/**
+ * Checks if content is allowed by auto-start rules setting
+ * @param customContentVersion - The custom content version to check
+ * @param customContentVersions - All custom content versions for context
+ * @returns True if allowed, false otherwise
+ */
 export const isAllowedByAutoStartRulesSetting = (
   customContentVersion: CustomContentVersion,
   customContentVersions: CustomContentVersion[],
@@ -281,111 +459,6 @@ export const isAllowedByAutoStartRulesSetting = (
 };
 
 /**
- * Finds the latest step number from step seen events
- * @param bizEvents Array of business events to search through
- * @returns The latest step number or -1 if no steps were seen
- */
-export const findLatestStepNumber = (bizEvents: BizEventWithEvent[] | undefined): number => {
-  if (!bizEvents?.length || flowIsDismissed(bizEvents)) {
-    return -1;
-  }
-  const latestStepSeenEvent = findLatestStepSeenEvent(bizEvents);
-  if (!latestStepSeenEvent) {
-    return -1;
-  }
-  const data = latestStepSeenEvent.data as any;
-
-  if (isUndefined(data.flow_step_number)) {
-    return -1;
-  }
-  return data.flow_step_number;
-};
-
-export const findLatestStepCvid = (
-  bizEvents: BizEventWithEvent[] | undefined,
-): string | undefined => {
-  try {
-    if (!bizEvents?.length || flowIsDismissed(bizEvents)) {
-      return undefined;
-    }
-    const latestStepSeenEvent = findLatestStepSeenEvent(bizEvents);
-    if (!latestStepSeenEvent) {
-      return undefined;
-    }
-    const data = latestStepSeenEvent.data as Record<string, unknown>;
-    if (isUndefined(data[EventAttributes.FLOW_STEP_CVID])) {
-      return undefined;
-    }
-    return data[EventAttributes.FLOW_STEP_CVID] as string;
-  } catch (_) {
-    return undefined;
-  }
-};
-
-/**
- * Finds the current step CVID
- * @param customContentVersion - The custom content version
- * @param options - The start content options
- * @returns The current step CVID
- */
-export const findCurrentStepCvid = (
-  customContentVersion: CustomContentVersion,
-  options?: StartContentOptions,
-): string | undefined => {
-  const { stepCvid } = options ?? {};
-  const steps = customContentVersion?.steps ?? [];
-  const session = customContentVersion.session;
-  const contentType = customContentVersion.content.type as ContentDataType;
-
-  if (stepCvid) {
-    return stepCvid;
-  }
-
-  if (!sessionIsAvailable(session.latestSession, contentType)) {
-    return steps?.[0]?.cvid;
-  }
-
-  const currentStepId = session.latestSession.currentStepId;
-  const currentStepCvid = steps.find((step) => step.id === currentStepId)?.cvid ?? null;
-
-  return currentStepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
-};
-
-export const findLatestStepSeenEvent = (
-  bizEvents: BizEventWithEvent[] | undefined,
-): BizEventWithEvent | null => {
-  if (!bizEvents?.length) {
-    return null;
-  }
-
-  // Use reduce to find the latest event instead of sorting the entire array
-  // This is more efficient (O(n) vs O(n log n)) when we only need the latest one
-  const stepSeenEvents = bizEvents.filter(
-    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
-  );
-
-  if (!stepSeenEvents.length) {
-    return null;
-  }
-
-  return stepSeenEvents.reduce((latest, current) => {
-    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
-  });
-};
-
-export const checklistIsDimissed = (bizEvents: BizEventWithEvent[] | undefined) => {
-  return bizEvents?.find((event) => event?.event?.codeName === BizEvents.CHECKLIST_DISMISSED);
-};
-
-export const flowIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
-  return bizEvents?.find((event) => event?.event?.codeName === BizEvents.FLOW_ENDED);
-};
-
-export const launcherIsDismissed = (bizEvents: BizEventWithEvent[] | undefined) => {
-  return bizEvents?.find((event) => event?.event?.codeName === BizEvents.LAUNCHER_DISMISSED);
-};
-
-/**
  * Checks if a custom content version is allowed based on wait timer conditions
  * @param customContentVersion - The custom content version to check
  * @param firedWaitTimerVersionIds - Optional array of version IDs that have fired wait timers
@@ -441,29 +514,10 @@ export const isAllowedByHideRules = (
 };
 
 /**
- * Filters the available launcher custom content versions
- * @param customContentVersions - The custom content versions
- * @param clientConditions - The client conditions
- * @returns The available launcher custom content versions
- */
-export const filterAvailableLauncherContentVersions = (
-  customContentVersions: CustomContentVersion[],
-  clientConditions: ClientCondition[],
-) => {
-  const autoStartContentVersions = filterAvailableAutoStartContentVersions(
-    customContentVersions,
-    ContentDataType.LAUNCHER,
-    clientConditions,
-  );
-  return autoStartContentVersions.filter(
-    (contentVersion) => !launcherIsDismissed(contentVersion.session.latestSession?.bizEvent),
-  );
-};
-
-/**
  * Filters the available auto-start custom content versions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
+ * @param clientConditions - The client conditions
  * @param waitTimers - The wait timer conditions
  * @returns The available auto-start custom content versions
  */
@@ -510,6 +564,113 @@ export const filterAvailableAutoStartContentVersions = (
     })
     .sort(priorityCompare);
 };
+
+/**
+ * Filters the available launcher custom content versions
+ * @param customContentVersions - The custom content versions
+ * @param clientConditions - The client conditions
+ * @returns The available launcher custom content versions
+ */
+export const filterAvailableLauncherContentVersions = (
+  customContentVersions: CustomContentVersion[],
+  clientConditions: ClientCondition[],
+) => {
+  const autoStartContentVersions = filterAvailableAutoStartContentVersions(
+    customContentVersions,
+    ContentDataType.LAUNCHER,
+    clientConditions,
+  );
+  return autoStartContentVersions.filter(
+    (contentVersion) => !launcherIsDismissed(contentVersion.session.latestSession?.bizEvent),
+  );
+};
+
+/**
+ * Helper function to check if auto-start content is eligible
+ * @param customContentVersion - The content version to check
+ * @param allContentVersions - All content versions for context
+ * @param allowedConditionTypes - Allowed condition types for filtering
+ * @returns True if the content is eligible for auto-start
+ */
+const isAutoStartContentEligible = (
+  customContentVersion: CustomContentVersion,
+  allContentVersions: CustomContentVersion[],
+  allowedConditionTypes: RulesType[],
+): boolean => {
+  // Check if auto-start rules are enabled
+  if (!isEnabledAutoStartRules(customContentVersion)) {
+    return false;
+  }
+
+  // Check auto-start rules settings
+  if (!isAllowedByAutoStartRulesSetting(customContentVersion, allContentVersions)) {
+    return false;
+  }
+
+  // Filter conditions by allowed types and check if they are activated
+  const filteredConditions = filterConditionsByType(
+    customContentVersion.config.autoStartRules,
+    allowedConditionTypes,
+  );
+
+  return isConditionsActived(filteredConditions);
+};
+
+/**
+ * Filters activated custom content versions that do not have client-side conditions
+ * @param customContentVersions - The custom content versions
+ * @param contentType - The content type
+ * @returns Array of activated custom content versions without client conditions
+ */
+export const filterActivatedContentWithoutClientConditions = (
+  customContentVersions: CustomContentVersion[],
+  contentType: ContentDataType,
+): CustomContentVersion[] => {
+  // Early return if no content versions provided
+  if (!customContentVersions?.length) {
+    return [];
+  }
+
+  // Define the condition types to filter by (server-side only conditions)
+  const allowedConditionTypes = [
+    RulesType.USER_ATTR,
+    RulesType.SEGMENT,
+    RulesType.CONTENT,
+    RulesType.TIME,
+    RulesType.CURRENT_PAGE,
+  ];
+
+  return customContentVersions.filter((customContentVersion) => {
+    // Check if content type matches
+    if (customContentVersion.content.type !== contentType) {
+      return false;
+    }
+
+    // Check if hide rules are activated and blocking the content
+    if (isActivedHideRules(customContentVersion)) {
+      return false;
+    }
+
+    // Path 1: Check auto-start content versions
+    if (
+      isAutoStartContentEligible(customContentVersion, customContentVersions, allowedConditionTypes)
+    ) {
+      return true;
+    }
+
+    // Launcher is not eligible for auto-start, return false
+    if (contentType === ContentDataType.LAUNCHER) {
+      return false;
+    }
+
+    // Path 2: Check activated content versions (session-based)
+    return sessionIsAvailable(customContentVersion.session.latestSession, contentType);
+  });
+};
+
+// ============================================================================
+// Session Management Functions
+// ============================================================================
 
 /**
  * Finds the available session ID
@@ -572,6 +733,7 @@ export const sessionIsAvailable = (
  * Finds the latest activated custom content version
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
+ * @param clientConditions - The client conditions
  * @returns The latest activated custom content version
  */
 export const findLatestActivatedCustomContentVersions = (
@@ -608,87 +770,23 @@ export const findCustomContentVersionByContentId = (
 };
 
 /**
- * Filters activated custom content versions that do not have client-side conditions
- * @param customContentVersions - The custom content versions
- * @param contentType - The content type
- * @returns Array of activated custom content versions without client conditions
+ * Get the published version ID for a content in a specific environment
+ * @param content - The content to get the published version ID for
+ * @param environmentId - The ID of the environment
+ * @returns The published version ID
  */
-export const filterActivatedContentWithoutClientConditions = (
-  customContentVersions: CustomContentVersion[],
-  contentType: ContentDataType,
-): CustomContentVersion[] => {
-  // Early return if no content versions provided
-  if (!customContentVersions?.length) {
-    return [];
-  }
-
-  // Define the condition types to filter by (server-side only conditions)
-  const allowedConditionTypes = [
-    RulesType.USER_ATTR,
-    RulesType.SEGMENT,
-    RulesType.CONTENT,
-    RulesType.TIME,
-    RulesType.CURRENT_PAGE,
-  ];
-
-  return customContentVersions.filter((customContentVersion) => {
-    // Check if content type matches
-    if (customContentVersion.content.type !== contentType) {
-      return false;
-    }
-
-    // Check if hide rules are activated and blocking the content
-    if (isActivedHideRules(customContentVersion)) {
-      return false;
-    }
-
-    // Path 1: Check auto-start content versions
-    if (
-      isAutoStartContentEligible(customContentVersion, customContentVersions, allowedConditionTypes)
-    ) {
-      return true;
-    }
-
-    // Launcher is not eligible for auto-start, return false
-    if (contentType === ContentDataType.LAUNCHER) {
-      return false;
-    }
-
-    // Path 2: Check activated content versions (session-based)
-    return sessionIsAvailable(customContentVersion.session.latestSession, contentType);
-  });
+export const getPublishedVersionId = (
+  content: ContentWithContentOnEnvironments,
+  environmentId: string,
+): string | undefined => {
+  return content.contentOnEnvironments.find(
+    (item) => item.environmentId === environmentId && item.published,
+  )?.publishedVersionId;
 };
 
-/**
- * Helper function to check if auto-start content is eligible
- * @param customContentVersion - The content version to check
- * @param allContentVersions - All content versions for context
- * @param allowedConditionTypes - Allowed condition types for filtering
- * @returns True if the content is eligible for auto-start
- */
-const isAutoStartContentEligible = (
-  customContentVersion: CustomContentVersion,
-  allContentVersions: CustomContentVersion[],
-  allowedConditionTypes: RulesType[],
-): boolean => {
-  // Check if auto-start rules are enabled
-  if (!isEnabledAutoStartRules(customContentVersion)) {
-    return false;
-  }
-
-  // Check auto-start rules settings
-  if (!isAllowedByAutoStartRulesSetting(customContentVersion, allContentVersions)) {
-    return false;
-  }
-
-  // Filter conditions by allowed types and check if they are activated
-  const filteredConditions = filterConditionsByType(
-    customContentVersion.config.autoStartRules,
-    allowedConditionTypes,
-  );
-
-  return isConditionsActived(filteredConditions);
-};
+// ============================================================================
+// Condition Evaluation and Extraction Functions
+// ============================================================================
 
 /**
  * Evaluates the custom content versions
@@ -778,21 +876,6 @@ export const extractConditionIds = (conditions: RulesCondition[]): string[] => {
   }
 
   return allIds;
-};
-
-/**
- * Get the published version ID for a content in a specific environment
- * @param content - The content to get the published version ID for
- * @param environmentId - The ID of the environment
- * @returns The published version ID
- */
-export const getPublishedVersionId = (
-  content: ContentWithContentOnEnvironments,
-  environmentId: string,
-): string | undefined => {
-  return content.contentOnEnvironments.find(
-    (item) => item.environmentId === environmentId && item.published,
-  )?.publishedVersionId;
 };
 
 /**
@@ -890,6 +973,60 @@ export const extractClientConditionWaitTimers = (
   }
   return waitTimers;
 };
+
+/**
+ * Checks if all condition IDs in rules conditions exist and are ready in client conditions
+ * @param conditions - Array of rules conditions (hideRules, autoStartRules, etc.)
+ * @param clientConditions - Array of client conditions from Redis socket data
+ * @param allowedTypes - Array of allowed condition types to filter by
+ * @returns True if all condition IDs exist and are ready (have isActive status), false otherwise
+ */
+export const conditionsIsReady = (
+  conditions: RulesCondition[],
+  clientConditions: ClientCondition[],
+  allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
+): boolean => {
+  if (!clientConditions || clientConditions.length === 0) {
+    return false;
+  }
+
+  const allowedConditions = flattenConditions(conditions, allowedTypes);
+  const clientConditionIds = clientConditions
+    .filter((cc) => cc.isActive !== undefined)
+    .map((cc) => cc.conditionId);
+
+  // Check if all condition IDs exist in client conditions with feedback
+  return allowedConditions.every((conditions) => clientConditionIds.includes(conditions.id));
+};
+
+/**
+ * Resolve clientConditions with latest states from clientConditionReports
+ * @param clientConditions - Business conditions (metadata)
+ * @param clientConditionReports - Client feedback conditions
+ * @returns Resolved clientConditions with latest states
+ */
+export const resolveConditionStates = (
+  clientConditions: ClientCondition[],
+  clientConditionReports: ClientCondition[],
+): ClientCondition[] => {
+  // Create a map of client reports for quick lookup
+  const reportsMap = new Map(
+    clientConditionReports.map((report) => [report.conditionId, report.isActive]),
+  );
+
+  // Update clientConditions with latest states from reports
+  return clientConditions.map((condition) => {
+    const reportValue = reportsMap.get(condition.conditionId);
+    return {
+      ...condition,
+      isActive: reportValue !== undefined ? reportValue : condition.isActive,
+    };
+  });
+};
+
+// ============================================================================
+// Attribute Extraction Functions
+// ============================================================================
 
 /**
  * Recursively extracts attribute IDs from rules conditions
@@ -1049,6 +1186,11 @@ export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
   return attrCodes;
 };
 
+/**
+ * Extracts user attribute codes from launcher data
+ * @param launcher - The launcher data
+ * @returns Array of unique user attribute codes
+ */
 export const extractLauncherAttrCodes = (launcher: LauncherData): string[] => {
   const content = launcher?.tooltip?.content as unknown as ContentEditorRoot[];
   if (content && isArray(content)) {
@@ -1057,200 +1199,13 @@ export const extractLauncherAttrCodes = (launcher: LauncherData): string[] => {
   return [];
 };
 
-// ===== SESSION COMPARISON UTILITIES =====
-
-/**
- * Check if session attributes have changes
- * @param oldAttributes - The original attributes
- * @param newAttributes - The new attributes
- * @returns True if there are differences
- */
-const hasSessionAttributeChanges = (
-  oldAttributes: SessionAttribute[],
-  newAttributes: SessionAttribute[],
-): boolean => {
-  if (oldAttributes.length !== newAttributes.length) {
-    return true;
-  }
-
-  const sortedOld = [...oldAttributes].sort((a, b) => a.id.localeCompare(b.id));
-  const sortedNew = [...newAttributes].sort((a, b) => a.id.localeCompare(b.id));
-
-  return !isEqual(sortedOld, sortedNew);
-};
-
-/**
- * Check if theme variations have changes
- * @param oldVariations - The original variations
- * @param newVariations - The new variations
- * @returns True if there are differences
- */
-const hasThemeVariationChanges = (
-  oldVariations: ThemeVariation[] | undefined,
-  newVariations: ThemeVariation[] | undefined,
-): boolean => {
-  const oldVars = oldVariations || [];
-  const newVars = newVariations || [];
-
-  if (oldVars.length !== newVars.length) {
-    return true;
-  }
-
-  const sortedOld = [...oldVars].sort((a, b) => a.id.localeCompare(b.id));
-  const sortedNew = [...newVars].sort((a, b) => a.id.localeCompare(b.id));
-
-  return !isEqual(sortedOld, sortedNew);
-};
-
-/**
- * Check if session themes have changes with smart comparison for variations and attributes
- * @param oldTheme - The original theme
- * @param newTheme - The new theme
- * @returns True if there are differences
- */
-const hasSessionThemeChanges = (
-  oldTheme: SessionTheme | undefined,
-  newTheme: SessionTheme | undefined,
-): boolean => {
-  // Handle null/undefined cases
-  if (!oldTheme && !newTheme) {
-    return false;
-  }
-  if (!oldTheme || !newTheme) {
-    return true;
-  }
-
-  // Compare settings (deep comparison for theme settings)
-  if (!isEqual(oldTheme.settings, newTheme.settings)) {
-    return true;
-  }
-
-  // Check variations changes by ID
-  if (hasThemeVariationChanges(oldTheme.variations, newTheme.variations)) {
-    return true;
-  }
-
-  // Check theme attributes changes
-  if (hasSessionAttributeChanges(oldTheme.attributes || [], newTheme.attributes || [])) {
-    return true;
-  }
-
-  return false;
-};
-
-/**
- * Check if session steps have changes with smart theme comparison
- * @param oldSteps - The original steps
- * @param newSteps - The new steps
- * @returns True if there are differences
- */
-const hasSessionStepChanges = (oldSteps: SessionStep[], newSteps: SessionStep[]): boolean => {
-  if (oldSteps.length !== newSteps.length) {
-    return true;
-  }
-
-  // Use id-based lookup to find corresponding steps, similar to hasChecklistItemChanges
-  // This avoids issues with array comparison by using isEqual on individual steps
-  return oldSteps.some((oldStep) => {
-    const newStep = newSteps.find((step) => step.id === oldStep.id);
-
-    // If step not found in newSteps, it's a change
-    if (!newStep) {
-      return true;
-    }
-
-    // Compare entire step objects using isEqual
-    return !isEqual(oldStep, newStep);
-  });
-};
-
-/**
- * Check if checklist items have changes
- * @param oldItems - The old items
- * @param newItems - The new items
- * @returns True if there are differences
- */
-const hasChecklistItemChanges = (oldItems: ChecklistItemType[], newItems: ChecklistItemType[]) => {
-  if (oldItems.length !== newItems.length) {
-    return true;
-  }
-
-  // Check if any changes occurred
-  return oldItems.some((item) => {
-    const newItem = newItems.find((newItem) => newItem.id === item.id);
-    return (
-      newItem &&
-      (item.isCompleted !== newItem.isCompleted ||
-        item.isVisible !== newItem.isVisible ||
-        item.isShowAnimation !== newItem.isShowAnimation)
-    );
-  });
-};
-
-/**
- * Checks if launcher data has changes
- * @param oldLauncher - The old launcher data
- * @param newLauncher - The new launcher data
- * @returns True if there are differences
- */
-const hasLauncherDataChanges = (oldLauncher: LauncherData, newLauncher: LauncherData): boolean => {
-  return !isEqual(oldLauncher, newLauncher);
-};
-
-/**
- * Checks if all condition IDs in rules conditions exist and are ready in client conditions
- * @param conditions - Array of rules conditions (hideRules, autoStartRules, etc.)
- * @param clientConditions - Array of client conditions from Redis socket data
- * @returns True if all condition IDs exist and are ready (have isActive status), false otherwise
- */
-export const conditionsIsReady = (
-  conditions: RulesCondition[],
-  clientConditions: ClientCondition[],
-  allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
-): boolean => {
-  if (!clientConditions || clientConditions.length === 0) {
-    return false;
-  }
-
-  const allowedConditions = flattenConditions(conditions, allowedTypes);
-  const clientConditionIds = clientConditions
-    .filter((cc) => cc.isActive !== undefined)
-    .map((cc) => cc.conditionId);
-
-  // Check if all condition IDs exist in client conditions with feedback
-  return allowedConditions.every((conditions) => clientConditionIds.includes(conditions.id));
-};
-
-/**
- * Resolve clientConditions with latest states from clientConditionReports
- * @param clientConditions - Business conditions (metadata)
- * @param clientConditionReports - Client feedback conditions
- * @returns Resolved clientConditions with latest states
- */
-export const resolveConditionStates = (
-  clientConditions: ClientCondition[],
-  clientConditionReports: ClientCondition[],
-): ClientCondition[] => {
-  // Create a map of client reports for quick lookup
-  const reportsMap = new Map(
-    clientConditionReports.map((report) => [report.conditionId, report.isActive]),
-  );
-
-  // Update clientConditions with latest states from reports
-  return clientConditions.map((condition) => {
-    const reportValue = reportsMap.get(condition.conditionId);
-    return {
-      ...condition,
-      isActive: reportValue !== undefined ? reportValue : condition.isActive,
-    };
-  });
-};
-
-/**=========================== CHECKLIST UTILITIES ================================**/
+// ============================================================================
+// Checklist Utility Functions
+// ============================================================================
 
 /**
  * Gets the initial display of a checklist
- * @param checklist - The checklist to get the initial display of
+ * @param customContentVersion - The custom content version
  * @returns The initial display of the checklist
  */
 export const getChecklistInitialDisplay = (
@@ -1502,6 +1457,12 @@ export const evaluateChecklistItems = async (
   return processedItems;
 };
 
+/**
+ * Extracts track conditions from checklist session
+ * @param customContentSession - The custom content session
+ * @param allowedTypes - Array of allowed condition types to filter by
+ * @returns Array of track conditions
+ */
 export const extractChecklistTrackConditions = (
   customContentSession: CustomContentSession,
   allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
@@ -1598,7 +1559,6 @@ export const checklistHasNewCompletedItems = (
  * @param previousItems - The previous items
  * @returns The new completed items
  */
-
 export const extractChecklistNewCompletedItems = (
   currentItems: ChecklistItemType[],
   previousItems: ChecklistItemType[],
@@ -1626,9 +1586,231 @@ export const extractChecklistShowAnimationItems = (items: ChecklistItemType[]) =
 };
 
 /**
+ * Checks the number of visible items
+ * @param items - The items to check
+ * @returns The number of visible items
+ */
+export const checklistVisibleItemsCount = (items: ChecklistItemType[]): number => {
+  return items.filter((item) => item.isVisible).length;
+};
+
+/**
+ * Checks the number of completed items
+ * @param items - The items to check
+ * @returns The number of completed items
+ */
+export const checklistCompletedItemsCount = (items: ChecklistItemType[]): number => {
+  return items.filter((item) => item.isVisible).filter((item) => item.isCompleted).length;
+};
+
+/**
+ * Checks if a checklist completed event is valid
+ * @param bizEvents - The business events to check
+ * @returns True if the checklist completed event is valid, false otherwise
+ */
+export const isValidChecklistCompletedEvent = (bizEvents: BizEventWithEvent[] | undefined) => {
+  // Find the latest CHECKLIST_TASK_COMPLETED event
+  const taskCompletedEvents =
+    bizEvents?.filter((event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED) ||
+    [];
+
+  if (taskCompletedEvents.length === 0) {
+    return false;
+  }
+
+  const latestTaskCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
+    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
+  });
+
+  // Pre-calculate the date to avoid repeated Date parsing
+  const latestTaskCompletedDate = new Date(latestTaskCompletedEvent.createdAt);
+
+  // Find all events that occurred after the latest CHECKLIST_TASK_COMPLETED
+  const eventsAfterTaskCompleted =
+    bizEvents?.filter((event) => isAfter(new Date(event.createdAt), latestTaskCompletedDate)) || [];
+
+  // Check if there's no CHECKLIST_COMPLETED event after the latest CHECKLIST_TASK_COMPLETED
+  const hasChecklistCompletedAfter = eventsAfterTaskCompleted.some(
+    (event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
+  );
+
+  return !hasChecklistCompletedAfter;
+};
+
+/**
+ * Checks if a checklist is all completed
+ * @param items - The checklist items
+ * @param latestSession - The latest session
+ * @returns True if the checklist is all completed, false otherwise
+ */
+export const isSendChecklistCompletedEvent = (
+  items: ChecklistItemType[] = [],
+  latestSession?: BizSessionWithEvents | undefined,
+) => {
+  const visibleItemsCount = checklistVisibleItemsCount(items);
+  const completedItemsCount = checklistCompletedItemsCount(items);
+
+  if (completedItemsCount === 0) {
+    return false;
+  }
+
+  if (!isValidChecklistCompletedEvent(latestSession?.bizEvent)) {
+    return false;
+  }
+
+  if (visibleItemsCount === completedItemsCount) {
+    return true;
+  }
+
+  return false;
+};
+
+// ============================================================================
+// Session Comparison Functions
+// ============================================================================
+
+/**
+ * Check if session attributes have changes
+ * @param oldAttributes - The original attributes
+ * @param newAttributes - The new attributes
+ * @returns True if there are differences
+ */
+const hasSessionAttributeChanges = (
+  oldAttributes: SessionAttribute[],
+  newAttributes: SessionAttribute[],
+): boolean => {
+  if (oldAttributes.length !== newAttributes.length) {
+    return true;
+  }
+
+  const sortedOld = [...oldAttributes].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedNew = [...newAttributes].sort((a, b) => a.id.localeCompare(b.id));
+
+  return !isEqual(sortedOld, sortedNew);
+};
+
+/**
+ * Check if theme variations have changes
+ * @param oldVariations - The original variations
+ * @param newVariations - The new variations
+ * @returns True if there are differences
+ */
+const hasThemeVariationChanges = (
+  oldVariations: ThemeVariation[] | undefined,
+  newVariations: ThemeVariation[] | undefined,
+): boolean => {
+  const oldVars = oldVariations || [];
+  const newVars = newVariations || [];
+
+  if (oldVars.length !== newVars.length) {
+    return true;
+  }
+
+  const sortedOld = [...oldVars].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedNew = [...newVars].sort((a, b) => a.id.localeCompare(b.id));
+
+  return !isEqual(sortedOld, sortedNew);
+};
+
+/**
+ * Check if session themes have changes with smart comparison for variations and attributes
+ * @param oldTheme - The original theme
+ * @param newTheme - The new theme
+ * @returns True if there are differences
+ */
+const hasSessionThemeChanges = (
+  oldTheme: SessionTheme | undefined,
+  newTheme: SessionTheme | undefined,
+): boolean => {
+  // Handle null/undefined cases
+  if (!oldTheme && !newTheme) {
+    return false;
+  }
+  if (!oldTheme || !newTheme) {
+    return true;
+  }
+
+  // Compare settings (deep comparison for theme settings)
+  if (!isEqual(oldTheme.settings, newTheme.settings)) {
+    return true;
+  }
+
+  // Check variations changes by ID
+  if (hasThemeVariationChanges(oldTheme.variations, newTheme.variations)) {
+    return true;
+  }
+
+  // Check theme attributes changes
+  if (hasSessionAttributeChanges(oldTheme.attributes || [], newTheme.attributes || [])) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * Check if session steps have changes with smart theme comparison
+ * @param oldSteps - The original steps
+ * @param newSteps - The new steps
+ * @returns True if there are differences
+ */
+const hasSessionStepChanges = (oldSteps: SessionStep[], newSteps: SessionStep[]): boolean => {
+  if (oldSteps.length !== newSteps.length) {
+    return true;
+  }
+
+  // Use id-based lookup to find corresponding steps, similar to hasChecklistItemChanges
+  // This avoids issues with array comparison by using isEqual on individual steps
+  return oldSteps.some((oldStep) => {
+    const newStep = newSteps.find((step) => step.id === oldStep.id);
+
+    // If step not found in newSteps, it's a change
+    if (!newStep) {
+      return true;
+    }
+
+    // Compare entire step objects using isEqual
+    return !isEqual(oldStep, newStep);
+  });
+};
+
+/**
+ * Check if checklist items have changes
+ * @param oldItems - The old items
+ * @param newItems - The new items
+ * @returns True if there are differences
+ */
+const hasChecklistItemChanges = (oldItems: ChecklistItemType[], newItems: ChecklistItemType[]) => {
+  if (oldItems.length !== newItems.length) {
+    return true;
+  }
+
+  // Check if any changes occurred
+  return oldItems.some((item) => {
+    const newItem = newItems.find((newItem) => newItem.id === item.id);
+    return (
+      newItem &&
+      (item.isCompleted !== newItem.isCompleted ||
+        item.isVisible !== newItem.isVisible ||
+        item.isShowAnimation !== newItem.isShowAnimation)
+    );
+  });
+};
+
+/**
+ * Checks if launcher data has changes
+ * @param oldLauncher - The old launcher data
+ * @param newLauncher - The new launcher data
+ * @returns True if there are differences
+ */
+const hasLauncherDataChanges = (oldLauncher: LauncherData, newLauncher: LauncherData): boolean => {
+  return !isEqual(oldLauncher, newLauncher);
+};
+
+/**
  * Check if content sessions have changes in key data
- * @param oldSession - The original content session
- * @param newSession - The updated content session
+ * @param oldCustomSession - The original content session
+ * @param newCustomSession - The updated content session
  * @returns True if there are changes in theme, attributes, or steps theme
  */
 export const hasContentSessionChanges = (
@@ -1678,80 +1860,6 @@ export const hasContentSessionChanges = (
   }
 
   if (!isEqual(oldSession.currentStep, newSession.currentStep)) {
-    return true;
-  }
-
-  return false;
-};
-
-/**
- * Checks the number of visible items
- * @param items - The items to check
- * @returns The number of visible items
- */
-export const checklistVisibleItemsCount = (items: ChecklistItemType[]): number => {
-  return items.filter((item) => item.isVisible).length;
-};
-
-/**
- * Checks the number of completed items
- * @param items - The items to check
- * @returns The number of completed items
- */
-export const checklistCompletedItemsCount = (items: ChecklistItemType[]): number => {
-  return items.filter((item) => item.isVisible).filter((item) => item.isCompleted).length;
-};
-
-export const isValidChecklistCompletedEvent = (bizEvents: BizEventWithEvent[] | undefined) => {
-  // Find the latest CHECKLIST_TASK_COMPLETED event
-  const taskCompletedEvents =
-    bizEvents?.filter((event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED) ||
-    [];
-
-  if (taskCompletedEvents.length === 0) {
-    return false;
-  }
-
-  const latestTaskCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
-    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
-  });
-
-  // Pre-calculate the date to avoid repeated Date parsing
-  const latestTaskCompletedDate = new Date(latestTaskCompletedEvent.createdAt);
-
-  // Find all events that occurred after the latest CHECKLIST_TASK_COMPLETED
-  const eventsAfterTaskCompleted =
-    bizEvents?.filter((event) => isAfter(new Date(event.createdAt), latestTaskCompletedDate)) || [];
-
-  // Check if there's no CHECKLIST_COMPLETED event after the latest CHECKLIST_TASK_COMPLETED
-  const hasChecklistCompletedAfter = eventsAfterTaskCompleted.some(
-    (event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
-  );
-
-  return !hasChecklistCompletedAfter;
-};
-
-/**
- * Checks if a checklist is all completed
- * @param content - The content to check
- * @returns True if the checklist is all completed, false otherwise
- */
-export const isSendChecklistCompletedEvent = (
-  items: ChecklistItemType[] = [],
-  latestSession?: BizSessionWithEvents | undefined,
-) => {
-  const visibleItemsCount = checklistVisibleItemsCount(items);
-  const completedItemsCount = checklistCompletedItemsCount(items);
-
-  if (completedItemsCount === 0) {
-    return false;
-  }
-
-  if (!isValidChecklistCompletedEvent(latestSession?.bizEvent)) {
-    return false;
-  }
-
-  if (visibleItemsCount === completedItemsCount) {
     return true;
   }
 
