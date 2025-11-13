@@ -90,6 +90,22 @@ export class EventTrackingService {
   }
 
   /**
+   * Get business session for event tracking
+   * @param sessionId - Session ID
+   * @returns Business session with relations, or null if invalid
+   */
+  private async getTrackingSession(sessionId: string): Promise<BizSessionWithRelations | null> {
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+
+    // Standard validation: session must exist and have content and version
+    if (!bizSession || !bizSession.content || !bizSession.version) {
+      return null;
+    }
+
+    return bizSession;
+  }
+
+  /**
    * Filter event data based on allowed attributes for the event
    * @param eventId - The ID of the event
    * @param data - The raw event data to filter
@@ -493,6 +509,53 @@ export class EventTrackingService {
   }
 
   /**
+   * Generic method to track events with standard flow:
+   * 1. Validate session
+   * 2. Build event data (return null if validation fails)
+   * 3. Track event
+   *
+   * @param sessionId - Session ID
+   * @param environment - Environment
+   * @param clientContext - Client context
+   * @param eventName - Event name (BizEvents enum)
+   * @param buildEventData - Function to build event data from session (return null if validation fails)
+   * @returns True if event was tracked successfully
+   */
+  private async trackEventWithSession(
+    sessionId: string,
+    environment: Environment,
+    clientContext: ClientContext,
+    eventName: string,
+    buildEventData: (session: BizSessionWithRelations) => Record<string, any> | null,
+  ): Promise<boolean> {
+    // Step 1: Get session for tracking
+    const bizSession = await this.getTrackingSession(sessionId);
+    if (!bizSession) {
+      return false;
+    }
+
+    // Step 2: Build event data (return null if validation fails)
+    const eventData = buildEventData(bizSession);
+
+    if (!eventData) {
+      return false;
+    }
+
+    // Step 4: Get external user ID from session
+    const externalUserId = String(bizSession.bizUser.externalId);
+
+    // Step 5: Track event
+    return await this.trackEvent(
+      environment,
+      externalUserId,
+      eventName,
+      bizSession.id,
+      eventData,
+      clientContext,
+    );
+  }
+
+  /**
    * Get event name and data for auto start events
    * @param customContentVersion - The custom content version
    * @param startReason - The start reason
@@ -700,7 +763,6 @@ export class EventTrackingService {
    * Track flow ended event
    * @param sessionId - The session ID
    * @param environment - The environment
-   * @param externalUserId - The external user ID
    * @param endReason - The end reason
    * @param clientContext - The client context
    * @returns The tracked event or false if tracking failed
@@ -708,7 +770,6 @@ export class EventTrackingService {
   async trackFlowEndedEvent(
     sessionId: string,
     environment: Environment,
-    externalUserId: string,
     endReason: string,
     clientContext: ClientContext,
   ): Promise<boolean> {
@@ -725,6 +786,7 @@ export class EventTrackingService {
       return false;
     }
     const eventName = BizEvents.FLOW_ENDED;
+    const externalUserId = String(bizSession.bizUser.externalId);
 
     return await this.trackEvent(
       environment,
@@ -927,21 +989,12 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) return false;
-    const content = bizSession.content;
-    const version = bizSession.version;
-
-    const eventData = buildChecklistSeenEventData(content, version);
-
-    const externalUserId = String(bizSession.bizUser.externalId);
-    return await this.trackEvent(
+    return this.trackEventWithSession(
+      sessionId,
       environment,
-      externalUserId,
-      BizEvents.CHECKLIST_SEEN,
-      bizSession.id,
-      eventData,
       clientContext,
+      BizEvents.CHECKLIST_SEEN,
+      (session) => buildChecklistSeenEventData(session.content, session.version),
     );
   }
 
@@ -1080,7 +1133,6 @@ export class EventTrackingService {
    * based on the content type (FLOW, CHECKLIST, or LAUNCHER)
    * @param sessionId - The session ID
    * @param environment - The environment
-   * @param externalUserId - The external user ID
    * @param clientContext - The client context
    * @param endReason - The end reason
    * @returns True if the event was tracked successfully, false otherwise
@@ -1088,7 +1140,6 @@ export class EventTrackingService {
   async trackContentEndedEvent(
     sessionId: string,
     environment: Environment,
-    externalUserId: string,
     clientContext: ClientContext,
     endReason: string,
   ): Promise<boolean> {
@@ -1104,13 +1155,7 @@ export class EventTrackingService {
     const contentType = bizSession.content.type as ContentDataType;
 
     if (contentType === ContentDataType.FLOW) {
-      return await this.trackFlowEndedEvent(
-        sessionId,
-        environment,
-        externalUserId,
-        endReason,
-        clientContext,
-      );
+      return await this.trackFlowEndedEvent(sessionId, environment, endReason, clientContext);
     }
 
     if (contentType === ContentDataType.CHECKLIST) {

@@ -131,13 +131,12 @@ export class ContentOrchestratorService {
     if (!socketData) {
       return false;
     }
-    const { environment, externalUserId, clientContext } = socketData;
+    const { environment, clientContext, externalUserId } = socketData;
 
     // Track content ended event
     const isEventTracked = await this.eventTrackingService.trackContentEndedEvent(
       sessionId,
       environment,
-      externalUserId,
       clientContext,
       endReason,
     );
