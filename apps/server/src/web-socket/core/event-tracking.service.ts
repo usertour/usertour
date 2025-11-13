@@ -572,15 +572,18 @@ export class EventTrackingService {
     // Step 3: Get external user ID from session
     const externalUserId = String(bizSession.bizUser.externalId);
 
-    // Step 4: Track event
-    return await this.trackEvent(
-      environment,
-      externalUserId,
-      eventName,
-      bizSession.id,
-      eventData,
-      clientContext,
-    );
+    // Step 4: Track event directly using executeEventTransaction to avoid duplicate session query
+    return await this.prisma.$transaction(async (tx) => {
+      return await this.executeEventTransaction(
+        tx,
+        environment,
+        externalUserId,
+        eventName,
+        bizSession.id,
+        eventData,
+        clientContext,
+      );
+    });
   }
 
   // ============================================================================
