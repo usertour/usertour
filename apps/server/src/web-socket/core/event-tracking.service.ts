@@ -314,41 +314,31 @@ export class EventTrackingService {
   /**
    * Process event creation
    * @param tx - Database transaction client
-   * @param sessionId - Session ID
-   * @param eventName - Event name
-   * @param events - Event data
+   * @param bizSession - Business session with events (already fetched)
    * @param eventId - Event ID
+   * @param eventCodeName - Event code name
+   * @param events - Event data
    * @returns True if the event was created successfully
    */
   private async handleEventCreation(
     tx: Tx,
-    sessionId: string,
+    bizSession: BizSessionWithEvents,
     eventId: string,
     eventCodeName: string,
     events: Record<string, any>,
   ): Promise<boolean> {
-    // Re-fetch session with latest events
-    const bizSession = await tx.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizEvent: { include: { event: true } } },
-    });
-
-    if (!bizSession || bizSession.state === 1) {
-      return false;
-    }
-
-    // Validate event
+    // Validate event using the provided session
     if (!isValidEvent(eventCodeName, bizSession, events)) {
       return false;
     }
-    const bizUserId = bizSession.bizUserId;
+
     // Create business event
     const bizEvent = await tx.bizEvent.create({
       data: {
-        bizUserId,
+        bizUserId: bizSession.bizUserId,
         eventId,
         data: events,
-        bizSessionId: sessionId,
+        bizSessionId: bizSession.id,
       },
     });
 
@@ -403,10 +393,11 @@ export class EventTrackingService {
       return false;
     }
 
-    // Create and validate business event
+    // Create and validate business event using the already fetched session
+    // Type assertion is safe because bizSession includes bizEvent with event relation
     const isEventCreated = await this.handleEventCreation(
       tx,
-      sessionId,
+      bizSession as BizSessionWithEvents,
       event.id,
       eventCodeName,
       events,
