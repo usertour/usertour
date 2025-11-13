@@ -773,28 +773,13 @@ export class EventTrackingService {
     endReason: string,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) {
-      return false;
-    }
-    const content = bizSession.content;
-    const version = bizSession.version;
-    const currentStepId = bizSession.currentStepId;
-
-    const eventData = buildFlowEndedEventData(content, version, currentStepId, endReason);
-    if (!eventData) {
-      return false;
-    }
-    const eventName = BizEvents.FLOW_ENDED;
-    const externalUserId = String(bizSession.bizUser.externalId);
-
-    return await this.trackEvent(
-      environment,
-      externalUserId,
-      eventName,
+    return this.trackEventWithSession(
       sessionId,
-      eventData,
+      environment,
       clientContext,
+      BizEvents.FLOW_ENDED,
+      (session) =>
+        buildFlowEndedEventData(session.content, session.version, session.currentStepId, endReason),
     );
   }
 
@@ -813,21 +798,12 @@ export class EventTrackingService {
     endReason: string,
   ): Promise<boolean> {
     if (!environment) return false;
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) return false;
-    const content = bizSession.content;
-    const version = bizSession.version;
-
-    const eventData = buildChecklistDismissedEventData(content, version, endReason);
-
-    const externalUserId = String(bizSession.bizUser.externalId);
-    return await this.trackEvent(
+    return this.trackEventWithSession(
+      sessionId,
       environment,
-      externalUserId,
-      BizEvents.CHECKLIST_DISMISSED,
-      bizSession.id,
-      eventData,
       clientContext,
+      BizEvents.CHECKLIST_DISMISSED,
+      (session) => buildChecklistDismissedEventData(session.content, session.version, endReason),
     );
   }
 
@@ -843,15 +819,15 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(params.sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) return false;
-    const content = bizSession.content;
-    const version = bizSession.version;
+    const bizSession = await this.getTrackingSession(params.sessionId);
+    if (!bizSession) return false;
 
-    const eventData = buildQuestionAnsweredEventData(content, version, params);
-
+    const eventData = buildQuestionAnsweredEventData(
+      bizSession.content,
+      bizSession.version,
+      params,
+    );
     const answer = getAnswer(eventData);
-
     const externalUserId = String(bizSession.bizUser.externalId);
     const bindToAttribute = extractStepBindToAttribute(
       bizSession.version.steps as unknown as Step[],
@@ -893,24 +869,17 @@ export class EventTrackingService {
     clientContext: ClientContext,
     taskId: string,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) return false;
-    const content = bizSession.content;
-    const version = bizSession.version;
-    const checklistData = version.data as unknown as ChecklistData;
-    const checklistItem = checklistData.items.find((item) => item.id === taskId);
-    if (!checklistItem) return false;
-
-    const eventData = buildChecklistTaskClickedEventData(content, version, checklistItem);
-    const externalUserId = String(bizSession.bizUser.externalId);
-
-    return await this.trackEvent(
+    return this.trackEventWithSession(
+      sessionId,
       environment,
-      externalUserId,
-      BizEvents.CHECKLIST_TASK_CLICKED,
-      bizSession.id,
-      eventData,
       clientContext,
+      BizEvents.CHECKLIST_TASK_CLICKED,
+      (session) => {
+        const checklistData = session.version.data as unknown as ChecklistData;
+        const checklistItem = checklistData.items.find((item) => item.id === taskId);
+        if (!checklistItem) return null;
+        return buildChecklistTaskClickedEventData(session.content, session.version, checklistItem);
+      },
     );
   }
 
@@ -928,22 +897,21 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) return false;
-    const content = bizSession.content;
-    const version = bizSession.version;
-    const checklistData = version.data as unknown as ChecklistData;
-    const checklistItem = checklistData.items.find((item) => item.id === taskId);
-    if (!checklistItem) return false;
-    const eventData = buildChecklistTaskCompletedEventData(content, version, checklistItem);
-    const externalUserId = String(bizSession.bizUser.externalId);
-    return await this.trackEvent(
+    return this.trackEventWithSession(
+      sessionId,
       environment,
-      externalUserId,
-      BizEvents.CHECKLIST_TASK_COMPLETED,
-      bizSession.id,
-      eventData,
       clientContext,
+      BizEvents.CHECKLIST_TASK_COMPLETED,
+      (session) => {
+        const checklistData = session.version.data as unknown as ChecklistData;
+        const checklistItem = checklistData.items.find((item) => item.id === taskId);
+        if (!checklistItem) return null;
+        return buildChecklistTaskCompletedEventData(
+          session.content,
+          session.version,
+          checklistItem,
+        );
+      },
     );
   }
 
@@ -959,21 +927,12 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) return false;
-    const content = bizSession.content;
-    const version = bizSession.version;
-
-    const eventData = buildChecklistHiddenEventData(content, version);
-
-    const externalUserId = String(bizSession.bizUser.externalId);
-    return await this.trackEvent(
+    return this.trackEventWithSession(
+      sessionId,
       environment,
-      externalUserId,
-      BizEvents.CHECKLIST_HIDDEN,
-      bizSession.id,
-      eventData,
       clientContext,
+      BizEvents.CHECKLIST_HIDDEN,
+      (session) => buildChecklistHiddenEventData(session.content, session.version),
     );
   }
 
@@ -1010,19 +969,12 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) return false;
-    const content = bizSession.content;
-    const version = bizSession.version;
-    const eventData = buildChecklistCompletedEventData(content, version);
-    const externalUserId = String(bizSession.bizUser.externalId);
-    return await this.trackEvent(
+    return this.trackEventWithSession(
+      sessionId,
       environment,
-      externalUserId,
-      BizEvents.CHECKLIST_COMPLETED,
-      bizSession.id,
-      eventData,
       clientContext,
+      BizEvents.CHECKLIST_COMPLETED,
+      (session) => buildChecklistCompletedEventData(session.content, session.version),
     );
   }
 
@@ -1040,26 +992,12 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) {
-      return false;
-    }
-    const content = bizSession.content;
-    const version = bizSession.version;
-
-    const eventData = buildStepEventData(content, version, stepId);
-    if (!eventData) {
-      return false;
-    }
-
-    const externalUserId = String(bizSession.bizUser.externalId);
-    return await this.trackEvent(
+    return this.trackEventWithSession(
+      sessionId,
       environment,
-      externalUserId,
-      BizEvents.TOOLTIP_TARGET_MISSING,
-      bizSession.id,
-      eventData,
       clientContext,
+      BizEvents.TOOLTIP_TARGET_MISSING,
+      (session) => buildStepEventData(session.content, session.version, stepId),
     );
   }
 
@@ -1075,22 +1013,12 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) return false;
-
-    const version = bizSession.version;
-    const content = bizSession.content;
-
-    const eventData = buildLauncherActivatedEventData(content, version);
-
-    const externalUserId = String(bizSession.bizUser.externalId);
-    return await this.trackEvent(
+    return this.trackEventWithSession(
+      sessionId,
       environment,
-      externalUserId,
-      BizEvents.LAUNCHER_ACTIVATED,
-      bizSession.id,
-      eventData,
       clientContext,
+      BizEvents.LAUNCHER_ACTIVATED,
+      (session) => buildLauncherActivatedEventData(session.content, session.version),
     );
   }
 
@@ -1108,22 +1036,12 @@ export class EventTrackingService {
     clientContext: ClientContext,
     endReason: string,
   ): Promise<boolean> {
-    const bizSession = await this.findBizSessionWithRelations(sessionId);
-    if (!bizSession || !bizSession.content || !bizSession.version) return false;
-
-    const version = bizSession.version;
-    const content = bizSession.content;
-
-    const eventData = buildLauncherDismissedEventData(content, version, endReason);
-
-    const externalUserId = String(bizSession.bizUser.externalId);
-    return await this.trackEvent(
+    return this.trackEventWithSession(
+      sessionId,
       environment,
-      externalUserId,
-      BizEvents.LAUNCHER_DISMISSED,
-      bizSession.id,
-      eventData,
       clientContext,
+      BizEvents.LAUNCHER_DISMISSED,
+      (session) => buildLauncherDismissedEventData(session.content, session.version, endReason),
     );
   }
 
