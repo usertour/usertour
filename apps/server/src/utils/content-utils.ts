@@ -153,7 +153,9 @@ export const findLatestEvent = (bizEvents: BizEventWithEvent[]) => {
   const initialValue = bizEvents[0];
   const lastEvent = bizEvents.reduce(
     (accumulator: typeof initialValue, currentValue: typeof initialValue) => {
-      if (isAfter(new Date(currentValue.createdAt), new Date(accumulator.createdAt))) {
+      const currentDate = new Date(currentValue.createdAt);
+      const accumulatorDate = new Date(accumulator.createdAt);
+      if (isAfter(currentDate, accumulatorDate)) {
         return currentValue;
       }
       return accumulator;
@@ -1263,7 +1265,7 @@ export const getChecklistInitialDisplay = (
 
   // Get the latest hidden or seen event
   const latestHiddenOrSeenEvent = hiddenOrSeenEvents.reduce((latest, current) => {
-    return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
   });
   if (latestHiddenOrSeenEvent.event?.codeName === BizEvents.CHECKLIST_SEEN) {
     return ChecklistInitialDisplay.EXPANDED;
@@ -1351,7 +1353,7 @@ const checklistIsShowAnimation = (
 
   // Get the latest hidden or seen event
   const latestHiddenOrSeenEvent = hiddenOrSeenEvents.reduce((latest, current) => {
-    return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
   });
 
   // If the latest event is CHECKLIST_SEEN, don't show animation
@@ -1364,14 +1366,17 @@ const checklistIsShowAnimation = (
   if (latestHiddenOrSeenEvent.event?.codeName === BizEvents.CHECKLIST_HIDDEN) {
     // Get the last SEEN event
     const lastCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
-      return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+      return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
     });
 
     // Check if the task was completed after the last SEEN event
-    const lastCompletedTime = new Date(lastCompletedEvent.createdAt);
-    const lastHiddenTime = new Date(latestHiddenOrSeenEvent.createdAt);
+    const lastCompletedDate = new Date(lastCompletedEvent.createdAt);
+    const lastHiddenDate = new Date(latestHiddenOrSeenEvent.createdAt);
 
-    return lastCompletedTime >= lastHiddenTime;
+    return (
+      isAfter(lastCompletedDate, lastHiddenDate) ||
+      lastCompletedDate.getTime() === lastHiddenDate.getTime()
+    );
   }
 
   return false;
@@ -1699,14 +1704,15 @@ export const isValidChecklistCompletedEvent = (bizEvents: BizEventWithEvent[] | 
   }
 
   const latestTaskCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
-    return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
   });
+
+  // Pre-calculate the date to avoid repeated Date parsing
+  const latestTaskCompletedDate = new Date(latestTaskCompletedEvent.createdAt);
 
   // Find all events that occurred after the latest CHECKLIST_TASK_COMPLETED
   const eventsAfterTaskCompleted =
-    bizEvents?.filter(
-      (event) => new Date(event.createdAt) > new Date(latestTaskCompletedEvent.createdAt),
-    ) || [];
+    bizEvents?.filter((event) => isAfter(new Date(event.createdAt), latestTaskCompletedDate)) || [];
 
   // Check if there's no CHECKLIST_COMPLETED event after the latest CHECKLIST_TASK_COMPLETED
   const hasChecklistCompletedAfter = eventsAfterTaskCompleted.some(
