@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { BizSessionWithBizUserContentAndVersion, Tx, Version } from '@/common/types/schema';
+import { BizSessionWithBizUserContentAndVersion, Tx } from '@/common/types/schema';
 import {
   getCurrentStepId,
   getEventProgress,
@@ -12,6 +12,12 @@ import {
   buildLauncherActivatedEventData,
   buildLauncherDismissedEventData,
   buildGoToStepEventData,
+  buildChecklistDismissedEventData,
+  buildChecklistSeenEventData,
+  buildChecklistHiddenEventData,
+  buildChecklistCompletedEventData,
+  buildChecklistTaskClickedEventData,
+  buildChecklistTaskCompletedEventData,
 } from '@/utils/event-v2';
 import {
   BizEvents,
@@ -64,7 +70,7 @@ export class EventTrackingService {
    * @param sessionId - Session ID
    * @returns Business session with user and version steps, or null if not found
    */
-  async findBizSessionWithUserAndSteps(client: Tx | PrismaService, sessionId: string) {
+  private async findBizSessionWithUserAndSteps(client: Tx | PrismaService, sessionId: string) {
     return await client.bizSession.findUnique({
       where: { id: sessionId },
       include: { bizUser: true, version: { include: { steps: { orderBy: { sequence: 'asc' } } } } },
@@ -85,32 +91,17 @@ export class EventTrackingService {
   }
 
   /**
-   * Find session with published version if available, otherwise fallback to session version
-   * @param sessionId - The session ID
-   * @param environment - The environment
-   * @returns Object containing bizSession, publishedVersion, or null if session not found
+   * Find business session with user, content and version
+   * @param sessionId - Session ID
+   * @returns Business session with user, content and version, or null if not found
    */
-  async findSessionWithPublishedVersion(
+  private async findBizSessionWithRelations(
     sessionId: string,
-    environment: Environment,
-  ): Promise<{
-    bizSession: BizSessionWithBizUserContentAndVersion;
-    publishedVersion: Version | null;
-  } | null> {
-    const bizSession = await this.prisma.bizSession.findUnique({
+  ): Promise<BizSessionWithBizUserContentAndVersion | null> {
+    return await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
       include: { bizUser: true, content: true, version: true },
     });
-    if (!bizSession) return null;
-
-    const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
-      where: { contentId: bizSession.contentId, environmentId: environment.id, published: true },
-      include: {
-        publishedVersion: true,
-      },
-    });
-
-    return { bizSession, publishedVersion: contentOnEnvironment?.publishedVersion };
   }
 
   /**
@@ -793,21 +784,12 @@ export class EventTrackingService {
     endReason: string,
   ): Promise<boolean> {
     if (!environment) return false;
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, content: true, version: true },
-    });
-    if (!bizSession) return false;
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) return false;
     const content = bizSession.content;
     const version = bizSession.version;
 
-    const eventData = {
-      [EventAttributes.CHECKLIST_ID]: content.id,
-      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
-      [EventAttributes.CHECKLIST_NAME]: content.name,
-      [EventAttributes.CHECKLIST_END_REASON]: endReason,
-    };
+    const eventData = buildChecklistDismissedEventData(content, version, endReason);
 
     const externalUserId = String(bizSession.bizUser.externalId);
     return await this.trackEvent(
@@ -896,25 +878,15 @@ export class EventTrackingService {
     clientContext: ClientContext,
     taskId: string,
   ): Promise<boolean> {
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, content: true, version: true },
-    });
-    if (!bizSession) return false;
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) return false;
     const content = bizSession.content;
     const version = bizSession.version;
     const checklistData = version.data as unknown as ChecklistData;
     const checklistItem = checklistData.items.find((item) => item.id === taskId);
     if (!checklistItem) return false;
 
-    const eventData = {
-      [EventAttributes.CHECKLIST_ID]: content.id,
-      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
-      [EventAttributes.CHECKLIST_NAME]: content.name,
-      [EventAttributes.CHECKLIST_TASK_ID]: checklistItem.id,
-      [EventAttributes.CHECKLIST_TASK_NAME]: checklistItem.name,
-    };
+    const eventData = buildChecklistTaskClickedEventData(content, version, checklistItem);
     const externalUserId = String(bizSession.bizUser.externalId);
 
     return await this.trackEvent(
@@ -941,24 +913,14 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, content: true, version: true },
-    });
-    if (!bizSession) return false;
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) return false;
     const content = bizSession.content;
     const version = bizSession.version;
     const checklistData = version.data as unknown as ChecklistData;
     const checklistItem = checklistData.items.find((item) => item.id === taskId);
     if (!checklistItem) return false;
-    const eventData = {
-      [EventAttributes.CHECKLIST_ID]: content.id,
-      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
-      [EventAttributes.CHECKLIST_NAME]: content.name,
-      [EventAttributes.CHECKLIST_TASK_ID]: checklistItem.id,
-      [EventAttributes.CHECKLIST_TASK_NAME]: checklistItem.name,
-    };
+    const eventData = buildChecklistTaskCompletedEventData(content, version, checklistItem);
     const externalUserId = String(bizSession.bizUser.externalId);
     return await this.trackEvent(
       environment,
@@ -982,20 +944,12 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, content: true, version: true },
-    });
-    if (!bizSession) return false;
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) return false;
     const content = bizSession.content;
     const version = bizSession.version;
 
-    const eventData = {
-      [EventAttributes.CHECKLIST_ID]: content.id,
-      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
-      [EventAttributes.CHECKLIST_NAME]: content.name,
-    };
+    const eventData = buildChecklistHiddenEventData(content, version);
 
     const externalUserId = String(bizSession.bizUser.externalId);
     return await this.trackEvent(
@@ -1020,20 +974,12 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, content: true, version: true },
-    });
-    if (!bizSession) return false;
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) return false;
     const content = bizSession.content;
     const version = bizSession.version;
 
-    const eventData = {
-      [EventAttributes.CHECKLIST_ID]: content.id,
-      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
-      [EventAttributes.CHECKLIST_NAME]: content.name,
-    };
+    const eventData = buildChecklistSeenEventData(content, version);
 
     const externalUserId = String(bizSession.bizUser.externalId);
     return await this.trackEvent(
@@ -1058,19 +1004,11 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const bizSession = await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, content: true, version: true },
-    });
-    if (!bizSession) return false;
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) return false;
     const content = bizSession.content;
     const version = bizSession.version;
-    const eventData = {
-      [EventAttributes.CHECKLIST_ID]: content.id,
-      [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
-      [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
-      [EventAttributes.CHECKLIST_NAME]: content.name,
-    };
+    const eventData = buildChecklistCompletedEventData(content, version);
     const externalUserId = String(bizSession.bizUser.externalId);
     return await this.trackEvent(
       environment,
@@ -1129,12 +1067,11 @@ export class EventTrackingService {
     environment: Environment,
     clientContext: ClientContext,
   ): Promise<boolean> {
-    const sessionData = await this.findSessionWithPublishedVersion(sessionId, environment);
-    if (!sessionData) return false;
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) return false;
 
-    const { bizSession, publishedVersion } = sessionData;
+    const version = bizSession.version;
     const content = bizSession.content;
-    const version = publishedVersion || bizSession.version;
 
     const eventData = buildLauncherActivatedEventData(content, version);
 
@@ -1163,11 +1100,10 @@ export class EventTrackingService {
     clientContext: ClientContext,
     endReason: string,
   ): Promise<boolean> {
-    const sessionData = await this.findSessionWithPublishedVersion(sessionId, environment);
-    if (!sessionData) return false;
+    const bizSession = await this.findBizSessionWithRelations(sessionId);
+    if (!bizSession || !bizSession.content || !bizSession.version) return false;
 
-    const { bizSession, publishedVersion } = sessionData;
-    const version = publishedVersion || bizSession.version;
+    const version = bizSession.version;
     const content = bizSession.content;
 
     const eventData = buildLauncherDismissedEventData(content, version, endReason);

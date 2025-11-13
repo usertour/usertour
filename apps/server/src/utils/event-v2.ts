@@ -1,6 +1,6 @@
 import { BizEvents, EventAttributes, StepSettings } from '@usertour/types';
 import { Prisma } from '@prisma/client';
-import { VersionWithSteps, Step } from '@/common/types/schema';
+import { VersionWithSteps, Step, Content, Version } from '@/common/types/schema';
 import { CustomContentVersion } from '@/common/types/content';
 
 type BizSession = Prisma.BizSessionGetPayload<{
@@ -244,14 +244,14 @@ export const buildLauncherSeenEventData = (
 };
 
 /**
- * Build event data for launcher activated events
+ * Build base event data for launcher events
  * @param content - The content object with id and name
  * @param version - The version object with id and sequence
- * @returns Launcher activated event data
+ * @returns Base launcher event data
  */
-export const buildLauncherActivatedEventData = (
-  content: { id: string; name: string },
-  version: { id: string; sequence: number },
+const buildLauncherBaseEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
 ): Record<string, any> => {
   return {
     [EventAttributes.LAUNCHER_ID]: content.id,
@@ -262,6 +262,19 @@ export const buildLauncherActivatedEventData = (
 };
 
 /**
+ * Build event data for launcher activated events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @returns Launcher activated event data
+ */
+export const buildLauncherActivatedEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+): Record<string, any> => {
+  return buildLauncherBaseEventData(content, version);
+};
+
+/**
  * Build event data for launcher dismissed events
  * @param content - The content object with id and name
  * @param version - The version object with id and sequence
@@ -269,15 +282,12 @@ export const buildLauncherActivatedEventData = (
  * @returns Launcher dismissed event data
  */
 export const buildLauncherDismissedEventData = (
-  content: { id: string; name: string },
-  version: { id: string; sequence: number },
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
   endReason: string,
 ): Record<string, any> => {
   return {
-    [EventAttributes.LAUNCHER_ID]: content.id,
-    [EventAttributes.LAUNCHER_NAME]: content.name,
-    [EventAttributes.LAUNCHER_VERSION_ID]: version.id,
-    [EventAttributes.LAUNCHER_VERSION_NUMBER]: version.sequence,
+    ...buildLauncherBaseEventData(content, version),
     [EventAttributes.LAUNCHER_END_REASON]: endReason,
   };
 };
@@ -321,4 +331,128 @@ export const buildGoToStepEventData = (
   };
 
   return { eventData, isComplete };
+};
+
+/**
+ * Build base event data for checklist events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @returns Base checklist event data
+ */
+const buildChecklistBaseEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+): Record<string, any> => {
+  return {
+    [EventAttributes.CHECKLIST_ID]: content.id,
+    [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
+    [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
+    [EventAttributes.CHECKLIST_NAME]: content.name,
+  };
+};
+
+/**
+ * Build event data for checklist dismissed events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @param endReason - The end reason
+ * @returns Checklist dismissed event data
+ */
+export const buildChecklistDismissedEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+  endReason: string,
+): Record<string, any> => {
+  return {
+    ...buildChecklistBaseEventData(content, version),
+    [EventAttributes.CHECKLIST_END_REASON]: endReason,
+  };
+};
+
+/**
+ * Build event data for checklist seen events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @returns Checklist seen event data
+ */
+export const buildChecklistSeenEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+): Record<string, any> => {
+  return buildChecklistBaseEventData(content, version);
+};
+
+/**
+ * Build event data for checklist hidden events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @returns Checklist hidden event data
+ */
+export const buildChecklistHiddenEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+): Record<string, any> => {
+  return buildChecklistBaseEventData(content, version);
+};
+
+/**
+ * Build event data for checklist completed events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @returns Checklist completed event data
+ */
+export const buildChecklistCompletedEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+): Record<string, any> => {
+  return buildChecklistBaseEventData(content, version);
+};
+
+/**
+ * Build event data for checklist task events (clicked or completed)
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @param checklistItem - The checklist item with id and name
+ * @returns Checklist task event data
+ */
+const buildChecklistTaskEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+  checklistItem: { id: string; name: string },
+): Record<string, any> => {
+  return {
+    ...buildChecklistBaseEventData(content, version),
+    [EventAttributes.CHECKLIST_TASK_ID]: checklistItem.id,
+    [EventAttributes.CHECKLIST_TASK_NAME]: checklistItem.name,
+  };
+};
+
+/**
+ * Build event data for checklist task clicked events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @param checklistItem - The checklist item with id and name
+ * @returns Checklist task clicked event data
+ */
+export const buildChecklistTaskClickedEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+  checklistItem: { id: string; name: string },
+): Record<string, any> => {
+  return buildChecklistTaskEventData(content, version, checklistItem);
+};
+
+/**
+ * Build event data for checklist task completed events
+ * @param content - The content object with id and name
+ * @param version - The version object with id and sequence
+ * @param checklistItem - The checklist item with id and name
+ * @returns Checklist task completed event data
+ */
+export const buildChecklistTaskCompletedEventData = (
+  content: Pick<Content, 'id' | 'name'>,
+  version: Pick<Version, 'id' | 'sequence'>,
+  checklistItem: { id: string; name: string },
+): Record<string, any> => {
+  return buildChecklistTaskEventData(content, version, checklistItem);
 };
