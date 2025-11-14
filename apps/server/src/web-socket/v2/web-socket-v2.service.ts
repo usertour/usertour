@@ -380,7 +380,7 @@ export class WebSocketV2Service {
       data: eventData,
       clientContext,
     };
-    return Boolean(await this.eventTrackingService.trackCustomEvent(eventTransactionParams));
+    return await this.eventTrackingService.trackCustomEvent(eventTransactionParams);
   }
 
   /**
