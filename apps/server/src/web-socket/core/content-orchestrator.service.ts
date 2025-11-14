@@ -44,11 +44,12 @@ import {
   ConditionExtractionMode,
   Environment,
   TryAutoStartContentOptions,
+  EventTrackingItem,
 } from '@/common/types';
 import { DistributedLockService } from './distributed-lock.service';
 import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
-import { EventTrackingItem, EventTrackingService } from './event-tracking.service';
+import { EventTrackingService } from './event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
 import { getStartEventType, getEndEventType } from '@/utils/event-v2';

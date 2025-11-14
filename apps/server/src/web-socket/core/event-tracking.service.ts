@@ -19,18 +19,11 @@ import {
   getAnswer,
   assignClientContext,
 } from '@/utils/event-v2';
-import {
-  BizEvents,
-  CompanyAttributes,
-  EventAttributes,
-  UserAttributes,
-  ClientContext,
-} from '@usertour/types';
+import { BizEvents, CompanyAttributes, EventAttributes, UserAttributes } from '@usertour/types';
 import {
   BizCompany,
   BizSession,
   BizUser,
-  Environment,
   Step,
   BizSessionWithEvents,
   BizSessionWithRelations,
@@ -39,76 +32,13 @@ import {
 import { isNullish } from '@usertour/helpers';
 import { extractStepBindToAttribute } from '@/utils/content-question';
 import { BizService } from '@/biz/biz.service';
-import type { AnswerQuestionDto } from '@usertour/types';
-
-// ============================================================================
-// Types and Interfaces
-// ============================================================================
-
-/**
- * Base parameters for event tracking
- * These are the common parameters used across most event tracking methods
- */
-interface BaseEventTrackingParams {
-  sessionId: string;
-  environment: Environment;
-  clientContext: ClientContext;
-}
-
-/**
- * Parameters for event transaction execution
- * Common parameters used in executeEventTransaction and trackCustomEvent
- */
-interface EventTransactionParams {
-  environment: Environment;
-  sessionId: string;
-  clientContext: ClientContext;
-  externalUserId: string;
-  eventName: string;
-  data: Record<string, any>;
-}
-
-/**
- * Extended parameters for events that require additional data
- */
-interface EventTrackingParams extends BaseEventTrackingParams {
-  endReason?: string;
-  stepId?: string;
-  taskId?: string;
-  startReason?: string;
-  answer?: AnswerQuestionDto;
-}
-
-/**
- * Event tracking item for batch tracking
- */
-export interface EventTrackingItem {
-  eventType: BizEvents;
-  params: EventTrackingParams;
-}
-
-/**
- * Event handler configuration
- */
-interface EventHandlerConfig {
-  eventName: BizEvents;
-  buildEventData: (
-    session: BizSessionWithRelations,
-    params: EventTrackingParams,
-  ) => Record<string, any> | null;
-  /**
-   * Custom handle function (optional)
-   * If provided, this will be used instead of the default trackEventWithSession flow
-   */
-  handle?: (tx: Tx, params: EventTrackingParams) => Promise<boolean>;
-}
-
-/**
- * Event handler interface
- */
-interface EventHandler {
-  handle(tx: Tx, params: EventTrackingParams): Promise<boolean>;
-}
+import type {
+  EventTrackingParams,
+  EventTrackingItem,
+  EventHandlerConfig,
+  EventHandler,
+  EventTransactionParams,
+} from '@/common/types/track';
 
 // ============================================================================
 // EventTrackingService
@@ -687,7 +617,7 @@ export class EventTrackingService {
         clientContext: params.clientContext,
         eventName: BizEvents.FLOW_STEP_SEEN,
       },
-      (session) => buildStepEventData(session, params.stepId),
+      (session) => buildStepEventData(session, params),
     );
 
     if (!success) {
@@ -700,7 +630,7 @@ export class EventTrackingService {
       return false;
     }
 
-    const eventData = buildStepEventData(bizSession, params.stepId);
+    const eventData = buildStepEventData(bizSession, params);
     if (eventData?.[EventAttributes.FLOW_STEP_PROGRESS] === 100) {
       // Track FLOW_COMPLETED event
       return await this.trackEventWithSession(
@@ -730,7 +660,7 @@ export class EventTrackingService {
       return false;
     }
 
-    const eventData = buildQuestionAnsweredEventData(bizSession, params.answer);
+    const eventData = buildQuestionAnsweredEventData(bizSession, params);
     if (!eventData) {
       return false;
     }
@@ -794,24 +724,23 @@ export class EventTrackingService {
     // Flow events
     register({
       eventName: BizEvents.FLOW_STARTED,
-      buildEventData: (session, params) => buildFlowStartEventData(session, params.startReason),
+      buildEventData: (session, params) => buildFlowStartEventData(session, params),
     });
 
     register({
       eventName: BizEvents.FLOW_ENDED,
-      buildEventData: (session, params) => buildFlowEndedEventData(session, params.endReason),
+      buildEventData: (session, params) => buildFlowEndedEventData(session, params),
     });
 
     register({
       eventName: BizEvents.TOOLTIP_TARGET_MISSING,
-      buildEventData: (session, params) => buildStepEventData(session, params.stepId),
+      buildEventData: (session, params) => buildStepEventData(session, params),
     });
 
     // Checklist events
     register({
       eventName: BizEvents.CHECKLIST_STARTED,
-      buildEventData: (session, params) =>
-        buildChecklistStartEventData(session, params.startReason),
+      buildEventData: (session, params) => buildChecklistStartEventData(session, params),
     });
 
     register({
@@ -831,24 +760,23 @@ export class EventTrackingService {
 
     register({
       eventName: BizEvents.CHECKLIST_DISMISSED,
-      buildEventData: (session, params) =>
-        buildChecklistDismissedEventData(session, params.endReason),
+      buildEventData: (session, params) => buildChecklistDismissedEventData(session, params),
     });
 
     register({
       eventName: BizEvents.CHECKLIST_TASK_CLICKED,
-      buildEventData: (session, params) => buildChecklistTaskEventData(session, params.taskId),
+      buildEventData: (session, params) => buildChecklistTaskEventData(session, params),
     });
 
     register({
       eventName: BizEvents.CHECKLIST_TASK_COMPLETED,
-      buildEventData: (session, params) => buildChecklistTaskEventData(session, params.taskId),
+      buildEventData: (session, params) => buildChecklistTaskEventData(session, params),
     });
 
     // Launcher events
     register({
       eventName: BizEvents.LAUNCHER_SEEN,
-      buildEventData: (session, params) => buildLauncherSeenEventData(session, params.startReason),
+      buildEventData: (session, params) => buildLauncherSeenEventData(session, params),
     });
 
     register({
@@ -858,21 +786,20 @@ export class EventTrackingService {
 
     register({
       eventName: BizEvents.LAUNCHER_DISMISSED,
-      buildEventData: (session, params) =>
-        buildLauncherDismissedEventData(session, params.endReason),
+      buildEventData: (session, params) => buildLauncherDismissedEventData(session, params),
     });
 
     // Flow step seen event with conditional FLOW_COMPLETED
     register({
       eventName: BizEvents.FLOW_STEP_SEEN,
-      buildEventData: (session, params) => buildStepEventData(session, params.stepId),
+      buildEventData: (session, params) => buildStepEventData(session, params),
       handle: (tx, params) => this.handleFlowStepSeen(tx, params),
     });
 
     // Question answered event with pre-process (update user attributes)
     register({
       eventName: BizEvents.QUESTION_ANSWERED,
-      buildEventData: (session, params) => buildQuestionAnsweredEventData(session, params.answer),
+      buildEventData: (session, params) => buildQuestionAnsweredEventData(session, params),
       handle: (tx, params) => this.handleQuestionAnswered(tx, params),
     });
   }

@@ -15,6 +15,7 @@ import {
 } from '@/common/types/schema';
 import type { AnswerQuestionDto } from '@usertour/types';
 import { isAfter } from 'date-fns';
+import type { EventBuildParams } from '@/common/types/track';
 
 // ============================================================================
 // Constants
@@ -356,13 +357,14 @@ export const buildLauncherBaseEventData = (
 /**
  * Build event data for flow start events
  * @param session - The business session with content and version
- * @param startReason - The start reason
+ * @param params - Event build parameters containing startReason
  * @returns Flow start event data, or null if startReason is missing
  */
 export const buildFlowStartEventData = (
   session: Pick<BizSessionWithRelations, 'content' | 'version'>,
-  startReason: string | undefined,
+  params?: EventBuildParams,
 ): Record<string, any> | null => {
+  const startReason = params?.startReason;
   if (!startReason) {
     return null;
   }
@@ -377,13 +379,15 @@ export const buildFlowStartEventData = (
  * Build go to step event data
  * Steps are sorted by sequence in descending order before calculation
  * @param session - The business session with content and version
- * @param stepId - The step ID
+ * @param params - Event build parameters containing stepId, or stepId directly for backward compatibility
  * @returns Object containing event data and completion status, or null if validation fails
  */
 export const buildStepEventData = (
   session: BizSessionWithRelations,
-  stepId: string | undefined | null,
+  params?: EventBuildParams | string | null,
 ): Record<string, any> | null => {
+  // Support both new params object and legacy stepId string for backward compatibility
+  const stepId = typeof params === 'string' || params === null ? params : params?.stepId;
   if (!stepId) {
     return null;
   }
@@ -423,13 +427,14 @@ export const buildStepEventData = (
 /**
  * Build event data for flow ended events
  * @param session - The business session with content, version, and currentStepId
- * @param endReason - The end reason
+ * @param params - Event build parameters containing endReason
  * @returns Flow ended event data, or null if validation fails
  */
 export const buildFlowEndedEventData = (
   session: BizSessionWithRelations,
-  endReason: string | undefined,
+  params?: EventBuildParams,
 ): Record<string, any> | null => {
+  const endReason = params?.endReason;
   if (!endReason || !session.currentStepId) {
     return null;
   }
@@ -448,32 +453,35 @@ export const buildFlowEndedEventData = (
 /**
  * Build event data for question answered events
  * @param session - The business session with content and version
- * @param params - The parameters for the question answered event (sessionId will be ignored)
+ * @param params - Event build parameters containing answer, or answer directly for backward compatibility
  * @returns Question answered event data, or null if params is missing or invalid
  */
 export const buildQuestionAnsweredEventData = (
   session: Pick<BizSessionWithRelations, 'content' | 'version'>,
-  params: AnswerQuestionDto | undefined,
+  params?: EventBuildParams | AnswerQuestionDto,
 ): Record<string, any> | null => {
-  if (!params || !params.questionCvid) {
+  // Support both new params object and legacy answer object for backward compatibility
+  const answer =
+    params && 'answer' in params ? params.answer : (params as AnswerQuestionDto | undefined);
+  if (!answer || !answer.questionCvid) {
     return null;
   }
 
   const eventData: Record<string, any> = {
     ...buildFlowBaseEventData(session),
-    [EventAttributes.QUESTION_CVID]: params.questionCvid,
-    [EventAttributes.QUESTION_NAME]: params.questionName,
-    [EventAttributes.QUESTION_TYPE]: params.questionType,
+    [EventAttributes.QUESTION_CVID]: answer.questionCvid,
+    [EventAttributes.QUESTION_NAME]: answer.questionName,
+    [EventAttributes.QUESTION_TYPE]: answer.questionType,
   };
 
-  if (!isNullish(params.listAnswer)) {
-    eventData[EventAttributes.LIST_ANSWER] = params.listAnswer;
+  if (!isNullish(answer.listAnswer)) {
+    eventData[EventAttributes.LIST_ANSWER] = answer.listAnswer;
   }
-  if (!isNullish(params.numberAnswer)) {
-    eventData[EventAttributes.NUMBER_ANSWER] = params.numberAnswer;
+  if (!isNullish(answer.numberAnswer)) {
+    eventData[EventAttributes.NUMBER_ANSWER] = answer.numberAnswer;
   }
-  if (!isNullish(params.textAnswer)) {
-    eventData[EventAttributes.TEXT_ANSWER] = params.textAnswer;
+  if (!isNullish(answer.textAnswer)) {
+    eventData[EventAttributes.TEXT_ANSWER] = answer.textAnswer;
   }
 
   return eventData;
@@ -486,13 +494,14 @@ export const buildQuestionAnsweredEventData = (
 /**
  * Build event data for checklist start events
  * @param session - The business session with content and version
- * @param startReason - The start reason
+ * @param params - Event build parameters containing startReason
  * @returns Checklist start event data, or null if startReason is missing
  */
 export const buildChecklistStartEventData = (
   session: Pick<BizSessionWithRelations, 'content' | 'version'>,
-  startReason: string | undefined,
+  params?: EventBuildParams,
 ): Record<string, any> | null => {
+  const startReason = params?.startReason;
   if (!startReason) {
     return null;
   }
@@ -506,13 +515,14 @@ export const buildChecklistStartEventData = (
 /**
  * Build event data for checklist dismissed events
  * @param session - The business session with content and version
- * @param endReason - The end reason
+ * @param params - Event build parameters containing endReason
  * @returns Checklist dismissed event data, or null if endReason is missing
  */
 export const buildChecklistDismissedEventData = (
   session: Pick<BizSessionWithRelations, 'content' | 'version'>,
-  endReason: string | undefined,
+  params?: EventBuildParams,
 ): Record<string, any> | null => {
+  const endReason = params?.endReason;
   if (!endReason) {
     return null;
   }
@@ -526,13 +536,14 @@ export const buildChecklistDismissedEventData = (
 /**
  * Build event data for checklist task events (clicked or completed)
  * @param session - The business session with content and version (version must have data property with ChecklistData)
- * @param taskId - The task ID to find in checklist items
+ * @param params - Event build parameters containing taskId
  * @returns Checklist task event data, or null if task not found
  */
 export const buildChecklistTaskEventData = (
   session: BizSessionWithRelations,
-  taskId: string | undefined,
+  params?: EventBuildParams,
 ): Record<string, any> | null => {
+  const taskId = params?.taskId;
   if (!taskId) {
     return null;
   }
@@ -556,13 +567,14 @@ export const buildChecklistTaskEventData = (
 /**
  * Build event data for launcher seen events
  * @param session - The business session with content and version
- * @param startReason - The start reason
+ * @param params - Event build parameters containing startReason
  * @returns Launcher seen event data, or null if startReason is missing
  */
 export const buildLauncherSeenEventData = (
   session: Pick<BizSessionWithRelations, 'content' | 'version'>,
-  startReason: string | undefined,
+  params?: EventBuildParams,
 ): Record<string, any> | null => {
+  const startReason = params?.startReason;
   if (!startReason) {
     return null;
   }
@@ -576,13 +588,14 @@ export const buildLauncherSeenEventData = (
 /**
  * Build event data for launcher dismissed events
  * @param session - The business session with content and version
- * @param endReason - The end reason
+ * @param params - Event build parameters containing endReason
  * @returns Launcher dismissed event data, or null if endReason is missing
  */
 export const buildLauncherDismissedEventData = (
   session: Pick<BizSessionWithRelations, 'content' | 'version'>,
-  endReason: string | undefined,
+  params?: EventBuildParams,
 ): Record<string, any> | null => {
+  const endReason = params?.endReason;
   if (!endReason) {
     return null;
   }
