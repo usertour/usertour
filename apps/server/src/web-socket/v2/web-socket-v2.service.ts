@@ -14,12 +14,9 @@ import {
   StartContentDto,
   EndContentDto,
   FireConditionWaitTimerDto,
-  WebSocketContext,
   SocketAuthData,
   ActivateLauncherDto,
   DismissLauncherDto,
-} from './web-socket-v2.dto';
-import {
   ContentDataType,
   ClientContext,
   contentStartReason,
@@ -27,6 +24,7 @@ import {
   AnswerQuestionDto,
   BizEvents,
 } from '@usertour/types';
+import { WebSocketContext } from './web-socket-v2.dto';
 import { Server, Socket } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';

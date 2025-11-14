@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
+import { ClientMessageKind } from '@usertour/types';
 import { WebSocketV2Service } from './web-socket-v2.service';
-import { ClientMessageKind, WebSocketContext } from './web-socket-v2.dto';
+import { WebSocketContext } from './web-socket-v2.dto';
 import { DistributedLockService } from '../core/distributed-lock.service';
 import { buildSocketLockKey } from '@/utils/websocket-utils';
 
