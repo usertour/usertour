@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@/shared/redis.service';
 
+// ============================================================================
+// Distributed Lock Service
+// ============================================================================
+
 /**
  * Distributed lock service using Redis
  * Provides atomic locking capabilities for preventing concurrent operations
@@ -11,6 +15,10 @@ export class DistributedLockService {
 
   constructor(private readonly redisService: RedisService) {}
 
+  // ============================================================================
+  // Private Helper Methods - Key Management
+  // ============================================================================
+
   /**
    * Build the Redis key for a lock
    * @param key - The original key
@@ -19,6 +27,18 @@ export class DistributedLockService {
   private buildLockKey(key: string): string {
     return `lock:${key}`;
   }
+
+  /**
+   * Utility method to create a delay
+   * @param ms - Delay in milliseconds
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // ============================================================================
+  // Public API Methods - Basic Lock Operations
+  // ============================================================================
 
   /**
    * Acquire a distributed lock
@@ -126,36 +146,9 @@ export class DistributedLockService {
     }
   }
 
-  /**
-   * Execute a function with a distributed lock
-   * @param key - The lock key
-   * @param fn - The function to execute while holding the lock
-   * @param timeoutMs - Lock timeout in milliseconds (default: 10000ms)
-   * @returns Promise<T | null> - The result of the function execution, or null if lock could not be acquired
-   */
-  async withLock<T>(key: string, fn: () => Promise<T>, timeoutMs = 10000): Promise<T | null> {
-    // Check if already locked
-    if (await this.isLocked(key)) {
-      this.logger.debug(`Resource ${key} is already locked, skipping operation`);
-      return null;
-    }
-
-    // Try to acquire lock
-    const lockValue = `${Date.now()}-${Math.random()}`;
-    const lockAcquired = await this.acquireLock(key, timeoutMs, lockValue);
-    if (!lockAcquired) {
-      this.logger.debug(`Failed to acquire lock for ${key}, skipping operation`);
-      return null;
-    }
-
-    try {
-      // Execute the function while holding the lock
-      return await fn();
-    } finally {
-      // Always release the lock
-      await this.releaseLock(key, lockValue);
-    }
-  }
+  // ============================================================================
+  // Public API Methods - Advanced Lock Operations
+  // ============================================================================
 
   /**
    * Try to acquire a lock with retry mechanism
@@ -190,6 +183,37 @@ export class DistributedLockService {
   }
 
   /**
+   * Execute a function with a distributed lock
+   * @param key - The lock key
+   * @param fn - The function to execute while holding the lock
+   * @param timeoutMs - Lock timeout in milliseconds (default: 10000ms)
+   * @returns Promise<T | null> - The result of the function execution, or null if lock could not be acquired
+   */
+  async withLock<T>(key: string, fn: () => Promise<T>, timeoutMs = 10000): Promise<T | null> {
+    // Check if already locked
+    if (await this.isLocked(key)) {
+      this.logger.debug(`Resource ${key} is already locked, skipping operation`);
+      return null;
+    }
+
+    // Try to acquire lock
+    const lockValue = `${Date.now()}-${Math.random()}`;
+    const lockAcquired = await this.acquireLock(key, timeoutMs, lockValue);
+    if (!lockAcquired) {
+      this.logger.debug(`Failed to acquire lock for ${key}, skipping operation`);
+      return null;
+    }
+
+    try {
+      // Execute the function while holding the lock
+      return await fn();
+    } finally {
+      // Always release the lock
+      await this.releaseLock(key, lockValue);
+    }
+  }
+
+  /**
    * Execute a function with a distributed lock and retry mechanism
    * @param key - The lock key
    * @param fn - The function to execute while holding the lock
@@ -220,13 +244,5 @@ export class DistributedLockService {
       // Always release the lock
       await this.releaseLock(key);
     }
-  }
-
-  /**
-   * Utility method to create a delay
-   * @param ms - Delay in milliseconds
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

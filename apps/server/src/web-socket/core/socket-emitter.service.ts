@@ -8,6 +8,10 @@ import {
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 
+// ============================================================================
+// Socket Emitter Service
+// ============================================================================
+
 /**
  * Socket emitter service
  * Handles all WebSocket event emissions to clients
@@ -20,7 +24,7 @@ export class SocketEmitterService {
   private readonly SERVER_MESSAGE_EVENT = 'server-message';
 
   // ============================================================================
-  // Client Event Tracking
+  // Public API Methods - Client Event Tracking
   // ============================================================================
 
   /**
@@ -58,7 +62,7 @@ export class SocketEmitterService {
   }
 
   // ============================================================================
-  // Content Session Management
+  // Public API Methods - Content Session Management
   // ============================================================================
 
   /**
@@ -109,7 +113,7 @@ export class SocketEmitterService {
   }
 
   /**
-   *
+   * Add a launcher session
    * @param socket - The socket
    * @param session - The session to add
    * @returns Promise<boolean> - True if the event was acknowledged by client
@@ -131,7 +135,7 @@ export class SocketEmitterService {
   }
 
   // ============================================================================
-  // Flow Control
+  // Public API Methods - Flow Control
   // ============================================================================
 
   /**
@@ -149,7 +153,7 @@ export class SocketEmitterService {
   }
 
   // ============================================================================
-  // Checklist Control
+  // Public API Methods - Checklist Control
   // ============================================================================
 
   /**
@@ -163,7 +167,7 @@ export class SocketEmitterService {
   }
 
   // ============================================================================
-  // Wait Timer Conditions
+  // Public API Methods - Wait Timer Conditions
   // ============================================================================
 
   /**
@@ -211,7 +215,7 @@ export class SocketEmitterService {
   }
 
   // ============================================================================
-  // Generic Event Emission
+  // Private Helper Methods - Generic Event Emission
   // ============================================================================
 
   /**
@@ -221,7 +225,6 @@ export class SocketEmitterService {
    * @param payload - The message payload
    * @param timeout - Timeout in milliseconds
    * @returns Promise<boolean> - True if the client successfully processed the message
-   * @private
    */
   private async emitWithAck(
     socket: Socket,
@@ -252,7 +255,6 @@ export class SocketEmitterService {
    * @param kind - The message kind
    * @param payload - The message payload
    * @returns boolean - True if the message was sent successfully
-   * @private
    */
   private emit(socket: Socket, kind: ServerMessageKind, payload?: any): boolean {
     try {

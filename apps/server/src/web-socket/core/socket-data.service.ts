@@ -2,6 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@/shared/redis.service';
 import { SocketData } from '@/common/types/content';
 
+// ============================================================================
+// Socket Data Service
+// ============================================================================
+
 /**
  * Socket data storage service
  * Handles all Redis data operations for SocketData management
@@ -13,6 +17,10 @@ export class SocketDataService {
 
   constructor(private readonly redisService: RedisService) {}
 
+  // ============================================================================
+  // Private Helper Methods - Key Management
+  // ============================================================================
+
   /**
    * Build Redis key for socket data
    * Uses hash tag to ensure cluster compatibility
@@ -22,6 +30,10 @@ export class SocketDataService {
   private key(socketId: string): string {
     return `{${socketId}}:client_data`;
   }
+
+  // ============================================================================
+  // Public API Methods - Data Operations
+  // ============================================================================
 
   /**
    * Set socket data in Redis

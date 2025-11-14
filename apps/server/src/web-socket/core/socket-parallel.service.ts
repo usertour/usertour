@@ -8,6 +8,10 @@ import {
 } from '@usertour/types';
 import { SocketEmitterService } from './socket-emitter.service';
 
+// ============================================================================
+// Socket Parallel Service
+// ============================================================================
+
 /**
  * Socket parallel service
  * Handles parallel WebSocket event emissions with acknowledgment
@@ -27,6 +31,7 @@ export class SocketParallelService {
    * Generic method to execute multiple socket operations in parallel
    * @param socket - The socket instance
    * @param operations - Array of operations to execute
+   * @param items - Array of items corresponding to operations
    * @param operationName - Name of the operation for logging
    * @returns Promise<T[]> - Array of successfully processed items
    */
@@ -57,7 +62,7 @@ export class SocketParallelService {
   }
 
   // ============================================================================
-  // Client Conditions
+  // Client Conditions Operations
   // ============================================================================
 
   /**
@@ -83,7 +88,7 @@ export class SocketParallelService {
   }
 
   /**
-   * Untrack client conditions
+   * Untrack client conditions in parallel with acknowledgment
    * @param socket - The socket
    * @param clientConditions - The client conditions to untrack
    * @returns Promise<ClientCondition[]> - Array of successfully untracked conditions
@@ -106,7 +111,7 @@ export class SocketParallelService {
   }
 
   // ============================================================================
-  // Condition Wait Timers
+  // Condition Wait Timers Operations
   // ============================================================================
 
   /**
@@ -154,6 +159,10 @@ export class SocketParallelService {
       'cancelConditionWaitTimers',
     );
   }
+
+  // ============================================================================
+  // Launcher Operations
+  // ============================================================================
 
   /**
    * Add multiple launcher sessions in parallel with acknowledgment

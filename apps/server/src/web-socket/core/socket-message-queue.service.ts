@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+// ============================================================================
+// Socket Message Queue Service
+// ============================================================================
+
 /**
  * Socket message queue service
  * Ensures messages for each socket are processed in order using Promise chains
@@ -17,6 +21,10 @@ export class SocketMessageQueueService {
   // Map: socketId -> Promise chain
   // Each socket has its own Promise chain for ordered execution
   private queues = new Map<string, Promise<any>>();
+
+  // ============================================================================
+  // Public API Methods - Queue Management
+  // ============================================================================
 
   /**
    * Execute task in order for a specific socket
@@ -67,7 +75,29 @@ export class SocketMessageQueueService {
   }
 
   /**
+   * Clear the queue for a specific socket
+   * Called when socket disconnects to prevent memory leaks
+   *
+   * @param socketId - The socket ID to clear queue for
+   */
+  clearQueue(socketId: string): void {
+    const hasQueue = this.queues.has(socketId);
+    if (hasQueue) {
+      this.queues.delete(socketId);
+      this.logger.debug(`Forcefully cleared queue for disconnected socket ${socketId}`);
+    }
+  }
+
+  // ============================================================================
+  // Private Helper Methods - Timeout Management
+  // ============================================================================
+
+  /**
    * Wrap a promise with timeout protection
+   * @param promise - The promise to wrap
+   * @param timeoutMs - Timeout in milliseconds
+   * @param socketId - The socket ID for logging
+   * @returns Promise that resolves or rejects with timeout error
    */
   private async withTimeout<T>(
     promise: Promise<T>,
@@ -83,19 +113,5 @@ export class SocketMessageQueueService {
         ),
       ),
     ]);
-  }
-
-  /**
-   * Clear the queue for a specific socket
-   * Called when socket disconnects to prevent memory leaks
-   *
-   * @param socketId - The socket ID to clear queue for
-   */
-  clearQueue(socketId: string): void {
-    const hasQueue = this.queues.has(socketId);
-    if (hasQueue) {
-      this.queues.delete(socketId);
-      this.logger.debug(`Forcefully cleared queue for disconnected socket ${socketId}`);
-    }
   }
 }

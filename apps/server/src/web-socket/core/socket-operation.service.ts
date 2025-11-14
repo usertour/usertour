@@ -20,6 +20,10 @@ import {
 import { hasContentSessionChanges } from '@/utils/content-utils';
 import { SocketDataService } from './socket-data.service';
 
+// ============================================================================
+// Type Definitions and Interfaces
+// ============================================================================
+
 /**
  * Options for cleaning up socket session
  */
@@ -48,6 +52,10 @@ interface ActivateChecklistSessionOptions {
   cleanupContentTypes?: ContentDataType[];
 }
 
+// ============================================================================
+// Socket Operation Service
+// ============================================================================
+
 /**
  * Socket operation service
  * Handles socket operations for content sessions and client conditions
@@ -64,156 +72,9 @@ export class SocketOperationService {
     private readonly socketDataService: SocketDataService,
   ) {}
 
-  /**
-   * Emit unset socket session event with acknowledgment
-   * @param socket - The socket instance
-   * @param sessionId - The session id to unset
-   * @param contentType - The content type to unset
-   * @returns Promise<boolean> - True if the session was unset and acknowledged by client
-   */
-  private async unsetSocketSession(
-    socket: Socket,
-    sessionId: string,
-    contentType: ContentDataType,
-  ): Promise<boolean> {
-    if (contentType === ContentDataType.FLOW) {
-      return await this.socketEmitterService.unsetFlowSessionWithAck(socket, sessionId);
-    }
-    if (contentType === ContentDataType.CHECKLIST) {
-      return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, sessionId);
-    }
-
-    this.logger.warn(`Unsupported content type: ${contentType}`);
-    return false;
-  }
-
-  /**
-   * Cleanup conditions efficiently with parallel processing
-   * @param socket - The socket
-   * @param clientConditions - All client conditions
-   * @param waitTimers - Condition wait timers to cleanup
-   * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
-   * @returns Object containing remaining conditions and timers after cleanup
-   */
-  private async cleanupConditions(
-    socket: Socket,
-    socketData: SocketData,
-    cleanupContentTypes?: ContentDataType[],
-  ): Promise<Pick<SocketData, 'clientConditions' | 'waitTimers'>> {
-    const { clientConditions = [], waitTimers = [] } = socketData;
-    // Filter and preserve client conditions based on content type filter
-    const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
-      clientConditions,
-      cleanupContentTypes,
-    );
-    // Filter and preserve wait timers based on content type filter
-    const { filteredWaitTimers, preservedWaitTimers } = filterAndPreserveWaitTimers(
-      waitTimers,
-      cleanupContentTypes,
-    );
-    // Un-track client conditions
-    filteredConditions.map((condition) =>
-      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
-    );
-    filteredWaitTimers.map((timer) =>
-      this.socketEmitterService.cancelConditionWaitTimer(socket, timer),
-    );
-    return {
-      clientConditions: preservedConditions,
-      waitTimers: preservedWaitTimers,
-    };
-  }
-
-  /**
-   * Execute and validate parallel condition operations
-   * @param socket - The socket instance
-   * @param conditionsToUntrack - Conditions to untrack
-   * @param waitTimers - Wait timers to cancel
-   * @param conditionsToTrack - Conditions to track
-   * @returns True if all operations completed successfully
-   */
-  private async executeParallelConditionOperations(
-    socket: Socket,
-    conditionsToUntrack: ClientCondition[],
-    waitTimers: ConditionWaitTimer[],
-    conditionsToTrack: TrackCondition[],
-  ): Promise<boolean> {
-    // Execute all condition operations in parallel
-    const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
-      this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
-      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
-      this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
-    ]);
-
-    // Validate results
-    if (
-      untrackedConditions.length !== conditionsToUntrack.length ||
-      cancelledTimers.length !== waitTimers.length ||
-      newConditions.length !== conditionsToTrack.length
-    ) {
-      this.logger.error(
-        `Failed to execute all condition operations: ${conditionsToUntrack.length} conditions to untrack,
-         ${waitTimers.length} wait timers to cancel, ${conditionsToTrack.length} conditions to track`,
-      );
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Emit conditions efficiently with parallel operations on session activation
-   * @param socket - The socket
-   * @param socketData - The socket client data
-   * @param trackConditions - New conditions to track
-   * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
-   * @returns Object containing updated conditions and remaining timers
-   */
-  private async emitConditionsOnActivation(
-    socket: Socket,
-    socketData: SocketData,
-    trackConditions: TrackCondition[],
-    cleanupContentTypes?: ContentDataType[],
-  ): Promise<Pick<SocketData, 'clientConditions' | 'waitTimers'> | null> {
-    const { clientConditions = [], waitTimers = [] } = socketData;
-    // Filter and preserve client conditions based on content type filter
-    const { filteredConditions, preservedConditions: preservedClientConditions } =
-      filterAndPreserveConditions(clientConditions, cleanupContentTypes);
-
-    // Categorize client conditions into preserved, untrack, and track groups
-    const { preservedConditions, conditionsToUntrack, conditionsToTrack } =
-      categorizeClientConditions(filteredConditions, trackConditions);
-
-    // Filter and preserve wait timers based on content type filter
-    const { filteredWaitTimers, preservedWaitTimers } = filterAndPreserveWaitTimers(
-      waitTimers,
-      cleanupContentTypes,
-    );
-
-    // Execute and validate parallel condition operations
-    const isSuccess = await this.executeParallelConditionOperations(
-      socket,
-      conditionsToUntrack,
-      filteredWaitTimers,
-      conditionsToTrack,
-    );
-    if (!isSuccess) {
-      return null;
-    }
-
-    const trackedClientConditions = convertToClientConditions(conditionsToTrack);
-
-    const updatedConditions = [
-      ...preservedClientConditions,
-      ...preservedConditions,
-      ...trackedClientConditions,
-    ];
-
-    return {
-      clientConditions: updatedConditions,
-      waitTimers: preservedWaitTimers,
-    };
-  }
+  // ============================================================================
+  // Public API Methods - Session Management
+  // ============================================================================
 
   /**
    * Cleanup socket session and associated conditions
@@ -354,139 +215,9 @@ export class SocketOperationService {
     return await this.socketDataService.set(socket.id, updatedSocketData, true);
   }
 
-  /**
-   * Handle launcher sessions processing
-   * Processes session additions, removals, and preserves existing sessions
-   */
-  private async handleLauncherSessions(
-    currentSessions: CustomContentSession[],
-    newSessions: CustomContentSession[],
-    socket: Socket,
-  ): Promise<{
-    updatedSessions: CustomContentSession[];
-    removedContentIds: string[];
-  }> {
-    const {
-      newSessions: categorizedNewSessions,
-      removedSessions,
-      preservedSessions,
-    } = categorizeLauncherSessions(currentSessions, newSessions);
-
-    // Second pass: detect changes in preserved sessions
-    const changedPreservedSessions: CustomContentSession[] = preservedSessions.filter((session) => {
-      if (!session?.id) {
-        return false;
-      }
-      const oldSession = currentSessions.find((s) => s.id === session.id);
-      if (!oldSession) {
-        return false;
-      }
-      return hasContentSessionChanges(oldSession, session);
-    });
-
-    const preservedUnchangedSessions = preservedSessions.filter(
-      (session) => !changedPreservedSessions.some((s) => s.id === session.id),
-    );
-
-    const toAdd = [...categorizedNewSessions, ...changedPreservedSessions];
-
-    const [addedSessions, removedContentIds] = await Promise.all([
-      this.socketParallelService.addLaunchers(socket, toAdd),
-      this.socketParallelService.removeLaunchers(
-        socket,
-        removedSessions.map((session) => session.content.id),
-      ),
-    ]);
-
-    const unremovedSessions = removedSessions.filter(
-      (session) => !removedContentIds.includes(session.content.id),
-    );
-
-    return {
-      updatedSessions: [...preservedUnchangedSessions, ...unremovedSessions, ...addedSessions],
-      removedContentIds,
-    };
-  }
-
-  /**
-   * Handle launcher client conditions filtering and updating
-   * Processes conditions specifically for launcher content type
-   */
-  private handleLauncherClientConditions(
-    currentConditions: ClientCondition[],
-    removedContentIds: string[],
-    socket: Socket,
-  ): {
-    updatedConditions: ClientCondition[];
-  } {
-    const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
-      currentConditions,
-      [ContentDataType.LAUNCHER],
-    );
-
-    // Use Set for O(1) lookup performance instead of nested array operations
-    const removedContentIdSet = new Set(removedContentIds);
-
-    const untrackedConditions: ClientCondition[] = [];
-    const trackedConditions: ClientCondition[] = [];
-
-    // Single pass categorization for better performance
-    for (const condition of filteredConditions) {
-      if (removedContentIdSet.has(condition.contentId)) {
-        untrackedConditions.push(condition);
-      } else {
-        trackedConditions.push(condition);
-      }
-    }
-
-    // Cancel tracking for conditions that are no longer needed
-    for (const condition of untrackedConditions) {
-      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId);
-    }
-
-    return {
-      updatedConditions: [...preservedConditions, ...trackedConditions],
-    };
-  }
-
-  /**
-   * Add launcher sessions
-   * @param socket - The socket
-   * @param socketData - The socket client data
-   * @param sessions - Target launcher sessions
-   * @returns Promise<boolean> - True if the sessions were added successfully
-   */
-  async addLaunchers(
-    socket: Socket,
-    socketData: SocketData,
-    sessions: CustomContentSession[],
-  ): Promise<boolean> {
-    const { clientConditions = [], launcherSessions = [] } = socketData;
-
-    // Handle launcher sessions processing
-    const { updatedSessions, removedContentIds } = await this.handleLauncherSessions(
-      launcherSessions,
-      sessions,
-      socket,
-    );
-
-    // Handle launcher client conditions update
-    const { updatedConditions } = this.handleLauncherClientConditions(
-      clientConditions,
-      removedContentIds,
-      socket,
-    );
-
-    // Update socket data with processed sessions and conditions
-    return await this.socketDataService.set(
-      socket.id,
-      {
-        launcherSessions: updatedSessions,
-        clientConditions: updatedConditions,
-      },
-      true,
-    );
-  }
+  // ============================================================================
+  // Public API Methods - Condition Management
+  // ============================================================================
 
   /**
    * Track client conditions
@@ -589,5 +320,306 @@ export class SocketOperationService {
     return taskIds.filter((taskId) =>
       this.socketEmitterService.checklistTaskCompleted(socket, taskId),
     );
+  }
+
+  // ============================================================================
+  // Public API Methods - Launcher Management
+  // ============================================================================
+
+  /**
+   * Add launcher sessions
+   * @param socket - The socket
+   * @param socketData - The socket client data
+   * @param sessions - Target launcher sessions
+   * @returns Promise<boolean> - True if the sessions were added successfully
+   */
+  async addLaunchers(
+    socket: Socket,
+    socketData: SocketData,
+    sessions: CustomContentSession[],
+  ): Promise<boolean> {
+    const { clientConditions = [], launcherSessions = [] } = socketData;
+
+    // Handle launcher sessions processing
+    const { updatedSessions, removedContentIds } = await this.handleLauncherSessions(
+      launcherSessions,
+      sessions,
+      socket,
+    );
+
+    // Handle launcher client conditions update
+    const { updatedConditions } = this.handleLauncherClientConditions(
+      clientConditions,
+      removedContentIds,
+      socket,
+    );
+
+    // Update socket data with processed sessions and conditions
+    return await this.socketDataService.set(
+      socket.id,
+      {
+        launcherSessions: updatedSessions,
+        clientConditions: updatedConditions,
+      },
+      true,
+    );
+  }
+
+  // ============================================================================
+  // Private Helper Methods - Session Management
+  // ============================================================================
+
+  /**
+   * Emit unset socket session event with acknowledgment
+   * @param socket - The socket instance
+   * @param sessionId - The session id to unset
+   * @param contentType - The content type to unset
+   * @returns Promise<boolean> - True if the session was unset and acknowledged by client
+   */
+  private async unsetSocketSession(
+    socket: Socket,
+    sessionId: string,
+    contentType: ContentDataType,
+  ): Promise<boolean> {
+    if (contentType === ContentDataType.FLOW) {
+      return await this.socketEmitterService.unsetFlowSessionWithAck(socket, sessionId);
+    }
+    if (contentType === ContentDataType.CHECKLIST) {
+      return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, sessionId);
+    }
+
+    this.logger.warn(`Unsupported content type: ${contentType}`);
+    return false;
+  }
+
+  // ============================================================================
+  // Private Helper Methods - Condition Management
+  // ============================================================================
+
+  /**
+   * Cleanup conditions efficiently with parallel processing
+   * @param socket - The socket
+   * @param clientConditions - All client conditions
+   * @param waitTimers - Condition wait timers to cleanup
+   * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
+   * @returns Object containing remaining conditions and timers after cleanup
+   */
+  private async cleanupConditions(
+    socket: Socket,
+    socketData: SocketData,
+    cleanupContentTypes?: ContentDataType[],
+  ): Promise<Pick<SocketData, 'clientConditions' | 'waitTimers'>> {
+    const { clientConditions = [], waitTimers = [] } = socketData;
+    // Filter and preserve client conditions based on content type filter
+    const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
+      clientConditions,
+      cleanupContentTypes,
+    );
+    // Filter and preserve wait timers based on content type filter
+    const { filteredWaitTimers, preservedWaitTimers } = filterAndPreserveWaitTimers(
+      waitTimers,
+      cleanupContentTypes,
+    );
+    // Un-track client conditions
+    filteredConditions.map((condition) =>
+      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
+    );
+    filteredWaitTimers.map((timer) =>
+      this.socketEmitterService.cancelConditionWaitTimer(socket, timer),
+    );
+    return {
+      clientConditions: preservedConditions,
+      waitTimers: preservedWaitTimers,
+    };
+  }
+
+  /**
+   * Execute and validate parallel condition operations
+   * @param socket - The socket instance
+   * @param conditionsToUntrack - Conditions to untrack
+   * @param waitTimers - Wait timers to cancel
+   * @param conditionsToTrack - Conditions to track
+   * @returns True if all operations completed successfully
+   */
+  private async executeParallelConditionOperations(
+    socket: Socket,
+    conditionsToUntrack: ClientCondition[],
+    waitTimers: ConditionWaitTimer[],
+    conditionsToTrack: TrackCondition[],
+  ): Promise<boolean> {
+    // Execute all condition operations in parallel
+    const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
+      this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
+      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
+      this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
+    ]);
+
+    // Validate results
+    if (
+      untrackedConditions.length !== conditionsToUntrack.length ||
+      cancelledTimers.length !== waitTimers.length ||
+      newConditions.length !== conditionsToTrack.length
+    ) {
+      this.logger.error(
+        `Failed to execute all condition operations: ${conditionsToUntrack.length} conditions to untrack,
+         ${waitTimers.length} wait timers to cancel, ${conditionsToTrack.length} conditions to track`,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Emit conditions efficiently with parallel operations on session activation
+   * @param socket - The socket
+   * @param socketData - The socket client data
+   * @param trackConditions - New conditions to track
+   * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
+   * @returns Object containing updated conditions and remaining timers
+   */
+  private async emitConditionsOnActivation(
+    socket: Socket,
+    socketData: SocketData,
+    trackConditions: TrackCondition[],
+    cleanupContentTypes?: ContentDataType[],
+  ): Promise<Pick<SocketData, 'clientConditions' | 'waitTimers'> | null> {
+    const { clientConditions = [], waitTimers = [] } = socketData;
+    // Filter and preserve client conditions based on content type filter
+    const { filteredConditions, preservedConditions: preservedClientConditions } =
+      filterAndPreserveConditions(clientConditions, cleanupContentTypes);
+
+    // Categorize client conditions into preserved, untrack, and track groups
+    const { preservedConditions, conditionsToUntrack, conditionsToTrack } =
+      categorizeClientConditions(filteredConditions, trackConditions);
+
+    // Filter and preserve wait timers based on content type filter
+    const { filteredWaitTimers, preservedWaitTimers } = filterAndPreserveWaitTimers(
+      waitTimers,
+      cleanupContentTypes,
+    );
+
+    // Execute and validate parallel condition operations
+    const isSuccess = await this.executeParallelConditionOperations(
+      socket,
+      conditionsToUntrack,
+      filteredWaitTimers,
+      conditionsToTrack,
+    );
+    if (!isSuccess) {
+      return null;
+    }
+
+    const trackedClientConditions = convertToClientConditions(conditionsToTrack);
+
+    const updatedConditions = [
+      ...preservedClientConditions,
+      ...preservedConditions,
+      ...trackedClientConditions,
+    ];
+
+    return {
+      clientConditions: updatedConditions,
+      waitTimers: preservedWaitTimers,
+    };
+  }
+
+  // ============================================================================
+  // Private Helper Methods - Launcher Handling
+  // ============================================================================
+
+  /**
+   * Handle launcher sessions processing
+   * Processes session additions, removals, and preserves existing sessions
+   */
+  private async handleLauncherSessions(
+    currentSessions: CustomContentSession[],
+    newSessions: CustomContentSession[],
+    socket: Socket,
+  ): Promise<{
+    updatedSessions: CustomContentSession[];
+    removedContentIds: string[];
+  }> {
+    const {
+      newSessions: categorizedNewSessions,
+      removedSessions,
+      preservedSessions,
+    } = categorizeLauncherSessions(currentSessions, newSessions);
+
+    // Second pass: detect changes in preserved sessions
+    const changedPreservedSessions: CustomContentSession[] = preservedSessions.filter((session) => {
+      if (!session?.id) {
+        return false;
+      }
+      const oldSession = currentSessions.find((s) => s.id === session.id);
+      if (!oldSession) {
+        return false;
+      }
+      return hasContentSessionChanges(oldSession, session);
+    });
+
+    const preservedUnchangedSessions = preservedSessions.filter(
+      (session) => !changedPreservedSessions.some((s) => s.id === session.id),
+    );
+
+    const toAdd = [...categorizedNewSessions, ...changedPreservedSessions];
+
+    const [addedSessions, removedContentIds] = await Promise.all([
+      this.socketParallelService.addLaunchers(socket, toAdd),
+      this.socketParallelService.removeLaunchers(
+        socket,
+        removedSessions.map((session) => session.content.id),
+      ),
+    ]);
+
+    const unremovedSessions = removedSessions.filter(
+      (session) => !removedContentIds.includes(session.content.id),
+    );
+
+    return {
+      updatedSessions: [...preservedUnchangedSessions, ...unremovedSessions, ...addedSessions],
+      removedContentIds,
+    };
+  }
+
+  /**
+   * Handle launcher client conditions filtering and updating
+   * Processes conditions specifically for launcher content type
+   */
+  private handleLauncherClientConditions(
+    currentConditions: ClientCondition[],
+    removedContentIds: string[],
+    socket: Socket,
+  ): {
+    updatedConditions: ClientCondition[];
+  } {
+    const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
+      currentConditions,
+      [ContentDataType.LAUNCHER],
+    );
+
+    // Use Set for O(1) lookup performance instead of nested array operations
+    const removedContentIdSet = new Set(removedContentIds);
+
+    const untrackedConditions: ClientCondition[] = [];
+    const trackedConditions: ClientCondition[] = [];
+
+    // Single pass categorization for better performance
+    for (const condition of filteredConditions) {
+      if (removedContentIdSet.has(condition.contentId)) {
+        untrackedConditions.push(condition);
+      } else {
+        trackedConditions.push(condition);
+      }
+    }
+
+    // Cancel tracking for conditions that are no longer needed
+    for (const condition of untrackedConditions) {
+      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId);
+    }
+
+    return {
+      updatedConditions: [...preservedConditions, ...trackedConditions],
+    };
   }
 }
