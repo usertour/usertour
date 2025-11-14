@@ -5,7 +5,7 @@ import {
   TrackCondition,
   ConditionWaitTimer,
   CustomContentSession,
-} from '@/common/types/sdk';
+} from '@usertour/types';
 import { SocketEmitterService } from './socket-emitter.service';
 
 /**

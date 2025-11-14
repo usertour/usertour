@@ -4,7 +4,7 @@ import {
   TrackCondition,
   ClientCondition,
   ConditionWaitTimer,
-} from '@/common/types/sdk';
+} from '@usertour/types';
 import { SocketData } from '@/common/types/content';
 
 // ============================================================================

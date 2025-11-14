@@ -32,7 +32,7 @@ import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
-import { ClientCondition, CustomContentSession } from '@/common/types/sdk';
+import { ClientCondition, CustomContentSession } from '@usertour/types';
 
 @Injectable()
 export class WebSocketV2Service {

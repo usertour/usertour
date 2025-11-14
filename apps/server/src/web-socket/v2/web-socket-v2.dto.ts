@@ -2,7 +2,7 @@ import { contentStartReason, ClientContext } from '@usertour/types';
 import { IsString, IsObject, IsOptional } from 'class-validator';
 import { Server, Socket } from 'socket.io';
 import { SocketData } from '@/common/types/content';
-import { ClientCondition } from '@/common/types/sdk';
+import { ClientCondition } from '@usertour/types';
 
 // ============================================================================
 // Type Definitions and Interfaces
