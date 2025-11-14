@@ -1,6 +1,7 @@
 import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
-import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
+import { createConditionsFilter } from '@/common/attribute/filter';
+import { evaluateAttributeCondition } from '@usertour/helpers';
 import { Injectable, Logger } from '@nestjs/common';
 import {
   BizUser,
@@ -21,6 +22,7 @@ import {
   ContentConditionLogic,
   RulesType,
   ProjectConfig,
+  RulesEvaluationOptions,
 } from '@usertour/types';
 import { getPublishedVersionId, flowIsDismissed, checklistIsDimissed } from '@/utils/content-utils';
 import { CustomContentVersion, ContentSessionCollection } from '@/common/types/content';
@@ -156,7 +158,7 @@ export class DataResolverService {
         const processedVariations = await Promise.all(
           variations.map(async (variation: any) => {
             const processedConditions = variation.conditions
-              ? await this.activedRulesConditions(
+              ? await this.evaluateRulesConditions(
                   variation.conditions,
                   environment,
                   attributes,
@@ -585,71 +587,60 @@ export class DataResolverService {
   // ============================================================================
 
   /**
-   * Process rules conditions and return updated conditions
-   * @param rulesConditions - Array of rules conditions to process
+   * Evaluate rules conditions and return updated conditions
+   * @param rulesConditions - Array of rules conditions to evaluate
    * @param environment - Environment context
    * @param attributes - Available attributes
    * @param bizUser - Business user
    * @param externalCompanyId - Optional company ID
-   * @returns Updated rules conditions with processed conditions
+   * @returns Updated rules conditions with evaluated conditions
    */
-  private async activedRulesConditions(
+  private async evaluateRulesConditions(
     rulesConditions: RulesCondition[],
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
     externalCompanyId?: string,
   ): Promise<RulesCondition[]> {
-    try {
-      const conditions = [...rulesConditions];
-      for (let index = 0; index < conditions.length; index++) {
-        const rules = conditions[index];
-        if (rules.type === 'group') {
-          for (let subIndex = 0; subIndex < rules.conditions.length; subIndex++) {
-            const subRules = rules.conditions[subIndex];
-            const isAcvited = await this.activedRulesCondition(
-              subRules,
-              environment,
-              attributes,
-              bizUser,
-              externalCompanyId,
-            );
-            conditions[index].conditions[subIndex].actived = isAcvited;
-          }
-        } else {
-          const isAcvited = await this.activedRulesCondition(
-            rules,
+    const conditions = [...rulesConditions];
+    for (let index = 0; index < conditions.length; index++) {
+      const rules = conditions[index];
+      if (rules.type === 'group' && rules.conditions) {
+        for (let subIndex = 0; subIndex < rules.conditions.length; subIndex++) {
+          const subRules = rules.conditions[subIndex];
+          const isActivated = await this.evaluateCondition(
+            subRules,
             environment,
             attributes,
             bizUser,
             externalCompanyId,
           );
-          conditions[index] = { ...rules, actived: isAcvited };
+          conditions[index].conditions[subIndex].actived = isActivated;
         }
+      } else {
+        const isActivated = await this.evaluateCondition(
+          rules,
+          environment,
+          attributes,
+          bizUser,
+          externalCompanyId,
+        );
+        conditions[index] = { ...rules, actived: isActivated };
       }
-      return conditions;
-    } catch (error) {
-      this.logger.error({
-        message: `Error in activedRulesConditions: ${error.message}`,
-        stack: error.stack,
-        rulesConditions,
-        environment,
-        attributes,
-      });
-      return rulesConditions;
     }
+    return conditions;
   }
 
   /**
-   * Process a single rule condition and return if it is activated
-   * @param rules - The rule condition to process
+   * Evaluate a single condition and return if it is activated
+   * @param rules - The condition to evaluate
    * @param environment - Environment context
    * @param attributes - Available attributes
    * @param bizUser - Business user
    * @param externalCompanyId - Optional company ID
    * @returns boolean indicating if the condition is activated
    */
-  private async activedRulesCondition(
+  private async evaluateCondition(
     rules: RulesCondition,
     environment: Environment,
     attributes: Attribute[],
@@ -659,7 +650,7 @@ export class DataResolverService {
     const userAttrs = attributes.filter((attr) => attr.bizType === AttributeBizType.USER);
     switch (rules.type) {
       case RulesType.USER_ATTR: {
-        return await this.activedUserAttributeRulesCondition(
+        return await this.evaluateUserAttributeCondition(
           rules,
           environment,
           attributes,
@@ -676,15 +667,10 @@ export class DataResolverService {
           return false;
         }
         if (segment.bizType === SegmentBizType.USER) {
-          return await this.activedUserSegmentRulesCondition(
-            rules,
-            environment,
-            userAttrs,
-            bizUser,
-          );
+          return await this.evaluateUserSegmentCondition(rules, environment, userAttrs, bizUser);
         }
         if (segment.bizType === SegmentBizType.COMPANY && externalCompanyId) {
-          return await this.activedCompanySegmentRulesCondition(
+          return await this.evaluateCompanySegmentCondition(
             rules,
             environment,
             attributes,
@@ -695,7 +681,7 @@ export class DataResolverService {
         return false;
       }
       case RulesType.CONTENT: {
-        return await this.activedContentRulesCondition(rules, bizUser);
+        return await this.evaluateContentCondition(rules, bizUser);
       }
       default: {
         return false;
@@ -704,15 +690,15 @@ export class DataResolverService {
   }
 
   /**
-   * Process user attribute rules condition
-   * @param rules - The rule condition to process
+   * Evaluate user attribute condition
+   * @param rules - The condition to evaluate
    * @param environment - Environment context
    * @param attributes - Available attributes
    * @param bizUser - Business user
    * @param externalCompanyId - Optional company ID
    * @returns boolean indicating if the condition is activated
    */
-  private async activedUserAttributeRulesCondition(
+  private async evaluateUserAttributeCondition(
     rules: RulesCondition,
     environment: Environment,
     attributes: Attribute[],
@@ -724,57 +710,88 @@ export class DataResolverService {
       return false;
     }
 
-    const filter = createFilterItem(rules, attributes) || {};
-    const environmentId = environment.id;
+    const evaluationOptions = await this.buildEvaluationOptions(
+      attr.bizType,
+      environment,
+      attributes,
+      bizUser,
+      externalCompanyId,
+    );
 
-    switch (attr.bizType) {
-      case AttributeBizType.USER: {
-        const segmentUser = await this.prisma.bizUser.findFirst({
-          where: {
-            environmentId,
-            externalId: String(bizUser.externalId),
-            ...filter,
-          },
-        });
-        return !!segmentUser;
-      }
-
-      case AttributeBizType.COMPANY:
-      case AttributeBizType.MEMBERSHIP: {
-        if (!externalCompanyId) return false;
-
-        const bizCompany = await this.prisma.bizCompany.findFirst({
-          where: {
-            externalId: String(externalCompanyId),
-            environmentId,
-          },
-        });
-        if (!bizCompany) return false;
-
-        const segmentUser = await this.prisma.bizUserOnCompany.findFirst({
-          where: {
-            bizUserId: bizUser.id,
-            bizCompanyId: bizCompany.id,
-            ...(attr.bizType === AttributeBizType.COMPANY ? { bizCompany: filter } : filter),
-          },
-        });
-        return !!segmentUser;
-      }
-
-      default:
-        return false;
+    if (!evaluationOptions) {
+      return false;
     }
+
+    return evaluateAttributeCondition(rules, evaluationOptions);
   }
 
   /**
-   * Process user segment rules condition
-   * @param rules - The rule condition to process
+   * Build complete RulesEvaluationOptions with all required attributes
+   */
+  private async buildEvaluationOptions(
+    bizType: AttributeBizType,
+    environment: Environment,
+    attributes: Attribute[],
+    bizUser: BizUser,
+    externalCompanyId?: string,
+  ): Promise<RulesEvaluationOptions | null> {
+    const userAttributes = (bizUser.data as Record<string, any>) || {};
+
+    // USER type doesn't require company context
+    if (bizType === AttributeBizType.USER) {
+      return {
+        attributes,
+        userAttributes,
+      };
+    }
+
+    // COMPANY and MEMBERSHIP types require company context
+    if (!externalCompanyId) {
+      return null;
+    }
+
+    // Query bizUserOnCompany with bizCompany included in one query
+    const userOnCompany = await this.prisma.bizUserOnCompany.findFirst({
+      where: {
+        bizUserId: bizUser.id,
+        bizCompany: {
+          externalId: String(externalCompanyId),
+          environmentId: environment.id,
+        },
+      },
+      include: {
+        bizCompany: {
+          select: {
+            data: true,
+          },
+        },
+      },
+    });
+
+    if (!userOnCompany || !userOnCompany.bizCompany) {
+      return null;
+    }
+
+    const companyAttributes = (userOnCompany.bizCompany.data as Record<string, any>) || {};
+    const membershipAttributes = (userOnCompany.data as Record<string, any>) || {};
+
+    return {
+      attributes,
+      userAttributes,
+      companyAttributes,
+      membershipAttributes,
+    };
+  }
+
+  /**
+   * Evaluate user segment condition
+   * @param rules - The condition to evaluate
    * @param environment - Environment context
    * @param attributes - Available attributes
    * @param bizUser - Business user
    * @returns boolean indicating if the condition is activated
    */
-  private async activedUserSegmentRulesCondition(
+  private async evaluateUserSegmentCondition(
     rules: RulesCondition,
     environment: Environment,
     attributes: Attribute[],
@@ -811,15 +828,15 @@ export class DataResolverService {
   }
 
   /**
-   * Process company segment rules condition
-   * @param rules - The rule condition to process
+   * Evaluate company segment condition
+   * @param rules - The condition to evaluate
    * @param environment - Environment context
    * @param attributes - Available attributes
    * @param bizUser - Business user
    * @param externalCompanyId - Optional company ID
    * @returns boolean indicating if the condition is activated
    */
-  private async activedCompanySegmentRulesCondition(
+  private async evaluateCompanySegmentCondition(
     rules: RulesCondition,
     environment: Environment,
     attributes: Attribute[],
@@ -868,12 +885,12 @@ export class DataResolverService {
   }
 
   /**
-   * Check if the content rules condition is activated
-   * @param rules - The rules condition to check
+   * Evaluate content condition
+   * @param rules - The condition to evaluate
    * @param bizUser - The business user to check against
    * @returns boolean indicating if the condition is activated
    */
-  private async activedContentRulesCondition(
+  private async evaluateContentCondition(
     rules: RulesCondition,
     bizUser: BizUser,
   ): Promise<boolean> {
@@ -883,16 +900,16 @@ export class DataResolverService {
       return false;
     }
 
-    // Special handling for actived/unactived logic
+    // Special handling for activated/unactivated logic
     if (logic === ContentConditionLogic.ACTIVED || logic === ContentConditionLogic.UNACTIVED) {
       const latestSession = await this.getLatestSession(contentId, bizUser.id);
       if (!latestSession) {
         return logic === ContentConditionLogic.UNACTIVED;
       }
-      const isActived = !(
+      const isActivated = !(
         flowIsDismissed(latestSession.bizEvent) || checklistIsDimissed(latestSession.bizEvent)
       );
-      return logic === ContentConditionLogic.ACTIVED ? isActived : !isActived;
+      return logic === ContentConditionLogic.ACTIVED ? isActivated : !isActivated;
     }
 
     if (logic === ContentConditionLogic.SEEN || logic === ContentConditionLogic.UNSEEN) {
@@ -1020,7 +1037,7 @@ export class DataResolverService {
 
     const autoStartRules =
       config.enabledAutoStartRules && config.autoStartRules.length > 0
-        ? await this.activedRulesConditions(
+        ? await this.evaluateRulesConditions(
             config.autoStartRules,
             environment,
             attributes,
@@ -1031,7 +1048,7 @@ export class DataResolverService {
 
     const hideRules =
       config.enabledHideRules && config.hideRules.length > 0
-        ? await this.activedRulesConditions(
+        ? await this.evaluateRulesConditions(
             config.hideRules,
             environment,
             attributes,
@@ -1048,109 +1065,87 @@ export class DataResolverService {
   }
 
   /**
-   * Process checklist conditions and return updated items
+   * Evaluate checklist conditions and return updated items
    * @param data - Checklist data containing items and conditions
    * @param environment - Environment context
    * @param attributes - Available attributes
    * @param bizUser - Business user
    * @param externalCompanyId - Optional company ID
-   * @returns Updated checklist data with processed conditions
+   * @returns Updated checklist data with evaluated conditions
    */
-  private async activedChecklistConditions(
+  private async evaluateChecklistConditions(
     data: ChecklistData,
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
     externalCompanyId?: string,
   ) {
-    try {
-      const items = await Promise.all(
-        data.items.map(async (item) => {
-          const completeConditions = item.completeConditions
-            ? await this.activedRulesConditions(
-                item.completeConditions,
-                environment,
-                attributes,
-                bizUser,
-                externalCompanyId,
-              )
-            : [];
-          const onlyShowTaskConditions = item.onlyShowTaskConditions
-            ? await this.activedRulesConditions(
-                item.onlyShowTaskConditions,
-                environment,
-                attributes,
-                bizUser,
-                externalCompanyId,
-              )
-            : [];
-          return {
-            ...item,
-            completeConditions,
-            onlyShowTaskConditions,
-          };
-        }),
-      );
-      return { ...data, items };
-    } catch (error) {
-      this.logger.error({
-        message: `Error in activedChecklistConditions: ${error.message}`,
-        stack: error.stack,
-        data,
-        environment,
-        attributes,
-      });
-      return data;
-    }
+    const items = await Promise.all(
+      data.items.map(async (item) => {
+        const completeConditions = item.completeConditions
+          ? await this.evaluateRulesConditions(
+              item.completeConditions,
+              environment,
+              attributes,
+              bizUser,
+              externalCompanyId,
+            )
+          : [];
+        const onlyShowTaskConditions = item.onlyShowTaskConditions
+          ? await this.evaluateRulesConditions(
+              item.onlyShowTaskConditions,
+              environment,
+              attributes,
+              bizUser,
+              externalCompanyId,
+            )
+          : [];
+        return {
+          ...item,
+          completeConditions,
+          onlyShowTaskConditions,
+        };
+      }),
+    );
+    return { ...data, items };
   }
 
   /**
-   * Process step triggers and return updated steps
+   * Evaluate step triggers and return updated steps
    * @param steps - Array of steps to process
    * @param environment - Environment context
    * @param attributes - Available attributes
    * @param bizUser - Business user
    * @param externalCompanyId - Optional company ID
-   * @returns Updated steps with processed conditions
+   * @returns Updated steps with evaluated conditions
    */
-  private async activedStepTriggers(
+  private async evaluateStepTriggers(
     steps: Step[],
     environment: Environment,
     attributes: Attribute[],
     bizUser: BizUser,
     externalCompanyId?: string,
   ): Promise<Step[]> {
-    try {
-      const stepsData = [...steps];
-      for (let index = 0; index < stepsData.length; index++) {
-        const step = stepsData[index];
-        if (step.trigger && Array.isArray(step.trigger)) {
-          for (let subIndex = 0; subIndex < step.trigger.length; subIndex++) {
-            const trigger = step.trigger[subIndex] as any;
-            if (trigger?.conditions) {
-              const triggerData = await this.activedRulesConditions(
-                trigger.conditions,
-                environment,
-                attributes,
-                bizUser,
-                externalCompanyId,
-              );
-              stepsData[index].trigger[subIndex].conditions = triggerData;
-            }
+    const stepsData = [...steps];
+    for (let index = 0; index < stepsData.length; index++) {
+      const step = stepsData[index];
+      if (step.trigger && Array.isArray(step.trigger)) {
+        for (let subIndex = 0; subIndex < step.trigger.length; subIndex++) {
+          const trigger = step.trigger[subIndex] as any;
+          if (trigger?.conditions) {
+            const triggerData = await this.evaluateRulesConditions(
+              trigger.conditions,
+              environment,
+              attributes,
+              bizUser,
+              externalCompanyId,
+            );
+            stepsData[index].trigger[subIndex].conditions = triggerData;
           }
         }
       }
-      return stepsData;
-    } catch (error) {
-      this.logger.error({
-        message: `Error in activedStepTriggers: ${error.message}`,
-        stack: error.stack,
-        steps,
-        environment,
-        attributes,
-      });
-      return steps;
     }
+    return stepsData;
   }
 
   /**
@@ -1181,7 +1176,7 @@ export class DataResolverService {
     const [config, processedData, processedSteps] = await Promise.all([
       this.getProcessedConfig(version, environment, attributes, bizUser, externalCompanyId),
       content.type === ContentDataType.CHECKLIST
-        ? this.activedChecklistConditions(
+        ? this.evaluateChecklistConditions(
             version.data as unknown as ChecklistData,
             environment,
             attributes,
@@ -1189,7 +1184,7 @@ export class DataResolverService {
             externalCompanyId,
           )
         : Promise.resolve(version.data),
-      this.activedStepTriggers(version.steps, environment, attributes, bizUser, externalCompanyId),
+      this.evaluateStepTriggers(version.steps, environment, attributes, bizUser, externalCompanyId),
     ]);
 
     return {
