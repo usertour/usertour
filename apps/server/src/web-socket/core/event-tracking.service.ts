@@ -778,15 +778,14 @@ export class EventTrackingService {
         handle: config.handle
           ? config.handle
           : async (tx: Tx, params: EventTrackingParams) => {
-              return await this.trackEventWithSession(
-                tx,
-                {
-                  sessionId: params.sessionId,
-                  environment: params.environment,
-                  clientContext: params.clientContext,
-                  eventName: config.eventName,
-                },
-                (session) => config.buildEventData(session, params),
+              const eventParams = {
+                sessionId: params.sessionId,
+                environment: params.environment,
+                clientContext: params.clientContext,
+                eventName: config.eventName,
+              };
+              return await this.trackEventWithSession(tx, eventParams, (session) =>
+                config.buildEventData(session, params),
               );
             },
       });
