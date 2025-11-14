@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { ContentDataType, contentStartReason, RulesType } from '@usertour/types';
+import { ContentDataType, contentStartReason, RulesType, BizEvents } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
   findLatestActivatedCustomContentVersions,
@@ -1039,16 +1039,19 @@ export class ContentOrchestratorService {
       currentItems ?? [],
       previousItems ?? [],
     );
+    const trackingParams = {
+      sessionId: session.id,
+      environment,
+      clientContext,
+    };
 
     if (newCompletedItems.length > 0) {
       // Track events for each completed task
       const trackingPromises = newCompletedItems.map((taskId) =>
-        this.eventTrackingService.trackChecklistTaskCompletedEvent(
-          session.id,
+        this.eventTrackingService.trackEventByType(BizEvents.CHECKLIST_TASK_COMPLETED, {
+          ...trackingParams,
           taskId,
-          environment,
-          clientContext,
-        ),
+        }),
       );
       await Promise.all(trackingPromises);
       // Emit events for all tasks
@@ -1056,12 +1059,10 @@ export class ContentOrchestratorService {
     }
     const latestSession = await this.eventTrackingService.findBizSessionWithEvents(session.id);
     if (isSendChecklistCompletedEvent(currentItems, latestSession)) {
-      const sendChecklistCompletedEvent =
-        await this.eventTrackingService.trackChecklistCompletedEvent(
-          session.id,
-          environment,
-          clientContext,
-        );
+      const sendChecklistCompletedEvent = await this.eventTrackingService.trackEventByType(
+        BizEvents.CHECKLIST_COMPLETED,
+        trackingParams,
+      );
       if (!sendChecklistCompletedEvent) {
         return false;
       }

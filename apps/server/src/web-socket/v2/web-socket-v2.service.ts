@@ -25,6 +25,7 @@ import {
   contentStartReason,
   contentEndReason,
   AnswerQuestionDto,
+  BizEvents,
 } from '@usertour/types';
 import { Server, Socket } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
@@ -431,12 +432,12 @@ export class WebSocketV2Service {
   ): Promise<boolean> {
     const { socketData } = context;
     const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackChecklistTaskClickedEvent(
-      params.sessionId,
+    return await this.eventTrackingService.trackEventByType(BizEvents.CHECKLIST_TASK_CLICKED, {
+      sessionId: params.sessionId,
       environment,
       clientContext,
-      params.taskId,
-    );
+      taskId: params.taskId,
+    });
   }
 
   /**
@@ -448,11 +449,11 @@ export class WebSocketV2Service {
   async hideChecklist(context: WebSocketContext, params: HideChecklistDto): Promise<boolean> {
     const { socketData } = context;
     const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackChecklistHiddenEvent(
-      params.sessionId,
+    return await this.eventTrackingService.trackEventByType(BizEvents.CHECKLIST_HIDDEN, {
+      sessionId: params.sessionId,
       environment,
       clientContext,
-    );
+    });
   }
 
   /**
@@ -464,11 +465,11 @@ export class WebSocketV2Service {
   async showChecklist(context: WebSocketContext, params: ShowChecklistDto): Promise<boolean> {
     const { socketData } = context;
     const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackChecklistSeenEvent(
-      params.sessionId,
+    return await this.eventTrackingService.trackEventByType(BizEvents.CHECKLIST_SEEN, {
+      sessionId: params.sessionId,
       environment,
       clientContext,
-    );
+    });
   }
 
   /**
@@ -483,12 +484,12 @@ export class WebSocketV2Service {
   ): Promise<boolean> {
     const { socketData } = context;
     const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackTooltipTargetMissingEvent(
-      params.sessionId,
-      params.stepId,
+    return await this.eventTrackingService.trackEventByType(BizEvents.TOOLTIP_TARGET_MISSING, {
+      sessionId: params.sessionId,
       environment,
       clientContext,
-    );
+      stepId: params.stepId,
+    });
   }
 
   /**
@@ -501,11 +502,11 @@ export class WebSocketV2Service {
     const { socketData } = context;
     const { environment, clientContext } = socketData;
     const { sessionId } = params;
-    return await this.eventTrackingService.trackLauncherActivatedEvent(
+    return await this.eventTrackingService.trackEventByType(BizEvents.LAUNCHER_ACTIVATED, {
       sessionId,
       environment,
       clientContext,
-    );
+    });
   }
 
   /**
@@ -518,12 +519,12 @@ export class WebSocketV2Service {
     const { server, socket, socketData } = context;
     const { environment, clientContext } = socketData;
     const { sessionId, endReason } = params;
-    const success = await this.eventTrackingService.trackLauncherDismissedEvent(
+    const success = await this.eventTrackingService.trackEventByType(BizEvents.LAUNCHER_DISMISSED, {
       sessionId,
       environment,
       clientContext,
       endReason,
-    );
+    });
     await this.toggleContents(server, socket, [ContentDataType.LAUNCHER]);
     return success;
   }

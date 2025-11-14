@@ -7,12 +7,10 @@ import {
 } from '@usertour/types';
 import { isEmptyString, isNullish } from '@usertour/helpers';
 import {
-  VersionWithSteps,
   Step,
-  Content,
-  Version,
   BizEventWithEvent,
   BizSessionWithEvents,
+  BizSessionWithRelations,
 } from '@/common/types/schema';
 import { CustomContentVersion } from '@/common/types/content';
 import type { AnswerQuestionDto } from '@usertour/types';
@@ -305,55 +303,49 @@ export const getCurrentStepId = (
 
 /**
  * Build base event data for flow events
- * @param content - The content object with id and name
- * @param version - The version object with id and sequence
+ * @param session - The business session with content and version
  * @returns Base flow event data
  */
 export const buildFlowBaseEventData = (
-  content: Pick<Content, 'id' | 'name'>,
-  version: Pick<Version, 'id' | 'sequence'>,
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
 ): Record<string, any> => {
   return {
-    [EventAttributes.FLOW_ID]: content.id,
-    [EventAttributes.FLOW_NAME]: content.name,
-    [EventAttributes.FLOW_VERSION_ID]: version.id,
-    [EventAttributes.FLOW_VERSION_NUMBER]: version.sequence,
+    [EventAttributes.FLOW_ID]: session.content.id,
+    [EventAttributes.FLOW_NAME]: session.content.name,
+    [EventAttributes.FLOW_VERSION_ID]: session.version.id,
+    [EventAttributes.FLOW_VERSION_NUMBER]: session.version.sequence,
   };
 };
 
 /**
  * Build base event data for checklist events
- * @param content - The content object with id and name
- * @param version - The version object with id and sequence
+ * @param session - The business session with content and version
  * @returns Base checklist event data
  */
 export const buildChecklistBaseEventData = (
-  content: Pick<Content, 'id' | 'name'>,
-  version: Pick<Version, 'id' | 'sequence'>,
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
 ): Record<string, any> => {
   return {
-    [EventAttributes.CHECKLIST_ID]: content.id,
-    [EventAttributes.CHECKLIST_VERSION_NUMBER]: version.sequence,
-    [EventAttributes.CHECKLIST_VERSION_ID]: version.id,
-    [EventAttributes.CHECKLIST_NAME]: content.name,
+    [EventAttributes.CHECKLIST_ID]: session.content.id,
+    [EventAttributes.CHECKLIST_VERSION_NUMBER]: session.version.sequence,
+    [EventAttributes.CHECKLIST_VERSION_ID]: session.version.id,
+    [EventAttributes.CHECKLIST_NAME]: session.content.name,
   };
 };
 
 /**
  * Build base event data for launcher events
- * @param content - The content object with id and name
- * @param version - The version object with id and sequence
+ * @param session - The business session with content and version
  * @returns Base launcher event data
  */
 export const buildLauncherBaseEventData = (
-  content: Pick<Content, 'id' | 'name'>,
-  version: Pick<Version, 'id' | 'sequence'>,
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
 ): Record<string, any> => {
   return {
-    [EventAttributes.LAUNCHER_ID]: content.id,
-    [EventAttributes.LAUNCHER_NAME]: content.name,
-    [EventAttributes.LAUNCHER_VERSION_ID]: version.id,
-    [EventAttributes.LAUNCHER_VERSION_NUMBER]: version.sequence,
+    [EventAttributes.LAUNCHER_ID]: session.content.id,
+    [EventAttributes.LAUNCHER_NAME]: session.content.name,
+    [EventAttributes.LAUNCHER_VERSION_ID]: session.version.id,
+    [EventAttributes.LAUNCHER_VERSION_NUMBER]: session.version.sequence,
   };
 };
 
@@ -371,8 +363,13 @@ export const buildFlowStartEventData = (
   customContentVersion: CustomContentVersion,
   startReason: string,
 ): Record<string, any> => {
+  // Create a session-like object from CustomContentVersion
+  const sessionLike = {
+    content: customContentVersion.content,
+    version: customContentVersion,
+  };
   return {
-    ...buildFlowBaseEventData(customContentVersion.content, customContentVersion),
+    ...buildFlowBaseEventData(sessionLike),
     [EventAttributes.FLOW_START_REASON]: startReason,
   };
 };
@@ -380,17 +377,23 @@ export const buildFlowStartEventData = (
 /**
  * Build go to step event data
  * Steps are sorted by sequence in descending order before calculation
- * @param content - The content object with id and name
- * @param version - The version with steps
+ * @param session - The business session with content and version
  * @param stepId - The step ID
  * @returns Object containing event data and completion status, or null if validation fails
  */
 export const buildStepEventData = (
-  content: Pick<Content, 'id' | 'name'>,
-  version: VersionWithSteps,
-  stepId: string,
+  session: BizSessionWithRelations,
+  stepId: string | undefined | null,
 ): Record<string, any> | null => {
-  const steps = version.steps;
+  if (!stepId) {
+    return null;
+  }
+
+  const steps = session.version.steps;
+  if (!steps) {
+    return null;
+  }
+
   const stepIndex = steps.findIndex((step: Step) => step.id === stepId);
 
   if (stepIndex === -1) {
@@ -404,7 +407,7 @@ export const buildStepEventData = (
 
   // Build event data
   const eventData = {
-    ...buildFlowBaseEventData(content, version),
+    ...buildFlowBaseEventData(session),
     [EventAttributes.FLOW_STEP_ID]: step.id,
     [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
     [EventAttributes.FLOW_STEP_CVID]: step.cvid,
@@ -418,13 +421,21 @@ export const buildStepEventData = (
   return eventData;
 };
 
+/**
+ * Build event data for flow ended events
+ * @param session - The business session with content, version, and currentStepId
+ * @param endReason - The end reason
+ * @returns Flow ended event data, or null if validation fails
+ */
 export const buildFlowEndedEventData = (
-  content: Pick<Content, 'id' | 'name'>,
-  version: VersionWithSteps,
-  currentStepId: string,
-  endReason: string,
+  session: BizSessionWithRelations,
+  endReason: string | undefined,
 ): Record<string, any> | null => {
-  const eventData = buildStepEventData(content, version, currentStepId);
+  if (!endReason || !session.currentStepId) {
+    return null;
+  }
+
+  const eventData = buildStepEventData(session, session.currentStepId);
   if (!eventData) {
     return null;
   }
@@ -437,18 +448,16 @@ export const buildFlowEndedEventData = (
 
 /**
  * Build event data for question answered events
- * @param content - The content object with id and name
- * @param version - The version object with id and sequence
+ * @param session - The business session with content and version
  * @param params - The parameters for the question answered event (sessionId will be ignored)
  * @returns Question answered event data
  */
 export const buildQuestionAnsweredEventData = (
-  content: Pick<Content, 'id' | 'name'>,
-  version: Pick<Version, 'id' | 'sequence'>,
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
   params: AnswerQuestionDto,
 ): Record<string, any> => {
   const eventData: Record<string, any> = {
-    ...buildFlowBaseEventData(content, version),
+    ...buildFlowBaseEventData(session),
     [EventAttributes.QUESTION_CVID]: params.questionCvid,
     [EventAttributes.QUESTION_NAME]: params.questionName,
     [EventAttributes.QUESTION_TYPE]: params.questionType,
@@ -481,49 +490,58 @@ export const buildChecklistStartEventData = (
   customContentVersion: CustomContentVersion,
   startReason: string,
 ): Record<string, any> => {
+  // Create a session-like object from CustomContentVersion
+  const sessionLike = {
+    content: customContentVersion.content,
+    version: customContentVersion,
+  };
   return {
-    ...buildChecklistBaseEventData(customContentVersion.content, customContentVersion),
+    ...buildChecklistBaseEventData(sessionLike),
     [EventAttributes.CHECKLIST_START_REASON]: startReason,
   };
 };
 
 /**
  * Build event data for checklist dismissed events
- * @param content - The content object with id and name
- * @param version - The version object with id and sequence
+ * @param session - The business session with content and version
  * @param endReason - The end reason
- * @returns Checklist dismissed event data
+ * @returns Checklist dismissed event data, or null if endReason is missing
  */
 export const buildChecklistDismissedEventData = (
-  content: Pick<Content, 'id' | 'name'>,
-  version: Pick<Version, 'id' | 'sequence'>,
-  endReason: string,
-): Record<string, any> => {
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
+  endReason: string | undefined,
+): Record<string, any> | null => {
+  if (!endReason) {
+    return null;
+  }
+
   return {
-    ...buildChecklistBaseEventData(content, version),
+    ...buildChecklistBaseEventData(session),
     [EventAttributes.CHECKLIST_END_REASON]: endReason,
   };
 };
 
 /**
  * Build event data for checklist task events (clicked or completed)
- * @param content - The content object with id and name
- * @param version - The version object with id and sequence (must have data property with ChecklistData)
+ * @param session - The business session with content and version (version must have data property with ChecklistData)
  * @param taskId - The task ID to find in checklist items
  * @returns Checklist task event data, or null if task not found
  */
 export const buildChecklistTaskEventData = (
-  content: Pick<Content, 'id' | 'name'>,
-  version: Pick<Version, 'id' | 'sequence' | 'data'>,
-  taskId: string,
+  session: BizSessionWithRelations,
+  taskId: string | undefined,
 ): Record<string, any> | null => {
-  const checklistData = version.data as unknown as ChecklistData;
+  if (!taskId) {
+    return null;
+  }
+
+  const checklistData = session.version.data as unknown as ChecklistData;
   const checklistItem = checklistData?.items?.find((item) => item.id === taskId);
   if (!checklistItem) {
     return null;
   }
   return {
-    ...buildChecklistBaseEventData(content, version),
+    ...buildChecklistBaseEventData(session),
     [EventAttributes.CHECKLIST_TASK_ID]: checklistItem.id,
     [EventAttributes.CHECKLIST_TASK_NAME]: checklistItem.name,
   };
@@ -543,26 +561,33 @@ export const buildLauncherSeenEventData = (
   customContentVersion: CustomContentVersion,
   startReason: string,
 ): Record<string, any> => {
+  // Create a session-like object from CustomContentVersion
+  const sessionLike = {
+    content: customContentVersion.content,
+    version: customContentVersion,
+  };
   return {
-    ...buildLauncherBaseEventData(customContentVersion.content, customContentVersion),
+    ...buildLauncherBaseEventData(sessionLike),
     [EventAttributes.LAUNCHER_START_REASON]: startReason,
   };
 };
 
 /**
  * Build event data for launcher dismissed events
- * @param content - The content object with id and name
- * @param version - The version object with id and sequence
+ * @param session - The business session with content and version
  * @param endReason - The end reason
- * @returns Launcher dismissed event data
+ * @returns Launcher dismissed event data, or null if endReason is missing
  */
 export const buildLauncherDismissedEventData = (
-  content: Pick<Content, 'id' | 'name'>,
-  version: Pick<Version, 'id' | 'sequence'>,
-  endReason: string,
-): Record<string, any> => {
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
+  endReason: string | undefined,
+): Record<string, any> | null => {
+  if (!endReason) {
+    return null;
+  }
+
   return {
-    ...buildLauncherBaseEventData(content, version),
+    ...buildLauncherBaseEventData(session),
     [EventAttributes.LAUNCHER_END_REASON]: endReason,
   };
 };
