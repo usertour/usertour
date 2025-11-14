@@ -26,7 +26,7 @@ import { useEffect, useSyncExternalStore, useMemo } from 'react';
 import { UsertourTour } from '@/core/usertour-tour';
 import { off, on } from '@/utils';
 import { useSettingsStyles } from '@usertour-packages/sdk';
-import { SessionStep } from '@/types';
+import { SessionStep } from '@usertour/types';
 
 // Base props that are shared between TourPopper and TourModal
 type TourBaseProps = {

@@ -19,17 +19,19 @@ import {
   isExpandPending,
 } from '@/utils/content-utils';
 import {
-  SessionAttribute,
-  CustomContentVersion,
-  SocketData,
   CustomContentSession,
   SessionTheme,
   SessionStep,
+  SessionAttribute,
+  ClientCondition,
+} from '@usertour/types';
+import {
+  CustomContentVersion,
+  SocketData,
   Environment,
   Step,
   Theme,
   BizSession,
-  ClientCondition,
 } from '@/common/types';
 import { DataResolverService } from './data-resolver.service';
 

@@ -1,4 +1,4 @@
-import { CustomContentSession, TrackCondition, ConditionWaitTimer } from '@/types';
+import { CustomContentSession, TrackCondition, ConditionWaitTimer } from '@usertour/types';
 
 /**
  * Context object passed to server message handlers

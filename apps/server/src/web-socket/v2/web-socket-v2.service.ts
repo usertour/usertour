@@ -23,6 +23,8 @@ import {
   contentEndReason,
   AnswerQuestionDto,
   BizEvents,
+  ClientCondition,
+  CustomContentSession,
 } from '@usertour/types';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { Server, Socket } from 'socket.io';
@@ -30,7 +32,6 @@ import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
-import { ClientCondition, CustomContentSession } from '@usertour/types';
 
 @Injectable()
 export class WebSocketV2Service {

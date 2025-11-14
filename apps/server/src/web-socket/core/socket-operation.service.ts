@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { ContentDataType } from '@usertour/types';
 import {
+  ContentDataType,
   CustomContentSession,
   TrackCondition,
-  SocketData,
   ClientCondition,
   ConditionWaitTimer,
-} from '@/common/types';
+} from '@usertour/types';
+import { SocketData } from '@/common/types';
 import { SocketEmitterService } from './socket-emitter.service';
 import { SocketParallelService } from './socket-parallel.service';
 import {

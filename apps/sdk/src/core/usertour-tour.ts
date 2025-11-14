@@ -9,6 +9,8 @@ import {
   RulesCondition,
   StepContentType,
   contentEndReason,
+  SessionStep,
+  SessionTheme,
 } from '@usertour/types';
 import { isUndefined } from '@usertour/helpers';
 import { TourStore, BaseStore } from '@/types/store';
@@ -18,7 +20,6 @@ import { UsertourTrigger } from '@/core/usertour-trigger';
 import { logger } from '@/utils';
 import { createQuestionAnswerEventData } from '@/core/usertour-helper';
 import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
-import { SessionStep, SessionTheme } from '@/types';
 import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
 
 export class UsertourTour extends UsertourComponent<TourStore> {

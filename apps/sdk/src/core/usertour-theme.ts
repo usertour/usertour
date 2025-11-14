@@ -1,10 +1,8 @@
 import { AssetAttributes } from '@usertour-packages/frame';
-import { ThemeTypesSetting } from '@usertour/types';
-import { convertSettings, convertToCssVars } from '@usertour/helpers';
+import { ThemeTypesSetting, SessionTheme } from '@usertour/types';
+import { convertSettings, convertToCssVars, isConditionsActived } from '@usertour/helpers';
 import { getUserTourCss } from '@/core/usertour-env';
 import { evaluateConditions } from '@/core/usertour-helper';
-import { isConditionsActived } from '@usertour/helpers';
-import { SessionTheme } from '@/types/sdk';
 
 // === Private Helpers ===
 /**

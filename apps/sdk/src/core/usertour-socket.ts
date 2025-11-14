@@ -1,5 +1,5 @@
-import { ClientContext } from '@usertour/types';
 import {
+  ClientContext,
   AnswerQuestionDto,
   UpsertUserDto,
   UpsertCompanyDto,
@@ -14,12 +14,12 @@ import {
   FireConditionWaitTimerDto,
   ActivateLauncherDto,
   DismissLauncherDto,
-} from '@/types/websocket';
-
+  ClientCondition,
+  WebSocketEvents,
+  ClientMessageKind,
+} from '@usertour/types';
 import { Socket, logger, window } from '@/utils';
-import { ClientCondition } from '@/types/sdk';
 import { getWsUri } from '@/core/usertour-env';
-import { WebSocketEvents, ClientMessageKind } from '@/types';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
 import { getClientContext } from '@/core/usertour-helper';
 import { uuidV4 } from '@usertour/helpers';

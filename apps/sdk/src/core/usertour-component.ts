@@ -16,9 +16,12 @@ import {
   ThemeTypesSetting,
   UserTourTypes,
   AttributeBizTypes,
+  CustomContentSession,
+  SessionAttribute,
+  SessionStep,
+  SessionTheme,
 } from '@usertour/types';
 import { uuidV4, isEqual } from '@usertour/helpers';
-import { CustomContentSession, SessionAttribute, SessionStep, SessionTheme } from '@/types/sdk';
 import { ActionManager, ActionHandler, ActionHandlerContext } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
 import { SDKClientEvents } from '@usertour-packages/constants';

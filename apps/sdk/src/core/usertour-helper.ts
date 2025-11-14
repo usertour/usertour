@@ -16,12 +16,15 @@ import {
   BizUserInfo,
   UserTourTypes,
   RulesTypeControl,
+  AnswerQuestionDto,
+  SessionAttribute,
+  AttributeBizTypes,
+  RulesEvaluationOptions,
 } from '@usertour/types';
 import {
   ContentEditorQuestionElement,
   ContentEditorElementType,
 } from '@usertour-packages/shared-editor';
-import { AnswerQuestionDto } from '@/types/websocket';
 import {
   differenceInDays,
   differenceInHours,
@@ -37,8 +40,6 @@ import {
   isConditionsActived,
   evaluateRulesConditions,
 } from '@usertour/helpers';
-import { SessionAttribute } from '@/types/sdk';
-import { AttributeBizTypes, RulesEvaluationOptions } from '@usertour/types';
 
 // ============================================================================
 // Constants

@@ -4,7 +4,7 @@ import { logger } from '@/utils';
 import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
 import { uuidV4, isConditionsActived } from '@usertour/helpers';
-import { TrackCondition } from '@/types';
+import { TrackCondition } from '@usertour/types';
 import { SDKClientEvents } from '@usertour-packages/constants';
 
 // === Interfaces ===

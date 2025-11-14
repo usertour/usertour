@@ -6,8 +6,16 @@ import {
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
 import { isEmptyString, isNullish, storage, uuidV4 } from '@usertour/helpers';
-import { contentStartReason, SDKSettingsMode } from '@usertour/types';
-import { UserTourTypes } from '@usertour/types';
+import {
+  contentStartReason,
+  SDKSettingsMode,
+  UserTourTypes,
+  CustomContentSession,
+  TrackCondition,
+  ConditionWaitTimer,
+  ClientCondition,
+  WebSocketEvents,
+} from '@usertour/types';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
 import { UsertourTour } from '@/core/usertour-tour';
@@ -35,14 +43,7 @@ import {
   timerManager,
 } from '@/utils';
 import { getClientContext } from '@/core/usertour-helper';
-import {
-  WebSocketEvents,
-  ErrorMessages,
-  CustomContentSession,
-  TrackCondition,
-  ConditionWaitTimer,
-  ClientCondition,
-} from '@/types';
+import { ErrorMessages } from '@/types';
 import { formatErrorMessage } from '@/types/error-messages';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';

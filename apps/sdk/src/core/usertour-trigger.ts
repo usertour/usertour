@@ -1,9 +1,8 @@
-import { StepTrigger, RulesCondition } from '@usertour/types';
+import { StepTrigger, RulesCondition, SessionAttribute } from '@usertour/types';
 import { uuidV4, isConditionsActived } from '@usertour/helpers';
 import { evaluateConditions } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { autoBind } from '@/utils';
-import { SessionAttribute } from '@/types/sdk';
 import { Evented } from '@/utils/evented';
 
 /**

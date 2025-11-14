@@ -3,7 +3,7 @@ import { logger } from '@/utils';
 import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
-import { ConditionWaitTimer } from '@/types/sdk';
+import { ConditionWaitTimer } from '@usertour/types';
 import { SDKClientEvents } from '@usertour-packages/constants';
 
 // === Interfaces ===

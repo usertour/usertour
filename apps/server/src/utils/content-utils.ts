@@ -15,22 +15,23 @@ import {
   ChecklistData,
   ChecklistInitialDisplay,
   LauncherData,
-} from '@usertour/types';
-import {
   SessionAttribute,
   SessionTheme,
   SessionStep,
   ConditionWaitTimer,
   ClientCondition,
+  TrackCondition,
+  CustomContentSession,
+  StartContentOptions,
+} from '@usertour/types';
+
+import {
   ConditionExtractionMode,
   CustomContentVersion,
   BizEventWithEvent,
   BizSessionWithEvents,
   ContentWithContentOnEnvironments,
   Step,
-  TrackCondition,
-  CustomContentSession,
-  StartContentOptions,
 } from '@/common/types';
 import {
   differenceInDays,

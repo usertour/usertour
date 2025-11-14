@@ -1,13 +1,15 @@
 import { BizSessionWithEvents, VersionWithStepsAndContent } from './schema';
 import {
   ClientCondition,
-  Environment,
   CustomContentSession,
   ConditionWaitTimer,
   TrackCondition,
   StartContentOptions,
-} from '@/common/types';
-import { ClientContext, ContentConfigObject, ContentDataType } from '@usertour/types';
+  ClientContext,
+  ContentConfigObject,
+  ContentDataType,
+} from '@usertour/types';
+import { Environment } from './schema';
 import { Server, Socket } from 'socket.io';
 
 export type ContentSessionCollection = {

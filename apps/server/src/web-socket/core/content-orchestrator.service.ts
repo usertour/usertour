@@ -30,10 +30,8 @@ import {
   extractSessionByContentType,
   buildSocketLockKey,
 } from '@/utils/websocket-utils';
+import { StartContentOptions, CustomContentSession, ClientCondition } from '@usertour/types';
 import {
-  StartContentOptions,
-  CustomContentSession,
-  ClientCondition,
   SocketData,
   CustomContentVersion,
   ContentStartContext,
