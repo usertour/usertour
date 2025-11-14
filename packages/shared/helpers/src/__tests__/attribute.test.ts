@@ -34,6 +34,12 @@ const testAttributes: SimpleAttribute[] = [
     bizType: AttributeBizTypes.User,
   },
   {
+    id: 'tags-attr',
+    codeName: 'tags',
+    dataType: BizAttributeTypes.List,
+    bizType: AttributeBizTypes.User,
+  },
+  {
     id: 'signUpDate-attr',
     codeName: 'signUpDate',
     dataType: BizAttributeTypes.DateTime,
@@ -78,6 +84,7 @@ const testUserAttributes: UserTourTypes.Attributes = {
   age: 25,
   isPremium: true,
   roles: ['admin', 'user'],
+  tags: [123, 456],
   signUpDate: '2024-01-15T10:30:00Z',
   score: 85.5,
 } as UserTourTypes.Attributes;
@@ -469,36 +476,263 @@ describe('Attribute Filter - Complete Test Suite', () => {
       expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
     });
 
-    test('should evaluate "notIncludesAtLeastOne" condition correctly', () => {
-      const condition: RulesCondition[] = [
-        {
-          id: 'condition-24',
-          type: 'condition',
-          operators: 'and',
-          data: {
-            logic: 'notIncludesAtLeastOne',
-            listValues: ['guest'],
-            attrId: 'roles-attr',
+    describe('notIncludesAtLeastOne condition', () => {
+      test('should return true when at least one value is not included (single value not included)', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-24',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAtLeastOne',
+              listValues: ['guest'],
+              attrId: 'roles-attr',
+            },
           },
-        },
-      ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+        ];
+        // roles: ['admin', 'user'], 'guest' is not included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      });
+
+      test('should return true when at least one value is not included (partial values not included)', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-24-2',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAtLeastOne',
+              listValues: ['admin', 'guest'],
+              attrId: 'roles-attr',
+            },
+          },
+        ];
+        // roles: ['admin', 'user'], 'admin' is included but 'guest' is not
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      });
+
+      test('should return true when all values are not included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-24-3',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAtLeastOne',
+              listValues: ['guest', 'visitor'],
+              attrId: 'roles-attr',
+            },
+          },
+        ];
+        // roles: ['admin', 'user'], both 'guest' and 'visitor' are not included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      });
+
+      test('should return false when all values are included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-24-4',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAtLeastOne',
+              listValues: ['admin', 'user'],
+              attrId: 'roles-attr',
+            },
+          },
+        ];
+        // roles: ['admin', 'user'], both values are included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      });
+
+      test('should return false when single value is included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-24-5',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAtLeastOne',
+              listValues: ['admin'],
+              attrId: 'roles-attr',
+            },
+          },
+        ];
+        // roles: ['admin', 'user'], 'admin' is included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      });
+
+      test('should return true for numeric list when at least one value is not included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-24-6',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAtLeastOne',
+              listValues: [123, 444],
+              attrId: 'tags-attr',
+            },
+          },
+        ];
+        // tags: [123, 456], 123 is included but 444 is not
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      });
+
+      test('should return false for numeric list when all values are included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-24-7',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAtLeastOne',
+              listValues: [123, 456],
+              attrId: 'tags-attr',
+            },
+          },
+        ];
+        // tags: [123, 456], both values are included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      });
     });
 
-    test('should evaluate "notIncludesAll" condition correctly', () => {
-      const condition: RulesCondition[] = [
-        {
-          id: 'condition-25',
-          type: 'condition',
-          operators: 'and',
-          data: {
-            logic: 'notIncludesAll',
-            listValues: ['admin', 'guest'],
-            attrId: 'roles-attr',
+    describe('notIncludesAll condition', () => {
+      test('should return true when all values are not included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-25',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAll',
+              listValues: ['guest', 'visitor'],
+              attrId: 'roles-attr',
+            },
           },
-        },
-      ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+        ];
+        // roles: ['admin', 'user'], both 'guest' and 'visitor' are not included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      });
+
+      test('should return true when single value is not included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-25-2',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAll',
+              listValues: ['guest'],
+              attrId: 'roles-attr',
+            },
+          },
+        ];
+        // roles: ['admin', 'user'], 'guest' is not included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      });
+
+      test('should return false when at least one value is included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-25-3',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAll',
+              listValues: ['admin', 'guest'],
+              attrId: 'roles-attr',
+            },
+          },
+        ];
+        // roles: ['admin', 'user'], 'admin' is included but 'guest' is not
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      });
+
+      test('should return false when all values are included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-25-4',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAll',
+              listValues: ['admin', 'user'],
+              attrId: 'roles-attr',
+            },
+          },
+        ];
+        // roles: ['admin', 'user'], both values are included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      });
+
+      test('should return false when single value is included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-25-5',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAll',
+              listValues: ['admin'],
+              attrId: 'roles-attr',
+            },
+          },
+        ];
+        // roles: ['admin', 'user'], 'admin' is included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      });
+
+      test('should return true for numeric list when all values are not included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-25-6',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAll',
+              listValues: [1234, 789],
+              attrId: 'tags-attr',
+            },
+          },
+        ];
+        // tags: [123, 456], both 1234 and 789 are not included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      });
+
+      test('should return false for numeric list when at least one value is included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-25-7',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAll',
+              listValues: [123, 444],
+              attrId: 'tags-attr',
+            },
+          },
+        ];
+        // tags: [123, 456], 123 is included but 444 is not
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      });
+
+      test('should return false for numeric list when all values are included', () => {
+        const condition: RulesCondition[] = [
+          {
+            id: 'condition-25-8',
+            type: 'condition',
+            operators: 'and',
+            data: {
+              logic: 'notIncludesAll',
+              listValues: [123, 456],
+              attrId: 'tags-attr',
+            },
+          },
+        ];
+        // tags: [123, 456], both values are included
+        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      });
     });
 
     test('should evaluate "empty" condition correctly', () => {

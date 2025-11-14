@@ -279,9 +279,9 @@ function evaluateListCondition(
     case 'includesAll':
       return filteredValues.every((value) => arrayValue.includes(value));
     case 'notIncludesAtLeastOne':
-      return !filteredValues.some((value) => arrayValue.includes(value));
+      return filteredValues.some((value) => !arrayValue.includes(value));
     case 'notIncludesAll':
-      return !filteredValues.every((value) => arrayValue.includes(value));
+      return filteredValues.every((value) => !arrayValue.includes(value));
     default:
       return false;
   }
