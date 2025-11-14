@@ -1,5 +1,10 @@
-import { CustomContentSession, SessionStep, SessionTheme } from '@/types/sdk';
-import { AttributeBizTypes, LauncherData } from '@usertour/types';
+import {
+  AttributeBizTypes,
+  LauncherData,
+  CustomContentSession,
+  SessionStep,
+  SessionTheme,
+} from '@usertour/types';
 
 /**
  * Session data access class

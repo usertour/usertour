@@ -91,8 +91,8 @@ importers:
         specifier: ^0.0.32
         version: 0.0.32(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.24
-        version: 0.0.24
+        specifier: ^0.0.25
+        version: 0.0.25
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -341,8 +341,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       '@usertour/types':
-        specifier: ^0.0.24
-        version: 0.0.24
+        specifier: ^0.0.25
+        version: 0.0.25
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -738,8 +738,8 @@ importers:
         specifier: ^0.0.32
         version: 0.0.32(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.24
-        version: 0.0.24
+        specifier: ^0.0.25
+        version: 0.0.25
       apollo3-cache-persist:
         specifier: ^0.14.1
         version: 0.14.1(@apollo/client@3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))
@@ -8578,8 +8578,8 @@ packages:
   '@usertour/types@0.0.19':
     resolution: {integrity: sha512-22IzFlgs5w8FPKaE+jcWfpGMcJxHicsQplfHglmY0LmYnaqSYdFdSZ/dgRe6JDLGro79u5vC0KBPsyGmOb/5bw==}
 
-  '@usertour/types@0.0.24':
-    resolution: {integrity: sha512-G87uggRaOPZgIdcs8JNcp/VXOMuktle1cJLOuubvoUCuamlIDwtgzVheKAdngbYy0EYpCJFd+o3GoguZzBQnhA==}
+  '@usertour/types@0.0.25':
+    resolution: {integrity: sha512-vlbjt4UBwFxYWcVlrzRsFjfwDZ9OC0yED5gzYSfVv2hC4Yynuh9oL2Mc8fguzGTZx8goyEae9a9mp82nCL0vvA==}
 
   '@vitejs/plugin-basic-ssl@1.1.0':
     resolution: {integrity: sha512-wO4Dk/rm8u7RNhOf95ZzcEmC9rYOncYgvq4z3duaJrCgjN8BxAnDVyndanfcJZ0O6XZzHz6Q0hTimxTg8Y9g/A==}
@@ -20567,7 +20567,7 @@ snapshots:
 
   '@usertour/types@0.0.19': {}
 
-  '@usertour/types@0.0.24': {}
+  '@usertour/types@0.0.25': {}
 
   '@vitejs/plugin-basic-ssl@1.1.0(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))':
     dependencies:

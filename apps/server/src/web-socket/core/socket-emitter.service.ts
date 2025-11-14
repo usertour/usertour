@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { CustomContentSession, TrackCondition, ConditionWaitTimer } from '@/common/types/sdk';
-import { ServerMessageKind } from '@/web-socket/v2/web-socket-v2.dto';
+import {
+  ServerMessageKind,
+  CustomContentSession,
+  TrackCondition,
+  ConditionWaitTimer,
+} from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 
 /**
