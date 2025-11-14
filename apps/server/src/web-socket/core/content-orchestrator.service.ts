@@ -6,6 +6,9 @@ import {
   RulesType,
   BizEvents,
   ClientContext,
+  StartContentOptions,
+  CustomContentSession,
+  ClientCondition,
 } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
@@ -30,7 +33,6 @@ import {
   extractSessionByContentType,
   buildSocketLockKey,
 } from '@/utils/websocket-utils';
-import { StartContentOptions, CustomContentSession, ClientCondition } from '@usertour/types';
 import {
   SocketData,
   CustomContentVersion,
