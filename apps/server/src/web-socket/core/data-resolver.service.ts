@@ -194,28 +194,18 @@ export class DataResolverService {
     contentId: string,
     environmentId: string,
   ): Promise<string | null> {
-    try {
-      const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
-        where: {
-          environmentId,
-          contentId,
-          published: true,
-        },
-        select: {
-          publishedVersionId: true,
-        },
-      });
-
-      return contentOnEnvironment?.publishedVersionId || null;
-    } catch (error) {
-      this.logger.error({
-        message: `Error finding published content version ID: ${error.message}`,
-        stack: error.stack,
-        contentId,
+    const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
+      where: {
         environmentId,
-      });
-      return null;
-    }
+        contentId,
+        published: true,
+      },
+      select: {
+        publishedVersionId: true,
+      },
+    });
+
+    return contentOnEnvironment?.publishedVersionId || null;
   }
 
   /**
