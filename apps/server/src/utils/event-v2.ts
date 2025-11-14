@@ -4,6 +4,7 @@ import {
   StepSettings,
   ChecklistData,
   ClientContext,
+  ContentDataType,
 } from '@usertour/types';
 import { isEmptyString, isNullish } from '@usertour/helpers';
 import {
@@ -12,7 +13,6 @@ import {
   BizSessionWithEvents,
   BizSessionWithRelations,
 } from '@/common/types/schema';
-import { CustomContentVersion } from '@/common/types/content';
 import type { AnswerQuestionDto } from '@usertour/types';
 import { isAfter } from 'date-fns';
 
@@ -355,21 +355,20 @@ export const buildLauncherBaseEventData = (
 
 /**
  * Build event data for flow start events
- * @param customContentVersion - The custom content version
+ * @param session - The business session with content and version
  * @param startReason - The start reason
- * @returns Flow start event data
+ * @returns Flow start event data, or null if startReason is missing
  */
 export const buildFlowStartEventData = (
-  customContentVersion: CustomContentVersion,
-  startReason: string,
-): Record<string, any> => {
-  // Create a session-like object from CustomContentVersion
-  const sessionLike = {
-    content: customContentVersion.content,
-    version: customContentVersion,
-  };
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
+  startReason: string | undefined,
+): Record<string, any> | null => {
+  if (!startReason) {
+    return null;
+  }
+
   return {
-    ...buildFlowBaseEventData(sessionLike),
+    ...buildFlowBaseEventData(session),
     [EventAttributes.FLOW_START_REASON]: startReason,
   };
 };
@@ -450,12 +449,16 @@ export const buildFlowEndedEventData = (
  * Build event data for question answered events
  * @param session - The business session with content and version
  * @param params - The parameters for the question answered event (sessionId will be ignored)
- * @returns Question answered event data
+ * @returns Question answered event data, or null if params is missing or invalid
  */
 export const buildQuestionAnsweredEventData = (
   session: Pick<BizSessionWithRelations, 'content' | 'version'>,
-  params: AnswerQuestionDto,
-): Record<string, any> => {
+  params: AnswerQuestionDto | undefined,
+): Record<string, any> | null => {
+  if (!params || !params.questionCvid) {
+    return null;
+  }
+
   const eventData: Record<string, any> = {
     ...buildFlowBaseEventData(session),
     [EventAttributes.QUESTION_CVID]: params.questionCvid,
@@ -482,21 +485,20 @@ export const buildQuestionAnsweredEventData = (
 
 /**
  * Build event data for checklist start events
- * @param customContentVersion - The custom content version
+ * @param session - The business session with content and version
  * @param startReason - The start reason
- * @returns Checklist start event data
+ * @returns Checklist start event data, or null if startReason is missing
  */
 export const buildChecklistStartEventData = (
-  customContentVersion: CustomContentVersion,
-  startReason: string,
-): Record<string, any> => {
-  // Create a session-like object from CustomContentVersion
-  const sessionLike = {
-    content: customContentVersion.content,
-    version: customContentVersion,
-  };
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
+  startReason: string | undefined,
+): Record<string, any> | null => {
+  if (!startReason) {
+    return null;
+  }
+
   return {
-    ...buildChecklistBaseEventData(sessionLike),
+    ...buildChecklistBaseEventData(session),
     [EventAttributes.CHECKLIST_START_REASON]: startReason,
   };
 };
@@ -553,21 +555,20 @@ export const buildChecklistTaskEventData = (
 
 /**
  * Build event data for launcher seen events
- * @param customContentVersion - The custom content version
+ * @param session - The business session with content and version
  * @param startReason - The start reason
- * @returns Launcher seen event data
+ * @returns Launcher seen event data, or null if startReason is missing
  */
 export const buildLauncherSeenEventData = (
-  customContentVersion: CustomContentVersion,
-  startReason: string,
-): Record<string, any> => {
-  // Create a session-like object from CustomContentVersion
-  const sessionLike = {
-    content: customContentVersion.content,
-    version: customContentVersion,
-  };
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
+  startReason: string | undefined,
+): Record<string, any> | null => {
+  if (!startReason) {
+    return null;
+  }
+
   return {
-    ...buildLauncherBaseEventData(sessionLike),
+    ...buildLauncherBaseEventData(session),
     [EventAttributes.LAUNCHER_START_REASON]: startReason,
   };
 };
@@ -627,4 +628,40 @@ export const assignClientContext = (
     [EventAttributes.VIEWPORT_WIDTH]: clientContext.viewportWidth,
     [EventAttributes.VIEWPORT_HEIGHT]: clientContext.viewportHeight,
   };
+};
+
+/**
+ * Get the start event type for a given content type
+ * @param contentType - The content type (FLOW, CHECKLIST, or LAUNCHER)
+ * @returns The corresponding start event type, or null if content type is not supported
+ */
+export const getStartEventType = (contentType: ContentDataType): BizEvents | null => {
+  if (contentType === ContentDataType.FLOW) {
+    return BizEvents.FLOW_STARTED;
+  }
+  if (contentType === ContentDataType.CHECKLIST) {
+    return BizEvents.CHECKLIST_STARTED;
+  }
+  if (contentType === ContentDataType.LAUNCHER) {
+    return BizEvents.LAUNCHER_SEEN;
+  }
+  return null;
+};
+
+/**
+ * Get the end event type for a given content type
+ * @param contentType - The content type (FLOW, CHECKLIST, or LAUNCHER)
+ * @returns The corresponding end event type, or null if content type is not supported
+ */
+export const getEndEventType = (contentType: ContentDataType): BizEvents | null => {
+  if (contentType === ContentDataType.FLOW) {
+    return BizEvents.FLOW_ENDED;
+  }
+  if (contentType === ContentDataType.CHECKLIST) {
+    return BizEvents.CHECKLIST_DISMISSED;
+  }
+  if (contentType === ContentDataType.LAUNCHER) {
+    return BizEvents.LAUNCHER_DISMISSED;
+  }
+  return null;
 };

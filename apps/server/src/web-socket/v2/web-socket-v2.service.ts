@@ -372,16 +372,15 @@ export class WebSocketV2Service {
     const { environment, externalUserId, clientContext } = socketData;
 
     const { eventName, sessionId, eventData } = trackEventDto;
-    return Boolean(
-      await this.eventTrackingService.trackEvent(
-        environment,
-        externalUserId,
-        eventName,
-        sessionId,
-        eventData,
-        clientContext,
-      ),
-    );
+    const eventTransactionParams = {
+      environment,
+      externalUserId,
+      eventName,
+      sessionId,
+      data: eventData,
+      clientContext,
+    };
+    return Boolean(await this.eventTrackingService.trackCustomEvent(eventTransactionParams));
   }
 
   /**
@@ -393,12 +392,12 @@ export class WebSocketV2Service {
   async goToStep(context: WebSocketContext, params: GoToStepDto): Promise<boolean> {
     const { socketData } = context;
     const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackGoToStepEvent(
-      params.sessionId,
-      params.stepId,
+    return await this.eventTrackingService.trackEventByType(BizEvents.FLOW_STEP_SEEN, {
+      sessionId: params.sessionId,
       environment,
       clientContext,
-    );
+      stepId: params.stepId,
+    });
   }
 
   /**
@@ -410,11 +409,12 @@ export class WebSocketV2Service {
   async answerQuestion(context: WebSocketContext, params: AnswerQuestionDto): Promise<boolean> {
     const { socketData, server, socket } = context;
     const { environment, clientContext } = socketData;
-    const success = await this.eventTrackingService.trackQuestionAnsweredEvent(
-      params,
+    const success = await this.eventTrackingService.trackEventByType(BizEvents.QUESTION_ANSWERED, {
+      sessionId: params.sessionId,
       environment,
       clientContext,
-    );
+      answer: params,
+    });
     await this.toggleContents(server, socket, [ContentDataType.FLOW]);
 
     return success;

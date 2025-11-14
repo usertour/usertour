@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { ContentDataType, contentStartReason, RulesType, BizEvents } from '@usertour/types';
+import {
+  ContentDataType,
+  contentStartReason,
+  RulesType,
+  BizEvents,
+  ClientContext,
+} from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
   findLatestActivatedCustomContentVersions,
@@ -20,7 +26,6 @@ import {
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
-  extractContentTypeBySessionId,
   extractExcludedContentIds,
   extractSessionByContentType,
   buildSocketLockKey,
@@ -43,9 +48,10 @@ import {
 import { DistributedLockService } from './distributed-lock.service';
 import { DataResolverService } from './data-resolver.service';
 import { SessionBuilderService } from './session-builder.service';
-import { EventTrackingService } from './event-tracking.service';
+import { EventTrackingItem, EventTrackingService } from './event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
+import { getStartEventType, getEndEventType } from '@/utils/event-v2';
 
 /**
  * Result of launcher data preparation
@@ -123,14 +129,18 @@ export class ContentOrchestratorService {
     } = context;
 
     const socketData = await this.getSocketData(socket);
-    if (!socketData) {
+    const session = await this.sessionBuilderService.getBizSession(sessionId);
+    if (!socketData || !session) {
       return false;
     }
     const { environment, clientContext, externalUserId } = socketData;
 
+    const contentType = session.content.type as ContentDataType;
+
     // Track content ended event
-    const isEventTracked = await this.eventTrackingService.trackContentEndedEvent(
+    const isEventTracked = await this.trackContentEndedEvent(
       sessionId,
+      contentType,
       environment,
       clientContext,
       endReason,
@@ -148,6 +158,7 @@ export class ContentOrchestratorService {
       socket,
       socketData,
       sessionId,
+      contentType,
       setLastDismissedId: true,
     };
 
@@ -170,7 +181,7 @@ export class ContentOrchestratorService {
     socketData: SocketData,
     sessionId: string,
   ): Promise<CustomContentSession | null> {
-    const session = await this.sessionBuilderService.getBizSessionWithContentAndVersion(sessionId);
+    const session = await this.sessionBuilderService.getBizSession(sessionId);
     if (!session) {
       return null;
     }
@@ -780,6 +791,7 @@ export class ContentOrchestratorService {
         socket,
         socketData,
         sessionId,
+        contentType,
       });
     }
 
@@ -844,7 +856,7 @@ export class ContentOrchestratorService {
     startOptions?: StartContentOptions,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
     const { environment, externalUserId, externalCompanyId, clientContext } = socketData;
-    const startReason = startOptions?.startReason;
+    const startReason = startOptions?.startReason ?? contentStartReason.START_FROM_CONDITION;
     const versionId = customContentVersion.id;
 
     const session = customContentVersion.session;
@@ -874,11 +886,10 @@ export class ContentOrchestratorService {
     const steps = customContentVersion?.steps ?? [];
     const stepId = steps.find((step) => step.cvid === currentStepCvid)?.id ?? null;
 
-    const result = await this.eventTrackingService.trackAutoStartEvent(
-      customContentVersion,
-      bizSession,
+    const result = await this.trackAutoStartEvent(
+      bizSession.id,
+      contentType,
       environment,
-      externalUserId,
       startReason,
       stepId,
       clientContext,
@@ -1159,8 +1170,7 @@ export class ContentOrchestratorService {
    * @returns True if the session was canceled successfully
    */
   private async cancelSocketSession(params: CancelSessionParams) {
-    const { server, socket, sessionId, socketData } = params;
-    const contentType = extractContentTypeBySessionId(socketData, sessionId);
+    const { server, socket, sessionId, socketData, contentType } = params;
     const currentSession = extractSessionByContentType(socketData, contentType);
     const context = {
       server,
@@ -1417,5 +1427,95 @@ export class ContentOrchestratorService {
       newSocketData,
       preTracks,
     );
+  }
+
+  // ============================================================================
+  // Content Event Tracking Methods
+  // ============================================================================
+
+  /**
+   * Track auto start event for flows or checklists
+   * @param sessionId - The session ID
+   * @param contentType - The content type (FLOW, CHECKLIST, or LAUNCHER)
+   * @param environment - The environment
+   * @param startReason - The start reason
+   * @param stepId - Optional step ID to navigate to after start
+   * @param clientContext - The client context
+   * @returns True if the event was tracked successfully
+   */
+  async trackAutoStartEvent(
+    sessionId: string,
+    contentType: ContentDataType,
+    environment: Environment,
+    startReason: string,
+    stepId: string | null,
+    clientContext: ClientContext,
+  ): Promise<boolean> {
+    const startEventType = getStartEventType(contentType);
+    if (!startEventType) {
+      return false;
+    }
+
+    const baseEventParams = {
+      sessionId,
+      environment,
+      clientContext,
+    };
+
+    // Build events array
+    const events: EventTrackingItem[] = [
+      {
+        eventType: startEventType,
+        params: {
+          ...baseEventParams,
+          startReason,
+        },
+      },
+    ];
+
+    // Add go to step event if stepId is provided
+    if (stepId) {
+      events.push({
+        eventType: BizEvents.FLOW_STEP_SEEN,
+        params: {
+          ...baseEventParams,
+          stepId,
+        },
+      });
+    }
+
+    return await this.eventTrackingService.trackEventsByType(events);
+  }
+
+  /**
+   * Track content ended event based on content type
+   * This method abstracts the logic of tracking different content end events
+   * based on the content type (FLOW, CHECKLIST, or LAUNCHER)
+   * @param sessionId - The session ID
+   * @param contentType - The content type
+   * @param environment - The environment
+   * @param clientContext - The client context
+   * @param endReason - The end reason
+   * @returns True if the event was tracked successfully, false otherwise
+   */
+  async trackContentEndedEvent(
+    sessionId: string,
+    contentType: ContentDataType,
+    environment: Environment,
+    clientContext: ClientContext,
+    endReason: string,
+  ): Promise<boolean> {
+    const endEventType = getEndEventType(contentType);
+    if (!endEventType) {
+      return false;
+    }
+    const eventParams = {
+      sessionId,
+      environment,
+      clientContext,
+      endReason,
+    };
+
+    return await this.eventTrackingService.trackEventByType(endEventType, eventParams);
   }
 }
