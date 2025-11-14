@@ -407,15 +407,13 @@ export class DataResolverService {
       .filter(Boolean);
 
     // Get versions with content and steps
-    const versions = await this.prisma.version.findMany({
+    return await this.prisma.version.findMany({
       where: { id: { in: versionIds } },
       include: {
         content: true,
         steps: { orderBy: { sequence: 'asc' } },
       },
     });
-
-    return versions;
   }
 
   /**
