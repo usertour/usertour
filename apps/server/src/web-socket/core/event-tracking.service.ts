@@ -295,37 +295,43 @@ export class EventTrackingService {
       },
     });
 
-    const answerData: Record<string, any> = {
-      bizEventId: bizEventId,
-      contentId,
-      cvid,
-      versionId,
-      bizUserId,
-      bizSessionId,
-      environmentId,
-    };
-
-    // Map answer fields based on the original implementation
+    // Extract answer fields (only these fields should be updated for existing answers)
     // Use isNullish to handle falsy values like 0, empty string, or empty array
+    const answerFields: Record<string, any> = {};
     if (!isNullish(events[EventAttributes.NUMBER_ANSWER])) {
-      answerData.numberAnswer = events[EventAttributes.NUMBER_ANSWER] as number;
+      answerFields.numberAnswer = events[EventAttributes.NUMBER_ANSWER] as number;
     }
     if (!isNullish(events[EventAttributes.TEXT_ANSWER])) {
-      answerData.textAnswer = events[EventAttributes.TEXT_ANSWER] as string;
+      answerFields.textAnswer = events[EventAttributes.TEXT_ANSWER] as string;
     }
     if (!isNullish(events[EventAttributes.LIST_ANSWER])) {
-      answerData.listAnswer = events[EventAttributes.LIST_ANSWER] as string[];
+      answerFields.listAnswer = events[EventAttributes.LIST_ANSWER] as string[];
     }
 
     if (existingAnswer) {
-      // Update existing answer
+      // Update answer fields and bizEventId (bizEventId may change for new events)
       await tx.bizAnswer.update({
         where: { id: existingAnswer.id },
-        data: answerData,
+        data: {
+          versionId,
+          bizEventId,
+          ...answerFields,
+        },
       });
     } else {
-      // Create new answer
-      await tx.bizAnswer.create({ data: answerData as any });
+      // Create new answer with all required fields
+      await tx.bizAnswer.create({
+        data: {
+          bizEventId,
+          contentId,
+          cvid,
+          versionId,
+          bizUserId,
+          bizSessionId,
+          environmentId,
+          ...answerFields,
+        },
+      });
     }
   }
 
