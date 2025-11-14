@@ -17,6 +17,7 @@ import {
   ClientCondition,
   WebSocketEvents,
   ClientMessageKind,
+  SocketAuthData,
 } from '@usertour/types';
 import { Socket, logger, window } from '@/utils';
 import { getWsUri } from '@/core/usertour-env';
@@ -29,18 +30,6 @@ import { uuidV4 } from '@usertour/helpers';
 export interface BatchOptions {
   batch?: boolean;
   endBatch?: boolean;
-}
-
-// Auth credentials for authentication
-export interface AuthCredentials {
-  externalUserId: string;
-  externalCompanyId?: string;
-  token: string;
-  clientContext?: ClientContext;
-  clientConditions?: ClientCondition[];
-  flowSessionId?: string;
-  checklistSessionId?: string;
-  launchers?: string[];
 }
 
 /**
@@ -85,7 +74,7 @@ export interface IUsertourSocket {
   endBatch(): Promise<void>;
 
   // Auth management
-  updateCredentials(authInfo: Partial<AuthCredentials>): void;
+  updateCredentials(authInfo: Partial<SocketAuthData>): void;
 
   // Event management with acknowledgment support
   on(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
@@ -101,7 +90,7 @@ export interface IUsertourSocket {
 export class UsertourSocket implements IUsertourSocket {
   // === Properties ===
   private socket: Socket;
-  private authCredentials: AuthCredentials | undefined;
+  private authCredentials: SocketAuthData | undefined;
   private inBatch = false;
   private endBatchTimeout?: number;
   private readonly BATCH_TIMEOUT = 50; // ms
@@ -441,7 +430,7 @@ export class UsertourSocket implements IUsertourSocket {
   /**
    * Updates socket authentication credentials
    */
-  updateCredentials(authInfo: Partial<AuthCredentials>): void {
+  updateCredentials(authInfo: Partial<SocketAuthData>): void {
     if (!this.socket) {
       console.warn('Socket not initialized. Cannot update auth.');
       return;
