@@ -214,24 +214,13 @@ export class DataResolverService {
    * @returns Configuration object with plan type and branding settings
    */
   async getConfig(environment: Environment): Promise<ProjectConfig> {
-    try {
-      const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
 
-      if (isSelfHostedMode) {
-        return await this.getSelfHostedConfig(environment);
-      }
-
-      return await this.getCloudConfig(environment);
-    } catch (error) {
-      this.logger.error({
-        message: `Error getting config: ${error.message}`,
-        stack: error.stack,
-      });
-      return {
-        removeBranding: false,
-        planType: 'hobby',
-      };
+    if (isSelfHostedMode) {
+      return await this.getSelfHostedConfig(environment);
     }
+
+    return await this.getCloudConfig(environment);
   }
 
   // ============================================================================
