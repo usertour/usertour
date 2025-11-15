@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { cn } from '@usertour/helpers';
+import { cn, isUndefined } from '@usertour/helpers';
 import { format } from 'date-fns';
 import {
   Dispatch,
@@ -19,6 +19,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -408,6 +409,28 @@ const RulesUserAttributeInput = () => {
     }
   }, [selectedPreset]);
 
+  // Track previous state to detect changes
+  const prevDataTypeRef = useRef<AttributeDataType | undefined>(selectedPreset?.dataType);
+  const prevIsDateTimeRef = useRef<boolean>(isDateTime);
+
+  // Clear value when dataType changes or isDateTime state changes (bidirectional)
+  useEffect(() => {
+    const shouldClearValue =
+      // DataType changed
+      (!isUndefined(prevDataTypeRef.current) &&
+        selectedPreset?.dataType !== prevDataTypeRef.current) ||
+      // isDateTime state changed (date picker <-> other logic types)
+      (selectedPreset?.dataType === AttributeDataType.DateTime &&
+        prevIsDateTimeRef.current !== isDateTime);
+
+    if (shouldClearValue) {
+      updateLocalData({ value: '' });
+    }
+
+    prevDataTypeRef.current = selectedPreset?.dataType;
+    prevIsDateTimeRef.current = isDateTime;
+  }, [localData?.logic, selectedPreset?.dataType, isDateTime, updateLocalData]);
+
   useEffect(() => {
     if (isDateTime) {
       try {
@@ -418,7 +441,7 @@ const RulesUserAttributeInput = () => {
         updateLocalData({ value: '' });
       }
     }
-  }, [startDate, isDateTime]);
+  }, [startDate, isDateTime, updateLocalData]);
 
   if (isDateTime) {
     return (
