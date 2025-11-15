@@ -5,12 +5,14 @@ import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
 import { BizModule } from '@/biz/biz.module';
 import { IntegrationModule } from '@/integration/integration.module';
 import { LicenseModule } from '@/license/license.module';
+import { ProjectsModule } from '@/projects/projects.module';
 import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
 import { WebSocketV2Service } from './v2/web-socket-v2.service';
 import { WebSocketV2Guard } from './v2/web-socket-v2.guard';
 import { SharedModule } from '@/shared/shared.module';
 import { EventTrackingService } from './core/event-tracking.service';
-import { DataResolverService } from './core/data-resolver.service';
+import { ConditionEvaluationService } from './core/condition-evaluation.service';
+import { ContentDataService } from './core/content-data.service';
 import { SessionBuilderService } from './core/session-builder.service';
 import { ContentOrchestratorService } from './core/content-orchestrator.service';
 import { SocketOperationService } from './core/socket-operation.service';
@@ -22,7 +24,7 @@ import { DistributedLockService } from './core/distributed-lock.service';
 import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
 
 @Module({
-  imports: [BizModule, IntegrationModule, LicenseModule, SharedModule],
+  imports: [BizModule, IntegrationModule, LicenseModule, ProjectsModule, SharedModule],
   providers: [
     WebSocketGateway,
     WebSocketService,
@@ -31,7 +33,8 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     WebSocketV2Service,
     WebSocketV2Guard,
     EventTrackingService,
-    DataResolverService,
+    ConditionEvaluationService,
+    ContentDataService,
     SessionBuilderService,
     ContentOrchestratorService,
     SocketOperationService,

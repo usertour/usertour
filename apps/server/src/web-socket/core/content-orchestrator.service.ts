@@ -47,7 +47,7 @@ import {
   EventTrackingItem,
 } from '@/common/types';
 import { DistributedLockService } from './distributed-lock.service';
-import { DataResolverService } from './data-resolver.service';
+import { ContentDataService } from './content-data.service';
 import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
@@ -73,7 +73,7 @@ export class ContentOrchestratorService {
   private readonly logger = new Logger(ContentOrchestratorService.name);
 
   constructor(
-    private readonly dataResolverService: DataResolverService,
+    private readonly contentDataService: ContentDataService,
     private readonly sessionBuilderService: SessionBuilderService,
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketOperationService: SocketOperationService,
@@ -187,7 +187,7 @@ export class ContentOrchestratorService {
       return null;
     }
     const contentType = session.content.type as ContentDataType;
-    const customContentVersion = await this.getEvaluatedContentVersion(
+    const customContentVersion = await this.findEvaluatedContentVersion(
       socketData,
       contentType,
       session.versionId,
@@ -240,11 +240,11 @@ export class ContentOrchestratorService {
     const { environment } = socketData;
     const contentType = ContentDataType.LAUNCHER;
 
-    const versionId = await this.getPublishedVersionId(contentId, environment);
+    const versionId = await this.findPublishedVersionId(contentId, environment);
     if (!versionId) {
       return null;
     }
-    const customContentVersion = await this.getEvaluatedContentVersion(
+    const customContentVersion = await this.findEvaluatedContentVersion(
       socketData,
       contentType,
       versionId,
@@ -269,9 +269,9 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Get evaluated content versions
+   * Find evaluated content versions
    */
-  private async getEvaluatedContentVersions(
+  private async findEvaluatedContentVersions(
     socketData: SocketData,
     contentType: ContentDataType,
     versionId?: string,
@@ -289,7 +289,7 @@ export class ContentOrchestratorService {
       ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === false)
       .map((clientCondition: ClientCondition) => clientCondition.conditionId);
 
-    const contentVersions = await this.dataResolverService.fetchCustomContentVersions(
+    const contentVersions = await this.contentDataService.findCustomContentVersions(
       environment,
       externalUserId,
       externalCompanyId,
@@ -313,15 +313,15 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Get evaluated content version by version ID
+   * Find evaluated content version by version ID
    * This method is optimized for querying a single version by ID
    */
-  private async getEvaluatedContentVersion(
+  private async findEvaluatedContentVersion(
     socketData: SocketData,
     contentType: ContentDataType,
     versionId: string,
   ): Promise<CustomContentVersion | null> {
-    const evaluatedVersions = await this.getEvaluatedContentVersions(
+    const evaluatedVersions = await this.findEvaluatedContentVersions(
       socketData,
       contentType,
       versionId,
@@ -330,12 +330,12 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Get published version ID for specific content
-   * @param contentId - The content ID to get version for
+   * Find published version ID for specific content
+   * @param contentId - The content ID to find version for
    * @param environment - The environment
    * @returns The published version ID or undefined if not found
    */
-  private async getPublishedVersionId(
+  private async findPublishedVersionId(
     contentId: string | undefined,
     environment: Environment,
   ): Promise<string | undefined> {
@@ -343,7 +343,7 @@ export class ContentOrchestratorService {
       return undefined;
     }
 
-    const publishedVersionId = await this.dataResolverService.findPublishedContentVersionId(
+    const publishedVersionId = await this.contentDataService.findPublishedVersionId(
       contentId,
       environment.id,
     );
@@ -370,14 +370,14 @@ export class ContentOrchestratorService {
     const { contentId } = options!;
     const { environment } = socketData;
 
-    const publishedVersionId = await this.getPublishedVersionId(contentId, environment);
+    const publishedVersionId = await this.findPublishedVersionId(contentId, environment);
     if (!publishedVersionId) {
       return {
         success: false,
         reason: 'Content not found or not published',
       };
     }
-    const evaluatedContentVersion = await this.getEvaluatedContentVersion(
+    const evaluatedContentVersion = await this.findEvaluatedContentVersion(
       socketData,
       contentType,
       publishedVersionId,
@@ -419,7 +419,7 @@ export class ContentOrchestratorService {
       return { success: false, reason: 'No existing session' };
     }
 
-    const customContentVersion = await this.getEvaluatedContentVersion(
+    const customContentVersion = await this.findEvaluatedContentVersion(
       socketData,
       contentType,
       session.version.id,
@@ -455,7 +455,7 @@ export class ContentOrchestratorService {
     } = options;
 
     // Get evaluated content versions once and reuse for both strategy executions
-    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+    const evaluatedContentVersions = await this.findEvaluatedContentVersions(
       socketData,
       contentType,
     );
@@ -778,7 +778,7 @@ export class ContentOrchestratorService {
       return true;
     }
     const sessionId = session.id;
-    const sessionVersion = await this.getEvaluatedContentVersion(
+    const sessionVersion = await this.findEvaluatedContentVersion(
       socketData,
       contentType,
       session.version.id,
@@ -967,7 +967,7 @@ export class ContentOrchestratorService {
       latestActivatedContentVersionId &&
       evaluatedContentVersion.id !== latestActivatedContentVersionId
     ) {
-      const activatedContentVersion = await this.getEvaluatedContentVersion(
+      const activatedContentVersion = await this.findEvaluatedContentVersion(
         socketData,
         contentType,
         latestActivatedContentVersionId,
@@ -1320,13 +1320,13 @@ export class ContentOrchestratorService {
     const contentType = ContentDataType.LAUNCHER;
 
     // Get published version ID if needed
-    const versionId = await this.getPublishedVersionId(contentId, environment);
+    const versionId = await this.findPublishedVersionId(contentId, environment);
     if (contentId && !versionId) {
       return { success: false, availableVersions: [], shouldTrackVersions: [], startReason };
     }
 
     // Get evaluated content versions once and reuse for both strategy executions
-    const evaluatedContentVersions = await this.getEvaluatedContentVersions(
+    const evaluatedContentVersions = await this.findEvaluatedContentVersions(
       socketData,
       contentType,
       versionId,

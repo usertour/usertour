@@ -165,7 +165,7 @@ export class EventTrackingService {
    * @param client - Optional Prisma client or transaction client (defaults to this.prisma)
    * @returns Business session with relations, or null if invalid
    */
-  private async getTrackingSession(
+  private async findTrackingSession(
     sessionId: string,
     client?: PrismaService | Tx,
   ): Promise<BizSessionWithRelations | null> {
@@ -573,7 +573,7 @@ export class EventTrackingService {
     buildEventData: (session: BizSessionWithRelations) => Record<string, any> | null,
   ): Promise<boolean> {
     // Step 1: Get session for tracking
-    const bizSession = await this.getTrackingSession(params.sessionId, tx);
+    const bizSession = await this.findTrackingSession(params.sessionId, tx);
     if (!bizSession) {
       return false;
     }
@@ -625,7 +625,7 @@ export class EventTrackingService {
     }
 
     // Check if we need to track FLOW_COMPLETED
-    const bizSession = await this.getTrackingSession(params.sessionId, tx);
+    const bizSession = await this.findTrackingSession(params.sessionId, tx);
     if (!bizSession) {
       return false;
     }
@@ -655,7 +655,7 @@ export class EventTrackingService {
    * @returns True if the event was tracked successfully
    */
   private async handleQuestionAnswered(tx: Tx, params: EventTrackingParams): Promise<boolean> {
-    const bizSession = await this.getTrackingSession(params.sessionId, tx);
+    const bizSession = await this.findTrackingSession(params.sessionId, tx);
     if (!bizSession) {
       return false;
     }

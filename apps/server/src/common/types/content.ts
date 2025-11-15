@@ -13,12 +13,9 @@ import { Environment } from './schema';
 import { Server, Socket } from 'socket.io';
 
 export type ContentSessionCollection = {
-  contentId: string;
   latestSession?: BizSessionWithEvents;
   totalSessions: number;
-  dismissedSessions: number;
   completedSessions: number;
-  seenSessions: number;
 };
 
 /**

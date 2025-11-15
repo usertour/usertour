@@ -33,7 +33,8 @@ import {
   Theme,
   BizSession,
 } from '@/common/types';
-import { DataResolverService } from './data-resolver.service';
+import { ContentDataService } from './content-data.service';
+import { ProjectsService } from '@/projects/projects.service';
 
 @Injectable()
 export class SessionBuilderService {
@@ -41,7 +42,8 @@ export class SessionBuilderService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly dataResolverService: DataResolverService,
+    private readonly contentDataService: ContentDataService,
+    private readonly projectsService: ProjectsService,
   ) {}
 
   // ============================================================================
@@ -158,8 +160,8 @@ export class SessionBuilderService {
   ): Promise<CustomContentSession | null> {
     const { environment, externalUserId, externalCompanyId } = socketData;
     const contentType = customContentVersion.content.type as ContentDataType;
-    const config = await this.dataResolverService.getConfig(environment);
-    const themes = await this.dataResolverService.fetchThemes(
+    const config = await this.projectsService.getConfig(environment);
+    const themes = await this.contentDataService.findThemes(
       environment,
       externalUserId,
       externalCompanyId,
