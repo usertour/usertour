@@ -751,7 +751,11 @@ export class AnalyticsService {
                 some: {},
               },
             },
-            include: { bizUser: true, bizEvent: { include: { event: true } } },
+            include: {
+              bizUser: true,
+              bizEvent: { include: { event: true } },
+              version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+            },
             orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,
           }),
@@ -826,7 +830,7 @@ export class AnalyticsService {
         bizUser: { include: { bizCompany: true } },
         bizEvent: { include: { event: true }, orderBy: { id: 'desc' } },
         content: true,
-        version: true,
+        version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
       },
     });
   }

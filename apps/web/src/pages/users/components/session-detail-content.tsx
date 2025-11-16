@@ -122,7 +122,7 @@ const SessionDetailContentInner = ({
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  const answerEvents = deduplicateAnswerEvents(bizEvents);
+  const answerEvents = deduplicateAnswerEvents(session);
 
   const startReason = getStartReasonTitle(contentType, startEvent);
   const endReason = getEndReasonTitle(contentType, endEvent);

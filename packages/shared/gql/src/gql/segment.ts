@@ -215,6 +215,14 @@ export const querySessionDetail = gql`
         id
         sequence
         data
+        steps {
+          id
+          name
+          cvid
+          type
+          sequence
+          data
+        }
       }
       bizUser {
         id

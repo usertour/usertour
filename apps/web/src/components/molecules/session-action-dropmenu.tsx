@@ -287,7 +287,7 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
   const { isViewOnly, environment } = useAppContext();
   const navigate = useNavigate();
 
-  const answerEvents = deduplicateAnswerEvents(session?.bizEvent);
+  const answerEvents = deduplicateAnswerEvents(session);
 
   // State for controlling different dialogs
   const [deleteOpen, setDeleteOpen] = useState(false);

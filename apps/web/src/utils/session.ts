@@ -2,73 +2,133 @@ import {
   Attribute,
   BizEvent,
   BizEvents,
+  BizSession,
   ContentDataType,
   EventAttributes,
   flowReasonTitleMap,
 } from '@usertour/types';
-import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
+import {
+  ContentEditorElementType,
+  contentTypesConfig,
+  extractQuestionData,
+} from '@usertour-packages/shared-editor';
 import { formatDistanceStrict } from 'date-fns';
 
 /**
- * Deduplicates answer events by QUESTION_CVID, keeping the latest event for each unique question.
- * Events without QUESTION_CVID are skipped.
- *
- * @param bizEvents - Array of business events to process
- * @returns Array of deduplicated answer events, with only the latest event for each QUESTION_CVID
+ * Builds a map from question cvid to step index for sorting purposes
+ * @param steps - Array of steps from version
+ * @returns Map of question cvid to step index
  */
-export const deduplicateAnswerEvents = (bizEvents: BizEvent[] | undefined | null): BizEvent[] => {
-  if (!bizEvents || bizEvents.length === 0) {
-    return [];
+const buildCvidToStepIndexMap = (
+  steps: Array<{ sequence?: number; data?: any }>,
+): Map<string, number> => {
+  const cvidToStepIndexMap = new Map<string, number>();
+  const sortedSteps = [...steps].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
+
+  for (let index = 0; index < sortedSteps.length; index++) {
+    const step = sortedSteps[index];
+    if (!step.data) {
+      continue;
+    }
+
+    const questionData = extractQuestionData(step.data);
+    for (const question of questionData) {
+      const cvid = question.data?.cvid;
+      if (cvid) {
+        cvidToStepIndexMap.set(cvid, index);
+      }
+    }
   }
 
-  // Use Map to deduplicate by QUESTION_CVID, keeping the latest event based on createdAt
+  return cvidToStepIndexMap;
+};
+
+/**
+ * Deduplicates events by QUESTION_CVID, keeping the latest event for each unique question
+ * @param events - Array of business events sorted by createdAt (descending)
+ * @returns Map of question cvid to the latest event
+ */
+const deduplicateEventsByCvid = (events: BizEvent[]): Map<string, BizEvent> => {
   const eventMap = new Map<string, BizEvent>();
-  for (const bizEvent of bizEvents) {
-    // Filter to only process QUESTION_ANSWERED events
+
+  for (const bizEvent of events) {
     if (bizEvent.event?.codeName !== BizEvents.QUESTION_ANSWERED) {
       continue;
     }
 
     const questionCvid = bizEvent.data?.[EventAttributes.QUESTION_CVID];
     if (!questionCvid) {
-      // Skip events without QUESTION_CVID
       continue;
     }
 
     const existingEvent = eventMap.get(questionCvid);
-    if (!existingEvent) {
-      // First occurrence of this QUESTION_CVID
+    if (
+      !existingEvent ||
+      new Date(bizEvent.createdAt).getTime() > new Date(existingEvent.createdAt).getTime()
+    ) {
       eventMap.set(questionCvid, bizEvent);
-    } else {
-      // Compare createdAt timestamps and keep the latest one
-      const existingTime = new Date(existingEvent.createdAt).getTime();
-      const currentTime = new Date(bizEvent.createdAt).getTime();
-      if (currentTime > existingTime) {
-        eventMap.set(questionCvid, bizEvent);
-      }
     }
   }
 
-  return Array.from(eventMap.values()).sort((a, b) => {
-    const stepNumberA = a.data?.[EventAttributes.FLOW_STEP_NUMBER];
-    const stepNumberB = b.data?.[EventAttributes.FLOW_STEP_NUMBER];
+  return eventMap;
+};
 
-    // Handle cases where FLOW_STEP_NUMBER might be missing or undefined
-    if (stepNumberA === undefined && stepNumberB === undefined) {
+/**
+ * Sorts events by step order based on cvid to step index mapping
+ * @param events - Array of events to sort
+ * @param cvidToStepIndexMap - Map of question cvid to step index
+ * @returns Sorted array of events
+ */
+const sortEventsByStepOrder = (
+  events: BizEvent[],
+  cvidToStepIndexMap: Map<string, number>,
+): BizEvent[] => {
+  return events.sort((a, b) => {
+    const questionCvidA = a.data?.[EventAttributes.QUESTION_CVID];
+    const questionCvidB = b.data?.[EventAttributes.QUESTION_CVID];
+
+    const stepIndexA = questionCvidA ? cvidToStepIndexMap.get(questionCvidA) : undefined;
+    const stepIndexB = questionCvidB ? cvidToStepIndexMap.get(questionCvidB) : undefined;
+
+    if (stepIndexA === undefined && stepIndexB === undefined) {
       return 0;
     }
-    if (stepNumberA === undefined) {
-      return 1; // Put undefined values at the end
+    if (stepIndexA === undefined) {
+      return 1;
     }
-    if (stepNumberB === undefined) {
-      return -1; // Put undefined values at the end
+    if (stepIndexB === undefined) {
+      return -1;
     }
 
-    // Convert to numbers and sort ascending
-    const numA = Number(stepNumberA);
-    const numB = Number(stepNumberB);
-    return numA - numB;
+    return stepIndexA - stepIndexB;
   });
+};
+
+/**
+ * Deduplicates answer events by QUESTION_CVID, keeping the latest event for each unique question.
+ * Events without QUESTION_CVID are skipped.
+ * Results are sorted by the order of steps in the version.
+ *
+ * @param session - Session object containing bizEvents and version with steps
+ * @returns Array of deduplicated answer events, sorted by step order
+ */
+export const deduplicateAnswerEvents = (session: BizSession): BizEvent[] => {
+  const bizEvents = session?.bizEvent?.sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  if (!bizEvents?.length) {
+    return [];
+  }
+
+  const cvidToStepIndexMap = session?.version?.steps
+    ? buildCvidToStepIndexMap(session.version.steps)
+    : new Map<string, number>();
+
+  const eventMap = deduplicateEventsByCvid(bizEvents);
+  const deduplicatedEvents = Array.from(eventMap.values());
+
+  return sortEventsByStepOrder(deduplicatedEvents, cvidToStepIndexMap);
 };
 
 /**
