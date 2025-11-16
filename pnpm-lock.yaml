@@ -335,8 +335,8 @@ importers:
         specifier: ^4.7.1
         version: 4.7.4
       '@usertour/helpers':
-        specifier: ^0.0.34
-        version: 0.0.34(typescript@4.9.5)
+        specifier: ^0.0.35
+        version: 0.0.35(typescript@4.9.5)
       '@usertour/license':
         specifier: ^0.0.1
         version: 0.0.1
@@ -8571,6 +8571,9 @@ packages:
 
   '@usertour/helpers@0.0.34':
     resolution: {integrity: sha512-aiASZx+78MeWzC3nt/FSpra+KLadvWW8ENJrUTayLvTQp5XVUjbAaTlA3SfqZHN8pHFU1hQFZOmF2JChHxI6cg==}
+
+  '@usertour/helpers@0.0.35':
+    resolution: {integrity: sha512-m2AjGDuwsTxAaMQvKvJCCdhM1n5sTESKkG4xzR+zScIqOZgFt7IcsswOhJmiCDN6T/62fCp9oXI4RFXp9UPY6A==}
 
   '@usertour/license@0.0.1':
     resolution: {integrity: sha512-FGzPpdCQa13fjU65d3YYhgtI0trG+u04ahJbJH9IWc4U/AqXR0nbaA27vrDHq8oKMRwkl7/XpOhxpf2HtuvcTw==}
@@ -20547,12 +20550,12 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.34(typescript@4.9.5)':
+  '@usertour/helpers@0.0.34(typescript@5.1.6)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@usertour/types': 0.0.19
       chroma-js: 3.1.2
-      class-variance-authority: 0.4.0(typescript@4.9.5)
+      class-variance-authority: 0.4.0(typescript@5.1.6)
       clsx: 1.2.1
       date-fns: 2.30.0
       deepmerge-ts: 7.1.3
@@ -20562,12 +20565,12 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.34(typescript@5.1.6)':
+  '@usertour/helpers@0.0.35(typescript@4.9.5)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@usertour/types': 0.0.19
       chroma-js: 3.1.2
-      class-variance-authority: 0.4.0(typescript@5.1.6)
+      class-variance-authority: 0.4.0(typescript@4.9.5)
       clsx: 1.2.1
       date-fns: 2.30.0
       deepmerge-ts: 7.1.3

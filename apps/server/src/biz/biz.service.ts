@@ -23,15 +23,15 @@ import {
 } from './dto/segment.input';
 import { Segment, SegmentBizType, SegmentDataType } from './models/segment.model';
 import { ParamsError, UnknownError } from '@/common/errors';
+import { BizAttributeTypes } from '@usertour/types';
+import { IntegrationSource } from '@/common/types/integration';
+import isEqual from 'fast-deep-equal';
 import {
   capitalizeFirstLetter,
   filterNullAttributes,
   getAttributeType,
   isNull,
-} from '@/common/attribute/attribute';
-import { BizAttributeTypes } from '@usertour/types';
-import { IntegrationSource } from '@/common/types/integration';
-import isEqual from 'fast-deep-equal';
+} from '@usertour/helpers';
 
 @Injectable()
 export class BizService {

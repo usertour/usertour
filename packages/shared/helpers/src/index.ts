@@ -10,3 +10,4 @@ export * from './utils';
 export * from './color';
 export * from './helper';
 export * from './conditions/';
+export * from './attribute';
