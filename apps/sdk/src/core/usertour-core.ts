@@ -911,6 +911,14 @@ export class UsertourCore extends Evented {
   private initializeConditionsMonitor() {
     this.conditionsMonitor = new UsertourConditionsMonitor({ autoStart: false });
 
+    // Start monitoring when uiManager initialization completes
+    // When uiManager.initialize() succeeds, DOM is definitely ready for condition evaluation
+    // This is more reliable than checking document.readyState because uiManager.initialize()
+    // requires document.body to exist and be ready for DOM operations
+    this.uiManager.once(SDKClientEvents.INITIALIZATION_COMPLETE, () => {
+      this.conditionsMonitor?.start();
+    });
+
     // Listen for condition state change events
     this.conditionsMonitor.on(SDKClientEvents.CONDITION_STATE_CHANGED, (eventData: unknown) => {
       const changeEvent = eventData as ConditionStateChangeEvent;

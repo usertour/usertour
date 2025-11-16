@@ -38,6 +38,7 @@ export class UsertourConditionsMonitor extends Evented {
   private readonly id: string;
   private readonly options: ConditionsMonitorOptions;
   private intervalId: string | null = null;
+  private isStarted = false; // Track if monitoring has been started
 
   // === Constructor ===
   constructor(options: ConditionsMonitorOptions = {}) {
@@ -131,19 +132,21 @@ export class UsertourConditionsMonitor extends Evented {
     return {
       totalConditions: this.conditions.length,
       activeConditions: this.activeConditions.size,
-      isMonitoring: this.intervalId !== null,
+      isMonitoring: this.isStarted,
     };
   }
 
   // === Monitoring Control ===
   /**
    * Starts monitoring
+   * When started, begins periodic condition checking
    */
   start(): void {
-    if (this.intervalId) {
-      this.stop();
+    if (this.isStarted) {
+      return; // Already started
     }
 
+    this.isStarted = true;
     this.intervalId = `${this.id}-monitor`;
     timerManager.setInterval(
       this.intervalId,
@@ -152,6 +155,11 @@ export class UsertourConditionsMonitor extends Evented {
       },
       this.options.interval || 1000,
     );
+
+    // Check initial states of all existing conditions when starting
+    if (this.conditions.length > 0) {
+      this.checkInitialConditionStates(this.conditions);
+    }
   }
 
   /**
@@ -162,6 +170,7 @@ export class UsertourConditionsMonitor extends Evented {
       timerManager.clearInterval(this.intervalId);
       this.intervalId = null;
     }
+    this.isStarted = false;
   }
 
   // === Condition Checking ===
@@ -170,6 +179,13 @@ export class UsertourConditionsMonitor extends Evented {
    * @param conditions - Array of TrackCondition objects to check
    */
   private async checkInitialConditionStates(conditions: TrackCondition[]): Promise<void> {
+    // Skip check if monitoring hasn't started yet - prevents false negatives for DOM-dependent conditions
+    // (e.g., UNPRESENT returning true when element just hasn't loaded yet)
+    // The periodic checkConditions() will handle it once monitoring starts
+    if (conditions.length === 0 || !this.isStarted) {
+      return;
+    }
+
     try {
       // Extract RulesCondition from TrackCondition for evaluation
       const rulesConditions = conditions.map((trackCondition) => trackCondition.condition);
@@ -207,7 +223,10 @@ export class UsertourConditionsMonitor extends Evented {
    * Checks all conditions and reports active ones
    */
   private async checkConditions(): Promise<void> {
-    if (this.conditions.length === 0) return;
+    // Skip check if monitoring hasn't started
+    if (this.conditions.length === 0 || !this.isStarted) {
+      return;
+    }
 
     try {
       // Extract RulesCondition from TrackCondition for evaluation
