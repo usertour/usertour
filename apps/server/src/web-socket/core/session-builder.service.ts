@@ -161,11 +161,11 @@ export class SessionBuilderService {
     const { environment, externalUserId, externalCompanyId } = socketData;
     const contentType = customContentVersion.content.type as ContentDataType;
     const config = await this.projectsService.getConfig(environment);
-    const themes = await this.contentDataService.findThemes(
+    const themes = await this.contentDataService.findThemes({
       environment,
       externalUserId,
       externalCompanyId,
-    );
+    });
     const sessionTheme = await this.createSessionTheme(
       themes,
       customContentVersion.themeId,

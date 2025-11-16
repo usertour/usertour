@@ -289,19 +289,15 @@ export class ContentOrchestratorService {
       ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === false)
       .map((clientCondition: ClientCondition) => clientCondition.conditionId);
 
+    // Pass contentType to filter at database level, reducing query data
     const contentVersions = await this.contentDataService.findCustomContentVersions(
-      environment,
-      externalUserId,
-      externalCompanyId,
+      { environment, externalUserId, externalCompanyId },
+      [contentType],
       versionId,
     );
 
-    const filteredContentVersions = contentVersions.filter((contentVersion) =>
-      [contentType].includes(contentVersion.content.type as ContentDataType),
-    );
-
     // Evaluate content versions with proper conditions
-    return await evaluateCustomContentVersion(filteredContentVersions, {
+    return await evaluateCustomContentVersion(contentVersions, {
       typeControl: {
         [RulesType.CURRENT_PAGE]: true,
         [RulesType.TIME]: true,

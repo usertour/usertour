@@ -203,7 +203,6 @@ export class ConditionEvaluationService {
         return await this.evaluateContentCondition(rules, context);
       }
       default: {
-        this.logger.warn(`Unknown condition type: ${(rules as any).type}`);
         return false;
       }
     }

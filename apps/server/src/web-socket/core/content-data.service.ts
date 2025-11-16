@@ -32,6 +32,15 @@ import {
 // ============================================================================
 
 /**
+ * Context for content queries containing essential parameters
+ */
+export interface ContentQueryContext {
+  readonly environment: Environment;
+  readonly externalUserId: string;
+  readonly externalCompanyId?: string;
+}
+
+/**
  * Context for content processing containing all required data
  */
 type ContentProcessingContext = {
@@ -107,23 +116,22 @@ export class ContentDataService {
 
   /**
    * Find custom content versions for a user with optimized performance
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
-   * @param externalCompanyId - The external company ID
+   * @param queryContext - Content query context containing environment, externalUserId, and externalCompanyId
+   * @param contentTypes - Content types array to filter by
    * @param versionId - Optional specific version ID
    * @returns Array of custom content versions
    */
   async findCustomContentVersions(
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
+    queryContext: ContentQueryContext,
+    contentTypes: ContentDataType[],
     versionId?: string,
   ): Promise<CustomContentVersion[]> {
+    const { environment, externalUserId, externalCompanyId } = queryContext;
     try {
       // Step 1: Find required data
       const [bizUser, versions] = await Promise.all([
         this.findBizUser(environment, externalUserId),
-        this.findVersions(environment, versionId),
+        this.findVersions(environment, contentTypes, versionId),
       ]);
 
       if (!bizUser || versions.length === 0) {
@@ -157,16 +165,11 @@ export class ContentDataService {
 
   /**
    * Find themes for a user with optimized performance
-   * @param environment - The environment
-   * @param externalUserId - The external user ID
-   * @param externalCompanyId - The external company ID
+   * @param queryContext - Content query context containing environment, externalUserId, and externalCompanyId
    * @returns Array of themes
    */
-  async findThemes(
-    environment: Environment,
-    externalUserId: string,
-    externalCompanyId?: string,
-  ): Promise<Theme[]> {
+  async findThemes(queryContext: ContentQueryContext): Promise<Theme[]> {
+    const { environment, externalUserId, externalCompanyId } = queryContext;
     // Step 1: Find data
     const [bizUser, themes] = await Promise.all([
       this.findBizUser(environment, externalUserId),
@@ -255,16 +258,25 @@ export class ContentDataService {
 
   /**
    * Find versions for content processing
+   * @param environment - The environment
+   * @param contentTypes - Content types array to filter by
+   * @param versionId - Optional specific version ID
    */
   private async findVersions(
     environment: Environment,
+    contentTypes: ContentDataType[],
     versionId?: string,
   ): Promise<VersionWithStepsAndContent[]> {
     if (versionId) {
-      // Find the specific version with content
+      // Find the specific version with content, filtered by contentTypes in Prisma query
       const version = await this.prisma.version.findFirst({
         where: {
           id: versionId,
+          content: {
+            type: {
+              in: contentTypes,
+            },
+          },
         },
         include: {
           content: true,
@@ -275,7 +287,7 @@ export class ContentDataService {
       return version ? [version] : [];
     }
 
-    // Find all published versions with content
+    // Find all published versions with content, filtered by contentTypes in Prisma query
     const publishedContents = await this.prisma.content.findMany({
       where: {
         contentOnEnvironments: {
@@ -283,6 +295,9 @@ export class ContentDataService {
             environmentId: environment.id,
             published: true,
           },
+        },
+        type: {
+          in: contentTypes,
         },
       },
       include: {
