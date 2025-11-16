@@ -1,19 +1,52 @@
 import { BizAttributeTypes } from '@usertour/types';
+import { isValid, parseISO, parse } from 'date-fns';
 
 export const isNull = (x: unknown): x is null => {
   // eslint-disable-next-line posthog-js/no-direct-null-check
   return x === null;
 };
 
-function isDateValid(dateStr: string): boolean {
-  if (!Number.isNaN(Number(dateStr))) {
+const isValidYear = (date: Date): boolean => {
+  const year = date.getFullYear();
+  return year >= 1900 && year <= 2100;
+};
+
+const tryParseDate = (parser: () => Date): boolean => {
+  try {
+    const date = parser();
+    return isValid(date) && isValidYear(date);
+  } catch {
     return false;
   }
-  if (dateStr.length < 10) {
+};
+
+function isDateString(dateStr: string): boolean {
+  // Quick rejections
+  if (!Number.isNaN(Number(dateStr)) || dateStr.length < 10) {
     return false;
   }
 
-  return !Number.isNaN(Date.parse(dateStr));
+  // Common date formats
+  const dateFormats = [
+    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+    "yyyy-MM-dd'T'HH:mm:ss'Z'",
+    "yyyy-MM-dd'T'HH:mm:ss.SSS",
+    "yyyy-MM-dd'T'HH:mm:ss",
+    'yyyy-MM-dd',
+    'MM/dd/yyyy',
+    'dd/MM/yyyy',
+    'yyyy/MM/dd',
+    'MM-dd-yyyy',
+    'dd-MM-yyyy',
+  ];
+
+  // Try ISO format first (most common)
+  if (tryParseDate(() => parseISO(dateStr))) {
+    return true;
+  }
+
+  // Try other formats
+  return dateFormats.some((format) => tryParseDate(() => parse(dateStr, format, new Date())));
 }
 
 export const getAttributeType = (attribute: any): number => {
@@ -22,7 +55,7 @@ export const getAttributeType = (attribute: any): number => {
     return BizAttributeTypes.Number;
   }
   if (t === 'string') {
-    if (isDateValid(attribute)) {
+    if (isDateString(attribute)) {
       return BizAttributeTypes.DateTime;
     }
     return BizAttributeTypes.String;
