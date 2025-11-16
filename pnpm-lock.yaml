@@ -88,8 +88,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/shared/tailwind
       '@usertour/helpers':
-        specifier: ^0.0.33
-        version: 0.0.33(typescript@5.1.6)
+        specifier: ^0.0.34
+        version: 0.0.34(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.25
         version: 0.0.25
@@ -335,8 +335,8 @@ importers:
         specifier: ^4.7.1
         version: 4.7.4
       '@usertour/helpers':
-        specifier: ^0.0.33
-        version: 0.0.33(typescript@4.9.5)
+        specifier: ^0.0.34
+        version: 0.0.34(typescript@4.9.5)
       '@usertour/license':
         specifier: ^0.0.1
         version: 0.0.1
@@ -8569,8 +8569,8 @@ packages:
   '@usertour/helpers@0.0.32':
     resolution: {integrity: sha512-VyTuPY6kZkKJMfnNv0uthlCYG0V6Et/zpKhuvP7zP9i1U3WyuhUPUTcVpUbdtKLm6ARfVWstdmXazKQvzp6Isw==}
 
-  '@usertour/helpers@0.0.33':
-    resolution: {integrity: sha512-l/5SzXl3NKO+q4ej08fSL3BKJ+4PbbtrA0a+IysCfhQ3rF5TTMjbmUHEkywTqGJoZu5vP76IpbgkkdlhfxWwXw==}
+  '@usertour/helpers@0.0.34':
+    resolution: {integrity: sha512-aiASZx+78MeWzC3nt/FSpra+KLadvWW8ENJrUTayLvTQp5XVUjbAaTlA3SfqZHN8pHFU1hQFZOmF2JChHxI6cg==}
 
   '@usertour/license@0.0.1':
     resolution: {integrity: sha512-FGzPpdCQa13fjU65d3YYhgtI0trG+u04ahJbJH9IWc4U/AqXR0nbaA27vrDHq8oKMRwkl7/XpOhxpf2HtuvcTw==}
@@ -20547,7 +20547,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.33(typescript@4.9.5)':
+  '@usertour/helpers@0.0.34(typescript@4.9.5)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@usertour/types': 0.0.19
@@ -20562,7 +20562,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.33(typescript@5.1.6)':
+  '@usertour/helpers@0.0.34(typescript@5.1.6)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@usertour/types': 0.0.19

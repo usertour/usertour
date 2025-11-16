@@ -193,28 +193,29 @@ function evaluateNumberCondition(
   expectedValue: number,
   expectedValue2?: number,
 ): boolean {
-  const numValue = Number(actualValue);
-  const numValue2 = Number(expectedValue2);
+  const numActualValue = Number(actualValue);
+  const numExpectedValue = Number(expectedValue);
+  const numExpectedValue2 = Number(expectedValue2);
 
-  if (Number.isNaN(numValue)) {
+  if (Number.isNaN(numActualValue)) {
     return false;
   }
 
   switch (logic) {
     case 'is':
-      return numValue === expectedValue;
+      return numActualValue === numExpectedValue;
     case 'not':
-      return numValue !== expectedValue;
+      return numActualValue !== numExpectedValue;
     case 'isLessThan':
-      return numValue < expectedValue;
+      return numActualValue < numExpectedValue;
     case 'isLessThanOrEqualTo':
-      return numValue <= expectedValue;
+      return numActualValue <= numExpectedValue;
     case 'isGreaterThan':
-      return numValue > expectedValue;
+      return numActualValue > numExpectedValue;
     case 'isGreaterThanOrEqualTo':
-      return numValue >= expectedValue;
+      return numActualValue >= numExpectedValue;
     case 'between':
-      return numValue >= expectedValue && numValue <= numValue2;
+      return numActualValue >= numExpectedValue && numActualValue <= numExpectedValue2;
     case 'empty':
       return actualValue === null || actualValue === undefined || actualValue === '';
     case 'any':

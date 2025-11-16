@@ -51,6 +51,12 @@ const testAttributes: SimpleAttribute[] = [
     dataType: BizAttributeTypes.Number,
     bizType: AttributeBizTypes.User,
   },
+  {
+    id: 'sdsdd-attr',
+    codeName: 'sdsdd',
+    dataType: BizAttributeTypes.Number,
+    bizType: AttributeBizTypes.User,
+  },
   // Company attributes
   {
     id: 'company-name-attr',
@@ -87,6 +93,7 @@ const testUserAttributes: UserTourTypes.Attributes = {
   tags: [123, 456],
   signUpDate: '2024-01-15T10:30:00Z',
   score: 85.5,
+  sdsdd: 101,
 } as UserTourTypes.Attributes;
 
 const testCompanyAttributes: UserTourTypes.Attributes = {
@@ -378,6 +385,246 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+  });
+
+  describe('Number conditions with string values', () => {
+    test('should evaluate "is" condition when actualValue is number and expectedValue is string', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-1',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: '101' as any,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should evaluate "is" condition when actualValue is string and expectedValue is number', () => {
+      const userAttributesWithStringNumber: UserTourTypes.Attributes = {
+        ...testUserAttributes,
+        sdsdd: '101' as any,
+      };
+
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-2',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: 101,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(
+        evaluateFilterConditions(condition, {
+          ...defaultOptions,
+          userAttributes: userAttributesWithStringNumber,
+        }),
+      ).toBe(true);
+    });
+
+    test('should evaluate "is" condition when both actualValue and expectedValue are strings', () => {
+      const userAttributesWithStringNumber: UserTourTypes.Attributes = {
+        ...testUserAttributes,
+        sdsdd: '101' as any,
+      };
+
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-3',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: '101' as any,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(
+        evaluateFilterConditions(condition, {
+          ...defaultOptions,
+          userAttributes: userAttributesWithStringNumber,
+        }),
+      ).toBe(true);
+    });
+
+    test('should evaluate "not" condition when actualValue is number and expectedValue is string', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-4',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'not',
+            value: '102' as any,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should evaluate "isLessThan" condition when expectedValue is string', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-5',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'isLessThan',
+            value: '102' as any,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should evaluate "isGreaterThan" condition when expectedValue is string', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-6',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'isGreaterThan',
+            value: '100' as any,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should evaluate "between" condition when value and value2 are strings', () => {
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-7',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'between',
+            value: '100' as any,
+            value2: '103' as any,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+    });
+
+    test('should evaluate "between" condition when actualValue is string and values are strings', () => {
+      const userAttributesWithStringNumber: UserTourTypes.Attributes = {
+        ...testUserAttributes,
+        sdsdd: '101' as any,
+      };
+
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-8',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'between',
+            value: '100' as any,
+            value2: '103' as any,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(
+        evaluateFilterConditions(condition, {
+          ...defaultOptions,
+          userAttributes: userAttributesWithStringNumber,
+        }),
+      ).toBe(true);
+    });
+
+    test('should return false when actualValue is NaN', () => {
+      const userAttributesWithNaN: UserTourTypes.Attributes = {
+        ...testUserAttributes,
+        sdsdd: 'not-a-number' as any,
+      };
+
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-9',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: 101,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(
+        evaluateFilterConditions(condition, {
+          ...defaultOptions,
+          userAttributes: userAttributesWithNaN,
+        }),
+      ).toBe(false);
+    });
+
+    test('should handle decimal string values correctly', () => {
+      const userAttributesWithDecimal: UserTourTypes.Attributes = {
+        ...testUserAttributes,
+        score: '85.5' as any,
+      };
+
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-10',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'is',
+            value: '85.5' as any,
+            attrId: 'score-attr',
+          },
+        },
+      ];
+      expect(
+        evaluateFilterConditions(condition, {
+          ...defaultOptions,
+          userAttributes: userAttributesWithDecimal,
+        }),
+      ).toBe(true);
+    });
+
+    test('should handle negative string values correctly', () => {
+      const userAttributesWithNegative: UserTourTypes.Attributes = {
+        ...testUserAttributes,
+        sdsdd: '-50' as any,
+      };
+
+      const condition: RulesCondition[] = [
+        {
+          id: 'number-string-condition-11',
+          type: 'condition',
+          operators: 'and',
+          data: {
+            logic: 'isLessThan',
+            value: '0' as any,
+            attrId: 'sdsdd-attr',
+          },
+        },
+      ];
+      expect(
+        evaluateFilterConditions(condition, {
+          ...defaultOptions,
+          userAttributes: userAttributesWithNegative,
+        }),
+      ).toBe(true);
     });
   });
 
