@@ -335,7 +335,10 @@ export class ContentDataService {
   /**
    * Find latest sessions for contents
    */
-  private async findLatestSessions(contentIds: string[], bizUserId: string) {
+  private async findLatestSessions(
+    contentIds: string[],
+    bizUserId: string,
+  ): Promise<BizSessionWithEvents[]> {
     return await this.prisma.bizSession.findMany({
       where: {
         contentId: { in: contentIds },
