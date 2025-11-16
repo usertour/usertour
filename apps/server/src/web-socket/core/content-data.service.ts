@@ -1,6 +1,7 @@
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
+import { Prisma } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
 import {
   BizUser,
@@ -359,24 +360,23 @@ export class ContentDataService {
     bizUserId: string,
     eventCodeNames?: readonly string[],
   ): Promise<Map<string, number>> {
-    const where = eventCodeNames
-      ? ({
-          contentId: { in: contentIds },
-          bizUserId,
-          deleted: false,
-          bizEvent: {
-            some: {
-              event: {
-                codeName: { in: eventCodeNames },
-              },
-            },
+    // Build base where condition
+    const where: Prisma.BizSessionWhereInput = {
+      contentId: { in: contentIds },
+      bizUserId,
+      deleted: false,
+    };
+
+    // Add event filter if eventCodeNames is provided
+    if (eventCodeNames) {
+      where.bizEvent = {
+        some: {
+          event: {
+            codeName: { in: [...eventCodeNames] },
           },
-        } as any)
-      : {
-          contentId: { in: contentIds },
-          bizUserId,
-          deleted: false,
-        };
+        },
+      };
+    }
 
     const results = await this.prisma.bizSession.groupBy({
       by: ['contentId'],
