@@ -987,17 +987,18 @@ export const conditionsIsReady = (
   clientConditions: ClientCondition[],
   allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
 ): boolean => {
-  if (!clientConditions || clientConditions.length === 0) {
-    return false;
+  const allowedConditions = flattenConditions(conditions, allowedTypes);
+
+  // If no allowed conditions, return true (no conditions to check)
+  if (allowedConditions.length === 0) {
+    return true;
   }
 
-  const allowedConditions = flattenConditions(conditions, allowedTypes);
-  const clientConditionIds = clientConditions
-    .filter((cc) => cc.isActive !== undefined)
-    .map((cc) => cc.conditionId);
+  const clientConditionIds =
+    clientConditions?.filter((cc) => cc.isActive !== undefined).map((cc) => cc.conditionId) ?? [];
 
   // Check if all condition IDs exist in client conditions with feedback
-  return allowedConditions.every((conditions) => clientConditionIds.includes(conditions.id));
+  return allowedConditions.every((condition) => clientConditionIds.includes(condition.id));
 };
 
 /**
