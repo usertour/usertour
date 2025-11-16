@@ -100,6 +100,37 @@ const isClicked = (el: HTMLElement) => {
 };
 
 /**
+ * Check if an element is disabled
+ * For form controls (input, button, select, etc.), uses the disabled property for accurate state detection
+ * For other elements, checks if the disabled attribute exists
+ * @param el - The HTML element to check
+ * @returns True if the element is disabled, false otherwise
+ */
+const isDisabled = (el: HTMLElement | null): boolean => {
+  if (!el) {
+    return false;
+  }
+
+  // For form controls, use the disabled property which reflects the actual state
+  if ('disabled' in el) {
+    return Boolean(
+      (
+        el as
+          | HTMLInputElement
+          | HTMLButtonElement
+          | HTMLSelectElement
+          | HTMLTextAreaElement
+          | HTMLOptionElement
+          | HTMLFieldSetElement
+      ).disabled,
+    );
+  }
+
+  // For other elements, check if the disabled attribute exists
+  return el.hasAttribute('disabled');
+};
+
+/**
  * Cache for tracking text fill events
  */
 const fillCache = new Map();
@@ -121,16 +152,16 @@ const isActiveRulesByElement = async (rules: RulesCondition) => {
   const el = finderV2(data.elementData, document);
 
   const isPresent = el ? await isVisible(el) : false;
-  const isDisabled = el ? (el as any).disabled : false;
+  const elementDisabled = isDisabled(el);
   switch (data.logic) {
     case ElementConditionLogic.PRESENT:
       return isPresent;
     case ElementConditionLogic.UNPRESENT:
       return !isPresent;
     case ElementConditionLogic.DISABLED:
-      return el && isDisabled;
+      return el && elementDisabled;
     case ElementConditionLogic.UNDISABLED:
-      return el && !isDisabled;
+      return el && !elementDisabled;
     case ElementConditionLogic.CLICKED:
       return el && isClicked(el);
     case ElementConditionLogic.UNCLICKED:
