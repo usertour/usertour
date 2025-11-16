@@ -6,6 +6,7 @@ import {
   RulesEvaluationOptions,
 } from '@usertour/types';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { isArray } from '../type-utils';
 
 /**
  * Evaluate filter conditions and return boolean result
@@ -251,7 +252,7 @@ function evaluateListCondition(
   actualValue: any,
   expectedValues: (string | number | boolean)[],
 ): boolean {
-  const arrayValue = Array.isArray(actualValue) ? actualValue : [];
+  const arrayValue = isArray(actualValue) ? actualValue : [];
 
   // For empty and any conditions, we don't need to check expectedValues
   if (logic === 'empty' || logic === 'any') {
