@@ -176,12 +176,8 @@ export class ContentDataService {
       this.findThemesByProject(environment),
     ]);
 
-    if (themes.length === 0) {
+    if (themes.length === 0 || !bizUser) {
       return [];
-    }
-
-    if (!bizUser) {
-      return themes;
     }
 
     // Step 2: Process themes
