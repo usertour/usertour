@@ -164,8 +164,9 @@ export class ConditionEvaluationService {
         }
 
         // Evaluate all triggers in parallel
+        const triggers = step.trigger as StepTrigger[];
         const evaluatedTriggers = await Promise.all(
-          step.trigger.map(async (triggerItem: StepTrigger) =>
+          triggers.map(async (triggerItem: StepTrigger) =>
             this.evaluateSingleTrigger(triggerItem, context),
           ),
         );
