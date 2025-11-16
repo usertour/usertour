@@ -772,7 +772,12 @@ export class BizService {
           },
         });
         if (newAttr) {
-          insertAttribute[attrName] = attrValue;
+          // Convert DateTime to ISO format for consistency
+          if (dataType === BizAttributeTypes.DateTime) {
+            insertAttribute[attrName] = new Date(attrValue).toISOString();
+          } else {
+            insertAttribute[attrName] = attrValue;
+          }
           continue;
         }
       }
