@@ -1,4 +1,4 @@
-import { RulesCondition } from './contents';
+import { RulesCondition } from './config';
 
 export enum ChecklistInitialDisplay {
   EXPANDED = 'expanded',

@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-switch": "^1.0.3",
-    "@usertour/helpers": "^0.0.29"
+    "@usertour/helpers": "^0.0.37"
   },
   "peerDependencies": {
     "react": "^18.2.0"

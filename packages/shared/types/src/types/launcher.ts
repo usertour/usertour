@@ -1,6 +1,6 @@
 import { ElementSelectorPropsData, StepScreenshot } from './contents';
 import { LauncherDataType } from './contents';
-import { RulesCondition } from './contents';
+import { RulesCondition } from './config';
 
 export type LauncherTooltipSettings = {
   readonly dismissAfterFirstActivation: boolean;

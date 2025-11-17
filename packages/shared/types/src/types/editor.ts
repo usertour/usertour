@@ -1,4 +1,5 @@
-import { ContentOmbedInfo, RulesCondition } from './contents';
+import { ContentOmbedInfo } from './contents';
+import { RulesCondition } from './config';
 
 type ContentEditorElementWidth = {
   type?: string;

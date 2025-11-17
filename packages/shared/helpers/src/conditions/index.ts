@@ -10,5 +10,11 @@ export {
   allConditionsHaveIds,
 } from './condition';
 export { isMatchUrlPattern, evaluateUrlCondition } from './url';
-export { evaluateTimeCondition } from './time';
+export {
+  evaluateTimeCondition,
+  isTimeConditionDataV2,
+  isTimeConditionDataLegacy,
+  convertTimeConditionLegacyToV2,
+  normalizeTimeConditionData,
+} from './time';
 export { evaluateAttributeCondition } from './attribute';

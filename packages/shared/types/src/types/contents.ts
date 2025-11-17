@@ -1,3 +1,74 @@
+import type { ContentConfigObject, RulesCondition } from './config';
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+export enum BuilderType {
+  EXTENSION = 'extension',
+  WEB = 'web',
+  ALL = 'all',
+}
+
+export enum ContentActionsItemType {
+  STEP_GOTO = 'step-goto',
+  FLOW_DISMIS = 'flow-dismis',
+  LAUNCHER_DISMIS = 'launcher-dismis',
+  CHECKLIST_DISMIS = 'checklist-dismis',
+  FLOW_START = 'flow-start',
+  PAGE_NAVIGATE = 'page-navigate',
+  JAVASCRIPT_EVALUATE = 'javascript-evaluate',
+}
+
+export enum ContentDataType {
+  CHECKLIST = 'checklist',
+  FLOW = 'flow',
+  LAUNCHER = 'launcher',
+  BANNER = 'banner',
+  NPS = 'nps',
+  SURVEY = 'survey',
+  TRACKER = 'tracker',
+  EVENT = 'event',
+}
+
+export enum ContentTypeName {
+  CHECKLISTS = 'checklists',
+  FLOWS = 'flows',
+  LAUNCHERS = 'launchers',
+  // RESOURCE_CENTERS = "resource-centers",
+  BANNERS = 'banners',
+  NPS = 'nps',
+  SURVEYS = 'surveys',
+  TRACKERS = 'trackers',
+  EVENTS = 'events',
+}
+
+export enum LauncherDataType {
+  BEACON = 'beacon',
+  ICON = 'icon',
+  HIDDEN = 'hidden',
+}
+
+export enum ModalPosition {
+  LeftTop = 'leftTop',
+  CenterTop = 'centerTop',
+  RightTop = 'rightTop',
+  LeftBottom = 'leftBottom',
+  CenterBottom = 'centerBottom',
+  RightBottom = 'rightBottom',
+  Center = 'center',
+}
+
+export enum StepContentType {
+  TOOLTIP = 'tooltip',
+  MODAL = 'modal',
+  HIDDEN = 'hidden',
+}
+
+// ============================================================================
+// Base Types
+// ============================================================================
+
 export type TargetData = {
   width: number;
   height: number;
@@ -10,6 +81,10 @@ export type StepScreenshot = {
   full: string;
   mini: string;
 };
+
+// ============================================================================
+// Step Types
+// ============================================================================
 
 export type StepTrigger = {
   id: string;
@@ -51,22 +126,41 @@ export type Step = {
   data?: any;
 };
 
+// ============================================================================
+// Content Types
+// ============================================================================
+
+export type ContentConfig = {
+  name?: string;
+  enabledAutoStartRules?: boolean;
+  enabledHideRules?: boolean;
+  autoStartRules?: string;
+  hideRules?: string;
+};
+
+export type ContentVersion = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  contentId: string;
+  themeId: string;
+  config: ContentConfigObject;
+  data: any;
+  sequence: number;
+  type: string;
+  steps?: Step[];
+};
+
 export type ContentOnEnvironment = {
   environment: {
     id: string;
     name: string;
   };
-
   environmentId: string;
-
   contentId: string;
-
   published: boolean;
-
   publishedAt: Date;
-
   publishedVersionId: string;
-
   publishedVersion: ContentVersion;
 };
 
@@ -95,128 +189,9 @@ export type Content = {
   contentOnEnvironments?: ContentOnEnvironment[];
 };
 
-export enum ContentPriority {
-  HIGHEST = 'highest',
-  HIGH = 'high',
-  MEDIUM = 'medium',
-  LOW = 'low',
-  LOWEST = 'lowest',
-}
-
-export enum BuilderType {
-  EXTENSION = 'extension',
-  WEB = 'web',
-  ALL = 'all',
-}
-
-export type ContentConfig = {
-  name?: string;
-  enabledAutoStartRules?: boolean;
-  enabledHideRules?: boolean;
-  autoStartRules?: string;
-  hideRules?: string;
-};
-
-export type RulesCondition = {
-  id: string;
-  type: string;
-  data: any;
-  operators?: 'and' | 'or';
-  actived?: boolean;
-  conditions?: RulesCondition[];
-};
-
-export enum Frequency {
-  ONCE = 'once',
-  MULTIPLE = 'multiple',
-  UNLIMITED = 'unlimited',
-}
-export enum FrequencyUnits {
-  DAYES = 'days',
-  HOURS = 'hours',
-  SECONDS = 'seconds',
-  MINUTES = 'minutes',
-}
-export enum StepContentType {
-  TOOLTIP = 'tooltip',
-  MODAL = 'modal',
-  HIDDEN = 'hidden',
-}
-export type RulesFrequencyValueEvery = {
-  times?: number;
-  duration: number;
-  unit: FrequencyUnits;
-};
-
-export type RulesFrequencyValueAtLeast = {
-  duration: number;
-  unit: FrequencyUnits;
-};
-
-export type RulesFrequencyValue = {
-  frequency: Frequency;
-  every: RulesFrequencyValueEvery;
-  atLeast?: RulesFrequencyValueAtLeast;
-};
-
-export type autoStartRulesSetting = {
-  frequency?: RulesFrequencyValue;
-  startIfNotComplete?: boolean;
-  priority?: ContentPriority;
-  wait?: number;
-};
-
-export type ContentConfigObject = {
-  name?: string;
-  enabledAutoStartRules: boolean;
-  enabledHideRules: boolean;
-  autoStartRules: RulesCondition[];
-  hideRules: RulesCondition[];
-  autoStartRulesSetting: autoStartRulesSetting;
-  hideRulesSetting: any;
-};
-
-export type ContentVersion = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  contentId: string;
-  themeId: string;
-  config: ContentConfigObject;
-  data: any;
-  sequence: number;
-  type: string;
-  steps?: Step[];
-};
-
-export enum ContentTypeName {
-  CHECKLISTS = 'checklists',
-  FLOWS = 'flows',
-  LAUNCHERS = 'launchers',
-  // RESOURCE_CENTERS = "resource-centers",
-  BANNERS = 'banners',
-  NPS = 'nps',
-  SURVEYS = 'surveys',
-  TRACKERS = 'trackers',
-  EVENTS = 'events',
-}
-
-export enum ContentDataType {
-  CHECKLIST = 'checklist',
-  FLOW = 'flow',
-  LAUNCHER = 'launcher',
-  BANNER = 'banner',
-  NPS = 'nps',
-  SURVEY = 'survey',
-  TRACKER = 'tracker',
-  EVENT = 'event',
-}
-
-export enum LauncherDataType {
-  BEACON = 'beacon',
-  ICON = 'icon',
-  HIDDEN = 'hidden',
-}
+// ============================================================================
+// Element & Placement Types
+// ============================================================================
 
 export type ElementSelectorPropsData = {
   type?: string;
@@ -231,81 +206,18 @@ export type ElementSelectorPropsData = {
   actions?: RulesCondition[];
 };
 
-export enum ContentActionsItemType {
-  STEP_GOTO = 'step-goto',
-  FLOW_DISMIS = 'flow-dismis',
-  LAUNCHER_DISMIS = 'launcher-dismis',
-  CHECKLIST_DISMIS = 'checklist-dismis',
-  FLOW_START = 'flow-start',
-  PAGE_NAVIGATE = 'page-navigate',
-  JAVASCRIPT_EVALUATE = 'javascript-evaluate',
-}
-
-export type ContentOmbedInfo = {
-  html: string;
-  width: number;
-  height: number;
-};
-
-export enum ModalPosition {
-  LeftTop = 'leftTop',
-  CenterTop = 'centerTop',
-  RightTop = 'rightTop',
-  LeftBottom = 'leftBottom',
-  CenterBottom = 'centerBottom',
-  RightBottom = 'rightBottom',
-  Center = 'center',
-}
-
 export type ContentModalPlacementData = {
   position: ModalPosition;
   positionOffsetX: number;
   positionOffsetY: number;
 };
 
-export enum ContentConditionLogic {
-  SEEN = 'seen',
-  UNSEEN = 'unseen',
-  COMPLETED = 'completed',
-  UNCOMPLETED = 'uncompleted',
-  ACTIVED = 'actived',
-  UNACTIVED = 'unactived',
-}
+// ============================================================================
+// Other Types
+// ============================================================================
 
-export enum ElementConditionLogic {
-  PRESENT = 'present',
-  UNPRESENT = 'unpresent',
-  DISABLED = 'disabled',
-  UNDISABLED = 'undisabled',
-  CLICKED = 'clicked',
-  UNCLICKED = 'unclicked',
-}
-
-export enum StringConditionLogic {
-  IS = 'is',
-  NOT = 'not',
-  CONTAINS = 'contains',
-  NOT_CONTAIN = 'notContain',
-  STARTS_WITH = 'startsWith',
-  ENDS_WITH = 'endsWith',
-  MATCH = 'match',
-  UNMATCH = 'unmatch',
-  ANY = 'any',
-  EMPTY = 'empty',
-}
-
-// Enum for better type safety and IDE support
-export enum RulesType {
-  USER_ATTR = 'user-attr',
-  CURRENT_PAGE = 'current-page',
-  EVENT = 'event',
-  SEGMENT = 'segment',
-  CONTENT = 'content',
-  ELEMENT = 'element',
-  TEXT_INPUT = 'text-input',
-  TEXT_FILL = 'text-fill',
-  TIME = 'time',
-  GROUP = 'group',
-  WAIT = 'wait',
-  TASK_IS_CLICKED = 'task-is-clicked',
-}
+export type ContentOmbedInfo = {
+  html: string;
+  width: number;
+  height: number;
+};

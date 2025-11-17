@@ -1,5 +1,6 @@
 import { AttributeBizTypes, BizAttributeTypes } from './attribute';
-import { ContentVersion, RulesType, RulesCondition } from './contents';
+import { ContentVersion } from './contents';
+import { RulesType, RulesCondition } from './config';
 import { BizSession } from './statistics';
 import { PlanType } from './subscription';
 import { Theme } from './theme';

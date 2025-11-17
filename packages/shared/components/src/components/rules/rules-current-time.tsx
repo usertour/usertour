@@ -11,13 +11,18 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { cn } from '@usertour/helpers';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@usertour-packages/button';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { getCurrentTimeError } from '@usertour/helpers';
+import {
+  getCurrentTimeError,
+  isTimeConditionDataV2,
+  isTimeConditionDataLegacy,
+} from '@usertour/helpers';
+import type { TimeConditionData, TimeConditionDataV2 } from '@usertour/types';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
@@ -26,46 +31,107 @@ import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 import { useRulesContext } from './rules-context';
 
-// Types
-export interface TimeData {
-  startDate: string;
-  startDateHour: string;
-  startDateMinute: string;
-  endDate: string;
-  endDateHour: string;
-  endDateMinute: string;
-}
-
 export interface RulesCurrentTimeProps {
   index: number;
   type: string;
-  data?: TimeData;
+  data?: TimeConditionData;
 }
 
-// Custom hook for time management
-const useTimeState = (initialData?: TimeData) => {
-  const [startDate, setStartDate] = useState<Date | undefined>(
-    initialData?.startDate ? new Date(initialData.startDate) : undefined,
-  );
-  const [endDate, setEndDate] = useState<Date | undefined>(
-    initialData?.endDate ? new Date(initialData.endDate) : undefined,
-  );
-  const [startDateHour, setStartDateHour] = useState(initialData?.startDateHour ?? '00');
-  const [startDateMinute, setStartDateMinute] = useState(initialData?.startDateMinute ?? '00');
-  const [endDateHour, setEndDateHour] = useState(initialData?.endDateHour ?? '00');
-  const [endDateMinute, setEndDateMinute] = useState(initialData?.endDateMinute ?? '00');
+/**
+ * Parse initial data from either new or legacy format
+ */
+const parseInitialData = (data?: TimeConditionData) => {
+  if (!data) {
+    return {
+      startDate: undefined,
+      endDate: undefined,
+      startDateHour: '00',
+      startDateMinute: '00',
+      endDateHour: '00',
+      endDateMinute: '00',
+    };
+  }
 
-  const getTimeData = useCallback(
-    (): TimeData => ({
-      startDate: startDate ? format(startDate, 'MM/dd/yyyy') : '',
-      startDateHour,
-      startDateMinute,
-      endDate: endDate ? format(endDate, 'MM/dd/yyyy') : '',
-      endDateHour,
-      endDateMinute,
-    }),
-    [startDate, startDateHour, startDateMinute, endDate, endDateHour, endDateMinute],
-  );
+  // New format: ISO 8601
+  if (isTimeConditionDataV2(data)) {
+    const startDate = data.startTime ? parseISO(data.startTime) : undefined;
+    const endDate = data.endTime ? parseISO(data.endTime) : undefined;
+
+    return {
+      startDate,
+      endDate,
+      startDateHour: startDate ? format(startDate, 'HH') : '00',
+      startDateMinute: startDate ? format(startDate, 'mm') : '00',
+      endDateHour: endDate ? format(endDate, 'HH') : '00',
+      endDateMinute: endDate ? format(endDate, 'mm') : '00',
+    };
+  }
+
+  // Legacy format: MM/dd/yyyy
+  if (isTimeConditionDataLegacy(data)) {
+    const parseLegacyDate = (dateStr?: string): Date | undefined => {
+      if (!dateStr) {
+        return undefined;
+      }
+      const [month, day, year] = dateStr.split('/');
+      if (!month || !day || !year) {
+        return undefined;
+      }
+      return new Date(Number.parseInt(year), Number.parseInt(month) - 1, Number.parseInt(day));
+    };
+
+    return {
+      startDate: parseLegacyDate(data.startDate),
+      endDate: parseLegacyDate(data.endDate),
+      startDateHour: data.startDateHour ?? '00',
+      startDateMinute: data.startDateMinute ?? '00',
+      endDateHour: data.endDateHour ?? '00',
+      endDateMinute: data.endDateMinute ?? '00',
+    };
+  }
+
+  return {
+    startDate: undefined,
+    endDate: undefined,
+    startDateHour: '00',
+    startDateMinute: '00',
+    endDateHour: '00',
+    endDateMinute: '00',
+  };
+};
+
+// Custom hook for time management
+const useTimeState = (initialData?: TimeConditionData) => {
+  const parsed = parseInitialData(initialData);
+
+  const [startDate, setStartDate] = useState<Date | undefined>(parsed.startDate);
+  const [endDate, setEndDate] = useState<Date | undefined>(parsed.endDate);
+  const [startDateHour, setStartDateHour] = useState(parsed.startDateHour);
+  const [startDateMinute, setStartDateMinute] = useState(parsed.startDateMinute);
+  const [endDateHour, setEndDateHour] = useState(parsed.endDateHour);
+  const [endDateMinute, setEndDateMinute] = useState(parsed.endDateMinute);
+
+  const getTimeData = useCallback((): TimeConditionDataV2 => {
+    if (!startDate) {
+      return {};
+    }
+
+    // Build complete datetime objects
+    const startDateTime = new Date(startDate);
+    startDateTime.setHours(Number.parseInt(startDateHour), Number.parseInt(startDateMinute), 0, 0);
+
+    const result: TimeConditionDataV2 = {
+      startTime: startDateTime.toISOString(),
+    };
+
+    if (endDate) {
+      const endDateTime = new Date(endDate);
+      endDateTime.setHours(Number.parseInt(endDateHour), Number.parseInt(endDateMinute), 0, 0);
+      result.endTime = endDateTime.toISOString();
+    }
+
+    return result;
+  }, [startDate, startDateHour, startDateMinute, endDate, endDateHour, endDateMinute]);
 
   return {
     startDate,
@@ -197,9 +263,20 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
         return;
       }
 
+      // Save in new format (ISO 8601)
       updateConditionData(index, timeData);
     },
-    [getTimeData, index, updateConditionData],
+    [
+      getTimeData,
+      index,
+      updateConditionData,
+      startDate,
+      startDateHour,
+      startDateMinute,
+      endDate,
+      endDateHour,
+      endDateMinute,
+    ],
   );
 
   return (

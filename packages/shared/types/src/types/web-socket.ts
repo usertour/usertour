@@ -1,6 +1,7 @@
 import { AttributeBizTypes, BizAttributeTypes } from './attribute';
 import { ChecklistData } from './checklist';
-import { Content, ContentDataType, RulesCondition, Step } from './contents';
+import { Content, ContentDataType, Step } from './contents';
+import { RulesCondition } from './config';
 import { LauncherData } from './launcher';
 import { ClientContext, contentStartReason } from './sdk';
 import { Theme } from './theme';

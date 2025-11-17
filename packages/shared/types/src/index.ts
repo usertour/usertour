@@ -2,6 +2,7 @@ export * from './types/contents';
 export * from './types/theme';
 export * from './types/theme-settings';
 export * from './types/attribute';
+export * from './types/config';
 export * from './types/event';
 export * from './types/project';
 export * from './types/segment';

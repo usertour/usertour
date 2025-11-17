@@ -241,7 +241,7 @@ describe('evaluateRulesConditions', () => {
       operators: 'and',
       actived: false,
       data: {
-        startDate: '2024-01-01',
+        startDate: '01/01/2024', // MM/dd/yyyy format
         startDateHour: '00',
         startDateMinute: '00',
       },

@@ -1,4 +1,4 @@
-import { RulesCondition } from './contents';
+import { RulesCondition } from './config';
 import { ThemeTypesSetting } from './theme-settings';
 
 export type ThemeVariation = {
