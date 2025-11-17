@@ -297,7 +297,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
     <LauncherWidgetCore
       data={launcherData}
       handleActivate={launcher.handleActivate}
-      handleActions={launcher.handleActions}
+      handleActions={(actions) => launcher.handleActions(actions)}
       themeSettings={themeSettings}
       zIndex={zIndex}
       handleOnClick={launcher.handleOnClick}

@@ -313,12 +313,14 @@ export const TourWidget = (props: { tour: UsertourTour }) => {
     return <></>;
   }
 
-  const { handleDismiss, handleOnClick, handleActions } = tour;
+  // Use arrow functions to ensure 'this' context is preserved
+  // Direct method references may lose binding in some cases
+  const handleActions = (actions: RulesCondition[]) => tour.handleActions(actions);
 
   const commonProps: TourBaseProps = {
     ...storeData,
-    handleDismiss,
-    handleOnClick,
+    handleDismiss: tour.handleDismiss,
+    handleOnClick: tour.handleOnClick,
   };
   const stepType = storeData.currentStep.type;
   const triggerRef = storeData.triggerRef;
