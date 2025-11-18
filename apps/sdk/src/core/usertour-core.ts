@@ -568,6 +568,8 @@ export class UsertourCore extends Evented {
     this.cleanupActivatedChecklist();
     // Cleanup launchers
     this.cleanupLaunchers();
+    // Clear all unacked tasks
+    this.clearUnackedTasks();
     // Cleanup condition monitor
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
@@ -839,7 +841,8 @@ export class UsertourCore extends Evented {
 
     // Clear unacked tasks when expanding
     if (targetExpanded) {
-      this.clearUnackedTasks();
+      const sessionId = this.activatedChecklist.getSessionId();
+      this.clearUnackedTasks(sessionId);
     }
   }
 
@@ -1156,14 +1159,15 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Clears all unacked tasks for the activated checklist
+   * Clears unacked tasks
+   * @param sessionId - Optional. If provided, clears tasks for the specific session; otherwise clears all tasks
    */
-  clearUnackedTasks(): void {
-    if (!this.activatedChecklist) {
-      return;
+  clearUnackedTasks(sessionId?: string): void {
+    if (sessionId !== undefined) {
+      this.taskIsUnacked.delete(sessionId);
+    } else {
+      this.taskIsUnacked.clear();
     }
-    const sessionId = this.activatedChecklist.getSessionId();
-    this.taskIsUnacked.delete(sessionId);
   }
 
   /**
