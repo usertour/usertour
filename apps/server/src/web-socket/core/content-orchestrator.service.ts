@@ -1043,10 +1043,9 @@ export class ContentOrchestratorService {
     const previousSession = extractSessionByContentType(socketData, ContentDataType.CHECKLIST);
     const currentItems = session?.version?.checklist?.items;
     const previousItems = previousSession?.version?.checklist?.items;
-    const newCompletedItems = extractChecklistNewCompletedItems(
-      currentItems ?? [],
-      previousItems ?? [],
-    );
+    const newCompletedItems = previousSession
+      ? extractChecklistNewCompletedItems(currentItems ?? [], previousItems ?? [])
+      : [];
     const trackingParams = {
       sessionId: session.id,
       environment,

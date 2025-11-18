@@ -738,7 +738,7 @@ export class UsertourCore extends Evented {
     const usertourTour = new UsertourTour(this, new UsertourSession(session));
     usertourTour.on(SDKClientEvents.COMPONENT_CLOSED, () => {
       this.cleanupActivatedTour();
-      this.toggleChecklist();
+      this.expandChecklist();
     });
     this.activatedTour = usertourTour;
     // Sync store
@@ -750,7 +750,7 @@ export class UsertourCore extends Evented {
       usertourTour.showStepByIndex(0, false);
     }
     if (!hasActivatedTour) {
-      this.toggleChecklist(false);
+      this.collapseChecklist();
     }
     return true;
   }
@@ -764,7 +764,7 @@ export class UsertourCore extends Evented {
       return false;
     }
     this.cleanupActivatedTour();
-    this.toggleChecklist();
+    this.expandChecklist();
     return true;
   }
 
@@ -804,7 +804,7 @@ export class UsertourCore extends Evented {
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
     // Show checklist with appropriate expanded state
-    this.activatedChecklist.show(this.isChecklistExpandable());
+    this.activatedChecklist.show();
     return true;
   }
 
@@ -822,37 +822,16 @@ export class UsertourCore extends Evented {
     return true;
   }
 
-  /**
-   * Toggles the checklist expansion state
-   * @param expanded - Optional. If provided, uses this value; otherwise determines automatically
-   *                   When auto-determining, only expands if there's no active tour
-   */
-  private toggleChecklist(expanded?: boolean): void {
-    if (!this.activatedChecklist) {
-      return;
-    }
-    const sessionId = this.activatedChecklist.getSessionId();
-
-    // Determine the target expansion state
-    const targetExpanded =
-      expanded !== undefined ? expanded : this.activatedTour ? false : this.isChecklistExpandable();
-
-    // Apply the expansion state
-    this.activatedChecklist.expand(targetExpanded);
-
-    // Clear unacked tasks when expanding
-    if (targetExpanded) {
-      this.clearUnackedTasks(sessionId);
+  private expandChecklist() {
+    if (!this.activatedTour && this.activatedChecklist?.isExpanded()) {
+      this.activatedChecklist.expand(true);
     }
   }
 
-  /**
-   * Checks if the checklist is expandable based on its own state
-   * This method assumes activatedChecklist exists (checked by caller)
-   * @returns True if the checklist is expandable, false otherwise
-   */
-  private isChecklistExpandable(): boolean {
-    return Boolean(this.activatedChecklist?.isExpanded() || this.hasUnackedTasks());
+  private collapseChecklist() {
+    if (this.activatedChecklist) {
+      this.activatedChecklist.expand(false);
+    }
   }
 
   // === Launcher Management ===
@@ -1136,29 +1115,6 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Checks if there are any unacked tasks for the activated checklist
-   * @returns True if there are unacked tasks, false otherwise
-   */
-  hasUnackedTasks(): boolean {
-    if (!this.activatedChecklist) {
-      return false;
-    }
-    const sessionId = this.activatedChecklist.getSessionId();
-    // Check unacked tasks first to avoid unnecessary items retrieval
-    const unackedTasks = this.taskIsUnacked.get(sessionId);
-    if (!unackedTasks || unackedTasks.size === 0) {
-      return false;
-    }
-    // Get task IDs and check if any unacked task exists in the current items
-    const items = this.activatedChecklist.getItems();
-    if (items.length === 0) {
-      return false;
-    }
-    const taskIds = items.map((item) => item.id);
-    return taskIds.some((taskId) => unackedTasks.has(taskId));
-  }
-
-  /**
    * Clears unacked tasks
    * @param sessionId - Optional. If provided, clears tasks for the specific session; otherwise clears all tasks
    */
@@ -1168,6 +1124,15 @@ export class UsertourCore extends Evented {
     } else {
       this.taskIsUnacked.clear();
     }
+  }
+
+  /**
+   * Gets the unacked tasks for a specific session
+   * @param sessionId - The session ID to get unacked tasks for
+   * @returns Set of unacked task IDs for the session, or undefined if no unacked tasks exist
+   */
+  getUnackedTasks(sessionId: string): Set<string> | undefined {
+    return this.taskIsUnacked.get(sessionId);
   }
 
   /**

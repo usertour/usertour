@@ -427,6 +427,21 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Gets the unacked tasks for the current session
+   * @returns Set of unacked task IDs for the current session, or undefined if no unacked tasks exist
+   */
+  protected getUnackedTasks(): Set<string> | undefined {
+    return this.instance.getUnackedTasks(this.getSessionId());
+  }
+
+  /**
+   * Clears the unacked tasks for the current session
+   */
+  protected clearUnackedTasks(): void {
+    this.instance.clearUnackedTasks(this.getSessionId());
+  }
+
+  /**
    * Checks if the component has any steps
    */
   protected hasSteps(): boolean {
