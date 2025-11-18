@@ -251,7 +251,7 @@ export class WebSocketV2Service {
     const { server, socket } = context;
     const { sessionId, endReason } = endContentDto;
 
-    return await this.contentOrchestratorService.cancelContent({
+    const success = await this.contentOrchestratorService.cancelContent({
       server,
       socket,
       sessionId,
@@ -259,6 +259,9 @@ export class WebSocketV2Service {
       cancelOtherSessions: true,
       endReason,
     });
+    const contentTypes = [ContentDataType.CHECKLIST, ContentDataType.FLOW];
+    await this.toggleContents(server, socket, contentTypes);
+    return success;
   }
 
   /**
