@@ -159,11 +159,12 @@ export class SocketEmitterService {
   /**
    * Checklist task completed
    * @param socket - The socket
+   * @param sessionId - The session id to complete the task for
    * @param taskId - The task id to complete
    * @returns boolean - True if the event was sent successfully
    */
-  checklistTaskCompleted(socket: Socket, taskId: string): boolean {
-    return this.emit(socket, ServerMessageKind.CHECKLIST_TASK_COMPLETED, { taskId });
+  checklistTaskCompleted(socket: Socket, sessionId: string, taskId: string): boolean {
+    return this.emit(socket, ServerMessageKind.CHECKLIST_TASK_COMPLETED, { sessionId, taskId });
   }
 
   // ============================================================================

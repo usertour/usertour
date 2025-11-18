@@ -69,8 +69,8 @@ export class ChecklistTaskCompletedHandler implements ServerMessageHandler {
   readonly messageKind = 'ChecklistTaskCompleted';
 
   handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
-    const { taskId } = payload as { taskId: string };
-    return context.getActivatedChecklist()?.addUnackedTask(taskId) ?? false;
+    const { sessionId, taskId } = payload as { sessionId: string; taskId: string };
+    return context.addUnackedTask(sessionId, taskId);
   }
 }
 

@@ -16,7 +16,7 @@ export interface ServerMessageHandlerContext {
   removeConditions: (conditionIds: string[]) => boolean;
   startConditionWaitTimer: (condition: ConditionWaitTimer) => boolean;
   cancelConditionWaitTimer: (condition: ConditionWaitTimer) => boolean;
-  getActivatedChecklist: () => { addUnackedTask: (taskId: string) => boolean } | null;
+  addUnackedTask: (sessionId: string, taskId: string) => boolean;
 }
 
 /**

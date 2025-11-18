@@ -89,6 +89,8 @@ export class UsertourCore extends Evented {
   private waitTimerMonitor: ConditionWaitTimersMonitor | null = null;
   private urlMonitor: UsertourURLMonitor | null = null;
   private serverMessageHandlerManager: ServerMessageHandlerManager;
+  // Map of sessionId to Set of unacked task IDs
+  private taskIsUnacked = new Map<string, Set<string>>();
 
   // === Constructor ===
   constructor() {
@@ -693,7 +695,7 @@ export class UsertourCore extends Evented {
         this.startConditionWaitTimer(condition),
       cancelConditionWaitTimer: (condition: ConditionWaitTimer) =>
         this.cancelConditionWaitTimer(condition),
-      getActivatedChecklist: () => this.activatedChecklist,
+      addUnackedTask: (sessionId: string, taskId: string) => this.addUnackedTask(sessionId, taskId),
     };
   }
 
@@ -734,7 +736,7 @@ export class UsertourCore extends Evented {
     const usertourTour = new UsertourTour(this, new UsertourSession(session));
     usertourTour.on(SDKClientEvents.COMPONENT_CLOSED, () => {
       this.cleanupActivatedTour();
-      this.expandChecklist();
+      this.toggleChecklist();
     });
     this.activatedTour = usertourTour;
     // Sync store
@@ -746,7 +748,7 @@ export class UsertourCore extends Evented {
       usertourTour.showStepByIndex(0, false);
     }
     if (!hasActivatedTour) {
-      this.collapseChecklist();
+      this.toggleChecklist(false);
     }
     return true;
   }
@@ -760,7 +762,7 @@ export class UsertourCore extends Evented {
       return false;
     }
     this.cleanupActivatedTour();
-    this.expandChecklist();
+    this.toggleChecklist();
     return true;
   }
 
@@ -799,8 +801,8 @@ export class UsertourCore extends Evented {
     });
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
-    // Show checklist
-    this.activatedChecklist.show();
+    // Show checklist with appropriate expanded state
+    this.activatedChecklist.show(this.isChecklistExpandable());
     return true;
   }
 
@@ -813,27 +815,41 @@ export class UsertourCore extends Evented {
       return false;
     }
     this.cleanupActivatedChecklist();
+    // Note: We don't clear unacked tasks here because they might be needed
+    // if ChecklistTaskCompleted messages arrive after unsetChecklistSession
     return true;
   }
 
   /**
-   * Expands the checklist
+   * Toggles the checklist expansion state
+   * @param expanded - Optional. If provided, uses this value; otherwise determines automatically
+   *                   When auto-determining, only expands if there's no active tour
    */
-  private expandChecklist() {
-    if (!this.activatedTour && this.activatedChecklist) {
-      if (this.activatedChecklist.hasUnackedTasks() || this.activatedChecklist.isExpanded()) {
-        this.activatedChecklist.expand(true);
-      }
+  private toggleChecklist(expanded?: boolean): void {
+    if (!this.activatedChecklist) {
+      return;
+    }
+
+    // Determine the target expansion state
+    const targetExpanded =
+      expanded !== undefined ? expanded : this.activatedTour ? false : this.isChecklistExpandable();
+
+    // Apply the expansion state
+    this.activatedChecklist.expand(targetExpanded);
+
+    // Clear unacked tasks when expanding
+    if (targetExpanded) {
+      this.clearUnackedTasks();
     }
   }
 
   /**
-   * Hides the activated checklist
+   * Checks if the checklist is expandable based on its own state
+   * This method assumes activatedChecklist exists (checked by caller)
+   * @returns True if the checklist is expandable, false otherwise
    */
-  private collapseChecklist() {
-    if (this.activatedChecklist) {
-      this.activatedChecklist.expand(false);
-    }
+  private isChecklistExpandable(): boolean {
+    return Boolean(this.activatedChecklist?.isExpanded() || this.hasUnackedTasks());
   }
 
   // === Launcher Management ===
@@ -1095,6 +1111,59 @@ export class UsertourCore extends Evented {
     this.activatedChecklist?.destroy();
     this.activatedChecklist = null;
     this.checklistsStore.setData(undefined);
+    // Note: We don't clear unacked tasks here because they might be needed
+    // if ChecklistTaskCompleted messages arrive after unsetChecklistSession.
+    // Unacked tasks will be cleared when the checklist is expanded or when
+    // a new checklist session is set for the same sessionId.
+  }
+
+  // === Unacked Tasks Management ===
+  /**
+   * Adds a task ID to the unacked tasks set for the activated checklist session
+   * @param sessionId - The session ID to add the task to
+   * @param taskId - The task ID to add
+   * @returns True if the task was added successfully
+   */
+  addUnackedTask(sessionId: string, taskId: string): boolean {
+    if (!this.taskIsUnacked.has(sessionId)) {
+      this.taskIsUnacked.set(sessionId, new Set<string>());
+    }
+    this.taskIsUnacked.get(sessionId)?.add(taskId);
+    return true;
+  }
+
+  /**
+   * Checks if there are any unacked tasks for the activated checklist
+   * @returns True if there are unacked tasks, false otherwise
+   */
+  hasUnackedTasks(): boolean {
+    if (!this.activatedChecklist) {
+      return false;
+    }
+    const sessionId = this.activatedChecklist.getSessionId();
+    // Check unacked tasks first to avoid unnecessary items retrieval
+    const unackedTasks = this.taskIsUnacked.get(sessionId);
+    if (!unackedTasks || unackedTasks.size === 0) {
+      return false;
+    }
+    // Get task IDs and check if any unacked task exists in the current items
+    const items = this.activatedChecklist.getItems();
+    if (items.length === 0) {
+      return false;
+    }
+    const taskIds = items.map((item) => item.id);
+    return taskIds.some((taskId) => unackedTasks.has(taskId));
+  }
+
+  /**
+   * Clears all unacked tasks for the activated checklist
+   */
+  clearUnackedTasks(): void {
+    if (!this.activatedChecklist) {
+      return;
+    }
+    const sessionId = this.activatedChecklist.getSessionId();
+    this.taskIsUnacked.delete(sessionId);
   }
 
   /**

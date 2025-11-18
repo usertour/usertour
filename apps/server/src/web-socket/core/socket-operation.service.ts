@@ -313,12 +313,13 @@ export class SocketOperationService {
   /**
    * Emit checklist tasks completed events
    * @param socket - The socket
+   * @param sessionId - The session id to complete the task for
    * @param taskIds - The task IDs to emit completed events for
    * @returns string[] - The task IDs that were successfully emitted
    */
-  emitChecklistTasksCompleted(socket: Socket, taskIds: string[]): string[] {
+  emitChecklistTasksCompleted(socket: Socket, sessionId: string, taskIds: string[]): string[] {
     return taskIds.filter((taskId) =>
-      this.socketEmitterService.checklistTaskCompleted(socket, taskId),
+      this.socketEmitterService.checklistTaskCompleted(socket, sessionId, taskId),
     );
   }
 

@@ -1063,7 +1063,11 @@ export class ContentOrchestratorService {
       );
       await Promise.all(trackingPromises);
       // Emit events for all tasks
-      this.socketOperationService.emitChecklistTasksCompleted(socket, newCompletedItems);
+      this.socketOperationService.emitChecklistTasksCompleted(
+        socket,
+        session.id,
+        newCompletedItems,
+      );
     }
     const latestSession = await this.eventTrackingService.findBizSessionWithEvents(session.id);
     if (isSendChecklistCompletedEvent(currentItems, latestSession)) {
