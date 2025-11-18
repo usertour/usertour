@@ -823,7 +823,7 @@ export class UsertourCore extends Evented {
   }
 
   private expandChecklist() {
-    if (!this.activatedTour && this.activatedChecklist?.isExpanded()) {
+    if (!this.activatedTour && this.activatedChecklist?.isExpandable()) {
       this.activatedChecklist.expand(true);
     }
   }

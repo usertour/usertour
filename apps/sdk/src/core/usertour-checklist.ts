@@ -43,7 +43,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     }
     // Process items to determine their status
     this.setStoreData(storeData);
-    const expanded = this.isExpanded();
+    const expanded = this.isExpandable();
     // Expand the checklist if it is expanded
     const isExpandPending = this.session.isExpandPending();
     const reportEvent = expanded && isExpandPending;
@@ -52,79 +52,9 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Gets the expanded state of the checklist
-   * This method checks session expand pending state and storage
-   * Note: Unacked tasks check is handled by UsertourCore when calling show()
-   * @returns The expanded state of the checklist
-   */
-  isExpanded(): boolean {
-    // Check session expand pending state and storage
-    const isExpandPending = this.session.isExpandPending();
-    const isExpandedStorage = this.getExpandedStateStorage(this.getSessionId());
-    const hasUnackedTasks = this.hasUnackedTasks();
-    return Boolean(isExpandPending || isExpandedStorage || hasUnackedTasks);
-  }
-
-  /**
-   * Checks if the checklist has any unacked tasks
-   * This method checks the unacked tasks for the current session
-   * @returns True if the checklist has any unacked tasks, false otherwise
-   */
-  private hasUnackedTasks(): boolean {
-    // Check unacked tasks first to avoid unnecessary items retrieval
-    const unackedTasks = this.getUnackedTasks();
-    if (!unackedTasks || unackedTasks.size === 0) {
-      return false;
-    }
-    // Get task IDs and check if any unacked task exists in the current items
-    const items = this.getItems();
-    if (items.length === 0) {
-      return false;
-    }
-    const taskIds = items.map((item) => item.id);
-    return taskIds.some((taskId) => unackedTasks.has(taskId));
-  }
-
-  /**
-   * Gets the items of the checklist
-   * @returns The items of the checklist
-   */
-  private getItems(): ChecklistItemType[] {
-    const checklistData = this.getChecklistData();
-    if (!checklistData) {
-      return [];
-    }
-    return checklistData.items;
-  }
-
-  /**
-   * Updates the items animation state
-   * This method updates the items animation state based on the unacked tasks
-   * @returns The updated checklist data or null if the checklist data is not found
-   */
-  private updateItems(): void {
-    const checklistData = this.getChecklistData();
-    if (!checklistData) {
-      return;
-    }
-    const items = checklistData.items;
-    const unackedTasks = this.getUnackedTasks();
-    const newChecklistData = {
-      ...checklistData,
-      items: items.map((item) => ({
-        ...item,
-        isShowAnimation: unackedTasks?.has(item.id) ?? false,
-      })),
-    };
-
-    if (!isEqual(checklistData.items, newChecklistData.items)) {
-      this.updateStore({ checklistData: newChecklistData });
-    }
-  }
-
-  /**
    * Expands or collapses the checklist
    * @param expanded - Whether the checklist should be expanded or collapsed
+   * @param reportEvent - Whether to report the expanded change event
    * @returns Promise that resolves when the state update is complete
    */
   async expand(expanded: boolean, reportEvent = true): Promise<void> {
@@ -153,6 +83,81 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     }
   }
 
+  /**
+   * Checks if the checklist is expandable
+   * @returns True if the checklist is expandable, false otherwise
+   */
+  isExpandable(): boolean {
+    // Check session expand pending state first (lightweight check)
+    if (this.session.isExpandPending()) {
+      return true;
+    }
+    // Check storage state (lightweight check)
+    if (this.getExpandedStateStorage(this.getSessionId())) {
+      return true;
+    }
+    // Check unacked tasks last (more expensive operation)
+    return this.hasUnackedTasks();
+  }
+
+  // === State Management ===
+  /**
+   * Checks if the checklist has any unacked tasks
+   * This method checks the unacked tasks for the current session
+   * @returns True if the checklist has any unacked tasks, false otherwise
+   */
+  private hasUnackedTasks(): boolean {
+    // Check unacked tasks first to avoid unnecessary items retrieval
+    const unackedTasks = this.getUnackedTasks();
+    if (!unackedTasks || unackedTasks.size === 0) {
+      return false;
+    }
+    // Get items and check if any unacked task exists in the current items
+    // Optimize by checking directly without creating intermediate array
+    const items = this.getItems();
+    if (items.length === 0) {
+      return false;
+    }
+    return items.some((item) => unackedTasks.has(item.id));
+  }
+
+  /**
+   * Gets the items of the checklist
+   * @returns The items of the checklist
+   */
+  private getItems(): ChecklistItemType[] {
+    const checklistData = this.getChecklistData();
+    if (!checklistData) {
+      return [];
+    }
+    return checklistData.items;
+  }
+
+  /**
+   * Updates the items animation state
+   * This method updates the items animation state based on the unacked tasks
+   */
+  private updateItems(): void {
+    const checklistData = this.getChecklistData();
+    if (!checklistData) {
+      return;
+    }
+    const items = checklistData.items;
+    const unackedTasks = this.getUnackedTasks();
+    const newChecklistData = {
+      ...checklistData,
+      items: items.map((item) => ({
+        ...item,
+        isShowAnimation: unackedTasks?.has(item.id) ?? false,
+      })),
+    };
+
+    if (!isEqual(checklistData.items, newChecklistData.items)) {
+      this.updateStore({ checklistData: newChecklistData });
+    }
+  }
+
+  // === Storage Management ===
   /**
    * Sets the expanded state in storage
    * @param sessionId - The session ID
