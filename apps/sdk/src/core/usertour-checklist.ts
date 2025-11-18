@@ -191,6 +191,13 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     await this.close(contentEndReason.USER_CLOSED);
   }
 
+  /**
+   * Handles the auto dismiss event of the checklist
+   */
+  async handleAutoDismiss() {
+    await this.close(contentEndReason.AUTO_DISMISSED);
+  }
+
   // === Event Reporting ===
   /**
    * Reports the open/close event of the checklist.

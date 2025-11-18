@@ -36,6 +36,7 @@ type ChecklistWidgetCoreProps = {
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
   handleDismiss: () => Promise<void>;
   handleExpandedChange: (expanded: boolean) => Promise<void>;
+  handleAutoDismiss: () => Promise<void>;
   removeBranding: boolean;
   zIndex: number;
   expanded: boolean;
@@ -84,9 +85,10 @@ const ChecklistContent = ({
   userAttributes,
   handleOnClick,
   handleItemClick,
+  handleAutoDismiss,
 }: Pick<
   ChecklistWidgetCoreProps,
-  'data' | 'userAttributes' | 'handleOnClick' | 'handleItemClick'
+  'data' | 'userAttributes' | 'handleOnClick' | 'handleItemClick' | 'handleAutoDismiss'
 >) => (
   <>
     <ContentEditorSerialize
@@ -96,7 +98,7 @@ const ChecklistContent = ({
     />
     <ChecklistProgress />
     <ChecklistItems onClick={handleItemClick} disabledUpdate={true} />
-    <ChecklistDismiss />
+    <ChecklistDismiss onAutoDismiss={handleAutoDismiss} />
   </>
 );
 
@@ -112,6 +114,7 @@ const ChecklistWidgetCore = ({
   removeBranding,
   zIndex,
   expanded,
+  handleAutoDismiss,
 }: ChecklistWidgetCoreProps) => (
   <ChecklistRoot
     data={data}
@@ -129,6 +132,7 @@ const ChecklistWidgetCore = ({
           userAttributes={userAttributes}
           handleOnClick={handleOnClick}
           handleItemClick={handleItemClick}
+          handleAutoDismiss={handleAutoDismiss}
         />
       </ChecklistPopperContentBody>
       {!removeBranding && <PopperMadeWith />}
@@ -171,6 +175,7 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
       removeBranding={removeBranding}
       zIndex={zIndex}
       expanded={expanded}
+      handleAutoDismiss={checklist.handleAutoDismiss}
     />
   );
 };

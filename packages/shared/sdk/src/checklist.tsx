@@ -629,39 +629,76 @@ const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<
 
 ChecklistDismissConfirm.displayName = 'ChecklistDismissConfirm';
 
-const ChecklistDismiss = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  (props, ref) => {
-    const { data, onDismiss, setShowDismissConfirm, isAllCompleted } = useChecklistRootContext();
+interface ChecklistDismissProps extends React.HTMLAttributes<HTMLDivElement> {
+  onAutoDismiss?: () => void;
+}
 
-    // Return placeholder if dismiss is prevented
-    if (data.preventDismissChecklist) {
-      return <div className="h-4" ref={ref} {...props} />;
+const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((props, ref) => {
+  const { onAutoDismiss, ...restProps } = props;
+  const { data, onDismiss, setShowDismissConfirm, isAllCompleted } = useChecklistRootContext();
+  const [progressWidth, setProgressWidth] = useState(0);
+
+  // Handle progress bar animation when autoDismissChecklist is enabled and all items are completed
+  useEffect(() => {
+    if (data.autoDismissChecklist && isAllCompleted) {
+      // Reset to 0 and then animate to 100%
+      setProgressWidth(0);
+      // Use requestAnimationFrame to ensure the reset is applied before animation starts
+      requestAnimationFrame(() => {
+        setProgressWidth(100);
+      });
+      // Call onAutoDismiss after animation completes (5000ms)
+      const timer = setTimeout(() => {
+        onAutoDismiss?.();
+      }, 5000);
+      return () => clearTimeout(timer);
     }
+    setProgressWidth(0);
+  }, [data.autoDismissChecklist, isAllCompleted, onAutoDismiss]);
 
-    const textClassName = cn(
-      'text-right cursor-pointer',
-      isAllCompleted
-        ? 'text-sdk-link hover:text-sdk-link/80 font-sdk-bold'
-        : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
-    );
+  const textClassName = cn(
+    'text-right cursor-pointer',
+    isAllCompleted
+      ? 'text-sdk-link hover:text-sdk-link/80 font-sdk-bold'
+      : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
+  );
 
-    const handleDismiss = useCallback(() => {
-      if (isAllCompleted) {
-        onDismiss?.();
-      } else {
-        setShowDismissConfirm(true);
-      }
-    }, [isAllCompleted, onDismiss, setShowDismissConfirm]);
+  const handleDismiss = useCallback(() => {
+    if (isAllCompleted) {
+      onDismiss?.();
+    } else {
+      setShowDismissConfirm(true);
+    }
+  }, [isAllCompleted, onDismiss, setShowDismissConfirm]);
 
-    return (
-      <div className="flex justify-end" ref={ref} {...props}>
-        <span className={textClassName} onClick={handleDismiss}>
-          Dismiss checklist
-        </span>
-      </div>
-    );
-  },
-);
+  return (
+    <div className="flex flex-col" ref={ref} {...restProps}>
+      {data.preventDismissChecklist && !(data.autoDismissChecklist && isAllCompleted) && (
+        <div className="h-4" />
+      )}
+      {!data.preventDismissChecklist && (
+        <div className="w-full flex justify-end">
+          <span className={textClassName} onClick={handleDismiss}>
+            Dismiss checklist
+          </span>
+        </div>
+      )}
+      {data.autoDismissChecklist && isAllCompleted && (
+        <div className="w-full flex justify-end">
+          <div className="w-32 max-w-32 h-[2px] bg-sdk-foreground/10 rounded-full overflow-hidden">
+            <div
+              className="bg-sdk-progress rounded-full h-full"
+              style={{
+                width: `${progressWidth}%`,
+                transition: 'width 5000ms linear',
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
 
 ChecklistDismiss.displayName = 'ChecklistDismiss';
 
