@@ -831,6 +831,7 @@ export class UsertourCore extends Evented {
     if (!this.activatedChecklist) {
       return;
     }
+    const sessionId = this.activatedChecklist.getSessionId();
 
     // Determine the target expansion state
     const targetExpanded =
@@ -841,7 +842,6 @@ export class UsertourCore extends Evented {
 
     // Clear unacked tasks when expanding
     if (targetExpanded) {
-      const sessionId = this.activatedChecklist.getSessionId();
       this.clearUnackedTasks(sessionId);
     }
   }
