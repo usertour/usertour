@@ -89,12 +89,37 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * Gets the items of the checklist
    * @returns The items of the checklist
    */
-  getItems(): ChecklistItemType[] {
+  private getItems(): ChecklistItemType[] {
     const checklistData = this.getChecklistData();
     if (!checklistData) {
       return [];
     }
     return checklistData.items;
+  }
+
+  /**
+   * Updates the items animation state
+   * This method updates the items animation state based on the unacked tasks
+   * @returns The updated checklist data or null if the checklist data is not found
+   */
+  private updateItems(): void {
+    const checklistData = this.getChecklistData();
+    if (!checklistData) {
+      return;
+    }
+    const items = checklistData.items;
+    const unackedTasks = this.getUnackedTasks();
+    const newChecklistData = {
+      ...checklistData,
+      items: items.map((item) => ({
+        ...item,
+        isShowAnimation: unackedTasks?.has(item.id) ?? false,
+      })),
+    };
+
+    if (!isEqual(checklistData.items, newChecklistData.items)) {
+      this.updateStore({ checklistData: newChecklistData });
+    }
   }
 
   /**
@@ -150,31 +175,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   private getExpandedStateStorage(sessionId: string): boolean {
     const key = `${StorageKeys.CHECKLIST_EXPANDED}-${sessionId}`;
     return (storage.getSessionStorage(key) as boolean | undefined) ?? false;
-  }
-
-  /**
-   * Updates the items animation state
-   * This method updates the items animation state based on the unacked tasks
-   * @returns The updated checklist data or null if the checklist data is not found
-   */
-  private updateItems(): void {
-    const checklistData = this.getChecklistData();
-    if (!checklistData) {
-      return;
-    }
-    const items = checklistData.items;
-    const unackedTasks = this.getUnackedTasks();
-    const newChecklistData = {
-      ...checklistData,
-      items: items.map((item) => ({
-        ...item,
-        isShowAnimation: unackedTasks?.has(item.id) ?? false,
-      })),
-    };
-
-    if (!isEqual(checklistData.items, newChecklistData.items)) {
-      this.updateStore({ checklistData: newChecklistData });
-    }
   }
 
   // === Store Management ===
