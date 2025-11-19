@@ -195,7 +195,7 @@ export class ContentOrchestratorService {
       contentType,
       session.versionId,
     );
-    if (!customContentVersion || customContentVersion.session.latestSession.id !== sessionId) {
+    if (!customContentVersion || customContentVersion.session.latestSession?.id !== sessionId) {
       return null;
     }
     return await this.initializeSession(customContentVersion, socketData, undefined);
@@ -1306,6 +1306,9 @@ export class ContentOrchestratorService {
   ): Promise<void> {
     const { environment, clientContext, clientConditions } = socketData;
     const latestSession = evaluatedContentVersion.session.latestSession;
+    if (!latestSession?.id) {
+      return;
+    }
     const sessionId = latestSession.id;
     const trackingParams = {
       environment,
@@ -1330,7 +1333,7 @@ export class ContentOrchestratorService {
       );
 
       await Promise.all(trackingPromises);
-      if (currentSession.id === sessionId) {
+      if (currentSession?.id === sessionId) {
         // Emit events for all tasks
         this.socketOperationService.emitChecklistTasksCompleted(
           socket,
