@@ -78,7 +78,6 @@ interface UsertourWithInternal extends UserTourTypes.Usertour {
 function createUsertourAPI(app: UsertourCore): UsertourWithInternal {
   return {
     _stubbed: false,
-    _app: app,
 
     load: async () => {
       // Intentionally empty - reserved for future use
