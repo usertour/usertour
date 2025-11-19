@@ -67,7 +67,6 @@ function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueIte
  * These methods are implemented but not yet in the public type definition
  */
 interface UsertourWithInternal extends UserTourTypes.Usertour {
-  _app?: UsertourCore;
   setTargetMissingSeconds?: (seconds: number) => void;
   setCustomNavigate?: (customNavigate: ((url: string) => void) | null) => void;
 }
