@@ -26,6 +26,7 @@ import {
   filterAvailableLauncherContentVersions,
   findCurrentStepCvid,
   isSendChecklistCompletedEvent,
+  evaluateChecklistItemsWithContext,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -169,6 +170,8 @@ export class ContentOrchestratorService {
     if (cancelOtherSessions) {
       await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
     }
+    // Handle checklist completed events
+    await this.handleChecklistCompletedEvents(socket);
     return true;
   }
 
@@ -719,80 +722,44 @@ export class ContentOrchestratorService {
     return await this.handleSessionActivation(context, result);
   }
 
-  /**
-   * Handles session activation and setup
-   */
-  private async handleSessionActivation(
-    context: ContentStartContext,
-    result: ContentStartResult,
-  ): Promise<boolean> {
-    const { server, socketData, socket } = context;
-    const { environment, externalUserId } = socketData;
-    const { session, postTracks, forceGoToStep = false, isActivateOtherSockets = true } = result;
-
-    if (!session) {
-      this.logger.warn(
-        `Handle session activation, session: null, result: ${JSON.stringify(result)}`,
-      );
-      return false;
-    }
-
-    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
-    const activateSessionParams = {
-      server,
-      socket,
-      session,
-      socketData,
-      postTracks,
-      forceGoToStep,
-    };
-
-    this.logger.debug(
-      `Handle session activation, session: ${session.id}, reason: ${result.reason}`,
-    );
-
-    if (!(await this.activateSocketSession(activateSessionParams))) {
-      return false;
-    }
-    if (isActivateOtherSockets) {
-      await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
-    }
-    // Check hide conditions and cancel content if necessary
-    return await this.checkHideConditions(context, session);
-  }
+  // ============================================================================
+  // Content Validation Methods
+  // ============================================================================
 
   /**
-   * Checks hide conditions and cancels content if necessary
+   * Determines if content should be hidden based on hide rules evaluation
+   * @param context - The content start context containing socket and content type
+   * @param versionId - The version ID of the content to check
+   * @returns True if content should be hidden, false otherwise
+   * @remarks
+   * Content is considered hidden if:
+   * - Socket data is unavailable (defensive: hide when state is unknown)
+   * - Content version cannot be found or evaluated
+   * - Hide rules are activated for the content version
    */
-  private async checkHideConditions(
-    context: ContentStartContext,
-    session: CustomContentSession,
-  ): Promise<boolean> {
-    const { socket, server, contentType } = context;
+  private async isContentHidden(context: ContentStartContext, versionId: string): Promise<boolean> {
+    const { socket, contentType } = context;
+
+    // Retrieve socket data for evaluation
     const socketData = await this.getSocketData(socket);
     if (!socketData) {
+      // Defensive approach: hide content when socket state is unavailable
       return true;
     }
-    const sessionId = session.id;
-    const sessionVersion = await this.findEvaluatedContentVersion(
+
+    // Find and evaluate the content version
+    const contentVersion = await this.findEvaluatedContentVersion(
       socketData,
       contentType,
-      session.version.id,
+      versionId,
     );
 
-    if (!sessionVersion || isActivedHideRules(sessionVersion)) {
-      this.logger.debug(`Hide rules are activated, canceling session, sessionId: ${sessionId}`);
-      // Cleanup socket session
-      return await this.cancelSocketSession({
-        server,
-        socket,
-        socketData,
-        sessionId,
-        contentType,
-      });
+    // Hide if version not found or hide rules are activated
+    if (!contentVersion) {
+      return true;
     }
 
-    return true;
+    return isActivedHideRules(contentVersion);
   }
 
   // ============================================================================
@@ -975,6 +942,64 @@ export class ContentOrchestratorService {
     return evaluatedContentVersion;
   }
 
+  /**
+   * Handles session activation and setup
+   */
+  private async handleSessionActivation(
+    context: ContentStartContext,
+    result: ContentStartResult,
+  ): Promise<boolean> {
+    const { server, socketData, socket, contentType } = context;
+    const { environment, externalUserId } = socketData;
+    const { session, postTracks, forceGoToStep = false, isActivateOtherSockets = true } = result;
+
+    if (!session) {
+      this.logger.warn(
+        `Handle session activation, session: null, result: ${JSON.stringify(result)}`,
+      );
+      return false;
+    }
+
+    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
+    const sessionId = session.id;
+    const activateSessionParams = {
+      server,
+      socket,
+      session,
+      socketData,
+      postTracks,
+      forceGoToStep,
+    };
+
+    this.logger.debug(
+      `Handle session activation, session: ${session.id}, reason: ${result.reason}`,
+    );
+    const isHidden = await this.isContentHidden(context, session.version.id);
+
+    if (isHidden) {
+      this.logger.debug(`Hide rules are activated, canceling session, sessionId: ${sessionId}`);
+      const cancelSessionParams: CancelSessionParams = {
+        server,
+        socket,
+        socketData,
+        sessionId,
+        contentType,
+      };
+      // Cleanup socket session
+      return await this.cancelSocketSession(cancelSessionParams);
+    }
+
+    // Handle checklist completed events
+    await this.handleChecklistCompletedEvents(socket);
+
+    if (!(await this.activateSocketSession(activateSessionParams))) {
+      return false;
+    }
+    if (isActivateOtherSockets) {
+      await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
+    }
+  }
+
   // ============================================================================
   // Session Activation Methods
   // ============================================================================
@@ -1035,49 +1060,11 @@ export class ContentOrchestratorService {
    */
   private async activateChecklistSession(params: ActivateSessionParams) {
     const { socket, session, postTracks, socketData } = params;
-    const { environment, clientContext } = socketData;
     const options = {
       trackConditions: postTracks,
       cleanupContentTypes: [ContentDataType.CHECKLIST],
     };
-    const previousSession = extractSessionByContentType(socketData, ContentDataType.CHECKLIST);
-    const currentItems = session?.version?.checklist?.items;
-    const previousItems = previousSession?.version?.checklist?.items;
-    const newCompletedItems = previousSession
-      ? extractChecklistNewCompletedItems(currentItems ?? [], previousItems ?? [])
-      : [];
-    const trackingParams = {
-      sessionId: session.id,
-      environment,
-      clientContext,
-    };
 
-    if (newCompletedItems.length > 0) {
-      // Track events for each completed task
-      const trackingPromises = newCompletedItems.map((taskId) =>
-        this.eventTrackingService.trackEventByType(BizEvents.CHECKLIST_TASK_COMPLETED, {
-          ...trackingParams,
-          taskId,
-        }),
-      );
-      await Promise.all(trackingPromises);
-      // Emit events for all tasks
-      this.socketOperationService.emitChecklistTasksCompleted(
-        socket,
-        session.id,
-        newCompletedItems,
-      );
-    }
-    const latestSession = await this.eventTrackingService.findBizSessionWithEvents(session.id);
-    if (isSendChecklistCompletedEvent(currentItems, latestSession)) {
-      const sendChecklistCompletedEvent = await this.eventTrackingService.trackEventByType(
-        BizEvents.CHECKLIST_COMPLETED,
-        trackingParams,
-      );
-      if (!sendChecklistCompletedEvent) {
-        return false;
-      }
-    }
     const checklistData = session.version.checklist;
     if (checklistData) {
       const items = checklistData.items.filter((item) => item.isVisible);
@@ -1161,7 +1148,7 @@ export class ContentOrchestratorService {
   }
 
   // ============================================================================
-  // Content Cancellation Methods
+  // Session Cancellation Methods
   // ============================================================================
 
   /**
@@ -1298,6 +1285,89 @@ export class ContentOrchestratorService {
     } catch (error) {
       this.logger.error(`Failed to stop other sockets in room: ${error.message}`);
       return false;
+    }
+  }
+
+  // ============================================================================
+  // Checklist Event Handlers
+  // ============================================================================
+
+  /**
+   * Handles checklist completed event
+   * @param socket - The socket
+   * @param socketData - The socket data
+   * @param evaluatedContentVersion - The evaluated content version
+   * @returns Promise<void> - The promise that resolves when the event is handled
+   */
+  private async handleChecklistCompletedEvent(
+    socket: Socket,
+    socketData: SocketData,
+    evaluatedContentVersion: CustomContentVersion,
+  ): Promise<void> {
+    const { environment, clientContext, clientConditions } = socketData;
+    const latestSession = evaluatedContentVersion.session.latestSession;
+    const sessionId = latestSession.id;
+    const trackingParams = {
+      environment,
+      sessionId,
+      clientContext,
+    };
+    const currentSession = extractSessionByContentType(socketData, ContentDataType.CHECKLIST);
+    const items = await evaluateChecklistItemsWithContext(
+      evaluatedContentVersion,
+      clientContext,
+      clientConditions,
+    );
+
+    const newCompletedItems = extractChecklistNewCompletedItems(items, latestSession?.bizEvent);
+    if (newCompletedItems.length > 0) {
+      // Track events for each completed task
+      const trackingPromises = newCompletedItems.map((item) =>
+        this.eventTrackingService.trackEventByType(BizEvents.CHECKLIST_TASK_COMPLETED, {
+          ...trackingParams,
+          taskId: item.id,
+        }),
+      );
+
+      await Promise.all(trackingPromises);
+      if (currentSession.id === sessionId) {
+        // Emit events for all tasks
+        this.socketOperationService.emitChecklistTasksCompleted(
+          socket,
+          sessionId,
+          newCompletedItems.map((item) => item.id),
+        );
+      }
+    }
+    if (isSendChecklistCompletedEvent(items, latestSession)) {
+      await this.eventTrackingService.trackEventByType(
+        BizEvents.CHECKLIST_COMPLETED,
+        trackingParams,
+      );
+    }
+  }
+
+  /**
+   * Handles checklist completed events
+   * @param socket - The socket
+   * @returns Promise<void> - The promise that resolves when the events are handled
+   */
+  private async handleChecklistCompletedEvents(socket: Socket): Promise<void> {
+    const newSocketData = await this.getSocketData(socket);
+    if (!newSocketData) {
+      return;
+    }
+    const evaluatedContentVersions = await this.findEvaluatedContentVersions(
+      newSocketData,
+      ContentDataType.CHECKLIST,
+    );
+
+    for (const evaluatedContentVersion of evaluatedContentVersions) {
+      const latestSession = evaluatedContentVersion.session.latestSession;
+      if (!sessionIsAvailable(latestSession, ContentDataType.CHECKLIST)) {
+        continue;
+      }
+      await this.handleChecklistCompletedEvent(socket, newSocketData, evaluatedContentVersion);
     }
   }
 

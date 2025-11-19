@@ -791,6 +791,9 @@ export class UsertourCore extends Evented {
       if (this.activatedChecklist.getSessionId() === session.id) {
         this.activatedChecklist.updateSession(session);
         this.activatedChecklist.refreshStoreData();
+        if (this.activatedChecklist.isExpanded()) {
+          this.activatedChecklist.updateItemsAnimation();
+        }
         return true;
       }
       this.cleanupActivatedChecklist();
@@ -822,12 +825,18 @@ export class UsertourCore extends Evented {
     return true;
   }
 
+  /**
+   * Expands the checklist
+   */
   private expandChecklist() {
     if (!this.activatedTour && this.activatedChecklist?.isExpandable()) {
       this.activatedChecklist.expand(true);
     }
   }
 
+  /**
+   * Collapses the checklist
+   */
   private collapseChecklist() {
     if (this.activatedChecklist) {
       this.activatedChecklist.expand(false);

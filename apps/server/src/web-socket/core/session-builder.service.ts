@@ -5,7 +5,6 @@ import {
   ChecklistData,
   ContentDataType,
   LauncherData,
-  RulesType,
   ThemeTypesSetting,
   ThemeVariation,
 } from '@usertour/types';
@@ -14,17 +13,11 @@ import {
   extractStepContentAttrCodes,
   extractThemeVariationsAttributeIds,
   getAttributeValue,
-  evaluateChecklistItems,
+  evaluateChecklistItemsWithContext,
   extractLauncherAttrCodes,
   isExpandPending,
 } from '@/utils/content-utils';
-import {
-  CustomContentSession,
-  SessionTheme,
-  SessionStep,
-  SessionAttribute,
-  ClientCondition,
-} from '@usertour/types';
+import { CustomContentSession, SessionTheme, SessionStep, SessionAttribute } from '@usertour/types';
 import {
   CustomContentVersion,
   SocketData,
@@ -328,25 +321,12 @@ export class SessionBuilderService {
   ): Promise<CustomContentSession> {
     const { clientContext, clientConditions } = socketData;
 
-    // Extract activated and deactivated condition IDs
-    const activatedIds = clientConditions
-      ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === true)
-      .map((clientCondition: ClientCondition) => clientCondition.conditionId);
-
-    const deactivatedIds = clientConditions
-      ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === false)
-      .map((clientCondition: ClientCondition) => clientCondition.conditionId);
-
-    // Evaluate content versions with proper conditions
-    const items = await evaluateChecklistItems(customContentVersion, {
-      typeControl: {
-        [RulesType.CURRENT_PAGE]: true,
-        [RulesType.TIME]: true,
-      },
+    // Evaluate checklist items with client conditions
+    const items = await evaluateChecklistItemsWithContext(
+      customContentVersion,
       clientContext,
-      activatedIds,
-      deactivatedIds,
-    });
+      clientConditions,
+    );
     const checklistData = customContentVersion.data as unknown as ChecklistData;
 
     session.expandPending = isExpandPending(customContentVersion);
