@@ -1315,7 +1315,6 @@ export class ContentOrchestratorService {
       sessionId,
       clientContext,
     };
-    const currentSession = extractSessionByContentType(socketData, ContentDataType.CHECKLIST);
     const items = await evaluateChecklistItemsWithContext(
       evaluatedContentVersion,
       clientContext,
@@ -1333,14 +1332,12 @@ export class ContentOrchestratorService {
       );
 
       await Promise.all(trackingPromises);
-      if (currentSession?.id === sessionId) {
-        // Emit events for all tasks
-        this.socketOperationService.emitChecklistTasksCompleted(
-          socket,
-          sessionId,
-          newCompletedItems.map((item) => item.id),
-        );
-      }
+      // Emit events for all tasks
+      this.socketOperationService.emitChecklistTasksCompleted(
+        socket,
+        sessionId,
+        newCompletedItems.map((item) => item.id),
+      );
     }
     if (isSendChecklistCompletedEvent(items, latestSession)) {
       await this.eventTrackingService.trackEventByType(

@@ -370,6 +370,35 @@ export const filterAutoStartContent = (contents: SDKContent[], type: string) => 
 };
 
 /**
+ * Check if conditions array contains a specific condition type
+ * Recursively checks nested conditions as well
+ * @param conditions - Array of rules conditions to check
+ * @param type - The condition type to check for
+ * @returns True if the specified condition type exists, false otherwise
+ */
+export const hasConditionType = (conditions: RulesCondition[], type: RulesType): boolean => {
+  if (!conditions || conditions.length === 0) {
+    return false;
+  }
+
+  for (const condition of conditions) {
+    // Check if current condition matches the specified type
+    if (condition.type === type) {
+      return true;
+    }
+
+    // Recursively check nested conditions
+    if (condition.conditions && condition.conditions.length > 0) {
+      if (hasConditionType(condition.conditions, type)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+/**
  * Check if two content arrays are the same
  * @param source - The source content array
  * @param dest - The destination content array

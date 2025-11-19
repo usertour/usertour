@@ -1,6 +1,7 @@
 import {
   ChecklistItemType,
   ContentEditorClickableElement,
+  RulesType,
   ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
@@ -10,6 +11,7 @@ import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
 import { isEqual, storage } from '@usertour/helpers';
+import { hasConditionType } from './usertour-helper';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   // === Abstract Methods Implementation ===
@@ -44,11 +46,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     // Process items to determine their status
     this.setStoreData(storeData);
     const expanded = this.isExpandable();
-    // Expand the checklist if it is expanded
-    const isExpandPending = this.session.isExpandPending();
-    const reportEvent = expanded && isExpandPending;
-    //If expanded, report the expanded change event, otherwise don't report
-    await this.expand(expanded, reportEvent);
+    await this.expand(expanded, expanded);
   }
 
   /**
@@ -237,6 +235,12 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   async handleItemClick(item: ChecklistItemType) {
     // Report the task click event
     await this.reportTaskClickEvent(item);
+    if (
+      item.clickedActions.length > 0 &&
+      !hasConditionType(item.completeConditions, RulesType.TASK_IS_CLICKED)
+    ) {
+      await this.expand(false);
+    }
     // Handle actions after state update is complete
     await this.handleActions(item.clickedActions);
   }
