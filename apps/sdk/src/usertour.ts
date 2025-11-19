@@ -63,18 +63,9 @@ function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueIte
 }
 
 /**
- * Extended Usertour interface with internal properties and additional methods
- * These methods are implemented but not yet in the public type definition
- */
-interface UsertourWithInternal extends UserTourTypes.Usertour {
-  setTargetMissingSeconds?: (seconds: number) => void;
-  setCustomNavigate?: (customNavigate: ((url: string) => void) | null) => void;
-}
-
-/**
  * Creates API methods bound to the UsertourCore instance
  */
-function createUsertourAPI(app: UsertourCore): UsertourWithInternal {
+function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
   return {
     _stubbed: false,
 
@@ -180,7 +171,7 @@ if (w.usertour === undefined || w.usertour?._stubbed) {
   const api = createUsertourAPI(app);
 
   // Preserve any existing methods if merging with a stubbed version
-  const usertour: UsertourWithInternal = Object.assign(w.usertour || {}, api);
+  const usertour: UserTourTypes.Usertour = Object.assign(w.usertour || {}, api);
 
   w.usertour = usertour;
 

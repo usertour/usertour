@@ -41,7 +41,7 @@
     "@usertour/helpers": "^0.0.37",
     "@usertour-packages/tabs": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
-    "@usertour/types": "^0.0.27",
+    "@usertour/types": "^0.0.29",
     "@usertour-packages/switch": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
     "@usertour-packages/textarea": "workspace:^",
