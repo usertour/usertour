@@ -73,7 +73,7 @@ export class WebSocketV2Service {
    * @param token - The token
    * @returns The environment or null if not found
    */
-  async fetchEnvironmentByToken(token: string): Promise<Environment | null> {
+  private async fetchEnvironmentByToken(token: string): Promise<Environment | null> {
     return await this.prisma.environment.findFirst({ where: { token } });
   }
 
@@ -83,16 +83,7 @@ export class WebSocketV2Service {
    * @returns Initialized SocketData or null if validation fails
    */
   async initializeSocketData(auth: SocketAuthData): Promise<SocketData | null> {
-    const {
-      externalUserId,
-      externalCompanyId,
-      clientContext,
-      clientConditions = [],
-      token,
-      flowSessionId,
-      checklistSessionId,
-      launchers = [],
-    } = auth;
+    const { externalUserId, externalCompanyId, clientContext, clientConditions = [], token } = auth;
 
     // Validate required fields
     if (!externalUserId || !token) {
@@ -115,27 +106,42 @@ export class WebSocketV2Service {
       clientConditions,
     };
 
-    // Initialize flow session if provided
-    if (flowSessionId) {
-      const flowSession = await this.initializeSessionById(socketData, flowSessionId);
-      if (flowSession) {
-        socketData.flowSession = flowSession;
-      }
-    }
+    // Initialize and assign sessions
+    return await this.initializeSessions(socketData, auth);
+  }
 
-    // Initialize checklist session if provided
-    if (checklistSessionId) {
-      const checklistSession = await this.initializeSessionById(socketData, checklistSessionId);
-      if (checklistSession) {
-        socketData.checklistSession = checklistSession;
-      }
-    }
+  /**
+   * Initialize and assign sessions to socket data
+   * @param socketData - The socket data to update
+   * @param auth - Authentication data containing session IDs
+   * @returns The socket data with initialized sessions
+   */
+  private async initializeSessions(
+    socketData: SocketData,
+    auth: SocketAuthData,
+  ): Promise<SocketData> {
+    const { flowSessionId, checklistSessionId, launchers = [] } = auth;
 
-    if (launchers.length > 0) {
-      const launcherSessions = await this.initializeLauncherSessions(socketData, launchers);
-      if (launcherSessions.length > 0) {
-        socketData.launcherSessions = launcherSessions;
-      }
+    // Initialize sessions in parallel (flow and checklist can be initialized concurrently)
+    const [flowSession, checklistSession, launcherSessions] = await Promise.all([
+      flowSessionId ? this.initializeSessionById(socketData, flowSessionId) : Promise.resolve(null),
+      checklistSessionId
+        ? this.initializeSessionById(socketData, checklistSessionId)
+        : Promise.resolve(null),
+      launchers.length > 0
+        ? this.initializeLauncherSessions(socketData, launchers)
+        : Promise.resolve([]),
+    ]);
+
+    // Assign sessions to socket data if they exist
+    if (flowSession) {
+      socketData.flowSession = flowSession;
+    }
+    if (checklistSession) {
+      socketData.checklistSession = checklistSession;
+    }
+    if (launcherSessions.length > 0) {
+      socketData.launcherSessions = launcherSessions;
     }
 
     return socketData;
@@ -271,7 +277,22 @@ export class WebSocketV2Service {
    */
   async endAllContent(context: WebSocketContext): Promise<boolean> {
     const { server, socket, socketData } = context;
-    const { flowSession, checklistSession, launcherSessions } = socketData;
+    const { flowSession, checklistSession, launcherSessions = [] } = socketData;
+
+    // Collect all sessions to cancel
+    const sessionsToCancel: CustomContentSession[] = [];
+    if (flowSession) {
+      sessionsToCancel.push(flowSession);
+    }
+    if (checklistSession) {
+      sessionsToCancel.push(checklistSession);
+    }
+    sessionsToCancel.push(...launcherSessions);
+
+    if (sessionsToCancel.length === 0) {
+      return true;
+    }
+
     const endContentContext: Omit<ContentCancelContext, 'sessionId'> = {
       server,
       socket,
@@ -279,24 +300,17 @@ export class WebSocketV2Service {
       unsetCurrentSession: true,
       cancelOtherSessions: true,
     };
-    if (flowSession) {
-      await this.contentOrchestratorService.cancelContent({
-        ...endContentContext,
-        sessionId: flowSession.id,
-      });
-    }
-    if (checklistSession) {
-      await this.contentOrchestratorService.cancelContent({
-        ...endContentContext,
-        sessionId: checklistSession.id,
-      });
-    }
-    for (const launcherSession of launcherSessions) {
-      await this.contentOrchestratorService.cancelContent({
-        ...endContentContext,
-        sessionId: launcherSession.id,
-      });
-    }
+
+    // Cancel all sessions
+    await Promise.allSettled(
+      sessionsToCancel.map((session) =>
+        this.contentOrchestratorService.cancelContent({
+          ...endContentContext,
+          sessionId: session.id,
+        }),
+      ),
+    );
+
     return true;
   }
 
@@ -346,28 +360,7 @@ export class WebSocketV2Service {
     }
 
     // Start content types
-    // Note: Get socket data in each iteration to ensure we have the latest data
-    // as it may be updated by previous content operations
-    for (const contentType of contentTypes) {
-      const socketData = await this.getSocketData(socket);
-      if (!socketData) {
-        return false;
-      }
-
-      const startContentContext: ContentStartContext = {
-        ...context,
-        socketData,
-        contentType,
-      };
-
-      if (contentType === ContentDataType.LAUNCHER) {
-        await this.contentOrchestratorService.startLaunchers(startContentContext);
-      } else {
-        await this.contentOrchestratorService.startContent(startContentContext);
-      }
-    }
-
-    return true;
+    return await this.contentOrchestratorService.startContentsByTypes(context, contentTypes);
   }
 
   // ============================================================================

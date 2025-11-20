@@ -229,6 +229,56 @@ export class ContentOrchestratorService {
   }
 
   /**
+   * Start contents by types sequentially
+   * Gets socket data in each iteration to ensure we have the latest data
+   * as it may be updated by previous content operations
+   * @param context - Base context containing server, socket, and options
+   * @param contentTypes - Array of content types to start
+   * @returns True if all content types were started successfully, false if any failed
+   */
+  async startContentsByTypes(
+    context: Omit<ContentStartContext, 'contentType' | 'socketData'>,
+    contentTypes: ContentDataType[],
+  ): Promise<boolean> {
+    for (const contentType of contentTypes) {
+      const startContentContext = await this.buildContentStartContext(context, contentType);
+      if (!startContentContext) {
+        return false;
+      }
+
+      if (contentType === ContentDataType.LAUNCHER) {
+        await this.startLaunchers(startContentContext);
+      } else {
+        await this.startContent(startContentContext);
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Build content start context with fresh socket data
+   * @param context - Base context containing server, socket, and options
+   * @param contentType - The content type to start
+   * @returns ContentStartContext if socket data is available, null otherwise
+   */
+  private async buildContentStartContext(
+    context: Omit<ContentStartContext, 'contentType' | 'socketData'>,
+    contentType: ContentDataType,
+  ): Promise<ContentStartContext | null> {
+    const socketData = await this.getSocketData(context.socket);
+    if (!socketData) {
+      return null;
+    }
+
+    return {
+      ...context,
+      socketData,
+      contentType,
+    };
+  }
+
+  /**
    * Initialize launcher session by content ID
    * @param socketData - Socket data
    * @param contentId - Content ID
