@@ -346,16 +346,20 @@ export class WebSocketV2Service {
     }
 
     // Start content types
+    // Note: Get socket data in each iteration to ensure we have the latest data
+    // as it may be updated by previous content operations
     for (const contentType of contentTypes) {
       const socketData = await this.getSocketData(socket);
       if (!socketData) {
         return false;
       }
+
       const startContentContext: ContentStartContext = {
         ...context,
         socketData,
         contentType,
       };
+
       if (contentType === ContentDataType.LAUNCHER) {
         await this.contentOrchestratorService.startLaunchers(startContentContext);
       } else {
