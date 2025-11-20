@@ -170,8 +170,6 @@ export class ContentOrchestratorService {
     if (cancelOtherSessions) {
       await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
     }
-    // Handle checklist completed events
-    await this.handleChecklistCompletedEvents(socket);
     return true;
   }
 
@@ -989,9 +987,6 @@ export class ContentOrchestratorService {
       return await this.cancelSocketSession(cancelSessionParams);
     }
 
-    // Handle checklist completed events
-    await this.handleChecklistCompletedEvents(socket);
-
     if (!(await this.activateSocketSession(activateSessionParams))) {
       return false;
     }
@@ -1352,7 +1347,7 @@ export class ContentOrchestratorService {
    * @param socket - The socket
    * @returns Promise<void> - The promise that resolves when the events are handled
    */
-  private async handleChecklistCompletedEvents(socket: Socket): Promise<void> {
+  async handleChecklistCompletedEvents(socket: Socket): Promise<void> {
     const newSocketData = await this.getSocketData(socket);
     if (!newSocketData) {
       return;

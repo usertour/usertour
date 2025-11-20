@@ -339,6 +339,10 @@ export class WebSocketV2Service {
       },
     };
 
+    // Handle checklist completed events
+    await this.contentOrchestratorService.handleChecklistCompletedEvents(socket);
+
+    // Start content types
     for (const contentType of contentTypes) {
       const socketData = await this.getSocketData(socket);
       if (!socketData) {
