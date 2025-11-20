@@ -1,5 +1,5 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
-import { useThemeListContext } from '@usertour-packages/contexts';
+import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
 import {
   ChecklistContainer,
   ChecklistDismiss,
@@ -28,6 +28,7 @@ export const ChecklistEmbed = () => {
   const [expanded, setExpanded] = useState(
     localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED,
   );
+  const { attributeList } = useAttributeListContext();
 
   useEffect(() => {
     setExpanded(localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED);
@@ -79,7 +80,9 @@ export const ChecklistEmbed = () => {
         data={{ ...localData, items }}
         themeSettings={theme.settings}
         expanded={expanded}
-        onExpandedChange={setExpanded}
+        onExpandedChange={async (expanded) => {
+          setExpanded(expanded);
+        }}
         zIndex={10000}
       >
         <ChecklistContainer>
@@ -93,6 +96,7 @@ export const ChecklistEmbed = () => {
                   initialValue={localData.content}
                   onValueChange={handleContentChange}
                   projectId={projectId}
+                  attributes={attributeList}
                 />
                 <ChecklistProgress />
                 <ChecklistItems />

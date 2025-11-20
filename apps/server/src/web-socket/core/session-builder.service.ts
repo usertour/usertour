@@ -16,6 +16,7 @@ import {
   evaluateChecklistItemsWithContext,
   extractLauncherAttrCodes,
   isExpandPending,
+  extractChecklistAttrCodes,
 } from '@/utils/content-utils';
 import { CustomContentSession, SessionTheme, SessionStep, SessionAttribute } from '@usertour/types';
 import {
@@ -319,7 +320,19 @@ export class SessionBuilderService {
     customContentVersion: CustomContentVersion,
     socketData: SocketData,
   ): Promise<CustomContentSession> {
-    const { clientContext, clientConditions } = socketData;
+    const { environment, externalUserId, externalCompanyId, clientContext, clientConditions } =
+      socketData;
+    const checklistData = customContentVersion.data as unknown as ChecklistData;
+    const attrCodes = extractChecklistAttrCodes(checklistData);
+
+    const attributes = await this.extractAttributes(
+      [],
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    session.attributes = attributes;
 
     // Evaluate checklist items with client conditions
     const items = await evaluateChecklistItemsWithContext(
@@ -327,7 +340,6 @@ export class SessionBuilderService {
       clientContext,
       clientConditions,
     );
-    const checklistData = customContentVersion.data as unknown as ChecklistData;
 
     session.expandPending = isExpandPending(customContentVersion);
     session.version.checklist = { ...checklistData, items };

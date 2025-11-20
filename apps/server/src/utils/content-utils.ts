@@ -1202,6 +1202,19 @@ export const extractLauncherAttrCodes = (launcher: LauncherData): string[] => {
   return [];
 };
 
+/**
+ * Extracts all user attribute codes from checklist data
+ * @param checklist - The checklist data
+ * @returns Array of unique user attribute codes found in the checklist data
+ */
+export const extractChecklistAttrCodes = (checklist: ChecklistData): string[] => {
+  const content = checklist?.content as unknown as ContentEditorRoot[];
+  if (content && isArray(content)) {
+    return extractUserAttrCodes(content);
+  }
+  return [];
+};
+
 // ============================================================================
 // Checklist Utility Functions
 // ============================================================================
