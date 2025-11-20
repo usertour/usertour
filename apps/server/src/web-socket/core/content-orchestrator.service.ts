@@ -1348,12 +1348,12 @@ export class ContentOrchestratorService {
    * @returns Promise<void> - The promise that resolves when the events are handled
    */
   async handleChecklistCompletedEvents(socket: Socket): Promise<void> {
-    const newSocketData = await this.getSocketData(socket);
-    if (!newSocketData) {
+    const socketData = await this.getSocketData(socket);
+    if (!socketData) {
       return;
     }
     const evaluatedContentVersions = await this.findEvaluatedContentVersions(
-      newSocketData,
+      socketData,
       ContentDataType.CHECKLIST,
     );
 
@@ -1362,7 +1362,7 @@ export class ContentOrchestratorService {
       if (!sessionIsAvailable(latestSession, ContentDataType.CHECKLIST)) {
         continue;
       }
-      await this.handleChecklistCompletedEvent(socket, newSocketData, evaluatedContentVersion);
+      await this.handleChecklistCompletedEvent(socket, socketData, evaluatedContentVersion);
     }
   }
 
