@@ -1,6 +1,7 @@
 import {
   ChecklistItemType,
   ContentEditorClickableElement,
+  CustomContentSession,
   RulesType,
   ThemeTypesSetting,
   contentEndReason,
@@ -126,6 +127,19 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       this.updateStore({ checklistData: newChecklistData });
     }
     this.clearUnackedTasks();
+  }
+
+  /**
+   * Updates the checklist with new session data
+   * This method updates the session, refreshes store data, and updates items animation if expanded
+   * @param session - The new session data
+   */
+  async update(session: CustomContentSession): Promise<void> {
+    this.updateSession(session);
+    await this.refreshStoreData();
+    if (this.isExpanded()) {
+      this.updateItemsAnimation();
+    }
   }
 
   // === State Management ===

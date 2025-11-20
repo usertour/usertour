@@ -789,11 +789,7 @@ export class UsertourCore extends Evented {
   private setChecklistSession(session: CustomContentSession): boolean {
     if (this.activatedChecklist) {
       if (this.activatedChecklist.getSessionId() === session.id) {
-        this.activatedChecklist.updateSession(session);
-        this.activatedChecklist.refreshStoreData();
-        if (this.activatedChecklist.isExpanded()) {
-          this.activatedChecklist.updateItemsAnimation();
-        }
+        this.activatedChecklist.update(session);
         return true;
       }
       this.cleanupActivatedChecklist();
