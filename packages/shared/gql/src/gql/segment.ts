@@ -197,6 +197,7 @@ export const querySessionDetail = gql`
       createdAt
       contentId
       data
+      progress
       content {
         id
         name

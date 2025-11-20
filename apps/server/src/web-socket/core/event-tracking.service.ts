@@ -19,7 +19,13 @@ import {
   getAnswer,
   assignClientContext,
 } from '@/utils/event-v2';
-import { BizEvents, CompanyAttributes, EventAttributes, UserAttributes } from '@usertour/types';
+import {
+  BizEvents,
+  CompanyAttributes,
+  EventAttributes,
+  UserAttributes,
+  ChecklistItemType,
+} from '@usertour/types';
 import {
   BizCompany,
   BizSession,
@@ -31,6 +37,7 @@ import {
 } from '@/common/types/schema';
 import { isNullish } from '@usertour/helpers';
 import { extractStepBindToAttribute } from '@/utils/content-question';
+import { calculateChecklistProgress } from '@/utils/content-utils';
 import { BizService } from '@/biz/biz.service';
 import type {
   EventTrackingParams,
@@ -59,6 +66,45 @@ export class EventTrackingService {
   // ============================================================================
   // Public API Methods
   // ============================================================================
+
+  /**
+   * Update checklist session with items and progress
+   * @param sessionId - The session ID
+   * @param items - The checklist items
+   * @returns Promise<void>
+   */
+  async updateChecklistSession(sessionId: string, items: ChecklistItemType[]): Promise<void> {
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      select: {
+        progress: true,
+        data: true,
+      },
+    });
+    if (!bizSession) {
+      return;
+    }
+    const simpleItems = items.map((item) => ({
+      id: item.id,
+      isCompleted: item.isCompleted,
+      isVisible: item.isVisible,
+      isClicked: item.isClicked,
+    }));
+
+    const progress = calculateChecklistProgress(items, bizSession.progress);
+    // Merge with existing data to preserve other fields
+    const existingData = (bizSession.data as Record<string, unknown>) || {};
+    await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: {
+        progress,
+        data: {
+          ...existingData,
+          items: simpleItems,
+        },
+      },
+    });
+  }
 
   /**
    * Unified event tracking method with routing

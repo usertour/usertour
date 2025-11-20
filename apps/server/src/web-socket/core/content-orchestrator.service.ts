@@ -1301,39 +1301,49 @@ export class ContentOrchestratorService {
   ): Promise<void> {
     const { environment, clientContext, clientConditions } = socketData;
     const latestSession = evaluatedContentVersion.session.latestSession;
-    if (!latestSession?.id) {
+    const contentType = evaluatedContentVersion.content.type;
+    if (
+      !latestSession?.id ||
+      contentType !== ContentDataType.CHECKLIST ||
+      !sessionIsAvailable(latestSession, ContentDataType.CHECKLIST)
+    ) {
       return;
     }
+
     const sessionId = latestSession.id;
     const trackingParams = {
       environment,
       sessionId,
       clientContext,
     };
+
     const items = await evaluateChecklistItemsWithContext(
       evaluatedContentVersion,
       clientContext,
       clientConditions,
     );
 
-    const newCompletedItems = extractChecklistNewCompletedItems(items, latestSession?.bizEvent);
-    if (newCompletedItems.length > 0) {
-      // Track events for each completed task
-      const trackingPromises = newCompletedItems.map((item) =>
-        this.eventTrackingService.trackEventByType(BizEvents.CHECKLIST_TASK_COMPLETED, {
-          ...trackingParams,
-          taskId: item.id,
-        }),
-      );
+    // Update checklist session with items and progress
+    await this.eventTrackingService.updateChecklistSession(sessionId, items);
 
-      await Promise.all(trackingPromises);
-      // Emit events for all tasks
-      this.socketOperationService.emitChecklistTasksCompleted(
-        socket,
-        sessionId,
-        newCompletedItems.map((item) => item.id),
+    // Track new completed task events
+    const newCompletedItems = extractChecklistNewCompletedItems(items, latestSession.bizEvent);
+    if (newCompletedItems.length > 0) {
+      const taskIds = newCompletedItems.map((item) => item.id);
+      // Track events for each completed task
+      await Promise.all(
+        taskIds.map((taskId) =>
+          this.eventTrackingService.trackEventByType(BizEvents.CHECKLIST_TASK_COMPLETED, {
+            ...trackingParams,
+            taskId,
+          }),
+        ),
       );
+      // Emit events for all tasks
+      this.socketOperationService.emitChecklistTasksCompleted(socket, sessionId, taskIds);
     }
+
+    // Check and track checklist completed event if all items are done
     if (canSendChecklistCompletedEvent(items, latestSession)) {
       await this.eventTrackingService.trackEventByType(
         BizEvents.CHECKLIST_COMPLETED,
@@ -1358,10 +1368,6 @@ export class ContentOrchestratorService {
     );
 
     for (const evaluatedContentVersion of evaluatedContentVersions) {
-      const latestSession = evaluatedContentVersion.session.latestSession;
-      if (!sessionIsAvailable(latestSession, ContentDataType.CHECKLIST)) {
-        continue;
-      }
       await this.handleChecklistCompletedEvent(socket, socketData, evaluatedContentVersion);
     }
   }

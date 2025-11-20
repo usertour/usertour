@@ -1397,6 +1397,7 @@ export const evaluateChecklistItems = async (
       isShowAnimation: false,
       isCompleted,
       isVisible,
+      isClicked,
     });
   }
 
@@ -1575,6 +1576,29 @@ export const checklistVisibleItemsCount = (items: ChecklistItemType[]): number =
  */
 export const checklistCompletedItemsCount = (items: ChecklistItemType[]): number => {
   return items.filter((item) => item.isVisible).filter((item) => item.isCompleted).length;
+};
+
+/**
+ * Calculates checklist progress based on completed and visible items
+ * @param items - The checklist items
+ * @param currentProgress - The current progress value (optional, used to ensure progress doesn't decrease)
+ * @returns The calculated progress value (0-100)
+ */
+export const calculateChecklistProgress = (
+  items: ChecklistItemType[],
+  currentProgress?: number | null,
+): number => {
+  const totalVisibleItemsCount = checklistVisibleItemsCount(items);
+  const completedItemsCount = checklistCompletedItemsCount(items);
+
+  if (totalVisibleItemsCount === 0) {
+    return currentProgress ?? 0;
+  }
+
+  const calculatedProgress = Math.round((completedItemsCount / totalVisibleItemsCount) * 100);
+  const minProgress = currentProgress ?? 0;
+
+  return Math.min(Math.max(calculatedProgress, minProgress), 100);
 };
 
 /**
