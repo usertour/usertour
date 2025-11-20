@@ -104,11 +104,25 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
+   * Updates the checklist with new session data
+   * This method updates the session, refreshes store data, and updates items animation if expanded
+   * @param session - The new session data
+   */
+  async update(session: CustomContentSession): Promise<void> {
+    this.updateSession(session);
+    await this.refreshStoreData();
+    if (this.isExpanded()) {
+      this.updateItemsAnimation();
+    }
+  }
+
+  // === State Management ===
+  /**
    * Updates the items animation state and clears unacked tasks
    * This method updates the items animation state based on the unacked tasks
    * and then clears the unacked tasks
    */
-  updateItemsAnimation(): void {
+  private updateItemsAnimation(): void {
     const checklistData = this.getChecklistData();
     if (!checklistData) {
       return;
@@ -130,20 +144,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   }
 
   /**
-   * Updates the checklist with new session data
-   * This method updates the session, refreshes store data, and updates items animation if expanded
-   * @param session - The new session data
-   */
-  async update(session: CustomContentSession): Promise<void> {
-    this.updateSession(session);
-    await this.refreshStoreData();
-    if (this.isExpanded()) {
-      this.updateItemsAnimation();
-    }
-  }
-
-  // === State Management ===
-  /**
    * Checks if the checklist has any unacked tasks
    * This method checks the unacked tasks for the current session
    * @returns True if the checklist has any unacked tasks, false otherwise
@@ -161,18 +161,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       return false;
     }
     return items.some((item) => unackedTasks.has(item.id));
-  }
-
-  /**
-   * Gets the items of the checklist
-   * @returns The items of the checklist
-   */
-  private getItems(): ChecklistItemType[] {
-    const checklistData = this.getChecklistData();
-    if (!checklistData) {
-      return [];
-    }
-    return checklistData.items;
   }
 
   // === Storage Management ===
@@ -226,6 +214,18 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       checklistData,
       expanded,
     };
+  }
+
+  /**
+   * Gets the items of the checklist
+   * @returns The items of the checklist
+   */
+  private getItems(): ChecklistItemType[] {
+    const checklistData = this.getChecklistData();
+    if (!checklistData) {
+      return [];
+    }
+    return checklistData.items;
   }
 
   // === Event Handlers ===
