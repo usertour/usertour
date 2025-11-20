@@ -61,18 +61,6 @@ export class EventTrackingService {
   // ============================================================================
 
   /**
-   * Find business session with user and events
-   * @param sessionId - Session ID
-   * @returns Business session with user and events, or null if not found
-   */
-  async findBizSessionWithEvents(sessionId: string): Promise<BizSessionWithEvents | null> {
-    return await this.prisma.bizSession.findUnique({
-      where: { id: sessionId },
-      include: { bizUser: true, version: true, bizEvent: { include: { event: true } } },
-    });
-  }
-
-  /**
    * Unified event tracking method with routing
    * Routes events to appropriate handlers based on event type
    * @param eventType - The event type to track
