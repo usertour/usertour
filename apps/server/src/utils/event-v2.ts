@@ -33,7 +33,7 @@ const SINGLE_OCCURRENCE_EVENTS = [
   BizEvents.FLOW_STARTED,
   BizEvents.FLOW_COMPLETED,
   BizEvents.FLOW_ENDED,
-  // BizEvents.CHECKLIST_COMPLETED,
+  BizEvents.CHECKLIST_COMPLETED,
   BizEvents.CHECKLIST_DISMISSED,
   BizEvents.CHECKLIST_STARTED,
   BizEvents.LAUNCHER_DISMISSED,
@@ -163,39 +163,6 @@ const EVENT_VALIDATION_RULES = {
   [BizEvents.CHECKLIST_HIDDEN]: {
     validate: (bizEvents: BizEventWithEvent[]) => {
       return validatePairedEvent(bizEvents, BizEvents.CHECKLIST_HIDDEN, BizEvents.CHECKLIST_SEEN);
-    },
-  },
-  [BizEvents.CHECKLIST_COMPLETED]: {
-    validate: (bizEvents: BizEventWithEvent[]) => {
-      // Find the latest CHECKLIST_TASK_COMPLETED event
-      const taskCompletedEvents =
-        bizEvents?.filter(
-          (event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED,
-        ) || [];
-
-      if (taskCompletedEvents.length === 0) {
-        return false;
-      }
-
-      // Find the latest task completed event using date-fns isAfter for consistent date comparison
-      const latestTaskCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
-        return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
-      });
-
-      // Pre-calculate the date to avoid repeated Date parsing
-      const latestTaskCompletedDate = new Date(latestTaskCompletedEvent.createdAt);
-
-      // Find all events that occurred after the latest CHECKLIST_TASK_COMPLETED
-      const eventsAfterTaskCompleted =
-        bizEvents?.filter((event) => isAfter(new Date(event.createdAt), latestTaskCompletedDate)) ||
-        [];
-
-      // Check if there's no CHECKLIST_COMPLETED event after the latest CHECKLIST_TASK_COMPLETED
-      const hasChecklistCompletedAfter = eventsAfterTaskCompleted.some(
-        (event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
-      );
-
-      return !hasChecklistCompletedAfter;
     },
   },
   [BizEvents.CHECKLIST_TASK_COMPLETED]: {

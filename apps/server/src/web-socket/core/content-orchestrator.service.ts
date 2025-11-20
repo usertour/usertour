@@ -25,7 +25,7 @@ import {
   hasContentSessionChanges,
   filterAvailableLauncherContentVersions,
   findCurrentStepCvid,
-  isSendChecklistCompletedEvent,
+  canSendChecklistCompletedEvent,
   evaluateChecklistItemsWithContext,
 } from '@/utils/content-utils';
 import {
@@ -1334,7 +1334,7 @@ export class ContentOrchestratorService {
         newCompletedItems.map((item) => item.id),
       );
     }
-    if (isSendChecklistCompletedEvent(items, latestSession)) {
+    if (canSendChecklistCompletedEvent(items, latestSession)) {
       await this.eventTrackingService.trackEventByType(
         BizEvents.CHECKLIST_COMPLETED,
         trackingParams,

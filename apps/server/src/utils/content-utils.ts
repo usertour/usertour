@@ -1578,65 +1578,60 @@ export const checklistCompletedItemsCount = (items: ChecklistItemType[]): number
 };
 
 /**
- * Checks if a checklist completed event is valid
+ * Checks if there's at least one CHECKLIST_TASK_COMPLETED event
  * @param bizEvents - The business events to check
- * @returns True if the checklist completed event is valid, false otherwise
+ * @returns True if there's at least one CHECKLIST_TASK_COMPLETED event, false otherwise
  */
-export const isValidChecklistCompletedEvent = (bizEvents: BizEventWithEvent[] | undefined) => {
-  // Find the latest CHECKLIST_TASK_COMPLETED event
-  const taskCompletedEvents =
-    bizEvents?.filter((event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED) ||
-    [];
-
-  if (taskCompletedEvents.length === 0) {
-    return false;
-  }
-
-  const latestTaskCompletedEvent = taskCompletedEvents.reduce((latest, current) => {
-    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
-  });
-
-  // Pre-calculate the date to avoid repeated Date parsing
-  const latestTaskCompletedDate = new Date(latestTaskCompletedEvent.createdAt);
-
-  // Find all events that occurred after the latest CHECKLIST_TASK_COMPLETED
-  const eventsAfterTaskCompleted =
-    bizEvents?.filter((event) => isAfter(new Date(event.createdAt), latestTaskCompletedDate)) || [];
-
-  // Check if there's no CHECKLIST_COMPLETED event after the latest CHECKLIST_TASK_COMPLETED
-  const hasChecklistCompletedAfter = eventsAfterTaskCompleted.some(
-    (event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED,
+const hasChecklistTaskCompletedEvent = (bizEvents: BizEventWithEvent[] | undefined): boolean => {
+  return (
+    bizEvents?.some((event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED) ??
+    false
   );
-
-  return !hasChecklistCompletedAfter;
 };
 
 /**
- * Checks if a checklist is all completed
+ * Checks if CHECKLIST_COMPLETED event already exists
+ * @param bizEvents - The business events to check
+ * @returns True if CHECKLIST_COMPLETED event exists, false otherwise
+ */
+const hasChecklistCompletedEvent = (bizEvents: BizEventWithEvent[] | undefined): boolean => {
+  return (
+    bizEvents?.some((event) => event.event?.codeName === BizEvents.CHECKLIST_COMPLETED) ?? false
+  );
+};
+
+/**
+ * Checks if a checklist is all completed and can send CHECKLIST_COMPLETED event
  * @param items - The checklist items
  * @param latestSession - The latest session
- * @returns True if the checklist is all completed, false otherwise
+ * @returns True if the checklist is all completed and can send the event, false otherwise
  */
-export const isSendChecklistCompletedEvent = (
+export const canSendChecklistCompletedEvent = (
   items: ChecklistItemType[] = [],
   latestSession?: BizSessionWithEvents | undefined,
 ) => {
+  // Check if all visible items are completed
   const visibleItemsCount = checklistVisibleItemsCount(items);
   const completedItemsCount = checklistCompletedItemsCount(items);
 
-  if (completedItemsCount === 0) {
+  if (visibleItemsCount === 0 || completedItemsCount !== visibleItemsCount) {
     return false;
   }
 
-  if (!isValidChecklistCompletedEvent(latestSession?.bizEvent)) {
+  // Check event prerequisites
+  const bizEvents = latestSession?.bizEvent;
+
+  // Must have at least one CHECKLIST_TASK_COMPLETED event
+  if (!hasChecklistTaskCompletedEvent(bizEvents)) {
     return false;
   }
 
-  if (visibleItemsCount === completedItemsCount) {
-    return true;
+  // CHECKLIST_COMPLETED should only occur once
+  if (hasChecklistCompletedEvent(bizEvents)) {
+    return false;
   }
 
-  return false;
+  return true;
 };
 
 // ============================================================================
