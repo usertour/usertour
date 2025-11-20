@@ -44,9 +44,11 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       return;
     }
     // Process items to determine their status
-    this.setStoreData(storeData);
-    const expanded = this.isExpandable();
-    await this.expand(expanded, expanded);
+    this.setStoreData({ ...storeData, openState: true });
+    // Expand the checklist with the appropriate expanded state and event reporting
+    if (this.isExpandable()) {
+      await this.expand(true);
+    }
   }
 
   /**
@@ -72,7 +74,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     // Update session storage
     this.setExpandedStateStorage(sessionId, expanded);
     // Update store to trigger component state change
-    this.updateStore({ expanded, openState: true });
+    this.updateStore({ expanded });
     // Report the expanded change event
     if (reportEvent) {
       await this.reportExpandedChangeEvent(expanded);
@@ -86,10 +88,6 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   isExpandable(): boolean {
     // Check session expand pending state first (lightweight check)
     if (this.session.isExpandPending()) {
-      return true;
-    }
-    // Check storage state (lightweight check)
-    if (this.getExpandedStateStorage(this.getSessionId())) {
       return true;
     }
     // Check unacked tasks last (more expensive operation)
@@ -209,8 +207,10 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<ChecklistStore> {
     const checklistData = this.getChecklistData();
+    const expanded = this.getExpandedStateStorage(this.getSessionId());
     return {
       checklistData,
+      expanded,
     };
   }
 
