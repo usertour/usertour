@@ -70,7 +70,8 @@ export interface ContentStartResult {
   success: boolean;
   session?: CustomContentSession;
   preTracks?: TrackCondition[];
-  postTracks?: TrackCondition[];
+  hideConditions?: TrackCondition[];
+  checklistConditions?: TrackCondition[];
   waitTimers?: ConditionWaitTimer[];
   reason?: string;
   forceGoToStep?: boolean;
@@ -83,6 +84,7 @@ export interface CancelSessionParams {
   socketData: SocketData;
   contentType: ContentDataType;
   sessionId: string;
+  trackConditions?: TrackCondition[];
   contentId?: string;
   unsetSession?: boolean;
   setLastDismissedId?: boolean;
@@ -91,10 +93,10 @@ export interface CancelSessionParams {
 export interface ActivateSessionParams {
   server: Server;
   socket: Socket;
-  socketData?: SocketData;
   session: CustomContentSession;
-  postTracks: TrackCondition[] | undefined;
   forceGoToStep: boolean;
+  socketData?: SocketData;
+  trackConditions?: TrackCondition[];
 }
 
 /**

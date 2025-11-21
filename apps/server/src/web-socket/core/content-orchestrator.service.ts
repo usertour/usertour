@@ -1028,12 +1028,12 @@ export class ContentOrchestratorService {
     );
     // Extract tracking conditions for checklist conditions
     const checklistConditions = extractChecklistTrackConditions(session);
-    const postTracks = [...hideConditions, ...checklistConditions];
 
     return {
       success: true,
       session,
-      postTracks,
+      hideConditions,
+      checklistConditions,
       reason: 'Content session created successfully',
     };
   }
@@ -1080,11 +1080,18 @@ export class ContentOrchestratorService {
   ): Promise<boolean> {
     const { server, socketData, socket } = context;
     const { externalUserId, environment } = socketData;
-    const { session, postTracks, forceGoToStep = false, isActivateOtherSockets = true } = result;
+    const {
+      session,
+      hideConditions = [],
+      checklistConditions = [],
+      forceGoToStep = false,
+      isActivateOtherSockets = true,
+    } = result;
 
     if (!session) {
       return false;
     }
+    const trackConditions = [...hideConditions, ...checklistConditions];
 
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     const activateSessionParams = {
@@ -1092,7 +1099,7 @@ export class ContentOrchestratorService {
       socket,
       session,
       socketData,
-      postTracks,
+      trackConditions,
       forceGoToStep,
     };
 
@@ -1119,7 +1126,7 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { session } = result;
+    const { session, hideConditions = [] } = result;
     if (!session) {
       return false;
     }
@@ -1136,6 +1143,7 @@ export class ContentOrchestratorService {
       socketData,
       sessionId,
       contentType,
+      trackConditions: [...hideConditions],
     };
     return await this.cancelSessionInRoom(cancelSessionParams, roomId);
   }
@@ -1179,9 +1187,9 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateFlowSession(params: ActivateSessionParams) {
-    const { socket, session, postTracks, forceGoToStep, socketData } = params;
+    const { socket, session, trackConditions, forceGoToStep, socketData } = params;
     const options = {
-      trackConditions: postTracks,
+      trackConditions,
       forceGoToStep,
       cleanupContentTypes: [ContentDataType.FLOW],
     };
@@ -1199,9 +1207,9 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateChecklistSession(params: ActivateSessionParams) {
-    const { socket, session, postTracks, socketData } = params;
+    const { socket, session, trackConditions, socketData } = params;
     const options = {
-      trackConditions: postTracks,
+      trackConditions,
       cleanupContentTypes: [ContentDataType.CHECKLIST],
     };
 
@@ -1414,12 +1422,26 @@ export class ContentOrchestratorService {
     session: CustomContentSession | null,
     params: CancelSessionParams,
   ): Promise<boolean> {
-    const { socket, socketData, unsetSession = true, setLastDismissedId = false } = params;
+    const {
+      socket,
+      socketData,
+      unsetSession = true,
+      setLastDismissedId = false,
+      trackConditions,
+    } = params;
 
-    return await this.socketOperationService.cleanupSocketSession(socket, socketData, session, {
+    const options = {
       unsetSession,
       setLastDismissedId,
-    });
+      trackConditions,
+    };
+
+    return await this.socketOperationService.cleanupSocketSession(
+      socket,
+      socketData,
+      session,
+      options,
+    );
   }
 
   /**
