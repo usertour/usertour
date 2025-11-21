@@ -192,7 +192,11 @@ export class ContentOrchestratorService {
       contentType,
       session.versionId,
     );
-    if (!customContentVersion || customContentVersion.session.latestSession?.id !== sessionId) {
+    if (
+      !customContentVersion ||
+      customContentVersion.session.latestSession?.id !== sessionId ||
+      !sessionIsAvailable(customContentVersion.session.latestSession, contentType)
+    ) {
       return null;
     }
     return await this.initializeSession(customContentVersion, socketData, undefined);
@@ -299,7 +303,10 @@ export class ContentOrchestratorService {
       contentType,
       versionId,
     );
-    if (!customContentVersion) {
+    if (
+      !customContentVersion ||
+      !sessionIsAvailable(customContentVersion.session.latestSession, contentType)
+    ) {
       return null;
     }
     return await this.initializeSession(customContentVersion, socketData);
