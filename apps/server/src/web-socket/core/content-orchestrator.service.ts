@@ -164,13 +164,12 @@ export class ContentOrchestratorService {
       setLastDismissedId: true,
     };
 
-    // Cleanup socket session
-    await this.cancelSocketSession({ ...cancelSessionParams, unsetSession: unsetCurrentSession });
-    // Cleanup other sockets in room
-    if (cancelOtherSessions) {
-      await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
-    }
-    return true;
+    return await this.cancelSessionInRoom(
+      cancelSessionParams,
+      roomId,
+      cancelOtherSessions,
+      unsetCurrentSession,
+    );
   }
 
   /**
@@ -767,6 +766,13 @@ export class ContentOrchestratorService {
       );
     }
 
+    // Check if content should be hidden and handle cancellation if needed
+    if (result.session?.version.id) {
+      if (await this.hasActiveHideRules(context, result.session.version.id)) {
+        return await this.handleSessionCancellation(context, result);
+      }
+    }
+
     return await this.handleSessionActivation(context, result);
   }
 
@@ -775,17 +781,20 @@ export class ContentOrchestratorService {
   // ============================================================================
 
   /**
-   * Determines if content should be hidden based on hide rules evaluation
+   * Checks if hide rules are active for the content version
    * @param context - The content start context containing socket and content type
    * @param versionId - The version ID of the content to check
-   * @returns True if content should be hidden, false otherwise
+   * @returns True if hide rules are active, false otherwise
    * @remarks
-   * Content is considered hidden if:
+   * Hide rules are considered active if:
    * - Socket data is unavailable (defensive: hide when state is unknown)
    * - Content version cannot be found or evaluated
    * - Hide rules are activated for the content version
    */
-  private async isContentHidden(context: ContentStartContext, versionId: string): Promise<boolean> {
+  private async hasActiveHideRules(
+    context: ContentStartContext,
+    versionId: string,
+  ): Promise<boolean> {
     const { socket, contentType } = context;
 
     // Retrieve socket data for evaluation
@@ -997,19 +1006,15 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { server, socketData, socket, contentType } = context;
-    const { environment, externalUserId } = socketData;
+    const { server, socketData, socket } = context;
+    const { externalUserId, environment } = socketData;
     const { session, postTracks, forceGoToStep = false, isActivateOtherSockets = true } = result;
 
     if (!session) {
-      this.logger.warn(
-        `Handle session activation, session: null, result: ${JSON.stringify(result)}`,
-      );
       return false;
     }
 
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
-    const sessionId = session.id;
     const activateSessionParams = {
       server,
       socket,
@@ -1022,20 +1027,6 @@ export class ContentOrchestratorService {
     this.logger.debug(
       `Handle session activation, session: ${session.id}, reason: ${result.reason}`,
     );
-    const isHidden = await this.isContentHidden(context, session.version.id);
-
-    if (isHidden) {
-      this.logger.debug(`Hide rules are activated, canceling session, sessionId: ${sessionId}`);
-      const cancelSessionParams: CancelSessionParams = {
-        server,
-        socket,
-        socketData,
-        sessionId,
-        contentType,
-      };
-      // Cleanup socket session
-      return await this.cancelSocketSession(cancelSessionParams);
-    }
 
     if (!(await this.activateSocketSession(activateSessionParams))) {
       return false;
@@ -1043,6 +1034,38 @@ export class ContentOrchestratorService {
     if (isActivateOtherSockets) {
       await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
     }
+    return true;
+  }
+
+  /**
+   * Handles session cancellation for hidden content
+   * @param context - The content start context
+   * @param result - The content start result
+   * @returns True if cancellation was successful
+   */
+  private async handleSessionCancellation(
+    context: ContentStartContext,
+    result: ContentStartResult,
+  ): Promise<boolean> {
+    const { session } = result;
+    if (!session) {
+      return false;
+    }
+
+    const { server, socketData, socket, contentType } = context;
+    const { environment, externalUserId } = socketData;
+    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
+    const sessionId = session.id;
+
+    this.logger.debug(`Hide rules are activated, canceling session, sessionId: ${sessionId}`);
+    const cancelSessionParams: CancelSessionParams = {
+      server,
+      socket,
+      socketData,
+      sessionId,
+      contentType,
+    };
+    return await this.cancelSessionInRoom(cancelSessionParams, roomId);
   }
 
   // ============================================================================
@@ -1195,6 +1218,31 @@ export class ContentOrchestratorService {
   // ============================================================================
   // Session Cancellation Methods
   // ============================================================================
+
+  /**
+   * Cancels a session and optionally cancels other sessions in the same room
+   * @param cancelSessionParams - The cancel session parameters
+   * @param roomId - The room ID
+   * @param cancelOtherSessions - Whether to cancel other sessions in the room (default: true)
+   * @param unsetCurrentSession - Whether to unset the current session (default: true)
+   * @returns True if cancellation was successful
+   */
+  private async cancelSessionInRoom(
+    cancelSessionParams: CancelSessionParams,
+    roomId: string,
+    cancelOtherSessions = true,
+    unsetCurrentSession = true,
+  ): Promise<boolean> {
+    const { sessionId } = cancelSessionParams;
+    this.logger.debug(`Canceling session, sessionId: ${sessionId}`);
+
+    await this.cancelSocketSession({ ...cancelSessionParams, unsetSession: unsetCurrentSession });
+    if (cancelOtherSessions) {
+      await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
+    }
+
+    return true;
+  }
 
   /**
    * Cancel current socket session
