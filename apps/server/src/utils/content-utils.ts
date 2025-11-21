@@ -63,6 +63,12 @@ export const PRIORITIES = [
   ContentPriority.LOWEST,
 ];
 
+/**
+ * Content types that follow singleton pattern - only one active session per type at a time
+ * Unlike LAUNCHER which can have multiple concurrent sessions
+ */
+export const SINGLETON_CONTENT_TYPES = [ContentDataType.FLOW, ContentDataType.CHECKLIST];
+
 // ============================================================================
 // Rule Checking Functions
 // ============================================================================
@@ -673,6 +679,15 @@ export const filterActivatedContentWithoutClientConditions = (
 // ============================================================================
 // Session Management Functions
 // ============================================================================
+
+/**
+ * Checks if a content type follows singleton pattern (only one active session per type)
+ * @param contentType - The content type to check
+ * @returns True if the content type is a singleton type, false otherwise
+ */
+export const isSingletonContentType = (contentType: ContentDataType): boolean => {
+  return SINGLETON_CONTENT_TYPES.includes(contentType);
+};
 
 /**
  * Finds the available session ID

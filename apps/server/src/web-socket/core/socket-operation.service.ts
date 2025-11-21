@@ -73,50 +73,8 @@ export class SocketOperationService {
   ) {}
 
   // ============================================================================
-  // Public API Methods - Session Management
+  // Public API Methods - Singleton Content Sessions (FLOW and CHECKLIST)
   // ============================================================================
-
-  /**
-   * Cleanup socket session and associated conditions
-   * @param socket - The socket instance
-   * @param socketData - The socket client data
-   * @param session - The session to cleanup
-   * @param options - Options for cleanup behavior
-   * @returns Promise<boolean> - True if the session was cleaned up successfully
-   */
-  async cleanupSocketSession(
-    socket: Socket,
-    socketData: SocketData,
-    session: CustomContentSession,
-    options: CleanupSocketSessionOptions = {},
-  ): Promise<boolean> {
-    const { unsetSession = true, setLastDismissedId = false } = options;
-    const contentType = session.content.type;
-
-    // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
-    if (unsetSession && !(await this.unsetSocketSession(socket, session.id, contentType))) {
-      return false;
-    }
-
-    // Cleanup conditions efficiently
-    const conditionChanges = await this.cleanupConditions(socket, socketData, [contentType]);
-
-    // Update client data with session clearing and remaining conditions/timers
-    // Now simplified as message queue ensures ordered execution
-    const updatedSocketData = {
-      ...conditionChanges,
-      ...(contentType === ContentDataType.FLOW && {
-        ...(setLastDismissedId && { lastDismissedFlowId: session.content.id }),
-        flowSession: undefined,
-      }),
-      ...(contentType === ContentDataType.CHECKLIST && {
-        ...(setLastDismissedId && { lastDismissedChecklistId: session.content.id }),
-        checklistSession: undefined,
-      }),
-    };
-
-    return await this.socketDataService.set(socket.id, updatedSocketData, true);
-  }
 
   /**
    * Activate Flow session
@@ -215,6 +173,133 @@ export class SocketOperationService {
     return await this.socketDataService.set(socket.id, updatedSocketData, true);
   }
 
+  /**
+   * Cleanup socket session and associated conditions
+   * @param socket - The socket instance
+   * @param socketData - The socket client data
+   * @param session - The session to cleanup
+   * @param options - Options for cleanup behavior
+   * @returns Promise<boolean> - True if the session was cleaned up successfully
+   */
+  async cleanupSocketSession(
+    socket: Socket,
+    socketData: SocketData,
+    session: CustomContentSession,
+    options: CleanupSocketSessionOptions = {},
+  ): Promise<boolean> {
+    const { unsetSession = true, setLastDismissedId = false } = options;
+    const contentType = session.content.type;
+
+    // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
+    if (unsetSession && !(await this.unsetSocketSession(socket, session.id, contentType))) {
+      return false;
+    }
+
+    // Cleanup conditions efficiently
+    const conditionChanges = await this.cleanupConditions(socket, socketData, [contentType]);
+
+    // Update client data with session clearing and remaining conditions/timers
+    // Now simplified as message queue ensures ordered execution
+    const updatedSocketData = {
+      ...conditionChanges,
+      ...(contentType === ContentDataType.FLOW && {
+        ...(setLastDismissedId && { lastDismissedFlowId: session.content.id }),
+        flowSession: undefined,
+      }),
+      ...(contentType === ContentDataType.CHECKLIST && {
+        ...(setLastDismissedId && { lastDismissedChecklistId: session.content.id }),
+        checklistSession: undefined,
+      }),
+    };
+
+    return await this.socketDataService.set(socket.id, updatedSocketData, true);
+  }
+
+  // ============================================================================
+  // Public API Methods - Launcher Sessions
+  // ============================================================================
+
+  /**
+   * Add launcher sessions
+   * @param socket - The socket
+   * @param socketData - The socket client data
+   * @param sessions - Target launcher sessions
+   * @returns Promise<boolean> - True if the sessions were added successfully
+   */
+  async addLaunchers(
+    socket: Socket,
+    socketData: SocketData,
+    sessions: CustomContentSession[],
+  ): Promise<boolean> {
+    const { clientConditions = [], launcherSessions = [] } = socketData;
+
+    // Handle launcher sessions processing
+    const { updatedSessions, removedContentIds } = await this.handleLauncherSessions(
+      launcherSessions,
+      sessions,
+      socket,
+    );
+
+    // Handle launcher client conditions update
+    const { updatedConditions } = this.handleLauncherClientConditions(
+      clientConditions,
+      removedContentIds,
+      socket,
+    );
+
+    // Update socket data with processed sessions and conditions
+    return await this.socketDataService.set(
+      socket.id,
+      {
+        launcherSessions: updatedSessions,
+        clientConditions: updatedConditions,
+      },
+      true,
+    );
+  }
+
+  /**
+   * Cleanup launcher session
+   * @param socket - The socket
+   * @param socketData - The socket client data
+   * @param contentId - The content id to cleanup
+   * @param options - Options for cleanup behavior
+   * @returns Promise<boolean> - True if the session was removed successfully
+   */
+  async cleanupLauncherSession(
+    socket: Socket,
+    socketData: SocketData,
+    contentId: string,
+    options: CleanupSocketSessionOptions = {},
+  ): Promise<boolean> {
+    const { unsetSession = true } = options;
+    const { clientConditions = [], launcherSessions = [] } = socketData;
+    if (unsetSession) {
+      const isRemoved = await this.socketEmitterService.removeLauncherWithAck(socket, contentId);
+      if (!isRemoved) {
+        this.logger.error(`Failed to remove launcher session: ${contentId}`);
+        return false;
+      }
+    }
+    // Handle launcher client conditions update
+    const { updatedConditions } = this.handleLauncherClientConditions(
+      clientConditions,
+      [contentId],
+      socket,
+    );
+    const updatedSessions = launcherSessions.filter((session) => session.content.id !== contentId);
+
+    // Update socket data with processed sessions and conditions
+    return await this.socketDataService.set(
+      socket.id,
+      {
+        launcherSessions: updatedSessions,
+        clientConditions: updatedConditions,
+      },
+      true,
+    );
+  }
+
   // ============================================================================
   // Public API Methods - Condition Management
   // ============================================================================
@@ -310,6 +395,10 @@ export class SocketOperationService {
     );
   }
 
+  // ============================================================================
+  // Public API Methods - Checklist Events
+  // ============================================================================
+
   /**
    * Emit checklist tasks completed events
    * @param socket - The socket
@@ -320,49 +409,6 @@ export class SocketOperationService {
   emitChecklistTasksCompleted(socket: Socket, sessionId: string, taskIds: string[]): string[] {
     return taskIds.filter((taskId) =>
       this.socketEmitterService.checklistTaskCompleted(socket, sessionId, taskId),
-    );
-  }
-
-  // ============================================================================
-  // Public API Methods - Launcher Management
-  // ============================================================================
-
-  /**
-   * Add launcher sessions
-   * @param socket - The socket
-   * @param socketData - The socket client data
-   * @param sessions - Target launcher sessions
-   * @returns Promise<boolean> - True if the sessions were added successfully
-   */
-  async addLaunchers(
-    socket: Socket,
-    socketData: SocketData,
-    sessions: CustomContentSession[],
-  ): Promise<boolean> {
-    const { clientConditions = [], launcherSessions = [] } = socketData;
-
-    // Handle launcher sessions processing
-    const { updatedSessions, removedContentIds } = await this.handleLauncherSessions(
-      launcherSessions,
-      sessions,
-      socket,
-    );
-
-    // Handle launcher client conditions update
-    const { updatedConditions } = this.handleLauncherClientConditions(
-      clientConditions,
-      removedContentIds,
-      socket,
-    );
-
-    // Update socket data with processed sessions and conditions
-    return await this.socketDataService.set(
-      socket.id,
-      {
-        launcherSessions: updatedSessions,
-        clientConditions: updatedConditions,
-      },
-      true,
     );
   }
 

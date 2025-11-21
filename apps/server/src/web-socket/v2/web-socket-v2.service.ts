@@ -241,7 +241,7 @@ export class WebSocketV2Service {
       options: startContentDto,
     };
     if (contentType === ContentDataType.LAUNCHER) {
-      return await this.contentOrchestratorService.startLaunchers(startContentContext);
+      return await this.contentOrchestratorService.addLaunchers(startContentContext);
     }
     // Start the content
     return await this.contentOrchestratorService.startContent(startContentContext);
@@ -303,12 +303,16 @@ export class WebSocketV2Service {
 
     // Cancel all sessions
     await Promise.allSettled(
-      sessionsToCancel.map((session) =>
-        this.contentOrchestratorService.cancelContent({
+      sessionsToCancel.map((session) => {
+        const context: ContentCancelContext = {
           ...endContentContext,
           sessionId: session.id,
-        }),
-      ),
+        };
+        if (session.content.type === ContentDataType.LAUNCHER) {
+          return this.contentOrchestratorService.dismissLauncher(context);
+        }
+        return this.contentOrchestratorService.cancelContent(context);
+      }),
     );
 
     return true;
@@ -522,17 +526,17 @@ export class WebSocketV2Service {
    * @returns True if the launcher was dismissed successfully
    */
   async dismissLauncher(context: WebSocketContext, params: DismissLauncherDto): Promise<boolean> {
-    const { server, socket, socketData } = context;
-    const { environment, clientContext } = socketData;
+    const { server, socket } = context;
     const { sessionId, endReason } = params;
-    const success = await this.eventTrackingService.trackEventByType(BizEvents.LAUNCHER_DISMISSED, {
+    const dismissLauncherContext: ContentCancelContext = {
+      server,
+      socket,
       sessionId,
-      environment,
-      clientContext,
       endReason,
-    });
-    await this.toggleContents(server, socket, [ContentDataType.LAUNCHER]);
-    return success;
+      unsetCurrentSession: false,
+      cancelOtherSessions: true,
+    };
+    return await this.contentOrchestratorService.dismissLauncher(dismissLauncherContext);
   }
 
   // ============================================================================

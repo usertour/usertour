@@ -74,7 +74,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     const tooltip = launcherData?.tooltip;
     // Auto-dismiss after tooltip is closed if configured
     if (tooltip?.settings?.dismissAfterFirstActivation) {
-      await this.reportDismissEvent();
+      await this.close(contentEndReason.LAUNCHER_DEACTIVATED);
     }
   }
 
@@ -245,15 +245,28 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   /**
    * Reports when the launcher is dismissed by the user
    * Deletes the current tracking session after dismissal
+   * @param reason - The reason for dismissing the launcher
    */
-  private async reportDismissEvent() {
+  protected async reportDismissEvent(
+    reason: contentEndReason = contentEndReason.LAUNCHER_DEACTIVATED,
+  ): Promise<void> {
     await this.socketService.dismissLauncher({
       sessionId: this.getSessionId(),
-      endReason: contentEndReason.LAUNCHER_DEACTIVATED,
+      endReason: reason,
     });
   }
 
   // === Lifecycle Hooks ===
+  /**
+   * Launcher-specific close logic
+   * Uses reportDismissEvent instead of endContent for launcher
+   * @param reason - The reason for closing the launcher
+   * @protected
+   */
+  protected async onClose(reason: contentEndReason = contentEndReason.USER_CLOSED): Promise<void> {
+    await this.reportDismissEvent(reason);
+  }
+
   /**
    * Launcher-specific cleanup logic
    * @protected

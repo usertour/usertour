@@ -27,6 +27,7 @@ import {
   findCurrentStepCvid,
   canSendChecklistCompletedEvent,
   evaluateChecklistItemsWithContext,
+  isSingletonContentType,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -83,17 +84,22 @@ export class ContentOrchestratorService {
   ) {}
 
   // ============================================================================
-  // Public API Methods
+  // Public API Methods - Singleton Content (FLOW and CHECKLIST)
   // ============================================================================
 
   /**
-   * Main entry point for starting singleton content
+   * Main entry point for starting singleton content (FLOW and CHECKLIST)
    * Implements multiple strategies for content activation and coordinates the start process
    * No longer needs distributed lock as message queue ensures ordered execution
    */
   async startContent(context: ContentStartContext): Promise<boolean> {
-    const { options } = context;
+    const { options, contentType } = context;
     const contentId = options?.contentId;
+
+    // If the content type is not a singleton content type, return false
+    if (!isSingletonContentType(contentType)) {
+      return false;
+    }
     // Strategy 1: Try to start by specific contentId
     if (contentId) {
       const result = await this.tryStartByContentId(context);
@@ -115,7 +121,7 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Cancel content
+   * Cancel singleton content (FLOW and CHECKLIST)
    * No longer needs distributed lock as message queue ensures ordered execution
    * @param context - The content cancel context
    * @returns True if the content was canceled successfully
@@ -138,6 +144,10 @@ export class ContentOrchestratorService {
     const { environment, clientContext, externalUserId } = socketData;
 
     const contentType = session.content.type as ContentDataType;
+    // If the content type is not a singleton content type, return false
+    if (!isSingletonContentType(contentType)) {
+      return false;
+    }
 
     // Track content ended event
     const isEventTracked = await this.trackContentEndedEvent(
@@ -202,12 +212,16 @@ export class ContentOrchestratorService {
     return await this.initializeSession(customContentVersion, socketData, undefined);
   }
 
+  // ============================================================================
+  // Public API Methods - Launcher
+  // ============================================================================
+
   /**
-   * Start launchers
+   * Add launchers
    * @param context - The content start context
-   * @returns True if the launchers were started successfully
+   * @returns True if the launchers were added successfully
    */
-  async startLaunchers(context: ContentStartContext): Promise<boolean> {
+  async addLaunchers(context: ContentStartContext): Promise<boolean> {
     // 1. Prepare launcher data
     const preparationResult = await this.prepareLauncherData(context);
     if (!preparationResult.success) {
@@ -232,53 +246,43 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Start contents by types sequentially
-   * Gets socket data in each iteration to ensure we have the latest data
-   * as it may be updated by previous content operations
-   * @param context - Base context containing server, socket, and options
-   * @param contentTypes - Array of content types to start
-   * @returns True if all content types were started successfully, false if any failed
+   * Dismiss launcher
+   * @param context - The content cancel context
+   * @returns True if the launcher was dismissed successfully
    */
-  async startContentsByTypes(
-    context: Omit<ContentStartContext, 'contentType' | 'socketData'>,
-    contentTypes: ContentDataType[],
-  ): Promise<boolean> {
-    for (const contentType of contentTypes) {
-      const startContentContext = await this.buildContentStartContext(context, contentType);
-      if (!startContentContext) {
-        return false;
-      }
-
-      if (contentType === ContentDataType.LAUNCHER) {
-        await this.startLaunchers(startContentContext);
-      } else {
-        await this.startContent(startContentContext);
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Build content start context with fresh socket data
-   * @param context - Base context containing server, socket, and options
-   * @param contentType - The content type to start
-   * @returns ContentStartContext if socket data is available, null otherwise
-   */
-  private async buildContentStartContext(
-    context: Omit<ContentStartContext, 'contentType' | 'socketData'>,
-    contentType: ContentDataType,
-  ): Promise<ContentStartContext | null> {
-    const socketData = await this.getSocketData(context.socket);
+  async dismissLauncher(context: ContentCancelContext): Promise<boolean> {
+    const { sessionId, endReason, socket, server } = context;
+    const socketData = await this.getSocketData(socket);
     if (!socketData) {
-      return null;
+      return false;
     }
+    const { environment, clientContext, externalUserId } = socketData;
+    const session = await this.sessionBuilderService.getBizSession(sessionId);
+    if (!session) {
+      return false;
+    }
+    const contentId = session.content.id;
 
-    return {
-      ...context,
+    const success = await this.eventTrackingService.trackEventByType(BizEvents.LAUNCHER_DISMISSED, {
+      sessionId,
+      environment,
+      clientContext,
+      endReason,
+    });
+    if (!success) {
+      return false;
+    }
+    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
+    const cancelSessionParams: CancelSessionParams = {
+      server,
+      socket,
       socketData,
-      contentType,
+      contentId,
+      sessionId,
+      contentType: ContentDataType.LAUNCHER,
     };
+
+    return await this.cancelSessionInRoom(cancelSessionParams, roomId, true, false);
   }
 
   /**
@@ -310,6 +314,60 @@ export class ContentOrchestratorService {
       return null;
     }
     return await this.initializeSession(customContentVersion, socketData);
+  }
+
+  // ============================================================================
+  // Public API Methods - Utility
+  // ============================================================================
+
+  /**
+   * Start contents by types sequentially
+   * Gets socket data in each iteration to ensure we have the latest data
+   * as it may be updated by previous content operations
+   * @param context - Base context containing server, socket, and options
+   * @param contentTypes - Array of content types to start
+   * @returns True if all content types were started successfully, false if any failed
+   */
+  async startContentsByTypes(
+    context: Omit<ContentStartContext, 'contentType' | 'socketData'>,
+    contentTypes: ContentDataType[],
+  ): Promise<boolean> {
+    for (const contentType of contentTypes) {
+      const startContentContext = await this.buildContentStartContext(context, contentType);
+      if (!startContentContext) {
+        return false;
+      }
+
+      if (contentType === ContentDataType.LAUNCHER) {
+        await this.addLaunchers(startContentContext);
+      } else {
+        await this.startContent(startContentContext);
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Build content start context with fresh socket data
+   * @param context - Base context containing server, socket, and options
+   * @param contentType - The content type to start
+   * @returns ContentStartContext if socket data is available, null otherwise
+   */
+  private async buildContentStartContext(
+    context: Omit<ContentStartContext, 'contentType' | 'socketData'>,
+    contentType: ContentDataType,
+  ): Promise<ContentStartContext | null> {
+    const socketData = await this.getSocketData(context.socket);
+    if (!socketData) {
+      return null;
+    }
+
+    return {
+      ...context,
+      socketData,
+      contentType,
+    };
   }
 
   // ============================================================================
@@ -892,6 +950,13 @@ export class ContentOrchestratorService {
     const currentStepCvid = findCurrentStepCvid(customContentVersion, startOptions);
     const sessionId = findAvailableSessionId(session.latestSession, contentType);
     if (sessionId) {
+      const existingBizSession = await this.sessionBuilderService.getBizSession(sessionId);
+      if (!existingBizSession) {
+        return {
+          success: false,
+          reason: 'BizSession not found or already dismissed',
+        };
+      }
       return {
         success: true,
         sessionId,
@@ -1252,11 +1317,41 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Cancel current socket session
+   * Cancel socket session
+   * Routes to appropriate cancellation method based on content type
    * @param params - The cancel session parameters
    * @returns True if the session was canceled successfully
    */
-  private async cancelSocketSession(params: CancelSessionParams) {
+  private async cancelSocketSession(params: CancelSessionParams): Promise<boolean> {
+    const { contentType } = params;
+    if (contentType === ContentDataType.LAUNCHER) {
+      return await this.cancelLauncherSocketSession(params);
+    }
+    return await this.cancelContentSocketSession(params);
+  }
+
+  /**
+   * Cancel launcher socket session
+   * @param params - The cancel session parameters
+   * @returns True if the session was canceled successfully
+   */
+  private async cancelLauncherSocketSession(params: CancelSessionParams): Promise<boolean> {
+    const { socket, socketData, contentId, unsetSession } = params;
+    if (!contentId) {
+      this.logger.warn('cancelLauncherSocketSession: contentId is required but not provided');
+      return false;
+    }
+    return await this.socketOperationService.cleanupLauncherSession(socket, socketData, contentId, {
+      unsetSession,
+    });
+  }
+
+  /**
+   * Cancel content socket session (FLOW and CHECKLIST)
+   * @param params - The cancel session parameters
+   * @returns True if the session was canceled successfully
+   */
+  private async cancelContentSocketSession(params: CancelSessionParams): Promise<boolean> {
     const { server, socket, sessionId, socketData, contentType } = params;
     const currentSession = extractSessionByContentType(socketData, contentType);
     const context = {

@@ -83,6 +83,7 @@ export interface CancelSessionParams {
   socketData: SocketData;
   contentType: ContentDataType;
   sessionId: string;
+  contentId?: string;
   unsetSession?: boolean;
   setLastDismissedId?: boolean;
 }

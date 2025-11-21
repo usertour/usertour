@@ -588,6 +588,17 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Component-specific close logic - can be overridden by subclasses
+   * @param reason - The reason for closing the component
+   * @protected
+   */
+  protected async onClose(reason: contentEndReason = contentEndReason.USER_CLOSED): Promise<void> {
+    // Default: use endContent for Tour and Checklist
+    await this.endContent(reason);
+  }
+
+  // === Component Lifecycle ===
+  /**
    * Closes the component with the specified reason
    * @param reason - The reason for closing the component
    * @protected
@@ -600,8 +611,8 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     this.trigger(SDKClientEvents.COMPONENT_CLOSED, { sessionId });
     // Destroy the component
     this.destroy();
-    // End the content session
-    await this.endContent(reason);
+    // Call component-specific close logic
+    await this.onClose(reason);
   }
 
   /**
