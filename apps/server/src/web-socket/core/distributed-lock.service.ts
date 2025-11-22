@@ -139,7 +139,7 @@ export class DistributedLockService {
       const client = this.redisService.getClient();
 
       const result = await client.get(lockKey);
-      return result;
+      return result ?? null;
     } catch (error) {
       this.logger.error(`Error getting lock value for ${key}:`, error);
       return null;

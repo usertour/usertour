@@ -13,6 +13,9 @@ import {
   RulesType,
   RulesEvaluationOptions,
   StepTrigger,
+  SimpleAttribute,
+  AttributeBizTypes,
+  BizAttributeTypes,
 } from '@usertour/types';
 import { flowIsDismissed, checklistIsDimissed } from '@/utils/content-utils';
 
@@ -272,10 +275,19 @@ export class ConditionEvaluationService {
   ): Promise<RulesEvaluationOptions | null> {
     const userAttributes = (context.bizUser.data as Record<string, any>) || {};
 
+    // Convert Attribute[] to SimpleAttribute[] for RulesEvaluationOptions
+    // AttributeBizType and AttributeBizTypes have the same numeric values (1, 2, 3)
+    const simpleAttributes: SimpleAttribute[] = context.attributes.map((attr) => ({
+      id: attr.id,
+      codeName: attr.codeName,
+      dataType: attr.dataType as BizAttributeTypes,
+      bizType: attr.bizType as AttributeBizTypes, // Cast to AttributeBizTypes for evaluateAttributeCondition
+    }));
+
     // USER type doesn't require company context
     if (bizType === AttributeBizType.USER) {
       return {
-        attributes: context.attributes,
+        attributes: simpleAttributes,
         userAttributes,
       };
     }
@@ -295,7 +307,7 @@ export class ConditionEvaluationService {
     const membershipAttributes = (userOnCompany.data as Record<string, any>) || {};
 
     return {
-      attributes: context.attributes,
+      attributes: simpleAttributes,
       userAttributes,
       companyAttributes,
       membershipAttributes,
