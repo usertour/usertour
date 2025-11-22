@@ -107,8 +107,8 @@ export class SocketOperationService {
       );
     }
 
-    // Emit condition changes efficiently
-    const conditionChanges = await this.emitConditionsOnActivation(
+    // Sync condition state efficiently
+    const conditionChanges = await this.emitConditions(
       socket,
       socketData,
       trackConditions,
@@ -153,8 +153,8 @@ export class SocketOperationService {
       return false;
     }
 
-    // Emit condition changes efficiently
-    const conditionChanges = await this.emitConditionsOnActivation(
+    // Sync condition state efficiently
+    const conditionChanges = await this.emitConditions(
       socket,
       socketData,
       trackConditions,
@@ -199,12 +199,9 @@ export class SocketOperationService {
     // Cleanup conditions efficiently
     // const conditionChanges = await this.cleanupConditions(socket, socketData, [contentType]);
 
-    const conditionChanges = await this.emitConditionsOnActivation(
-      socket,
-      socketData,
-      trackConditions,
-      [contentType],
-    );
+    const conditionChanges = await this.emitConditions(socket, socketData, trackConditions, [
+      contentType,
+    ]);
     if (!conditionChanges) {
       return false;
     }
@@ -529,14 +526,15 @@ export class SocketOperationService {
   }
 
   /**
-   * Emit conditions efficiently with parallel operations on session activation
+   * Emit conditions efficiently with parallel operations
+   * Handles condition tracking, untracking, and wait timer management
    * @param socket - The socket
    * @param socketData - The socket client data
    * @param trackConditions - New conditions to track
    * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
    * @returns Object containing updated conditions and remaining timers
    */
-  private async emitConditionsOnActivation(
+  private async emitConditions(
     socket: Socket,
     socketData: SocketData,
     trackConditions: TrackCondition[],
