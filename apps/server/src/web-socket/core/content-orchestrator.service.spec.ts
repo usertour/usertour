@@ -1,0 +1,1010 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { ContentOrchestratorService } from './content-orchestrator.service';
+import { ContentDataService } from './content-data.service';
+import { SessionBuilderService } from './session-builder.service';
+import { EventTrackingService } from './event-tracking.service';
+import { SocketOperationService } from './socket-operation.service';
+import { SocketDataService } from './socket-data.service';
+import { DistributedLockService } from './distributed-lock.service';
+import {
+  ContentDataType,
+  contentStartReason,
+  contentEndReason,
+  CustomContentSession,
+  ClientContext,
+} from '@usertour/types';
+import { Socket } from 'socket.io';
+import {
+  SocketData,
+  CustomContentVersion,
+  ContentStartContext,
+  ContentCancelContext,
+  Environment,
+  BizSessionWithEvents,
+} from '@/common/types';
+
+describe('ContentOrchestratorService', () => {
+  let service: ContentOrchestratorService;
+  let contentDataService: jest.Mocked<ContentDataService>;
+  let sessionBuilderService: jest.Mocked<SessionBuilderService>;
+  let eventTrackingService: jest.Mocked<EventTrackingService>;
+  let socketOperationService: jest.Mocked<SocketOperationService>;
+  let socketDataService: jest.Mocked<SocketDataService>;
+
+  // Mock data factories
+  const createMockEnvironment = (): Environment => ({
+    id: 'env-1',
+    projectId: 'project-1',
+    name: 'Test Environment',
+    token: 'test-token',
+    deleted: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  const createMockClientContext = (): ClientContext => ({
+    pageUrl: 'https://example.com/test',
+    viewportWidth: 1920,
+    viewportHeight: 1080,
+  });
+
+  const createMockSocketData = (overrides?: Partial<SocketData>): SocketData => ({
+    environment: createMockEnvironment(),
+    externalUserId: 'user-1',
+    externalCompanyId: 'company-1',
+    clientContext: createMockClientContext(),
+    clientConditions: [],
+    waitTimers: [],
+    ...overrides,
+  });
+
+  const createMockSocket = (): Partial<Socket> =>
+    ({
+      id: 'socket-1',
+      emit: jest.fn(),
+      join: jest.fn(),
+      leave: jest.fn(),
+    }) as unknown as Socket;
+
+  const createMockCustomContentVersion = (
+    contentType: ContentDataType,
+    overrides?: Partial<CustomContentVersion>,
+  ): CustomContentVersion => ({
+    id: 'version-1',
+    contentId: 'content-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    publishedAt: new Date(),
+    deleted: false,
+    sequence: 1,
+    themeId: 'theme-1',
+    data: {},
+    config: {
+      enabledAutoStartRules: false,
+      enabledHideRules: false,
+      autoStartRules: [],
+      hideRules: [],
+      autoStartRulesSetting: {
+        startIfNotComplete: false,
+        priority: 'medium' as any,
+        wait: 0,
+      },
+      hideRulesSetting: {},
+    },
+    content: {
+      id: 'content-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      publishedAt: new Date(),
+      name: 'Test Content',
+      buildUrl: '',
+      type: contentType,
+      published: true,
+      deleted: false,
+      environmentId: 'env-1',
+      projectId: 'project-1',
+      config: {},
+      publishedVersionId: 'version-1',
+      editedVersionId: 'version-1',
+    },
+    steps: [],
+    session: {
+      latestSession: undefined,
+      totalSessions: 0,
+      completedSessions: 0,
+    },
+    ...overrides,
+  });
+
+  const createMockContentSession = (
+    contentType: ContentDataType,
+    overrides?: Partial<CustomContentSession>,
+  ): CustomContentSession => ({
+    id: 'session-1',
+    type: contentType,
+    content: {
+      id: 'content-1',
+      name: 'Test Content',
+      type: contentType,
+      project: {
+        id: 'project-1',
+        removeBranding: false,
+      },
+    },
+    draftMode: false,
+    attributes: [],
+    version: {
+      id: 'version-1',
+      theme: null,
+    },
+    ...overrides,
+  });
+
+  beforeEach(async () => {
+    const mockContentDataService = {
+      findCustomContentVersions: jest.fn(),
+      findPublishedVersionId: jest.fn(),
+    };
+
+    const mockSessionBuilderService = {
+      getBizSession: jest.fn(),
+      createBizSession: jest.fn(),
+      createContentSession: jest.fn(),
+      syncSessionVersionIfNeeded: jest.fn(),
+      updateCurrentStepId: jest.fn(),
+    };
+
+    const mockEventTrackingService = {
+      trackEventByType: jest.fn(),
+      trackEventsByType: jest.fn(),
+      updateChecklistSession: jest.fn(),
+    };
+
+    const mockSocketOperationService = {
+      activateFlowSession: jest.fn(),
+      activateChecklistSession: jest.fn(),
+      addLaunchers: jest.fn(),
+      cleanupLauncherSession: jest.fn(),
+      cleanupSocketSession: jest.fn(),
+      trackClientConditions: jest.fn(),
+      startConditionWaitTimers: jest.fn(),
+      emitChecklistTasksCompleted: jest.fn(),
+    };
+
+    const mockSocketDataService = {
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
+    const mockDistributedLockService = {
+      withRetryLock: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ContentOrchestratorService,
+        {
+          provide: ContentDataService,
+          useValue: mockContentDataService,
+        },
+        {
+          provide: SessionBuilderService,
+          useValue: mockSessionBuilderService,
+        },
+        {
+          provide: EventTrackingService,
+          useValue: mockEventTrackingService,
+        },
+        {
+          provide: SocketOperationService,
+          useValue: mockSocketOperationService,
+        },
+        {
+          provide: SocketDataService,
+          useValue: mockSocketDataService,
+        },
+        {
+          provide: DistributedLockService,
+          useValue: mockDistributedLockService,
+        },
+      ],
+    }).compile();
+
+    service = module.get<ContentOrchestratorService>(ContentOrchestratorService);
+    contentDataService = module.get(ContentDataService);
+    sessionBuilderService = module.get(SessionBuilderService);
+    eventTrackingService = module.get(EventTrackingService);
+    socketOperationService = module.get(SocketOperationService);
+    socketDataService = module.get(SocketDataService);
+
+    jest.clearAllMocks();
+  });
+
+  describe('startContent - FLOW', () => {
+    const contentType = ContentDataType.FLOW;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    describe('Strategy 1: Start by specific contentId', () => {
+      it('should start content successfully when contentId is provided', async () => {
+        const contentId = 'content-1';
+        const versionId = 'version-1';
+        const mockVersion = createMockCustomContentVersion(contentType);
+        const mockSession = createMockContentSession(contentType);
+
+        contentDataService.findPublishedVersionId.mockResolvedValue(versionId);
+        contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+        sessionBuilderService.getBizSession.mockResolvedValue(null);
+        sessionBuilderService.createBizSession.mockResolvedValue({
+          id: 'biz-session-1',
+          versionId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deleted: false,
+          state: 0,
+          data: {},
+          progress: 0,
+          projectId: 'project-1',
+          environmentId: 'env-1',
+          bizUserId: 'biz-user-1',
+          bizCompanyId: 'biz-company-1',
+          contentId: 'content-1',
+          currentStepId: '',
+          bizEvent: [],
+        } as BizSessionWithEvents);
+        sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+        eventTrackingService.trackEventsByType.mockResolvedValue(true);
+        socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+        const context: ContentStartContext = {
+          server: {} as any,
+          socket: mockSocket as Socket,
+          socketData: mockSocketData,
+          contentType,
+          options: {
+            contentId,
+            startReason: contentStartReason.START_FROM_CONDITION,
+          },
+        };
+
+        const result = await service.startContent(context);
+
+        expect(result).toBe(true);
+        expect(contentDataService.findPublishedVersionId).toHaveBeenCalledWith(
+          contentId,
+          mockSocketData.environment.id,
+        );
+        expect(sessionBuilderService.createContentSession).toHaveBeenCalled();
+        expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+      });
+
+      it('should return false when content is not published', async () => {
+        const contentId = 'content-1';
+
+        contentDataService.findPublishedVersionId.mockResolvedValue(undefined);
+
+        const context: ContentStartContext = {
+          server: {} as any,
+          socket: mockSocket as Socket,
+          socketData: mockSocketData,
+          contentType,
+          options: {
+            contentId,
+            startReason: contentStartReason.START_FROM_CONDITION,
+          },
+        };
+
+        const result = await service.startContent(context);
+
+        expect(result).toBe(false);
+        expect(sessionBuilderService.createContentSession).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Strategy 2: Handle existing session', () => {
+      it('should reactivate existing session', async () => {
+        const existingSession = createMockContentSession(contentType);
+        const mockBizSession = {
+          id: 'session-1',
+          versionId: 'version-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deleted: false,
+          state: 0,
+          data: {},
+          progress: 0,
+          projectId: 'project-1',
+          environmentId: 'env-1',
+          bizUserId: 'biz-user-1',
+          bizCompanyId: 'biz-company-1',
+          contentId: 'content-1',
+          currentStepId: '',
+          bizEvent: [],
+        } as BizSessionWithEvents;
+        // Create version with matching version ID
+        const mockVersion = createMockCustomContentVersion(contentType, {
+          id: 'version-1', // Must match existingSession.version.id
+          session: {
+            latestSession: mockBizSession,
+            totalSessions: 1,
+            completedSessions: 0,
+          },
+        });
+
+        mockSocketData.flowSession = existingSession;
+        // Ensure the version ID matches the session's versionId
+        mockVersion.id = existingSession.version.id;
+        // Mock findCustomContentVersions to return the version for evaluation
+        contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+        // Mock getBizSession to return the existing biz session when queried by sessionId
+        sessionBuilderService.getBizSession.mockImplementation((sessionId: string) => {
+          if (sessionId === existingSession.id) {
+            return Promise.resolve(mockBizSession as any);
+          }
+          return Promise.resolve(null);
+        });
+        // Create a session with different theme to trigger activation
+        // This will make hasContentSessionChanges return true
+        const reactivatedSession = createMockContentSession(contentType, {
+          id: existingSession.id,
+          version: {
+            ...existingSession.version,
+            id: existingSession.version.id,
+            theme: {
+              id: 'theme-2', // Different theme ID to trigger changes
+              name: 'Different Theme',
+            } as any,
+          },
+        });
+        sessionBuilderService.createContentSession.mockResolvedValue(reactivatedSession);
+        socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+        const context: ContentStartContext = {
+          server: {} as any,
+          socket: mockSocket as Socket,
+          socketData: mockSocketData,
+          contentType,
+          options: {
+            startReason: contentStartReason.START_FROM_CONDITION,
+          },
+        };
+
+        const result = await service.startContent(context);
+
+        expect(result).toBe(true);
+        expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+      });
+
+      it('should return false when existing session version is not found', async () => {
+        const existingSession = createMockContentSession(contentType);
+        mockSocketData.flowSession = existingSession;
+
+        contentDataService.findCustomContentVersions.mockResolvedValue([]);
+
+        const context: ContentStartContext = {
+          server: {} as any,
+          socket: mockSocket as Socket,
+          socketData: mockSocketData,
+          contentType,
+          options: {
+            startReason: contentStartReason.START_FROM_CONDITION,
+          },
+        };
+
+        const result = await service.startContent(context);
+
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('Strategy 3: Auto start content', () => {
+      it('should auto start by latest activated version', async () => {
+        const mockLatestSession = {
+          id: 'session-1',
+          versionId: 'version-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deleted: false,
+          state: 0,
+          data: {},
+          progress: 0,
+          projectId: 'project-1',
+          environmentId: 'env-1',
+          bizUserId: 'biz-user-1',
+          bizCompanyId: 'biz-company-1',
+          contentId: 'content-1',
+          currentStepId: '',
+          bizEvent: [],
+        } as BizSessionWithEvents;
+        const mockVersion = createMockCustomContentVersion(contentType, {
+          session: {
+            latestSession: mockLatestSession,
+            totalSessions: 1,
+            completedSessions: 0,
+          },
+        });
+        const mockSession = createMockContentSession(contentType);
+
+        contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+        const mockBizSession = {
+          id: 'biz-session-1',
+          versionId: 'version-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deleted: false,
+          state: 0,
+          data: {},
+          progress: 0,
+          projectId: 'project-1',
+          environmentId: 'env-1',
+          bizUserId: 'biz-user-1',
+          bizCompanyId: 'biz-company-1',
+          contentId: 'content-1',
+          currentStepId: '',
+          bizEvent: [],
+          version: {
+            id: 'version-1',
+            contentId: 'content-1',
+          } as any,
+          content: {
+            id: 'content-1',
+            type: contentType,
+          } as any,
+        } as BizSessionWithEvents;
+        sessionBuilderService.getBizSession.mockResolvedValue(mockBizSession as any);
+        sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+        socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+        const context: ContentStartContext = {
+          server: {} as any,
+          socket: mockSocket as Socket,
+          socketData: mockSocketData,
+          contentType,
+          options: {
+            startReason: contentStartReason.START_FROM_CONDITION,
+          },
+        };
+
+        const result = await service.startContent(context);
+
+        expect(result).toBe(true);
+        expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+      });
+
+      it('should setup wait timers when content is not ready', async () => {
+        const mockVersion = createMockCustomContentVersion(contentType, {
+          config: {
+            enabledAutoStartRules: true,
+            enabledHideRules: false,
+            autoStartRules: [
+              {
+                id: 'condition-1',
+                type: 'page',
+                data: {
+                  operator: 'equals',
+                  value: 'test',
+                },
+              },
+            ],
+            hideRules: [],
+            autoStartRulesSetting: {
+              startIfNotComplete: false,
+              priority: 'medium' as any,
+              wait: 1000, // Must be > 0 to generate wait timers
+            },
+            hideRulesSetting: {},
+          },
+        });
+
+        // Mock clientConditions to make the condition activated but with wait time
+        // The condition needs to be activated for filterAvailableAutoStartContentVersions to return the version
+        // But wait time > 0 will generate wait timers
+        mockSocketData.clientConditions = [
+          {
+            conditionId: 'condition-1',
+            isActive: true,
+          } as any,
+        ];
+        contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+        socketOperationService.startConditionWaitTimers.mockResolvedValue(true);
+
+        const context: ContentStartContext = {
+          server: {} as any,
+          socket: mockSocket as Socket,
+          socketData: mockSocketData,
+          contentType,
+          options: {
+            startReason: contentStartReason.START_FROM_CONDITION,
+          },
+        };
+
+        const result = await service.startContent(context);
+
+        expect(result).toBe(true);
+        expect(socketOperationService.startConditionWaitTimers).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('startContent - CHECKLIST', () => {
+    const contentType = ContentDataType.CHECKLIST;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should start checklist successfully', async () => {
+      const mockBizSession = {
+        id: 'biz-session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+        bizEvent: [],
+      } as BizSessionWithEvents;
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        data: {
+          checklist: {
+            items: [
+              {
+                id: 'item-1',
+                title: 'Test Item',
+                isVisible: true,
+                isCompleted: false,
+              },
+            ],
+          },
+        },
+        session: {
+          latestSession: mockBizSession,
+          totalSessions: 1,
+          completedSessions: 0,
+        },
+      });
+      const mockSession = createMockContentSession(contentType, {
+        version: {
+          id: 'version-1',
+          theme: null,
+          checklist: {
+            items: [
+              {
+                id: 'item-1',
+                title: 'Test Item',
+                isVisible: true,
+                isCompleted: false,
+              },
+            ],
+          },
+        } as any,
+      });
+
+      contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+      sessionBuilderService.getBizSession.mockResolvedValue(mockBizSession as any);
+      sessionBuilderService.createBizSession.mockResolvedValue(mockBizSession as any);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      eventTrackingService.trackEventsByType.mockResolvedValue(true);
+      socketOperationService.activateChecklistSession.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.activateChecklistSession).toHaveBeenCalled();
+    });
+  });
+
+  describe('cancelContent', () => {
+    const contentType = ContentDataType.FLOW;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+    let mockServer: any;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      mockServer = {
+        in: jest.fn().mockReturnValue({
+          fetchSockets: jest.fn().mockResolvedValue([]),
+        }),
+      };
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should cancel content successfully', async () => {
+      const sessionId = 'session-1';
+      const mockSession = createMockContentSession(contentType);
+      mockSession.id = sessionId;
+      mockSession.content.id = 'content-1';
+
+      // Set up socketData with the current session
+      mockSocketData.flowSession = mockSession;
+
+      sessionBuilderService.getBizSession.mockResolvedValue({
+        id: sessionId,
+        versionId: mockSession.version.id,
+        content: {
+          id: 'content-1',
+          type: contentType,
+        },
+      } as any);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.cleanupSocketSession.mockResolvedValue(true);
+      // Mock findCustomContentVersions to return empty array for tryAutoStartContent
+      contentDataService.findCustomContentVersions.mockResolvedValue([]);
+
+      const context: ContentCancelContext = {
+        server: mockServer,
+        socket: mockSocket as Socket,
+        sessionId,
+        endReason: contentEndReason.USER_CLOSED,
+      };
+
+      const result = await service.cancelContent(context);
+
+      expect(result).toBe(true);
+      expect(eventTrackingService.trackEventByType).toHaveBeenCalled();
+      expect(socketOperationService.cleanupSocketSession).toHaveBeenCalled();
+    });
+
+    it('should return false when session is not found', async () => {
+      const sessionId = 'non-existent';
+
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+
+      const context: ContentCancelContext = {
+        server: mockServer,
+        socket: mockSocket as Socket,
+        sessionId,
+        endReason: contentEndReason.USER_CLOSED,
+      };
+
+      const result = await service.cancelContent(context);
+
+      expect(result).toBe(false);
+      expect(eventTrackingService.trackEventByType).not.toHaveBeenCalled();
+    });
+
+    it('should return false when event tracking fails', async () => {
+      const sessionId = 'session-1';
+      const mockSession = {
+        id: sessionId,
+        content: {
+          id: 'content-1',
+          type: contentType,
+        },
+      };
+
+      sessionBuilderService.getBizSession.mockResolvedValue(mockSession as any);
+      eventTrackingService.trackEventByType.mockResolvedValue(false);
+
+      const context: ContentCancelContext = {
+        server: mockServer,
+        socket: mockSocket as Socket,
+        sessionId,
+        endReason: contentEndReason.USER_CLOSED,
+      };
+
+      const result = await service.cancelContent(context);
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('addLaunchers', () => {
+    const contentType = ContentDataType.LAUNCHER;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should add launchers successfully', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType);
+      const mockSession = createMockContentSession(contentType);
+
+      contentDataService.findPublishedVersionId.mockResolvedValue('version-1');
+      contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      socketOperationService.addLaunchers.mockResolvedValue(true);
+      socketOperationService.trackClientConditions.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          contentId: 'content-1',
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.addLaunchers(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.addLaunchers).toHaveBeenCalled();
+    });
+
+    it('should return false when published version is not found', async () => {
+      contentDataService.findPublishedVersionId.mockResolvedValue(undefined);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          contentId: 'content-1',
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.addLaunchers(context);
+
+      expect(result).toBe(false);
+      expect(socketOperationService.addLaunchers).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('dismissLauncher', () => {
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+    let mockServer: any;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      mockServer = {
+        in: jest.fn().mockReturnValue({
+          fetchSockets: jest.fn().mockResolvedValue([]),
+        }),
+      };
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should dismiss launcher successfully', async () => {
+      const sessionId = 'session-1';
+      const contentId = 'content-1';
+      const mockSession = {
+        id: sessionId,
+        content: {
+          id: contentId,
+        },
+      };
+
+      sessionBuilderService.getBizSession.mockResolvedValue(mockSession as any);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.cleanupLauncherSession.mockResolvedValue(true);
+
+      const context: ContentCancelContext = {
+        server: mockServer,
+        socket: mockSocket as Socket,
+        sessionId,
+        endReason: contentEndReason.USER_CLOSED,
+      };
+
+      const result = await service.dismissLauncher(context);
+
+      expect(result).toBe(true);
+      expect(eventTrackingService.trackEventByType).toHaveBeenCalled();
+      expect(socketOperationService.cleanupLauncherSession).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleChecklistCompletedEvents', () => {
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should handle checklist completed events', async () => {
+      const mockBizSession = {
+        id: 'session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+        bizEvent: [],
+      } as BizSessionWithEvents;
+      const mockVersion = createMockCustomContentVersion(ContentDataType.CHECKLIST, {
+        session: {
+          latestSession: mockBizSession,
+          totalSessions: 1,
+          completedSessions: 0,
+        },
+        data: {
+          items: [],
+        },
+      });
+
+      contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+      eventTrackingService.updateChecklistSession.mockResolvedValue(undefined);
+
+      await service.handleChecklistCompletedEvents(mockSocket as Socket);
+
+      expect(contentDataService.findCustomContentVersions).toHaveBeenCalled();
+    });
+  });
+
+  describe('trackAutoStartEvent', () => {
+    it('should track auto start event for FLOW', async () => {
+      const sessionId = 'session-1';
+      const environment = createMockEnvironment();
+      const clientContext = createMockClientContext();
+
+      eventTrackingService.trackEventsByType.mockResolvedValue(true);
+
+      const result = await service.trackAutoStartEvent(
+        sessionId,
+        ContentDataType.FLOW,
+        environment,
+        contentStartReason.START_FROM_CONDITION,
+        null,
+        clientContext,
+      );
+
+      expect(result).toBe(true);
+      expect(eventTrackingService.trackEventsByType).toHaveBeenCalled();
+    });
+
+    it('should track auto start event with stepId', async () => {
+      const sessionId = 'session-1';
+      const stepId = 'step-1';
+      const environment = createMockEnvironment();
+      const clientContext = createMockClientContext();
+
+      eventTrackingService.trackEventsByType.mockResolvedValue(true);
+
+      const result = await service.trackAutoStartEvent(
+        sessionId,
+        ContentDataType.FLOW,
+        environment,
+        contentStartReason.START_FROM_CONDITION,
+        stepId,
+        clientContext,
+      );
+
+      expect(result).toBe(true);
+      expect(eventTrackingService.trackEventsByType).toHaveBeenCalled();
+    });
+  });
+
+  describe('trackContentEndedEvent', () => {
+    it('should track content ended event for FLOW', async () => {
+      const sessionId = 'session-1';
+      const environment = createMockEnvironment();
+      const clientContext = createMockClientContext();
+
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+
+      const result = await service.trackContentEndedEvent(
+        sessionId,
+        ContentDataType.FLOW,
+        environment,
+        clientContext,
+        contentEndReason.USER_CLOSED,
+      );
+
+      expect(result).toBe(true);
+      expect(eventTrackingService.trackEventByType).toHaveBeenCalled();
+    });
+  });
+
+  describe('initializeSessionById', () => {
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocketData = createMockSocketData();
+    });
+
+    it('should initialize session by ID successfully', async () => {
+      const sessionId = 'session-1';
+      const mockSession = createMockContentSession(ContentDataType.FLOW);
+      const mockLatestSession = {
+        id: sessionId,
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+        bizEvent: [],
+      } as BizSessionWithEvents;
+      const mockVersion = createMockCustomContentVersion(ContentDataType.FLOW, {
+        session: {
+          latestSession: mockLatestSession,
+          totalSessions: 1,
+          completedSessions: 0,
+        },
+      });
+
+      const mockBizSession = {
+        id: sessionId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        versionId: 'version-1',
+        currentStepId: '',
+        content: { type: ContentDataType.FLOW } as any,
+        version: { id: 'version-1' } as any,
+        bizEvent: [],
+      } as BizSessionWithEvents;
+      sessionBuilderService.getBizSession.mockResolvedValue(mockBizSession as any);
+      contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+
+      const result = await service.initializeSessionById(mockSocketData, sessionId);
+
+      expect(result).toEqual(mockSession);
+    });
+
+    it('should return null when session is not found', async () => {
+      const sessionId = 'non-existent';
+
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+
+      const result = await service.initializeSessionById(mockSocketData, sessionId);
+
+      expect(result).toBeNull();
+    });
+  });
+});

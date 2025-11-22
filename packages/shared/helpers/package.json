@@ -1,18 +1,18 @@
 {
   "name": "@usertour/helpers",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "type": "module",
   "description": "Utility functions and helpers shared across the UserTour project",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc. <support@usertour.io>",
   "license": "AGPL-3.0",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
+      "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     }
   },

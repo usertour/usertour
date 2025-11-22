@@ -1,18 +1,18 @@
 {
   "name": "@usertour/license",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "JWT license signing and validation utilities for UserTour",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc. <support@usertour.io>",
   "license": "AGPL-3.0",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
+      "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     }
   },

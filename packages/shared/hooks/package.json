@@ -15,7 +15,7 @@
     "@apollo/client": "^3.7.17",
     "@usertour-packages/gql": "workspace:^",
     "@usertour/types": "^0.0.29",
-    "@usertour/helpers": "^0.0.37",
+    "@usertour/helpers": "^0.0.38",
     "@usertour-packages/constants": "workspace:^",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
