@@ -1816,4 +1816,936 @@ describe('ContentOrchestratorService', () => {
       expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
     });
   });
+
+  // ============================================================================
+  // Comprehensive Attribute Type Testing - String Operations
+  // ============================================================================
+
+  describe('Auto-start Rules - String Attribute Operations', () => {
+    const contentType = ContentDataType.FLOW;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should start content when string "contains" condition matches', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'userAttr',
+              data: {
+                attrId: 'attr-email',
+                operator: 'contains',
+                value: 'example.com',
+              },
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      const evaluatedVersion = {
+        ...mockVersion,
+        config: {
+          ...mockVersion.config,
+          autoStartRules: [
+            {
+              ...mockVersion.config.autoStartRules[0],
+              actived: true,
+            },
+          ],
+        },
+      };
+
+      const mockSession = createMockContentSession(contentType);
+      contentDataService.findCustomContentVersions.mockResolvedValue([evaluatedVersion]);
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+      sessionBuilderService.createBizSession.mockResolvedValue({
+        id: 'biz-session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+      } as any);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+    });
+
+    it('should start content when string "startsWith" condition matches', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'userAttr',
+              data: {
+                attrId: 'attr-email',
+                operator: 'startsWith',
+                value: 'user',
+              },
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      const evaluatedVersion = {
+        ...mockVersion,
+        config: {
+          ...mockVersion.config,
+          autoStartRules: [
+            {
+              ...mockVersion.config.autoStartRules[0],
+              actived: true,
+            },
+          ],
+        },
+      };
+
+      const mockSession = createMockContentSession(contentType);
+      contentDataService.findCustomContentVersions.mockResolvedValue([evaluatedVersion]);
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+      sessionBuilderService.createBizSession.mockResolvedValue({
+        id: 'biz-session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+      } as any);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+    });
+
+    it('should not start content when string "not" condition does not match', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'userAttr',
+              data: {
+                attrId: 'attr-email',
+                operator: 'not',
+                value: 'user@example.com',
+              },
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      const evaluatedVersion = {
+        ...mockVersion,
+        config: {
+          ...mockVersion.config,
+          autoStartRules: [
+            {
+              ...mockVersion.config.autoStartRules[0],
+              actived: false,
+            },
+          ],
+        },
+      };
+
+      contentDataService.findCustomContentVersions.mockResolvedValue([evaluatedVersion]);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(false);
+      expect(socketOperationService.activateFlowSession).not.toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================================
+  // Comprehensive Attribute Type Testing - Number Operations
+  // ============================================================================
+
+  describe('Auto-start Rules - Number Attribute Operations', () => {
+    const contentType = ContentDataType.FLOW;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should start content when number "isGreaterThan" condition matches', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'userAttr',
+              data: {
+                attrId: 'attr-age',
+                operator: 'isGreaterThan',
+                value: 18,
+              },
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      const evaluatedVersion = {
+        ...mockVersion,
+        config: {
+          ...mockVersion.config,
+          autoStartRules: [
+            {
+              ...mockVersion.config.autoStartRules[0],
+              actived: true,
+            },
+          ],
+        },
+      };
+
+      const mockSession = createMockContentSession(contentType);
+      contentDataService.findCustomContentVersions.mockResolvedValue([evaluatedVersion]);
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+      sessionBuilderService.createBizSession.mockResolvedValue({
+        id: 'biz-session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+      } as any);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+    });
+
+    it('should start content when number "between" condition matches', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'userAttr',
+              data: {
+                attrId: 'attr-age',
+                operator: 'between',
+                value: 20,
+                value2: 30,
+              },
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      const evaluatedVersion = {
+        ...mockVersion,
+        config: {
+          ...mockVersion.config,
+          autoStartRules: [
+            {
+              ...mockVersion.config.autoStartRules[0],
+              actived: true,
+            },
+          ],
+        },
+      };
+
+      const mockSession = createMockContentSession(contentType);
+      contentDataService.findCustomContentVersions.mockResolvedValue([evaluatedVersion]);
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+      sessionBuilderService.createBizSession.mockResolvedValue({
+        id: 'biz-session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+      } as any);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================================
+  // Comprehensive Attribute Type Testing - Boolean Operations
+  // ============================================================================
+
+  describe('Auto-start Rules - Boolean Attribute Operations', () => {
+    const contentType = ContentDataType.FLOW;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should start content when boolean "true" condition matches', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'userAttr',
+              data: {
+                attrId: 'attr-isPremium',
+                operator: 'true',
+              },
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      const evaluatedVersion = {
+        ...mockVersion,
+        config: {
+          ...mockVersion.config,
+          autoStartRules: [
+            {
+              ...mockVersion.config.autoStartRules[0],
+              actived: true,
+            },
+          ],
+        },
+      };
+
+      const mockSession = createMockContentSession(contentType);
+      contentDataService.findCustomContentVersions.mockResolvedValue([evaluatedVersion]);
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+      sessionBuilderService.createBizSession.mockResolvedValue({
+        id: 'biz-session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+      } as any);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================================
+  // Comprehensive Attribute Type Testing - List Operations
+  // ============================================================================
+
+  describe('Auto-start Rules - List Attribute Operations', () => {
+    const contentType = ContentDataType.FLOW;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should start content when list "includesAtLeastOne" condition matches', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'userAttr',
+              data: {
+                attrId: 'attr-roles',
+                operator: 'includesAtLeastOne',
+                listValues: ['admin'],
+              },
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      const evaluatedVersion = {
+        ...mockVersion,
+        config: {
+          ...mockVersion.config,
+          autoStartRules: [
+            {
+              ...mockVersion.config.autoStartRules[0],
+              actived: true,
+            },
+          ],
+        },
+      };
+
+      const mockSession = createMockContentSession(contentType);
+      contentDataService.findCustomContentVersions.mockResolvedValue([evaluatedVersion]);
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+      sessionBuilderService.createBizSession.mockResolvedValue({
+        id: 'biz-session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+      } as any);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================================
+  // Complex Condition Combinations - AND/OR Logic
+  // ============================================================================
+
+  describe('Auto-start Rules - Complex Condition Combinations', () => {
+    const contentType = ContentDataType.FLOW;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should start content when all AND conditions match', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'group',
+              operators: 'and',
+              data: {},
+              conditions: [
+                {
+                  id: 'rule-1-1',
+                  type: 'userAttr',
+                  operators: 'and',
+                  data: {
+                    attrId: 'attr-email',
+                    operator: 'contains',
+                    value: 'example.com',
+                  },
+                },
+                {
+                  id: 'rule-1-2',
+                  type: 'userAttr',
+                  operators: 'and',
+                  data: {
+                    attrId: 'attr-age',
+                    operator: 'isGreaterThan',
+                    value: 18,
+                  },
+                },
+              ],
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      // Mock evaluated version with activated rules
+      const evaluatedVersion = {
+        ...mockVersion,
+        config: {
+          ...mockVersion.config,
+          autoStartRules: [
+            {
+              ...mockVersion.config.autoStartRules[0],
+              actived: true,
+            },
+          ],
+        },
+      };
+      jest
+        .spyOn(contentUtils, 'evaluateCustomContentVersion')
+        .mockResolvedValue([evaluatedVersion]);
+      jest
+        .spyOn(contentUtils, 'filterAvailableAutoStartContentVersions')
+        .mockReturnValue([evaluatedVersion]);
+
+      const mockSession = createMockContentSession(contentType);
+      contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+      sessionBuilderService.createBizSession.mockResolvedValue({
+        id: 'biz-session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+      } as any);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+    });
+
+    it('should start content when at least one OR condition matches', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'group',
+              operators: 'or',
+              data: {},
+              conditions: [
+                {
+                  id: 'rule-1-1',
+                  type: 'userAttr',
+                  operators: 'or',
+                  data: {
+                    attrId: 'attr-email',
+                    operator: 'is',
+                    value: 'wrong@example.com',
+                  },
+                },
+                {
+                  id: 'rule-1-2',
+                  type: 'userAttr',
+                  operators: 'or',
+                  data: {
+                    attrId: 'attr-age',
+                    operator: 'isGreaterThan',
+                    value: 18,
+                  },
+                },
+              ],
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      // Mock evaluateCustomContentVersion to return evaluated version with activated rules
+      jest.spyOn(contentUtils, 'evaluateCustomContentVersion').mockResolvedValue([
+        {
+          ...mockVersion,
+          config: {
+            ...mockVersion.config,
+            autoStartRules: [
+              {
+                ...mockVersion.config.autoStartRules[0],
+                actived: true,
+              },
+            ],
+          },
+        },
+      ]);
+
+      const mockSession = createMockContentSession(contentType);
+      contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+      sessionBuilderService.getBizSession.mockResolvedValue(null);
+      sessionBuilderService.createBizSession.mockResolvedValue({
+        id: 'biz-session-1',
+        versionId: 'version-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deleted: false,
+        state: 0,
+        data: {},
+        progress: 0,
+        projectId: 'project-1',
+        environmentId: 'env-1',
+        bizUserId: 'biz-user-1',
+        bizCompanyId: 'biz-company-1',
+        contentId: 'content-1',
+        currentStepId: '',
+      } as any);
+      sessionBuilderService.createContentSession.mockResolvedValue(mockSession);
+      eventTrackingService.trackEventByType.mockResolvedValue(true);
+      socketOperationService.activateFlowSession.mockResolvedValue(true);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(true);
+      expect(socketOperationService.activateFlowSession).toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================================
+  // Edge Cases and Error Handling
+  // ============================================================================
+
+  describe('Edge Cases and Error Handling', () => {
+    const contentType = ContentDataType.FLOW;
+    let mockSocket: Partial<Socket>;
+    let mockSocketData: SocketData;
+
+    beforeEach(() => {
+      mockSocket = createMockSocket();
+      mockSocketData = createMockSocketData();
+      socketDataService.get.mockResolvedValue(mockSocketData);
+    });
+
+    it('should handle missing user attributes gracefully', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [
+            {
+              id: 'rule-1',
+              type: 'userAttr',
+              data: {
+                attrId: 'attr-non-existent',
+                operator: 'is',
+                value: 'value',
+              },
+            },
+          ],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      const evaluatedVersion = {
+        ...mockVersion,
+        config: {
+          ...mockVersion.config,
+          autoStartRules: [
+            {
+              ...mockVersion.config.autoStartRules[0],
+              actived: false,
+            },
+          ],
+        },
+      };
+
+      contentDataService.findCustomContentVersions.mockResolvedValue([evaluatedVersion]);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(false);
+      expect(socketOperationService.activateFlowSession).not.toHaveBeenCalled();
+    });
+
+    it('should handle empty auto-start rules array', async () => {
+      const mockVersion = createMockCustomContentVersion(contentType, {
+        config: {
+          enabledAutoStartRules: true,
+          enabledHideRules: false,
+          autoStartRules: [],
+          hideRules: [],
+          autoStartRulesSetting: {
+            startIfNotComplete: false,
+            priority: 'medium' as any,
+            wait: 0,
+          },
+          hideRulesSetting: {},
+        },
+      });
+
+      contentDataService.findCustomContentVersions.mockResolvedValue([mockVersion]);
+
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(false);
+      expect(socketOperationService.activateFlowSession).not.toHaveBeenCalled();
+    });
+
+    it('should return false when content type is not singleton', async () => {
+      const context: ContentStartContext = {
+        server: {} as any,
+        socket: mockSocket as Socket,
+        socketData: mockSocketData,
+        contentType: ContentDataType.LAUNCHER,
+        options: {
+          startReason: contentStartReason.START_FROM_CONDITION,
+        },
+      };
+
+      const result = await service.startContent(context);
+
+      expect(result).toBe(false);
+    });
+  });
 });
