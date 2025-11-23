@@ -16,8 +16,9 @@ import {
   SimpleAttribute,
   AttributeBizTypes,
   BizAttributeTypes,
+  ContentDataType,
 } from '@usertour/types';
-import { flowIsDismissed, checklistIsDimissed } from '@/utils/content-utils';
+import { sessionIsAvailable } from '@/utils/content-utils';
 
 // ============================================================================
 // Type Definitions
@@ -617,16 +618,15 @@ export class ConditionEvaluationService {
   private async evaluateActivationCondition(params: ContentConditionParams): Promise<boolean> {
     const { contentId, bizUserId, logic } = params;
     const latestSession = await this.findLatestSession(contentId, bizUserId);
+    const contentType = latestSession?.content.type as ContentDataType;
 
     // If no session exists, content is unactivated
     if (!latestSession) {
       return logic === ContentConditionLogic.UNACTIVED;
     }
 
-    // Check if content is dismissed
-    const isDismissed =
-      flowIsDismissed(latestSession.bizEvent) || checklistIsDimissed(latestSession.bizEvent);
-    const isActivated = !isDismissed;
+    // Check if content is available
+    const isActivated = sessionIsAvailable(latestSession, contentType);
 
     return logic === ContentConditionLogic.ACTIVED ? isActivated : !isActivated;
   }
@@ -693,7 +693,7 @@ export class ConditionEvaluationService {
   private async findLatestSession(contentId: string, bizUserId: string) {
     return await this.prisma.bizSession.findFirst({
       where: { contentId, bizUserId, deleted: false },
-      include: { bizEvent: { include: { event: true } } },
+      include: { bizEvent: { include: { event: true } }, content: true },
       orderBy: { createdAt: 'desc' },
     });
   }
