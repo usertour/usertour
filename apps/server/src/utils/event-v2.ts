@@ -83,8 +83,17 @@ const calculateStepProgress = (steps: Step[], stepIndex: number): number => {
   const total =
     firstExplicitCompletionStepIndex !== -1 ? firstExplicitCompletionStepIndex + 1 : steps.length;
 
-  // Validate total
-  if (total <= 1) {
+  // Validate total: must be at least 1
+  if (total < 1) {
+    return -1;
+  }
+
+  // Handle edge case: if total is 1, the only step should be considered complete
+  if (total === 1) {
+    if (stepIndex === 0) {
+      return 100;
+    }
+    // If stepIndex is not 0 but total is 1, it's invalid
     return -1;
   }
 
