@@ -133,6 +133,7 @@ export class WebSocketV2MessageHandler {
   }
 
   async handle(server: Server, socket: Socket, kind: string, payload: any): Promise<boolean> {
+    const startTime = Date.now();
     const lockKey = buildSocketLockKey(socket.id);
 
     const result = await this.distributedLockService.withRetryLock(
@@ -142,6 +143,9 @@ export class WebSocketV2MessageHandler {
       100, // Retry interval 100ms
       5000, // Lock timeout 5 seconds
     );
+
+    const duration = Date.now() - startTime;
+    this.logger.log(`[WS] handleClientMessage kind=${kind} - Completed in ${duration}ms`);
 
     return result ?? false;
   }
