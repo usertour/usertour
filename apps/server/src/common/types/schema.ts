@@ -53,6 +53,7 @@ export type BizSessionWithRelations = BizSession & {
   bizUser: BizUser;
   content: Content;
   version: VersionWithSteps;
+  bizEvent: BizEventWithEvent[];
 };
 
 // Transaction client type alias for shorter usage

@@ -16,6 +16,7 @@ import {
 import type { AnswerQuestionDto } from '@usertour/types';
 import { isAfter } from 'date-fns';
 import type { EventBuildParams } from '@/common/types/track';
+import { findStepIdByLatestCvid } from './content-utils';
 
 // ============================================================================
 // Constants
@@ -402,11 +403,19 @@ export const buildFlowEndedEventData = (
   params?: EventBuildParams,
 ): Record<string, any> | null => {
   const endReason = params?.endReason;
-  if (!endReason || !session.currentStepId) {
+  if (!endReason) {
     return null;
   }
 
-  const eventData = buildStepEventData(session, session.currentStepId);
+  // Prefer currentStepId if available, otherwise find the latest step from events
+  const stepId = !isEmptyString(session.currentStepId)
+    ? session.currentStepId
+    : findStepIdByLatestCvid(session);
+  if (!stepId) {
+    return null;
+  }
+
+  const eventData = buildStepEventData(session, stepId);
   if (!eventData) {
     return null;
   }

@@ -31,6 +31,7 @@ import {
   CustomContentVersion,
   BizEventWithEvent,
   BizSessionWithEvents,
+  BizSessionWithRelations,
   ContentWithContentOnEnvironments,
   Step,
 } from '@/common/types';
@@ -195,6 +196,29 @@ export const findLatestStepCvid = (
   } catch (_) {
     return undefined;
   }
+};
+
+/**
+ * Find step ID by the latest step CVID found in business events
+ * @param session - The business session with version and bizEvent
+ * @returns Step ID if found, null otherwise
+ */
+export const findStepIdByLatestCvid = (
+  session: Pick<BizSessionWithRelations, 'version' | 'bizEvent'>,
+): string | null => {
+  const steps = session.version.steps;
+  if (!steps?.length) {
+    return null;
+  }
+
+  const latestStepCvid = findLatestStepCvid(session.bizEvent);
+
+  if (!latestStepCvid) {
+    return null;
+  }
+
+  const lastStep = steps.find((step) => step.cvid === latestStepCvid);
+  return lastStep?.id ?? null;
 };
 
 /**

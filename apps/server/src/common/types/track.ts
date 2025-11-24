@@ -51,19 +51,26 @@ export interface EventTrackingItem {
 
 /**
  * Event handler configuration
+ * If a custom handle is provided, buildEventData is optional since the handle manages its own data building
+ * If no custom handle is provided, buildEventData is required for the default flow
  */
-export interface EventHandlerConfig {
-  eventName: BizEvents;
-  buildEventData: (
-    session: BizSessionWithRelations,
-    params: EventTrackingParams,
-  ) => Record<string, any> | null;
-  /**
-   * Custom handle function (optional)
-   * If provided, this will be used instead of the default trackEventWithSession flow
-   */
-  handle?: (tx: Tx, params: EventTrackingParams) => Promise<boolean>;
-}
+export type EventHandlerConfig =
+  | {
+      eventName: BizEvents;
+      buildEventData: (
+        session: BizSessionWithRelations,
+        params: EventTrackingParams,
+      ) => Record<string, any> | null;
+      handle?: never;
+    }
+  | {
+      eventName: BizEvents;
+      buildEventData?: (
+        session: BizSessionWithRelations,
+        params: EventTrackingParams,
+      ) => Record<string, any> | null;
+      handle: (tx: Tx, params: EventTrackingParams) => Promise<boolean>;
+    };
 
 /**
  * Event handler interface

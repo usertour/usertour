@@ -188,6 +188,7 @@ export class EventTrackingService {
       include: {
         bizUser: true,
         content: true,
+        bizEvent: { include: { event: true } },
         version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
       },
     });
@@ -742,6 +743,12 @@ export class EventTrackingService {
         handle: config.handle
           ? config.handle
           : async (tx: Tx, params: EventTrackingParams) => {
+              // When handle is not provided, buildEventData is required by type definition
+              if (!config.buildEventData) {
+                throw new Error(
+                  `buildEventData is required for event ${config.eventName} when no custom handle is provided`,
+                );
+              }
               const eventParams = {
                 sessionId: params.sessionId,
                 environment: params.environment,
@@ -749,7 +756,7 @@ export class EventTrackingService {
                 eventName: config.eventName,
               };
               return await this.trackEventWithSession(tx, eventParams, (session) =>
-                config.buildEventData(session, params),
+                config.buildEventData!(session, params),
               );
             },
       });
@@ -826,14 +833,12 @@ export class EventTrackingService {
     // Flow step seen event with conditional FLOW_COMPLETED
     register({
       eventName: BizEvents.FLOW_STEP_SEEN,
-      buildEventData: (session, params) => buildStepEventData(session, params),
       handle: (tx, params) => this.handleFlowStepSeen(tx, params),
     });
 
     // Question answered event with pre-process (update user attributes)
     register({
       eventName: BizEvents.QUESTION_ANSWERED,
-      buildEventData: (session, params) => buildQuestionAnsweredEventData(session, params),
       handle: (tx, params) => this.handleQuestionAnswered(tx, params),
     });
   }
