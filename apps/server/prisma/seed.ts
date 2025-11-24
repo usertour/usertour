@@ -1,11 +1,19 @@
 import { PrismaClient } from '@prisma/client';
-import { migrateConditionIds } from './migration';
+import { migrateConditionIds, validateConditionIds } from './migration';
 
 const prisma = new PrismaClient();
 
 async function main() {
   // Migrate condition IDs
   await migrateConditionIds(prisma);
+
+  // Validate migration result
+  const result = await validateConditionIds(prisma);
+  if (result.isAllValid) {
+    console.log('✅ All versions have complete condition IDs!');
+  } else {
+    console.log(`❌ Found ${result.invalidVersions} versions with missing IDs`);
+  }
 
   // Step 4: Create initial user if none exists
   const user = await prisma.user.findFirst();
