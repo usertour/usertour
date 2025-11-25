@@ -137,13 +137,13 @@ export class ContentOrchestratorService {
     } = context;
 
     const socketData = await this.getSocketData(socket);
-    const session = await this.sessionBuilderService.getBizSession(sessionId);
-    if (!socketData || !session) {
+    const bizSession = await this.sessionBuilderService.getBizSession(sessionId);
+    if (!socketData || !bizSession) {
       return false;
     }
     const { environment, clientContext, externalUserId } = socketData;
 
-    const contentType = session.content.type as ContentDataType;
+    const contentType = bizSession.content.type as ContentDataType;
     // If the content type is not a singleton content type, return false
     if (!isSingletonContentType(contentType)) {
       return false;
