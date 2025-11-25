@@ -65,9 +65,9 @@ const isCompletedEvent = (eventCodeName: string) => {
  * @param stepIndex - The current step index (0-based)
  * @returns Progress percentage (0-100), or -1 if the calculation is invalid
  */
-const calculateStepProgress = (steps: Step[], stepIndex: number): number => {
-  // Validate inputs: stepIndex must be valid
-  if (stepIndex < 0 || stepIndex >= steps.length) {
+export const calculateStepProgress = (steps: Step[], stepIndex: number): number => {
+  // Validate inputs: steps array must not be empty and stepIndex must be valid
+  if (!steps?.length || stepIndex < 0 || stepIndex >= steps.length) {
     return -1;
   }
 
@@ -83,27 +83,13 @@ const calculateStepProgress = (steps: Step[], stepIndex: number): number => {
   const total =
     firstExplicitCompletionStepIndex !== -1 ? firstExplicitCompletionStepIndex + 1 : steps.length;
 
-  // Validate total: must be at least 1
-  if (total < 1) {
-    return -1;
-  }
-
-  // Handle edge case: if total is 1, the only step should be considered complete
-  if (total === 1) {
-    if (stepIndex === 0) {
-      return 100;
-    }
-    // If stepIndex is not 0 but total is 1, it's invalid
-    return -1;
-  }
-
   // If there's an explicit completion step and current step is after it, it's not complete
   if (firstExplicitCompletionStepIndex !== -1 && stepIndex > firstExplicitCompletionStepIndex) {
     return -1;
   }
 
   // Check if current step has explicitCompletionStep setting
-  const isExplicitCompletionStep = (step.setting as StepSettings)?.explicitCompletionStep;
+  const isExplicitCompletionStep = (step.setting as StepSettings)?.explicitCompletionStep === true;
 
   // Calculate isComplete:
   // - If step has explicitCompletionStep, it's complete
