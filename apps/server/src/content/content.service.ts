@@ -11,7 +11,8 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
 import { regenerateConditionIds } from '@usertour/helpers';
-import { ContentConfigObject } from '@usertour/types';
+import { ContentConfigObject, ContentDataType } from '@usertour/types';
+import { duplicateChecklistData } from '@/utils/content-duplicate';
 
 @Injectable()
 export class ContentService {
@@ -443,12 +444,18 @@ export class ContentService {
           hideRules: regenerateConditionIds(config.hideRules),
         };
 
+        let processedData = editedVersion.data;
+        // Process checklist data to regenerate condition IDs
+        if (duplicateContent.type === ContentDataType.CHECKLIST) {
+          processedData = duplicateChecklistData(editedVersion.data);
+        }
+
         const version = await tx.version.create({
           data: {
             sequence: 0,
             contentId: content.id,
             config: newConfig,
-            data: editedVersion.data,
+            data: processedData,
             themeId: editedVersion.themeId,
             steps: { create: [...steps] },
           },
