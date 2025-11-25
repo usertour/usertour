@@ -76,6 +76,7 @@ export interface ContentStartResult {
   reason?: string;
   forceGoToStep?: boolean;
   isActivateOtherSockets?: boolean;
+  hideRulesActivated?: boolean;
 }
 
 export interface CancelSessionParams {

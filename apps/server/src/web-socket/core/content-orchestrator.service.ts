@@ -506,17 +506,15 @@ export class ContentOrchestratorService {
     );
     const steps = latestActivatedContentVersion?.steps ?? [];
     const stepCvid = options?.stepCvid || steps?.[0]?.cvid;
-
-    return await this.handleContentVersion(
-      {
-        ...context,
-        options: {
-          ...options,
-          stepCvid,
-        },
+    const contentStartContext = {
+      ...context,
+      options: {
+        ...options,
+        stepCvid,
       },
-      latestActivatedContentVersion,
-    );
+    };
+
+    return await this.handleContentVersion(contentStartContext, latestActivatedContentVersion);
   }
 
   /**
@@ -803,16 +801,27 @@ export class ContentOrchestratorService {
   /**
    * Handles the result of content start operations
    * Processes ContentStartResult and performs necessary WebSocket operations
+   * @param context - The content start context
+   * @param result - The content start result
+   * @returns True if the operation was successful, false otherwise
+   * @remarks
+   * This method handles the following scenarios:
+   * 1. If operation failed, returns false immediately
+   * 2. If preTracks exist, handles tracking conditions
+   * 3. If waitTimers exist, handles condition wait timers
+   * 4. If session should be hidden (existing session with active hide rules), cancels the session
+   * 5. Otherwise, activates the session first, then checks if cancellation is needed
    */
   private async handleContentStartResult(
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { success, preTracks, waitTimers } = result;
-    const { socket, socketData } = context;
+    const { success, preTracks, waitTimers, session, hideRulesActivated } = result;
+    const { socket, contentType } = context;
+    const socketData = await this.getSocketData(socket);
 
     // Early return if operation failed
-    if (!success) {
+    if (!success || !socketData) {
       this.logger.warn(`Handle content start result, failed, reason: ${result.reason}`);
       return false;
     }
@@ -831,57 +840,27 @@ export class ContentOrchestratorService {
       );
     }
 
-    // Check if content should be hidden and handle cancellation if needed
-    if (result.session?.version.id) {
-      if (await this.hasActiveHideRules(context, result.session.version.id)) {
-        return await this.handleSessionCancellation(context, result);
-      }
+    // Determine if session should be hidden based on current state
+    const currentSession = extractSessionByContentType(socketData, contentType);
+
+    // If session should be hidden, cancel it directly
+    if (currentSession?.id === session?.id && hideRulesActivated) {
+      return await this.handleSessionCancellation({ ...context, socketData }, result);
     }
 
-    return await this.handleSessionActivation(context, result);
-  }
-
-  // ============================================================================
-  // Content Validation Methods
-  // ============================================================================
-
-  /**
-   * Checks if hide rules are active for the content version
-   * @param context - The content start context containing socket and content type
-   * @param versionId - The version ID of the content to check
-   * @returns True if hide rules are active, false otherwise
-   * @remarks
-   * Hide rules are considered active if:
-   * - Socket data is unavailable (defensive: hide when state is unknown)
-   * - Content version cannot be found or evaluated
-   * - Hide rules are activated for the content version
-   */
-  private async hasActiveHideRules(
-    context: ContentStartContext,
-    versionId: string,
-  ): Promise<boolean> {
-    const { socket, contentType } = context;
-
-    // Retrieve socket data for evaluation
-    const socketData = await this.getSocketData(socket);
-    if (!socketData) {
-      // Defensive approach: hide content when socket state is unavailable
-      return true;
+    // Otherwise, activate the session first
+    const activationSuccess = await this.handleSessionActivation(context, result);
+    if (!activationSuccess) {
+      return false;
     }
 
-    // Find and evaluate the content version
-    const contentVersion = await this.findEvaluatedContentVersion(
-      socketData,
-      contentType,
-      versionId,
-    );
-
-    // Hide if version not found or hide rules are activated
-    if (!contentVersion) {
-      return true;
+    // After activation, check if cancellation is needed
+    // This handles the case where activation changes the session state
+    if (hideRulesActivated) {
+      return await this.handleSessionCancellation({ ...context, socketData }, result);
     }
 
-    return isActivedHideRules(contentVersion);
+    return true;
   }
 
   // ============================================================================
@@ -1029,11 +1008,15 @@ export class ContentOrchestratorService {
     // Extract tracking conditions for checklist conditions
     const checklistConditions = extractChecklistTrackConditions(session);
 
+    // Check if hide rules are activated
+    const hideRulesActivated = isActivedHideRules(customContentVersion);
+
     return {
       success: true,
       session,
       hideConditions,
       checklistConditions,
+      hideRulesActivated,
       reason: 'Content session created successfully',
     };
   }
@@ -1121,6 +1104,10 @@ export class ContentOrchestratorService {
    * @param context - The content start context
    * @param result - The content start result
    * @returns True if cancellation was successful
+   * @remarks
+   * This method always fetches the latest socketData to ensure it has the most up-to-date
+   * session state, especially when called after handleSessionActivation which may have
+   * updated the socketData.
    */
   private async handleSessionCancellation(
     context: ContentStartContext,
@@ -1131,7 +1118,7 @@ export class ContentOrchestratorService {
       return false;
     }
 
-    const { server, socketData, socket, contentType } = context;
+    const { server, socket, contentType, socketData } = context;
     const { environment, externalUserId } = socketData;
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     const sessionId = session.id;
@@ -1313,12 +1300,26 @@ export class ContentOrchestratorService {
     cancelOtherSessions = true,
     unsetCurrentSession = true,
   ): Promise<boolean> {
-    const { sessionId } = cancelSessionParams;
+    const { sessionId, socket } = cancelSessionParams;
     this.logger.debug(`Canceling session, sessionId: ${sessionId}`);
+    // Get the latest socketData to ensure we have the most up-to-date session state
+    const socketData = await this.getSocketData(socket);
+    if (!socketData) {
+      this.logger.warn('Failed to get socketData for session cancellation');
+      return false;
+    }
 
-    await this.cancelSocketSession({ ...cancelSessionParams, unsetSession: unsetCurrentSession });
+    const cancelParams = {
+      ...cancelSessionParams,
+      socketData,
+    };
+
+    await this.cancelSocketSession({
+      ...cancelParams,
+      unsetSession: unsetCurrentSession,
+    });
     if (cancelOtherSessions) {
-      await this.cancelOtherSocketSessionsInRoom(roomId, cancelSessionParams);
+      await this.cancelOtherSocketSessionsInRoom(roomId, cancelParams);
     }
 
     return true;
@@ -1372,7 +1373,7 @@ export class ContentOrchestratorService {
       },
     };
     // If the current session is not the same as the session id, return false
-    if (currentSession && currentSession.id !== sessionId) {
+    if (!currentSession || currentSession.id !== sessionId) {
       return false;
     }
     const excludeContentIds = [currentSession?.content?.id].filter(Boolean) as string[];
@@ -1394,15 +1395,10 @@ export class ContentOrchestratorService {
     // Second attempt: Try to auto start content with all available content
     const result = await this.tryAutoStartContent(context);
     // Cleanup current session if exists
-    if (currentSession && !result.session) {
+    if (!result.session) {
       if (!(await this.cleanupSocketSession(currentSession, params))) {
         return false;
       }
-      const newSocketData = await this.getSocketData(socket);
-      if (!newSocketData) {
-        return false;
-      }
-      context.socketData = newSocketData;
     }
 
     // handleContentStartResult will check success internally
