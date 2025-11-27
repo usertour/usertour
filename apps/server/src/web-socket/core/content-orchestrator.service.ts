@@ -292,8 +292,8 @@ export class ContentOrchestratorService {
     return await this.cancelSessionInRoom(
       cancelSessionParams,
       roomId,
-      unsetCurrentSession,
       cancelOtherSessions,
+      unsetCurrentSession,
     );
   }
 
