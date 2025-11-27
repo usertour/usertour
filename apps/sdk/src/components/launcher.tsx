@@ -13,7 +13,7 @@ import {
 import {
   LauncherActionType,
   LauncherData,
-  LauncherTriggerElement,
+  LauncherPositionType,
   RulesCondition,
   ThemeTypesSetting,
   UserTourTypes,
@@ -247,9 +247,7 @@ const LauncherWidgetCore = ({
     <LauncherRoot themeSettings={themeSettings} data={data}>
       <LauncherPopper
         triggerRef={
-          data.behavior.triggerElement === LauncherTriggerElement.LAUNCHER
-            ? launcherRef
-            : triggerRef
+          data.tooltip.reference === LauncherPositionType.LAUNCHER ? launcherRef : triggerRef
         }
         zIndex={zIndex}
         open={open}
