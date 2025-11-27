@@ -334,15 +334,30 @@ export class AnalyticsService {
     const field = getAggregationField(question);
 
     // Get basic answer statistics
-    const answer = await this.aggregationQuestionAnswer(
-      environmentId,
-      contentId,
-      questionCvid,
-      startDateStr,
-      endDateStr,
-      field,
-    );
-    const totalResponse = answer.reduce((sum, item) => sum + item.count, 0);
+    let answer: QuestionAnswerAnalytics[];
+    let totalResponse: number;
+
+    if (field === 'listAnswer') {
+      const result = await this.aggregationListAnswer(
+        environmentId,
+        contentId,
+        questionCvid,
+        startDateStr,
+        endDateStr,
+      );
+      answer = result.distribution;
+      totalResponse = result.totalResponse;
+    } else {
+      answer = await this.aggregationQuestionAnswer(
+        environmentId,
+        contentId,
+        questionCvid,
+        startDateStr,
+        endDateStr,
+        field,
+      );
+      totalResponse = answer.reduce((sum, item) => sum + item.count, 0);
+    }
 
     const response: any = {
       totalResponse,
@@ -1057,39 +1072,69 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * Aggregate list answer data with total response count
+   * Returns both distribution and totalResponse for listAnswer field
+   */
+  private async aggregationListAnswer(
+    environmentId: string,
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+  ): Promise<{ distribution: QuestionAnswerAnalytics[]; totalResponse: number }> {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
+      SELECT unnest("listAnswer") as answer, count(*) as count 
+      FROM "BizAnswer"
+      WHERE
+        "BizAnswer"."contentId" = ${contentId} 
+        AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} 
+        AND "BizAnswer"."createdAt" <= ${endDate}
+        AND "BizAnswer"."environmentId" = ${environmentId}
+        AND "BizAnswer"."listAnswer" IS NOT NULL
+        AND array_length("listAnswer", 1) > 0
+      GROUP BY unnest("listAnswer")
+      ORDER BY count DESC
+    `;
+
+    // Calculate total based on the number of BizAnswer records, not the unnest count
+    const totalResult = await this.prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*) as count
+      FROM "BizAnswer"
+      WHERE
+        "BizAnswer"."contentId" = ${contentId} 
+        AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} 
+        AND "BizAnswer"."createdAt" <= ${endDate}
+        AND "BizAnswer"."environmentId" = ${environmentId}
+        AND "BizAnswer"."listAnswer" IS NOT NULL
+        AND array_length("listAnswer", 1) > 0
+    `;
+    const totalResponse = Number(totalResult[0]?.count ?? 0);
+
+    const distribution = data.map((item) => ({
+      ...item,
+      count: Number(item.count),
+      percentage: totalResponse > 0 ? Math.round((Number(item.count) / totalResponse) * 100) : 0,
+    }));
+
+    return { distribution, totalResponse };
+  }
+
   async aggregationQuestionAnswer(
     environmentId: string,
     contentId: string,
     questionCvid: string,
     startDateStr: string,
     endDateStr: string,
-    field: 'numberAnswer' | 'textAnswer' | 'listAnswer',
+    field: 'numberAnswer' | 'textAnswer',
   ): Promise<QuestionAnswerAnalytics[]> {
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
-
-    if (field === 'listAnswer') {
-      const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
-        SELECT unnest("listAnswer") as answer, count(*) as count 
-        FROM "BizAnswer"
-        WHERE
-          "BizAnswer"."contentId" = ${contentId} 
-          AND "BizAnswer"."cvid" = ${questionCvid}
-          AND "BizAnswer"."createdAt" >= ${startDate} 
-          AND "BizAnswer"."createdAt" <= ${endDate}
-          AND "BizAnswer"."environmentId" = ${environmentId}
-          AND "BizAnswer"."listAnswer" IS NOT NULL
-          AND array_length("listAnswer", 1) > 0
-        GROUP BY unnest("listAnswer")
-        ORDER BY count DESC
-      `;
-      const total = data.reduce((sum, item) => sum + Number(item.count), 0);
-      return data.map((item) => ({
-        ...item,
-        count: Number(item.count),
-        percentage: total > 0 ? Math.round((Number(item.count) / total) * 100) : 0,
-      }));
-    }
 
     const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
       SELECT "BizAnswer".${Prisma.raw(`"${field}"`)} as answer, count(*) as count 
