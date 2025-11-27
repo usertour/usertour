@@ -251,7 +251,14 @@ export class ContentOrchestratorService {
    * @returns True if the launcher was dismissed successfully
    */
   async dismissLauncher(context: ContentCancelContext): Promise<boolean> {
-    const { sessionId, endReason, socket, server } = context;
+    const {
+      sessionId,
+      endReason,
+      socket,
+      server,
+      cancelOtherSessions = true,
+      unsetCurrentSession = false,
+    } = context;
     const socketData = await this.getSocketData(socket);
     if (!socketData) {
       return false;
@@ -282,7 +289,12 @@ export class ContentOrchestratorService {
       contentType: ContentDataType.LAUNCHER,
     };
 
-    return await this.cancelSessionInRoom(cancelSessionParams, roomId, true, false);
+    return await this.cancelSessionInRoom(
+      cancelSessionParams,
+      roomId,
+      unsetCurrentSession,
+      cancelOtherSessions,
+    );
   }
 
   /**
