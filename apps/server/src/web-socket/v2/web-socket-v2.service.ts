@@ -245,7 +245,9 @@ export class WebSocketV2Service {
       return await this.contentOrchestratorService.addLaunchers(startContentContext);
     }
     // Start the content
-    return await this.contentOrchestratorService.startContent(startContentContext);
+    const success = await this.contentOrchestratorService.startContent(startContentContext);
+    await this.toggleContents(server, socket);
+    return success;
   }
 
   /**
@@ -266,7 +268,7 @@ export class WebSocketV2Service {
       cancelOtherSessions: true,
       endReason,
     });
-    await this.toggleContents(server, socket, ALL_CONTENT_TYPES);
+    await this.toggleContents(server, socket);
     return success;
   }
 
@@ -326,7 +328,7 @@ export class WebSocketV2Service {
   async endBatch(context: WebSocketContext): Promise<boolean> {
     const { server, socket } = context;
 
-    return await this.toggleContents(server, socket, ALL_CONTENT_TYPES);
+    return await this.toggleContents(server, socket);
   }
 
   /**
@@ -340,7 +342,7 @@ export class WebSocketV2Service {
   async toggleContents(
     server: Server,
     socket: Socket,
-    contentTypes: ContentDataType[],
+    contentTypes: ContentDataType[] = ALL_CONTENT_TYPES,
   ): Promise<boolean> {
     // Start content asynchronously without waiting for completion
     // This allows toggleContents to return immediately while startContent runs in background
