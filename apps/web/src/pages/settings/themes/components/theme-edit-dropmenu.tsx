@@ -81,7 +81,7 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
           <DropdownMenuItem
             className="text-red-600"
             onClick={handleOnClick}
-            disabled={theme.isSystem}
+            disabled={theme.isSystem || theme.isDefault}
           >
             <Delete2Icon className="mr-1" />
             Delete theme
