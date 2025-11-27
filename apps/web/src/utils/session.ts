@@ -343,6 +343,9 @@ export const getFieldValue = (key: string, value: any): string | number => {
   if (key === EventAttributes.FLOW_STEP_NUMBER) {
     return value !== undefined && value !== null ? Number(value) + 1 : value;
   }
+  if (key === EventAttributes.FLOW_VERSION_NUMBER) {
+    return value !== undefined && value !== null ? Number(value) + 1 : value;
+  }
   return key === 'question_type'
     ? contentTypesConfig.find((config) => config.element.type === value)?.name || value
     : typeof value === 'string'
