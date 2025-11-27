@@ -80,7 +80,7 @@ export class ThemesService {
   async listThemesByProjectId(projectId: string) {
     return await this.prisma.theme.findMany({
       where: { projectId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { id: 'asc' },
     });
   }
 }
