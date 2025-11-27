@@ -70,6 +70,15 @@ export const PRIORITIES = [
  */
 export const SINGLETON_CONTENT_TYPES = [ContentDataType.FLOW, ContentDataType.CHECKLIST];
 
+/**
+ * All content types including checklist, flow, and launcher
+ */
+export const ALL_CONTENT_TYPES: ContentDataType[] = [
+  ContentDataType.CHECKLIST,
+  ContentDataType.FLOW,
+  ContentDataType.LAUNCHER,
+];
+
 // ============================================================================
 // Rule Checking Functions
 // ============================================================================

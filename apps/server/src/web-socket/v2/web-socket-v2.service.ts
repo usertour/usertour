@@ -32,6 +32,7 @@ import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
+import { ALL_CONTENT_TYPES } from '@/utils/content-utils';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -265,8 +266,7 @@ export class WebSocketV2Service {
       cancelOtherSessions: true,
       endReason,
     });
-    const contentTypes = [ContentDataType.CHECKLIST, ContentDataType.FLOW];
-    await this.toggleContents(server, socket, contentTypes);
+    await this.toggleContents(server, socket, ALL_CONTENT_TYPES);
     return success;
   }
 
@@ -326,12 +326,7 @@ export class WebSocketV2Service {
   async endBatch(context: WebSocketContext): Promise<boolean> {
     const { server, socket } = context;
 
-    const contentTypes = [
-      ContentDataType.CHECKLIST,
-      ContentDataType.FLOW,
-      ContentDataType.LAUNCHER,
-    ];
-    return await this.toggleContents(server, socket, contentTypes);
+    return await this.toggleContents(server, socket, ALL_CONTENT_TYPES);
   }
 
   /**
