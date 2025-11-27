@@ -815,7 +815,7 @@ describe('ContentOrchestratorService', () => {
         endReason: contentEndReason.USER_CLOSED,
       };
 
-      const result = await service.dismissLauncher(context);
+      const result = await service.cancelContent(context);
 
       expect(result).toBe(true);
       expect(eventTrackingService.trackEventByType).toHaveBeenCalled();

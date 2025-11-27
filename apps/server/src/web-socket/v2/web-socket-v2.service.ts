@@ -303,16 +303,13 @@ export class WebSocketV2Service {
       cancelOtherSessions: true,
     };
 
-    // Cancel all sessions
+    // Cancel all sessions (cancelContent now supports all content types)
     await Promise.allSettled(
       sessionsToCancel.map((session) => {
         const context: ContentCancelContext = {
           ...endContentContext,
           sessionId: session.id,
         };
-        if (session.content.type === ContentDataType.LAUNCHER) {
-          return this.contentOrchestratorService.dismissLauncher(context);
-        }
         return this.contentOrchestratorService.cancelContent(context);
       }),
     );
@@ -533,7 +530,8 @@ export class WebSocketV2Service {
       unsetCurrentSession: false,
       cancelOtherSessions: true,
     };
-    return await this.contentOrchestratorService.dismissLauncher(dismissLauncherContext);
+    // Use cancelContent which now supports all content types including LAUNCHER
+    return await this.contentOrchestratorService.cancelContent(dismissLauncherContext);
   }
 
   // ============================================================================

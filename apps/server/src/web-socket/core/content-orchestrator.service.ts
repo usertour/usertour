@@ -121,7 +121,7 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Cancel singleton content (FLOW and CHECKLIST)
+   * Cancel content (FLOW, CHECKLIST, or LAUNCHER)
    * No longer needs distributed lock as message queue ensures ordered execution
    * @param context - The content cancel context
    * @returns True if the content was canceled successfully
@@ -144,12 +144,9 @@ export class ContentOrchestratorService {
     const { environment, clientContext, externalUserId } = socketData;
 
     const contentType = bizSession.content.type as ContentDataType;
-    // If the content type is not a singleton content type, return false
-    if (!isSingletonContentType(contentType)) {
-      return false;
-    }
+    const contentId = bizSession.content.id;
 
-    // Track content ended event
+    // Track content ended event (supports FLOW, CHECKLIST, LAUNCHER)
     const isEventTracked = await this.trackContentEndedEvent(
       sessionId,
       contentType,
@@ -164,15 +161,20 @@ export class ContentOrchestratorService {
 
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
 
-    // Define common cancel session parameters
+    // Build cancel session parameters based on content type
     const cancelSessionParams: CancelSessionParams = {
       server,
       socket,
       socketData,
       sessionId,
       contentType,
-      setLastDismissedId: true,
+      contentId,
     };
+
+    // FLOW/CHECKLIST need setLastDismissedId to prevent immediate restart
+    if (isSingletonContentType(contentType)) {
+      cancelSessionParams.setLastDismissedId = true;
+    }
 
     return await this.cancelSessionInRoom(
       cancelSessionParams,
@@ -242,58 +244,6 @@ export class ContentOrchestratorService {
       context.socketData,
       sessions,
       preparationResult.shouldTrackVersions,
-    );
-  }
-
-  /**
-   * Dismiss launcher
-   * @param context - The content cancel context
-   * @returns True if the launcher was dismissed successfully
-   */
-  async dismissLauncher(context: ContentCancelContext): Promise<boolean> {
-    const {
-      sessionId,
-      endReason,
-      socket,
-      server,
-      cancelOtherSessions = true,
-      unsetCurrentSession = false,
-    } = context;
-    const socketData = await this.getSocketData(socket);
-    if (!socketData) {
-      return false;
-    }
-    const { environment, clientContext, externalUserId } = socketData;
-    const session = await this.sessionBuilderService.getBizSession(sessionId);
-    if (!session) {
-      return false;
-    }
-    const contentId = session.content.id;
-
-    const success = await this.eventTrackingService.trackEventByType(BizEvents.LAUNCHER_DISMISSED, {
-      sessionId,
-      environment,
-      clientContext,
-      endReason,
-    });
-    if (!success) {
-      return false;
-    }
-    const roomId = buildExternalUserRoomId(environment.id, externalUserId);
-    const cancelSessionParams: CancelSessionParams = {
-      server,
-      socket,
-      socketData,
-      contentId,
-      sessionId,
-      contentType: ContentDataType.LAUNCHER,
-    };
-
-    return await this.cancelSessionInRoom(
-      cancelSessionParams,
-      roomId,
-      cancelOtherSessions,
-      unsetCurrentSession,
     );
   }
 
