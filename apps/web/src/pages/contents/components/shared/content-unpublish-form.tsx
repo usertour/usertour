@@ -172,7 +172,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
                   {isPublished ? (
                     version && (
                       <>
-                        <span className="text-sm text-gray-500">(v{version.sequence})</span>
+                        <span className="text-sm text-gray-500">(v{version.sequence + 1})</span>
                         {isSelected && (
                           <span className="text-sm text-destructive">To be unpublished</span>
                         )}
