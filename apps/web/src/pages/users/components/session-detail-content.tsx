@@ -8,7 +8,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuerySessionDetailQuery } from '@usertour-packages/shared-hooks';
 import { Table, TableBody, TableCell, TableRow } from '@usertour-packages/table';
-import { BizEvent, BizEvents, ContentDataType } from '@usertour/types';
+import { BizEvent, BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
@@ -19,7 +19,7 @@ import { ChecklistProgressColumn } from '@/components/molecules/session';
 import { cn } from '@usertour/helpers';
 import { Button } from '@usertour-packages/button';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
-import { SessionResponse } from '@/components/molecules/session-detail';
+import { QuestionAnswer, SessionResponse } from '@/components/molecules/session-detail';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import {
   deduplicateAnswerEvents,
@@ -277,7 +277,12 @@ const SessionDetailContentInner = ({
                                         {attributeList?.find((attr) => attr.codeName === key)
                                           ?.displayName || key}
                                       </span>
-                                      <span className="grow">{getFieldValue(key, value)}</span>
+                                      {key === EventAttributes.LIST_ANSWER && (
+                                        <QuestionAnswer answerEvent={bizEvent} />
+                                      )}
+                                      {key !== EventAttributes.LIST_ANSWER && (
+                                        <span className="grow">{getFieldValue(key, value)}</span>
+                                      )}
                                     </div>
                                   ),
                                 )}
