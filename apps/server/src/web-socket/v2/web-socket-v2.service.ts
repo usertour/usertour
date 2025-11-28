@@ -242,7 +242,10 @@ export class WebSocketV2Service {
       options: startContentDto,
     };
     if (contentType === ContentDataType.LAUNCHER) {
-      return await this.contentOrchestratorService.addLaunchers(startContentContext);
+      return await this.contentOrchestratorService.startContentBatch(
+        startContentContext,
+        ContentDataType.LAUNCHER,
+      );
     }
     // Start the content
     const success = await this.contentOrchestratorService.startContent(startContentContext);
@@ -358,7 +361,7 @@ export class WebSocketV2Service {
     }
 
     // Start content types
-    return await this.contentOrchestratorService.startContentsByTypes(context, contentTypes);
+    return await this.contentOrchestratorService.startContentByTypes(context, contentTypes);
   }
 
   // ============================================================================
@@ -636,9 +639,10 @@ export class WebSocketV2Service {
   ): Promise<CustomContentSession[]> {
     const launcherSessions: CustomContentSession[] = [];
     for (const launcherId of launcherIds) {
-      const launcherSession = await this.contentOrchestratorService.initializeLauncherSession(
+      const launcherSession = await this.contentOrchestratorService.initializeSessionByContentId(
         socketData,
         launcherId,
+        ContentDataType.LAUNCHER,
       );
       if (launcherSession) {
         launcherSessions.push(launcherSession);

@@ -38,6 +38,7 @@ export const buildExternalUserRoomId = (environmentId: string, externalUserId: s
 
 /**
  * Extract content session from socket client data by content type
+ * For singleton types (FLOW, CHECKLIST) only
  * @param socketData - The socket client data
  * @param contentType - The content type
  * @returns The content session or null
@@ -55,6 +56,23 @@ export const extractSessionByContentType = (
     default:
       return null;
   }
+};
+
+/**
+ * Extract content sessions array from socket client data by content type
+ * For multi-instance types (LAUNCHER) only
+ * @param socketData - The socket client data
+ * @param contentType - The content type
+ * @returns Array of sessions for the content type
+ */
+export const extractSessionsByContentType = (
+  socketData: SocketData,
+  contentType: ContentDataType,
+): CustomContentSession[] => {
+  if (contentType === ContentDataType.LAUNCHER) {
+    return socketData.launcherSessions ?? [];
+  }
+  return [];
 };
 
 /**

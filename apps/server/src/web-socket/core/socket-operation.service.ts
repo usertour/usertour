@@ -17,6 +17,7 @@ import {
   convertToClientConditions,
   categorizeSessions,
   detectChangedPreservedSessions,
+  extractSessionsByContentType,
 } from '@/utils/websocket-utils';
 import { SocketDataService } from './socket-data.service';
 
@@ -46,13 +47,11 @@ interface CleanupSocketSessionOptions {
   unsetSession?: boolean;
   /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
   setLastDismissedId?: boolean;
-  /** Optional array of content types to cleanup client conditions for */
-  // cleanupContentTypes?: ContentDataType[];
   trackConditions?: TrackCondition[];
 }
 
-// Session Operations
-interface EmitSessionsOptions {
+// Batch Session Operations (Multi-instance Content Types)
+interface EmitBatchSessionsOptions {
   /** The socket instance */
   socket: Socket;
   /** Sessions to add */
@@ -63,14 +62,14 @@ interface EmitSessionsOptions {
   contentType: ContentDataType;
 }
 
-interface EmitSessionsResult {
+interface EmitBatchSessionsResult {
   /** Successfully added sessions */
   addedSessions: CustomContentSession[];
   /** Successfully removed content IDs */
   removedContentIds: string[];
 }
 
-interface HandleSessionsOptions {
+interface HandleBatchSessionsOptions {
   /** Current sessions */
   currentSessions: CustomContentSession[];
   /** New sessions to add */
@@ -81,22 +80,22 @@ interface HandleSessionsOptions {
   contentType: ContentDataType;
 }
 
-interface HandleSessionsResult {
+interface HandleBatchSessionsResult {
   /** Updated sessions after processing */
   updatedSessions: CustomContentSession[];
   /** Successfully removed content IDs */
   removedContentIds: string[];
 }
 
-// Condition Operations
-interface UntrackConditionsOptions {
+// Batch Condition Operations
+interface CleanupBatchConditionsOptions {
   /** All client conditions */
   clientConditions: ClientCondition[];
   /** Array of content IDs that were removed */
   removedContentIds: string[];
   /** The socket instance */
   socket: Socket;
-  /** Optional array of content types to cleanup client conditions for */
+  /** Array of content types to cleanup client conditions for */
   cleanupContentTypes: ContentDataType[];
 }
 
@@ -239,7 +238,7 @@ export class SocketOperationService {
     const contentType = session.content.type;
 
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
-    if (unsetSession && !(await this.unsetSocketSession(socket, session.id, contentType))) {
+    if (unsetSession && !(await this.unsetSocketSession(socket, session))) {
       return false;
     }
 
@@ -271,44 +270,52 @@ export class SocketOperationService {
   }
 
   // ============================================================================
-  // Public API Methods - Launcher Sessions
+  // Public API Methods - Multi-instance Content Sessions
   // ============================================================================
 
   /**
-   * Add launcher sessions
+   * Activate multiple sessions (for non-singleton content types like LAUNCHER)
+   * Supports multiple concurrent sessions for the same content type
+   * Note: Singleton content types (FLOW, CHECKLIST) should use activateFlowSession/activateChecklistSession instead
    * @param socket - The socket
    * @param socketData - The socket client data
-   * @param sessions - Target launcher sessions
-   * @returns Promise<boolean> - True if the sessions were added successfully
+   * @param sessions - Target sessions to activate
+   * @param contentType - The content type (must be non-singleton)
+   * @returns Promise<boolean> - True if the sessions were activated successfully
    */
-  async addLaunchers(
+  async activateBatchSessions(
     socket: Socket,
     socketData: SocketData,
     sessions: CustomContentSession[],
+    contentType: ContentDataType,
   ): Promise<boolean> {
-    const { clientConditions = [], launcherSessions = [] } = socketData;
+    const { clientConditions = [] } = socketData;
+    const currentSessions = extractSessionsByContentType(socketData, contentType);
 
-    // Handle launcher sessions processing
-    const { updatedSessions, removedContentIds } = await this.handleSessions({
-      currentSessions: launcherSessions,
+    // Process sessions: add new, update changed, remove obsolete
+    const { updatedSessions, removedContentIds } = await this.handleBatchSessions({
+      currentSessions,
       newSessions: sessions,
       socket,
-      contentType: ContentDataType.LAUNCHER,
+      contentType,
     });
 
-    // Handle launcher client conditions update
-    const { clientConditions: updatedConditions } = this.untrackClientConditions({
+    // Cleanup conditions for removed content
+    const { clientConditions: updatedConditions } = this.cleanupBatchConditions({
       clientConditions,
       removedContentIds,
       socket,
-      cleanupContentTypes: [ContentDataType.LAUNCHER],
+      cleanupContentTypes: [contentType],
     });
 
-    // Update socket data with processed sessions and conditions
+    // Update socket data
+    const updateData: Partial<SocketData> =
+      contentType === ContentDataType.LAUNCHER ? { launcherSessions: updatedSessions } : {};
+
     return await this.socketDataService.set(
       socket.id,
       {
-        launcherSessions: updatedSessions,
+        ...updateData,
         clientConditions: updatedConditions,
       },
       true,
@@ -316,42 +323,48 @@ export class SocketOperationService {
   }
 
   /**
-   * Cleanup launcher session
+   * Clean up multi-instance session (for non-singleton content types like LAUNCHER)
    * @param socket - The socket
    * @param socketData - The socket client data
-   * @param contentId - The content id to cleanup
+   * @param session - The session to clean up
    * @param options - Options for cleanup behavior
    * @returns Promise<boolean> - True if the session was removed successfully
    */
-  async cleanupLauncherSession(
+  async cleanupBatchSession(
     socket: Socket,
     socketData: SocketData,
-    contentId: string,
+    session: CustomContentSession,
     options: CleanupSocketSessionOptions = {},
   ): Promise<boolean> {
     const { unsetSession = true } = options;
-    const { clientConditions = [], launcherSessions = [] } = socketData;
-    if (unsetSession) {
-      const isRemoved = await this.socketEmitterService.removeLauncherWithAck(socket, contentId);
-      if (!isRemoved) {
-        this.logger.error(`Failed to remove launcher session: ${contentId}`);
-        return false;
-      }
+    const { clientConditions = [] } = socketData;
+    const contentType = session.content.type;
+    const contentId = session.content.id;
+    const currentSessions = extractSessionsByContentType(socketData, contentType);
+
+    // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
+    if (unsetSession && !(await this.unsetSocketSession(socket, session))) {
+      return false;
     }
-    // Handle launcher client conditions update
-    const { clientConditions: updatedConditions } = this.untrackClientConditions({
+
+    // Handle client conditions update
+    const { clientConditions: updatedConditions } = this.cleanupBatchConditions({
       clientConditions,
       removedContentIds: [contentId],
       socket,
-      cleanupContentTypes: [ContentDataType.LAUNCHER],
+      cleanupContentTypes: [contentType],
     });
-    const updatedSessions = launcherSessions.filter((session) => session.content.id !== contentId);
+
+    const updatedSessions = currentSessions.filter((s) => s.content.id !== contentId);
 
     // Update socket data with processed sessions and conditions
+    const updateData: Partial<SocketData> =
+      contentType === ContentDataType.LAUNCHER ? { launcherSessions: updatedSessions } : {};
+
     return await this.socketDataService.set(
       socket.id,
       {
-        launcherSessions: updatedSessions,
+        ...updateData,
         clientConditions: updatedConditions,
       },
       true,
@@ -471,61 +484,18 @@ export class SocketOperationService {
   }
 
   // ============================================================================
-  // Private Helper Methods - Session Operations
+  // Private Helper Methods - Batch Session Operations
   // ============================================================================
 
   /**
-   * Emit unset socket session event with acknowledgment
-   * @param socket - The socket instance
-   * @param sessionId - The session id to unset
-   * @param contentType - The content type to unset
-   * @returns Promise<boolean> - True if the session was unset and acknowledged by client
-   */
-  private async unsetSocketSession(
-    socket: Socket,
-    sessionId: string,
-    contentType: ContentDataType,
-  ): Promise<boolean> {
-    if (contentType === ContentDataType.FLOW) {
-      return await this.socketEmitterService.unsetFlowSessionWithAck(socket, sessionId);
-    }
-    if (contentType === ContentDataType.CHECKLIST) {
-      return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, sessionId);
-    }
-
-    this.logger.warn(`Unsupported content type: ${contentType}`);
-    return false;
-  }
-
-  /**
-   * Emit sessions in parallel based on content type
-   * Handles session additions and removals
-   * @param params - Parameters for emitting sessions
-   * @returns Promise containing added sessions and removed content IDs
-   */
-  private async emitSessions(params: EmitSessionsOptions): Promise<EmitSessionsResult> {
-    const { socket, sessionsToAdd, contentIdsToRemove, contentType } = params;
-    switch (contentType) {
-      case ContentDataType.LAUNCHER: {
-        const [addedSessions, removedContentIds] = await Promise.all([
-          this.socketParallelService.addLaunchers(socket, sessionsToAdd),
-          this.socketParallelService.removeLaunchers(socket, contentIdsToRemove),
-        ]);
-        return { addedSessions, removedContentIds };
-      }
-      default:
-        this.logger.warn(`Unsupported content type for emitSessions: ${contentType}`);
-        return { addedSessions: [], removedContentIds: [] };
-    }
-  }
-
-  /**
-   * Handle sessions processing
+   * Handle batch sessions processing
    * Processes session additions, removals, and preserves existing sessions
-   * @param params - Parameters for handling sessions
+   * @param params - Parameters for handling batch sessions
    * @returns Promise containing updated sessions and removed content IDs
    */
-  private async handleSessions(params: HandleSessionsOptions): Promise<HandleSessionsResult> {
+  private async handleBatchSessions(
+    params: HandleBatchSessionsOptions,
+  ): Promise<HandleBatchSessionsResult> {
     const { currentSessions, newSessions, socket, contentType } = params;
     const {
       newSessions: categorizedNewSessions,
@@ -546,7 +516,7 @@ export class SocketOperationService {
     const toAdd = [...categorizedNewSessions, ...changedPreservedSessions];
     const contentIdsToRemove = removedSessions.map((session) => session.content.id);
 
-    const { addedSessions, removedContentIds } = await this.emitSessions({
+    const { addedSessions, removedContentIds } = await this.emitBatchSessions({
       socket,
       sessionsToAdd: toAdd,
       contentIdsToRemove,
@@ -563,87 +533,72 @@ export class SocketOperationService {
     };
   }
 
-  // ============================================================================
-  // Private Helper Methods - Condition Operations
-  // ============================================================================
-
   /**
-   * Cleanup conditions efficiently with parallel processing
-   * @param socket - The socket
-   * @param clientConditions - All client conditions
-   * @param waitTimers - Condition wait timers to cleanup
-   * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
-   * @returns Object containing remaining conditions and timers after cleanup
+   * Emit batch sessions in parallel based on content type
+   * Handles session additions and removals for multi-instance content types
+   * @param params - Parameters for emitting batch sessions
+   * @returns Promise containing added sessions and removed content IDs
    */
-  private async cleanupConditions(
-    socket: Socket,
-    socketData: SocketData,
-    cleanupContentTypes?: ContentDataType[],
-  ): Promise<Pick<SocketData, 'clientConditions' | 'waitTimers'>> {
-    const { clientConditions = [], waitTimers = [] } = socketData;
-    // Filter and preserve client conditions based on content type filter
-    const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
-      clientConditions,
-      cleanupContentTypes,
-    );
-    // Filter and preserve wait timers based on content type filter
-    const { filteredWaitTimers, preservedWaitTimers } = filterAndPreserveWaitTimers(
-      waitTimers,
-      cleanupContentTypes,
-    );
-    // Un-track client conditions
-    filteredConditions.map((condition) =>
-      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId),
-    );
-    filteredWaitTimers.map((timer) =>
-      this.socketEmitterService.cancelConditionWaitTimer(socket, timer),
-    );
-    return {
-      clientConditions: preservedConditions,
-      waitTimers: preservedWaitTimers,
-    };
+  private async emitBatchSessions(
+    params: EmitBatchSessionsOptions,
+  ): Promise<EmitBatchSessionsResult> {
+    const { socket, sessionsToAdd, contentIdsToRemove, contentType } = params;
+    // Early return if no operations are needed
+    if (sessionsToAdd.length === 0 && contentIdsToRemove.length === 0) {
+      return { addedSessions: [], removedContentIds: [] };
+    }
+    switch (contentType) {
+      case ContentDataType.LAUNCHER: {
+        const [addedSessions, removedContentIds] = await Promise.all([
+          this.socketParallelService.addLaunchers(socket, sessionsToAdd),
+          this.socketParallelService.removeLaunchers(socket, contentIdsToRemove),
+        ]);
+        return { addedSessions, removedContentIds };
+      }
+      default:
+        this.logger.warn(`Unsupported content type for emitBatchSessions: ${contentType}`);
+        return { addedSessions: [], removedContentIds: [] };
+    }
   }
 
-  /**
-   * Execute and validate parallel condition operations
-   * @param socket - The socket instance
-   * @param conditionsToUntrack - Conditions to untrack
-   * @param waitTimers - Wait timers to cancel
-   * @param conditionsToTrack - Conditions to track
-   * @returns True if all operations completed successfully
-   */
-  private async executeParallelConditionOperations(
-    socket: Socket,
-    conditionsToUntrack: ClientCondition[],
-    waitTimers: ConditionWaitTimer[],
-    conditionsToTrack: TrackCondition[],
-  ): Promise<boolean> {
-    // Execute all condition operations in parallel
-    const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
-      this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
-      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
-      this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
-    ]);
+  // ============================================================================
+  // Private Helper Methods - Session Operations (Common)
+  // ============================================================================
 
-    // Validate results
-    if (
-      untrackedConditions.length !== conditionsToUntrack.length ||
-      cancelledTimers.length !== waitTimers.length ||
-      newConditions.length !== conditionsToTrack.length
-    ) {
-      this.logger.error(
-        `Failed to execute all condition operations: ${conditionsToUntrack.length} conditions to untrack,
-         ${waitTimers.length} wait timers to cancel, ${conditionsToTrack.length} conditions to track`,
-      );
-      return false;
+  /**
+   * Emit unset socket session event with acknowledgment
+   * Supports both singleton (FLOW, CHECKLIST) and batch (LAUNCHER) content types
+   * @param socket - The socket instance
+   * @param session - The session to unset
+   * @returns Promise<boolean> - True if the session was unset and acknowledged by client
+   */
+  private async unsetSocketSession(
+    socket: Socket,
+    session: CustomContentSession,
+  ): Promise<boolean> {
+    const contentType = session.content.type;
+    if (contentType === ContentDataType.FLOW) {
+      return await this.socketEmitterService.unsetFlowSessionWithAck(socket, session.id);
+    }
+    if (contentType === ContentDataType.CHECKLIST) {
+      return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, session.id);
     }
 
-    return true;
+    if (contentType === ContentDataType.LAUNCHER) {
+      return await this.socketEmitterService.removeLauncherWithAck(socket, session.content.id);
+    }
+
+    this.logger.warn(`Unsupported content type: ${contentType}`);
+    return false;
   }
+
+  // ============================================================================
+  // Private Helper Methods - Condition Operations (Singleton)
+  // ============================================================================
 
   /**
    * Emit conditions efficiently with parallel operations
-   * Handles condition tracking, untracking, and wait timer management
+   * Handles condition tracking, untracking, and wait timer management for singleton content types
    * @param socket - The socket
    * @param socketData - The socket client data
    * @param trackConditions - New conditions to track
@@ -697,13 +652,53 @@ export class SocketOperationService {
   }
 
   /**
-   * Untrack client conditions for removed content
-   * Filters conditions by content type and untracks conditions for removed content IDs
-   * @param params - Parameters for untracking client conditions
-   * @returns Object containing remaining conditions after cleanup
+   * Execute and validate parallel condition operations
+   * @param socket - The socket instance
+   * @param conditionsToUntrack - Conditions to untrack
+   * @param waitTimers - Wait timers to cancel
+   * @param conditionsToTrack - Conditions to track
+   * @returns True if all operations completed successfully
    */
-  private untrackClientConditions(
-    params: UntrackConditionsOptions,
+  private async executeParallelConditionOperations(
+    socket: Socket,
+    conditionsToUntrack: ClientCondition[],
+    waitTimers: ConditionWaitTimer[],
+    conditionsToTrack: TrackCondition[],
+  ): Promise<boolean> {
+    // Execute all condition operations in parallel
+    const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
+      this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
+      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
+      this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
+    ]);
+
+    // Validate results
+    if (
+      untrackedConditions.length !== conditionsToUntrack.length ||
+      cancelledTimers.length !== waitTimers.length ||
+      newConditions.length !== conditionsToTrack.length
+    ) {
+      this.logger.error(
+        `Failed to execute all condition operations: ${conditionsToUntrack.length} conditions to untrack,
+         ${waitTimers.length} wait timers to cancel, ${conditionsToTrack.length} conditions to track`,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  // ============================================================================
+  // Private Helper Methods - Condition Operations (Batch)
+  // ============================================================================
+
+  /**
+   * Cleanup conditions for removed batch content
+   * @param params - Parameters for cleanup batch conditions
+   * @returns Object containing updated conditions after cleanup
+   */
+  private cleanupBatchConditions(
+    params: CleanupBatchConditionsOptions,
   ): Pick<SocketData, 'clientConditions'> {
     const { clientConditions, removedContentIds, socket, cleanupContentTypes } = params;
     const { filteredConditions, preservedConditions } = filterAndPreserveConditions(

@@ -17,23 +17,23 @@ import {
   isActivedHideRules,
   extractClientTrackConditions,
   evaluateCustomContentVersion,
-  findAvailableSessionId,
   extractClientConditionWaitTimers,
   sessionIsAvailable,
   extractChecklistNewCompletedItems,
   extractChecklistTrackConditions,
   hasContentSessionChanges,
-  filterAvailableLauncherContentVersions,
   findCurrentStepCvid,
   canSendChecklistCompletedEvent,
   evaluateChecklistItemsWithContext,
   isSingletonContentType,
+  sessionIsDismissed,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
   extractExcludedContentIds,
   extractSessionByContentType,
   buildSocketLockKey,
+  extractSessionsByContentType,
 } from '@/utils/websocket-utils';
 import {
   SocketData,
@@ -57,9 +57,9 @@ import { SocketDataService } from './socket-data.service';
 import { getStartEventType, getEndEventType } from '@/utils/event-v2';
 
 /**
- * Result of launcher data preparation
+ * Result of content data preparation
  */
-interface LauncherDataPreparationResult {
+interface ContentDataPreparationResult {
   success: boolean;
   availableVersions: CustomContentVersion[];
   shouldTrackVersions: CustomContentVersion[];
@@ -215,50 +215,62 @@ export class ContentOrchestratorService {
   }
 
   // ============================================================================
-  // Public API Methods - Launcher
+  // Public API Methods - Multi-instance Content (LAUNCHER)
   // ============================================================================
 
   /**
-   * Add launchers
+   * Start content batch (for multi-instance content types like LAUNCHER)
+   * Supports multiple concurrent sessions for the same content type
+   * Note: Singleton content types (FLOW, CHECKLIST) should use startContent instead
    * @param context - The content start context
-   * @returns True if the launchers were added successfully
+   * @param contentType - The content type (must be non-singleton)
+   * @returns True if the content batch was started successfully
    */
-  async addLaunchers(context: ContentStartContext): Promise<boolean> {
-    // 1. Prepare launcher data
-    const preparationResult = await this.prepareLauncherData(context);
+  async startContentBatch(
+    context: ContentStartContext,
+    contentType: ContentDataType,
+  ): Promise<boolean> {
+    // Validate that content type is not singleton
+    if (isSingletonContentType(contentType)) {
+      return false;
+    }
+
+    // Prepare, create, and execute in sequence
+    const preparationResult = await this.prepareBatchData(context, contentType);
     if (!preparationResult.success) {
       return false;
     }
 
-    // 2. Create launcher sessions
-    const sessions = await this.createLauncherSessions(
+    const sessions = await this.createBatchSessions(
       preparationResult.availableVersions,
       context.socketData,
       preparationResult.startReason,
       preparationResult.versionId,
+      contentType,
     );
 
-    // 3. Execute launcher operations
-    return await this.executeLauncherOperations(
+    return await this.executeBatchOperations(
       context.socket,
       context.socketData,
       sessions,
       preparationResult.shouldTrackVersions,
+      contentType,
     );
   }
 
   /**
-   * Initialize launcher session by content ID
+   * Initialize session by content ID
    * @param socketData - Socket data
    * @param contentId - Content ID
+   * @param contentType - The content type
    * @returns The initialized session or null if not found
    */
-  async initializeLauncherSession(
+  async initializeSessionByContentId(
     socketData: SocketData,
     contentId: string,
+    contentType: ContentDataType,
   ): Promise<CustomContentSession | null> {
     const { environment } = socketData;
-    const contentType = ContentDataType.LAUNCHER;
 
     const versionId = await this.findPublishedVersionId(contentId, environment);
     if (!versionId) {
@@ -283,14 +295,14 @@ export class ContentOrchestratorService {
   // ============================================================================
 
   /**
-   * Start contents by types sequentially
+   * Start content by types sequentially
    * Gets socket data in each iteration to ensure we have the latest data
    * as it may be updated by previous content operations
    * @param context - Base context containing server, socket, and options
    * @param contentTypes - Array of content types to start
    * @returns True if all content types were started successfully, false if any failed
    */
-  async startContentsByTypes(
+  async startContentByTypes(
     context: Omit<ContentStartContext, 'contentType' | 'socketData'>,
     contentTypes: ContentDataType[],
   ): Promise<boolean> {
@@ -300,15 +312,19 @@ export class ContentOrchestratorService {
         return false;
       }
 
-      if (contentType === ContentDataType.LAUNCHER) {
-        await this.addLaunchers(startContentContext);
-      } else {
+      if (isSingletonContentType(contentType)) {
         await this.startContent(startContentContext);
+      } else {
+        await this.startContentBatch(startContentContext, contentType);
       }
     }
 
     return true;
   }
+
+  // ============================================================================
+  // Private Helper Methods - Data Access
+  // ============================================================================
 
   /**
    * Build content start context with fresh socket data
@@ -331,10 +347,6 @@ export class ContentOrchestratorService {
       contentType,
     };
   }
-
-  // ============================================================================
-  // Data Retrieval Methods
-  // ============================================================================
 
   /**
    * Get socket data from Redis
@@ -889,8 +901,9 @@ export class ContentOrchestratorService {
     const session = customContentVersion.session;
     const contentType = customContentVersion.content.type as ContentDataType;
     const currentStepCvid = findCurrentStepCvid(customContentVersion, startOptions);
-    const sessionId = findAvailableSessionId(session.latestSession, contentType);
-    if (sessionId) {
+
+    if (sessionIsAvailable(session.latestSession, contentType)) {
+      const sessionId = session.latestSession!.id;
       const existingBizSession = await this.sessionBuilderService.getBizSession(sessionId);
       if (!existingBizSession) {
         return {
@@ -1295,26 +1308,38 @@ export class ContentOrchestratorService {
    */
   private async cancelSocketSession(params: CancelSessionParams): Promise<boolean> {
     const { contentType } = params;
-    if (contentType === ContentDataType.LAUNCHER) {
-      return await this.cancelLauncherSocketSession(params);
+    if (isSingletonContentType(contentType)) {
+      return await this.cancelContentSocketSession(params);
     }
-    return await this.cancelContentSocketSession(params);
+    return await this.cancelBatchSocketSession(params);
   }
 
   /**
-   * Cancel launcher socket session
+   * Cancel batch socket session
    * @param params - The cancel session parameters
    * @returns True if the session was canceled successfully
    */
-  private async cancelLauncherSocketSession(params: CancelSessionParams): Promise<boolean> {
-    const { socket, socketData, contentId, unsetSession } = params;
+  private async cancelBatchSocketSession(params: CancelSessionParams): Promise<boolean> {
+    const { socket, socketData, contentId, contentType, unsetSession } = params;
     if (!contentId) {
-      this.logger.warn('cancelLauncherSocketSession: contentId is required but not provided');
+      this.logger.warn('cancelBatchSocketSession: contentId is required but not provided');
       return false;
     }
-    return await this.socketOperationService.cleanupLauncherSession(socket, socketData, contentId, {
-      unsetSession,
-    });
+    const sessions = extractSessionsByContentType(socketData, contentType);
+    const currentSession = sessions.find((s) => s.content.id === contentId);
+    if (!currentSession) {
+      this.logger.warn(`cancelBatchSocketSession: session not found for contentId: ${contentId}`);
+      return false;
+    }
+
+    return await this.socketOperationService.cleanupBatchSession(
+      socket,
+      socketData,
+      currentSession,
+      {
+        unsetSession,
+      },
+    );
   }
 
   /**
@@ -1553,48 +1578,56 @@ export class ContentOrchestratorService {
   }
 
   // ============================================================================
-  // Launcher Methods
+  // Private Helper Methods - Batch Operations
   // ============================================================================
 
   /**
-   * Prepare launcher data for processing
+   * Prepare batch data for session creation
    * @param context - The content start context
-   * @returns Launcher data preparation result
+   * @param contentType - The content type
+   * @returns Result containing available versions and versions to track
    */
-  private async prepareLauncherData(
+  private async prepareBatchData(
     context: ContentStartContext,
-  ): Promise<LauncherDataPreparationResult> {
+    contentType: ContentDataType,
+  ): Promise<ContentDataPreparationResult> {
     const { socketData, options } = context;
     const { clientConditions, environment } = socketData;
     const { contentId, startReason = contentStartReason.START_FROM_CONDITION } = options ?? {};
-    const contentType = ContentDataType.LAUNCHER;
 
-    // Get published version ID if needed
-    const versionId = await this.findPublishedVersionId(contentId, environment);
+    // Resolve version ID if content ID is provided
+    const versionId = contentId
+      ? await this.findPublishedVersionId(contentId, environment)
+      : undefined;
     if (contentId && !versionId) {
       return { success: false, availableVersions: [], shouldTrackVersions: [], startReason };
     }
 
-    // Get evaluated content versions once and reuse for both strategy executions
-    const evaluatedContentVersions = await this.findEvaluatedContentVersions(
+    // Evaluate and filter content versions
+    const evaluatedVersions = await this.findEvaluatedContentVersions(
       socketData,
       contentType,
       versionId,
     );
-    const availableContentVersions = filterAvailableLauncherContentVersions(
-      evaluatedContentVersions,
+
+    const autoStartContentVersions = filterAvailableAutoStartContentVersions(
+      evaluatedVersions,
+      contentType,
       clientConditions,
     );
-    const shouldTrackVersions = evaluatedContentVersions.filter(
-      (version) =>
-        !availableContentVersions.find(
-          (availableVersion) => availableVersion.contentId === version.contentId,
-        ),
+
+    const availableVersions = autoStartContentVersions.filter(
+      (contentVersion) => !sessionIsDismissed(contentVersion.session.latestSession, contentType),
+    );
+
+    // Versions that should be tracked but not activated
+    const shouldTrackVersions = evaluatedVersions.filter(
+      (version) => !availableVersions.some((v) => v.contentId === version.contentId),
     );
 
     return {
       success: true,
-      availableVersions: availableContentVersions,
+      availableVersions,
       shouldTrackVersions,
       startReason,
       versionId,
@@ -1602,80 +1635,74 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Create launcher sessions for available content versions
+   * Create batch sessions for available content versions
    * @param availableVersions - Available content versions
    * @param socketData - Socket data
    * @param startReason - Start reason
    * @param versionId - Version ID
+   * @param contentType - The content type
    * @returns Array of created sessions
    */
-  private async createLauncherSessions(
+  private async createBatchSessions(
     availableVersions: CustomContentVersion[],
     socketData: SocketData,
     startReason: contentStartReason,
-    versionId?: string,
+    versionId: string | undefined,
+    contentType: ContentDataType,
   ): Promise<CustomContentSession[]> {
-    const contentType = ContentDataType.LAUNCHER;
-    const sessions: CustomContentSession[] = [];
+    const sessions = await Promise.all(
+      availableVersions.map(async (contentVersion) => {
+        const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
+        const skipBizSession = !isAvailable && !versionId;
 
-    for (const contentVersion of availableVersions) {
-      const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
+        return this.initializeSession(contentVersion, socketData, { startReason }, skipBizSession);
+      }),
+    );
 
-      // Skip bizSession processing when session is not available and no versionId is specified
-      const skipBizSession = !isAvailable && !versionId;
-
-      const result = await this.initializeSession(
-        contentVersion,
-        socketData,
-        { startReason },
-        skipBizSession,
-      );
-
-      if (result) {
-        sessions.push(result);
-      }
-    }
-
-    return sessions;
+    return sessions.filter((session): session is CustomContentSession => session !== null);
   }
 
   /**
-   * Execute launcher operations including adding launchers and tracking conditions
+   * Execute batch operations including activating sessions and tracking conditions
    * @param socket - Socket instance
    * @param socketData - Socket data
-   * @param sessions - Sessions to add
+   * @param sessions - Sessions to activate
    * @param shouldTrackVersions - Versions to track
+   * @param contentType - The content type
    * @returns True if operations were successful
    */
-  private async executeLauncherOperations(
+  private async executeBatchOperations(
     socket: Socket,
     socketData: SocketData,
     sessions: CustomContentSession[],
     shouldTrackVersions: CustomContentVersion[],
+    contentType: ContentDataType,
   ): Promise<boolean> {
-    const contentType = ContentDataType.LAUNCHER;
-
-    // Add launchers to socket
-    const success = await this.socketOperationService.addLaunchers(socket, socketData, sessions);
-    if (!success) {
+    // Activate sessions via socket operation service
+    const sessionsActivated = await this.socketOperationService.activateBatchSessions(
+      socket,
+      socketData,
+      sessions,
+      contentType,
+    );
+    if (!sessionsActivated) {
       return false;
     }
 
-    // Extract and track client conditions
+    // Track conditions for versions that should be tracked but not activated
     const { preTracks = [] } = await this.extractClientConditions(contentType, shouldTrackVersions);
-
     if (preTracks.length === 0) {
       return true;
     }
 
-    const newSocketData = await this.getSocketData(socket);
-    if (!newSocketData) {
+    const updatedSocketData = await this.getSocketData(socket);
+    if (!updatedSocketData) {
       return false;
     }
 
     return await this.socketOperationService.trackClientConditions(
       socket,
-      newSocketData,
+      updatedSocketData,
       preTracks,
     );
   }

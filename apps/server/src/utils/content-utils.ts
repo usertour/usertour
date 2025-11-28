@@ -607,26 +607,6 @@ export const filterAvailableAutoStartContentVersions = (
 };
 
 /**
- * Filters the available launcher custom content versions
- * @param customContentVersions - The custom content versions
- * @param clientConditions - The client conditions
- * @returns The available launcher custom content versions
- */
-export const filterAvailableLauncherContentVersions = (
-  customContentVersions: CustomContentVersion[],
-  clientConditions: ClientCondition[],
-) => {
-  const autoStartContentVersions = filterAvailableAutoStartContentVersions(
-    customContentVersions,
-    ContentDataType.LAUNCHER,
-    clientConditions,
-  );
-  return autoStartContentVersions.filter(
-    (contentVersion) => !launcherIsDismissed(contentVersion.session.latestSession?.bizEvent),
-  );
-};
-
-/**
  * Helper function to check if auto-start content is eligible
  * @param customContentVersion - The content version to check
  * @param allContentVersions - All content versions for context
@@ -723,42 +703,13 @@ export const isSingletonContentType = (contentType: ContentDataType): boolean =>
 };
 
 /**
- * Finds the available session ID
- * @param latestSession - The latest session
- * @param contentType - The content type
- * @returns The available session ID
- */
-export const findAvailableSessionId = (
-  latestSession: BizSessionWithEvents,
-  contentType: ContentDataType,
-) => {
-  if (contentType === ContentDataType.CHECKLIST) {
-    if (latestSession && !checklistIsDimissed(latestSession.bizEvent)) {
-      return latestSession.id;
-    }
-  }
-  if (contentType === ContentDataType.FLOW) {
-    if (latestSession && !flowIsDismissed(latestSession.bizEvent)) {
-      return latestSession.id;
-    }
-  }
-
-  if (contentType === ContentDataType.LAUNCHER) {
-    if (latestSession && !launcherIsDismissed(latestSession.bizEvent)) {
-      return latestSession.id;
-    }
-  }
-  return undefined;
-};
-
-/**
  * Checks if a session is available
- * @param latestSession - The latest session
+ * @param latestSession - The latest session (may be null or undefined)
  * @param contentType - The content type
  * @returns True if the session is available, false otherwise
  */
 export const sessionIsAvailable = (
-  latestSession: BizSessionWithEvents,
+  latestSession: BizSessionWithEvents | null | undefined,
   contentType: ContentDataType,
 ): boolean => {
   if (contentType === ContentDataType.CHECKLIST) {
@@ -773,6 +724,34 @@ export const sessionIsAvailable = (
   }
   if (contentType === ContentDataType.LAUNCHER) {
     if (latestSession && !launcherIsDismissed(latestSession.bizEvent)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
+ * Checks if a session is dismissed
+ * @param latestSession - The latest session (may be null or undefined)
+ * @param contentType - The content type
+ * @returns True if the session is dismissed, false otherwise
+ */
+export const sessionIsDismissed = (
+  latestSession: BizSessionWithEvents | null | undefined,
+  contentType: ContentDataType,
+): boolean => {
+  if (contentType === ContentDataType.CHECKLIST) {
+    if (latestSession && checklistIsDimissed(latestSession.bizEvent)) {
+      return true;
+    }
+  }
+  if (contentType === ContentDataType.FLOW) {
+    if (latestSession && flowIsDismissed(latestSession.bizEvent)) {
+      return true;
+    }
+  }
+  if (contentType === ContentDataType.LAUNCHER) {
+    if (latestSession && launcherIsDismissed(latestSession.bizEvent)) {
       return true;
     }
   }
