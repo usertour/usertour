@@ -3,6 +3,7 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { defaultSettings } from '@usertour/types';
 import { deepmerge } from 'deepmerge-ts';
 import { ThemeEditor } from './theme-editor';
+import { useAppContext } from '@/contexts/app-context';
 
 export const ThemeDetailContent = () => {
   const {
@@ -17,6 +18,7 @@ export const ThemeDetailContent = () => {
     customStyle,
   } = useThemeDetailContext();
   const { attributeList } = useAttributeListContext();
+  const { isViewOnly } = useAppContext();
   const showConditionalVariations = !theme.isSystem;
 
   return (
@@ -36,6 +38,7 @@ export const ThemeDetailContent = () => {
         attributeList={attributeList}
         variations={variations}
         onVariationsChange={setVariations}
+        isViewOnly={isViewOnly}
       />
     </div>
   );

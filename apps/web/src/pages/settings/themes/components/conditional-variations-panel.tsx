@@ -24,6 +24,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { DragHandleDots2Icon } from '@radix-ui/react-icons';
 
 interface ConditionalVariationsPanelProps {
+  isViewOnly?: boolean;
   variations: ThemeVariation[];
   onVariationsChange?: (variations: ThemeVariation[]) => void;
   attributeList?: Attribute[];
@@ -64,6 +65,7 @@ const SortableVariationItem = ({
 };
 
 export const ConditionalVariationsPanel = ({
+  isViewOnly = false,
   variations,
   onVariationsChange,
   attributeList,
@@ -155,6 +157,7 @@ export const ConditionalVariationsPanel = ({
             <SortableContext
               items={variations.map((_, index) => index.toString())}
               strategy={verticalListSortingStrategy}
+              disabled={isViewOnly}
             >
               <div className="space-y-1">
                 {variations.map((variation, index) => (
@@ -174,6 +177,7 @@ export const ConditionalVariationsPanel = ({
           variant="link"
           size="sm"
           onClick={handleAddVariation}
+          disabled={isViewOnly}
           className="gap-2 hover:no-underline w-fit p-0"
         >
           <PlusIcon className="h-4 w-4" />
@@ -184,6 +188,7 @@ export const ConditionalVariationsPanel = ({
       {openModal && (
         <SubThemeModal
           isOpen={openModal}
+          isViewOnly={isViewOnly}
           onOpenChange={setOpenModal}
           initialVariation={editingVariation}
           onSave={handleSaveVariation}

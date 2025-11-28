@@ -218,6 +218,7 @@ export const ThemeSettingsAccordionContent = () => (
 
 // Default panel for regular theme settings
 export const ThemeSettingsDefaultPanel = ({
+  isViewOnly = false,
   settings,
   defaultSettings,
   onSettingsChange,
@@ -227,6 +228,7 @@ export const ThemeSettingsDefaultPanel = ({
   onVariationsChange,
   showConditionalVariations = true,
 }: {
+  isViewOnly?: boolean;
   settings: ThemeTypesSetting;
   defaultSettings: ThemeTypesSetting;
   onSettingsChange: (settings: ThemeTypesSetting) => void;
@@ -248,6 +250,7 @@ export const ThemeSettingsDefaultPanel = ({
           variations={variations}
           onVariationsChange={onVariationsChange}
           attributeList={attributeList}
+          isViewOnly={isViewOnly}
         />
       </div>
     )}
