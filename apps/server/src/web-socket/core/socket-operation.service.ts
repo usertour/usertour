@@ -24,19 +24,7 @@ import { SocketDataService } from './socket-data.service';
 // Type Definitions and Interfaces
 // ============================================================================
 
-/**
- * Options for cleaning up socket session
- */
-interface CleanupSocketSessionOptions {
-  /** Whether to execute unsetSocketSession, defaults to true */
-  unsetSession?: boolean;
-  /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
-  setLastDismissedId?: boolean;
-  /** Optional array of content types to cleanup client conditions for */
-  // cleanupContentTypes?: ContentDataType[];
-  trackConditions?: TrackCondition[];
-}
-
+// Session Options
 interface ActivateFlowSessionOptions {
   /** The conditions to track */
   trackConditions?: TrackCondition[];
@@ -53,17 +41,17 @@ interface ActivateChecklistSessionOptions {
   cleanupContentTypes?: ContentDataType[];
 }
 
-interface UntrackConditionsOptions {
-  /** All client conditions */
-  clientConditions: ClientCondition[];
-  /** Array of content IDs that were removed */
-  removedContentIds: string[];
-  /** The socket instance */
-  socket: Socket;
+interface CleanupSocketSessionOptions {
+  /** Whether to execute unsetSocketSession, defaults to true */
+  unsetSession?: boolean;
+  /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
+  setLastDismissedId?: boolean;
   /** Optional array of content types to cleanup client conditions for */
-  cleanupContentTypes: ContentDataType[];
+  // cleanupContentTypes?: ContentDataType[];
+  trackConditions?: TrackCondition[];
 }
 
+// Session Operations
 interface EmitSessionsOptions {
   /** The socket instance */
   socket: Socket;
@@ -98,6 +86,18 @@ interface HandleSessionsResult {
   updatedSessions: CustomContentSession[];
   /** Successfully removed content IDs */
   removedContentIds: string[];
+}
+
+// Condition Operations
+interface UntrackConditionsOptions {
+  /** All client conditions */
+  clientConditions: ClientCondition[];
+  /** Array of content IDs that were removed */
+  removedContentIds: string[];
+  /** The socket instance */
+  socket: Socket;
+  /** Optional array of content types to cleanup client conditions for */
+  cleanupContentTypes: ContentDataType[];
 }
 
 // ============================================================================
@@ -471,7 +471,7 @@ export class SocketOperationService {
   }
 
   // ============================================================================
-  // Private Helper Methods - Session Management
+  // Private Helper Methods - Session Operations
   // ============================================================================
 
   /**
@@ -497,8 +497,74 @@ export class SocketOperationService {
     return false;
   }
 
+  /**
+   * Emit sessions in parallel based on content type
+   * Handles session additions and removals
+   * @param params - Parameters for emitting sessions
+   * @returns Promise containing added sessions and removed content IDs
+   */
+  private async emitSessions(params: EmitSessionsOptions): Promise<EmitSessionsResult> {
+    const { socket, sessionsToAdd, contentIdsToRemove, contentType } = params;
+    switch (contentType) {
+      case ContentDataType.LAUNCHER: {
+        const [addedSessions, removedContentIds] = await Promise.all([
+          this.socketParallelService.addLaunchers(socket, sessionsToAdd),
+          this.socketParallelService.removeLaunchers(socket, contentIdsToRemove),
+        ]);
+        return { addedSessions, removedContentIds };
+      }
+      default:
+        this.logger.warn(`Unsupported content type for emitSessions: ${contentType}`);
+        return { addedSessions: [], removedContentIds: [] };
+    }
+  }
+
+  /**
+   * Handle sessions processing
+   * Processes session additions, removals, and preserves existing sessions
+   * @param params - Parameters for handling sessions
+   * @returns Promise containing updated sessions and removed content IDs
+   */
+  private async handleSessions(params: HandleSessionsOptions): Promise<HandleSessionsResult> {
+    const { currentSessions, newSessions, socket, contentType } = params;
+    const {
+      newSessions: categorizedNewSessions,
+      removedSessions,
+      preservedSessions,
+    } = categorizeSessions(currentSessions, newSessions);
+
+    // Second pass: detect changes in preserved sessions
+    const changedPreservedSessions = detectChangedPreservedSessions(
+      currentSessions,
+      preservedSessions,
+    );
+
+    const preservedUnchangedSessions = preservedSessions.filter(
+      (session) => !changedPreservedSessions.some((s) => s.id === session.id),
+    );
+
+    const toAdd = [...categorizedNewSessions, ...changedPreservedSessions];
+    const contentIdsToRemove = removedSessions.map((session) => session.content.id);
+
+    const { addedSessions, removedContentIds } = await this.emitSessions({
+      socket,
+      sessionsToAdd: toAdd,
+      contentIdsToRemove,
+      contentType,
+    });
+
+    const unremovedSessions = removedSessions.filter(
+      (session) => !removedContentIds.includes(session.content.id),
+    );
+
+    return {
+      updatedSessions: [...preservedUnchangedSessions, ...unremovedSessions, ...addedSessions],
+      removedContentIds,
+    };
+  }
+
   // ============================================================================
-  // Private Helper Methods - Condition Management
+  // Private Helper Methods - Condition Operations
   // ============================================================================
 
   /**
@@ -627,76 +693,6 @@ export class SocketOperationService {
     return {
       clientConditions: updatedConditions,
       waitTimers: preservedWaitTimers,
-    };
-  }
-
-  // ============================================================================
-  // Private Helper Methods - Session Handling
-  // ============================================================================
-
-  /**
-   * Emit sessions in parallel based on content type
-   * Handles session additions and removals
-   * @param params - Parameters for emitting sessions
-   * @returns Promise containing added sessions and removed content IDs
-   */
-  private async emitSessions(params: EmitSessionsOptions): Promise<EmitSessionsResult> {
-    const { socket, sessionsToAdd, contentIdsToRemove, contentType } = params;
-    switch (contentType) {
-      case ContentDataType.LAUNCHER: {
-        const [addedSessions, removedContentIds] = await Promise.all([
-          this.socketParallelService.addLaunchers(socket, sessionsToAdd),
-          this.socketParallelService.removeLaunchers(socket, contentIdsToRemove),
-        ]);
-        return { addedSessions, removedContentIds };
-      }
-      default:
-        this.logger.warn(`Unsupported content type for emitSessions: ${contentType}`);
-        return { addedSessions: [], removedContentIds: [] };
-    }
-  }
-
-  /**
-   * Handle sessions processing
-   * Processes session additions, removals, and preserves existing sessions
-   * @param params - Parameters for handling sessions
-   * @returns Promise containing updated sessions and removed content IDs
-   */
-  private async handleSessions(params: HandleSessionsOptions): Promise<HandleSessionsResult> {
-    const { currentSessions, newSessions, socket, contentType } = params;
-    const {
-      newSessions: categorizedNewSessions,
-      removedSessions,
-      preservedSessions,
-    } = categorizeSessions(currentSessions, newSessions);
-
-    // Second pass: detect changes in preserved sessions
-    const changedPreservedSessions = detectChangedPreservedSessions(
-      currentSessions,
-      preservedSessions,
-    );
-
-    const preservedUnchangedSessions = preservedSessions.filter(
-      (session) => !changedPreservedSessions.some((s) => s.id === session.id),
-    );
-
-    const toAdd = [...categorizedNewSessions, ...changedPreservedSessions];
-    const contentIdsToRemove = removedSessions.map((session) => session.content.id);
-
-    const { addedSessions, removedContentIds } = await this.emitSessions({
-      socket,
-      sessionsToAdd: toAdd,
-      contentIdsToRemove,
-      contentType,
-    });
-
-    const unremovedSessions = removedSessions.filter(
-      (session) => !removedContentIds.includes(session.content.id),
-    );
-
-    return {
-      updatedSessions: [...preservedUnchangedSessions, ...unremovedSessions, ...addedSessions],
-      removedContentIds,
     };
   }
 
