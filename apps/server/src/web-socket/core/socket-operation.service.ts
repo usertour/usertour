@@ -53,7 +53,7 @@ interface ActivateChecklistSessionOptions {
   cleanupContentTypes?: ContentDataType[];
 }
 
-interface UntrackRemovedConditionsParams {
+interface UntrackConditionsOptions {
   /** All client conditions */
   clientConditions: ClientCondition[];
   /** Array of content IDs that were removed */
@@ -62,6 +62,42 @@ interface UntrackRemovedConditionsParams {
   socket: Socket;
   /** Optional array of content types to cleanup client conditions for */
   cleanupContentTypes: ContentDataType[];
+}
+
+interface EmitSessionsOptions {
+  /** The socket instance */
+  socket: Socket;
+  /** Sessions to add */
+  sessionsToAdd: CustomContentSession[];
+  /** Content IDs to remove */
+  contentIdsToRemove: string[];
+  /** Content type to determine which methods to call */
+  contentType: ContentDataType;
+}
+
+interface EmitSessionsResult {
+  /** Successfully added sessions */
+  addedSessions: CustomContentSession[];
+  /** Successfully removed content IDs */
+  removedContentIds: string[];
+}
+
+interface HandleSessionsOptions {
+  /** Current sessions */
+  currentSessions: CustomContentSession[];
+  /** New sessions to add */
+  newSessions: CustomContentSession[];
+  /** The socket instance */
+  socket: Socket;
+  /** Content type to determine which methods to call */
+  contentType: ContentDataType;
+}
+
+interface HandleSessionsResult {
+  /** Updated sessions after processing */
+  updatedSessions: CustomContentSession[];
+  /** Successfully removed content IDs */
+  removedContentIds: string[];
 }
 
 // ============================================================================
@@ -253,14 +289,15 @@ export class SocketOperationService {
     const { clientConditions = [], launcherSessions = [] } = socketData;
 
     // Handle launcher sessions processing
-    const { updatedSessions, removedContentIds } = await this.handleLauncherSessions(
-      launcherSessions,
-      sessions,
+    const { updatedSessions, removedContentIds } = await this.handleSessions({
+      currentSessions: launcherSessions,
+      newSessions: sessions,
       socket,
-    );
+      contentType: ContentDataType.LAUNCHER,
+    });
 
     // Handle launcher client conditions update
-    const { clientConditions: updatedConditions } = this.untrackRemovedConditions({
+    const { clientConditions: updatedConditions } = this.untrackConditions({
       clientConditions,
       removedContentIds,
       socket,
@@ -302,7 +339,7 @@ export class SocketOperationService {
       }
     }
     // Handle launcher client conditions update
-    const { clientConditions: updatedConditions } = this.untrackRemovedConditions({
+    const { clientConditions: updatedConditions } = this.untrackConditions({
       clientConditions,
       removedContentIds: [contentId],
       socket,
@@ -594,21 +631,39 @@ export class SocketOperationService {
   }
 
   // ============================================================================
-  // Private Helper Methods - Launcher Handling
+  // Private Helper Methods - Session Handling
   // ============================================================================
 
   /**
-   * Handle launcher sessions processing
-   * Processes session additions, removals, and preserves existing sessions
+   * Emit sessions in parallel based on content type
+   * Handles session additions and removals
+   * @param params - Parameters for emitting sessions
+   * @returns Promise containing added sessions and removed content IDs
    */
-  private async handleLauncherSessions(
-    currentSessions: CustomContentSession[],
-    newSessions: CustomContentSession[],
-    socket: Socket,
-  ): Promise<{
-    updatedSessions: CustomContentSession[];
-    removedContentIds: string[];
-  }> {
+  private async emitSessions(params: EmitSessionsOptions): Promise<EmitSessionsResult> {
+    const { socket, sessionsToAdd, contentIdsToRemove, contentType } = params;
+    switch (contentType) {
+      case ContentDataType.LAUNCHER: {
+        const [addedSessions, removedContentIds] = await Promise.all([
+          this.socketParallelService.addLaunchers(socket, sessionsToAdd),
+          this.socketParallelService.removeLaunchers(socket, contentIdsToRemove),
+        ]);
+        return { addedSessions, removedContentIds };
+      }
+      default:
+        this.logger.warn(`Unsupported content type for emitSessions: ${contentType}`);
+        return { addedSessions: [], removedContentIds: [] };
+    }
+  }
+
+  /**
+   * Handle sessions processing
+   * Processes session additions, removals, and preserves existing sessions
+   * @param params - Parameters for handling sessions
+   * @returns Promise containing updated sessions and removed content IDs
+   */
+  private async handleSessions(params: HandleSessionsOptions): Promise<HandleSessionsResult> {
+    const { currentSessions, newSessions, socket, contentType } = params;
     const {
       newSessions: categorizedNewSessions,
       removedSessions,
@@ -632,14 +687,14 @@ export class SocketOperationService {
     );
 
     const toAdd = [...categorizedNewSessions, ...changedPreservedSessions];
+    const contentIdsToRemove = removedSessions.map((session) => session.content.id);
 
-    const [addedSessions, removedContentIds] = await Promise.all([
-      this.socketParallelService.addLaunchers(socket, toAdd),
-      this.socketParallelService.removeLaunchers(
-        socket,
-        removedSessions.map((session) => session.content.id),
-      ),
-    ]);
+    const { addedSessions, removedContentIds } = await this.emitSessions({
+      socket,
+      sessionsToAdd: toAdd,
+      contentIdsToRemove,
+      contentType,
+    });
 
     const unremovedSessions = removedSessions.filter(
       (session) => !removedContentIds.includes(session.content.id),
@@ -654,11 +709,11 @@ export class SocketOperationService {
   /**
    * Untrack client conditions for removed content
    * Filters conditions by content type and untracks conditions for removed content IDs
-   * @param params - Parameters for untracking removed conditions
+   * @param params - Parameters for untracking conditions
    * @returns Object containing remaining conditions after cleanup
    */
-  private untrackRemovedConditions(
-    params: UntrackRemovedConditionsParams,
+  private untrackConditions(
+    params: UntrackConditionsOptions,
   ): Pick<SocketData, 'clientConditions'> {
     const { clientConditions, removedContentIds, socket, cleanupContentTypes } = params;
     const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
