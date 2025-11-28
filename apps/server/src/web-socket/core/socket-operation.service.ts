@@ -53,6 +53,17 @@ interface ActivateChecklistSessionOptions {
   cleanupContentTypes?: ContentDataType[];
 }
 
+interface UntrackRemovedConditionsParams {
+  /** All client conditions */
+  clientConditions: ClientCondition[];
+  /** Array of content IDs that were removed */
+  removedContentIds: string[];
+  /** The socket instance */
+  socket: Socket;
+  /** Optional array of content types to cleanup client conditions for */
+  cleanupContentTypes: ContentDataType[];
+}
+
 // ============================================================================
 // Socket Operation Service
 // ============================================================================
@@ -249,11 +260,12 @@ export class SocketOperationService {
     );
 
     // Handle launcher client conditions update
-    const { updatedConditions } = this.handleLauncherClientConditions(
+    const { clientConditions: updatedConditions } = this.untrackRemovedConditions({
       clientConditions,
       removedContentIds,
       socket,
-    );
+      cleanupContentTypes: [ContentDataType.LAUNCHER],
+    });
 
     // Update socket data with processed sessions and conditions
     return await this.socketDataService.set(
@@ -290,11 +302,12 @@ export class SocketOperationService {
       }
     }
     // Handle launcher client conditions update
-    const { updatedConditions } = this.handleLauncherClientConditions(
+    const { clientConditions: updatedConditions } = this.untrackRemovedConditions({
       clientConditions,
-      [contentId],
+      removedContentIds: [contentId],
       socket,
-    );
+      cleanupContentTypes: [ContentDataType.LAUNCHER],
+    });
     const updatedSessions = launcherSessions.filter((session) => session.content.id !== contentId);
 
     // Update socket data with processed sessions and conditions
@@ -639,19 +652,18 @@ export class SocketOperationService {
   }
 
   /**
-   * Handle launcher client conditions filtering and updating
-   * Processes conditions specifically for launcher content type
+   * Untrack client conditions for removed content
+   * Filters conditions by content type and untracks conditions for removed content IDs
+   * @param params - Parameters for untracking removed conditions
+   * @returns Object containing remaining conditions after cleanup
    */
-  private handleLauncherClientConditions(
-    currentConditions: ClientCondition[],
-    removedContentIds: string[],
-    socket: Socket,
-  ): {
-    updatedConditions: ClientCondition[];
-  } {
+  private untrackRemovedConditions(
+    params: UntrackRemovedConditionsParams,
+  ): Pick<SocketData, 'clientConditions'> {
+    const { clientConditions, removedContentIds, socket, cleanupContentTypes } = params;
     const { filteredConditions, preservedConditions } = filterAndPreserveConditions(
-      currentConditions,
-      [ContentDataType.LAUNCHER],
+      clientConditions,
+      cleanupContentTypes,
     );
 
     // Use Set for O(1) lookup performance instead of nested array operations
@@ -675,7 +687,7 @@ export class SocketOperationService {
     }
 
     return {
-      updatedConditions: [...preservedConditions, ...trackedConditions],
+      clientConditions: [...preservedConditions, ...trackedConditions],
     };
   }
 }
