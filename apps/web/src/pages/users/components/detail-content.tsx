@@ -26,6 +26,7 @@ import {
 import { BizUserDeleteForm } from './bizuser-delete-form';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
+import { useAppContext } from '@/contexts/app-context';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -108,6 +109,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { isViewOnly } = useAppContext();
 
   useEffect(() => {
     if (!contents) {
@@ -180,6 +182,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={() => setShowDeleteDialog(true)}
+                  disabled={isViewOnly}
                   className="text-destructive focus:text-destructive"
                 >
                   <Delete2Icon className="mr-2 h-4 w-4" />

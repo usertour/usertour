@@ -40,6 +40,7 @@ import { queryBizUser } from '@usertour-packages/gql';
 import { PaginationState } from '@tanstack/react-table';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useCallback } from 'react';
+import { useAppContext } from '@/contexts/app-context';
 
 // Company User List Context
 interface CompanyUserListContextValue {
@@ -455,6 +456,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const [bizCompanyAttributes, setBizCompanyAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { isViewOnly } = useAppContext();
 
   useEffect(() => {
     if (!contents) {
@@ -529,6 +531,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={() => setShowDeleteDialog(true)}
+                  disabled={isViewOnly}
                   className="text-destructive focus:text-destructive"
                 >
                   <Delete2Icon className="mr-2 h-4 w-4" />
