@@ -6,6 +6,7 @@ import {
   ConditionWaitTimer,
 } from '@usertour/types';
 import { SocketData } from '@/common/types/content';
+import { hasContentSessionChanges } from '@/utils/content-utils';
 
 // ============================================================================
 // ID/Key Building Functions
@@ -262,4 +263,27 @@ export const categorizeSessions = (
     removedSessions,
     preservedSessions,
   };
+};
+
+/**
+ * Detect changed preserved sessions by comparing with current sessions
+ * Filters preserved sessions that have changes compared to their corresponding current sessions
+ * @param currentSessions - Current sessions to compare against
+ * @param preservedSessions - Preserved sessions to check for changes
+ * @returns Array of preserved sessions that have changes
+ */
+export const detectChangedPreservedSessions = (
+  currentSessions: CustomContentSession[],
+  preservedSessions: CustomContentSession[],
+): CustomContentSession[] => {
+  return preservedSessions.filter((session) => {
+    if (!session?.id) {
+      return false;
+    }
+    const oldSession = currentSessions.find((s) => s.id === session.id);
+    if (!oldSession) {
+      return false;
+    }
+    return hasContentSessionChanges(oldSession, session);
+  });
 };

@@ -16,8 +16,8 @@ import {
   filterAndPreserveWaitTimers,
   convertToClientConditions,
   categorizeSessions,
+  detectChangedPreservedSessions,
 } from '@/utils/websocket-utils';
-import { hasContentSessionChanges } from '@/utils/content-utils';
 import { SocketDataService } from './socket-data.service';
 
 // ============================================================================
@@ -297,7 +297,7 @@ export class SocketOperationService {
     });
 
     // Handle launcher client conditions update
-    const { clientConditions: updatedConditions } = this.untrackConditions({
+    const { clientConditions: updatedConditions } = this.untrackClientConditions({
       clientConditions,
       removedContentIds,
       socket,
@@ -339,7 +339,7 @@ export class SocketOperationService {
       }
     }
     // Handle launcher client conditions update
-    const { clientConditions: updatedConditions } = this.untrackConditions({
+    const { clientConditions: updatedConditions } = this.untrackClientConditions({
       clientConditions,
       removedContentIds: [contentId],
       socket,
@@ -671,16 +671,10 @@ export class SocketOperationService {
     } = categorizeSessions(currentSessions, newSessions);
 
     // Second pass: detect changes in preserved sessions
-    const changedPreservedSessions: CustomContentSession[] = preservedSessions.filter((session) => {
-      if (!session?.id) {
-        return false;
-      }
-      const oldSession = currentSessions.find((s) => s.id === session.id);
-      if (!oldSession) {
-        return false;
-      }
-      return hasContentSessionChanges(oldSession, session);
-    });
+    const changedPreservedSessions = detectChangedPreservedSessions(
+      currentSessions,
+      preservedSessions,
+    );
 
     const preservedUnchangedSessions = preservedSessions.filter(
       (session) => !changedPreservedSessions.some((s) => s.id === session.id),
@@ -709,10 +703,10 @@ export class SocketOperationService {
   /**
    * Untrack client conditions for removed content
    * Filters conditions by content type and untracks conditions for removed content IDs
-   * @param params - Parameters for untracking conditions
+   * @param params - Parameters for untracking client conditions
    * @returns Object containing remaining conditions after cleanup
    */
-  private untrackConditions(
+  private untrackClientConditions(
     params: UntrackConditionsOptions,
   ): Pick<SocketData, 'clientConditions'> {
     const { clientConditions, removedContentIds, socket, cleanupContentTypes } = params;
