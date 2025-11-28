@@ -44,6 +44,9 @@ export class ProjectsService {
   }
 
   async getUserProject(userId: string, projectId: string) {
+    if (!userId || !projectId) {
+      return null;
+    }
     return await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },
     });
