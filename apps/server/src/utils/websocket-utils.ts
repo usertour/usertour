@@ -220,17 +220,17 @@ export const convertToClientConditions = (trackConditions: TrackCondition[]): Cl
 };
 
 // ============================================================================
-// Launcher Session Functions
+// Session Categorization Functions
 // ============================================================================
 
 /**
- * Efficiently categorize launcher sessions into new, removed, and preserved groups
+ * Efficiently categorize sessions into new, removed, and preserved groups
  * Uses Set/Map for O(1) lookup performance while maintaining readable filter syntax
- * @param currentSessions - Current launcher sessions
- * @param targetSessions - Target launcher sessions
+ * @param currentSessions - Current sessions
+ * @param targetSessions - Target sessions
  * @returns Object containing categorized sessions
  */
-export const categorizeLauncherSessions = (
+export const categorizeSessions = (
   currentSessions: CustomContentSession[],
   targetSessions: CustomContentSession[],
 ): {

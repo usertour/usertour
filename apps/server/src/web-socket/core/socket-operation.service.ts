@@ -15,7 +15,7 @@ import {
   filterAndPreserveConditions,
   filterAndPreserveWaitTimers,
   convertToClientConditions,
-  categorizeLauncherSessions,
+  categorizeSessions,
 } from '@/utils/websocket-utils';
 import { hasContentSessionChanges } from '@/utils/content-utils';
 import { SocketDataService } from './socket-data.service';
@@ -613,7 +613,7 @@ export class SocketOperationService {
       newSessions: categorizedNewSessions,
       removedSessions,
       preservedSessions,
-    } = categorizeLauncherSessions(currentSessions, newSessions);
+    } = categorizeSessions(currentSessions, newSessions);
 
     // Second pass: detect changes in preserved sessions
     const changedPreservedSessions: CustomContentSession[] = preservedSessions.filter((session) => {
