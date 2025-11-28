@@ -15,7 +15,7 @@
     "@radix-ui/react-alert-dialog": "^1.0.4",
     "class-variance-authority": "^0.4.0",
     "@usertour-packages/button": "workspace:*",
-    "@usertour/helpers": "^0.0.41"
+    "@usertour/helpers": "^0.0.42"
   },
   "peerDependencies": {
     "react": "^18.2.0"

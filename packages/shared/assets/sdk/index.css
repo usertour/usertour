@@ -129,7 +129,7 @@ _:future,
 .usertour-widget-popper-backdrop {
   position: fixed;
   border-radius: 2px;
-  box-shadow: var(--usertour-backdrop-highlight-inset) 0 0 var(--usertour-backdrop-highlight-radius)
+  box-shadow: var(--usertour-backdrop-highlight-inset, ) 0 0 var(--usertour-backdrop-highlight-radius)
     var(--usertour-backdrop-highlight-spread)
     rgba(var(--usertour-backdrop-highlight-color-rgb), var(--usertour-backdrop-highlight-opacity)),
     0 0 0 1000vw rgba(var(--usertour-backdrop-color-rgb), var(--usertour-backdrop-opacity));

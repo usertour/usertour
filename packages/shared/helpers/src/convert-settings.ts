@@ -201,8 +201,6 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-secondary-border-active': settings.buttons.secondary.border.color.active,
     '--usertour-secondary-font-weight': settings.buttons.secondary.fontWeight,
     '--usertour-backdrop-color-rgb': hexToRGBStr(settings.backdrop.color),
-    '--usertour-backdrop-highlight-inset':
-      settings.backdrop.highlight.type === 'inside' ? 'inset' : null,
     '--usertour-backdrop-highlight-color-rgb': hexToRGBStr(settings.backdrop.highlight.color),
     '--usertour-backdrop-highlight-opacity': settings.backdrop.highlight.opacity / 100,
     '--usertour-backdrop-highlight-radius': `${settings.backdrop.highlight.radius}px`,
@@ -241,6 +239,10 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-checklist-trigger-hover-background-color': settings.checklistLauncher.color.hover,
     '--usertour-question-color': hexToHSLString(settings.survey.color),
   };
+
+  if (settings.backdrop.highlight.type === 'inside') {
+    cssMapping['--usertour-backdrop-highlight-inset'] = 'inset';
+  }
 
   let css = '';
   for (const key in cssMapping) {

@@ -4,6 +4,7 @@ import { defaultSettings } from '@usertour/types';
 import { deepmerge } from 'deepmerge-ts';
 import { ThemeEditor } from './theme-editor';
 import { useAppContext } from '@/contexts/app-context';
+import { ContentLoading } from '@/components/molecules/content-loading';
 
 export const ThemeDetailContent = () => {
   const {
@@ -19,6 +20,11 @@ export const ThemeDetailContent = () => {
   } = useThemeDetailContext();
   const { attributeList } = useAttributeListContext();
   const { isViewOnly } = useAppContext();
+
+  if (!theme) {
+    return <ContentLoading message="Loading theme details..." />;
+  }
+
   const showConditionalVariations = !theme.isSystem;
 
   return (

@@ -27,7 +27,7 @@
     "@usertour-packages/react-context": "workspace:^",
     "@usertour-packages/shared-editor": "workspace:^",
     "@usertour-packages/sdk": "workspace:^",
-    "@usertour/helpers": "^0.0.41",
+    "@usertour/helpers": "^0.0.42",
     "@usertour/types": "^0.0.29",
     "@usertour-packages/tailwind": "workspace:^",
     "date-fns": "^2.30.0",

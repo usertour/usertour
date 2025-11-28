@@ -4,7 +4,7 @@ import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { cn } from '@usertour/helpers';
-import { createContext, forwardRef, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, forwardRef, useContext, useMemo, useCallback, ReactNode } from 'react';
 import { ThemeSettingsBackdrop } from './settings/theme-settings-backdrop';
 import { ThemeSettingsBasicColor } from './settings/theme-settings-basic-color';
 import { ThemeSettingsBeacon } from './settings/theme-settings-beacon';
@@ -92,25 +92,29 @@ interface ThemeSettingsPanelProps {
 
 // The main container component that provides context and structure
 export const ThemeSettingsPanel = ({
-  settings: initialSettings,
+  settings,
   onSettingsChange,
   className,
   children,
 }: ThemeSettingsPanelProps) => {
-  const [settings, setSettings] = useState<ThemeTypesSetting>(initialSettings);
-  const [finalSettings, setFinalSettings] = useState<ThemeTypesSetting | null>(null);
-
-  // Update internal settings when external settings change
-  useEffect(() => {
-    setSettings(initialSettings);
-  }, [initialSettings]);
-
-  useEffect(() => {
-    if (settings) {
-      setFinalSettings(convertSettings(settings));
-      onSettingsChange(settings);
+  // Calculate finalSettings using useMemo
+  const finalSettings = useMemo(() => {
+    if (!settings) {
+      return null;
     }
-  }, [settings, onSettingsChange]);
+    return convertSettings(settings);
+  }, [settings]);
+
+  // Simple wrapper that calls onSettingsChange
+  const setSettings = useCallback(
+    (updater: React.SetStateAction<ThemeTypesSetting>) => {
+      const newSettings = typeof updater === 'function' ? updater(settings) : updater;
+      if (newSettings) {
+        onSettingsChange(newSettings);
+      }
+    },
+    [settings, onSettingsChange],
+  );
 
   const value = { settings, setSettings, finalSettings };
 
