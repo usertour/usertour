@@ -389,7 +389,7 @@ export const defaultSettings: ThemeTypesSetting = {
   },
   launcherBeacon: {
     color: '#1d4ed8',
-    size: 10,
+    size: 16,
   },
   launcherIcon: {
     color: {
@@ -399,7 +399,7 @@ export const defaultSettings: ThemeTypesSetting = {
       active: '#1d4ed8',
     },
     opacity: 100,
-    size: 10,
+    size: 16,
   },
   checklist: {
     width: 360,
@@ -553,7 +553,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
   },
   launcherBeacon: {
     color: '#1d4ed8',
-    size: 10,
+    size: 16,
   },
   launcherIcon: {
     color: {
@@ -563,7 +563,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
       active: '#1d4ed8',
     },
     opacity: 100,
-    size: 10,
+    size: 16,
   },
   checklist: {
     width: 360,

@@ -175,8 +175,8 @@ _:future,
 
 .usertour-widget-beacon {
   position: relative;
-  width: 16px;
-  height: 16px;
+  width: var(--usertour-widget-beacon-size);
+  height: var(--usertour-widget-beacon-size);
 }
 .usertour-widget-beacon--for-flow {
   pointer-events: none;

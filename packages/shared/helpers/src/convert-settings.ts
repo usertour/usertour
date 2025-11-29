@@ -222,6 +222,7 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-widget-launcher-icon-active-color': settings.launcherIcon.color.active,
     '--usertour-widget-launcher-icon-size': `${settings.launcherIcon.size}px`,
     '--usertour-widget-beacon-color': settings.launcherBeacon.color,
+    '--usertour-widget-beacon-size': `${settings.launcherBeacon.size}px`,
     '--usertour-widget-launcher-icon-opacity': settings.launcherIcon.opacity / 100,
     '--usertour-widget-popper-padding-top': '2px',
     '--usertour-widget-popper-padding-bottom': '2px',

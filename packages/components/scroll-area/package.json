@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-scroll-area": "^1.0.4",
-    "@usertour/helpers": "^0.0.42"
+    "@usertour/helpers": "^0.0.43"
   },
   "peerDependencies": {
     "react": "^18.2.0"
