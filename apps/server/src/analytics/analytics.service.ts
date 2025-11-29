@@ -202,16 +202,19 @@ export class AnalyticsService {
       ...condition,
       isDistinct: false,
     });
-    const uniqueCompletions = await this.aggregationByEvent({
-      ...condition,
-      eventId: completeEvent.id,
-    });
+    // For LAUNCHER_ACTIVATED, only count the first occurrence per user
+    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
+    const uniqueCompletions = isLauncherActivated
+      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+      : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
 
-    const totalCompletions = await this.aggregationByEvent({
-      ...condition,
-      eventId: completeEvent.id,
-      isDistinct: completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED,
-    });
+    const totalCompletions = isLauncherActivated
+      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+      : await this.aggregationByEvent({
+          ...condition,
+          eventId: completeEvent.id,
+          isDistinct: false,
+        });
     const viewsByStep = await this.aggregationStepsByContent(
       condition,
       stepSeenEvent,
@@ -690,41 +693,76 @@ export class AnalyticsService {
   }
 
   /**
-   * Aggregate events by day, counting only the first occurrence per user
+   * Aggregate events by day, counting only the first occurrence per user across all history
    * This is used for LAUNCHER_ACTIVATED events where multiple activations should only count as one
+   * The first event is determined from all historical events, then filtered by the query time range
+   * Only first events that occurred within the query time range are included
    */
   async aggregationFirstEventByDay(condition: AnalyticsConditions, timezone: string) {
     const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
-    // Use window function to get the first event per user, then group by day
+    // Optimized from original: Use DISTINCT ON instead of ROW_NUMBER() for better performance
+    // First get all users' first events from all history, then filter by time range
     const data = (await this.prisma.$queryRaw`
       WITH first_events AS (
-        SELECT 
-          "BizEvent"."bizUserId",
-          DATE_TRUNC('DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone}) AS day,
-          ROW_NUMBER() OVER (
-            PARTITION BY "BizEvent"."bizUserId" 
-            ORDER BY "BizEvent"."createdAt" ASC
-          ) AS rn
-        FROM "BizEvent"
-        LEFT JOIN "BizSession" ON "BizEvent"."bizSessionId" = "BizSession".id
+        SELECT DISTINCT ON (be."bizUserId")
+          be."bizUserId",
+          be."createdAt",
+          DATE_TRUNC('DAY', be."createdAt" AT TIME ZONE ${timezone}) AS day
+        FROM "BizEvent" be
+        LEFT JOIN "BizSession" bs ON be."bizSessionId" = bs.id
         WHERE
-          "BizSession"."contentId" = ${contentId} 
-          AND "BizEvent"."eventId" = ${eventId} 
-          AND "BizSession"."environmentId" = ${environmentId}
-          AND "BizEvent"."createdAt" >= ${startDate} 
-          AND "BizEvent"."createdAt" <= ${endDate}
+          bs."contentId" = ${contentId} 
+          AND be."eventId" = ${eventId} 
+          AND bs."environmentId" = ${environmentId}
+        ORDER BY be."bizUserId", be."createdAt" ASC
       )
       SELECT day, COUNT(*) as count
       FROM first_events
-      WHERE rn = 1
+      WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
       GROUP BY day
       ORDER BY day
-    `) as Array<{ day: Date; count: bigint }>;
+    `) as Array<{ day: Date | string; count: bigint }>;
 
-    return data.map((dd) => ({ ...dd, count: Number(dd.count) }));
+    return data.map((dd) => ({
+      day: dd.day instanceof Date ? dd.day.toISOString() : String(dd.day),
+      count: Number(dd.count),
+    }));
+  }
+
+  /**
+   * Aggregate first event per user, counting only first events that occurred within the query time range
+   * This is used for LAUNCHER_ACTIVATED events where multiple activations should only count as one
+   * The first event is determined from all historical events, then filtered by the query time range
+   * Returns total count (not grouped by day)
+   */
+  async aggregationFirstEvent(condition: AnalyticsConditions) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // First get all users' first events from all history, then filter by time range
+    const data = (await this.prisma.$queryRaw`
+      WITH first_events AS (
+        SELECT DISTINCT ON (be."bizUserId")
+          be."bizUserId",
+          be."createdAt"
+        FROM "BizEvent" be
+        LEFT JOIN "BizSession" bs ON be."bizSessionId" = bs.id
+        WHERE
+          bs."contentId" = ${contentId} 
+          AND be."eventId" = ${eventId} 
+          AND bs."environmentId" = ${environmentId}
+        ORDER BY be."bizUserId", be."createdAt" ASC
+      )
+      SELECT COUNT(*) as count
+      FROM first_events
+      WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
+    `) as Array<{ count: bigint }>;
+
+    return Number.parseInt(data[0].count.toString());
   }
 
   async aggregationByStep(condition: AnalyticsConditions) {
