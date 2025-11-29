@@ -12,7 +12,7 @@ import {
 } from '@usertour/types';
 import { Event } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
-import { cn } from '@usertour/helpers';
+import { cn, isUndefined } from '@usertour/helpers';
 
 const LauncherProgressColumn = ({
   original,
@@ -128,15 +128,22 @@ const ChecklistItemsColumn = ({
     .filter((e) => e.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED)
     .map((e) => e.data?.checklist_task_id);
 
-  const checklistItems = data.items?.map((item) => ({
-    ...item,
-    ...(sessionItems.find((i) => i.id === item.id) ?? {}),
-  }));
+  const checklistItems =
+    data.items?.map((item) => ({
+      ...item,
+      ...(sessionItems?.find((i) => i.id === item.id) ?? {}),
+    })) ?? [];
 
   return (
     <div className="flex flex-col gap-2">
       {checklistItems.map((item) => (
-        <div key={item.id} className={cn('flex items-center', item.isVisible ? '' : 'opacity-30')}>
+        <div
+          key={item.id}
+          className={cn(
+            'flex items-center',
+            !isUndefined(item.isVisible) && !item.isVisible ? 'opacity-30' : '',
+          )}
+        >
           <span
             className={cn(
               'flex-none w-8 h-8 border-2 border-transparent rounded-full flex justify-center items-center mr-3 text-sm text-white',
@@ -162,7 +169,7 @@ const ChecklistItemsColumn = ({
                   </Tooltip>
                 </TooltipProvider>
               )}
-              {!item.isVisible && (
+              {!isUndefined(item.isVisible) && !item.isVisible && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger className="cursor-default">
