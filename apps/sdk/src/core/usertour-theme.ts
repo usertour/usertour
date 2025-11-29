@@ -75,8 +75,8 @@ export const UsertourTheme = {
   /**
    * Converts theme settings to CSS variables
    */
-  convertToCssVars: (themeSettings: ThemeTypesSetting): string => {
-    return convertToCssVars(convertSettings(themeSettings));
+  convertToCssVars: (themeSettings: ThemeTypesSetting, type = 'tooltip'): string => {
+    return convertToCssVars(convertSettings(themeSettings), type);
   },
 
   /**

@@ -21,6 +21,7 @@ import { logger } from '@/utils';
 import { createQuestionAnswerEventData } from '@/core/usertour-helper';
 import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
 import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
+import { UsertourTheme } from './usertour-theme';
 
 export class UsertourTour extends UsertourComponent<TourStore> {
   // === Properties ===
@@ -152,12 +153,41 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
   /**
    * Gets custom tour store data
-   * @param _baseData - The base store data that can be used for custom logic
+   * @param baseData - The base store data that can be used for custom logic
    * @protected
    */
-  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<TourStore> {
+  protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<TourStore> {
     const currentStep = this.getCurrentStep();
-    return { currentStep };
+
+    return {
+      currentStep,
+      ...this.getStepStyle(currentStep, baseData),
+    };
+  }
+
+  /**
+   * Gets style data for a specific step
+   * @param step - The current step
+   * @param baseData - The base store data that contains theme information
+   * @private
+   */
+  private getStepStyle(
+    step: SessionStep | undefined,
+    baseData: Partial<BaseStore> | null,
+  ): Partial<Pick<TourStore, 'globalStyle'>> {
+    const themeSettings = baseData?.themeSettings;
+
+    if (!step || step.type === StepContentType.HIDDEN || !themeSettings) {
+      return {};
+    }
+
+    if (step.type === StepContentType.TOOLTIP && baseData?.globalStyle) {
+      return { globalStyle: baseData.globalStyle };
+    }
+
+    return {
+      globalStyle: UsertourTheme.convertToCssVars(themeSettings, step.type),
+    };
   }
 
   // === Theme Management ===
