@@ -31,7 +31,7 @@ export class SocketMessageQueueService {
    *
    * @param socketId - The socket ID
    * @param task - The async task to execute
-   * @param timeoutMs - Task timeout in milliseconds (default: 30000)
+   * @param timeoutMs - Task timeout in milliseconds (default: 10000)
    * @returns Promise that resolves with the task result
    *
    * Example flow:
@@ -39,7 +39,7 @@ export class SocketMessageQueueService {
    * 2. Message 2 arrives (Message 1 still running) -> Add to chain -> Wait
    * 3. Message 1 completes -> Message 2 starts automatically
    */
-  async executeInOrder<T>(socketId: string, task: () => Promise<T>, timeoutMs = 30000): Promise<T> {
+  async executeInOrder<T>(socketId: string, task: () => Promise<T>, timeoutMs = 10000): Promise<T> {
     // Get the last task in the queue for this socket
     // If no queue exists, use a resolved Promise (executes immediately)
     const lastTask = this.queues.get(socketId) || Promise.resolve();

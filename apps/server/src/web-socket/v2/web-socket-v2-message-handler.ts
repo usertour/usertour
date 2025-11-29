@@ -140,7 +140,7 @@ export class WebSocketV2MessageHandler {
       lockKey,
       () => this.handleMessage(server, socket, kind, payload),
       3, // Retry 3 times
-      100, // Retry interval 100ms
+      1000, // Retry interval 1000ms (allows sufficient time for message processing including DB operations)
       5000, // Lock timeout 5 seconds
     );
 
