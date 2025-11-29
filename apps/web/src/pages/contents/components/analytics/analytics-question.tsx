@@ -2,7 +2,7 @@ import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { ContentEditorElementType } from '@usertour-packages/shared-editor';
 import { useQueryContentQuestionAnalyticsQuery } from '@usertour-packages/shared-hooks';
-import { format } from 'date-fns';
+import { endOfDay, format, startOfDay } from 'date-fns';
 
 import {
   Table,
@@ -138,6 +138,10 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
   const { contentId } = props;
   const { dateRange, timezone, analyticsData, loading } = useAnalyticsContext();
   const { content, refetch } = useContentDetailContext();
+
+  const startDate = dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '';
+  const endDate = dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '';
+
   const { environment } = useAppContext();
   const {
     questionAnalytics,
@@ -146,8 +150,8 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
   } = useQueryContentQuestionAnalyticsQuery(
     environment?.id ?? '',
     contentId,
-    dateRange?.from?.toISOString() ?? '',
-    dateRange?.to?.toISOString() ?? '',
+    startDate,
+    endDate,
     timezone,
   );
 
