@@ -77,7 +77,7 @@ const EVENT_TYPE_MAPPING = {
     complete: BizEvents.LAUNCHER_ACTIVATED,
   },
   [ContentType.CHECKLIST]: {
-    start: BizEvents.CHECKLIST_SEEN,
+    start: BizEvents.CHECKLIST_STARTED,
     complete: BizEvents.CHECKLIST_COMPLETED,
   },
 };
@@ -88,7 +88,7 @@ const EVENTS = [
   BizEvents.FLOW_COMPLETED,
   BizEvents.LAUNCHER_SEEN,
   BizEvents.LAUNCHER_ACTIVATED,
-  BizEvents.CHECKLIST_SEEN,
+  BizEvents.CHECKLIST_STARTED,
   BizEvents.CHECKLIST_COMPLETED,
 ];
 
