@@ -206,10 +206,11 @@ export class AnalyticsService {
       ...condition,
       eventId: completeEvent.id,
     });
+
     const totalCompletions = await this.aggregationByEvent({
       ...condition,
       eventId: completeEvent.id,
-      isDistinct: false,
+      isDistinct: completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED,
     });
     const viewsByStep = await this.aggregationStepsByContent(
       condition,
@@ -428,7 +429,11 @@ export class AnalyticsService {
       timezone,
     );
     const totalCompletionByDay = await this.aggregationByDay(
-      { ...condition, eventId: completeEvent.id, isDistinct: false },
+      {
+        ...condition,
+        eventId: completeEvent.id,
+        isDistinct: completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED,
+      },
       timezone,
     );
 
