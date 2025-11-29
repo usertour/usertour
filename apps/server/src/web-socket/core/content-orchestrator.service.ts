@@ -223,13 +223,10 @@ export class ContentOrchestratorService {
    * Supports multiple concurrent sessions for the same content type
    * Note: Singleton content types (FLOW, CHECKLIST) should use startContent instead
    * @param context - The content start context
-   * @param contentType - The content type (must be non-singleton)
    * @returns True if the content batch was started successfully
    */
-  async startContentBatch(
-    context: ContentStartContext,
-    contentType: ContentDataType,
-  ): Promise<boolean> {
+  async startContentBatch(context: ContentStartContext): Promise<boolean> {
+    const { contentType } = context;
     // Validate that content type is not singleton
     if (isSingletonContentType(contentType)) {
       return false;
@@ -315,7 +312,7 @@ export class ContentOrchestratorService {
       if (isSingletonContentType(contentType)) {
         await this.startContent(startContentContext);
       } else {
-        await this.startContentBatch(startContentContext, contentType);
+        await this.startContentBatch(startContentContext);
       }
     }
 
