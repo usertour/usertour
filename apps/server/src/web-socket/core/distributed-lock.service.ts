@@ -233,7 +233,7 @@ export class DistributedLockService {
     const lockAcquired = await this.acquireLockWithRetry(key, maxRetries, retryDelayMs, timeoutMs);
 
     if (!lockAcquired) {
-      this.logger.warn(`Failed to acquire lock for ${key} after ${maxRetries} attempts`);
+      // Warning is already logged by acquireLockWithRetry, no need to log again
       return null;
     }
 

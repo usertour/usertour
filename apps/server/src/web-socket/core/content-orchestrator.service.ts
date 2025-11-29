@@ -1210,8 +1210,8 @@ export class ContentOrchestratorService {
             socketData,
           });
         },
-        3, // Retry 3 times
-        100, // Retry interval 100ms
+        5, // Retry 5 times (increased from 3 to handle concurrent message processing)
+        200, // Retry interval 200ms (increased from 100ms to allow more time for other operations)
         5000, // Lock timeout 5 seconds
       )) ?? false
     );
@@ -1446,8 +1446,8 @@ export class ContentOrchestratorService {
             socketData,
           });
         },
-        3, // Retry 3 times
-        100, // Retry interval 100ms
+        5, // Retry 5 times (increased from 3 to handle concurrent message processing)
+        200, // Retry interval 200ms (increased from 100ms to allow more time for other operations)
         5000, // Lock timeout 5 seconds
       )) ?? false
     );
