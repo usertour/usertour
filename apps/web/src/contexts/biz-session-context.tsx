@@ -5,6 +5,7 @@ import { BizSession, PageInfo, Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useAnalyticsContext } from './analytics-context';
 import { useAppContext } from './app-context';
+import { endOfDay, startOfDay } from 'date-fns';
 
 const defaultPagination = {
   pageIndex: 0,
@@ -39,7 +40,6 @@ export function BizSessionProvider(props: BizSessionProviderProps): JSX.Element 
   const [pagination, setPagination] = useState<PaginationState>({
     ...defaultPagination,
   });
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [currentPagination, setCurrentPagination] = useState<PaginationState>({
     ...defaultPagination,
   });
@@ -47,7 +47,7 @@ export function BizSessionProvider(props: BizSessionProviderProps): JSX.Element 
   const [bizSessions, setBizSessions] = useState<BizSession[]>([]);
   const [pageCount, setPageCount] = useState(defaultPagination.pageSize);
   const [totalCount, setTotalCount] = useState<number>(0);
-  const { dateRange } = useAnalyticsContext();
+  const { dateRange, timezone } = useAnalyticsContext();
   const { environment } = useAppContext();
 
   const { data, refetch, loading } = useQuery(queryBizSession, {
@@ -56,8 +56,8 @@ export function BizSessionProvider(props: BizSessionProviderProps): JSX.Element 
       query: {
         environmentId: environment?.id ?? '',
         contentId,
-        startDate: dateRange?.from?.toISOString(),
-        endDate: dateRange?.to?.toISOString(),
+        startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : undefined,
+        endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,
         timezone,
       },
       orderBy: { field: 'createdAt', direction: 'desc' },
