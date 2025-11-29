@@ -424,18 +424,21 @@ export class AnalyticsService {
       { ...condition, eventId: startEvent.id, isDistinct: false },
       timezone,
     );
-    const uniqueCompletionByDay = await this.aggregationByDay(
-      { ...condition, eventId: completeEvent.id },
-      timezone,
-    );
-    const totalCompletionByDay = await this.aggregationByDay(
-      {
-        ...condition,
-        eventId: completeEvent.id,
-        isDistinct: completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED,
-      },
-      timezone,
-    );
+    // For LAUNCHER_ACTIVATED, only count the first occurrence per user
+    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
+    const uniqueCompletionByDay = isLauncherActivated
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
+      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
+    const totalCompletionByDay = isLauncherActivated
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
+      : await this.aggregationByDay(
+          {
+            ...condition,
+            eventId: completeEvent.id,
+            isDistinct: false,
+          },
+          timezone,
+        );
 
     const data = [];
     let currentDate = startDate;
@@ -683,6 +686,44 @@ export class AnalyticsService {
           GROUP BY DAY
         `;
     }
+    return data.map((dd) => ({ ...dd, count: Number(dd.count) }));
+  }
+
+  /**
+   * Aggregate events by day, counting only the first occurrence per user
+   * This is used for LAUNCHER_ACTIVATED events where multiple activations should only count as one
+   */
+  async aggregationFirstEventByDay(condition: AnalyticsConditions, timezone: string) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Use window function to get the first event per user, then group by day
+    const data = (await this.prisma.$queryRaw`
+      WITH first_events AS (
+        SELECT 
+          "BizEvent"."bizUserId",
+          DATE_TRUNC('DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone}) AS day,
+          ROW_NUMBER() OVER (
+            PARTITION BY "BizEvent"."bizUserId" 
+            ORDER BY "BizEvent"."createdAt" ASC
+          ) AS rn
+        FROM "BizEvent"
+        LEFT JOIN "BizSession" ON "BizEvent"."bizSessionId" = "BizSession".id
+        WHERE
+          "BizSession"."contentId" = ${contentId} 
+          AND "BizEvent"."eventId" = ${eventId} 
+          AND "BizSession"."environmentId" = ${environmentId}
+          AND "BizEvent"."createdAt" >= ${startDate} 
+          AND "BizEvent"."createdAt" <= ${endDate}
+      )
+      SELECT day, COUNT(*) as count
+      FROM first_events
+      WHERE rn = 1
+      GROUP BY day
+      ORDER BY day
+    `) as Array<{ day: Date; count: bigint }>;
+
     return data.map((dd) => ({ ...dd, count: Number(dd.count) }));
   }
 
