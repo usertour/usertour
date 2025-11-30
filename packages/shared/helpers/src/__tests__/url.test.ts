@@ -285,6 +285,14 @@ describe('URL Condition Evaluation', () => {
       expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
     });
 
+    test('should handle URL patterns with wildcard in nested path', () => {
+      const url = 'http://localhost:3004/client-view/sites/SUPERCONCEPTS/funds/aaaa/queries';
+      const includes = ['/client-view/sites/SUPERCONCEPTS/funds/*/queries'];
+      const excludes: string[] = [];
+
+      expect(isMatchUrlPattern(url, includes, excludes)).toBe(true);
+    });
+
     test('should handle URL patterns with fragments', () => {
       const url = 'https://example.com/dashboard#overview';
       const includes = ['https://example.com/dashboard#*'];
