@@ -136,6 +136,7 @@ export const migrateConditionIds = async (prisma: PrismaClient, batchSize = 100)
         id: true,
         config: true,
         data: true,
+        updatedAt: true, // Include updatedAt to preserve it during migration
         content: {
           select: {
             type: true,
@@ -181,11 +182,16 @@ export const migrateConditionIds = async (prisma: PrismaClient, batchSize = 100)
       }
 
       if (hasChanges) {
+        // Explicitly set updatedAt to its current value to prevent Prisma from auto-updating it
+        // When updatedAt is explicitly provided, Prisma won't override it
         await prisma.version.update({
           where: { id: version.id },
-          data: updateData,
+          data: {
+            ...updateData,
+            updatedAt: version.updatedAt, // Preserve the original updatedAt value
+          },
         });
-        console.log(`Updated version ${version.id} with condition IDs`);
+        console.log(`Updated version ${version.id} with condition IDs (updatedAt preserved)`);
       } else {
         skippedCount++;
       }
