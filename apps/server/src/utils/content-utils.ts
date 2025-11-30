@@ -634,6 +634,11 @@ const isAutoStartContentEligible = (
     allowedConditionTypes,
   );
 
+  // If no conditions are filtered, return true
+  if (filteredConditions.length === 0) {
+    return true;
+  }
+
   return isConditionsActived(filteredConditions);
 };
 
