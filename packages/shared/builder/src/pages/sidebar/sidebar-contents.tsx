@@ -105,7 +105,11 @@ const SidebarContent = forwardRef<HTMLDivElement, any>(
                     <EventIcon2 className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Trigger</TooltipContent>
+                <TooltipContent>
+                  {step.trigger && step.trigger.length > 0
+                    ? `${step.trigger.length} ${step.trigger.length === 1 ? 'Trigger' : 'Triggers'}`
+                    : 'Add Trigger'}
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <AlertDialog>
