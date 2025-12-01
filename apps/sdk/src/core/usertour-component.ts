@@ -550,14 +550,20 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     const userAttributes = this.getUserAttributes();
     const url = buildNavigateUrl(data.value, userAttributes);
 
-    // Check if custom navigation function is set
-    const customNavigate = this.instance.getCustomNavigate();
-    if (customNavigate) {
-      // Use custom navigation function
-      customNavigate(url);
+    // Only use customNavigate for same-window navigation (SPA routing)
+    // For other open types, use default browser navigation
+    if (data?.openType === 'same') {
+      const customNavigate = this.instance.getCustomNavigate();
+      if (customNavigate) {
+        // Use custom navigation function for SPA routing
+        customNavigate(url);
+        return;
+      }
+      // Fallback to default same-window navigation
+      window?.top?.open(url, '_self');
     } else {
-      // Use default behavior
-      window?.top?.open(url, data?.openType === 'same' ? '_self' : '_blank');
+      // Use default browser navigation for new window/tab
+      window?.top?.open(url, '_blank');
     }
   }
 
