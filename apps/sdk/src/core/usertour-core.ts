@@ -736,9 +736,12 @@ export class UsertourCore extends Evented {
 
     // Create new tour
     const usertourTour = new UsertourTour(this, new UsertourSession(session));
-    usertourTour.on(SDKClientEvents.COMPONENT_CLOSED, () => {
-      this.cleanupActivatedTour();
-      this.expandChecklist();
+    usertourTour.on(SDKClientEvents.COMPONENT_CLOSED, (eventData: unknown) => {
+      const { sessionId } = eventData as { sessionId: string };
+      if (this?.activatedTour?.getSessionId() === sessionId) {
+        this.cleanupActivatedTour();
+        this.expandChecklist();
+      }
     });
     this.activatedTour = usertourTour;
     // Sync store
@@ -797,8 +800,11 @@ export class UsertourCore extends Evented {
 
     // Create new checklist
     this.activatedChecklist = new UsertourChecklist(this, new UsertourSession(session));
-    this.activatedChecklist.on(SDKClientEvents.COMPONENT_CLOSED, () => {
-      this.cleanupActivatedChecklist();
+    this.activatedChecklist.on(SDKClientEvents.COMPONENT_CLOSED, (eventData: unknown) => {
+      const { sessionId } = eventData as { sessionId: string };
+      if (this.activatedChecklist?.getSessionId() === sessionId) {
+        this.cleanupActivatedChecklist();
+      }
     });
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);

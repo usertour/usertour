@@ -19,6 +19,7 @@ export class UsertourTrigger extends Evented {
   private readonly getSessionAttributes: () => SessionAttribute[];
   private readonly id: string; // Unique identifier for this trigger
   private activeTimeouts: Set<string> = new Set(); // Track active timeout keys
+  private isProcessing = false; // Flag to prevent concurrent execution
 
   // === Constructor ===
   constructor(
@@ -38,58 +39,69 @@ export class UsertourTrigger extends Evented {
   /**
    * Processes all remaining triggers
    * Returns true if there are still pending triggers
+   * Prevents concurrent execution to avoid duplicate trigger execution
    */
   async process(): Promise<boolean> {
-    if (this.triggers.length === 0) return false;
-
-    const remainingTriggers: StepTrigger[] = [];
-    // Get fresh session attributes on each process call
-    const sessionAttributes = this.getSessionAttributes();
-
-    for (let i = 0; i < this.triggers.length; i++) {
-      const trigger = this.triggers[i];
-      const { conditions, ...rest } = trigger;
-      const activatedConditions = await evaluateConditions(conditions, sessionAttributes);
-
-      if (!isConditionsActived(activatedConditions)) {
-        // Conditions not met, keep for next check
-        remainingTriggers.push({
-          ...rest,
-          conditions: activatedConditions,
-        });
-      } else {
-        // Conditions met, execute actions
-        const waitTime = Math.min(trigger.wait ?? 0, UsertourTrigger.MAX_WAIT_TIME);
-
-        if (waitTime > 0) {
-          // Execute with delay using timer manager
-          const triggerId = trigger.id || `trigger-${i}`;
-          const timeoutKey = `${this.id}-${triggerId}`;
-
-          // Track the timeout key for cleanup
-          this.activeTimeouts.add(timeoutKey);
-
-          timerManager.setTimeout(
-            timeoutKey,
-            async () => {
-              await this.actionExecutor(trigger.actions);
-              // Remove from tracking after execution
-              this.activeTimeouts.delete(timeoutKey);
-            },
-            waitTime * 1000,
-          );
-        } else {
-          // Execute immediately
-          await this.actionExecutor(trigger.actions);
-        }
-      }
+    // Prevent concurrent execution
+    if (this.isProcessing) {
+      return this.triggers.length > 0;
     }
 
-    // Update remaining triggers
-    this.triggers = remainingTriggers;
+    if (this.triggers.length === 0) return false;
 
-    // Return true if there are still pending triggers
-    return this.triggers.length > 0;
+    this.isProcessing = true;
+    try {
+      const remainingTriggers: StepTrigger[] = [];
+      // Get fresh session attributes on each process call
+      const sessionAttributes = this.getSessionAttributes();
+
+      for (let i = 0; i < this.triggers.length; i++) {
+        const trigger = this.triggers[i];
+        const { conditions, ...rest } = trigger;
+        const activatedConditions = await evaluateConditions(conditions, sessionAttributes);
+
+        if (!isConditionsActived(activatedConditions)) {
+          // Conditions not met, keep for next check
+          remainingTriggers.push({
+            ...rest,
+            conditions: activatedConditions,
+          });
+        } else {
+          // Conditions met, execute actions
+          const waitTime = Math.min(trigger.wait ?? 0, UsertourTrigger.MAX_WAIT_TIME);
+
+          if (waitTime > 0) {
+            // Execute with delay using timer manager
+            const triggerId = trigger.id || `trigger-${i}`;
+            const timeoutKey = `${this.id}-${triggerId}`;
+
+            // Track the timeout key for cleanup
+            this.activeTimeouts.add(timeoutKey);
+
+            timerManager.setTimeout(
+              timeoutKey,
+              async () => {
+                await this.actionExecutor(trigger.actions);
+                // Remove from tracking after execution
+                this.activeTimeouts.delete(timeoutKey);
+              },
+              waitTime * 1000,
+            );
+          } else {
+            // Execute immediately
+            await this.actionExecutor(trigger.actions);
+          }
+        }
+      }
+
+      // Update remaining triggers
+      this.triggers = remainingTriggers;
+
+      // Return true if there are still pending triggers
+      return this.triggers.length > 0;
+    } finally {
+      this.isProcessing = false;
+    }
   }
 
   // === Status Queries ===
@@ -127,5 +139,8 @@ export class UsertourTrigger extends Evented {
 
     // Clear triggers
     this.triggers = [];
+
+    // Reset processing flag
+    this.isProcessing = false;
   }
 }
