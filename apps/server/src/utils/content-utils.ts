@@ -24,6 +24,7 @@ import {
   CustomContentSession,
   StartContentOptions,
   ClientContext,
+  ElementSelectorPropsData,
 } from '@usertour/types';
 
 import {
@@ -1127,6 +1128,40 @@ const extractAttrCodesRecursively = (data: any[]): string[] => {
 };
 
 /**
+ * Extracts attribute codes from button actions
+ * Handles different action types:
+ * - page-navigate: extracts attrCode from data.value (paragraph data)
+ * - user-attr: extracts attrId from standard RulesCondition (needs conversion to code)
+ * @param actions - Array of action conditions
+ * @returns Array of attribute codes and IDs found in actions
+ */
+const extractAttrCodesFromActions = (actions: RulesCondition[]): string[] => {
+  const attrCodes: string[] = [];
+
+  for (const action of actions) {
+    // Handle page-navigate action type which contains paragraph data with user-attribute elements
+    if (action.type === 'page-navigate' && action.data?.value && Array.isArray(action.data.value)) {
+      const codes = extractAttrCodesRecursively(action.data.value);
+      attrCodes.push(...codes);
+    }
+
+    // Handle standard user-attr RulesCondition type
+    if (action.type === RulesType.USER_ATTR && action.data?.attrId) {
+      // Note: This is attrId, not attrCode, but we include it for now
+      // The caller may need to convert it to code if necessary
+      attrCodes.push(action.data.attrId);
+    }
+
+    // Handle nested conditions (group type)
+    if (action.type === RulesType.GROUP && action.conditions && action.conditions.length > 0) {
+      attrCodes.push(...extractAttrCodesFromActions(action.conditions));
+    }
+  }
+
+  return attrCodes;
+};
+
+/**
  * Extracts all user attribute codes from editor contents
  * @param editorContents - Array of editor content roots to search through
  * @returns Array of unique user attribute codes found in the content
@@ -1148,6 +1183,14 @@ export const extractUserAttrCodes = (editorContents: ContentEditorRoot[]): strin
         if (element.element.type === ContentEditorElementType.TEXT && element.element.data) {
           const attrCodes = extractAttrCodesRecursively(element.element.data);
           allAttrCodes.push(...attrCodes);
+        }
+        if (
+          element.element.type === ContentEditorElementType.BUTTON &&
+          element.element.data?.actions &&
+          isArray(element.element.data.actions)
+        ) {
+          const codes = extractAttrCodesFromActions(element.element.data.actions);
+          allAttrCodes.push(...codes);
         }
       }
     }
@@ -1185,11 +1228,11 @@ export const extractStepTriggerAttributeIds = (steps: Step[]): string[] => {
   const processedAttrIds = new Set<string>(); // Track processed attribute IDs to avoid duplicates
 
   for (const step of steps) {
-    if (step.trigger && Array.isArray(step.trigger)) {
+    if (step.trigger && isArray(step.trigger)) {
       for (const trigger of step.trigger) {
         // Type assertion to handle JsonValue type
         const typedTrigger = trigger as any;
-        if (typedTrigger?.conditions && Array.isArray(typedTrigger.conditions)) {
+        if (typedTrigger?.conditions && isArray(typedTrigger.conditions)) {
           // Recursively extract attribute IDs from nested conditions
           const attrIds = extractAttributeIdsFromConditions(typedTrigger.conditions);
 
@@ -1217,6 +1260,22 @@ export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
     if (step.data) {
       attrCodes.push(...extractUserAttrCodes(step.data as unknown as ContentEditorRoot[]));
     }
+    // Extract attribute codes from step.target.actions
+    const target = step.target as ElementSelectorPropsData | null | undefined;
+    if (target?.actions && isArray(target.actions)) {
+      const codes = extractAttrCodesFromActions(target.actions);
+      attrCodes.push(...codes);
+    }
+    // Extract attribute codes from step.trigger[].actions
+    if (step.trigger && isArray(step.trigger)) {
+      for (const trigger of step.trigger) {
+        const typedTrigger = trigger as any;
+        if (typedTrigger?.actions && isArray(typedTrigger.actions)) {
+          const codes = extractAttrCodesFromActions(typedTrigger.actions);
+          attrCodes.push(...codes);
+        }
+      }
+    }
   }
   return attrCodes;
 };
@@ -1227,11 +1286,21 @@ export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
  * @returns Array of unique user attribute codes
  */
 export const extractLauncherAttrCodes = (launcher: LauncherData): string[] => {
+  const attrCodes: string[] = [];
+
+  // Extract attribute codes from tooltip content
   const content = launcher?.tooltip?.content as unknown as ContentEditorRoot[];
   if (content && isArray(content)) {
-    return extractUserAttrCodes(content);
+    attrCodes.push(...extractUserAttrCodes(content));
   }
-  return [];
+
+  // Extract attribute codes from launcher.behavior.actions
+  if (launcher?.behavior?.actions && isArray(launcher.behavior.actions)) {
+    const codes = extractAttrCodesFromActions(launcher.behavior.actions);
+    attrCodes.push(...codes);
+  }
+
+  return [...new Set(attrCodes)];
 };
 
 /**
@@ -1240,11 +1309,25 @@ export const extractLauncherAttrCodes = (launcher: LauncherData): string[] => {
  * @returns Array of unique user attribute codes found in the checklist data
  */
 export const extractChecklistAttrCodes = (checklist: ChecklistData): string[] => {
+  const attrCodes: string[] = [];
+
+  // Extract attribute codes from checklist content
   const content = checklist?.content as unknown as ContentEditorRoot[];
   if (content && isArray(content)) {
-    return extractUserAttrCodes(content);
+    attrCodes.push(...extractUserAttrCodes(content));
   }
-  return [];
+
+  // Extract attribute codes from each item's clickedActions
+  if (checklist?.items && isArray(checklist.items)) {
+    for (const item of checklist.items) {
+      if (item.clickedActions && isArray(item.clickedActions)) {
+        const codes = extractAttrCodesFromActions(item.clickedActions);
+        attrCodes.push(...codes);
+      }
+    }
+  }
+
+  return [...new Set(attrCodes)];
 };
 
 // ============================================================================
