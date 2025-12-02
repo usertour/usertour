@@ -23,9 +23,7 @@ export const TruncatedText = ({ text, maxLength = 20, className = '' }: Truncate
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className={`${className} cursor-help`} title={text}>
-            {displayText}
-          </span>
+          <span className={`${className} cursor-help`}>{displayText}</span>
         </TooltipTrigger>
         <TooltipContent>
           <p className="max-w-xs break-words">{text}</p>
