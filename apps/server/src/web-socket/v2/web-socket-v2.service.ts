@@ -32,7 +32,7 @@ import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
-import { ALL_CONTENT_TYPES } from '@/utils/content-utils';
+import { ALL_CONTENT_TYPES, isSingletonContentType } from '@/utils/content-utils';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -352,8 +352,7 @@ export class WebSocketV2Service {
     };
 
     // Handle checklist completed events
-    const checklistContentTypes = [ContentDataType.CHECKLIST, ContentDataType.FLOW];
-    if (checklistContentTypes.some((type) => contentTypes.includes(type))) {
+    if (contentTypes.some((type) => isSingletonContentType(type))) {
       await this.contentOrchestratorService.handleChecklistCompletedEvents(socket);
     }
 
