@@ -16,6 +16,7 @@ import {
 import { useDebouncedCallback } from 'use-debounce';
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
+import { deepClone } from '@usertour/helpers';
 
 export interface ChecklistProviderProps {
   children: ReactNode;
@@ -87,8 +88,8 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
           await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
         }
 
-        // Update the last saved data reference
-        lastSavedDataRef.current = newData;
+        // Update the last saved data reference with a deep clone to avoid reference sharing
+        lastSavedDataRef.current = deepClone(newData);
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -221,7 +222,8 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
   useEffect(() => {
     if (data && !isEqual(data, lastSavedDataRef.current)) {
       setLocalData(data);
-      lastSavedDataRef.current = data;
+      // Store a deep clone to avoid reference sharing
+      lastSavedDataRef.current = deepClone(data);
     }
   }, [data]);
 

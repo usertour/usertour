@@ -13,6 +13,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
 import { useToast } from '@usertour-packages/use-toast';
+import { deepClone } from '@usertour/helpers';
 
 export interface LauncherProviderProps {
   children: ReactNode;
@@ -72,8 +73,8 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
           await fetchContentAndVersion(currentVersion.contentId, currentVersion.id);
         }
 
-        // Update the last saved data reference
-        lastSavedDataRef.current = newData;
+        // Update the last saved data reference with a deep clone to avoid reference sharing
+        lastSavedDataRef.current = deepClone(newData);
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -178,7 +179,8 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
 
     if (!isEqual(serverData, lastSavedDataRef.current)) {
       setLocalData(serverData);
-      lastSavedDataRef.current = serverData;
+      // Store a deep clone to avoid reference sharing
+      lastSavedDataRef.current = deepClone(serverData);
     }
   }, [currentVersion]);
 
