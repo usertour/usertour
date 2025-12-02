@@ -17,11 +17,10 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { EDITOR_OVERLAY } from '@usertour-packages/constants';
-import { isUndefined } from '@usertour/helpers';
+import { replaceUserAttr } from '@usertour/helpers';
 import { UserTourTypes } from '@usertour/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Descendant } from 'slate';
 import {
   ContentEditorContextProvider,
   useContentEditorContext,
@@ -127,81 +126,6 @@ export const contentEditorElements = [
     serialize: ContentEditorMultipleChoiceSerialize,
   },
 ];
-
-const getLinkUrl = (value: Descendant[], userAttributes: UserTourTypes.Attributes) => {
-  let url = '';
-  try {
-    for (const v of value) {
-      if ('children' in v) {
-        for (const vc of v.children) {
-          if ('type' in vc && vc.type === 'user-attribute') {
-            if (userAttributes) {
-              url += userAttributes[vc.attrCode] || vc.fallback;
-            }
-          } else if ('text' in vc) {
-            url += vc.text;
-          }
-        }
-      }
-    }
-  } catch (_) {}
-  return url;
-};
-
-const replaceUserAttrForElement = (
-  data: Descendant[],
-  userAttributes: UserTourTypes.Attributes,
-) => {
-  return data.map((v: any) => {
-    if (v.children) {
-      v.children = replaceUserAttrForElement(v.children, userAttributes);
-    }
-    if (v.type === 'user-attribute' && userAttributes) {
-      const value = userAttributes[v.attrCode] || v.fallback;
-      if (!isUndefined(value)) {
-        v.value = String(value);
-      }
-    }
-    if (v.type === 'link' && userAttributes) {
-      v.url = v.data ? getLinkUrl(v.data, userAttributes) : '';
-    }
-    return v;
-  });
-};
-
-export const replaceUserAttr = (
-  editorContents: ContentEditorRoot[],
-  userAttributes: UserTourTypes.Attributes,
-) => {
-  return editorContents.map((editorContent: ContentEditorRoot) => {
-    if (!editorContent.children) {
-      return editorContent;
-    }
-    return {
-      ...editorContent,
-      children: editorContent.children.map((column) => {
-        if (!column.children) {
-          return column;
-        }
-        return {
-          ...column,
-          children: column.children.map((element) => {
-            if (element.element.type === ContentEditorElementType.TEXT) {
-              return {
-                ...element,
-                element: {
-                  ...element.element,
-                  data: replaceUserAttrForElement(element.element.data, userAttributes),
-                },
-              };
-            }
-            return { ...element };
-          }),
-        };
-      }),
-    };
-  });
-};
 
 export const ContentEditorSerialize = (props: {
   contents: ContentEditorRoot[];

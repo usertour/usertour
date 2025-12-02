@@ -21,11 +21,11 @@ import {
   SessionStep,
   SessionTheme,
 } from '@usertour/types';
-import { uuidV4, isEqual } from '@usertour/helpers';
+import { uuidV4, isEqual, extractLinkUrl } from '@usertour/helpers';
 import { ActionManager, ActionHandler, ActionHandlerContext } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
 import { SDKClientEvents } from '@usertour-packages/constants';
-import { convertToAttributeEvaluationOptions, buildNavigateUrl } from '@/core/usertour-helper';
+import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
 import { window } from '@/utils';
 
 /**
@@ -548,7 +548,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   handleNavigate(data: any): void {
     const userAttributes = this.getUserAttributes();
-    const url = buildNavigateUrl(data.value, userAttributes);
+    const url = extractLinkUrl(data.value, userAttributes);
 
     // Only use customNavigate for same-window navigation (SPA routing)
     // For other open types, use default browser navigation

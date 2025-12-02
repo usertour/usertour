@@ -14,7 +14,6 @@ import {
   RulesType,
   ContentPriority,
   BizUserInfo,
-  UserTourTypes,
   RulesTypeControl,
   AnswerQuestionDto,
   SessionAttribute,
@@ -32,7 +31,7 @@ import {
   differenceInSeconds,
   isAfter,
 } from 'date-fns';
-import { document, location, off, on, logger, window } from '@/utils';
+import { document, location, off, on, window } from '@/utils';
 import {
   isEqual,
   uuidV4,
@@ -679,35 +678,6 @@ export const checklistIsSeen = (latestSession?: BizSession) => {
 // ============================================================================
 // Utility Functions
 // ============================================================================
-
-/**
- * Build navigate URL from value array with user attributes support
- * @param value - Array of URL segments
- * @param userAttributes - Optional user attributes for substitution
- * @returns The built URL string
- */
-export function buildNavigateUrl(value: any[], userAttributes?: UserTourTypes.Attributes): string {
-  let url = '';
-
-  try {
-    for (const v of value) {
-      for (const vc of v.children) {
-        if (vc.type === 'user-attribute') {
-          if (userAttributes) {
-            url += userAttributes[vc.attrCode] || vc.fallback;
-          }
-        } else {
-          url += vc.text;
-        }
-      }
-    }
-
-    return url;
-  } catch (error) {
-    logger.error('Build navigate URL error: ', error);
-    return '';
-  }
-}
 
 /**
  * Checks if attributes have actually changed by comparing current and new attributes

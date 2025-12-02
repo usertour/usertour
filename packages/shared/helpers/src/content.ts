@@ -1,12 +1,16 @@
 import {
   Content,
   ContentConfigObject,
+  ContentEditorElementType,
+  ContentEditorRoot,
   ContentPriority,
   ContentVersion,
   Environment,
+  UserTourTypes,
   autoStartRulesSetting,
 } from '@usertour/types';
 import { deepmerge } from 'deepmerge-ts';
+import { isUndefined } from './type-utils';
 
 export const isPublishedInAllEnvironments = (
   content: Content | null,
@@ -67,3 +71,84 @@ export const buildConfig = (config: ContentConfigObject | undefined): ContentCon
     hideRulesSetting: config?.hideRulesSetting || {},
   };
 };
+
+const extractLinkUrl = (value: any[], userAttributes: UserTourTypes.Attributes): string => {
+  let url = '';
+  try {
+    for (const v of value) {
+      if ('children' in v && Array.isArray(v.children)) {
+        for (const vc of v.children) {
+          if ('type' in vc && vc.type === 'user-attribute') {
+            if (userAttributes && 'attrCode' in vc && typeof vc.attrCode === 'string') {
+              const attrValue = userAttributes[vc.attrCode];
+              const fallback =
+                'fallback' in vc && typeof vc.fallback === 'string' ? vc.fallback : '';
+              url += attrValue ?? fallback;
+            } else if ('fallback' in vc && typeof vc.fallback === 'string') {
+              url += vc.fallback;
+            }
+          } else if ('text' in vc && typeof vc.text === 'string') {
+            url += vc.text;
+          }
+        }
+      }
+    }
+  } catch (_) {
+    // Silently handle errors and return partial URL
+  }
+  return url;
+};
+
+const replaceUserAttrForElement = (data: any[], userAttributes: UserTourTypes.Attributes) => {
+  return data.map((v: any) => {
+    if (v.children) {
+      v.children = replaceUserAttrForElement(v.children, userAttributes);
+    }
+    if (v.type === 'user-attribute' && userAttributes) {
+      const value = userAttributes[v.attrCode] || v.fallback;
+      if (!isUndefined(value)) {
+        v.value = String(value);
+      }
+    }
+    if (v.type === 'link' && userAttributes) {
+      v.url = v.data ? extractLinkUrl(v.data, userAttributes) : '';
+    }
+    return v;
+  });
+};
+
+const replaceUserAttr = (
+  editorContents: ContentEditorRoot[],
+  userAttributes: UserTourTypes.Attributes,
+) => {
+  return editorContents.map((editorContent: ContentEditorRoot) => {
+    if (!editorContent.children) {
+      return editorContent;
+    }
+    return {
+      ...editorContent,
+      children: editorContent.children.map((column) => {
+        if (!column.children) {
+          return column;
+        }
+        return {
+          ...column,
+          children: column.children.map((element) => {
+            if (element.element.type === ContentEditorElementType.TEXT) {
+              return {
+                ...element,
+                element: {
+                  ...element.element,
+                  data: replaceUserAttrForElement(element.element.data, userAttributes),
+                },
+              };
+            }
+            return { ...element };
+          }),
+        };
+      }),
+    };
+  });
+};
+
+export { replaceUserAttr, extractLinkUrl };
