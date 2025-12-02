@@ -19,7 +19,6 @@ import {
   DismissLauncherDto,
   ContentDataType,
   ClientContext,
-  contentStartReason,
   contentEndReason,
   AnswerQuestionDto,
   BizEvents,
@@ -27,12 +26,11 @@ import {
   CustomContentSession,
 } from '@usertour/types';
 import { WebSocketContext } from './web-socket-v2.dto';
-import { Server, Socket } from 'socket.io';
+import { Socket } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
-import { ALL_CONTENT_TYPES, isSingletonContentType } from '@/utils/content-utils';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -246,7 +244,7 @@ export class WebSocketV2Service {
     }
     // Start the content
     const success = await this.contentOrchestratorService.startContent(startContentContext);
-    await this.toggleContents(server, socket);
+    await this.contentOrchestratorService.toggleContents(context);
     return success;
   }
 
@@ -268,7 +266,7 @@ export class WebSocketV2Service {
       cancelOtherSessions: true,
       endReason,
     });
-    await this.toggleContents(server, socket);
+    await this.contentOrchestratorService.toggleContents(context);
     return success;
   }
 
@@ -323,41 +321,7 @@ export class WebSocketV2Service {
    * @returns True if the batch was ended successfully
    */
   async endBatch(context: WebSocketContext): Promise<boolean> {
-    const { server, socket } = context;
-
-    return await this.toggleContents(server, socket);
-  }
-
-  /**
-   * Toggle contents for the socket
-   * This method will start content types specified by the caller, handling session cleanup and restart
-   * @param server - The server instance
-   * @param socket - The socket instance
-   * @param contentTypes - Array of content types to toggle
-   * @returns True if the contents were toggled successfully
-   */
-  async toggleContents(
-    server: Server,
-    socket: Socket,
-    contentTypes: ContentDataType[] = ALL_CONTENT_TYPES,
-  ): Promise<boolean> {
-    // Start content asynchronously without waiting for completion
-    // This allows toggleContents to return immediately while startContent runs in background
-    const context = {
-      server,
-      socket,
-      options: {
-        startReason: contentStartReason.START_FROM_CONDITION,
-      },
-    };
-
-    // Handle checklist completed events
-    if (contentTypes.some((type) => isSingletonContentType(type))) {
-      await this.contentOrchestratorService.handleChecklistCompletedEvents(socket);
-    }
-
-    // Start content types
-    return await this.contentOrchestratorService.startContentByTypes(context, contentTypes);
+    return await this.contentOrchestratorService.toggleContents(context);
   }
 
   // ============================================================================
@@ -410,7 +374,7 @@ export class WebSocketV2Service {
    * @returns True if the event was tracked successfully
    */
   async answerQuestion(context: WebSocketContext, params: AnswerQuestionDto): Promise<boolean> {
-    const { socketData, server, socket } = context;
+    const { socketData } = context;
     const { environment, clientContext } = socketData;
     const success = await this.eventTrackingService.trackEventByType(BizEvents.QUESTION_ANSWERED, {
       sessionId: params.sessionId,
@@ -418,7 +382,7 @@ export class WebSocketV2Service {
       clientContext,
       answer: params,
     });
-    await this.toggleContents(server, socket, [ContentDataType.FLOW]);
+    await this.contentOrchestratorService.toggleContents(context, [ContentDataType.FLOW]);
 
     return success;
   }

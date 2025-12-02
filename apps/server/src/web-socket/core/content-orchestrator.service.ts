@@ -55,6 +55,7 @@ import { EventTrackingService } from './event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
 import { getStartEventType, getEndEventType } from '@/utils/event-v2';
+import { WebSocketContext } from '../v2/web-socket-v2.dto';
 
 /**
  * Result of content data preparation
@@ -292,19 +293,42 @@ export class ContentOrchestratorService {
   // ============================================================================
 
   /**
-   * Start content by types sequentially
-   * Gets socket data in each iteration to ensure we have the latest data
-   * as it may be updated by previous content operations
-   * @param context - Base context containing server, socket, and options
-   * @param contentTypes - Array of content types to start
-   * @returns True if all content types were started successfully, false if any failed
+   * Toggle contents for the socket
+   * This method will start content types specified by the caller, handling session cleanup and restart
+   * @param context - The web socket context containing server, socket, and socket data
+   * @param types - Optional array of content types to toggle. If not provided, uses all content types in order: CHECKLIST, FLOW, LAUNCHER
+   * @returns True if the contents were toggled successfully
    */
-  async startContentByTypes(
-    context: Omit<ContentStartContext, 'contentType' | 'socketData'>,
-    contentTypes: ContentDataType[],
-  ): Promise<boolean> {
+  async toggleContents(context: WebSocketContext, types?: ContentDataType[]): Promise<boolean> {
+    const { server, socket } = context;
+
+    // Use default content types if not provided, maintaining the order: CHECKLIST, FLOW, LAUNCHER
+    const contentTypes = types ?? [
+      ContentDataType.CHECKLIST,
+      ContentDataType.FLOW,
+      ContentDataType.LAUNCHER,
+    ];
+
+    // Start content asynchronously without waiting for completion
+    // This allows toggleContents to return immediately while startContent runs in background
+    const startContext = {
+      server,
+      socket,
+      options: {
+        startReason: contentStartReason.START_FROM_CONDITION,
+      },
+    };
+
+    // Handle checklist completed events
+    if (contentTypes.some((type) => isSingletonContentType(type))) {
+      await this.handleChecklistCompletedEvents(socket);
+    }
+
+    // Start content types sequentially
+    // Gets socket data in each iteration to ensure we have the latest data
+    // as it may be updated by previous content operations
     for (const contentType of contentTypes) {
-      const startContentContext = await this.buildContentStartContext(context, contentType);
+      const startContentContext = await this.buildContentStartContext(startContext, contentType);
       if (!startContentContext) {
         return false;
       }
