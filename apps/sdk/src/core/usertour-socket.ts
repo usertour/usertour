@@ -78,6 +78,7 @@ export interface IUsertourSocket {
 
   // Event management with acknowledgment support
   on(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
+  onQueue(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
   off(event: string, handler?: (...args: any[]) => void): void;
   once(event: string, handler: (...args: any[]) => void): void;
 }
@@ -94,6 +95,8 @@ export class UsertourSocket implements IUsertourSocket {
   private inBatch = false;
   private endBatchTimeout?: number;
   private readonly BATCH_TIMEOUT = 50; // ms
+  // Promise chain for serializing event handlers (especially SERVER_MESSAGE)
+  private eventHandlerQueues = new Map<string, Promise<boolean>>();
 
   // === Constructor ===
   constructor() {
@@ -171,6 +174,8 @@ export class UsertourSocket implements IUsertourSocket {
    */
   disconnect(): void {
     logger.info('Disconnecting socket and clearing credentials...');
+    // Clear event handler queues to prevent memory leaks
+    this.eventHandlerQueues.clear();
 
     // Disconnect the socket
     this.socket.disconnect();
@@ -416,6 +421,63 @@ export class UsertourSocket implements IUsertourSocket {
         callback?.(false);
       }
     });
+  }
+
+  /**
+   * Register an event handler with queue-based execution support
+   * Handlers are queued and executed sequentially to maintain message order
+   * @param event - The event name to handle
+   * @param handler - Event handler function that returns boolean indicating success
+   */
+  onQueue(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void {
+    this.socket?.on(event, async (message: unknown, callback: (success: boolean) => void) => {
+      try {
+        const result = await this.executeHandlerInOrder(event, () => handler(message));
+        callback?.(result);
+      } catch (error) {
+        logger.error(`Failed to process ${event}:`, error, message);
+        callback?.(false);
+      }
+    });
+  }
+
+  /**
+   * Execute handler in order for events that require serial processing
+   * @param event - The event name
+   * @param handler - The handler function to execute
+   * @returns Promise<boolean> - The result of the handler
+   */
+  private async executeHandlerInOrder(
+    event: string,
+    handler: () => boolean | Promise<boolean>,
+  ): Promise<boolean> {
+    // Get the last task in the queue for this event (or resolved promise if queue is empty)
+    const lastTask = this.eventHandlerQueues.get(event) || Promise.resolve(true);
+
+    // Create a new task that waits for the last task to complete
+    // Ensure handler result is always a Promise
+    const newTask = lastTask
+      .then(() => Promise.resolve(handler()))
+      .catch((err) => {
+        logger.warn(`Previous ${event} handler failed, continuing with next:`, err?.message);
+        return Promise.resolve(handler());
+      })
+      .catch((err) => {
+        logger.error(`${event} handler execution failed:`, err);
+        return false;
+      });
+
+    // Update the queue with the new task
+    this.eventHandlerQueues.set(event, newTask);
+
+    // Cleanup: Remove from queue when this task completes and no new tasks were added
+    newTask.finally(() => {
+      if (this.eventHandlerQueues.get(event) === newTask) {
+        this.eventHandlerQueues.delete(event);
+      }
+    });
+
+    return newTask;
   }
 
   off(event: string, handler?: (...args: any[]) => void): void {

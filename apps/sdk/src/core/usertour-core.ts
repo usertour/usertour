@@ -91,6 +91,8 @@ export class UsertourCore extends Evented {
   private serverMessageHandlerManager: ServerMessageHandlerManager;
   // Map of sessionId to Set of unacked task IDs
   private taskIsUnacked = new Map<string, Set<string>>();
+  // Server message handler context (initialized in initializeServerMessageHandlerContext)
+  private serverMessageHandlerContext!: ServerMessageHandlerContext;
 
   // === Constructor ===
   constructor() {
@@ -101,6 +103,7 @@ export class UsertourCore extends Evented {
     this.serverMessageHandlerManager = new ServerMessageHandlerManager();
     this.uiManager = new UsertourUIManager();
     this.id = uuidV4();
+    this.initializeServerMessageHandlerContext();
     this.initializeEventListeners();
     this.initializeSocketEventListeners();
     this.initializeConditionsMonitor();
@@ -630,7 +633,7 @@ export class UsertourCore extends Evented {
    * This method sets up all WebSocket event handlers after socket is initialized
    */
   private initializeSocketEventListeners(): void {
-    this.socketService.on(WebSocketEvents.SERVER_MESSAGE, this.handleServerMessage);
+    this.socketService.onQueue(WebSocketEvents.SERVER_MESSAGE, this.handleServerMessage);
   }
 
   // === Message Handling ===
@@ -662,12 +665,15 @@ export class UsertourCore extends Evented {
 
   /**
    * Handle server message by routing to appropriate handler
+   * Messages are processed serially at the socket level to maintain order and prevent race conditions
    * @param message - The server message containing kind and payload
    * @returns Promise<boolean> - True if message was handled successfully
    */
   private async handleServerMessage(message: unknown): Promise<boolean> {
-    const context = this.createServerMessageHandlerContext();
-    const success = await this.serverMessageHandlerManager.handleServerMessage(message, context);
+    const success = await this.serverMessageHandlerManager.handleServerMessage(
+      message,
+      this.serverMessageHandlerContext,
+    );
 
     // Trigger appropriate event based on result
     const event = success
@@ -676,29 +682,6 @@ export class UsertourCore extends Evented {
     this.trigger(event, message);
 
     return success;
-  }
-
-  /**
-   * Creates a context object for server message handlers
-   * @returns ServerMessageHandlerContext with bound methods
-   */
-  private createServerMessageHandlerContext(): ServerMessageHandlerContext {
-    return {
-      setFlowSession: (session: CustomContentSession) => this.setFlowSession(session),
-      forceGoToStep: (sessionId: string, stepId: string) => this.forceGoToStep(sessionId, stepId),
-      unsetFlowSession: (sessionId: string) => this.unsetFlowSession(sessionId),
-      setChecklistSession: (session: CustomContentSession) => this.setChecklistSession(session),
-      unsetChecklistSession: (sessionId: string) => this.unsetChecklistSession(sessionId),
-      addLauncher: (session: CustomContentSession) => this.addLauncher(session),
-      removeLauncher: (contentId: string) => this.removeLauncher(contentId),
-      trackClientCondition: (condition: TrackCondition) => this.trackClientCondition(condition),
-      removeConditions: (conditionIds: string[]) => this.removeConditions(conditionIds),
-      startConditionWaitTimer: (condition: ConditionWaitTimer) =>
-        this.startConditionWaitTimer(condition),
-      cancelConditionWaitTimer: (condition: ConditionWaitTimer) =>
-        this.cancelConditionWaitTimer(condition),
-      addUnackedTask: (sessionId: string, taskId: string) => this.addUnackedTask(sessionId, taskId),
-    };
   }
 
   /**
@@ -722,13 +705,13 @@ export class UsertourCore extends Evented {
    * Sets the flow session and manages tour lifecycle
    * @param session - The SDK content session to set
    */
-  private setFlowSession(session: CustomContentSession): boolean {
+  private async setFlowSession(session: CustomContentSession): Promise<boolean> {
     const hasActivatedTour = this.activatedTour !== null;
 
     if (this.activatedTour) {
       if (this.activatedTour.getSessionId() === session.id) {
         this.activatedTour.updateSession(session);
-        this.activatedTour.refreshStoreData();
+        await this.activatedTour.refreshStoreData();
         return true;
       }
       this.cleanupActivatedTour();
@@ -748,9 +731,9 @@ export class UsertourCore extends Evented {
     this.syncToursStore([this.activatedTour]);
     // Show tour from the session current step
     if (session.currentStep?.cvid) {
-      usertourTour.showStepByCvid(session.currentStep?.cvid, false);
+      await usertourTour.showStepByCvid(session.currentStep?.cvid, false);
     } else {
-      usertourTour.showStepByIndex(0, false);
+      await usertourTour.showStepByIndex(0, false);
     }
     if (!hasActivatedTour) {
       this.collapseChecklist();
@@ -762,12 +745,12 @@ export class UsertourCore extends Evented {
    * Unsets the flow session and destroys the tour
    * @param sessionId - The session ID to unset
    */
-  private unsetFlowSession(sessionId: string): boolean {
+  private async unsetFlowSession(sessionId: string): Promise<boolean> {
     if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
       return false;
     }
     this.cleanupActivatedTour();
-    this.expandChecklist();
+    await this.expandChecklist();
     return true;
   }
 
@@ -777,11 +760,11 @@ export class UsertourCore extends Evented {
    * @param stepId - The step ID to force go to step
    * @returns True if the step was forced to be shown, false otherwise
    */
-  private forceGoToStep(sessionId: string, stepId: string): boolean {
+  private async forceGoToStep(sessionId: string, stepId: string): Promise<boolean> {
     if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
       return false;
     }
-    this.activatedTour.showStepById(stepId, false);
+    await this.activatedTour.showStepById(stepId, false);
     return true;
   }
 
@@ -789,10 +772,11 @@ export class UsertourCore extends Evented {
    * Sets the checklist session and manages checklist lifecycle
    * @param session - The SDK content session to set
    */
-  private setChecklistSession(session: CustomContentSession): boolean {
+  private async setChecklistSession(session: CustomContentSession): Promise<boolean> {
     if (this.activatedChecklist) {
       if (this.activatedChecklist.getSessionId() === session.id) {
         this.activatedChecklist.update(session);
+        await this.expandChecklist();
         return true;
       }
       this.cleanupActivatedChecklist();
@@ -817,7 +801,7 @@ export class UsertourCore extends Evented {
    * Unsets the checklist session and destroys the checklist
    * @param sessionId - The session ID to unset
    */
-  private unsetChecklistSession(sessionId: string): boolean {
+  private async unsetChecklistSession(sessionId: string): Promise<boolean> {
     if (!this.activatedChecklist || this.activatedChecklist.getSessionId() !== sessionId) {
       return false;
     }
@@ -830,9 +814,9 @@ export class UsertourCore extends Evented {
   /**
    * Expands the checklist
    */
-  private expandChecklist() {
+  private async expandChecklist() {
     if (!this.activatedTour && this.activatedChecklist?.isExpandable()) {
-      this.activatedChecklist.expand(true);
+      await this.activatedChecklist.expand(true);
     }
   }
 
@@ -878,7 +862,7 @@ export class UsertourCore extends Evented {
    * @param contentId - The content ID to remove the launcher from
    * @returns True if the launcher was removed, false otherwise
    */
-  private removeLauncher(contentId: string): boolean {
+  private async removeLauncher(contentId: string): Promise<boolean> {
     const launcher = this.launchers.find((launcher) => launcher.getContentId() === contentId);
     if (!launcher) {
       return false;
@@ -911,6 +895,28 @@ export class UsertourCore extends Evented {
    */
   private syncLaunchersStore(launchers: UsertourLauncher[]) {
     this.launchersStore.setData([...launchers]);
+  }
+
+  // === Server Message Handler Context Initialization ===
+  /**
+   * Initializes the server message handler context
+   * Must be called after autoBind(this) to ensure methods are bound
+   */
+  private initializeServerMessageHandlerContext(): void {
+    this.serverMessageHandlerContext = {
+      setFlowSession: this.setFlowSession,
+      forceGoToStep: this.forceGoToStep,
+      unsetFlowSession: this.unsetFlowSession,
+      setChecklistSession: this.setChecklistSession,
+      unsetChecklistSession: this.unsetChecklistSession,
+      addLauncher: this.addLauncher,
+      removeLauncher: this.removeLauncher,
+      trackClientCondition: this.trackClientCondition,
+      removeConditions: this.removeConditions,
+      startConditionWaitTimer: this.startConditionWaitTimer,
+      cancelConditionWaitTimer: this.cancelConditionWaitTimer,
+      addUnackedTask: this.addUnackedTask,
+    };
   }
 
   // === Monitor Initialization ===
@@ -1011,7 +1017,7 @@ export class UsertourCore extends Evented {
    * Tracks a client condition
    * @param condition - The condition to track
    */
-  private trackClientCondition(condition: TrackCondition): boolean {
+  private async trackClientCondition(condition: TrackCondition): Promise<boolean> {
     this.conditionsMonitor?.addConditions([condition]);
     return true;
   }
@@ -1020,7 +1026,7 @@ export class UsertourCore extends Evented {
    * Removes conditions from the condition monitor
    * @param conditionIds - The IDs of the conditions to remove
    */
-  private removeConditions(conditionIds: string[]): boolean {
+  private async removeConditions(conditionIds: string[]): Promise<boolean> {
     this.conditionsMonitor?.removeConditions(conditionIds);
     return true;
   }
@@ -1029,7 +1035,7 @@ export class UsertourCore extends Evented {
    * Starts a wait timer condition
    * @param condition - The condition to start
    */
-  private startConditionWaitTimer(condition: ConditionWaitTimer): boolean {
+  private async startConditionWaitTimer(condition: ConditionWaitTimer): Promise<boolean> {
     this.waitTimerMonitor?.addWaitTimer(condition);
     return true;
   }
@@ -1038,7 +1044,7 @@ export class UsertourCore extends Evented {
    * Cancels a wait timer condition
    * @param condition - The condition to cancel
    */
-  private cancelConditionWaitTimer(condition: ConditionWaitTimer): boolean {
+  private async cancelConditionWaitTimer(condition: ConditionWaitTimer): Promise<boolean> {
     this.waitTimerMonitor?.cancelWaitTimer(condition.versionId);
     return true;
   }
@@ -1117,7 +1123,7 @@ export class UsertourCore extends Evented {
    * @param taskId - The task ID to add
    * @returns True if the task was added successfully
    */
-  addUnackedTask(sessionId: string, taskId: string): boolean {
+  async addUnackedTask(sessionId: string, taskId: string): Promise<boolean> {
     if (!this.taskIsUnacked.has(sessionId)) {
       this.taskIsUnacked.set(sessionId, new Set<string>());
     }

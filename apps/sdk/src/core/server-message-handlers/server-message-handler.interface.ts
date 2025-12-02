@@ -5,18 +5,18 @@ import { CustomContentSession, TrackCondition, ConditionWaitTimer } from '@usert
  * Provides access to UsertourCore methods and properties needed by handlers
  */
 export interface ServerMessageHandlerContext {
-  setFlowSession: (session: CustomContentSession) => boolean;
-  forceGoToStep: (sessionId: string, stepId: string) => boolean;
-  unsetFlowSession: (sessionId: string) => boolean;
-  setChecklistSession: (session: CustomContentSession) => boolean;
-  unsetChecklistSession: (sessionId: string) => boolean;
+  setFlowSession: (session: CustomContentSession) => Promise<boolean>;
+  forceGoToStep: (sessionId: string, stepId: string) => Promise<boolean>;
+  unsetFlowSession: (sessionId: string) => Promise<boolean>;
+  setChecklistSession: (session: CustomContentSession) => Promise<boolean>;
+  unsetChecklistSession: (sessionId: string) => Promise<boolean>;
   addLauncher: (session: CustomContentSession) => Promise<boolean>;
-  removeLauncher: (contentId: string) => boolean;
-  trackClientCondition: (condition: TrackCondition) => boolean;
-  removeConditions: (conditionIds: string[]) => boolean;
-  startConditionWaitTimer: (condition: ConditionWaitTimer) => boolean;
-  cancelConditionWaitTimer: (condition: ConditionWaitTimer) => boolean;
-  addUnackedTask: (sessionId: string, taskId: string) => boolean;
+  removeLauncher: (contentId: string) => Promise<boolean>;
+  trackClientCondition: (condition: TrackCondition) => Promise<boolean>;
+  removeConditions: (conditionIds: string[]) => Promise<boolean>;
+  startConditionWaitTimer: (condition: ConditionWaitTimer) => Promise<boolean>;
+  cancelConditionWaitTimer: (condition: ConditionWaitTimer) => Promise<boolean>;
+  addUnackedTask: (sessionId: string, taskId: string) => Promise<boolean>;
 }
 
 /**
@@ -34,5 +34,5 @@ export interface ServerMessageHandler {
    * @param context - The context object with UsertourCore methods
    * @returns Promise that resolves to true if handled successfully, false otherwise
    */
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean | Promise<boolean>;
+  handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean>;
 }

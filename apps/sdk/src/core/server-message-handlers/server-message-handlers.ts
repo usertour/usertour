@@ -10,8 +10,8 @@ import {
 export class SetFlowSessionHandler implements ServerMessageHandler {
   readonly messageKind = 'SetFlowSession';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
-    return context.setFlowSession(payload as CustomContentSession);
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    return await context.setFlowSession(payload as CustomContentSession);
   }
 }
 
@@ -21,9 +21,9 @@ export class SetFlowSessionHandler implements ServerMessageHandler {
 export class ForceGoToStepHandler implements ServerMessageHandler {
   readonly messageKind = 'ForceGoToStep';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
     const { sessionId, stepId } = payload as { sessionId: string; stepId: string };
-    return context.forceGoToStep(sessionId, stepId);
+    return await context.forceGoToStep(sessionId, stepId);
   }
 }
 
@@ -33,9 +33,9 @@ export class ForceGoToStepHandler implements ServerMessageHandler {
 export class UnsetFlowSessionHandler implements ServerMessageHandler {
   readonly messageKind = 'UnsetFlowSession';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
     const { sessionId } = payload as { sessionId: string };
-    return context.unsetFlowSession(sessionId);
+    return await context.unsetFlowSession(sessionId);
   }
 }
 
@@ -45,8 +45,8 @@ export class UnsetFlowSessionHandler implements ServerMessageHandler {
 export class SetChecklistSessionHandler implements ServerMessageHandler {
   readonly messageKind = 'SetChecklistSession';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
-    return context.setChecklistSession(payload as CustomContentSession);
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    return await context.setChecklistSession(payload as CustomContentSession);
   }
 }
 
@@ -56,9 +56,9 @@ export class SetChecklistSessionHandler implements ServerMessageHandler {
 export class UnsetChecklistSessionHandler implements ServerMessageHandler {
   readonly messageKind = 'UnsetChecklistSession';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
     const { sessionId } = payload as { sessionId: string };
-    return context.unsetChecklistSession(sessionId);
+    return await context.unsetChecklistSession(sessionId);
   }
 }
 
@@ -68,9 +68,9 @@ export class UnsetChecklistSessionHandler implements ServerMessageHandler {
 export class ChecklistTaskCompletedHandler implements ServerMessageHandler {
   readonly messageKind = 'ChecklistTaskCompleted';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
     const { sessionId, taskId } = payload as { sessionId: string; taskId: string };
-    return context.addUnackedTask(sessionId, taskId);
+    return await context.addUnackedTask(sessionId, taskId);
   }
 }
 
@@ -91,9 +91,9 @@ export class AddLauncherHandler implements ServerMessageHandler {
 export class RemoveLauncherHandler implements ServerMessageHandler {
   readonly messageKind = 'RemoveLauncher';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
     const { contentId } = payload as { contentId: string };
-    return context.removeLauncher(contentId);
+    return await context.removeLauncher(contentId);
   }
 }
 
@@ -103,8 +103,8 @@ export class RemoveLauncherHandler implements ServerMessageHandler {
 export class TrackClientConditionHandler implements ServerMessageHandler {
   readonly messageKind = 'TrackClientCondition';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
-    return context.trackClientCondition(payload as TrackCondition);
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    return await context.trackClientCondition(payload as TrackCondition);
   }
 }
 
@@ -114,9 +114,9 @@ export class TrackClientConditionHandler implements ServerMessageHandler {
 export class UntrackClientConditionHandler implements ServerMessageHandler {
   readonly messageKind = 'UntrackClientCondition';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
     const { conditionId } = payload as { conditionId: string };
-    return context.removeConditions([conditionId]);
+    return await context.removeConditions([conditionId]);
   }
 }
 
@@ -126,8 +126,8 @@ export class UntrackClientConditionHandler implements ServerMessageHandler {
 export class StartConditionWaitTimerHandler implements ServerMessageHandler {
   readonly messageKind = 'StartConditionWaitTimer';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
-    return context.startConditionWaitTimer(payload as ConditionWaitTimer);
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    return await context.startConditionWaitTimer(payload as ConditionWaitTimer);
   }
 }
 
@@ -137,7 +137,7 @@ export class StartConditionWaitTimerHandler implements ServerMessageHandler {
 export class CancelConditionWaitTimerHandler implements ServerMessageHandler {
   readonly messageKind = 'CancelConditionWaitTimer';
 
-  handle(payload: unknown, context: ServerMessageHandlerContext): boolean {
-    return context.cancelConditionWaitTimer(payload as ConditionWaitTimer);
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    return await context.cancelConditionWaitTimer(payload as ConditionWaitTimer);
   }
 }
