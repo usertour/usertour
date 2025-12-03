@@ -3,6 +3,7 @@ import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
 import { AttributeBizTypes, BizCompany, BizUser, BizUserOnCompany } from '@usertour/types';
+import { formatAttributeValue } from '@/utils/common';
 import { useEffect, useState, createContext, useContext, ReactNode, Fragment } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
@@ -480,9 +481,17 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
           attrs.push({
             name: companyAttr.displayName || companyAttr.codeName,
             value,
+            dataType: companyAttr.dataType,
+            predefined: companyAttr.predefined,
           });
         }
       }
+      // Sort attributes by name in alphabetical order (a-z)
+      attrs.sort((a, b) => {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
       setBizCompanyAttributes(attrs);
     }
   }, [bizCompany, attributeList]);
@@ -587,16 +596,19 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                 <div className="w-1/2 ">Name</div>
                 <div className="w-1/2 ">Value</div>
               </div>
-              {bizCompanyAttributes.map(({ name, value }, key) => (
-                <div className="flex flex-row py-2 text-sm" key={key}>
-                  <div className="w-1/2">
-                    <TruncatedText text={name} maxLength={25} />
+              {bizCompanyAttributes.map(({ name, value, dataType, predefined }, key) => {
+                const formattedValue = formatAttributeValue(value, dataType, predefined);
+                return (
+                  <div className="flex flex-row py-2 text-sm" key={key}>
+                    <div className="w-1/2">
+                      <TruncatedText text={name} maxLength={25} />
+                    </div>
+                    <div className="w-1/2">
+                      <TruncatedText text={formattedValue} maxLength={25} />
+                    </div>
                   </div>
-                  <div className="w-1/2">
-                    <TruncatedText text={`${value}`} maxLength={25} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </div>

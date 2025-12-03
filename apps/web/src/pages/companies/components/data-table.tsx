@@ -74,7 +74,11 @@ export function DataTable({ segment }: TableProps) {
           header: ({ column }) => <DataTableColumnHeader column={column} title={displayName} />,
           cell: ({ row }) => {
             const value = row.getValue(attribute.codeName);
-            return <div className="px-2">{formatAttributeValue(value)}</div>;
+            return (
+              <div className="px-2">
+                {formatAttributeValue(value, attribute.dataType, attribute.predefined)}
+              </div>
+            );
           },
           enableSorting: false,
           enableHiding: true,

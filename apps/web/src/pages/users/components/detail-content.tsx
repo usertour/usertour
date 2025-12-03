@@ -3,11 +3,12 @@ import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
-import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
+import { AttributeBizTypes, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserSessions } from './user-sessions';
 import { formatDistanceToNow } from 'date-fns';
+import { formatAttributeValue } from '@/utils/common';
 import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
 import {
   Tooltip,
@@ -52,15 +53,6 @@ const TooltipIcon = ({
     </Tooltip>
   </TooltipProvider>
 );
-
-// Helper function to check if a value is a valid date
-const isValidDate = (value: any): boolean => {
-  if (!value) {
-    return false;
-  }
-  const date = new Date(value);
-  return !Number.isNaN(date.getTime());
-};
 
 // Component to display date with formatDistanceToNow and tooltip showing original date
 const DateDisplay = ({ dateValue }: { dateValue: string | Date }) => {
@@ -134,6 +126,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
             name: userAttr.displayName || userAttr.codeName,
             value,
             dataType: userAttr.dataType,
+            predefined: userAttr.predefined,
           });
         }
       }
@@ -240,21 +233,15 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 <div className="w-1/2 ">Name</div>
                 <div className="w-1/2 ">Value</div>
               </div>
-              {bizUserAttributes.map(({ name, value, dataType }, key) => {
-                const isDateTime = dataType === AttributeDataType.DateTime;
-                const shouldFormatAsDate = isDateTime && isValidDate(value);
-
+              {bizUserAttributes.map(({ name, value, dataType, predefined }, key) => {
+                const formattedValue = formatAttributeValue(value, dataType, predefined);
                 return (
                   <div className="flex flex-row py-2 text-sm" key={key}>
                     <div className="w-1/2">
                       <TruncatedText text={name} maxLength={15} />
                     </div>
                     <div className="w-1/2">
-                      {shouldFormatAsDate ? (
-                        <DateDisplay dateValue={value} />
-                      ) : (
-                        <TruncatedText text={`${value}`} maxLength={25} />
-                      )}
+                      <TruncatedText text={formattedValue} maxLength={25} />
                     </div>
                   </div>
                 );
