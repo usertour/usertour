@@ -25,16 +25,16 @@ export const formatAttributeValue = (
       return `${value}`;
     case AttributeDataType.Boolean:
       if (typeof value === 'boolean') {
-        return value ? 'True' : 'False';
+        return value ? 'true' : 'false';
       }
       // Handle string representations of boolean
       if (typeof value === 'string') {
         const lowerValue = value.toLowerCase();
         if (lowerValue === 'true' || lowerValue === '1') {
-          return 'True';
+          return 'true';
         }
         if (lowerValue === 'false' || lowerValue === '0') {
-          return 'False';
+          return 'false';
         }
       }
       return `${value}`;
