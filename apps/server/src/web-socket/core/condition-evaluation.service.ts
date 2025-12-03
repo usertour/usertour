@@ -16,9 +16,7 @@ import {
   SimpleAttribute,
   AttributeBizTypes,
   BizAttributeTypes,
-  ContentDataType,
 } from '@usertour/types';
-import { sessionIsAvailable } from '@/utils/content-utils';
 
 // ============================================================================
 // Type Definitions
@@ -617,18 +615,8 @@ export class ConditionEvaluationService {
    */
   private async evaluateActivationCondition(params: ContentConditionParams): Promise<boolean> {
     const { contentId, bizUserId, logic } = params;
-    const latestSession = await this.findLatestSession(contentId, bizUserId);
-    const contentType = latestSession?.content.type as ContentDataType;
-
-    // If no session exists, content is unactivated
-    if (!latestSession) {
-      return logic === ContentConditionLogic.UNACTIVED;
-    }
-
-    // Check if content is available
-    const isActivated = sessionIsAvailable(latestSession, contentType);
-
-    return logic === ContentConditionLogic.ACTIVED ? isActivated : !isActivated;
+    const hasSession = await this.hasAvailableSession(contentId, bizUserId);
+    return logic === ContentConditionLogic.ACTIVED ? hasSession : !hasSession;
   }
 
   /**
@@ -636,8 +624,8 @@ export class ConditionEvaluationService {
    */
   private async evaluateSeenCondition(params: ContentConditionParams): Promise<boolean> {
     const { contentId, bizUserId, logic } = params;
-    const isSeen = await this.findBizEvent(contentId, bizUserId, BizEvents.FLOW_STEP_SEEN);
-    return Boolean(logic === ContentConditionLogic.SEEN ? isSeen : !isSeen);
+    const hasSeen = await this.hasBizEvent(contentId, bizUserId, BizEvents.FLOW_STEP_SEEN);
+    return logic === ContentConditionLogic.SEEN ? hasSeen : !hasSeen;
   }
 
   /**
@@ -645,8 +633,8 @@ export class ConditionEvaluationService {
    */
   private async evaluateCompletedCondition(params: ContentConditionParams): Promise<boolean> {
     const { contentId, bizUserId, logic } = params;
-    const isCompleted = await this.findBizEvent(contentId, bizUserId, BizEvents.FLOW_COMPLETED);
-    return Boolean(logic === ContentConditionLogic.COMPLETED ? isCompleted : !isCompleted);
+    const hasCompleted = await this.hasBizEvent(contentId, bizUserId, BizEvents.FLOW_COMPLETED);
+    return logic === ContentConditionLogic.COMPLETED ? hasCompleted : !hasCompleted;
   }
 
   // ============================================================================
@@ -685,17 +673,16 @@ export class ConditionEvaluationService {
   }
 
   /**
-   * Get the latest session for a content and user
+   * Check if there is an available session for a content and user
    * @param contentId - The ID of the content
    * @param bizUserId - The ID of the business user
-   * @returns The latest session
+   * @returns true if an available session exists, false otherwise
    */
-  private async findLatestSession(contentId: string, bizUserId: string) {
-    return await this.prisma.bizSession.findFirst({
-      where: { contentId, bizUserId, deleted: false },
-      include: { bizEvent: { include: { event: true } }, content: true },
-      orderBy: { createdAt: 'desc' },
+  private async hasAvailableSession(contentId: string, bizUserId: string): Promise<boolean> {
+    const count = await this.prisma.bizSession.count({
+      where: { contentId, bizUserId, deleted: false, state: 0 },
     });
+    return count > 0;
   }
 
   /**
@@ -703,10 +690,14 @@ export class ConditionEvaluationService {
    * @param contentId - The ID of the content
    * @param bizUserId - The ID of the business user
    * @param eventCodeName - The code name of the event
-   * @returns boolean indicating if the user has the event
+   * @returns true if the user has the event, false otherwise
    */
-  private async findBizEvent(contentId: string, bizUserId: string, eventCodeName: string) {
-    return await this.prisma.bizSession.findFirst({
+  private async hasBizEvent(
+    contentId: string,
+    bizUserId: string,
+    eventCodeName: string,
+  ): Promise<boolean> {
+    const count = await this.prisma.bizSession.count({
       where: {
         contentId,
         bizUserId,
@@ -714,5 +705,6 @@ export class ConditionEvaluationService {
         bizEvent: { some: { event: { codeName: eventCodeName } } },
       },
     });
+    return count > 0;
   }
 }
