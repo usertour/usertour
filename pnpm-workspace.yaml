@@ -5,3 +5,4 @@ packages:
   - "packages/components/*"
   - "packages/radix/*"
   - "packages/shared/*"
+  - "packages/license"

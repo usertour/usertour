@@ -18,6 +18,7 @@ import {
 } from '@usertour/types';
 import { forwardRef, useMemo, useRef } from 'react';
 import { useBuilderContext } from '../../../contexts';
+import { useAttributeListContext } from '@usertour-packages/contexts';
 export interface LauncherContentProps {
   zIndex: number;
   triggerRef?: React.RefObject<any> | undefined;
@@ -33,6 +34,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
     const launcherRef = useRef<HTMLDivElement>(null);
     const { projectId } = useBuilderContext();
 
+    const { attributeList } = useAttributeListContext();
     const triggerReference = useMemo(
       () => (data.tooltip.reference === LauncherPositionType.TARGET ? triggerRef : launcherRef),
       [data.tooltip.reference, triggerRef],
@@ -47,6 +49,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
             <LauncherPopperContentPotal ref={ref}>
               <LauncherPopperContent>
                 <ContentEditor
+                  attributes={attributeList || []}
                   zIndex={zIndex + EXTENSION_CONTENT_POPPER}
                   customUploadRequest={onCustomUploadRequest}
                   actionItems={[

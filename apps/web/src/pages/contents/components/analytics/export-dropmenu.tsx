@@ -139,8 +139,10 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const { content } = useContentDetailContext();
   const { attributeList } = useAttributeListContext();
   const { environment } = useAppContext();
+  const versionId = content?.publishedVersionId || content?.editedVersionId;
   const { data } = useQuery(getContentVersion, {
-    variables: { versionId: content?.publishedVersionId || content?.editedVersionId },
+    variables: { versionId },
+    skip: !versionId,
   });
   const version = data?.getContentVersion as ContentVersion;
 

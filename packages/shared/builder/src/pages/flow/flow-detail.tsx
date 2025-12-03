@@ -286,7 +286,13 @@ const FlowBuilderDetailFooter = () => {
           });
         }
       } else {
-        const { id, createdAt, updatedAt, cvid, ...updates } = step;
+        const { id, createdAt, updatedAt, cvid, themeId, ...restUpdates } = step;
+        // Convert undefined themeId to null so it can be properly sent to the backend
+        // GraphQL will ignore undefined values, so we need to explicitly set null
+        const updates = {
+          ...restUpdates,
+          themeId: themeId === undefined ? null : themeId,
+        };
         const updatedStep = await updateContentStep(step.id, updates);
         if (updatedStep && currentVersion?.contentId) {
           await fetchContentAndVersion(currentVersion?.contentId, currentVersion?.id);

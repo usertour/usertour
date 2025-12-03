@@ -3,6 +3,7 @@ import { listSegment } from '@usertour-packages/gql';
 import { RulesCondition, Segment } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { filterSegmentsByTypeOrder } from '../utils/segment';
 
 export interface SegmentListProviderProps {
   children?: ReactNode;
@@ -42,9 +43,9 @@ export function SegmentListProvider(props: SegmentListProviderProps): JSX.Elemen
 
   useEffect(() => {
     if (data?.listSegment && data.listSegment.length > 0) {
-      setSegmentList(data.listSegment.filter((item: Segment) => bizType.includes(item.bizType)));
+      setSegmentList(filterSegmentsByTypeOrder(data.listSegment as Segment[], bizType));
     }
-  }, [data?.listSegment]);
+  }, [data?.listSegment, bizType]);
 
   useEffect(() => {
     if (segmentList && segmentList.length > 0) {

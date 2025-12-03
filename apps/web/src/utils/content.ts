@@ -21,7 +21,10 @@ export const isPublishedInAllEnvironments = (
 };
 
 export const isPublishedAtLeastOneEnvironment = (content: Content | null) => {
-  return Boolean(content?.contentOnEnvironments?.length);
+  if (content?.contentOnEnvironments && content?.contentOnEnvironments?.length > 0) {
+    return true;
+  }
+  return false;
 };
 
 export const isVersionPublished = (content: Content, versionId: string): boolean => {

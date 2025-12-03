@@ -150,21 +150,19 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
         };
       case 'notIncludesAtLeastOne':
         return {
-          NOT: [
-            {
-              OR: filteredValues.map((value) => ({
-                data: { path: [attr.codeName], array_contains: value },
-              })),
+          OR: filteredValues.map((value) => ({
+            NOT: {
+              data: { path: [attr.codeName], array_contains: value },
             },
-          ],
+          })),
         };
       case 'notIncludesAll':
         return {
-          NOT: [
-            {
-              data: { path: [attr.codeName], array_contains: filteredValues },
-            },
-          ],
+          NOT: {
+            OR: filteredValues.map((value) => ({
+              data: { path: [attr.codeName], array_contains: value },
+            })),
+          },
         };
       case 'empty':
         return {

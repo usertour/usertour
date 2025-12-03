@@ -55,7 +55,7 @@ export class ThemesService {
 
   async deleteTheme(id: string) {
     const theme = await this.prisma.theme.findFirst({ where: { id } });
-    if (theme.isSystem) {
+    if (theme.isSystem || theme.isDefault) {
       throw new ParamsError();
     }
     return await this.prisma.theme.delete({
@@ -80,7 +80,7 @@ export class ThemesService {
   async listThemesByProjectId(projectId: string) {
     return await this.prisma.theme.findMany({
       where: { projectId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { id: 'asc' },
     });
   }
 }

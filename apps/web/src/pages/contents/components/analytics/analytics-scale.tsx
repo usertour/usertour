@@ -88,7 +88,7 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
   const lastDay = averageByDay?.[averageByDay.length - 1];
 
   const totalResponses = selectedDay?.metrics.total ?? total ?? 0;
-  const rate = Math.round(((totalResponses ?? 0) / totalViews) * 100);
+  const rate = totalViews > 0 ? Math.round(((totalResponses ?? 0) / totalViews) * 100) : 0;
   const average = lastDay?.metrics.average ?? 0;
 
   const startDate = selectedDay?.startDate

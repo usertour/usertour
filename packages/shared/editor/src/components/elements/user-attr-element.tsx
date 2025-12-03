@@ -23,6 +23,8 @@ import { Transforms } from 'slate';
 import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
 import { UserAttributeElementType } from '../../types/slate';
 import { usePopperEditorContext } from '../editor';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { cn } from '@usertour/helpers';
 
 export const UserAttributeElement = (props: RenderElementProps) => {
   const { zIndex, attributes } = usePopperEditorContext();
@@ -94,6 +96,8 @@ export const UserAttributeElement = (props: RenderElementProps) => {
     event.preventDefault();
   };
 
+  const userAttributes = attributes?.filter((attr: Attribute) => attr.bizType === 1);
+
   return (
     <Popover.Root open={open} onOpenChange={handleOnOpenChange}>
       <Popover.Trigger onMouseDown={handleMouseDown} onClick={handleOnClick} asChild>
@@ -123,13 +127,15 @@ export const UserAttributeElement = (props: RenderElementProps) => {
               </SelectTrigger>
               <SelectPortal style={{ zIndex: zIndex + 2 }}>
                 <SelectContent>
-                  {attributes
-                    ?.filter((attr: Attribute) => attr.bizType === 1)
-                    .map((attr: Attribute) => (
+                  <ScrollArea
+                    className={cn(userAttributes && userAttributes?.length > 10 ? 'h-72' : '')}
+                  >
+                    {userAttributes?.map((attr: Attribute) => (
                       <SelectItem value={attr.codeName} key={attr.id}>
                         {attr.displayName}
                       </SelectItem>
                     ))}
+                  </ScrollArea>
                 </SelectContent>
               </SelectPortal>
             </Select>

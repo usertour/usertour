@@ -8,26 +8,27 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuerySessionDetailQuery } from '@usertour-packages/shared-hooks';
 import { Table, TableBody, TableCell, TableRow } from '@usertour-packages/table';
-import {
-  BizEvent,
-  BizEvents,
-  ContentDataType,
-  EventAttributes,
-  flowReasonTitleMap,
-} from '@usertour/types';
+import { BizEvent, BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { LauncherProgressColumn } from '@/components/molecules/session';
+import { ChecklistItemsColumn, LauncherProgressColumn } from '@/components/molecules/session';
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
 import { cn } from '@usertour/helpers';
 import { Button } from '@usertour-packages/button';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
-import { contentTypesConfig } from '@usertour-packages/shared-editor';
-import { SessionResponse } from '@/components/molecules/session-detail';
+import { QuestionAnswer, SessionResponse } from '@/components/molecules/session-detail';
 import { ContentLoading } from '@/components/molecules/content-loading';
+import {
+  deduplicateAnswerEvents,
+  getEndReasonTitle,
+  getEventDisplaySuffix,
+  getFieldValue,
+  getStartReasonTitle,
+  sortEventDataEntries,
+} from '@/utils/session';
 
 const SessionItemContainer = ({
   children,
@@ -35,7 +36,7 @@ const SessionItemContainer = ({
 }: { children: React.ReactNode; className?: string }) => {
   return (
     <div
-      className={cn('flex flex-col w-full px-4 py-6 grow shadow bg-white rounded-lg', className)}
+      className={cn('flex flex-col w-full px-6 py-6 grow shadow bg-white rounded-lg', className)}
     >
       {children}
     </div>
@@ -93,7 +94,15 @@ const SessionDetailContentInner = ({
   const startEvent = session?.bizEvent?.find(
     (bizEvent: BizEvent) =>
       bizEvent.event?.codeName === BizEvents.FLOW_STARTED ||
+      bizEvent.event?.codeName === BizEvents.LAUNCHER_SEEN ||
       bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED,
+  );
+
+  const endEvent = session?.bizEvent?.find(
+    (bizEvent: BizEvent) =>
+      bizEvent.event?.codeName === BizEvents.FLOW_ENDED ||
+      bizEvent.event?.codeName === BizEvents.CHECKLIST_DISMISSED ||
+      bizEvent.event?.codeName === BizEvents.LAUNCHER_DISMISSED,
   );
 
   if (!eventList || !content || !version) {
@@ -113,59 +122,11 @@ const SessionDetailContentInner = ({
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  const answerEvents = session?.bizEvent?.filter(
-    (bizEvent: BizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
-  );
+  const answerEvents = deduplicateAnswerEvents(session);
 
-  const getStartReasonTitle = (startEvent: BizEvent | undefined) => {
-    try {
-      const reason =
-        startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||
-        startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON];
-      return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason;
-    } catch (_) {
-      return '';
-    }
-  };
-
-  const getFieldValue = (key: string, value: any) => {
-    if (
-      key === EventAttributes.FLOW_START_REASON ||
-      key === EventAttributes.CHECKLIST_START_REASON
-    ) {
-      return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
-    }
-    if (key === EventAttributes.FLOW_END_REASON || key === EventAttributes.CHECKLIST_END_REASON) {
-      return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
-    }
-    return key === 'question_type'
-      ? contentTypesConfig.find((config) => config.element.type === value)?.name
-      : typeof value === 'string'
-        ? value
-        : JSON.stringify(value);
-  };
-
-  const sortEventDataEntries = (data: Record<string, any>, attributes: typeof attributeList) => {
-    return Object.entries(data || {}).sort(([keyA], [keyB]) => {
-      // Find attributes in attributeList to determine order
-      const attrA = attributes?.find((attr) => attr.codeName === keyA);
-      const attrB = attributes?.find((attr) => attr.codeName === keyB);
-
-      // If both are in attributeList, sort by their order in the list
-      if (attrA && attrB && attributes) {
-        const indexA = attributes.indexOf(attrA);
-        const indexB = attributes.indexOf(attrB);
-        return indexA - indexB;
-      }
-
-      // If only one is in attributeList, prioritize the one in the list
-      if (attrA && !attrB) return -1;
-      if (!attrA && attrB) return 1;
-
-      // If neither is in attributeList, sort alphabetically
-      return keyA.localeCompare(keyB);
-    });
-  };
+  const startReason = getStartReasonTitle(contentType, startEvent);
+  const endReason = getEndReasonTitle(contentType, endEvent);
+  const routeContentTypes = `${contentType}s`;
 
   return (
     <>
@@ -203,7 +164,7 @@ const SessionDetailContentInner = ({
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">User</span>
             <Link
-              className="text-primary"
+              className="text-primary hover:underline underline-offset-2"
               to={`/env/${environmentId}/user/${session?.bizUser?.id}`}
             >
               {session?.bizUser?.data?.name ??
@@ -215,8 +176,8 @@ const SessionDetailContentInner = ({
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60 capitalize">{content.type}</span>
             <Link
-              className=" text-primary"
-              to={`/env/${environmentId}/${content.type}s/${session?.content?.id}/detail`}
+              className="text-primary hover:underline underline-offset-2"
+              to={`/env/${environmentId}/${routeContentTypes}/${session?.content?.id}/detail`}
             >
               {session?.content?.name}
             </Link>
@@ -224,10 +185,10 @@ const SessionDetailContentInner = ({
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">Version</span>
             <Link
-              className="text-primary"
-              to={`/env/${environmentId}/flows/${session?.content?.id}/versions`}
+              className="text-primary hover:underline underline-offset-2"
+              to={`/env/${environmentId}/${routeContentTypes}/${session?.content?.id}/versions`}
             >
-              V{session?.version?.sequence}
+              V{session?.version?.sequence + 1}
             </Link>
           </div>
           <div className="border-b flex flex-col pb-1">
@@ -238,13 +199,22 @@ const SessionDetailContentInner = ({
           </div>
           <div className="border-b flex flex-col pb-1">
             <span className="text-sm text-foreground/60">Start reason</span>
-            <span>{getStartReasonTitle(startEvent)}</span>
+            <span>{startReason}</span>
           </div>
+          {endEvent && (
+            <div className="border-b flex flex-col pb-1">
+              <span className="text-sm text-foreground/60">End reason</span>
+              <span>{endReason}</span>
+            </div>
+          )}
         </SessionItemContainer>
         <SessionItemContainer>
           <div className="mb-2 flex flex-row items-center font-bold	">Progress</div>
           {contentType === ContentDataType.CHECKLIST && (
-            <ChecklistProgressColumn original={session} eventList={eventList} version={version} />
+            <div className="flex flex-col gap-8">
+              <ChecklistProgressColumn original={session} eventList={eventList} version={version} />
+              <ChecklistItemsColumn original={session} eventList={eventList} version={version} />
+            </div>
           )}
 
           {contentType === ContentDataType.FLOW && (
@@ -271,45 +241,58 @@ const SessionDetailContentInner = ({
             <Table>
               <TableBody>
                 {bizEvents ? (
-                  bizEvents.map((bizEvent: BizEvent) => (
-                    <Fragment key={bizEvent.id}>
-                      <TableRow
-                        className="cursor-pointer  h-10 group"
-                        onClick={() => handleRowClick(bizEvent.id)}
-                      >
-                        <TableCell className="w-1/4">
-                          {format(new Date(bizEvent.createdAt), 'yyyy-MM-dd HH:mm:ss')}
-                        </TableCell>
-                        <TableCell className="flex justify-between items-center">
-                          {bizEvent.event?.displayName}
-                          {expandedRowId === bizEvent.id ? (
-                            <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          ) : (
-                            <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                      {expandedRowId === bizEvent.id && bizEvent.data && (
-                        <TableRow>
-                          <TableCell colSpan={2} className="bg-gray-50 p-4">
-                            <div className="text-sm">
-                              {sortEventDataEntries(bizEvent.data, attributeList || []).map(
-                                ([key, value]) => (
-                                  <div key={key} className="py-2 border-b flex flex-row">
-                                    <span className="font-medium w-[200px] flex-none">
-                                      {attributeList?.find((attr) => attr.codeName === key)
-                                        ?.displayName || key}
-                                    </span>
-                                    <span className="grow">{getFieldValue(key, value)}</span>
-                                  </div>
-                                ),
+                  bizEvents.map((bizEvent: BizEvent) => {
+                    const displaySuffix = getEventDisplaySuffix(bizEvent, session);
+                    return (
+                      <Fragment key={bizEvent.id}>
+                        <TableRow
+                          className="cursor-pointer  h-10 group"
+                          onClick={() => handleRowClick(bizEvent.id)}
+                        >
+                          <TableCell className="w-1/4">
+                            {format(new Date(bizEvent.createdAt), 'yyyy-MM-dd HH:mm:ss')}
+                          </TableCell>
+                          <TableCell className="flex justify-between items-center">
+                            <span>
+                              {bizEvent.event?.displayName}
+                              {displaySuffix && (
+                                <span className="text-muted-foreground ml-2">{displaySuffix}</span>
                               )}
-                            </div>
+                            </span>
+                            {expandedRowId === bizEvent.id ? (
+                              <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            ) : (
+                              <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            )}
                           </TableCell>
                         </TableRow>
-                      )}
-                    </Fragment>
-                  ))
+                        {expandedRowId === bizEvent.id && bizEvent.data && (
+                          <TableRow>
+                            <TableCell colSpan={2} className="bg-gray-50 p-4">
+                              <div className="text-sm">
+                                {sortEventDataEntries(bizEvent.data, attributeList || []).map(
+                                  ([key, value]) => (
+                                    <div key={key} className="py-2 border-b flex flex-row">
+                                      <span className="font-medium w-[200px] flex-none">
+                                        {attributeList?.find((attr) => attr.codeName === key)
+                                          ?.displayName || key}
+                                      </span>
+                                      {key === EventAttributes.LIST_ANSWER && (
+                                        <QuestionAnswer answerEvent={bizEvent} />
+                                      )}
+                                      {key !== EventAttributes.LIST_ANSWER && (
+                                        <span className="grow">{getFieldValue(key, value)}</span>
+                                      )}
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell className="h-24 text-center">No events found.</TableCell>

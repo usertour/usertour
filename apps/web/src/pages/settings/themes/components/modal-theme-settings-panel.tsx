@@ -15,6 +15,7 @@ import {
 } from '@usertour-packages/tooltip';
 
 interface ModalThemeSettingsPanelProps {
+  isViewOnly?: boolean;
   settings: ThemeTypesSetting;
   defaultSettings: ThemeTypesSetting;
   onSettingsChange: (settings: ThemeTypesSetting) => void;
@@ -48,6 +49,7 @@ export const ModalThemeSettingsPanel = ({
   showDelete = false,
   errorMessage = '',
   showError = false,
+  isViewOnly = false,
 }: ModalThemeSettingsPanelProps) => {
   // Track initial data for comparison
   const initialDataRef = useRef<{
@@ -118,6 +120,7 @@ export const ModalThemeSettingsPanel = ({
             <div className="flex-1 mr-4">
               <OutlineInput
                 value={currentTitle}
+                disabled={isViewOnly}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Enter variation title..."
                 className="h-8 shadow-none focus-visible:ring-0 focus:border-b text-base"
@@ -132,6 +135,7 @@ export const ModalThemeSettingsPanel = ({
                       variant="ghost"
                       size="icon"
                       onClick={onDelete}
+                      disabled={isViewOnly}
                     >
                       <Delete2Icon />
                     </Button>
@@ -165,7 +169,7 @@ export const ModalThemeSettingsPanel = ({
                 filterItems={['group', 'user-attr', 'current-page']}
                 addButtonText={'Add condition'}
                 attributes={attributeList || []}
-                disabled={false}
+                disabled={isViewOnly}
               />
             </div>
           )}

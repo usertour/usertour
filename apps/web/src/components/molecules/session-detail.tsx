@@ -55,7 +55,8 @@ const QuestionAnswer = ({ answerEvent }: { answerEvent: BizEvent }) => {
   switch (answerEvent.data.question_type) {
     case ContentEditorElementType.STAR_RATING:
       return (
-        <div className="flex flex-row gap-0.5">
+        <div className="flex flex-row gap-0.5 items-center">
+          <span className="pr-2">{answerEvent.data.number_answer}</span>
           <QuestionStarRating
             maxLength={answerEvent.data.number_answer}
             score={answerEvent.data.number_answer}

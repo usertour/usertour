@@ -24,12 +24,13 @@ import {
   ZoomInIcon,
 } from '@usertour-packages/icons';
 import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour-packages/shared-hooks';
-import { BizEvent, BizEvents, BizSession } from '@usertour/types';
+import { BizEvent, BizSession } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { Fragment, ReactNode, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour-packages/dialog';
 import { SessionResponse } from '@/components/molecules/session-detail';
+import { deduplicateAnswerEvents } from '@/utils/session';
 
 // Create a custom hook for form handling
 const useSessionForm = (
@@ -95,20 +96,6 @@ type SessionActionDropdownMenuProps = {
   onEndSuccess?: () => void;
 };
 
-// Custom hook to handle session events
-// Returns filtered and sorted answer events from session bizEvents
-const useSessionEvents = (session?: BizSession) => {
-  const bizEvents = session?.bizEvent?.sort((a, b) => {
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  });
-
-  const answerEvents = bizEvents?.filter(
-    (bizEvent) => bizEvent.event?.codeName === BizEvents.QUESTION_ANSWERED,
-  );
-
-  return { answerEvents };
-};
-
 // Dialog component for displaying session responses
 const ResponseDialog = ({ open, onOpenChange, answerEvents }: ResponseDialogProps) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,6 +114,14 @@ const ResponseDialog = ({ open, onOpenChange, answerEvents }: ResponseDialogProp
     </DialogContent>
   </Dialog>
 );
+
+// Define menu items with their groups for separator logic
+type MenuItemConfig = {
+  id: string;
+  group: string;
+  show: boolean;
+  render: () => React.ReactNode;
+};
 
 // Component containing all dropdown menu items
 // Extracts menu items logic from main component to reduce complexity
@@ -152,45 +147,81 @@ const DropdownMenuItems = ({
   showViewResponse: boolean;
   isViewOnly: boolean;
   sessionState: number;
-}) => (
-  <>
-    {showViewDetails && (
-      <DropdownMenuItem onClick={onViewDetailsClick} className="cursor-pointer">
-        <ZoomInIcon className="w-4 h-4 mr-1" />
-        View details
-      </DropdownMenuItem>
-    )}
-    <DropdownMenuSeparator />
-    {showViewResponse && (
-      <DropdownMenuItem onClick={onResponseClick} className="cursor-pointer">
-        <QuestionMarkCircledIcon className="w-4 h-4 mr-1" />
-        View Response
-      </DropdownMenuItem>
-    )}
-    {showViewDetails && showEndSession && <DropdownMenuSeparator />}
-    {showEndSession && (
-      <DropdownMenuItem
-        className="cursor-pointer"
-        disabled={isViewOnly || sessionState === 1}
-        onClick={onEndClick}
-      >
-        <CloseCircleIcon className="w-4 h-4 mr-1" />
-        End session now
-      </DropdownMenuItem>
-    )}
-    {showEndSession && showDeleteSession && <DropdownMenuSeparator />}
-    {showDeleteSession && (
-      <DropdownMenuItem
-        className="cursor-pointer text-destructive"
-        disabled={isViewOnly}
-        onClick={onDeleteClick}
-      >
-        <Delete2Icon className="w-4 h-4 mr-1" />
-        Delete session
-      </DropdownMenuItem>
-    )}
-  </>
-);
+}) => {
+  const menuItems: MenuItemConfig[] = [
+    {
+      id: 'viewDetails',
+      group: 'view',
+      show: showViewDetails,
+      render: () => (
+        <DropdownMenuItem onClick={onViewDetailsClick} className="cursor-pointer">
+          <ZoomInIcon className="w-4 h-4 mr-1" />
+          View details
+        </DropdownMenuItem>
+      ),
+    },
+    {
+      id: 'viewResponse',
+      group: 'view',
+      show: showViewResponse,
+      render: () => (
+        <DropdownMenuItem onClick={onResponseClick} className="cursor-pointer">
+          <QuestionMarkCircledIcon className="w-4 h-4 mr-1" />
+          View Response
+        </DropdownMenuItem>
+      ),
+    },
+    {
+      id: 'endSession',
+      group: 'action',
+      show: showEndSession,
+      render: () => (
+        <DropdownMenuItem
+          className="cursor-pointer"
+          disabled={isViewOnly || sessionState === 1}
+          onClick={onEndClick}
+        >
+          <CloseCircleIcon className="w-4 h-4 mr-1" />
+          End session now
+        </DropdownMenuItem>
+      ),
+    },
+    {
+      id: 'deleteSession',
+      group: 'action',
+      show: showDeleteSession,
+      render: () => (
+        <DropdownMenuItem
+          className="cursor-pointer text-destructive"
+          disabled={isViewOnly}
+          onClick={onDeleteClick}
+        >
+          <Delete2Icon className="w-4 h-4 mr-1" />
+          Delete session
+        </DropdownMenuItem>
+      ),
+    },
+  ];
+
+  // Filter items that should be shown
+  const visibleItems = menuItems.filter((item) => item.show);
+
+  return (
+    <>
+      {visibleItems.map((item, index) => {
+        const prevItem = index > 0 ? visibleItems[index - 1] : null;
+        const needsSeparator = prevItem && prevItem.group !== item.group;
+
+        return (
+          <Fragment key={item.id}>
+            {needsSeparator && <DropdownMenuSeparator />}
+            {item.render()}
+          </Fragment>
+        );
+      })}
+    </>
+  );
+};
 
 // Form component for session actions (delete/end)
 const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFormProps) => {
@@ -255,7 +286,8 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
 
   const { isViewOnly, environment } = useAppContext();
   const navigate = useNavigate();
-  const { answerEvents } = useSessionEvents(session);
+
+  const answerEvents = deduplicateAnswerEvents(session);
 
   // State for controlling different dialogs
   const [deleteOpen, setDeleteOpen] = useState(false);

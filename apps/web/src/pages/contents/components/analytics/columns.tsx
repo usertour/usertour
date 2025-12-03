@@ -74,14 +74,27 @@ export const columns: ColumnDef<BizSession>[] = [
       const bizUser = row.original.bizUser;
       const email = bizUser?.data?.email || '';
       const name = bizUser?.data?.name || '';
+      const externalId = bizUser?.externalId || '';
+
+      // Display email or name if available, otherwise show externalId
+      // If both primary text and externalId exist, show externalId on second line
+      const primaryText = name || email || externalId;
+      const showExternalIdOnSecondLine = externalId && (email || name);
 
       return (
         <Link
           to={`/env/${environment?.id}/user/${row.getValue('bizUserId')}`}
-          className="text-muted-foreground hover:text-primary hover:underline underline-offset-4 flex items-center gap-2"
+          className="flex items-center gap-2"
         >
           <UserAvatar email={email} name={name} size="sm" />
-          <span>{bizUser?.data?.email || bizUser?.data?.name || bizUser?.externalId || ''}</span>
+          <div className="flex flex-col">
+            <span className="text-muted-foreground hover:text-primary hover:underline underline-offset-4">
+              {primaryText}
+            </span>
+            {showExternalIdOnSecondLine && (
+              <span className="text-muted-foreground/60 text-xs">{externalId}</span>
+            )}
+          </div>
         </Link>
       );
     },

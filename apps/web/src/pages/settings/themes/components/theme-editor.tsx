@@ -16,6 +16,7 @@ export interface Rect {
 }
 
 export interface ThemeEditorProps {
+  isViewOnly?: boolean;
   // Data
   settings: ThemeTypesSetting;
   defaultSettings: ThemeTypesSetting;
@@ -43,6 +44,7 @@ export interface ThemeEditorProps {
 }
 
 export const ThemeEditor = ({
+  isViewOnly = false,
   settings,
   defaultSettings,
   selectedType,
@@ -68,6 +70,7 @@ export const ThemeEditor = ({
       )}
     >
       <ThemeSettingsDefaultPanel
+        isViewOnly={isViewOnly}
         settings={settings}
         defaultSettings={defaultSettings}
         onSettingsChange={onSettingsChange}

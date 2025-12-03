@@ -1,70 +1,120 @@
 import { AssetAttributes } from '@usertour-packages/frame';
-import { PopperMadeWith } from '@usertour-packages/sdk';
-import { ChecklistProgress } from '@usertour-packages/sdk';
 import {
+  PopperMadeWith,
+  ChecklistProgress,
   ChecklistDismiss,
   ChecklistDropdown,
   ChecklistItems,
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
   ChecklistRoot,
-} from '@usertour-packages/sdk/src/checklist';
+} from '@usertour-packages/sdk';
 import {
   ContentEditorClickableElement,
   ContentEditorSerialize,
 } from '@usertour-packages/shared-editor';
-import { BizUserInfo, ChecklistData, ChecklistItemType, ThemeTypesSetting } from '@usertour/types';
+import {
+  ChecklistData,
+  ChecklistItemType,
+  ThemeTypesSetting,
+  UserTourTypes,
+} from '@usertour/types';
 import { useSyncExternalStore } from 'react';
-import { Checklist } from '../core/checklist';
+import { UsertourChecklist } from '@/core/usertour-checklist';
 
 // Types
 type ChecklistWidgetProps = {
-  checklist: Checklist;
+  checklist: UsertourChecklist;
 };
 
 type ChecklistWidgetCoreProps = {
   data: ChecklistData;
   themeSettings: ThemeTypesSetting;
-  userInfo: BizUserInfo;
+  userAttributes?: UserTourTypes.Attributes;
   assets: AssetAttributes[] | undefined;
   handleItemClick: (item: ChecklistItemType, index: number) => void;
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
   handleDismiss: () => Promise<void>;
-  handleExpandedChange: (expanded: boolean) => void;
-  reportExpandedChangeEvent: (expanded: boolean) => Promise<void>;
+  handleExpandedChange: (expanded: boolean) => Promise<void>;
+  handleAutoDismiss: () => Promise<void>;
   removeBranding: boolean;
   zIndex: number;
   expanded: boolean;
 };
 
+// Custom hook to extract store state
+const useChecklistStore = (checklist: UsertourChecklist) => {
+  const store = useSyncExternalStore(checklist.subscribe, checklist.getSnapshot);
+
+  if (!store) {
+    return null;
+  }
+
+  const {
+    userAttributes,
+    checklistData,
+    expanded,
+    openState,
+    zIndex,
+    globalStyle,
+    themeSettings,
+    assets,
+    removeBranding,
+  } = store;
+
+  if (!checklistData || !openState) {
+    return null;
+  }
+
+  return {
+    userAttributes,
+    checklistData,
+    expanded,
+    openState,
+    zIndex,
+    globalStyle,
+    themeSettings,
+    assets,
+    removeBranding,
+  };
+};
+
 // Components
 const ChecklistContent = ({
   data,
-  userInfo,
+  userAttributes,
   handleOnClick,
   handleItemClick,
-}: Pick<ChecklistWidgetCoreProps, 'data' | 'userInfo' | 'handleOnClick' | 'handleItemClick'>) => (
+  handleAutoDismiss,
+}: Pick<
+  ChecklistWidgetCoreProps,
+  'data' | 'userAttributes' | 'handleOnClick' | 'handleItemClick' | 'handleAutoDismiss'
+>) => (
   <>
-    <ContentEditorSerialize contents={data.content} onClick={handleOnClick} userInfo={userInfo} />
+    <ContentEditorSerialize
+      contents={data.content}
+      onClick={handleOnClick}
+      userAttributes={userAttributes}
+    />
     <ChecklistProgress />
     <ChecklistItems onClick={handleItemClick} disabledUpdate={true} />
-    <ChecklistDismiss />
+    <ChecklistDismiss onAutoDismiss={handleAutoDismiss} />
   </>
 );
 
 const ChecklistWidgetCore = ({
   data,
   themeSettings,
-  userInfo,
+  userAttributes,
   assets,
   handleItemClick,
   handleOnClick,
   handleDismiss,
   handleExpandedChange,
-  reportExpandedChangeEvent,
   removeBranding,
   zIndex,
   expanded,
+  handleAutoDismiss,
 }: ChecklistWidgetCoreProps) => (
   <ChecklistRoot
     data={data}
@@ -72,7 +122,6 @@ const ChecklistWidgetCore = ({
     expanded={expanded}
     onDismiss={handleDismiss}
     onExpandedChange={handleExpandedChange}
-    reportExpandedChangeEvent={reportExpandedChangeEvent}
     zIndex={zIndex}
   >
     <ChecklistPopperUseIframe zIndex={zIndex} assets={assets}>
@@ -80,9 +129,10 @@ const ChecklistWidgetCore = ({
       <ChecklistPopperContentBody>
         <ChecklistContent
           data={data}
-          userInfo={userInfo}
+          userAttributes={userAttributes}
           handleOnClick={handleOnClick}
           handleItemClick={handleItemClick}
+          handleAutoDismiss={handleAutoDismiss}
         />
       </ChecklistPopperContentBody>
       {!removeBranding && <PopperMadeWith />}
@@ -91,19 +141,24 @@ const ChecklistWidgetCore = ({
 );
 
 export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
-  const store = useSyncExternalStore(
-    checklist.getStore().subscribe,
-    checklist.getStore().getSnapshot,
-  );
+  const store = useChecklistStore(checklist);
 
   if (!store) {
     return <></>;
   }
 
-  const { checklistData, themeSettings, userInfo, openState, assets, sdkConfig, zIndex, expanded } =
-    store;
+  const {
+    checklistData,
+    themeSettings,
+    userAttributes,
+    openState,
+    assets,
+    zIndex,
+    expanded,
+    removeBranding,
+  } = store;
 
-  if (!themeSettings || !checklistData || !openState || !userInfo) {
+  if (!themeSettings || !checklistData || !openState || !userAttributes) {
     return <></>;
   }
 
@@ -111,16 +166,16 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     <ChecklistWidgetCore
       data={checklistData}
       themeSettings={themeSettings}
-      userInfo={userInfo}
+      userAttributes={userAttributes}
       assets={assets}
       handleItemClick={checklist.handleItemClick}
       handleOnClick={checklist.handleOnClick}
       handleDismiss={checklist.handleDismiss}
       handleExpandedChange={checklist.handleExpandedChange}
-      reportExpandedChangeEvent={checklist.reportExpandedChangeEvent}
-      removeBranding={sdkConfig.removeBranding}
+      removeBranding={removeBranding}
       zIndex={zIndex}
       expanded={expanded}
+      handleAutoDismiss={checklist.handleAutoDismiss}
     />
   );
 };

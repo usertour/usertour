@@ -337,7 +337,7 @@ export const PopperEditorMini = (props: PopperEditorProps) => {
             placeholder="Write text here…"
             spellCheck
             autoFocus={true}
-            style={{ outline: 'none' }}
+            style={{ outline: 'none', minWidth: 0 }}
             onKeyDown={handleKeyDown}
           />
           <UserAttrButton className="flex-none" />

@@ -1,9 +1,9 @@
 import React, { useSyncExternalStore } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Checklist } from '../core/checklist';
-import { Launcher } from '../core/launcher';
-import { ExternalStore } from '../core/store';
-import { Tour } from '../core/tour';
+import { ExternalStore } from '../utils/store';
+import { UsertourTour } from '../core/usertour-tour';
+import { UsertourChecklist } from '../core/usertour-checklist';
+import { UsertourLauncher } from '@/core/usertour-launcher';
 import '../index.css';
 
 // Extract widgets into a constant to improve readability
@@ -13,45 +13,44 @@ const WIDGETS = {
       default: module.TourWidget,
     })),
   ),
-  Launcher: React.lazy(() =>
-    import('./launcher').then((module) => ({
-      default: module.LauncherWidget,
-    })),
-  ),
   Checklist: React.lazy(() =>
     import('./checklist').then((module) => ({
       default: module.ChecklistWidget,
     })),
   ),
+  Launcher: React.lazy(() =>
+    import('./launcher').then((module) => ({
+      default: module.LauncherWidget,
+    })),
+  ),
 };
 
 interface AppProps {
-  toursStore: ExternalStore<Tour[]>;
-  launchersStore: ExternalStore<Launcher[]>;
-  checklistsStore: ExternalStore<Checklist[]>;
+  toursStore: ExternalStore<UsertourTour[]>;
+  checklistsStore: ExternalStore<UsertourChecklist[]>;
+  launchersStore: ExternalStore<UsertourLauncher[]>;
 }
 
 // Optimize App component with better type safety and error boundaries
-const App = ({ toursStore, launchersStore, checklistsStore }: AppProps) => {
+const App = ({ toursStore, checklistsStore, launchersStore }: AppProps) => {
   // Use custom hook to reduce repetition
   const useStore = <T,>(store: ExternalStore<T>) =>
     useSyncExternalStore(store.subscribe, store.getSnapshot);
 
   const tours = useStore(toursStore);
-  const launchers = useStore(launchersStore);
   const checklists = useStore(checklistsStore);
-
+  const launchers = useStore(launchersStore);
   return (
     <React.StrictMode>
       <React.Suspense fallback={null}>
         {tours?.map((tour) => (
-          <WIDGETS.Tour tour={tour} key={tour.getContent().contentId} />
-        ))}
-        {launchers?.map((launcher) => (
-          <WIDGETS.Launcher launcher={launcher} key={launcher.getContent().contentId} />
+          <WIDGETS.Tour tour={tour} key={tour.getId()} />
         ))}
         {checklists?.map((checklist) => (
-          <WIDGETS.Checklist checklist={checklist} key={checklist.getContent().contentId} />
+          <WIDGETS.Checklist checklist={checklist} key={checklist.getId()} />
+        ))}
+        {launchers?.map((launcher) => (
+          <WIDGETS.Launcher launcher={launcher} key={launcher.getId()} />
         ))}
       </React.Suspense>
     </React.StrictMode>
@@ -59,13 +58,6 @@ const App = ({ toursStore, launchersStore, checklistsStore }: AppProps) => {
 };
 
 // Update render function to use the App component
-export const render = async (
-  root: ReactDOM.Root,
-  props: {
-    toursStore: ExternalStore<Tour[]>;
-    launchersStore: ExternalStore<Launcher[]>;
-    checklistsStore: ExternalStore<Checklist[]>;
-  },
-) => {
-  return root.render(<App {...props} />);
+export const render = (root: ReactDOM.Root, props: AppProps): void => {
+  root.render(<App {...props} />);
 };

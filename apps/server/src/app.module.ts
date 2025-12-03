@@ -31,6 +31,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { IntegrationModule } from './integration/integration.module';
 import { LicenseModule } from './license/license.module';
+import { SharedModule } from './shared/shared.module';
 import { loggingMiddleware } from 'nestjs-prisma';
 import { Logger } from '@nestjs/common';
 
@@ -59,22 +60,32 @@ import { Logger } from '@nestjs/common';
       },
     }),
     LoggerModule.forRootAsync({
-      useFactory: () => ({
-        pinoHttp: {
-          redact: {
-            paths: ['pid', 'hostname', 'req.headers'],
-            remove: true,
+      useFactory: () => {
+        // Set log level based on environment
+        // Production: 'info' (excludes debug logs)
+        // Development: 'debug' (includes all logs)
+        // Can be overridden by LOG_LEVEL environment variable
+        const logLevel =
+          process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
+
+        return {
+          pinoHttp: {
+            redact: {
+              paths: ['pid', 'hostname', 'req.headers'],
+              remove: true,
+            },
+            autoLogging: false,
+            genReqId: () => undefined,
+            customSuccessObject: (req) => ({
+              env: process.env.NODE_ENV,
+              uid: (req as any).user?.id || 'anonymous',
+            }),
+            level: logLevel,
+            transport:
+              process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
           },
-          autoLogging: false,
-          genReqId: () => undefined,
-          customSuccessObject: (req) => ({
-            env: process.env.NODE_ENV,
-            uid: (req as any).user?.id || 'anonymous',
-          }),
-          level: 'debug',
-          transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
-        },
-      }),
+        };
+      },
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -125,6 +136,7 @@ import { Logger } from '@nestjs/common';
     IntegrationModule,
     LicenseModule,
     OpenAPIModule,
+    SharedModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

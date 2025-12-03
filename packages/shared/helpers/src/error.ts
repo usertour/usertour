@@ -6,6 +6,7 @@ import {
   RulesCondition,
   RulesUserAttributeData,
 } from '@usertour/types';
+import { isTimeConditionDataV2, isTimeConditionDataLegacy } from './conditions/time';
 
 export const isValidSelector = (selector: ElementSelectorPropsData) => {
   if (!selector) {
@@ -63,10 +64,31 @@ export const getUrlPatternError = (data: any) => {
 
 export const getCurrentTimeError = (data: any) => {
   const ret = { showError: false, errorInfo: '' };
-  if (!data.startDate && !data.endDate) {
+
+  // Check new format (ISO 8601)
+  if (isTimeConditionDataV2(data)) {
+    if (!data.startTime && !data.endTime) {
+      ret.showError = true;
+      ret.errorInfo = 'Either start or end time be filled in';
+    }
+    return ret;
+  }
+
+  // Check legacy format (MM/dd/yyyy)
+  if (isTimeConditionDataLegacy(data)) {
+    if (!data.startDate && !data.endDate) {
+      ret.showError = true;
+      ret.errorInfo = 'Either start or end time be filled in';
+    }
+    return ret;
+  }
+
+  // Unknown format or empty data
+  if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
     ret.showError = true;
     ret.errorInfo = 'Either start or end time be filled in';
   }
+
   return ret;
 };
 

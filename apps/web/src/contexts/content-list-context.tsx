@@ -1,7 +1,6 @@
-import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
-import { queryContent } from '@usertour-packages/gql';
-import { Content, PageInfo, Pagination } from '@usertour/types';
+import { useContentListQuery } from '@usertour-packages/shared-hooks';
+import { Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -26,7 +25,6 @@ export interface ContentListProviderProps {
 }
 
 export interface ContentListContextValue {
-  contentList: any;
   refetch: any;
   requestPagination: Pagination;
   setRequestPagination: React.Dispatch<React.SetStateAction<Pagination>>;
@@ -88,21 +86,20 @@ export function ContentListProvider(props: ContentListProviderProps): JSX.Elemen
   const [currentPagination, setCurrentPagination] = useState<PaginationState>({
     ...defaultPagination,
   });
-  const [currentPageInfo, setCurrentPageInfo] = useState<PageInfo>();
-  const [contents, setContents] = useState<Content[]>([]);
-  const [pageCount, setPageCount] = useState(defaultPagination.pageSize);
-  const [totalCount, setTotalCount] = useState<number>(0);
 
-  const { data, refetch, loading } = useQuery(queryContent, {
-    variables: {
-      ...requestPagination,
-      query: { environmentId, type: getQueryType(contentType), ...query },
-      orderBy: { field: 'createdAt', direction: 'desc' },
-    },
-    skip: !environmentId,
+  const {
+    contents,
+    pageInfo: currentPageInfo,
+    totalCount,
+    refetch,
+    loading,
+  } = useContentListQuery({
+    query: { environmentId, type: getQueryType(contentType), ...query },
+    pagination: { ...requestPagination },
+    options: { skip: !environmentId },
   });
 
-  const contentList = data?.queryContent;
+  const pageCount = Math.ceil(totalCount / currentPagination.pageSize);
 
   useEffect(() => {
     const { pageIndex, pageSize } = pagination;
@@ -138,29 +135,10 @@ export function ContentListProvider(props: ContentListProviderProps): JSX.Elemen
   }, [pagination, currentPagination, currentPageInfo, totalCount]);
 
   useEffect(() => {
-    if (!contentList) {
-      return;
-    }
-    const { edges, pageInfo, totalCount } = contentList;
-    if (!edges || !pageInfo) {
-      return;
-    }
-
-    setCurrentPageInfo(pageInfo);
-    const c: Content[] = edges.map((e: any) => {
-      return { ...e.node };
-    });
-    setContents(c);
-    setTotalCount(totalCount);
-    setPageCount(Math.ceil(totalCount / currentPagination.pageSize));
-  }, [contentList, currentPagination]);
-
-  useEffect(() => {
     refetch();
   }, [query, requestPagination]);
 
   const value: ContentListContextValue = {
-    contentList,
     refetch,
     requestPagination,
     setRequestPagination,

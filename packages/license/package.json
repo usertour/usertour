@@ -1,0 +1,47 @@
+{
+  "name": "@usertour/license",
+  "version": "0.0.2",
+  "type": "module",
+  "description": "JWT license signing and validation utilities for UserTour",
+  "homepage": "https://www.usertour.io",
+  "author": "Usertour, Inc. <support@usertour.io>",
+  "license": "AGPL-3.0",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src --dts",
+    "dev": "pnpm build:fast -- --watch",
+    "clean": "rimraf dist .turbo",
+    "typecheck": "tsc --noEmit",
+    "build:fast": "tsup src",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20.17.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
+    "eslint": "^8.38.0",
+    "rimraf": "^5.0.1",
+    "tsup": "^7.2.0",
+    "typescript": "^5.0.2"
+  },
+  "tsup": {
+    "clean": true,
+    "target": "es2019",
+    "format": ["cjs", "esm"]
+  },
+  "keywords": ["jwt", "license", "validation", "usertour", "authentication", "signing"]
+}

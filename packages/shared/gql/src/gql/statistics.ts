@@ -67,6 +67,19 @@ export const queryBizSession = gql`
               codeName
             }
           }
+          version {
+            id
+            sequence
+            data
+            steps {
+              id
+              name
+              cvid
+              type
+              sequence
+              data
+            }
+          }
         }
       }
       pageInfo {

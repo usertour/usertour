@@ -284,8 +284,10 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     duplicateStep?: Step,
   ) => {
     const finalStepType = stepType || duplicateStep?.type || 'tooltip';
+    const existingStepNames = currentVersion?.steps?.map((step) => step.name) ?? [];
+
     const step: Step = duplicateStep
-      ? createStepCopy(duplicateStep, sequence)
+      ? createStepCopy(duplicateStep, sequence, existingStepNames)
       : {
           ...defaultStep,
           type: finalStepType,

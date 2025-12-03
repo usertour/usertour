@@ -34,6 +34,7 @@ export function ContentVersionProvider(props: ContentVersionProviderProps): JSX.
   const [isSaveing, setIsSaveing] = useState<boolean>(false);
   const { data, refetch, loading } = useQuery(getContentVersion, {
     variables: { versionId: content?.editedVersionId },
+    skip: !content?.editedVersionId,
   });
 
   useEffect(() => {

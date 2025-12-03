@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { ArrowRightIcon, CloseCircleIcon, PlusIcon } from '@usertour-packages/icons';
-import { hasActionError } from '@usertour/helpers';
+import { cuid, hasActionError } from '@usertour/helpers';
 import { ContentActionsItemType, RulesCondition } from '@usertour/types';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
@@ -174,9 +174,9 @@ export const ContentActionsGroup = () => {
   const handleOnSelect = useCallback(
     (type: string) => {
       if (type === 'group') {
-        setNewConditions([...conditions, { type, data: {}, conditions: [] }]);
+        setNewConditions([...conditions, { type, data: {}, conditions: [], id: cuid() }]);
       } else {
-        setNewConditions([...conditions, { type, data: {}, operators: conditionType }]);
+        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: cuid() }]);
       }
     },
     [conditionType, conditions],
@@ -197,6 +197,9 @@ export const ContentActionsGroup = () => {
         if (i === index) {
           if (data) {
             condition.data = data;
+          }
+          if (!condition.id) {
+            condition.id = cuid();
           }
           condition.operators = conditionType;
         }

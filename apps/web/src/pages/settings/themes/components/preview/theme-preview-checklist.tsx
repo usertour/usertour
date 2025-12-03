@@ -41,7 +41,9 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
         expanded={expandedState}
         themeSettings={settings}
         zIndex={10000}
-        onExpandedChange={setExpandedState}
+        onExpandedChange={async (expanded: boolean) => {
+          setExpandedState(expanded);
+        }}
       >
         <ChecklistContainer>
           <ChecklistPopper zIndex={10000}>

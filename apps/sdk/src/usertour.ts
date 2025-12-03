@@ -1,9 +1,11 @@
-import { SDKSettingsMode, UserTourTypes } from '@usertour/types';
-import { App } from './core/app';
-import { logger } from './utils/logger';
-import { window } from './utils/globals';
+import { contentStartReason, SDKSettingsMode, UserTourTypes } from '@usertour/types';
+import { UsertourCore } from './core/usertour-core';
+import { logger, window } from '@/utils';
 
-const w: UserTourTypes.WindowWithUsertour = typeof window === 'undefined' ? ({} as any) : window;
+type WindowWithUsertour = UserTourTypes.WindowWithUsertour;
+
+const w: WindowWithUsertour =
+  typeof window === 'undefined' ? ({} as WindowWithUsertour) : (window as WindowWithUsertour);
 
 interface Deferred {
   resolve: (value: unknown) => void;
@@ -14,6 +16,8 @@ type QueueItem = [string, Deferred | null, unknown[]];
 
 /**
  * Process the queue of method calls that were collected before SDK initialization
+ * @param usertour - The initialized usertour instance
+ * @param stubQueue - Queue of method calls to process
  */
 function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueItem[]): void {
   if (!stubQueue?.length) {
@@ -23,21 +27,31 @@ function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueIte
   logger.info(`Processing ${stubQueue.length} items in the queue`);
 
   // Clear the queue immediately to prevent double processing
-  (window as any).USERTOURJS_QUEUE = undefined;
+  if (w.USERTOURJS_QUEUE) {
+    w.USERTOURJS_QUEUE = undefined;
+  }
 
   for (const [method, deferred, args] of stubQueue) {
     try {
-      const methodName = method as keyof typeof usertour;
+      const methodName = method as keyof UserTourTypes.Usertour;
 
-      if (typeof usertour[methodName] !== 'function') {
+      // Type-safe method check
+      if (!(methodName in usertour) || typeof usertour[methodName] !== 'function') {
         logger.error(`usertour.js: Invalid method '${methodName}' in queue`);
+        deferred?.reject?.(new Error(`Invalid method: ${methodName}`));
         continue;
       }
 
-      const result = (usertour[methodName] as (...args: unknown[]) => unknown)(...args);
+      const methodFn = usertour[methodName] as (...args: unknown[]) => unknown;
+      const result = methodFn(...args);
 
-      if (deferred && result && typeof (result as Promise<unknown>).then === 'function') {
-        (result as Promise<unknown>).then(deferred.resolve, deferred.reject);
+      // Handle promise-based methods
+      if (deferred) {
+        if (result instanceof Promise) {
+          result.then(deferred.resolve, deferred.reject).catch(deferred.reject);
+        } else {
+          deferred.resolve(result);
+        }
       }
     } catch (error) {
       logger.error(`Error processing queue item for method '${method}':`, error);
@@ -48,140 +62,119 @@ function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueIte
   logger.info('Queue processed successfully');
 }
 
+/**
+ * Creates API methods bound to the UsertourCore instance
+ */
+function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
+  return {
+    _stubbed: false,
+
+    load: async () => {
+      // Intentionally empty - reserved for future use
+    },
+
+    init: (token: string) => {
+      return app.init({
+        token,
+        mode: SDKSettingsMode.NORMAL,
+      });
+    },
+
+    identify: async (userId: string, attributes?: UserTourTypes.Attributes) => {
+      return await app.identify(userId, attributes);
+    },
+
+    identifyAnonymous: async (attributes?: UserTourTypes.Attributes) => {
+      return await app.identifyAnonymous(attributes);
+    },
+
+    updateUser: async (attributes: UserTourTypes.Attributes) => {
+      return await app.updateUser(attributes);
+    },
+
+    group: async (
+      groupId: string,
+      attributes?: UserTourTypes.Attributes,
+      opts?: UserTourTypes.GroupOptions,
+    ) => {
+      return await app.group(groupId, attributes, opts);
+    },
+
+    updateGroup: async (
+      attributes?: UserTourTypes.Attributes,
+      opts?: UserTourTypes.GroupOptions,
+    ) => {
+      return await app.updateGroup(attributes, opts);
+    },
+
+    track: async (
+      name: string,
+      attributes?: UserTourTypes.EventAttributes,
+      opts?: UserTourTypes.TrackOptions,
+    ) => {
+      // Intentionally empty - reserved for future event tracking
+      logger.warn('track method is not yet implemented', { name, attributes, opts });
+    },
+
+    isIdentified: () => {
+      return app.isIdentified();
+    },
+
+    isStarted: (contentId: string) => {
+      return app.isStarted(contentId);
+    },
+
+    start: async (contentId: string, opts?: UserTourTypes.StartOptions) => {
+      return app.startContent(contentId, contentStartReason.START_FROM_PROGRAM, opts);
+    },
+
+    endAll: async () => {
+      return await app.endAll();
+    },
+
+    reset: () => {
+      app.reset();
+    },
+
+    remount: () => {
+      // Intentionally empty - reserved for future remount functionality
+      logger.warn('remount method is not yet implemented');
+    },
+
+    setBaseZIndex: (baseZIndex: number) => {
+      app.setBaseZIndex(baseZIndex);
+    },
+
+    setTargetMissingSeconds: (seconds: number) => {
+      app.setTargetMissingSeconds(seconds);
+    },
+
+    setCustomNavigate: (customNavigate: ((url: string) => void) | null) => {
+      app.setCustomNavigate(customNavigate);
+    },
+
+    on: (eventName: string, _listener: (...args: any[]) => void) => {
+      // Intentionally empty - reserved for future event system
+      logger.warn('on method is not yet implemented', { eventName });
+    },
+
+    off: (eventName: string, _listener: (...args: any[]) => void) => {
+      // Intentionally empty - reserved for future event system
+      logger.warn('off method is not yet implemented', { eventName });
+    },
+  };
+}
+
+// Initialize SDK if not already initialized or if it's a stubbed version
 if (w.usertour === undefined || w.usertour?._stubbed) {
-  const app = new App();
-  const usertour = Object.assign(
-    w.usertour || {},
-    (() => {
-      return {
-        _stubbed: false,
-        _app: app,
-        load: async () => {},
-        init: (token: string) => {
-          return app.init({
-            token,
-            mode: SDKSettingsMode.NORMAL,
-          });
-        },
-        identify: async (
-          userId: string,
-          attributes?: UserTourTypes.Attributes,
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          opts?: UserTourTypes.IdentifyOptions,
-        ) => {
-          return await app.identify(userId, { ...attributes });
-        },
-        identifyAnonymous: async (
-          attributes?: UserTourTypes.Attributes,
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          opts?: UserTourTypes.IdentifyOptions,
-        ) => {
-          return await app.identifyAnonymous(attributes);
-        },
-        updateUser: async (
-          attributes: UserTourTypes.Attributes,
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          opts?: UserTourTypes.IdentifyOptions,
-        ) => {
-          return await app.updateUser(attributes);
-        },
-        group: async (
-          groupId: string,
-          attributes?: UserTourTypes.Attributes,
-          opts?: UserTourTypes.GroupOptions,
-        ) => {
-          return await app.group(groupId, attributes, opts);
-        },
-        updateGroup: async (
-          attributes: UserTourTypes.Attributes,
-          opts?: UserTourTypes.GroupOptions,
-        ) => {
-          return await app.updateGroup(attributes, opts);
-        },
-        track: async (
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          name: string,
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          attributes?: UserTourTypes.EventAttributes,
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          opts?: UserTourTypes.TrackOptions,
-        ) => {},
-        /**
-         * Checks if a user is identified
-         * @returns True if user info exists, false otherwise
-         */
-        isIdentified: () => {
-          return app.isIdentified();
-        },
-        /**
-         * Checks if a content has been started
-         * @param contentId - The content ID to check
-         * @returns True if the content has been started, false otherwise
-         */
-        isStarted: (contentId: string) => {
-          return app.isStarted(contentId);
-        },
-        /**
-         * Starts a content
-         * @param contentId - The content ID to start
-         * @param opts - The options for starting the content
-         * @returns A promise that resolves when the content is started
-         */
-        start: async (contentId: string, opts?: UserTourTypes.StartOptions) => {
-          return app.startContent(contentId, opts);
-        },
-        endAll: async () => {
-          return await app.endAll();
-        },
-        reset: () => {
-          app.reset();
-        },
-        remount: () => {},
-        setBaseZIndex: (baseZIndex: number) => {
-          app.setBaseZIndex(baseZIndex);
-        },
-        setSessionTimeout: (hours: number) => {
-          app.setSessionTimeout(hours);
-        },
-        setTargetMissingSeconds: (seconds: number) => {
-          app.setTargetMissingSeconds(seconds);
-        },
-        setCustomNavigate: (customNavigate: ((url: string) => void) | null) => {
-          app.setCustomNavigate(customNavigate);
-        },
-        // eslint-disable-next-line es5/no-rest-parameters
-        on: (
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          eventName: string,
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          listener: (...args: any[]) => void,
-        ) => {},
-        // eslint-disable-next-line es5/no-rest-parameters
-        off: (
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          eventName: string,
-          //@ts-ignore
-          // biome-ignore lint/correctness/noUnusedVariables: <explanation>
-          listener: (...args: any[]) => void,
-        ) => {},
-      };
-    })(),
-  );
+  const app = new UsertourCore();
+  const api = createUsertourAPI(app);
+
+  // Preserve any existing methods if merging with a stubbed version
+  const usertour: UserTourTypes.Usertour = Object.assign(w.usertour || {}, api);
 
   w.usertour = usertour;
 
-  (() => {
-    processStubQueue(w.usertour, w.USERTOURJS_QUEUE);
-  })();
+  // Process any queued method calls that occurred before initialization
+  processStubQueue(w.usertour, w.USERTOURJS_QUEUE);
 }
-
-// export default usertour;

@@ -64,7 +64,7 @@ const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <QuestionMarkCircledIcon />
+                <QuestionMarkCircledIcon className="cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs bg-foreground text-background">
                 Whether the {contentType} can auto-start for the same user just once, or many times.
@@ -173,12 +173,15 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <QuestionMarkCircledIcon />
+              <QuestionMarkCircledIcon className="cursor-help" />
             </TooltipTrigger>
             <TooltipContent className="max-w-xs bg-foreground text-background">
               <p>
                 The {contentType} may auto-start up to {data.times} times, with at least{' '}
                 {data.duration} {data.unit} passing in between.
+                <br />
+                <br />
+                Note that manual and programmatic starts are included in the limit.
               </p>
             </TooltipContent>
           </Tooltip>
@@ -268,7 +271,7 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <QuestionMarkCircledIcon />
+            <QuestionMarkCircledIcon className="cursor-help" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs bg-foreground text-background">
             If enabled, the {contentType} will only auto-start if no other {contentType} has shown
@@ -286,11 +289,11 @@ const initialValue: RulesFrequencyValue = {
   every: {
     times: 0,
     duration: 0,
-    unit: FrequencyUnits.DAYES,
+    unit: FrequencyUnits.MINUTES,
   },
   atLeast: {
     duration: 0,
-    unit: FrequencyUnits.DAYES,
+    unit: FrequencyUnits.MINUTES,
   },
 };
 

@@ -42,7 +42,7 @@ export interface Usertour {
   //   getValue?: (el: Element) => string
   // ): void;
 
-  // setCustomNavigate(customNavigate: ((url: string) => void) | null): void;
+  setCustomNavigate(customNavigate: ((url: string) => void) | null): void;
 
   // setUrlFilter(urlFilter: ((url: string) => string) | null): void;
 
@@ -68,6 +68,7 @@ export interface Usertour {
   // setPageTrackingDisabled(pageTrackingDisabled: boolean): void;
 
   setBaseZIndex(baseZIndex: number): void;
+  setTargetMissingSeconds(seconds: number): void;
 
   // setServerEndpoint(serverEndpoint: string | null | undefined): void;
 

@@ -161,6 +161,10 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
     }
   }, [environmentList, mutation, onSubmit, selectedEnvironments, toast, versionId]);
 
+  if (!version) {
+    return null;
+  }
+
   return (
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
@@ -187,11 +191,11 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
                     <Label htmlFor={`env-${env.id}`}>{env.name}</Label>
                     {isAlreadyPublished ? (
                       <span className="text-sm text-gray-500">
-                        ({env.name} is already on v{version?.sequence})
+                        ({env.name} is already on v{version.sequence + 1})
                       </span>
                     ) : publishedVersion ? (
                       <span className="text-sm text-gray-500">
-                        (v{publishedVersion.sequence} → v{version?.sequence})
+                        (v{publishedVersion.sequence + 1} → v{version.sequence + 1})
                       </span>
                     ) : (
                       <span className="text-sm text-gray-500">Unpublished</span>

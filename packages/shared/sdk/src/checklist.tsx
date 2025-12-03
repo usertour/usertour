@@ -51,9 +51,6 @@ interface ChecklistRootContextValue {
   setShowDismissConfirm: (showDismissConfirm: boolean) => void;
   onDismiss?: () => Promise<void>;
   handleExpandedChange?: (expanded: boolean) => Promise<void>;
-  // Animation state tracking
-  pendingAnimationItems: Set<string>;
-  removePendingAnimation: (itemId: string) => void;
   zIndex: number;
 }
 
@@ -74,8 +71,7 @@ interface ChecklistRootProps {
   defaultOpen?: boolean;
   expanded?: boolean;
   onDismiss?: () => Promise<void>;
-  onExpandedChange?: (expanded: boolean) => void;
-  reportExpandedChangeEvent?: (expanded: boolean) => Promise<void>;
+  onExpandedChange?: (expanded: boolean) => Promise<void>;
   zIndex: number;
 }
 
@@ -87,15 +83,12 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
     expanded,
     onDismiss,
     onExpandedChange,
-    reportExpandedChangeEvent,
     zIndex,
     themeSettings,
   } = props;
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
   const [data, setData] = useState(initialData);
   const [showDismissConfirm, setShowDismissConfirm] = useState(false);
-  const [pendingAnimationItems, setPendingAnimationItems] = useState<Set<string>>(new Set());
-  const [prevData, setPrevData] = useState(initialData);
 
   // Use expanded from store if provided, otherwise use local state
   const isOpen = expanded !== undefined ? expanded : defaultOpen;
@@ -110,25 +103,10 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
   //manual control open state
   const handleExpandedChange = useCallback(
     async (open: boolean) => {
-      onExpandedChange?.(open);
-      await reportExpandedChangeEvent?.(open);
+      await onExpandedChange?.(open);
     },
-    [reportExpandedChangeEvent],
+    [onExpandedChange],
   );
-
-  // Track completion changes and add to pending animations if checklist is closed
-  useEffect(() => {
-    if (!isOpen) {
-      // Check for newly completed items
-      for (const item of data.items) {
-        const prevItem = prevData.items.find((prevItem) => prevItem.id === item.id);
-        if (item.isCompleted && prevItem && !prevItem.isCompleted) {
-          setPendingAnimationItems((prev) => new Set(prev).add(item.id));
-        }
-      }
-    }
-    setPrevData(data);
-  }, [data, isOpen]);
 
   const updateItemStatus = (itemId: string, isCompleted: boolean) => {
     setData((prevData) => ({
@@ -136,14 +114,6 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
       items: prevData.items.map((item) => (item.id === itemId ? { ...item, isCompleted } : item)),
     }));
   };
-
-  const removePendingAnimation = useCallback((itemId: string) => {
-    setPendingAnimationItems((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(itemId);
-      return newSet;
-    });
-  }, []);
 
   return (
     <ChecklistRootContext.Provider
@@ -160,8 +130,6 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         setShowDismissConfirm,
         onDismiss,
         handleExpandedChange,
-        pendingAnimationItems,
-        removePendingAnimation,
         zIndex,
       }}
     >
@@ -632,39 +600,76 @@ const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<
 
 ChecklistDismissConfirm.displayName = 'ChecklistDismissConfirm';
 
-const ChecklistDismiss = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  (props, ref) => {
-    const { data, onDismiss, setShowDismissConfirm, isAllCompleted } = useChecklistRootContext();
+interface ChecklistDismissProps extends React.HTMLAttributes<HTMLDivElement> {
+  onAutoDismiss?: () => void;
+}
 
-    // Return placeholder if dismiss is prevented
-    if (data.preventDismissChecklist) {
-      return <div className="h-4" ref={ref} {...props} />;
+const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((props, ref) => {
+  const { onAutoDismiss, ...restProps } = props;
+  const { data, onDismiss, setShowDismissConfirm, isAllCompleted } = useChecklistRootContext();
+  const [progressWidth, setProgressWidth] = useState(0);
+
+  // Handle progress bar animation when autoDismissChecklist is enabled and all items are completed
+  useEffect(() => {
+    if (data.autoDismissChecklist && isAllCompleted) {
+      // Reset to 0 and then animate to 100%
+      setProgressWidth(0);
+      // Use requestAnimationFrame to ensure the reset is applied before animation starts
+      requestAnimationFrame(() => {
+        setProgressWidth(100);
+      });
+      // Call onAutoDismiss after animation completes (5000ms)
+      const timer = setTimeout(() => {
+        onAutoDismiss?.();
+      }, 5000);
+      return () => clearTimeout(timer);
     }
+    setProgressWidth(0);
+  }, [data.autoDismissChecklist, isAllCompleted, onAutoDismiss]);
 
-    const textClassName = cn(
-      'text-right cursor-pointer',
-      isAllCompleted
-        ? 'text-sdk-link hover:text-sdk-link/80 font-sdk-bold'
-        : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
-    );
+  const textClassName = cn(
+    'text-right cursor-pointer',
+    isAllCompleted
+      ? 'text-sdk-link hover:text-sdk-link/80 font-sdk-bold'
+      : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
+  );
 
-    const handleDismiss = useCallback(() => {
-      if (isAllCompleted) {
-        onDismiss?.();
-      } else {
-        setShowDismissConfirm(true);
-      }
-    }, [isAllCompleted, onDismiss, setShowDismissConfirm]);
+  const handleDismiss = useCallback(() => {
+    if (isAllCompleted) {
+      onDismiss?.();
+    } else {
+      setShowDismissConfirm(true);
+    }
+  }, [isAllCompleted, onDismiss, setShowDismissConfirm]);
 
-    return (
-      <div className="flex justify-end" ref={ref} {...props}>
-        <span className={textClassName} onClick={handleDismiss}>
-          Dismiss checklist
-        </span>
-      </div>
-    );
-  },
-);
+  return (
+    <div className="flex flex-col" ref={ref} {...restProps}>
+      {data.preventDismissChecklist && !(data.autoDismissChecklist && isAllCompleted) && (
+        <div className="h-4" />
+      )}
+      {!data.preventDismissChecklist && (
+        <div className="w-full flex justify-end">
+          <span className={textClassName} onClick={handleDismiss}>
+            Dismiss checklist
+          </span>
+        </div>
+      )}
+      {data.autoDismissChecklist && isAllCompleted && (
+        <div className="w-full flex justify-end">
+          <div className="w-32 max-w-32 h-[2px] bg-sdk-foreground/10 rounded-full overflow-hidden">
+            <div
+              className="bg-sdk-progress rounded-full h-full"
+              style={{
+                width: `${progressWidth}%`,
+                transition: 'width 5000ms linear',
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
 
 ChecklistDismiss.displayName = 'ChecklistDismiss';
 
@@ -692,72 +697,45 @@ interface ChecklistItemProps {
 
 const ChecklistItem = (props: ChecklistItemProps) => {
   const { item, index, onClick, textDecoration = 'line-through' } = props;
-  const { isOpen, pendingAnimationItems, removePendingAnimation, data } = useChecklistRootContext();
-  const [prevIsCompleted, setPrevIsCompleted] = useState(item.isCompleted);
+  const { isOpen, data } = useChecklistRootContext();
   const [shouldShowAnimation, setShouldShowAnimation] = useState(false);
 
   const isCompleted = useMemo(() => {
     return item.isCompleted;
   }, [item.isCompleted]);
 
-  // Handle animation logic
+  // Handle animation logic - only check isShowAnimation
   useEffect(() => {
-    // Case 1: Item was just completed while checklist is open
-    if (isCompleted && !prevIsCompleted && isOpen) {
+    if (isOpen && item.isShowAnimation) {
       setShouldShowAnimation(true);
       const timer = setTimeout(() => {
         setShouldShowAnimation(false);
       }, 1000);
       return () => clearTimeout(timer);
     }
-
-    // Case 2: Item has pending animation (completed while closed) and checklist is now open
-    if (isOpen && isCompleted && pendingAnimationItems.has(item.id)) {
-      setShouldShowAnimation(true);
-      const timer = setTimeout(() => {
-        removePendingAnimation(item.id);
-        setShouldShowAnimation(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-
-    // Case 3: External animation control via item.isShowAnimation
-    if (isOpen && isCompleted && item.isShowAnimation) {
-      setShouldShowAnimation(true);
-      const timer = setTimeout(() => {
-        setShouldShowAnimation(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-
-    setPrevIsCompleted(isCompleted);
-  }, [
-    isCompleted,
-    isOpen,
-    prevIsCompleted,
-    pendingAnimationItems,
-    item.id,
-    removePendingAnimation,
-    item.isShowAnimation,
-  ]);
+  }, [isOpen, item.isShowAnimation]);
 
   // Check if this item can be clicked based on completion order
   const isClickable = useMemo(() => {
     return canCompleteChecklistItem(data.completionOrder, data.items, item);
   }, [data.completionOrder, data.items, item]);
 
-  // Reset animation state when item becomes uncompleted
-  useEffect(() => {
-    if (!isCompleted) {
-      setShouldShowAnimation(false);
+  // Calculate cursor and interaction styles
+  const cursorStyle = useMemo(() => {
+    if (!isClickable) {
+      return 'cursor-not-allowed opacity-50';
     }
-  }, [isCompleted]);
+    if (item.isCompleted && !item?.clickedActions?.length) {
+      return 'cursor-default';
+    }
+    return 'cursor-pointer';
+  }, [isClickable, item.isCompleted, item?.clickedActions?.length]);
 
   return (
     <div
       className={cn(
-        'flex items-center cursor-pointer px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
-        isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+        'flex items-center px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
+        cursorStyle,
       )}
       onClick={() => (isClickable ? onClick(item, index) : undefined)}
     >

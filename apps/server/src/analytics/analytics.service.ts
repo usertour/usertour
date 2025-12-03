@@ -9,15 +9,9 @@ import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
 import { toZonedTime } from 'date-fns-tz';
+import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
-import {
-  aggregationQuestionTypes,
-  ContentEditorElementType,
-  extractQuestionData,
-  GroupItem,
-  numberQuestionTypes,
-  QuestionElement,
-} from '@/utils/content';
+import { extractStepQuestion, numberQuestionTypes } from '@/utils/content-question';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
 import { PaginationConnection } from '@/common/openapi/pagination';
@@ -63,7 +57,7 @@ const completeDistribution = (distribution: QuestionAnswerAnalytics[]) => {
   return fullDistribution;
 };
 
-const getAggregationField = (question: QuestionElement) => {
+const getAggregationField = (question: ContentEditorQuestionElement) => {
   if (numberQuestionTypes.includes(question.type)) {
     return 'numberAnswer';
   }
@@ -83,7 +77,7 @@ const EVENT_TYPE_MAPPING = {
     complete: BizEvents.LAUNCHER_ACTIVATED,
   },
   [ContentType.CHECKLIST]: {
-    start: BizEvents.CHECKLIST_SEEN,
+    start: BizEvents.CHECKLIST_STARTED,
     complete: BizEvents.CHECKLIST_COMPLETED,
   },
 };
@@ -94,7 +88,7 @@ const EVENTS = [
   BizEvents.FLOW_COMPLETED,
   BizEvents.LAUNCHER_SEEN,
   BizEvents.LAUNCHER_ACTIVATED,
-  BizEvents.CHECKLIST_SEEN,
+  BizEvents.CHECKLIST_STARTED,
   BizEvents.CHECKLIST_COMPLETED,
 ];
 
@@ -208,15 +202,19 @@ export class AnalyticsService {
       ...condition,
       isDistinct: false,
     });
-    const uniqueCompletions = await this.aggregationByEvent({
-      ...condition,
-      eventId: completeEvent.id,
-    });
-    const totalCompletions = await this.aggregationByEvent({
-      ...condition,
-      eventId: completeEvent.id,
-      isDistinct: false,
-    });
+    // For LAUNCHER_ACTIVATED, only count the first occurrence per user
+    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
+    const uniqueCompletions = isLauncherActivated
+      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+      : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
+
+    const totalCompletions = isLauncherActivated
+      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+      : await this.aggregationByEvent({
+          ...condition,
+          eventId: completeEvent.id,
+          isDistinct: false,
+        });
     const viewsByStep = await this.aggregationStepsByContent(
       condition,
       stepSeenEvent,
@@ -269,7 +267,7 @@ export class AnalyticsService {
 
     const version = await this.prisma.version.findUnique({
       where: { id: publishedVersionId },
-      include: { steps: true },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
     });
 
     if (!version) {
@@ -285,7 +283,7 @@ export class AnalyticsService {
 
     const ret = [];
     for (const step of version.steps) {
-      const questionData = this.extractQuestionForAnalytics(step);
+      const questionData = extractStepQuestion(step);
       if (!questionData) continue;
       let rollingWindow = 365;
       if (questionData.type === ContentEditorElementType.NPS) {
@@ -318,23 +316,10 @@ export class AnalyticsService {
     return await this.prisma.content.findUnique({
       where: { id: contentId },
       include: {
-        publishedVersion: { include: { steps: true } },
-        editedVersion: { include: { steps: true } },
+        publishedVersion: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+        editedVersion: { include: { steps: { orderBy: { sequence: 'asc' } } } },
       },
     });
-  }
-
-  /**
-   * Extract question data from step if it's a valid question for analytics
-   */
-  private extractQuestionForAnalytics(step: any) {
-    const questionData = extractQuestionData(step.data as unknown as GroupItem[]);
-    if (questionData.length === 0) return null;
-
-    const question = questionData[0];
-    if (!aggregationQuestionTypes.includes(question.type)) return null;
-
-    return question;
   }
 
   /**
@@ -342,7 +327,7 @@ export class AnalyticsService {
    */
   private async processQuestionAnalytics(
     environmentId: string,
-    question: QuestionElement,
+    question: ContentEditorQuestionElement,
     contentId: string,
     startDateStr: string,
     endDateStr: string,
@@ -353,15 +338,30 @@ export class AnalyticsService {
     const field = getAggregationField(question);
 
     // Get basic answer statistics
-    const answer = await this.aggregationQuestionAnswer(
-      environmentId,
-      contentId,
-      questionCvid,
-      startDateStr,
-      endDateStr,
-      field,
-    );
-    const totalResponse = answer.reduce((sum, item) => sum + item.count, 0);
+    let answer: QuestionAnswerAnalytics[];
+    let totalResponse: number;
+
+    if (field === 'listAnswer') {
+      const result = await this.aggregationListAnswer(
+        environmentId,
+        contentId,
+        questionCvid,
+        startDateStr,
+        endDateStr,
+      );
+      answer = result.distribution;
+      totalResponse = result.totalResponse;
+    } else {
+      answer = await this.aggregationQuestionAnswer(
+        environmentId,
+        contentId,
+        questionCvid,
+        startDateStr,
+        endDateStr,
+        field,
+      );
+      totalResponse = answer.reduce((sum, item) => sum + item.count, 0);
+    }
 
     const response: any = {
       totalResponse,
@@ -427,14 +427,21 @@ export class AnalyticsService {
       { ...condition, eventId: startEvent.id, isDistinct: false },
       timezone,
     );
-    const uniqueCompletionByDay = await this.aggregationByDay(
-      { ...condition, eventId: completeEvent.id },
-      timezone,
-    );
-    const totalCompletionByDay = await this.aggregationByDay(
-      { ...condition, eventId: completeEvent.id, isDistinct: false },
-      timezone,
-    );
+    // For LAUNCHER_ACTIVATED, only count the first occurrence per user
+    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
+    const uniqueCompletionByDay = isLauncherActivated
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
+      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
+    const totalCompletionByDay = isLauncherActivated
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
+      : await this.aggregationByDay(
+          {
+            ...condition,
+            eventId: completeEvent.id,
+            isDistinct: false,
+          },
+          timezone,
+        );
 
     const data = [];
     let currentDate = startDate;
@@ -486,7 +493,7 @@ export class AnalyticsService {
     const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
-      include: { steps: true },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
     });
     if (!version || !version.steps || version.steps.length === 0) {
       return false;
@@ -544,7 +551,7 @@ export class AnalyticsService {
     const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
-      include: { steps: true },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
     });
     if (!version || !version.data) {
       return false;
@@ -685,6 +692,79 @@ export class AnalyticsService {
     return data.map((dd) => ({ ...dd, count: Number(dd.count) }));
   }
 
+  /**
+   * Aggregate events by day, counting only the first occurrence per user across all history
+   * This is used for LAUNCHER_ACTIVATED events where multiple activations should only count as one
+   * The first event is determined from all historical events, then filtered by the query time range
+   * Only first events that occurred within the query time range are included
+   */
+  async aggregationFirstEventByDay(condition: AnalyticsConditions, timezone: string) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Optimized from original: Use DISTINCT ON instead of ROW_NUMBER() for better performance
+    // First get all users' first events from all history, then filter by time range
+    const data = (await this.prisma.$queryRaw`
+      WITH first_events AS (
+        SELECT DISTINCT ON (be."bizUserId")
+          be."bizUserId",
+          be."createdAt",
+          DATE_TRUNC('DAY', be."createdAt" AT TIME ZONE ${timezone}) AS day
+        FROM "BizEvent" be
+        LEFT JOIN "BizSession" bs ON be."bizSessionId" = bs.id
+        WHERE
+          bs."contentId" = ${contentId} 
+          AND be."eventId" = ${eventId} 
+          AND bs."environmentId" = ${environmentId}
+        ORDER BY be."bizUserId", be."createdAt" ASC
+      )
+      SELECT day, COUNT(*) as count
+      FROM first_events
+      WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
+      GROUP BY day
+      ORDER BY day
+    `) as Array<{ day: Date | string; count: bigint }>;
+
+    return data.map((dd) => ({
+      day: dd.day instanceof Date ? dd.day.toISOString() : String(dd.day),
+      count: Number(dd.count),
+    }));
+  }
+
+  /**
+   * Aggregate first event per user, counting only first events that occurred within the query time range
+   * This is used for LAUNCHER_ACTIVATED events where multiple activations should only count as one
+   * The first event is determined from all historical events, then filtered by the query time range
+   * Returns total count (not grouped by day)
+   */
+  async aggregationFirstEvent(condition: AnalyticsConditions) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // First get all users' first events from all history, then filter by time range
+    const data = (await this.prisma.$queryRaw`
+      WITH first_events AS (
+        SELECT DISTINCT ON (be."bizUserId")
+          be."bizUserId",
+          be."createdAt"
+        FROM "BizEvent" be
+        LEFT JOIN "BizSession" bs ON be."bizSessionId" = bs.id
+        WHERE
+          bs."contentId" = ${contentId} 
+          AND be."eventId" = ${eventId} 
+          AND bs."environmentId" = ${environmentId}
+        ORDER BY be."bizUserId", be."createdAt" ASC
+      )
+      SELECT COUNT(*) as count
+      FROM first_events
+      WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
+    `) as Array<{ count: bigint }>;
+
+    return Number.parseInt(data[0].count.toString());
+  }
+
   async aggregationByStep(condition: AnalyticsConditions) {
     const { contentId, eventId, startDateStr, endDateStr, isDistinct, stepIndex, environmentId } =
       condition;
@@ -770,7 +850,11 @@ export class AnalyticsService {
                 some: {},
               },
             },
-            include: { bizUser: true, bizEvent: { include: { event: true } } },
+            include: {
+              bizUser: true,
+              bizEvent: { include: { event: true } },
+              version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+            },
             orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
             ...args,
           }),
@@ -843,9 +927,9 @@ export class AnalyticsService {
       where: { id: sessionId, deleted: false },
       include: {
         bizUser: { include: { bizCompany: true } },
-        bizEvent: { include: { event: true }, orderBy: { createdAt: 'desc' } },
+        bizEvent: { include: { event: true }, orderBy: { id: 'desc' } },
         content: true,
-        version: true,
+        version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
       },
     });
   }
@@ -879,6 +963,9 @@ export class AnalyticsService {
     }
     if (bizSession.content.type === ContentType.CHECKLIST) {
       return await this.endChecklistSession(bizSession);
+    }
+    if (bizSession.content.type === ContentType.LAUNCHER) {
+      return await this.endLauncherSession(bizSession);
     }
     return false;
   }
@@ -994,6 +1081,60 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * End a launcher session
+   * @param session - The session to end
+   * @returns True if the session was ended successfully, false otherwise
+   */
+  async endLauncherSession(bizSession: BizSession) {
+    const sessionId = bizSession.id;
+    const endEvent = await this.prisma.event.findFirst({
+      where: { codeName: BizEvents.LAUNCHER_DISMISSED },
+    });
+    const latestBizEvent = await this.prisma.bizEvent.findFirst({
+      where: { bizSessionId: sessionId },
+      orderBy: { createdAt: 'desc' },
+    });
+    const endBizEvent = await this.prisma.bizEvent.findFirst({
+      where: { bizSessionId: sessionId, eventId: endEvent.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!endEvent || endBizEvent) {
+      return false;
+    }
+
+    const seenData = latestBizEvent?.data as any;
+    const data: any = {
+      [EventAttributes.LAUNCHER_END_REASON]: 'admin_ended',
+    };
+    const dismissedAttributes =
+      defaultEvents.find((event) => event.codeName === BizEvents.LAUNCHER_DISMISSED)?.attributes ||
+      [];
+
+    for (const attribute of dismissedAttributes) {
+      if (seenData?.[attribute]) {
+        data[attribute] = seenData[attribute];
+      }
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.bizEvent.create({
+        data: {
+          bizSessionId: sessionId,
+          eventId: endEvent.id,
+          bizUserId: bizSession.bizUserId,
+          data,
+        },
+      });
+      await tx.bizSession.update({
+        where: { id: sessionId },
+        data: { state: 1 },
+      });
+      return true;
+    });
+  }
+
   async deleteSession(sessionId: string) {
     const session = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
@@ -1015,39 +1156,69 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * Aggregate list answer data with total response count
+   * Returns both distribution and totalResponse for listAnswer field
+   */
+  private async aggregationListAnswer(
+    environmentId: string,
+    contentId: string,
+    questionCvid: string,
+    startDateStr: string,
+    endDateStr: string,
+  ): Promise<{ distribution: QuestionAnswerAnalytics[]; totalResponse: number }> {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
+      SELECT unnest("listAnswer") as answer, count(*) as count 
+      FROM "BizAnswer"
+      WHERE
+        "BizAnswer"."contentId" = ${contentId} 
+        AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} 
+        AND "BizAnswer"."createdAt" <= ${endDate}
+        AND "BizAnswer"."environmentId" = ${environmentId}
+        AND "BizAnswer"."listAnswer" IS NOT NULL
+        AND array_length("listAnswer", 1) > 0
+      GROUP BY unnest("listAnswer")
+      ORDER BY count DESC
+    `;
+
+    // Calculate total based on the number of BizAnswer records, not the unnest count
+    const totalResult = await this.prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*) as count
+      FROM "BizAnswer"
+      WHERE
+        "BizAnswer"."contentId" = ${contentId} 
+        AND "BizAnswer"."cvid" = ${questionCvid}
+        AND "BizAnswer"."createdAt" >= ${startDate} 
+        AND "BizAnswer"."createdAt" <= ${endDate}
+        AND "BizAnswer"."environmentId" = ${environmentId}
+        AND "BizAnswer"."listAnswer" IS NOT NULL
+        AND array_length("listAnswer", 1) > 0
+    `;
+    const totalResponse = Number(totalResult[0]?.count ?? 0);
+
+    const distribution = data.map((item) => ({
+      ...item,
+      count: Number(item.count),
+      percentage: totalResponse > 0 ? Math.round((Number(item.count) / totalResponse) * 100) : 0,
+    }));
+
+    return { distribution, totalResponse };
+  }
+
   async aggregationQuestionAnswer(
     environmentId: string,
     contentId: string,
     questionCvid: string,
     startDateStr: string,
     endDateStr: string,
-    field: 'numberAnswer' | 'textAnswer' | 'listAnswer',
+    field: 'numberAnswer' | 'textAnswer',
   ): Promise<QuestionAnswerAnalytics[]> {
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
-
-    if (field === 'listAnswer') {
-      const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
-        SELECT unnest("listAnswer") as answer, count(*) as count 
-        FROM "BizAnswer"
-        WHERE
-          "BizAnswer"."contentId" = ${contentId} 
-          AND "BizAnswer"."cvid" = ${questionCvid}
-          AND "BizAnswer"."createdAt" >= ${startDate} 
-          AND "BizAnswer"."createdAt" <= ${endDate}
-          AND "BizAnswer"."environmentId" = ${environmentId}
-          AND "BizAnswer"."listAnswer" IS NOT NULL
-          AND array_length("listAnswer", 1) > 0
-        GROUP BY unnest("listAnswer")
-        ORDER BY count DESC
-      `;
-      const total = data.reduce((sum, item) => sum + Number(item.count), 0);
-      return data.map((item) => ({
-        ...item,
-        count: Number(item.count),
-        percentage: total > 0 ? Math.round((Number(item.count) / total) * 100) : 0,
-      }));
-    }
 
     const data = await this.prisma.$queryRaw<QuestionAnswerAnalytics[]>`
       SELECT "BizAnswer".${Prisma.raw(`"${field}"`)} as answer, count(*) as count 
@@ -1148,7 +1319,7 @@ export class AnalyticsService {
       (sum, item) => sum + Number(item.answer) * item.count,
       0,
     );
-    const average = total > 0 ? Number((weightedSum / total).toFixed(2)) : 0;
+    const average = total > 0 ? Math.round((weightedSum / total) * 10) / 10 : 0;
 
     return {
       average,
@@ -1171,10 +1342,15 @@ export class AnalyticsService {
       .reduce((sum, item) => sum + item.count, 0);
 
     const total = promoters + passives + detractors;
-    const promotersPercentage = Math.round((promoters / total) * 100);
+    // Calculate exact percentages for NPS calculation (no rounding)
+    const promotersPercentageExact = (promoters / total) * 100;
+    const detractorsPercentageExact = (detractors / total) * 100;
+    // Calculate NPS using exact percentages, then round the final result
+    const npsScore = Math.round(promotersPercentageExact - detractorsPercentageExact);
+    // Round percentages for display
+    const promotersPercentage = Math.round(promotersPercentageExact);
     const passivesPercentage = Math.round((passives / total) * 100);
-    const detractorsPercentage = Math.round((detractors / total) * 100);
-    const npsScore = promotersPercentage - detractorsPercentage;
+    const detractorsPercentage = Math.round(detractorsPercentageExact);
 
     return {
       promoters: {

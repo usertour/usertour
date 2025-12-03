@@ -11,7 +11,7 @@ import { ReactNode, useState } from 'react';
 import { ContentDeleteForm } from './content-delete-form';
 import { ContentDuplicateForm } from './content-duplicate-form';
 import { ContentUnpublishForm } from './content-unpublish-form';
-import { isPublishedAtLeastOneEnvironment } from '@usertour/helpers';
+import { isPublishedAtLeastOneEnvironment } from '@/utils/content';
 
 type ContentEditDropdownMenuProps = {
   content: Content;
