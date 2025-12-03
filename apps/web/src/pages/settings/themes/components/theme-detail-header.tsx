@@ -71,7 +71,7 @@ export const ThemeDetailHeader = () => {
             </span>
           </>
         )}
-        {!theme?.isSystem && (
+        {!theme?.isSystem && theme && (
           <ThemeRenameForm
             data={theme}
             onSubmit={() => {
