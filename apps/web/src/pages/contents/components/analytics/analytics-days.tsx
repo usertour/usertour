@@ -22,14 +22,25 @@ const generateChartConfig = (
   contentType: ContentDataType,
 ): ChartConfig => {
   if (chartType === 'view') {
+    if (contentType === ContentDataType.LAUNCHER) {
+      return {
+        uniqueViews: {
+          label: 'Views',
+          color: 'hsl(var(--chart-1))',
+        },
+        uniqueCompletions: {
+          label: 'Activations',
+          color: 'hsl(var(--chart-2))',
+        },
+      };
+    }
     return {
       uniqueViews: {
         label: 'Unique Views',
         color: 'hsl(var(--chart-1))',
       },
       uniqueCompletions: {
-        label:
-          contentType === ContentDataType.LAUNCHER ? 'Unique Activations' : 'Unique Completions',
+        label: 'Unique Completions',
         color: 'hsl(var(--chart-2))',
       },
       totalViews: {
@@ -37,25 +48,28 @@ const generateChartConfig = (
         color: 'hsl(var(--chart-3))',
       },
       totalCompletions: {
-        label: contentType === ContentDataType.LAUNCHER ? 'Total Activations' : 'Total Completions',
+        label: 'Total Completions',
         color: 'hsl(var(--chart-4))',
+      },
+    };
+  }
+
+  if (contentType === ContentDataType.LAUNCHER) {
+    return {
+      unique: {
+        label: 'Activation Rate',
+        color: 'hsl(var(--chart-1))',
       },
     };
   }
 
   return {
     unique: {
-      label:
-        contentType === ContentDataType.LAUNCHER
-          ? 'Unique Activation Rate'
-          : 'Unique Completion rate',
+      label: 'Unique Completion rate',
       color: 'hsl(var(--chart-1))',
     },
     total: {
-      label:
-        contentType === ContentDataType.LAUNCHER
-          ? 'Total Activation Rate'
-          : 'Total Completion rate',
+      label: 'Total Completion rate',
       color: 'hsl(var(--chart-2))',
     },
   };
@@ -177,20 +191,16 @@ const AnalyticsRateChart = (props: {
             cursor={false}
           />
           <ChartLegend content={<ChartLegendContent />} />
-          <Line
-            dataKey="unique"
-            type="monotone"
-            stroke={'var(--color-unique)'}
-            strokeWidth={2}
-            dot={false}
-          />
-          <Line
-            dataKey="total"
-            type="monotone"
-            stroke="var(--color-total)"
-            strokeWidth={2}
-            dot={false}
-          />
+          {Object.keys(chartConfig).map((key) => (
+            <Line
+              key={key}
+              dataKey={key}
+              type="monotone"
+              stroke={`var(--color-${key})`}
+              strokeWidth={2}
+              dot={false}
+            />
+          ))}
         </ComposedChart>
       </ChartContainer>
     </CardContent>

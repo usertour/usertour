@@ -27,7 +27,7 @@ export interface ThemeDetailContextValue {
   setSelectedType: Dispatch<SetStateAction<ThemeDetailSelectorType>>;
   customStyle: string;
   setCustomStyle: Dispatch<SetStateAction<string>>;
-  theme: Theme;
+  theme: Theme | undefined;
   refetch: any;
   loading: boolean;
 }
@@ -47,12 +47,23 @@ export function ThemeDetailProvider(props: ThemeDetailProviderProps): JSX.Elemen
 
   const theme = data?.getTheme;
 
-  // Initialize variations from theme data
+  // Initialize variations and settings from theme data
   useEffect(() => {
-    if (theme?.variations) {
-      setVariations(theme.variations);
+    if (!theme) {
+      // Reset state when theme is undefined
+      setVariations([]);
+      setSettings(null);
+      return;
     }
-  }, [theme?.variations]);
+
+    // Update variations (reset to empty array if undefined)
+    setVariations(theme.variations ?? []);
+
+    // Update settings (should always exist per type definition)
+    if (theme.settings) {
+      setSettings(theme.settings);
+    }
+  }, [theme]);
 
   const value: ThemeDetailContextValue = {
     theme,

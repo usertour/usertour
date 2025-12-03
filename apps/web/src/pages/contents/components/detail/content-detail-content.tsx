@@ -9,6 +9,7 @@ import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour-packages/icons';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
+import { TruncatedText } from '@/components/molecules/truncated-text';
 import {
   ChecklistData,
   ChecklistInitialDisplay,
@@ -141,40 +142,43 @@ const ContentDetailContentStep = ({
           <div className="font-bold flex flex-row space-x-1 items-center	">
             {index + 1}. {currentStep.name}
           </div>
-          <div className="text-sm space-x-1">
+          <div className="text-sm flex flex-row flex-wrap gap-1">
             <ContentBadge>{currentStep.type}</ContentBadge>
             {!isHidddenStep && (
               <>
-                <ContentBadge>width: {currentStep.setting.width}px</ContentBadge>
-                <ContentBadge>height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
-                <ContentBadge>theme: {currentTheme.name}</ContentBadge>
+                <ContentBadge>Width: {currentStep.setting.width}px</ContentBadge>
+                <ContentBadge>Height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
+                <ContentBadge>
+                  Theme: <TruncatedText text={currentTheme.name ?? ''} maxLength={20} />
+                </ContentBadge>
+              </>
+            )}
+            {!isHidddenStep && (
+              <>
+                <ContentBadge>
+                  {!currentStep.setting.skippable && 'Not skippable'}
+                  {currentStep.setting.skippable && 'Skippable'}
+                </ContentBadge>
+                {currentStep.setting.enabledBackdrop && (
+                  <ContentBadge>Backdrop enabled</ContentBadge>
+                )}
+                {!currentStep.setting.enabledBackdrop && (
+                  <ContentBadge>Backdrop disabled</ContentBadge>
+                )}
               </>
             )}
           </div>
-          {!isHidddenStep && (
-            <div className="flex flex-row space-x-1">
-              <ContentBadge>
-                {!currentStep.setting.skippable && 'not skippable'}
-                {currentStep.setting.skippable && 'skippable'}
-              </ContentBadge>
-              {currentStep.setting.enabledBackdrop && <ContentBadge>backdrop enabled</ContentBadge>}
-              {!currentStep.setting.enabledBackdrop && (
-                <ContentBadge>backdrop disabled</ContentBadge>
-              )}
-            </div>
-          )}
           {!stepIsReachable(currentVersion.steps as Step[], currentStep) && (
             <div className="text-xs flex flex-row items-center text-warning space-x-1 pt-2">
               <ExclamationTriangleIcon className="h-3 w-3" />
               <span>
-                Step is not reachable from the start step. Add a button, trigger that links to this
-                step, or delete it in the builder.
+                This step is not reachable from the start step. Add a button or trigger that links
+                to this step, or delete it in the builder.
               </span>
             </div>
           )}
           <div className="text-xs	 absolute right-0 bottom-0 text-muted-foreground">
-            Last edited at{' '}
-            {currentStep.updatedAt && format(new Date(currentStep.updatedAt), 'PPpp')}
+            Last edited {currentStep.updatedAt && format(new Date(currentStep.updatedAt), 'PPpp')}
           </div>
         </div>
       </div>
@@ -222,17 +226,24 @@ const LauncherContentPreview = ({
             </TooltipProvider>
           </div>
           <div className="font-bold flex flex-row space-x-1 items-center	max-w-4/5	truncate ...">
-            {content.name}
+            <TruncatedText text={content.name ?? ''} maxLength={30} />
           </div>
-          <div className="text-sm space-x-1">
+          <div className="text-sm flex flex-row flex-wrap gap-1">
             <ContentBadge>{data.type}</ContentBadge>
-            <ContentBadge>target element: {data.target.element?.customSelector}</ContentBadge>
-            <ContentBadge>target alignment: {data.target.alignment.alignType}</ContentBadge>
-            <ContentBadge>theme: {currentTheme.name}</ContentBadge>
-          </div>
-          <div className="flex flex-row space-x-1">
+            <ContentBadge>
+              Target element:{' '}
+              {data.target.element?.customSelector ? (
+                <TruncatedText text={data.target.element.customSelector} maxLength={20} />
+              ) : (
+                'Not set'
+              )}
+            </ContentBadge>
+            <ContentBadge>Target alignment: {data.target.alignment.alignType}</ContentBadge>
+            <ContentBadge>
+              Theme: <TruncatedText text={currentTheme.name ?? ''} maxLength={20} />
+            </ContentBadge>
             {data.type === LauncherDataType.ICON && data.iconType && (
-              <ContentBadge>iconType: {data.iconType}</ContentBadge>
+              <ContentBadge>Icon type: {data.iconType}</ContentBadge>
             )}
             <ContentBadge>
               {data.behavior.actionType === LauncherActionType.PERFORM_ACTION
@@ -241,7 +252,7 @@ const LauncherContentPreview = ({
             </ContentBadge>
           </div>
           <div className="text-xs	 absolute right-0 bottom-0 text-muted-foreground">
-            Last edited at{' '}
+            Last edited{' '}
             {currentVersion.updatedAt && format(new Date(currentVersion.updatedAt), 'PPpp')}
           </div>
         </div>
@@ -314,10 +325,10 @@ const ChecklistContentPreview = ({
             {content.name}
           </div>
           <div className="text-sm flex flex-row flex-wrap gap-1">
-            <ContentBadge>launcher button text: {data.buttonText}</ContentBadge>
+            <ContentBadge>Launcher button text: {data.buttonText}</ContentBadge>
             <ContentBadge>
-              initial display: {data.initialDisplay === ChecklistInitialDisplay.BUTTON && 'button'}
-              {data.initialDisplay === ChecklistInitialDisplay.EXPANDED && 'expanded'}
+              Initial display: {data.initialDisplay === ChecklistInitialDisplay.BUTTON && 'Button'}
+              {data.initialDisplay === ChecklistInitialDisplay.EXPANDED && 'Expanded'}
             </ContentBadge>
             <ContentBadge>Task completion order: {data.completionOrder}</ContentBadge>
             {data.preventDismissChecklist && (
@@ -326,11 +337,13 @@ const ChecklistContentPreview = ({
             {!data.preventDismissChecklist && (
               <ContentBadge>Allow users to dismiss checklist</ContentBadge>
             )}
-            <ContentBadge>theme: {currentTheme.name}</ContentBadge>
-            <ContentBadge>items: {data.items.length}</ContentBadge>
+            <ContentBadge>
+              Theme: <TruncatedText text={currentTheme.name ?? ''} maxLength={20} />
+            </ContentBadge>
+            <ContentBadge>Items: {data.items.length}</ContentBadge>
           </div>
           <div className="text-xs	 absolute right-0 bottom-0 text-muted-foreground">
-            Last edited at{' '}
+            Last edited{' '}
             {currentVersion.updatedAt && format(new Date(currentVersion.updatedAt), 'PPpp')}
           </div>
         </div>

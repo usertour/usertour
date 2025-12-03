@@ -14,7 +14,7 @@ import { paginate } from '@/common/openapi/pagination';
 import { ContentService } from '@/content/content.service';
 import { Environment } from '@/environments/models/environment.model';
 import { parseOrderBy } from '@/common/openapi/sort';
-import { extractQuestionData } from '@/utils/content';
+import { extractQuestionData } from '@/utils/content-question';
 
 type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
   include: {

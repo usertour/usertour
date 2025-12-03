@@ -3,7 +3,6 @@ import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
 import { EventAttributes, UserAttributes, CompanyAttributes } from '@usertour/types';
-import { ContentType } from '@/content/models/content.model';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
@@ -24,8 +23,6 @@ import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
 import { LicenseService } from '@/license/license.service';
 import {
-  BizEventWithEvent,
-  BizSessionWithEvents,
   ConfigRequest,
   ConfigResponse,
   ContentResponse,
@@ -41,8 +38,10 @@ import {
   GetProjectSettingsRequest,
   GetProjectSettingsResponse,
 } from './web-socket.dto';
-import { getPublishedVersionId } from '@/utils/content';
+import { getPublishedVersionId } from '@/utils/content-utils';
 import { BizEvents } from '@usertour/types';
+import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
+import { ContentType } from '@/content/models/content.model';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },
@@ -58,7 +57,7 @@ interface SegmentDataItem {
     logic: string;
     attrId: string;
   };
-  type: 'company-attr' | 'user-attr' | 'membership-attr';
+  type: 'user-attr';
   operators: 'and' | 'or';
 }
 
@@ -238,7 +237,7 @@ export class WebSocketService {
    * @returns Array of content
    */
   async listContent(
-    body: ListContentsRequest,
+    body: Pick<ListContentsRequest, 'userId' | 'companyId'>,
     environment: Environment,
   ): Promise<ContentResponse[]> {
     try {
@@ -1071,7 +1070,7 @@ export class WebSocketService {
    * @returns The upserted business users
    */
   async upsertBizUsers(
-    data: UpsertUserRequest,
+    data: Omit<UpsertUserRequest, 'token'>,
     environment: Environment,
   ): Promise<UpsertUserResponse> {
     const { userId, attributes } = data;
@@ -1084,7 +1083,7 @@ export class WebSocketService {
    * @returns The upserted business companies
    */
   async upsertBizCompanies(
-    data: UpsertCompanyRequest,
+    data: Omit<UpsertCompanyRequest, 'token'>,
     environment: Environment,
   ): Promise<UpsertCompanyResponse> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
@@ -1104,7 +1103,7 @@ export class WebSocketService {
    * @returns The created session
    */
   async createSession(
-    data: CreateSessionRequest,
+    data: Omit<CreateSessionRequest, 'token'>,
     environment: Environment,
   ): Promise<BizSession | null> {
     const {
@@ -1190,7 +1189,6 @@ export class WebSocketService {
 
       await this.trackEvent(
         {
-          token: data.token,
           userId: String(externalUserId),
           eventName,
           sessionId: session.id,
@@ -1285,7 +1283,10 @@ export class WebSocketService {
    * @param data - The data to track an event
    * @returns The tracked event
    */
-  async trackEvent(data: TrackEventRequest, environment: Environment): Promise<BizEvent | false> {
+  async trackEvent(
+    data: Omit<TrackEventRequest, 'token'>,
+    environment: Environment,
+  ): Promise<BizEvent | false> {
     const { userId: externalUserId, eventName, sessionId, eventData } = data;
     const environmentId = environment.id;
     const projectId = environment.projectId;

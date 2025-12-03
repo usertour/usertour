@@ -98,7 +98,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
           isHorizontal={true}
           isShowIf={false}
           key={currentSegment.id}
-          filterItems={['group', 'company-attr']}
+          filterItems={['group', 'user-attr']}
           addButtonText={'Add filter'}
           attributes={
             attributeList?.filter(

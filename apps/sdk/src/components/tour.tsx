@@ -14,34 +14,33 @@ import {
 } from '@usertour-packages/shared-editor';
 import {
   Align,
-  BizUserInfo,
   ProgressBarPosition,
   ProgressBarType,
   RulesCondition,
-  SDKConfig,
   Side,
-  Step,
   StepContentType,
   ThemeTypesSetting,
+  UserTourTypes,
 } from '@usertour/types';
 import { useEffect, useSyncExternalStore, useMemo } from 'react';
-import { Tour as TourCore } from '../core/tour';
-import { off, on } from '../utils/listener';
+import { UsertourTour } from '@/core/usertour-tour';
+import { off, on } from '@/utils';
 import { useSettingsStyles } from '@usertour-packages/sdk';
+import { SessionStep } from '@usertour/types';
 
 // Base props that are shared between TourPopper and TourModal
 type TourBaseProps = {
   openState: boolean;
   zIndex: number;
   globalStyle: string;
-  currentStep: Step;
+  currentStep: SessionStep;
   assets: any;
-  userInfo: BizUserInfo;
+  userAttributes?: UserTourTypes.Attributes;
   currentStepIndex: number;
   totalSteps: number;
-  sdkConfig: SDKConfig;
+  removeBranding: boolean;
   themeSettings: ThemeTypesSetting;
-  handleClose: () => void;
+  handleDismiss: () => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
@@ -53,26 +52,26 @@ type TourPopperProps = TourBaseProps & {
 type TourModalProps = TourBaseProps;
 
 type PopperContentProps = {
-  currentStep: Step;
-  userInfo: BizUserInfo;
+  currentStep: SessionStep;
+  userAttributes?: UserTourTypes.Attributes;
   currentStepIndex: number;
   totalSteps: number;
   themeSettings: ThemeTypesSetting;
-  sdkConfig: SDKConfig;
-  handleClose: () => void;
+  removeBranding: boolean;
+  handleDismiss: () => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
 // Custom hook to extract store state
-const useTourStore = (tour: TourCore) => {
-  const store = useSyncExternalStore(tour.getStore().subscribe, tour.getStore().getSnapshot);
+const useTourStore = (tour: UsertourTour) => {
+  const store = useSyncExternalStore(tour.subscribe, tour.getSnapshot);
 
   if (!store) {
     return null;
   }
 
   const {
-    userInfo,
+    userAttributes,
     currentStep,
     triggerRef,
     openState,
@@ -80,17 +79,17 @@ const useTourStore = (tour: TourCore) => {
     globalStyle,
     themeSettings,
     assets,
-    sdkConfig,
+    removeBranding,
     currentStepIndex,
     totalSteps,
   } = store;
 
-  if (!userInfo || !currentStep || !openState) {
+  if (!currentStep || !openState) {
     return null;
   }
 
   return {
-    userInfo,
+    userAttributes,
     currentStep,
     triggerRef,
     openState,
@@ -98,7 +97,7 @@ const useTourStore = (tour: TourCore) => {
     globalStyle,
     themeSettings,
     assets,
-    sdkConfig,
+    removeBranding,
     currentStepIndex: currentStepIndex || 0,
     totalSteps: totalSteps || 0,
   };
@@ -108,12 +107,12 @@ const useTourStore = (tour: TourCore) => {
 const PopperContent = (props: PopperContentProps) => {
   const {
     currentStep,
-    userInfo,
+    userAttributes,
     currentStepIndex,
     totalSteps,
     themeSettings,
-    sdkConfig,
-    handleClose,
+    removeBranding,
+    handleDismiss,
     handleOnClick,
   } = props;
   const { themeSetting } = useSettingsStyles(themeSettings);
@@ -132,7 +131,7 @@ const PopperContent = (props: PopperContentProps) => {
   return (
     <PopperContentFrame>
       {currentStep.setting.skippable && (
-        <PopperClose onClick={handleClose} className="cursor-pointer" />
+        <PopperClose onClick={handleDismiss} className="cursor-pointer" />
       )}
       {showTopProgress && (
         <PopperProgress
@@ -145,9 +144,9 @@ const PopperContent = (props: PopperContentProps) => {
       <ContentEditorSerialize
         contents={currentStep.data}
         onClick={handleOnClick}
-        userInfo={userInfo}
+        userAttributes={userAttributes}
       />
-      {!sdkConfig.removeBranding && <PopperMadeWith />}
+      {!removeBranding && <PopperMadeWith />}
       {showBottomProgress && (
         <PopperProgress
           type={progressType}
@@ -163,7 +162,7 @@ const PopperContent = (props: PopperContentProps) => {
 // Hooks
 const useTargetActions = (
   ref: React.RefObject<HTMLElement> | Element | null | undefined,
-  currentStep: Step,
+  currentStep: SessionStep,
   handleActions: (actions: RulesCondition[]) => Promise<void>,
 ) => {
   useEffect(() => {
@@ -188,11 +187,11 @@ const TourPopper = (props: TourPopperProps) => {
     themeSettings,
     triggerRef,
     assets,
-    userInfo,
+    userAttributes,
     currentStepIndex,
     totalSteps,
-    sdkConfig,
-    handleClose,
+    removeBranding,
+    handleDismiss,
     handleOnClick,
     handleActions,
   } = props;
@@ -247,12 +246,12 @@ const TourPopper = (props: TourPopperProps) => {
       >
         <PopperContent
           currentStep={currentStep}
-          userInfo={userInfo}
+          userAttributes={userAttributes}
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
           themeSettings={themeSettings}
-          sdkConfig={sdkConfig}
-          handleClose={handleClose}
+          removeBranding={removeBranding}
+          handleDismiss={handleDismiss}
           handleOnClick={handleOnClick}
         />
       </PopperContentPotal>
@@ -267,12 +266,12 @@ const TourModal = (props: TourModalProps) => {
     globalStyle,
     currentStep,
     assets,
-    userInfo,
+    userAttributes,
     currentStepIndex,
     totalSteps,
     themeSettings,
-    sdkConfig,
-    handleClose,
+    removeBranding,
+    handleDismiss,
     handleOnClick,
   } = props;
 
@@ -293,12 +292,12 @@ const TourModal = (props: TourModalProps) => {
       >
         <PopperContent
           currentStep={currentStep}
-          userInfo={userInfo}
+          userAttributes={userAttributes}
           currentStepIndex={currentStepIndex}
           totalSteps={totalSteps}
           themeSettings={themeSettings}
-          sdkConfig={sdkConfig}
-          handleClose={handleClose}
+          removeBranding={removeBranding}
+          handleDismiss={handleDismiss}
           handleOnClick={handleOnClick}
         />
       </PopperModalContentPotal>
@@ -306,7 +305,7 @@ const TourModal = (props: TourModalProps) => {
   );
 };
 
-export const TourWidget = (props: { tour: TourCore }) => {
+export const TourWidget = (props: { tour: UsertourTour }) => {
   const { tour } = props;
   const storeData = useTourStore(tour);
 
@@ -314,12 +313,14 @@ export const TourWidget = (props: { tour: TourCore }) => {
     return <></>;
   }
 
-  const { handleClose, handleOnClick, handleActions } = tour;
+  // Use arrow functions to ensure 'this' context is preserved
+  // Direct method references may lose binding in some cases
+  const handleActions = (actions: RulesCondition[]) => tour.handleActions(actions);
 
   const commonProps: TourBaseProps = {
     ...storeData,
-    handleClose,
-    handleOnClick,
+    handleDismiss: tour.handleDismiss,
+    handleOnClick: tour.handleOnClick,
   };
   const stepType = storeData.currentStep.type;
   const triggerRef = storeData.triggerRef;

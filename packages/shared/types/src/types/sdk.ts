@@ -1,7 +1,10 @@
+import { AttributeBizTypes, BizAttributeTypes } from './attribute';
 import { ContentVersion } from './contents';
+import { RulesType, RulesCondition } from './config';
 import { BizSession } from './statistics';
 import { PlanType } from './subscription';
 import { Theme } from './theme';
+import { Attributes } from './usertour';
 
 export type ContentSession = {
   contentId: string;
@@ -29,26 +32,28 @@ export enum contentEndReason {
   PROGRAM_STARTED_OTHER_CONTENT = 'program_started_other_content',
   STEP_NOT_FOUND = 'step_not_found',
   UNPUBLISHED_CONTENT = 'unpublished_content',
+  END_FROM_PROGRAM = 'end_from_program',
+  LAUNCHER_DEACTIVATED = 'launcher_deactivated',
 }
 
 export enum contentStartReason {
-  START_CONDITION = 'start_condition',
+  START_FROM_CONDITION = 'start_from_condition',
   START_FROM_URL = 'start_from_url',
   START_FROM_SESSION = 'start_from_session',
-  MANUAL_START = 'manual_start',
+  START_FROM_MANUAL = 'start_from_manual',
   START_FROM_PROGRAM = 'start_from_program',
   START_FROM_CONTENT_ID = 'start_from_content_id',
-  ACTION = 'action',
+  START_FROM_ACTION = 'start_from_action',
 }
 
 export const flowReasonTitleMap = {
-  [contentStartReason.START_CONDITION]: 'Matched auto-start condition',
+  [contentStartReason.START_FROM_CONDITION]: 'Matched auto-start condition',
   [contentStartReason.START_FROM_URL]: 'Started from URL',
   [contentStartReason.START_FROM_SESSION]: 'Started from session',
   [contentStartReason.START_FROM_PROGRAM]: 'Started from program',
   [contentStartReason.START_FROM_CONTENT_ID]: 'Started from content id',
-  [contentStartReason.MANUAL_START]: 'Manually started',
-  [contentStartReason.ACTION]: 'Button clicked',
+  [contentStartReason.START_FROM_MANUAL]: 'Manually started',
+  [contentStartReason.START_FROM_ACTION]: 'Button clicked',
   [contentEndReason.USER_CLOSED]: 'User closed',
   [contentEndReason.TOOLTIP_TARGET_MISSING]: 'Tooltip target missing',
   [contentEndReason.CONTENT_NOT_FOUND]: 'Content not found',
@@ -60,6 +65,8 @@ export const flowReasonTitleMap = {
   [contentEndReason.STEP_NOT_FOUND]: 'Step not found',
   [contentEndReason.AUTO_DISMISSED]: 'Auto dismissed',
   [contentEndReason.UNPUBLISHED_CONTENT]: 'Unpublished content',
+  [contentEndReason.END_FROM_PROGRAM]: 'Ended from program',
+  [contentEndReason.LAUNCHER_DEACTIVATED]: 'Launcher deactivated',
 };
 
 export interface SDKConfig {
@@ -70,4 +77,62 @@ export interface SDKConfig {
 export interface GetProjectSettingsResponse {
   config: SDKConfig;
   themes: Theme[];
+}
+
+/**
+ * Client context information for condition evaluation
+ */
+export interface ClientContext {
+  pageUrl: string;
+  viewportWidth: number;
+  viewportHeight: number;
+}
+
+/**
+ * Control which rule types to evaluate
+ * Default behavior: all rule types are disabled unless explicitly enabled
+ * Set to true to enable evaluation for specific rule types
+ */
+export type RulesTypeControl = Partial<Record<RulesType, boolean>>;
+
+/**
+ * Custom evaluation function for specific rule types
+ * @param rule - The rule condition to evaluate
+ * @param options - The evaluation options
+ * @returns boolean | Promise<boolean> - Whether the rule condition is satisfied
+ */
+export type CustomRuleEvaluator = (
+  rule: RulesCondition,
+  options: RulesEvaluationOptions,
+) => boolean | Promise<boolean>;
+
+/**
+ * Custom evaluators for specific rule types
+ * Override default evaluation logic for specific rule types
+ */
+export type CustomRuleEvaluators = Partial<Record<RulesType, CustomRuleEvaluator>>;
+
+/**
+ * Simplified attribute type with only required fields
+ */
+export interface SimpleAttribute {
+  id: string;
+  codeName: string;
+  dataType: BizAttributeTypes;
+  bizType: AttributeBizTypes;
+}
+
+/**
+ * Options for evaluating rules conditions
+ */
+export interface RulesEvaluationOptions {
+  clientContext?: ClientContext;
+  attributes?: SimpleAttribute[];
+  userAttributes?: Attributes;
+  companyAttributes?: Attributes;
+  membershipAttributes?: Attributes;
+  typeControl?: RulesTypeControl;
+  activatedIds?: string[];
+  deactivatedIds?: string[];
+  customEvaluators?: CustomRuleEvaluators;
 }

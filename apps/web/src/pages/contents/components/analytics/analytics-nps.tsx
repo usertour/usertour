@@ -59,7 +59,7 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   const lastDay = npsAnalysisByDay?.[npsAnalysisByDay.length - 1];
 
   const totalResponses = selectedDay?.metrics.total ?? lastDay?.metrics.total ?? 0;
-  const rate = Math.round(((totalResponses ?? 0) / totalViews) * 100);
+  const rate = totalViews > 0 ? Math.round(((totalResponses ?? 0) / totalViews) * 100) : 0;
 
   const startDate = selectedDay?.startDate
     ? formatDate(selectedDay.startDate)

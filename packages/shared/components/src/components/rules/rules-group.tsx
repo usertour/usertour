@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_RULES, RulesType } from '@usertour-packages/constants';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,8 +17,8 @@ import {
   TimeIcon,
   UserIcon,
 } from '@usertour-packages/icons';
-import { RulesCondition } from '@usertour/types';
-import { deepClone } from '@usertour/helpers';
+import { RulesCondition, RulesType } from '@usertour/types';
+import { cuid, deepClone } from '@usertour/helpers';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
 import { useRulesContext } from './rules-context';
@@ -40,12 +40,6 @@ export const RULES_ITEMS = [
   {
     type: RulesType.USER_ATTR,
     text: 'Attribute',
-    IconElement: UserIcon,
-    RulesElement: RulesUserAttribute,
-  },
-  {
-    type: RulesType.COMPANY_ATTR,
-    text: 'Company attribute',
     IconElement: UserIcon,
     RulesElement: RulesUserAttribute,
   },
@@ -187,9 +181,9 @@ export const RulesGroup = (props: RulesGroupProps) => {
   const handleOnSelect = useCallback(
     (type: string) => {
       if (type === 'group') {
-        setNewConditions([...conditions, { type, data: {}, conditions: [] }]);
+        setNewConditions([...conditions, { type, data: {}, conditions: [], id: cuid() }]);
       } else {
-        setNewConditions([...conditions, { type, data: {}, operators: conditionType }]);
+        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: cuid() }]);
       }
     },
     [conditionType, conditions],

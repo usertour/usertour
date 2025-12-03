@@ -17,7 +17,7 @@ import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { Environment } from '@/environments/models/environment.model';
 import { parseOrderBy } from '@/common/openapi/sort';
-import { extractQuestionData } from '@/utils/content';
+import { extractQuestionData } from '@/utils/content-question';
 type ContentWithVersions = Prisma.ContentGetPayload<{
   include: {
     editedVersion: true;

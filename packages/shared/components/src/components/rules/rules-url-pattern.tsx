@@ -28,6 +28,39 @@ export interface RulesUrlPatternProps {
   };
 }
 
+interface UrlPatternTextProps {
+  includesValues: string[];
+  excludesValues: string[];
+}
+
+const UrlPatternText = ({ includesValues, excludesValues }: UrlPatternTextProps) => {
+  const hasIncludes = includesValues.length > 0;
+  const hasExcludes = excludesValues.length > 0;
+
+  if (!hasIncludes && !hasExcludes) {
+    return <>Current page</>;
+  }
+
+  return (
+    <>
+      Current page
+      {hasIncludes && (
+        <>
+          {' '}
+          matches <span className="font-bold">{includesValues.join(', ')}</span>
+        </>
+      )}
+      {hasIncludes && hasExcludes && ' and'}
+      {hasExcludes && (
+        <>
+          {' '}
+          does not match <span className="font-bold">{excludesValues.join(', ')}</span>
+        </>
+      )}
+    </>
+  );
+};
+
 export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
   const { data = {}, index } = props;
   const { excludes = [], includes = [] } = data;
@@ -119,8 +152,10 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
             </RulesConditionIcon>
             <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
               <RulesPopoverTriggerWrapper>
-                Current page matches <span className="font-bold">{includesValues.join(',')}</span>{' '}
-                and does not match <span className="font-bold">{excludesValues.join(',')}</span>
+                <UrlPatternText
+                  includesValues={filterIncludesValues}
+                  excludesValues={filterExcludesValues}
+                />
               </RulesPopoverTriggerWrapper>
               <RulesPopoverContent>
                 <div className=" flex flex-col space-y-2">

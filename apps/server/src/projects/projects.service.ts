@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
+import { ConfigService } from '@nestjs/config';
 import { CreateProjectInput } from './dto/createProject.input';
 import {
   ParamsError,
@@ -9,12 +10,17 @@ import {
   LicenseDecodeError,
 } from '@/common/errors';
 import { LicenseService } from '@/license/license.service';
+import { Environment } from '@/common/types/schema';
+import { ProjectConfig } from '@usertour/types';
 
 @Injectable()
 export class ProjectsService {
+  private readonly logger = new Logger(ProjectsService.name);
+
   constructor(
     private prisma: PrismaService,
     private licenseService: LicenseService,
+    private configService: ConfigService,
   ) {}
 
   async createProject(userId: string, newData: CreateProjectInput) {
@@ -38,6 +44,9 @@ export class ProjectsService {
   }
 
   async getUserProject(userId: string, projectId: string) {
+    if (!userId || !projectId) {
+      return null;
+    }
     return await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },
     });
@@ -123,5 +132,103 @@ export class ProjectsService {
       where: { id: projectId },
       data: { license },
     });
+  }
+
+  // ============================================================================
+  // Project Configuration Methods
+  // ============================================================================
+
+  /**
+   * Get configuration settings based on environment
+   * @param environment - Environment context
+   * @returns Configuration object with plan type and branding settings
+   */
+  async getConfig(environment: Environment): Promise<ProjectConfig> {
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+
+    if (isSelfHostedMode) {
+      return await this.getSelfHostedConfig(environment);
+    }
+
+    return await this.getCloudConfig(environment);
+  }
+
+  /**
+   * Get configuration for self-hosted mode using license validation
+   * @param environment - Environment context
+   * @returns Configuration object with plan type and branding settings
+   */
+  private async getSelfHostedConfig(environment: Environment): Promise<ProjectConfig> {
+    const defaultConfig: ProjectConfig = {
+      removeBranding: false,
+      planType: 'hobby',
+    };
+    const project = await this.prisma.project.findUnique({
+      where: { id: environment.projectId },
+    });
+
+    // Self-hosted mode: use license validation
+    const licenseToken = project?.license;
+    if (!licenseToken) {
+      return defaultConfig;
+    }
+
+    const validationResult = await this.licenseService.validateLicense(licenseToken);
+
+    if (validationResult.isValid) {
+      const licensePayload = await this.licenseService.getLicensePayload(licenseToken);
+
+      // Check if license projectId matches the current project
+      if (licensePayload?.projectId !== environment.projectId) {
+        this.logger.warn(
+          `License projectId mismatch. Expected: ${environment.projectId}, Got: ${licensePayload?.projectId}`,
+        );
+        return defaultConfig;
+      }
+
+      const isBusinessPlan =
+        licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
+
+      return {
+        removeBranding: isBusinessPlan,
+        planType: licensePayload?.plan || 'hobby',
+      };
+    }
+
+    return defaultConfig;
+  }
+
+  /**
+   * Get configuration for cloud mode using subscription-based logic
+   * @param environment - Environment context
+   * @returns Configuration object with plan type and branding settings
+   */
+  private async getCloudConfig(environment: Environment): Promise<ProjectConfig> {
+    const defaultConfig: ProjectConfig = {
+      removeBranding: false,
+      planType: 'hobby',
+    };
+
+    // Cloud mode: use subscription-based logic
+    const project = await this.prisma.project.findUnique({
+      where: { id: environment.projectId },
+    });
+
+    if (!project?.subscriptionId) {
+      return defaultConfig;
+    }
+
+    const subscription = await this.prisma.subscription.findFirst({
+      where: { subscriptionId: project.subscriptionId },
+    });
+
+    if (!subscription) {
+      return defaultConfig;
+    }
+
+    return {
+      removeBranding: subscription.planType !== 'hobby',
+      planType: subscription.planType,
+    };
   }
 }

@@ -12,6 +12,7 @@ import { ReactNode, createContext, useContext } from 'react';
 export interface SubscriptionProviderProps {
   children?: ReactNode;
   projectId: string | undefined;
+  subscriptionId: string | undefined;
 }
 
 export interface SubscriptionContextValue {
@@ -26,7 +27,7 @@ export interface SubscriptionContextValue {
 export const SubscriptionContext = createContext<SubscriptionContextValue | undefined>(undefined);
 
 export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Element {
-  const { children, projectId } = props;
+  const { children, projectId, subscriptionId } = props;
 
   const {
     data: subscriptionData,
@@ -34,6 +35,7 @@ export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Elem
     loading: subscriptionLoading,
   } = useQuery(getSubscriptionByProjectId, {
     variables: { projectId },
+    skip: !subscriptionId,
   });
 
   const { data: usageData, loading: usageLoading } = useQuery(getSubscriptionUsage, {

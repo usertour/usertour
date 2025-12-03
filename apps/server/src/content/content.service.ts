@@ -10,6 +10,9 @@ import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
+import { regenerateConditionIds } from '@usertour/helpers';
+import { ContentConfigObject, ContentDataType } from '@usertour/types';
+import { duplicateChecklistData } from '@/utils/content-duplicate';
 
 @Injectable()
 export class ContentService {
@@ -212,11 +215,19 @@ export class ContentService {
           },
         );
 
+        const editedConfig = (config || editedVersion.config) as ContentConfigObject;
+
+        const newConfig = {
+          ...editedConfig,
+          autoStartRules: regenerateConditionIds(editedConfig.autoStartRules),
+          hideRules: regenerateConditionIds(editedConfig.hideRules),
+        };
+
         const version = await tx.version.create({
           data: {
             sequence: editedVersion.sequence + 1,
             contentId: content.id,
-            config: config || editedVersion.config || {},
+            config: newConfig,
             data: data || editedVersion.data || {},
             themeId: themeId || editedVersion.themeId || undefined,
             steps: { create: steps.length > 0 ? [...steps] : [...oldSteps] },
@@ -298,26 +309,6 @@ export class ContentService {
 
   async publishedContentVersion(versionId: string, environmentId: string) {
     const version = await this.getContentVersionById(versionId);
-    const oldContent = await this.prisma.content.findUnique({
-      where: { id: version.contentId },
-      include: { contentOnEnvironments: true },
-    });
-    if (
-      oldContent.published &&
-      oldContent.publishedVersionId &&
-      (!oldContent.contentOnEnvironments || oldContent.contentOnEnvironments.length === 0)
-    ) {
-      // Update or create ContentOnEnvironment
-      await this.prisma.contentOnEnvironment.create({
-        data: {
-          environmentId: oldContent.environmentId,
-          contentId: oldContent.id,
-          published: true,
-          publishedAt: new Date(),
-          publishedVersionId: oldContent.publishedVersionId,
-        },
-      });
-    }
 
     const content = await this.prisma.$transaction(async (tx) => {
       // Update Content table
@@ -445,12 +436,26 @@ export class ContentService {
           },
         });
 
+        const config = editedVersion.config as ContentConfigObject;
+
+        const newConfig = {
+          ...config,
+          autoStartRules: regenerateConditionIds(config.autoStartRules),
+          hideRules: regenerateConditionIds(config.hideRules),
+        };
+
+        let processedData = editedVersion.data;
+        // Process checklist data to regenerate condition IDs
+        if (duplicateContent.type === ContentDataType.CHECKLIST) {
+          processedData = duplicateChecklistData(editedVersion.data);
+        }
+
         const version = await tx.version.create({
           data: {
             sequence: 0,
             contentId: content.id,
-            config: editedVersion.config,
-            data: editedVersion.data,
+            config: newConfig,
+            data: processedData,
             themeId: editedVersion.themeId,
             steps: { create: [...steps] },
           },

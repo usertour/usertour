@@ -3,11 +3,11 @@ import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
-import { AttributeBizTypes, BizUser } from '@usertour/types';
+import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserSessions } from './user-sessions';
-import { formatDistanceToNow } from 'date-fns';
+import { formatAttributeValue } from '@/utils/common';
 import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
 import {
   Tooltip,
@@ -26,6 +26,7 @@ import {
 import { BizUserDeleteForm } from './bizuser-delete-form';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
+import { useAppContext } from '@/contexts/app-context';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -76,6 +77,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { isViewOnly } = useAppContext();
 
   useEffect(() => {
     if (!contents) {
@@ -99,9 +101,17 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           attrs.push({
             name: userAttr.displayName || userAttr.codeName,
             value,
+            dataType: userAttr.dataType,
+            predefined: userAttr.predefined,
           });
         }
       }
+      // Sort attributes by name in alphabetical order (a-z)
+      attrs.sort((a, b) => {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
       setBizUserAttributes(attrs);
     }
   }, [bizUser, attributeList]);
@@ -141,6 +151,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={() => setShowDeleteDialog(true)}
+                  disabled={isViewOnly}
                   className="text-destructive focus:text-destructive"
                 >
                   <Delete2Icon className="mr-2 h-4 w-4" />
@@ -177,9 +188,14 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 </div>
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={CalendarIcon} tooltip="Created" />
-                  <span>
-                    {bizUser?.createdAt && formatDistanceToNow(new Date(bizUser?.createdAt))} ago
-                  </span>
+                  {bizUser?.createdAt ? (
+                    <TruncatedText
+                      text={formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}
+                      rawValue={bizUser.createdAt}
+                    />
+                  ) : (
+                    <span>-</span>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -196,16 +212,23 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 <div className="w-1/2 ">Name</div>
                 <div className="w-1/2 ">Value</div>
               </div>
-              {bizUserAttributes.map(({ name, value }, key) => (
-                <div className="flex flex-row py-2 text-sm" key={key}>
-                  <div className="w-1/2">
-                    <TruncatedText text={name} maxLength={15} />
+              {bizUserAttributes.map(({ name, value, dataType }, key) => {
+                const formattedValue = formatAttributeValue(value, dataType);
+                return (
+                  <div className="flex flex-row py-2 text-sm" key={key}>
+                    <div className="w-1/2">
+                      <TruncatedText text={name} maxLength={15} />
+                    </div>
+                    <div className="w-1/2">
+                      <TruncatedText
+                        text={formattedValue}
+                        maxLength={25}
+                        rawValue={dataType === AttributeDataType.DateTime ? value : undefined}
+                      />
+                    </div>
                   </div>
-                  <div className="w-1/2">
-                    <TruncatedText text={`${value}`} maxLength={25} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </div>

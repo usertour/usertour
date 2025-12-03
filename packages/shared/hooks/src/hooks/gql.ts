@@ -103,6 +103,7 @@ type UseContentListQueryProps = {
     environmentId: string;
     type?: ContentDataType;
   };
+  options?: QueryHookOptions;
   pagination?: Pagination;
   orderBy?: {
     field: string;
@@ -114,20 +115,24 @@ export const useContentListQuery = ({
   query,
   orderBy = { field: 'createdAt', direction: 'desc' },
   pagination = { first: 1000 },
+  options,
 }: UseContentListQueryProps) => {
-  const { data, refetch, error } = useQuery(queryContent, {
+  const { data, refetch, error, loading } = useQuery(queryContent, {
     variables: {
       ...pagination,
       query,
       orderBy,
     },
+    ...options,
   });
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const contentList = data?.queryContent?.edges.map((e: any) => e.node);
+  const pageInfo = data?.queryContent?.pageInfo;
+  const totalCount = data?.queryContent?.totalCount;
 
   const contents = contentList ? (contentList as Content[]) : [];
 
-  return { contents, refetch, error };
+  return { contents, pageInfo, totalCount, refetch, error, loading };
 };
 
 type UseCompanyListQueryProps = {

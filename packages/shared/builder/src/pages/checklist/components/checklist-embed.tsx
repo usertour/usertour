@@ -1,5 +1,5 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
-import { useThemeListContext } from '@usertour-packages/contexts';
+import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
 import {
   ChecklistContainer,
   ChecklistDismiss,
@@ -13,7 +13,7 @@ import {
   PopperMadeWith,
 } from '@usertour-packages/sdk';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
-import { ChecklistInitialDisplay, Theme } from '@usertour/types';
+import { ChecklistInitialDisplay, ContentEditorElementType, Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useState } from 'react';
 import { useBuilderContext, useChecklistContext } from '../../../contexts';
@@ -28,6 +28,7 @@ export const ChecklistEmbed = () => {
   const [expanded, setExpanded] = useState(
     localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED,
   );
+  const { attributeList } = useAttributeListContext();
 
   useEffect(() => {
     setExpanded(localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED);
@@ -73,13 +74,21 @@ export const ChecklistEmbed = () => {
     return { ...newItem, isVisible: true };
   });
 
+  const enabledElementTypes = [
+    ContentEditorElementType.IMAGE,
+    ContentEditorElementType.EMBED,
+    ContentEditorElementType.TEXT,
+  ];
+
   return (
     <>
       <ChecklistRoot
         data={{ ...localData, items }}
         themeSettings={theme.settings}
         expanded={expanded}
-        onExpandedChange={setExpanded}
+        onExpandedChange={async (expanded) => {
+          setExpanded(expanded);
+        }}
         zIndex={10000}
       >
         <ChecklistContainer>
@@ -93,6 +102,8 @@ export const ChecklistEmbed = () => {
                   initialValue={localData.content}
                   onValueChange={handleContentChange}
                   projectId={projectId}
+                  attributes={attributeList}
+                  enabledElementTypes={enabledElementTypes}
                 />
                 <ChecklistProgress />
                 <ChecklistItems />

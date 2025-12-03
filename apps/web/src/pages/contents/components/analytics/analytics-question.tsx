@@ -2,7 +2,7 @@ import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { ContentEditorElementType } from '@usertour-packages/shared-editor';
 import { useQueryContentQuestionAnalyticsQuery } from '@usertour-packages/shared-hooks';
-import { format } from 'date-fns';
+import { endOfDay, format, startOfDay } from 'date-fns';
 
 import {
   Table,
@@ -29,6 +29,48 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
 
   const totalResponses = questionAnalytics.totalResponse ?? 0;
   const responseRate = totalViews > 0 ? Math.round((totalResponses / totalViews) * 100) : 0;
+
+  // Get all option values for matching
+  const optionValues = new Set(
+    questionAnalytics.question.data.options?.map((option) => String(option.value)) ?? [],
+  );
+
+  // Process options with their corresponding answer data
+  const optionsWithAnswers =
+    questionAnalytics.question.data.options?.map((option) => {
+      const answerData = questionAnalytics.answer?.find(
+        (answer: AnswerCount) => String(answer.answer) === String(option.value),
+      );
+      const count = answerData?.count ?? 0;
+      const percentage = totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0;
+      return {
+        answer: option.value,
+        count,
+        percentage,
+      };
+    }) ?? [];
+
+  // Find answers that are not in options and merge them into "Other"
+  const otherAnswers =
+    questionAnalytics.answer?.filter(
+      (answer: AnswerCount) => !optionValues.has(String(answer.answer)),
+    ) ?? [];
+  const otherCount = otherAnswers.reduce((sum, answer) => sum + (answer.count ?? 0), 0);
+  const otherPercentage = totalResponses > 0 ? Math.round((otherCount / totalResponses) * 100) : 0;
+
+  // Combine options with answers and add "Other" if there are unmatched answers
+  const allAnswers = [
+    ...optionsWithAnswers,
+    ...(otherCount > 0
+      ? [
+          {
+            answer: 'Other',
+            count: otherCount,
+            percentage: otherPercentage,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <>
@@ -59,26 +101,22 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {questionAnalytics.answer ? (
-                questionAnalytics.answer.map((answer: AnswerCount, index) => {
-                  const percentage =
-                    totalViews > 0 ? Math.round((answer.count / totalResponses) * 100) : 0;
-                  return (
-                    <TableRow key={index} onClick={() => {}}>
-                      <TableCell className="py-[1px]">{answer.answer}</TableCell>
-                      <TableCell className="py-[1px]">{answer.count}</TableCell>
-                      <TableCell className="py-[1px]">{percentage}%</TableCell>
-                      <TableCell className="py-[1px] px-0">
-                        <div
-                          className="bg-success h-10"
-                          style={{
-                            width: `${percentage}%`,
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+              {allAnswers.length > 0 ? (
+                allAnswers.map((item, index) => (
+                  <TableRow key={index} onClick={() => {}}>
+                    <TableCell className="py-[1px]">{item.answer}</TableCell>
+                    <TableCell className="py-[1px]">{item.count}</TableCell>
+                    <TableCell className="py-[1px]">{item.percentage}%</TableCell>
+                    <TableCell className="py-[1px] px-0">
+                      <div
+                        className="bg-success h-10"
+                        style={{
+                          width: `${item.percentage}%`,
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center">
@@ -100,6 +138,10 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
   const { contentId } = props;
   const { dateRange, timezone, analyticsData, loading } = useAnalyticsContext();
   const { content, refetch } = useContentDetailContext();
+
+  const startDate = dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '';
+  const endDate = dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '';
+
   const { environment } = useAppContext();
   const {
     questionAnalytics,
@@ -108,8 +150,8 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
   } = useQueryContentQuestionAnalyticsQuery(
     environment?.id ?? '',
     contentId,
-    dateRange?.from?.toISOString() ?? '',
-    dateRange?.to?.toISOString() ?? '',
+    startDate,
+    endDate,
     timezone,
   );
 

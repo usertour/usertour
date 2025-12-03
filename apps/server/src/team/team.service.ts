@@ -44,6 +44,9 @@ export class TeamService {
   }
 
   async changeTeamMemberRole(userId: string, projectId: string, role: Role) {
+    if (!userId || !projectId) {
+      throw new ParamsError();
+    }
     const userOnProject = await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },
     });
@@ -69,6 +72,9 @@ export class TeamService {
   }
 
   async removeTeamMember(userId: string, projectId: string) {
+    if (!userId || !projectId) {
+      throw new ParamsError();
+    }
     const userOnProject = await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },
     });
@@ -260,6 +266,9 @@ export class TeamService {
   }
 
   async getUserOnProject(userId: string, projectId: string) {
+    if (!userId || !projectId) {
+      return null;
+    }
     return await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },
     });

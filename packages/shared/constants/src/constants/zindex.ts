@@ -14,3 +14,13 @@ export const EDITOR_RICH_TOOLBAR = 10904;
 export const EDITOR_RICH_TOOLBAR_MORE = 10905;
 export const EDITOR_RICH_ACTION = 10906;
 export const EDITOR_RICH_ACTION_CONTENT = 10907;
+
+/**
+ * Widget z-index offsets relative to base z-index
+ */
+export enum WidgetZIndex {
+  BASE = 1000000,
+  TOUR_OFFSET = 200,
+  CHECKLIST_OFFSET = 100,
+  LAUNCHER_OFFSET = 0,
+}

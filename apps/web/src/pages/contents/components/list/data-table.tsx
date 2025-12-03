@@ -143,6 +143,7 @@ const ContentTableItem = ({
 }) => {
   const { data } = useQuery(getContentVersion, {
     variables: { versionId: content?.editedVersionId },
+    skip: !content?.editedVersionId,
   });
   const navigate = useNavigate();
   const [currentVersion, setCurrentVersion] = useState<ContentVersion | undefined>();

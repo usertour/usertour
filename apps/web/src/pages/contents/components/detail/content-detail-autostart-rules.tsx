@@ -112,6 +112,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
   const { segmentList } = useSegmentListContext();
   const { contents } = useContentListQuery({
     query: { environmentId: content.environmentId },
+    options: { skip: !content.environmentId },
   });
   const contentType = content.type;
 

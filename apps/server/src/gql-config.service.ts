@@ -1,10 +1,10 @@
 import { ApolloDriverConfig } from '@nestjs/apollo';
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GqlOptionsFactory } from '@nestjs/graphql';
 import { STATUS_CODES } from 'node:http';
 import { GraphQLError } from 'graphql';
-import { BaseError } from './common/errors';
+import { BaseError, ValidationError } from './common/errors';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
@@ -39,26 +39,61 @@ export class GqlConfigService implements GqlOptionsFactory {
             : {}),
         });
 
-        // Log unknown errors
-        if (error instanceof GraphQLError && !(error.originalError instanceof BaseError)) {
-          this.logger.error({
-            err: error.originalError || error,
-            msg: 'GraphQL unknown error occurred',
-            context: this.constructor.name,
-          });
-        }
-
         // @ts-expect-error allow assign
         formattedError.extensions ??= {};
 
+        // Extract original error for easier handling
+        const isGraphQLError = error instanceof GraphQLError;
+        const originalError = isGraphQLError ? error.originalError : null;
+
         // Handle BaseError instances
-        if (error instanceof GraphQLError && error.originalError instanceof BaseError) {
+        if (isGraphQLError && originalError instanceof BaseError) {
           return {
-            message: error.originalError.getMessage('en'),
+            message: originalError.getMessage('en'),
             extensions: {
-              code: error.originalError.code,
+              code: originalError.code,
             },
           };
+        }
+
+        // Handle HttpException instances (e.g., BadRequestException from ValidationPipe)
+        if (isGraphQLError && originalError instanceof HttpException) {
+          const httpException = originalError;
+          const response = httpException.getResponse() as any;
+
+          // Extract error message
+          let message: string;
+          if (Array.isArray(response?.message)) {
+            // Handle validation errors (array of messages)
+            message = response.message[0] || httpException.message;
+          } else if (typeof response === 'string') {
+            message = response;
+          } else {
+            message = response?.message || httpException.message || 'Bad Request';
+          }
+
+          // Create ValidationError to match BaseError format
+          const validationError = new ValidationError(message);
+
+          return {
+            message: validationError.getMessage('en'),
+            extensions: {
+              code: validationError.code,
+            },
+          };
+        }
+
+        // Log unknown errors (excluding BaseError and HttpException which are handled above)
+        if (
+          isGraphQLError &&
+          !(originalError instanceof BaseError) &&
+          !(originalError instanceof HttpException)
+        ) {
+          this.logger.error({
+            err: originalError || error,
+            msg: 'GraphQL unknown error occurred',
+            context: this.constructor.name,
+          });
         }
 
         return {

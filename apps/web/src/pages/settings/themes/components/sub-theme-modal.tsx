@@ -20,6 +20,7 @@ import { ModalThemeSettingsPanel } from './modal-theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
 
 interface SubThemeModalProps {
+  isViewOnly?: boolean;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   initialVariation?: ThemeVariation | null;
@@ -30,6 +31,7 @@ interface SubThemeModalProps {
 }
 
 export const SubThemeModal = ({
+  isViewOnly = false,
   isOpen,
   onOpenChange,
   initialVariation,
@@ -141,7 +143,7 @@ export const SubThemeModal = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {!isOpen && (
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button variant="outline" size="sm" className="gap-2" disabled={isViewOnly}>
             <PlusIcon className="h-4 w-4" />
             Add Sub Theme
           </Button>
@@ -166,6 +168,7 @@ export const SubThemeModal = ({
           showDelete={!!initialVariation}
           errorMessage={errorInfo}
           showError={showError}
+          isViewOnly={isViewOnly}
         />
 
         <ThemePreviewPanel

@@ -17,11 +17,10 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { EDITOR_OVERLAY } from '@usertour-packages/constants';
-import { isUndefined } from '@usertour/helpers';
-import { BizUserInfo } from '@usertour/types';
+import { replaceUserAttr } from '@usertour/helpers';
+import { UserTourTypes } from '@usertour/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Descendant } from 'slate';
 import {
   ContentEditorContextProvider,
   useContentEditorContext,
@@ -128,82 +127,13 @@ export const contentEditorElements = [
   },
 ];
 
-const getLinkUrl = (value: Descendant[], userInfo: BizUserInfo) => {
-  let url = '';
-  try {
-    for (const v of value) {
-      if ('children' in v) {
-        for (const vc of v.children) {
-          if ('type' in vc && vc.type === 'user-attribute') {
-            if (userInfo) {
-              url += userInfo.data[vc.attrCode] || vc.fallback;
-            }
-          } else if ('text' in vc) {
-            url += vc.text;
-          }
-        }
-      }
-    }
-  } catch (_) {}
-  return url;
-};
-
-const replaceUserAttrForElement = (data: Descendant[], userInfo: BizUserInfo) => {
-  return data.map((v: any) => {
-    if (v.children) {
-      v.children = replaceUserAttrForElement(v.children, userInfo);
-    }
-    if (v.type === 'user-attribute' && userInfo.data) {
-      const value = userInfo.data[v.attrCode] || v.fallback;
-      if (!isUndefined(value)) {
-        v.value = String(value);
-      }
-    }
-    if (v.type === 'link' && userInfo.data) {
-      v.url = v.data ? getLinkUrl(v.data, userInfo) : '';
-    }
-    return v;
-  });
-};
-
-export const replaceUserAttr = (editorContents: ContentEditorRoot[], userInfo: BizUserInfo) => {
-  return editorContents.map((editorContent: ContentEditorRoot) => {
-    if (!editorContent.children) {
-      return editorContent;
-    }
-    return {
-      ...editorContent,
-      children: editorContent.children.map((column) => {
-        if (!column.children) {
-          return column;
-        }
-        return {
-          ...column,
-          children: column.children.map((element) => {
-            if (element.element.type === ContentEditorElementType.TEXT) {
-              return {
-                ...element,
-                element: {
-                  ...element.element,
-                  data: replaceUserAttrForElement(element.element.data, userInfo),
-                },
-              };
-            }
-            return { ...element };
-          }),
-        };
-      }),
-    };
-  });
-};
-
 export const ContentEditorSerialize = (props: {
   contents: ContentEditorRoot[];
-  userInfo?: BizUserInfo;
+  userAttributes?: UserTourTypes.Attributes;
   onClick?: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 }) => {
-  const { contents, onClick, userInfo } = props;
-  const editorContents = userInfo ? replaceUserAttr(contents, userInfo) : contents;
+  const { contents, onClick, userAttributes } = props;
+  const editorContents = userAttributes ? replaceUserAttr(contents, userAttributes) : contents;
 
   return (
     <>

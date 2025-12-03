@@ -34,7 +34,7 @@ const AnalyticsCard = ({ title, tooltip, value, icon }: AnalyticsCardProps) => (
 
 const calculateCompletionRate = (completions: number, views: number): string => {
   if (!views) return '0%';
-  return `${Math.floor((completions / views) * 100)}%`;
+  return `${Math.round((completions / views) * 100)}%`;
 };
 
 interface AnalyticsViewsGridProps {
@@ -98,25 +98,23 @@ const AnalyticsViewsGrid = ({
 );
 
 const LauncherAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
-  <AnalyticsViewsGrid
-    analyticsData={analyticsData}
-    titles={{
-      uniqueViews: 'Unique Views',
-      uniqueCompletionRate: 'Unique Activation Rate',
-      totalViews: 'Total Views',
-      totalCompletionRate: 'Total Activation Rate',
-    }}
-    tooltips={{
-      uniqueViews:
-        'Views are only counted once per user, meaning even if a user views the launcher multiple times, it will only be counted once',
-      uniqueCompletionRate:
-        'The activation rate shows the percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it).',
-      totalViews:
-        'Views are counted for each visit, so a user will be recorded multiple times for viewing the launcher.',
-      totalCompletionRate:
-        'The activation rate shows the percentage of visits where the launcher was seen and activated (e.g., by clicking or hovering).',
-    }}
-  />
+  <div className="grid gap-4 md:grid-cols-2">
+    <AnalyticsCard
+      title="Views"
+      tooltip="Views are only counted once per user, meaning even if a user views the launcher multiple times, it will only be counted once"
+      value={analyticsData?.uniqueViews || 0}
+      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+    <AnalyticsCard
+      title="Activation Rate"
+      tooltip="The activation rate shows the percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it)."
+      value={calculateCompletionRate(
+        analyticsData?.uniqueCompletions || 0,
+        analyticsData?.uniqueViews || 0,
+      )}
+      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+  </div>
 );
 
 const FlowAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
