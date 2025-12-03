@@ -776,9 +776,10 @@ export class BizService {
           // DateTime must be stored as ISO 8601 in UTC
           if (dataType === BizAttributeTypes.DateTime) {
             if (!isValidISO8601(attrValue)) {
-              throw new ParamsError(
-                `Invalid DateTime format for attribute "${attrName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(attrValue)}. Example: "2024-12-12T00:00:00.000Z"`,
+              this.logger.error(
+                `Invalid DateTime format for attribute "${attrName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(attrValue)}. Example: "2024-12-12T00:00:00.000Z". Skipping this field.`,
               );
+              continue;
             }
             insertAttribute[attrName] = attrValue;
           } else {
@@ -791,9 +792,10 @@ export class BizService {
         // If attribute is DateTime type, value must be ISO 8601 format regardless of detected type
         if (attribute.dataType === BizAttributeTypes.DateTime) {
           if (!isValidISO8601(attrValue)) {
-            throw new ParamsError(
-              `Invalid DateTime format for attribute "${attrName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(attrValue)}. Example: "2024-12-12T00:00:00.000Z"`,
+            this.logger.error(
+              `Invalid DateTime format for attribute "${attrName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(attrValue)}. Example: "2024-12-12T00:00:00.000Z". Skipping this field.`,
             );
+            continue;
           }
           insertAttribute[attrName] = attrValue;
         } else if (attribute.dataType === dataType) {
