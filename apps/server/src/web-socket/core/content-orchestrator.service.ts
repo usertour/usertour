@@ -1631,18 +1631,21 @@ export class ContentOrchestratorService {
       versionId,
     );
 
-    const autoStartContentVersions = filterAvailableAutoStartContentVersions(
-      evaluatedVersions,
+    // Filter out dismissed versions first
+    const activeEvaluatedVersions = evaluatedVersions.filter(
+      (contentVersion) => !sessionIsDismissed(contentVersion.session.latestSession, contentType),
+    );
+
+    const availableVersions = filterAvailableAutoStartContentVersions(
+      activeEvaluatedVersions,
       contentType,
       clientConditions,
     );
 
-    const availableVersions = autoStartContentVersions.filter(
-      (contentVersion) => !sessionIsDismissed(contentVersion.session.latestSession, contentType),
-    );
-
     // Versions that should be tracked but not activated
-    const shouldTrackVersions = evaluatedVersions.filter(
+    // These are versions in activeEvaluatedVersions but not in availableVersions
+    // (i.e., they don't meet auto-start conditions but may need client condition tracking)
+    const shouldTrackVersions = activeEvaluatedVersions.filter(
       (version) => !availableVersions.some((v) => v.contentId === version.contentId),
     );
 
