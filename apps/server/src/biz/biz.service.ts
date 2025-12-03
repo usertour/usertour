@@ -31,6 +31,7 @@ import {
   filterNullAttributes,
   getAttributeType,
   isNull,
+  isValidISO8601,
 } from '@usertour/helpers';
 
 @Injectable()
@@ -772,20 +773,37 @@ export class BizService {
           },
         });
         if (newAttr) {
-          // Convert DateTime to ISO format for consistency
+          // DateTime must be stored as ISO 8601 in UTC
           if (dataType === BizAttributeTypes.DateTime) {
-            insertAttribute[attrName] = new Date(attrValue).toISOString();
+            if (!isValidISO8601(attrValue)) {
+              throw new ParamsError(
+                `Invalid DateTime format for attribute "${attrName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(attrValue)}. Example: "2024-12-12T00:00:00.000Z"`,
+              );
+            }
+            insertAttribute[attrName] = attrValue;
           } else {
             insertAttribute[attrName] = attrValue;
           }
           continue;
         }
       }
-      if (attribute && attribute.dataType === dataType) {
-        if (dataType === BizAttributeTypes.DateTime) {
-          insertAttribute[attrName] = new Date(attrValue).toISOString();
-        } else {
+      if (attribute) {
+        // If attribute is DateTime type, value must be ISO 8601 format regardless of detected type
+        if (attribute.dataType === BizAttributeTypes.DateTime) {
+          if (!isValidISO8601(attrValue)) {
+            throw new ParamsError(
+              `Invalid DateTime format for attribute "${attrName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(attrValue)}. Example: "2024-12-12T00:00:00.000Z"`,
+            );
+          }
           insertAttribute[attrName] = attrValue;
+        } else if (attribute.dataType === dataType) {
+          // For non-DateTime types, only store if types match
+          insertAttribute[attrName] = attrValue;
+        } else {
+          // Log type mismatch but don't throw error to allow flexibility
+          this.logger.warn(
+            `Type mismatch for attribute ${attrName}. Expected type: ${attribute.dataType}, got: ${dataType}. Value: ${attrValue}`,
+          );
         }
       }
     }

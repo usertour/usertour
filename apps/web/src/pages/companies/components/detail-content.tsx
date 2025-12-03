@@ -2,11 +2,16 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
-import { AttributeBizTypes, BizCompany, BizUser, BizUserOnCompany } from '@usertour/types';
+import {
+  AttributeBizTypes,
+  AttributeDataType,
+  BizCompany,
+  BizUser,
+  BizUserOnCompany,
+} from '@usertour/types';
 import { formatAttributeValue } from '@/utils/common';
 import { useEffect, useState, createContext, useContext, ReactNode, Fragment } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
 import { IdCardIcon, CalendarIcon, ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons';
 import {
   Tooltip,
@@ -183,7 +188,9 @@ const getMembershipAttributes = (
       const attr = membershipAttributes.find((attr) => attr.codeName === key);
       return {
         name: attr?.displayName || key,
-        value: typeof value === 'string' ? value : JSON.stringify(value),
+        value,
+        dataType: attr?.dataType,
+        codeName: key,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -344,14 +351,28 @@ const CompanyUserList = () => {
                           {hasMembershipData ? (
                             <div className="flex justify-between items-center">
                               <div className="space-y-1">
-                                {membershipAttributes.slice(0, 2).map((attr, index) => (
-                                  <div key={index} className="text-sm">
-                                    <span className="font-medium text-muted-foreground">
-                                      {attr.name}:
-                                    </span>{' '}
-                                    <span>{attr.value}</span>
-                                  </div>
-                                ))}
+                                {membershipAttributes.slice(0, 2).map((attr, index) => {
+                                  const formattedValue = formatAttributeValue(
+                                    attr.value,
+                                    attr.dataType || AttributeDataType.String,
+                                  );
+                                  return (
+                                    <div key={index} className="text-sm">
+                                      <span className="font-medium text-muted-foreground">
+                                        {attr.name}:
+                                      </span>{' '}
+                                      <TruncatedText
+                                        text={formattedValue}
+                                        maxLength={30}
+                                        rawValue={
+                                          attr.dataType === AttributeDataType.DateTime
+                                            ? attr.value
+                                            : undefined
+                                        }
+                                      />
+                                    </div>
+                                  );
+                                })}
                                 {membershipAttributes.length > 2 && (
                                   <div className="text-xs text-muted-foreground">
                                     +{membershipAttributes.length - 2} more attributes
@@ -376,17 +397,29 @@ const CompanyUserList = () => {
                           <TableCell colSpan={2} className="bg-gray-50 p-4">
                             <div className="text-sm">
                               {sortMembershipDataEntries(membershipData, attributeList || []).map(
-                                ([key, value]) => (
-                                  <div key={key} className="py-2 border-b flex flex-row">
-                                    <span className="font-medium w-[200px] flex-none">
-                                      {attributeList?.find((attr) => attr.codeName === key)
-                                        ?.displayName || key}
-                                    </span>
-                                    <span className="grow">
-                                      {typeof value === 'string' ? value : JSON.stringify(value)}
-                                    </span>
-                                  </div>
-                                ),
+                                ([key, value]) => {
+                                  const attr = attributeList?.find((attr) => attr.codeName === key);
+                                  const dataType = attr?.dataType || AttributeDataType.String;
+                                  const formattedValue = formatAttributeValue(value, dataType);
+                                  return (
+                                    <div key={key} className="py-2 border-b flex flex-row">
+                                      <span className="font-medium w-[200px] flex-none">
+                                        {attr?.displayName || key}
+                                      </span>
+                                      <span className="grow">
+                                        <TruncatedText
+                                          text={formattedValue}
+                                          maxLength={50}
+                                          rawValue={
+                                            dataType === AttributeDataType.DateTime
+                                              ? value
+                                              : undefined
+                                          }
+                                        />
+                                      </span>
+                                    </div>
+                                  );
+                                },
                               )}
                             </div>
                           </TableCell>
@@ -576,10 +609,14 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                 </div>
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={CalendarIcon} tooltip="Created" />
-                  <span>
-                    {bizCompany?.createdAt && formatDistanceToNow(new Date(bizCompany?.createdAt))}{' '}
-                    ago
-                  </span>
+                  {bizCompany?.createdAt ? (
+                    <TruncatedText
+                      text={formatAttributeValue(bizCompany.createdAt, AttributeDataType.DateTime)}
+                      rawValue={bizCompany.createdAt}
+                    />
+                  ) : (
+                    <span>-</span>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -596,15 +633,19 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                 <div className="w-1/2 ">Name</div>
                 <div className="w-1/2 ">Value</div>
               </div>
-              {bizCompanyAttributes.map(({ name, value, dataType, predefined }, key) => {
-                const formattedValue = formatAttributeValue(value, dataType, predefined);
+              {bizCompanyAttributes.map(({ name, value, dataType }, key) => {
+                const formattedValue = formatAttributeValue(value, dataType);
                 return (
                   <div className="flex flex-row py-2 text-sm" key={key}>
                     <div className="w-1/2">
                       <TruncatedText text={name} maxLength={25} />
                     </div>
                     <div className="w-1/2">
-                      <TruncatedText text={formattedValue} maxLength={25} />
+                      <TruncatedText
+                        text={formattedValue}
+                        maxLength={25}
+                        rawValue={dataType === AttributeDataType.DateTime ? value : undefined}
+                      />
                     </div>
                   </div>
                 );

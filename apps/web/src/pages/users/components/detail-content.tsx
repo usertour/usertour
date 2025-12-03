@@ -3,11 +3,10 @@ import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
-import { AttributeBizTypes, BizUser } from '@usertour/types';
+import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserSessions } from './user-sessions';
-import { formatDistanceToNow } from 'date-fns';
 import { formatAttributeValue } from '@/utils/common';
 import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
 import {
@@ -53,29 +52,6 @@ const TooltipIcon = ({
     </Tooltip>
   </TooltipProvider>
 );
-
-// Component to display date with formatDistanceToNow and tooltip showing original date
-const DateDisplay = ({ dateValue }: { dateValue: string | Date }) => {
-  if (!dateValue) {
-    return null;
-  }
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) {
-    return <span>{String(dateValue)}</span>;
-  }
-  const relativeTime = formatDistanceToNow(date);
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="cursor-help">{relativeTime} ago</span>
-        </TooltipTrigger>
-        <TooltipContent>{String(dateValue)}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
 
 // Loading wrapper component to handle all loading states
 const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
@@ -213,7 +189,10 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 <div className="flex items-center space-x-2">
                   <TooltipIcon icon={CalendarIcon} tooltip="Created" />
                   {bizUser?.createdAt ? (
-                    <DateDisplay dateValue={bizUser.createdAt} />
+                    <TruncatedText
+                      text={formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}
+                      rawValue={bizUser.createdAt}
+                    />
                   ) : (
                     <span>-</span>
                   )}
@@ -233,15 +212,19 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 <div className="w-1/2 ">Name</div>
                 <div className="w-1/2 ">Value</div>
               </div>
-              {bizUserAttributes.map(({ name, value, dataType, predefined }, key) => {
-                const formattedValue = formatAttributeValue(value, dataType, predefined);
+              {bizUserAttributes.map(({ name, value, dataType }, key) => {
+                const formattedValue = formatAttributeValue(value, dataType);
                 return (
                   <div className="flex flex-row py-2 text-sm" key={key}>
                     <div className="w-1/2">
                       <TruncatedText text={name} maxLength={15} />
                     </div>
                     <div className="w-1/2">
-                      <TruncatedText text={formattedValue} maxLength={25} />
+                      <TruncatedText
+                        text={formattedValue}
+                        maxLength={25}
+                        rawValue={dataType === AttributeDataType.DateTime ? value : undefined}
+                      />
                     </div>
                   </div>
                 );
