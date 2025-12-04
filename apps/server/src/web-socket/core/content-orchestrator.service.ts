@@ -494,10 +494,11 @@ export class ContentOrchestratorService {
         reason: 'Content version not available or not activated',
       };
     }
-    const latestActivatedContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
+    const latestActivatedContentVersion = await this.findAndUpdateCustomContentVersion(
       socketData,
       contentType,
       evaluatedContentVersion,
+      true, // When versions don't match, use published version and clear activeSession
     );
     const steps = latestActivatedContentVersion?.steps ?? [];
     const stepCvid = options?.stepCvid || steps?.[0]?.cvid;
@@ -686,10 +687,11 @@ export class ContentOrchestratorService {
       };
     }
 
-    const customContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
+    const customContentVersion = await this.findAndUpdateCustomContentVersion(
       socketData,
       contentType,
       latestActivatedContentVersion,
+      false, // When versions don't match, prefer to use active session version
     );
 
     const result = await this.handleContentVersion(context, customContentVersion);
@@ -1011,35 +1013,42 @@ export class ContentOrchestratorService {
 
   /**
    * Find the latest activated content version, potentially updated by latest session version
+   * @param usePublishedVersionOnMismatch - When activeSession version differs from published version:
+   *                                        - If true: use the published version and set activeSession to null
+   *                                        - If false: prefer to use the version from active session
    */
-  private async findAndUpdateActivatedCustomContentVersion(
+  private async findAndUpdateCustomContentVersion(
     socketData: SocketData,
     contentType: ContentDataType,
     evaluatedContentVersion: CustomContentVersion,
+    usePublishedVersionOnMismatch: boolean,
   ): Promise<CustomContentVersion> {
     // For checklist, always return the evaluated content version (the new published version)
-    if (
-      !sessionIsAvailable(evaluatedContentVersion.session.latestSession, contentType) ||
-      contentType === ContentDataType.CHECKLIST
-    ) {
+    const activeSession = evaluatedContentVersion.session.activeSession;
+    if (!activeSession || contentType !== ContentDataType.FLOW) {
       return evaluatedContentVersion;
     }
-    const latestActivatedContentVersionId =
-      evaluatedContentVersion.session.latestSession?.versionId;
-    if (
-      latestActivatedContentVersionId &&
-      evaluatedContentVersion.id !== latestActivatedContentVersionId
-    ) {
-      const activatedContentVersion = await this.findEvaluatedContentVersion(
-        socketData,
-        contentType,
-        latestActivatedContentVersionId,
-      );
-      if (activatedContentVersion) {
-        return activatedContentVersion;
-      }
+
+    const activeSessionVersionId = activeSession?.versionId;
+
+    // Versions match, return as is
+    if (evaluatedContentVersion.id === activeSessionVersionId) {
+      return evaluatedContentVersion;
     }
-    return evaluatedContentVersion;
+
+    // When activeSession version differs from published version:
+    // Use the published version and set activeSession to null
+    if (usePublishedVersionOnMismatch) {
+      return {
+        ...evaluatedContentVersion,
+        session: {
+          ...evaluatedContentVersion.session,
+          activeSession: null,
+        },
+      };
+    }
+
+    return await this.findEvaluatedContentVersion(socketData, contentType, activeSessionVersionId);
   }
 
   /**
