@@ -124,21 +124,6 @@ export class SessionBuilderService {
   }
 
   /**
-   * Get biz session
-   * @param sessionId - The session ID
-   * @returns The biz session or null if not found
-   */
-  async getBizSession(sessionId: string, state = 0) {
-    return await this.prisma.bizSession.findUnique({
-      where: { id: sessionId, state },
-      include: {
-        content: true,
-        version: true,
-      },
-    });
-  }
-
-  /**
    * Create content session
    * @param customContentVersion - The custom content version
    * @param socketData - The socket data

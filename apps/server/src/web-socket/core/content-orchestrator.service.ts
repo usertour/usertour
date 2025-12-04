@@ -138,7 +138,7 @@ export class ContentOrchestratorService {
     } = context;
 
     const socketData = await this.getSocketData(socket);
-    const bizSession = await this.sessionBuilderService.getBizSession(sessionId);
+    const bizSession = await this.contentDataService.findBizSession(sessionId);
     if (!socketData || !bizSession) {
       return false;
     }
@@ -195,7 +195,7 @@ export class ContentOrchestratorService {
     socketData: SocketData,
     sessionId: string,
   ): Promise<CustomContentSession | null> {
-    const session = await this.sessionBuilderService.getBizSession(sessionId);
+    const session = await this.contentDataService.findBizSession(sessionId);
     if (!session) {
       return null;
     }
@@ -205,12 +205,14 @@ export class ContentOrchestratorService {
       contentType,
       session.versionId,
     );
-    if (
-      !customContentVersion ||
-      customContentVersion.session.latestSession?.id !== sessionId ||
-      !sessionIsAvailable(customContentVersion.session.latestSession, contentType)
-    ) {
+
+    if (!customContentVersion) {
       return null;
+    }
+    const activeSession = customContentVersion?.session?.activeSession;
+    if (activeSession?.id !== sessionId) {
+      const bizSession = await this.contentDataService.findBizSessionWithEvents(sessionId);
+      customContentVersion.session.activeSession = bizSession;
     }
     return await this.initializeSession(customContentVersion, socketData, undefined);
   }
@@ -279,10 +281,8 @@ export class ContentOrchestratorService {
       contentType,
       versionId,
     );
-    if (
-      !customContentVersion ||
-      !sessionIsAvailable(customContentVersion.session.latestSession, contentType)
-    ) {
+    // If active session is not found, return null
+    if (!customContentVersion?.session?.activeSession) {
       return null;
     }
     return await this.initializeSession(customContentVersion, socketData);
@@ -925,7 +925,7 @@ export class ContentOrchestratorService {
 
     if (sessionIsAvailable(session.latestSession, contentType)) {
       const sessionId = session.latestSession!.id;
-      const existingBizSession = await this.sessionBuilderService.getBizSession(sessionId);
+      const existingBizSession = await this.contentDataService.findBizSession(sessionId);
       if (!existingBizSession) {
         return {
           success: false,

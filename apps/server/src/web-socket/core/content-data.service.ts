@@ -11,6 +11,7 @@ import {
   VersionWithStepsAndContent,
   Attribute,
   BizSessionWithEvents,
+  BizSessionWithContentAndVersion,
 } from '@/common/types/schema';
 import {
   BizEvents,
@@ -204,6 +205,37 @@ export class ContentDataService {
     });
 
     return contentOnEnvironment?.publishedVersionId;
+  }
+
+  /**
+   * Find biz session with events
+   * @param id - The biz session ID
+   * @param state - The state of the session
+   * @returns The biz session with events or null if not found
+   */
+  async findBizSessionWithEvents(id: string, state = 0): Promise<BizSessionWithEvents | null> {
+    return await this.prisma.bizSession.findUnique({
+      where: { id, state },
+      include: {
+        bizEvent: { include: { event: true } },
+      },
+    });
+  }
+
+  /**
+   * Find biz session with content and version
+   * @param id - The biz session ID
+   * @param state - The state of the session
+   * @returns The biz session with content and version or null if not found
+   */
+  async findBizSession(id: string, state = 0): Promise<BizSessionWithContentAndVersion | null> {
+    return await this.prisma.bizSession.findUnique({
+      where: { id, state },
+      include: {
+        content: true,
+        version: true,
+      },
+    });
   }
 
   // ============================================================================
