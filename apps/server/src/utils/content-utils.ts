@@ -244,13 +244,12 @@ export const findCurrentStepCvid = (
   const { stepCvid } = options ?? {};
   const steps = customContentVersion?.steps ?? [];
   const session = customContentVersion.session;
-  const contentType = customContentVersion.content.type as ContentDataType;
 
   if (stepCvid) {
     return stepCvid;
   }
 
-  if (!sessionIsAvailable(session.latestSession, contentType)) {
+  if (!session.activeSession) {
     return steps?.[0]?.cvid;
   }
 
