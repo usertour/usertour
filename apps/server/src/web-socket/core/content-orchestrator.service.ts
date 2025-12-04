@@ -923,18 +923,10 @@ export class ContentOrchestratorService {
     const contentType = customContentVersion.content.type as ContentDataType;
     const currentStepCvid = findCurrentStepCvid(customContentVersion, startOptions);
 
-    if (sessionIsAvailable(session.latestSession, contentType)) {
-      const sessionId = session.latestSession!.id;
-      const existingBizSession = await this.contentDataService.findBizSession(sessionId);
-      if (!existingBizSession) {
-        return {
-          success: false,
-          reason: 'BizSession not found or already dismissed',
-        };
-      }
+    if (session.activeSession) {
       return {
         success: true,
-        sessionId,
+        sessionId: session.activeSession.id,
         currentStepCvid,
       };
     }
