@@ -25,7 +25,6 @@ import {
   canSendChecklistCompletedEvent,
   evaluateChecklistItemsWithContext,
   isSingletonContentType,
-  sessionIsDismissed,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -1626,9 +1625,11 @@ export class ContentOrchestratorService {
       versionId,
     );
 
-    // Filter out dismissed versions first
+    // Keep versions that have active session OR have total sessions = 0
+    // Filter out versions that have neither active session nor total sessions = 0
     const activeEvaluatedVersions = evaluatedVersions.filter(
-      (contentVersion) => !sessionIsDismissed(contentVersion.session.latestSession, contentType),
+      (contentVersion) =>
+        contentVersion.session.activeSession || contentVersion.session.totalSessions === 0,
     );
 
     const availableVersions = filterAvailableAutoStartContentVersions(
