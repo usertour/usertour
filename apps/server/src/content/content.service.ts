@@ -7,6 +7,7 @@ import { CreateStepInput, UpdateStepInput } from './dto/step.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
 import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
+import { WebSocketV2Gateway } from '@/web-socket/v2/web-socket-v2.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
@@ -19,6 +20,7 @@ export class ContentService {
   constructor(
     private prisma: PrismaService,
     private webSocketGateway: WebSocketGateway,
+    private webSocketV2Gateway: WebSocketV2Gateway,
   ) {}
 
   async createContent(input: ContentInput) {
@@ -389,6 +391,10 @@ export class ContentService {
 
     // send content change notification to all users in the environment
     await this.webSocketGateway.notifyContentChanged(environmentId);
+
+    // Cancel all active content sessions for this content
+    // await this.webSocketV2Gateway.cancelAllContentSessions(contentId, environmentId);
+
     return content;
   }
 

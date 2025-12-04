@@ -26,11 +26,12 @@ import {
   CustomContentSession,
 } from '@usertour/types';
 import { WebSocketContext } from './web-socket-v2.dto';
-import { Socket } from 'socket.io';
+import { Socket, Server } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
+import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -609,5 +610,94 @@ export class WebSocketV2Service {
       }
     }
     return launcherSessions;
+  }
+
+  /**
+   * Cancel all active content sessions for a specific content when it's unpublished
+   * @param server - The WebSocket server instance
+   * @param contentId - The content ID to cancel sessions for
+   * @param environmentId - The environment ID
+   * @returns Promise<void>
+   */
+  async cancelAllContentSessions(
+    server: Server,
+    contentId: string,
+    environmentId: string,
+  ): Promise<void> {
+    try {
+      // Find all active sessions (state = 0) for this content
+      const activeSessions = await this.prisma.bizSession.findMany({
+        where: {
+          contentId,
+          environmentId,
+          state: 0, // Active sessions
+          deleted: false,
+        },
+        include: {
+          bizUser: {
+            select: {
+              externalId: true,
+            },
+          },
+        },
+      });
+
+      if (activeSessions.length === 0) {
+        this.logger.debug(
+          `No active sessions found for content ${contentId} in environment ${environmentId}`,
+        );
+        return;
+      }
+
+      // Collect all cancel contexts first
+      const cancelContexts: ContentCancelContext[] = [];
+
+      for (const session of activeSessions) {
+        const { id: sessionId, bizUser } = session;
+
+        if (!bizUser?.externalId) {
+          continue;
+        }
+
+        // Build user room ID to find the socket
+        const userRoomId = buildExternalUserRoomId(environmentId, bizUser.externalId);
+        const sockets = await server.in(userRoomId).fetchSockets();
+
+        if (sockets.length === 0) {
+          continue;
+        }
+
+        // Cancel the session on all sockets in the user room
+        const socket = sockets[0] as unknown as Socket;
+
+        cancelContexts.push({
+          server,
+          socket,
+          sessionId,
+          cancelOtherSessions: true,
+          unsetCurrentSession: true,
+          endReason: contentEndReason.UNPUBLISHED_CONTENT,
+        });
+      }
+
+      // Cancel all sessions
+      await Promise.allSettled(
+        cancelContexts.map((cancelContext) => {
+          return this.contentOrchestratorService.cancelContent(cancelContext).catch((error) => {
+            this.logger.error(
+              `Failed to cancel session ${cancelContext.sessionId} for socket ${cancelContext.socket.id}: ${error.message}`,
+            );
+          });
+        }),
+      );
+
+      this.logger.log(
+        `Canceled all active sessions for content ${contentId} in environment ${environmentId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to cancel all content sessions for content ${contentId}: ${(error as Error).message}`,
+      );
+    }
   }
 }

@@ -116,4 +116,14 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       return await this.messageHandler.handle(this.server, socket, kind, payload);
     });
   }
+
+  /**
+   * Cancel all active content sessions for a specific content when it's unpublished
+   * @param contentId - The content ID to cancel sessions for
+   * @param environmentId - The environment ID
+   * @returns Promise<void>
+   */
+  async cancelAllContentSessions(contentId: string, environmentId: string): Promise<void> {
+    return await this.service.cancelAllContentSessions(this.server, contentId, environmentId);
+  }
 }
