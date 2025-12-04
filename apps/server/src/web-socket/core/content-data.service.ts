@@ -12,6 +12,7 @@ import {
   Attribute,
   BizSessionWithEvents,
   BizSessionWithContentAndVersion,
+  BizEventWithEvent,
 } from '@/common/types/schema';
 import {
   BizEvents,
@@ -36,7 +37,7 @@ import {
 /**
  * Context for content queries containing essential parameters
  */
-export interface ContentQueryContext {
+interface ContentQueryContext {
   readonly environment: Environment;
   readonly externalUserId: string;
   readonly externalCompanyId?: string;
@@ -70,6 +71,13 @@ type VersionWithSession = {
 };
 
 /**
+ * Event with bizSession and content info for latest event calculation
+ */
+type BizEventWithSessionAndContent = BizEventWithEvent & {
+  bizSession: { contentId: string | null; content: { type: string } | null } | null;
+};
+
+/**
  * Service responsible for fetching and processing content data
  * Coordinates data retrieval, condition evaluation, and content assembly
  */
@@ -88,6 +96,15 @@ export class ContentDataService {
     BizEvents.FLOW_COMPLETED,
     BizEvents.LAUNCHER_ACTIVATED,
     BizEvents.CHECKLIST_COMPLETED,
+  ] as const;
+
+  /**
+   * Event code names for dismissed events
+   */
+  private static readonly DISMISSED_EVENTS = [
+    BizEvents.FLOW_ENDED,
+    BizEvents.LAUNCHER_DISMISSED,
+    BizEvents.CHECKLIST_DISMISSED,
   ] as const;
 
   /**
@@ -348,26 +365,32 @@ export class ContentDataService {
     contentIds: string[],
     bizUserId: string,
   ): Promise<Map<string, ContentSessionCollection>> {
-    const [latestSessions, activeSessions, totalCounts, completedCounts] = await Promise.all([
-      this.findSessionsByContent(contentIds, bizUserId),
+    const [activeSessions, totalCounts, completedCounts, events] = await Promise.all([
       this.findSessionsByContent(contentIds, bizUserId, 0),
       this.findSessionCounts(contentIds, bizUserId),
       this.findSessionCounts(contentIds, bizUserId, ContentDataService.COMPLETED_EVENTS),
+      this.findEventsByContentIds(contentIds, bizUserId),
     ]);
+
+    // Process latestEvents and latestDismissedEvents from the same events data
+    const latestEvents = this.getLatestEventByContentType(events, contentIds);
+    const latestDismissedEvents = this.getLatestDismissedEvents(events);
 
     const sessions = new Map<string, ContentSessionCollection>();
 
     for (const contentId of contentIds) {
-      const latestSession =
-        latestSessions.find((session) => session.contentId === contentId) || null;
-      const activeSession =
-        activeSessions.find((session) => session.contentId === contentId) || null;
+      const activeSession = activeSessions.get(contentId) || null;
+      const totalSessions = totalCounts.get(contentId) ?? 0;
+      const completedSessions = completedCounts.get(contentId) ?? 0;
+      const latestEvent = latestEvents.get(contentId);
+      const latestDismissedEvent = latestDismissedEvents.get(contentId);
 
       sessions.set(contentId, {
-        latestSession,
         activeSession,
-        totalSessions: totalCounts.get(contentId) ?? 0,
-        completedSessions: completedCounts.get(contentId) ?? 0,
+        totalSessions,
+        completedSessions,
+        latestEvent,
+        latestDismissedEvent,
       });
     }
 
@@ -385,7 +408,13 @@ export class ContentDataService {
     contentIds: string[],
     bizUserId: string,
     state?: number,
-  ): Promise<BizSessionWithEvents[]> {
+  ): Promise<Map<string, BizSessionWithEvents>> {
+    const sessionMap = new Map<string, BizSessionWithEvents>();
+
+    if (contentIds.length === 0) {
+      return sessionMap;
+    }
+
     const where: Prisma.BizSessionWhereInput = {
       contentId: { in: contentIds },
       bizUserId,
@@ -396,12 +425,138 @@ export class ContentDataService {
       where.state = state;
     }
 
-    return await this.prisma.bizSession.findMany({
+    const sessions = await this.prisma.bizSession.findMany({
       where,
       include: { bizEvent: { include: { event: true } } },
       orderBy: { createdAt: 'desc' },
       distinct: ['contentId'],
     });
+
+    // Convert array to map by contentId (first occurrence is the latest due to orderBy)
+    for (const session of sessions) {
+      if (!sessionMap.has(session.contentId)) {
+        sessionMap.set(session.contentId, session);
+      }
+    }
+
+    return sessionMap;
+  }
+
+  /**
+   * Find all events for content IDs
+   * @param contentIds - Array of content IDs to find events for
+   * @param bizUserId - Business user ID (globally unique, determines environment)
+   * @returns Array of events with bizSession and content info, ordered by createdAt desc
+   */
+  private async findEventsByContentIds(
+    contentIds: string[],
+    bizUserId: string,
+  ): Promise<BizEventWithSessionAndContent[]> {
+    if (contentIds.length === 0) {
+      return [];
+    }
+
+    return await this.prisma.bizEvent.findMany({
+      where: {
+        bizUserId,
+        bizSession: {
+          contentId: { in: contentIds },
+          deleted: false,
+        },
+      },
+      include: {
+        event: true,
+        bizSession: {
+          select: {
+            contentId: true,
+            content: {
+              select: {
+                type: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  /**
+   * Get latest dismissed events for each content ID
+   * @param events - Array of events with bizSession and content info, ordered by createdAt desc
+   * @returns Map of contentId to latest dismissed event
+   */
+  private getLatestDismissedEvents(
+    events: BizEventWithSessionAndContent[],
+  ): Map<string, BizEventWithEvent> {
+    const latestDismissedEvents = new Map<string, BizEventWithEvent>();
+
+    for (const event of events) {
+      const contentId = event.bizSession?.contentId;
+      const eventCodeName = event.event?.codeName;
+      if (
+        contentId &&
+        eventCodeName &&
+        ContentDataService.DISMISSED_EVENTS.includes(
+          eventCodeName as (typeof ContentDataService.DISMISSED_EVENTS)[number],
+        ) &&
+        !latestDismissedEvents.has(contentId)
+      ) {
+        const { bizSession, ...eventWithEvent } = event;
+        latestDismissedEvents.set(contentId, eventWithEvent as BizEventWithEvent);
+      }
+    }
+
+    return latestDismissedEvents;
+  }
+
+  /**
+   * Get latest event for each contentId from other contents with the same contentType
+   * @param events - Array of events with bizSession and content info, ordered by createdAt desc
+   * @param contentIds - Array of content IDs to find latest events for
+   * @returns Map of contentId to latest event from other contents with same contentType
+   */
+  private getLatestEventByContentType(
+    events: BizEventWithSessionAndContent[],
+    contentIds: string[],
+  ): Map<string, BizEventWithEvent> {
+    const latestEventMap = new Map<string, BizEventWithEvent>();
+
+    if (contentIds.length === 0 || events.length === 0) {
+      return latestEventMap;
+    }
+
+    // Build contentId -> contentType map
+    const contentTypeMap = new Map<string, ContentDataType>();
+    for (const event of events) {
+      const contentId = event.bizSession?.contentId;
+      const contentType = event.bizSession?.content?.type as ContentDataType | undefined;
+      if (contentId && contentType && !contentTypeMap.has(contentId)) {
+        contentTypeMap.set(contentId, contentType);
+      }
+    }
+
+    // For each contentId, find the first event from other contents with same contentType
+    for (const contentId of contentIds) {
+      const contentType = contentTypeMap.get(contentId);
+      if (!contentType) {
+        continue;
+      }
+
+      const latestEvent = events.find(
+        (event) =>
+          event.bizSession?.contentId !== contentId &&
+          event.bizSession?.content?.type === contentType,
+      );
+      if (latestEvent) {
+        const { bizSession, ...bizEventWithEvent } = latestEvent;
+        latestEventMap.set(contentId, bizEventWithEvent);
+      }
+    }
+
+    return latestEventMap;
   }
 
   /**

@@ -345,38 +345,6 @@ const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
 };
 
 /**
- * Gets the latest event from other content versions
- * @param currentContent - The current content version
- * @param contents - Array of all content versions
- * @returns The latest event from other content versions
- */
-const getLatestEvent = (currentContent: CustomContentVersion, contents: CustomContentVersion[]) => {
-  const bizEvents: BizEventWithEvent[] = [];
-  const contentId = currentContent.id;
-  const contentType = currentContent.content.type;
-  for (let index = 0; index < contents.length; index++) {
-    const content = contents[index];
-    if (content.id === contentId || content.content.type !== contentType) {
-      continue;
-    }
-    const sessionBizEvents = content.session.latestSession?.bizEvent;
-    if (sessionBizEvents && sessionBizEvents.length > 0) {
-      bizEvents.push(...sessionBizEvents);
-    }
-  }
-  return findLatestEvent(bizEvents);
-};
-
-/**
- * Mapping of content types to their dismissed event names
- */
-const dismissedEventMapping = {
-  [ContentDataType.FLOW]: BizEvents.FLOW_ENDED,
-  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_DISMISSED,
-  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_DISMISSED,
-};
-
-/**
  * Checks if the duration between two dates is greater than the specified duration
  * @param dateLeft - The left date
  * @param dateRight - The right date
@@ -420,13 +388,9 @@ const isGreaterThenDuration = (
 /**
  * Checks if content is allowed by auto-start rules setting
  * @param customContentVersion - The custom content version to check
- * @param customContentVersions - All custom content versions for context
  * @returns True if allowed, false otherwise
  */
-export const isAllowedByAutoStartRulesSetting = (
-  customContentVersion: CustomContentVersion,
-  customContentVersions: CustomContentVersion[],
-) => {
+export const isAllowedByAutoStartRulesSetting = (customContentVersion: CustomContentVersion) => {
   const now = new Date();
 
   const { frequency, startIfNotComplete } = customContentVersion.config.autoStartRulesSetting;
@@ -443,18 +407,15 @@ export const isAllowedByAutoStartRulesSetting = (
     return true;
   }
 
-  const contentType = customContentVersion.content.type as ContentDataType;
-
-  const lastEvent = getLatestEvent(customContentVersion, customContentVersions);
-  const contentEvents = customContentVersion.session.latestSession?.bizEvent;
+  const latestEvent = customContentVersion.session.latestEvent;
 
   if (
-    lastEvent &&
+    latestEvent &&
     frequency &&
     frequency.atLeast &&
     !isGreaterThenDuration(
       now,
-      new Date(lastEvent.createdAt),
+      new Date(latestEvent.createdAt),
       frequency.atLeast.unit,
       frequency.atLeast.duration,
     )
@@ -470,14 +431,13 @@ export const isAllowedByAutoStartRulesSetting = (
     return true;
   }
 
-  const dismissedEventName = dismissedEventMapping[contentType];
-  const dismissedEvent = contentEvents?.find((e) => e?.event?.codeName === dismissedEventName);
+  const latestDismissedEvent = customContentVersion.session.latestDismissedEvent;
 
-  if (!dismissedEvent) {
+  if (!latestDismissedEvent) {
     return true;
   }
 
-  const dismissedEventDate = new Date(dismissedEvent.createdAt);
+  const dismissedEventDate = new Date(latestDismissedEvent.createdAt);
 
   if (frequency.frequency === Frequency.MULTIPLE) {
     if (frequency.every.times && totalSessions >= frequency.every.times) {
@@ -585,7 +545,7 @@ export const filterAvailableAutoStartContentVersions = (
       }
 
       // Check auto-start rules settings
-      if (!isAllowedByAutoStartRulesSetting(customContentVersion, customContentVersions)) {
+      if (!isAllowedByAutoStartRulesSetting(customContentVersion)) {
         return false;
       }
 
@@ -609,13 +569,11 @@ export const filterAvailableAutoStartContentVersions = (
 /**
  * Helper function to check if auto-start content is eligible
  * @param customContentVersion - The content version to check
- * @param allContentVersions - All content versions for context
  * @param allowedConditionTypes - Allowed condition types for filtering
  * @returns True if the content is eligible for auto-start
  */
 const isAutoStartContentEligible = (
   customContentVersion: CustomContentVersion,
-  allContentVersions: CustomContentVersion[],
   allowedConditionTypes: RulesType[],
 ): boolean => {
   // Check if auto-start rules are enabled
@@ -624,7 +582,7 @@ const isAutoStartContentEligible = (
   }
 
   // Check auto-start rules settings
-  if (!isAllowedByAutoStartRulesSetting(customContentVersion, allContentVersions)) {
+  if (!isAllowedByAutoStartRulesSetting(customContentVersion)) {
     return false;
   }
 
@@ -678,9 +636,7 @@ export const filterActivatedContentWithoutClientConditions = (
     }
 
     // Path 1: Check auto-start content versions
-    if (
-      isAutoStartContentEligible(customContentVersion, customContentVersions, allowedConditionTypes)
-    ) {
+    if (isAutoStartContentEligible(customContentVersion, allowedConditionTypes)) {
       return true;
     }
 
