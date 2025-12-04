@@ -708,34 +708,6 @@ export const isSingletonContentType = (contentType: ContentDataType): boolean =>
 };
 
 /**
- * Checks if a session is dismissed
- * @param latestSession - The latest session (may be null or undefined)
- * @param contentType - The content type
- * @returns True if the session is dismissed, false otherwise
- */
-export const sessionIsDismissed = (
-  latestSession: BizSessionWithEvents | null | undefined,
-  contentType: ContentDataType,
-): boolean => {
-  if (contentType === ContentDataType.CHECKLIST) {
-    if (latestSession && checklistIsDimissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  if (contentType === ContentDataType.FLOW) {
-    if (latestSession && flowIsDismissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  if (contentType === ContentDataType.LAUNCHER) {
-    if (latestSession && launcherIsDismissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  return false;
-};
-
-/**
  * Finds the latest activated custom content version
  * @param customContentVersions - The custom content versions
  * @param clientConditions - The client conditions
