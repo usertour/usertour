@@ -1392,7 +1392,7 @@ export const evaluateChecklistItems = async (
   const processedItems: ChecklistItemType[] = [];
 
   for (const item of items) {
-    const bizEvents = customContentVersion.session.latestSession?.bizEvent || [];
+    const bizEvents = customContentVersion.session.activeSession?.bizEvent || [];
     const isClicked = checklistItemIsClicked(bizEvents, item) || item.isClicked || false;
 
     // Check completion conditions using item's isClicked state
@@ -1661,12 +1661,12 @@ const hasChecklistCompletedEvent = (bizEvents: BizEventWithEvent[] | undefined):
 /**
  * Checks if a checklist is all completed and can send CHECKLIST_COMPLETED event
  * @param items - The checklist items
- * @param latestSession - The latest session
+ * @param activeSession - The active session
  * @returns True if the checklist is all completed and can send the event, false otherwise
  */
 export const canSendChecklistCompletedEvent = (
   items: ChecklistItemType[] = [],
-  latestSession?: BizSessionWithEvents | undefined,
+  activeSession?: BizSessionWithEvents | undefined,
 ) => {
   // Check if all visible items are completed
   const visibleItemsCount = checklistVisibleItemsCount(items);
@@ -1677,7 +1677,7 @@ export const canSendChecklistCompletedEvent = (
   }
 
   // Check event prerequisites
-  const bizEvents = latestSession?.bizEvent;
+  const bizEvents = activeSession?.bizEvent;
 
   // Must have at least one CHECKLIST_TASK_COMPLETED event
   if (!hasChecklistTaskCompletedEvent(bizEvents)) {
