@@ -1527,17 +1527,13 @@ export class ContentOrchestratorService {
     evaluatedContentVersion: CustomContentVersion,
   ): Promise<void> {
     const { environment, clientContext, clientConditions } = socketData;
-    const latestSession = evaluatedContentVersion.session.latestSession;
+    const activeSession = evaluatedContentVersion.session.activeSession;
     const contentType = evaluatedContentVersion.content.type;
-    if (
-      !latestSession?.id ||
-      contentType !== ContentDataType.CHECKLIST ||
-      !sessionIsAvailable(latestSession, ContentDataType.CHECKLIST)
-    ) {
+    if (!activeSession || contentType !== ContentDataType.CHECKLIST) {
       return;
     }
 
-    const sessionId = latestSession.id;
+    const sessionId = activeSession.id;
     const trackingParams = {
       environment,
       sessionId,
@@ -1554,7 +1550,7 @@ export class ContentOrchestratorService {
     await this.eventTrackingService.updateChecklistSession(sessionId, items);
 
     // Track new completed task events
-    const newCompletedItems = extractChecklistNewCompletedItems(items, latestSession.bizEvent);
+    const newCompletedItems = extractChecklistNewCompletedItems(items, activeSession.bizEvent);
     if (newCompletedItems.length > 0) {
       const taskIds = newCompletedItems.map((item) => item.id);
       // Track events for each completed task
@@ -1571,7 +1567,7 @@ export class ContentOrchestratorService {
     }
 
     // Check and track checklist completed event if all items are done
-    if (canSendChecklistCompletedEvent(items, latestSession)) {
+    if (canSendChecklistCompletedEvent(items, activeSession)) {
       await this.eventTrackingService.trackEventByType(
         BizEvents.CHECKLIST_COMPLETED,
         trackingParams,
