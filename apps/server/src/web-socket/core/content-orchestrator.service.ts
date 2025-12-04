@@ -18,7 +18,6 @@ import {
   extractClientTrackConditions,
   evaluateCustomContentVersion,
   extractClientConditionWaitTimers,
-  sessionIsAvailable,
   extractChecklistNewCompletedItems,
   extractChecklistTrackConditions,
   hasContentSessionChanges,
@@ -246,7 +245,6 @@ export class ContentOrchestratorService {
       context.socketData,
       preparationResult.startReason,
       preparationResult.versionId,
-      contentType,
     );
 
     return await this.executeBatchOperations(
@@ -1669,12 +1667,11 @@ export class ContentOrchestratorService {
     socketData: SocketData,
     startReason: contentStartReason,
     versionId: string | undefined,
-    contentType: ContentDataType,
   ): Promise<CustomContentSession[]> {
     const sessions = await Promise.all(
       availableVersions.map(async (contentVersion) => {
-        const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
-        const skipBizSession = !isAvailable && !versionId;
+        const activeSession = contentVersion.session.activeSession;
+        const skipBizSession = !activeSession && !versionId;
 
         return this.initializeSession(contentVersion, socketData, { startReason }, skipBizSession);
       }),
