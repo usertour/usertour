@@ -393,7 +393,7 @@ export class ContentService {
     await this.webSocketGateway.notifyContentChanged(environmentId);
 
     // Cancel all active content sessions for this content
-    // await this.webSocketV2Gateway.cancelAllContentSessions(contentId, environmentId);
+    await this.webSocketV2Gateway.cancelAllContentSessions(contentId, environmentId);
 
     return content;
   }
