@@ -69,14 +69,6 @@ type VersionWithSession = {
 };
 
 /**
- * GroupBy result for session counts
- */
-type SessionCountResult = {
-  contentId: string;
-  _count: { id: number };
-};
-
-/**
  * Service responsible for fetching and processing content data
  * Coordinates data retrieval, condition evaluation, and content assembly
  */
@@ -324,28 +316,56 @@ export class ContentDataService {
     contentIds: string[],
     bizUserId: string,
   ): Promise<Map<string, ContentSessionCollection>> {
-    const [latestSessions, totalCounts, completedCounts] = await Promise.all([
-      this.findLatestSessions(contentIds, bizUserId),
+    const [latestSessions, activeSessions, totalCounts, completedCounts] = await Promise.all([
+      this.findSessionsByContent(contentIds, bizUserId),
+      this.findSessionsByContent(contentIds, bizUserId, 0),
       this.findSessionCounts(contentIds, bizUserId),
       this.findSessionCounts(contentIds, bizUserId, ContentDataService.COMPLETED_EVENTS),
     ]);
 
-    return this.buildSessions(contentIds, latestSessions, totalCounts, completedCounts);
+    const sessions = new Map<string, ContentSessionCollection>();
+
+    for (const contentId of contentIds) {
+      const latestSession =
+        latestSessions.find((session) => session.contentId === contentId) || null;
+      const activeSession =
+        activeSessions.find((session) => session.contentId === contentId) || null;
+
+      sessions.set(contentId, {
+        latestSession,
+        activeSession,
+        totalSessions: totalCounts.get(contentId) ?? 0,
+        completedSessions: completedCounts.get(contentId) ?? 0,
+      });
+    }
+
+    return sessions;
   }
 
   /**
-   * Find latest sessions for contents
+   * Find sessions for contents
+   * @param contentIds - Array of content IDs
+   * @param bizUserId - Business user ID
+   * @param state - Optional state filter (e.g., 0 for active sessions)
+   * @returns Array of sessions with events
    */
-  private async findLatestSessions(
+  private async findSessionsByContent(
     contentIds: string[],
     bizUserId: string,
+    state?: number,
   ): Promise<BizSessionWithEvents[]> {
+    const where: Prisma.BizSessionWhereInput = {
+      contentId: { in: contentIds },
+      bizUserId,
+      deleted: false,
+    };
+
+    if (state !== undefined) {
+      where.state = state;
+    }
+
     return await this.prisma.bizSession.findMany({
-      where: {
-        contentId: { in: contentIds },
-        bizUserId,
-        deleted: false,
-      },
+      where,
       include: { bizEvent: { include: { event: true } } },
       orderBy: { createdAt: 'desc' },
       distinct: ['contentId'],
@@ -384,43 +404,7 @@ export class ContentDataService {
       _count: { id: true },
     });
 
-    return this.buildCounts(results);
-  }
-
-  // ============================================================================
-  // Helper Methods
-  // ============================================================================
-
-  /**
-   * Build counts from groupBy results
-   */
-  private buildCounts(results: SessionCountResult[]): Map<string, number> {
     return new Map(results.map((result) => [result.contentId, result._count.id]));
-  }
-
-  /**
-   * Build sessions from latest sessions and counts
-   */
-  private buildSessions(
-    contentIds: string[],
-    latestSessions: BizSessionWithEvents[],
-    totalCounts: Map<string, number>,
-    completedCounts: Map<string, number>,
-  ): Map<string, ContentSessionCollection> {
-    const sessions = new Map<string, ContentSessionCollection>();
-
-    for (const contentId of contentIds) {
-      const latestSession =
-        latestSessions.find((session) => session.contentId === contentId) || null;
-
-      sessions.set(contentId, {
-        latestSession,
-        totalSessions: totalCounts.get(contentId) ?? 0,
-        completedSessions: completedCounts.get(contentId) ?? 0,
-      });
-    }
-
-    return sessions;
   }
 
   // ============================================================================

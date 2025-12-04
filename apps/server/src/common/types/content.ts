@@ -14,6 +14,7 @@ import { Server, Socket } from 'socket.io';
 
 export type ContentSessionCollection = {
   latestSession?: BizSessionWithEvents;
+  activeSession?: BizSessionWithEvents;
   totalSessions: number;
   completedSessions: number;
 };
