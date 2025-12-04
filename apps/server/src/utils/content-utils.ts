@@ -1276,54 +1276,19 @@ export const extractChecklistAttrCodes = (checklist: ChecklistData): string[] =>
 // ============================================================================
 
 /**
- * Gets the initial display of a checklist
- * @param customContentVersion - The custom content version
- * @returns The initial display of the checklist
- */
-export const getChecklistInitialDisplay = (
-  customContentVersion: CustomContentVersion,
-): ChecklistInitialDisplay => {
-  const latestSession = customContentVersion.session.latestSession;
-  const checklistData = customContentVersion.data as unknown as ChecklistData;
-  if (!latestSession || checklistIsDimissed(latestSession.bizEvent)) {
-    return checklistData.initialDisplay;
-  }
-  // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
-  const hiddenOrSeenEvents = latestSession.bizEvent?.filter(
-    (event) =>
-      event.event?.codeName === BizEvents.CHECKLIST_HIDDEN ||
-      event.event?.codeName === BizEvents.CHECKLIST_SEEN,
-  );
-
-  if (!hiddenOrSeenEvents || hiddenOrSeenEvents.length === 0) {
-    return checklistData.initialDisplay;
-  }
-
-  // Get the latest hidden or seen event
-  const latestHiddenOrSeenEvent = hiddenOrSeenEvents.reduce((latest, current) => {
-    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
-  });
-  if (latestHiddenOrSeenEvent.event?.codeName === BizEvents.CHECKLIST_SEEN) {
-    return ChecklistInitialDisplay.EXPANDED;
-  }
-
-  return ChecklistInitialDisplay.BUTTON;
-};
-
-/**
  * Checks if the checklist is expand pending
  * @param customContentVersion - The custom content version
  * @returns True if the checklist is expand pending, false otherwise
  */
 export const isExpandPending = (customContentVersion: CustomContentVersion): boolean => {
-  const latestSession = customContentVersion.session.latestSession;
+  const activeSession = customContentVersion.session.activeSession;
   const checklistData = customContentVersion.data as unknown as ChecklistData;
   // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
   const seenEvents =
-    latestSession?.bizEvent?.filter(
+    activeSession?.bizEvent?.filter(
       (event) => event.event?.codeName === BizEvents.CHECKLIST_SEEN,
     ) ?? [];
-  if (!latestSession || checklistIsDimissed(latestSession.bizEvent) || seenEvents.length === 0) {
+  if (!activeSession || seenEvents.length === 0) {
     return checklistData.initialDisplay === ChecklistInitialDisplay.EXPANDED;
   }
   return false;
