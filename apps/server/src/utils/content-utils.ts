@@ -253,10 +253,10 @@ export const findCurrentStepCvid = (
     return steps?.[0]?.cvid;
   }
 
-  const currentStepId = session.latestSession.currentStepId;
+  const currentStepId = session.activeSession.currentStepId;
   const currentStepCvid = steps.find((step) => step.id === currentStepId)?.cvid ?? null;
 
-  return currentStepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
+  return currentStepCvid || findLatestStepCvid(session.activeSession?.bizEvent);
 };
 
 /**
