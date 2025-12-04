@@ -671,7 +671,6 @@ export class ContentOrchestratorService {
 
     const latestActivatedContentVersions = findLatestActivatedCustomContentVersions(
       evaluatedContentVersions,
-      contentType,
       clientConditions,
     );
     const latestActivatedContentVersion = latestActivatedContentVersions?.[0];

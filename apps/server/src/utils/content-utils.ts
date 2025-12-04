@@ -690,7 +690,7 @@ export const filterActivatedContentWithoutClientConditions = (
     }
 
     // Path 2: Check activated content versions (session-based)
-    return sessionIsAvailable(customContentVersion.session.latestSession, contentType);
+    return !!customContentVersion.session.activeSession;
   });
 };
 
@@ -705,34 +705,6 @@ export const filterActivatedContentWithoutClientConditions = (
  */
 export const isSingletonContentType = (contentType: ContentDataType): boolean => {
   return SINGLETON_CONTENT_TYPES.includes(contentType);
-};
-
-/**
- * Checks if a session is available
- * @param latestSession - The latest session (may be null or undefined)
- * @param contentType - The content type
- * @returns True if the session is available, false otherwise
- */
-export const sessionIsAvailable = (
-  latestSession: BizSessionWithEvents | null | undefined,
-  contentType: ContentDataType,
-): boolean => {
-  if (contentType === ContentDataType.CHECKLIST) {
-    if (latestSession && !checklistIsDimissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  if (contentType === ContentDataType.FLOW) {
-    if (latestSession && !flowIsDismissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  if (contentType === ContentDataType.LAUNCHER) {
-    if (latestSession && !launcherIsDismissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  return false;
 };
 
 /**
@@ -766,27 +738,25 @@ export const sessionIsDismissed = (
 /**
  * Finds the latest activated custom content version
  * @param customContentVersions - The custom content versions
- * @param contentType - The content type
  * @param clientConditions - The client conditions
  * @returns The latest activated custom content version
  */
 export const findLatestActivatedCustomContentVersions = (
   customContentVersions: CustomContentVersion[],
-  contentType: ContentDataType,
   clientConditions: ClientCondition[],
 ): CustomContentVersion[] | undefined => {
   return customContentVersions
     .filter((customContentVersion) => {
       return (
-        sessionIsAvailable(customContentVersion.session.latestSession, contentType) &&
+        customContentVersion.session.activeSession &&
         isAllowedByHideRules(customContentVersion, clientConditions) &&
-        customContentVersion.session.latestSession?.createdAt
+        customContentVersion.session.activeSession?.createdAt
       );
     })
     .sort(
       (a, b) =>
-        new Date(b.session.latestSession!.createdAt).getTime() -
-        new Date(a.session.latestSession!.createdAt).getTime(),
+        new Date(b.session.activeSession!.createdAt).getTime() -
+        new Date(a.session.activeSession!.createdAt).getTime(),
     );
 };
 
