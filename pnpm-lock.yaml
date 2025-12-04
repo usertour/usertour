@@ -91,8 +91,8 @@ importers:
         specifier: ^0.0.45
         version: 0.0.45(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -341,8 +341,8 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -738,8 +738,8 @@ importers:
         specifier: ^0.0.45
         version: 0.0.45(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       apollo3-cache-persist:
         specifier: ^0.14.1
         version: 0.14.1(@apollo/client@3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))
@@ -3175,8 +3175,8 @@ importers:
         specifier: ^0.0.45
         version: 0.0.45(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       animejs:
         specifier: ^3.2.1
         version: 3.2.2
@@ -3419,8 +3419,8 @@ importers:
         specifier: ^0.0.45
         version: 0.0.45(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -3498,8 +3498,8 @@ importers:
         specifier: workspace:^
         version: link:../gql
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -3677,8 +3677,8 @@ importers:
         specifier: ^0.0.45
         version: 0.0.45(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -3857,8 +3857,8 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       chroma-js:
         specifier: ^3.1.2
         version: 3.1.2
@@ -3930,8 +3930,8 @@ importers:
         specifier: ^0.0.45
         version: 0.0.45(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -4060,8 +4060,8 @@ importers:
         specifier: ^0.0.45
         version: 0.0.45(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.32
-        version: 0.0.32
+        specifier: ^0.0.33
+        version: 0.0.33
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -8572,8 +8572,8 @@ packages:
   '@usertour/types@0.0.31':
     resolution: {integrity: sha512-9tJXGxyRybJGTTnCuHE6kj7DDjde8Bi78ORGZse2AyHMT2lrXTcwdBSD1DuMsIUcx7cP5hbYYcGq+R/4TjeseQ==}
 
-  '@usertour/types@0.0.32':
-    resolution: {integrity: sha512-5N8Cx9mD064vZPg93hiV541cSwmwsvbCaNIbzz1RiCo3AUmaliTpVHbSi7EVL+1vM1k6SvjMg9Da5riJxfMOBA==}
+  '@usertour/types@0.0.33':
+    resolution: {integrity: sha512-CvRtOFjRHpPmeoH82+NBJ1uBMGl5NSkfMwIqEkPjs60uSckYS5jizB8zWEr0UUiuY9iURC7EueyP7LbyVevoaQ==}
 
   '@vitejs/plugin-basic-ssl@1.1.0':
     resolution: {integrity: sha512-wO4Dk/rm8u7RNhOf95ZzcEmC9rYOncYgvq4z3duaJrCgjN8BxAnDVyndanfcJZ0O6XZzHz6Q0hTimxTg8Y9g/A==}
@@ -20544,7 +20544,7 @@ snapshots:
 
   '@usertour/types@0.0.31': {}
 
-  '@usertour/types@0.0.32': {}
+  '@usertour/types@0.0.33': {}
 
   '@vitejs/plugin-basic-ssl@1.1.0(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))':
     dependencies:

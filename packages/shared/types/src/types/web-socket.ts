@@ -305,6 +305,8 @@ export type StartContentOptions = {
   startReason: contentStartReason;
   contentId?: string;
   stepCvid?: string;
+  once?: boolean;
+  continue?: boolean;
 };
 
 // ============================================================================
