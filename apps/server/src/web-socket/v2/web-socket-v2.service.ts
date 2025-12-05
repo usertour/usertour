@@ -55,7 +55,7 @@ export class WebSocketV2Service {
    * @returns Promise<SocketData | null>
    */
   async getSocketData(socket: Socket): Promise<SocketData | null> {
-    return await this.socketDataService.get(socket.id);
+    return await this.socketDataService.get(socket);
   }
 
   /**
@@ -65,7 +65,7 @@ export class WebSocketV2Service {
    * @returns Promise<boolean>
    */
   private async updateSocketData(socket: Socket, updates: Partial<SocketData>): Promise<boolean> {
-    return await this.socketDataService.set(socket.id, updates, true);
+    return await this.socketDataService.set(socket, updates, true);
   }
 
   /**
@@ -177,7 +177,7 @@ export class WebSocketV2Service {
       environment.id,
     );
     if (!bizUser) {
-      await this.socketDataService.delete(socket.id);
+      await this.socketDataService.delete(socket);
       this.logger.error(`Failed to upsert business user ${externalUserId} for socket ${socket.id}`);
       return false;
     }
@@ -205,7 +205,7 @@ export class WebSocketV2Service {
     );
 
     if (!bizCompany) {
-      await this.socketDataService.delete(socket.id);
+      await this.socketDataService.delete(socket);
       this.logger.error(
         `Failed to upsert business company ${externalCompanyId} for socket ${socket.id}`,
       );

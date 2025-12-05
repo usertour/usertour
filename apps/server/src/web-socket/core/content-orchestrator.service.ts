@@ -375,7 +375,7 @@ export class ContentOrchestratorService {
    * @returns Promise<SocketData | null>
    */
   private async getSocketData(socket: Socket): Promise<SocketData | null> {
-    return await this.socketDataService.get(socket.id);
+    return await this.socketDataService.get(socket);
   }
 
   /**
@@ -1200,7 +1200,7 @@ export class ContentOrchestratorService {
    */
   private async activateOtherSocketSession(params: ActivateSessionParams) {
     const { socket } = params;
-    const lockKey = buildSocketLockKey(socket.id);
+    const lockKey = buildSocketLockKey(socket);
 
     return (
       (await this.distributedLockService.withRetryLock(
@@ -1436,7 +1436,7 @@ export class ContentOrchestratorService {
    */
   private async cancelOtherSocketSession(params: CancelSessionParams) {
     const { socket } = params;
-    const lockKey = buildSocketLockKey(socket.id);
+    const lockKey = buildSocketLockKey(socket);
 
     return (
       (await this.distributedLockService.withRetryLock(

@@ -17,6 +17,7 @@ import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
+import { cuid } from '@usertour/helpers';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -39,6 +40,11 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
 
     server.use(async (socket: Socket, next) => {
       try {
+        // Generate global unique socket ID to ensure uniqueness across multiple server instances
+        if (!socket?.data?.globalSocketId) {
+          socket.data.globalSocketId = cuid();
+        }
+
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
 
         // Initialize and validate client data
@@ -49,8 +55,8 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           return next(new SDKAuthenticationError());
         }
 
-        // Store client data in Redis
-        const success = await this.socketDataService.set(socket.id, socketData);
+        // Store client data in Redis using global socket ID
+        const success = await this.socketDataService.set(socket, socketData);
         if (!success) {
           return next(new SDKAuthenticationError());
         }
@@ -84,7 +90,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       this.queueService.clearQueue(socket.id);
 
       // Cleanup Redis data
-      await this.socketDataService.delete(socket.id);
+      await this.socketDataService.delete(socket);
 
       this.logger.debug(`Cleaned up queue and Redis data for disconnected socket ${socket.id}`);
     } catch (error) {
