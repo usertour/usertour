@@ -169,7 +169,9 @@ export class WebSocketV2Service {
       environment.id,
     );
     if (!bizUser) {
-      return await this.socketDataService.delete(socket.id);
+      await this.socketDataService.delete(socket.id);
+      this.logger.error(`Failed to upsert business user ${externalUserId} for socket ${socket.id}`);
+      return false;
     }
     return await this.updateSocketData(socket, { externalUserId, bizUserId: bizUser.id });
   }
@@ -195,7 +197,11 @@ export class WebSocketV2Service {
     );
 
     if (!bizCompany) {
-      return await this.socketDataService.delete(socket.id);
+      await this.socketDataService.delete(socket.id);
+      this.logger.error(
+        `Failed to upsert business company ${externalCompanyId} for socket ${socket.id}`,
+      );
+      return false;
     }
     return await this.updateSocketData(socket, { externalCompanyId, bizCompanyId: bizCompany.id });
   }
