@@ -41,6 +41,8 @@ export interface SocketData {
   environment: Environment;
   externalUserId: string;
   externalCompanyId?: string;
+  bizUserId?: string;
+  bizCompanyId?: string;
   clientContext: ClientContext;
   clientConditions?: ClientCondition[];
   waitTimers?: ConditionWaitTimer[];

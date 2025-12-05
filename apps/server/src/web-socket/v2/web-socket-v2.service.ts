@@ -168,8 +168,10 @@ export class WebSocketV2Service {
       attributes,
       environment.id,
     );
-    if (!bizUser) return false;
-    return await this.updateSocketData(socket, { externalUserId });
+    if (!bizUser) {
+      return await this.socketDataService.delete(socket.id);
+    }
+    return await this.updateSocketData(socket, { externalUserId, bizUserId: bizUser.id });
   }
 
   /**
@@ -192,8 +194,10 @@ export class WebSocketV2Service {
       membership,
     );
 
-    if (!bizCompany) return false;
-    return await this.updateSocketData(socket, { externalCompanyId });
+    if (!bizCompany) {
+      return await this.socketDataService.delete(socket.id);
+    }
+    return await this.updateSocketData(socket, { externalCompanyId, bizCompanyId: bizCompany.id });
   }
 
   /**

@@ -255,6 +255,29 @@ export class ContentDataService {
     });
   }
 
+  /**
+   * Check if the user has a biz event
+   * @param contentId - The ID of the content
+   * @param bizUserId - The ID of the business user
+   * @param eventCodeName - The code name of the event
+   * @returns true if the user has the event, false otherwise
+   */
+  async hasBizEvent(
+    contentId: string,
+    bizUserId: string,
+    eventCodeNames: string[],
+  ): Promise<boolean> {
+    const count = await this.prisma.bizSession.count({
+      where: {
+        contentId,
+        bizUserId,
+        deleted: false,
+        bizEvent: { some: { event: { codeName: { in: eventCodeNames } } } },
+      },
+    });
+    return count > 0;
+  }
+
   // ============================================================================
   // Data Fetching Methods
   // ============================================================================

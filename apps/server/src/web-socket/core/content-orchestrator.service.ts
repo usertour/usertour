@@ -25,6 +25,7 @@ import {
   canSendChecklistCompletedEvent,
   evaluateChecklistItemsWithContext,
   isSingletonContentType,
+  CONTENT_SEEN_EVENTS,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -470,11 +471,11 @@ export class ContentOrchestratorService {
    */
   private async tryStartByContentId(context: ContentStartContext): Promise<ContentStartResult> {
     const { contentType, options, socketData } = context;
-    const { contentId } = options!;
-    const { environment } = socketData;
+    const { contentId } = options;
+    const { environment, bizUserId } = socketData;
 
     const publishedVersionId = await this.findPublishedVersionId(contentId, environment);
-    if (!publishedVersionId) {
+    if (!publishedVersionId || !bizUserId) {
       return {
         success: false,
         reason: 'Content not found or not published',
@@ -491,13 +492,25 @@ export class ContentOrchestratorService {
         reason: 'Content version not available or not activated',
       };
     }
-    const latestActivatedContentVersion = await this.findAndUpdateCustomContentVersion(
+    const resolvedContentVersion = await this.findAndUpdateCustomContentVersion(
       socketData,
       contentType,
       evaluatedContentVersion,
       true, // When versions don't match, use published version and clear activeSession
     );
-    const steps = latestActivatedContentVersion?.steps ?? [];
+
+    const hasSeen = await this.contentDataService.hasBizEvent(
+      contentId,
+      bizUserId,
+      CONTENT_SEEN_EVENTS,
+    );
+    if (options?.once && hasSeen) {
+      return {
+        success: false,
+        reason: 'Content already seen',
+      };
+    }
+    const steps = resolvedContentVersion?.steps ?? [];
     const stepCvid = options?.stepCvid || steps?.[0]?.cvid;
     const contentStartContext = {
       ...context,
@@ -507,7 +520,7 @@ export class ContentOrchestratorService {
       },
     };
 
-    return await this.handleContentVersion(contentStartContext, latestActivatedContentVersion);
+    return await this.handleContentVersion(contentStartContext, resolvedContentVersion);
   }
 
   /**

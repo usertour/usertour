@@ -80,6 +80,15 @@ export const ALL_CONTENT_TYPES: ContentDataType[] = [
   ContentDataType.LAUNCHER,
 ];
 
+/**
+ * Events that indicate the user has seen the content
+ */
+export const CONTENT_SEEN_EVENTS: BizEvents[] = [
+  BizEvents.FLOW_STEP_SEEN,
+  BizEvents.CHECKLIST_SEEN,
+  BizEvents.LAUNCHER_SEEN,
+];
+
 // ============================================================================
 // Rule Checking Functions
 // ============================================================================
