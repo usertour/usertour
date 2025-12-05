@@ -673,6 +673,47 @@ export const isSingletonContentType = (contentType: ContentDataType): boolean =>
 };
 
 /**
+ * Checks if the content version ID doesn't match the active session's version ID
+ * This happens when the content type is FLOW, there's an active session,
+ * and the current version ID doesn't match the active session's version ID
+ * @param customContentVersion - The custom content version to check
+ * @param contentType - The content type to check, defaults to FLOW
+ * @returns True if the version ID doesn't match the active session's version ID, false otherwise
+ */
+export const isVersionMismatchWithActiveSession = (
+  customContentVersion: CustomContentVersion,
+  contentType: ContentDataType = ContentDataType.FLOW,
+): boolean => {
+  const activeSession = customContentVersion.session?.activeSession;
+  return (
+    customContentVersion.content.type === contentType &&
+    !!activeSession &&
+    customContentVersion.id !== activeSession?.versionId
+  );
+};
+
+/**
+ * Unset activeSession if version mismatches.
+ * @param customContentVersion - The custom content version
+ * @returns The custom content version with the active session unset
+ */
+export const unsetActiveSessionOnVersionMismatch = (
+  customContentVersion: CustomContentVersion,
+): CustomContentVersion => {
+  const activeSessionVersionId = customContentVersion.session?.activeSession?.versionId;
+  if (customContentVersion.id === activeSessionVersionId) {
+    return customContentVersion;
+  }
+  return {
+    ...customContentVersion,
+    session: {
+      ...customContentVersion.session,
+      activeSession: null,
+    },
+  };
+};
+
+/**
  * Finds the latest activated custom content version
  * @param customContentVersions - The custom content versions
  * @param clientConditions - The client conditions
