@@ -481,6 +481,20 @@ export class ContentOrchestratorService {
         reason: 'Content not found or not published',
       };
     }
+    if (options?.once) {
+      const hasSeen = await this.contentDataService.hasBizEvent(
+        contentId,
+        bizUserId,
+        CONTENT_SEEN_EVENTS,
+      );
+      if (hasSeen) {
+        return {
+          success: false,
+          reason: 'Content already seen',
+        };
+      }
+    }
+
     const evaluatedContentVersion = await this.findEvaluatedContentVersion(
       socketData,
       contentType,
@@ -499,17 +513,6 @@ export class ContentOrchestratorService {
       true, // When versions don't match, use published version and clear activeSession
     );
 
-    const hasSeen = await this.contentDataService.hasBizEvent(
-      contentId,
-      bizUserId,
-      CONTENT_SEEN_EVENTS,
-    );
-    if (options?.once && hasSeen) {
-      return {
-        success: false,
-        reason: 'Content already seen',
-      };
-    }
     const steps = resolvedContentVersion?.steps ?? [];
     const stepCvid = options?.stepCvid || steps?.[0]?.cvid;
     const contentStartContext = {
