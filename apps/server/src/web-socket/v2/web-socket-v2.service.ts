@@ -95,6 +95,12 @@ export class WebSocketV2Service {
     if (!environment) {
       return null;
     }
+    const environmentId = environment.id;
+
+    const bizUser = await this.bizService.getBizUser(externalUserId, environmentId);
+    const bizCompany = externalCompanyId
+      ? await this.bizService.getBizCompany(externalCompanyId, environmentId)
+      : null;
 
     // Build base socket data
     const socketData: SocketData = {
@@ -104,6 +110,8 @@ export class WebSocketV2Service {
       externalCompanyId,
       waitTimers: [],
       clientConditions,
+      bizUserId: bizUser?.id,
+      bizCompanyId: bizCompany?.id,
     };
 
     // Initialize and assign sessions
