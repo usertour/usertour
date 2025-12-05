@@ -72,6 +72,24 @@ export const buildConfig = (config: ContentConfigObject | undefined): ContentCon
   };
 };
 
+/**
+ * Extract user attribute value with fallback support
+ * Returns the attribute value if it exists (including falsy values like false, 0, ''),
+ * otherwise returns the fallback value
+ */
+const extractUserAttributeValue = (
+  element: any,
+  userAttributes: UserTourTypes.Attributes | null | undefined,
+): any => {
+  if (!userAttributes || !('attrCode' in element) || typeof element.attrCode !== 'string') {
+    return 'fallback' in element && typeof element.fallback === 'string' ? element.fallback : '';
+  }
+  const attrValue = userAttributes[element.attrCode];
+  const fallback =
+    'fallback' in element && typeof element.fallback === 'string' ? element.fallback : '';
+  return attrValue ?? fallback;
+};
+
 const extractLinkUrl = (value: any[], userAttributes: UserTourTypes.Attributes): string => {
   let url = '';
   try {
@@ -79,14 +97,7 @@ const extractLinkUrl = (value: any[], userAttributes: UserTourTypes.Attributes):
       if ('children' in v && Array.isArray(v.children)) {
         for (const vc of v.children) {
           if ('type' in vc && vc.type === 'user-attribute') {
-            if (userAttributes && 'attrCode' in vc && typeof vc.attrCode === 'string') {
-              const attrValue = userAttributes[vc.attrCode];
-              const fallback =
-                'fallback' in vc && typeof vc.fallback === 'string' ? vc.fallback : '';
-              url += attrValue ?? fallback;
-            } else if ('fallback' in vc && typeof vc.fallback === 'string') {
-              url += vc.fallback;
-            }
+            url += String(extractUserAttributeValue(vc, userAttributes));
           } else if ('text' in vc && typeof vc.text === 'string') {
             url += vc.text;
           }
@@ -105,7 +116,7 @@ const replaceUserAttrForElement = (data: any[], userAttributes: UserTourTypes.At
       v.children = replaceUserAttrForElement(v.children, userAttributes);
     }
     if (v.type === 'user-attribute' && userAttributes) {
-      const value = userAttributes[v.attrCode] || v.fallback;
+      const value = extractUserAttributeValue(v, userAttributes);
       if (!isUndefined(value)) {
         v.value = String(value);
       }
