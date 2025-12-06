@@ -48,7 +48,7 @@
     "@usertour-packages/shared-editor": "workspace:^",
     "@usertour-packages/shared-hooks": "workspace:^",
     "@usertour-packages/sdk": "workspace:^",
-    "@usertour/helpers": "^0.0.46",
+    "@usertour/helpers": "^0.0.47",
     "@usertour-packages/slider": "workspace:^",
     "@usertour-packages/switch": "workspace:^",
     "@usertour-packages/table": "workspace:^",
