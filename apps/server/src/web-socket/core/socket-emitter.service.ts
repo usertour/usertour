@@ -233,6 +233,7 @@ export class SocketEmitterService {
     payload?: any,
     timeout = this.DEFAULT_TIMEOUT,
   ): Promise<boolean> {
+    const startTime = Date.now();
     try {
       const message = {
         kind,
@@ -240,12 +241,18 @@ export class SocketEmitterService {
         messageId: uuidV4(), // Generate a unique message ID for idempotency
       };
       const success = await socket.timeout(timeout).emitWithAck(this.SERVER_MESSAGE_EVENT, message);
+      const duration = Date.now() - startTime;
       if (!success) {
-        this.logger.warn(`Client failed to process ${kind} for socket ${socket.id}`);
+        this.logger.warn(
+          `[WS] emitWithAck kind=${kind} - Client failed to process in ${duration}ms`,
+        );
+      } else {
+        this.logger.log(`[WS] emitWithAck kind=${kind} - Completed in ${duration}ms`);
       }
       return !!success;
     } catch (error) {
-      this.logger.error(`Failed to emit ${kind} for socket ${socket.id}:`, error);
+      const duration = Date.now() - startTime;
+      this.logger.error(`[WS] emitWithAck kind=${kind} - Failed in ${duration}ms:`, error);
       return false;
     }
   }
