@@ -89,9 +89,9 @@ const evaluateRule = async (
   const { typeControl = {}, activatedIds, deactivatedIds, customEvaluators } = options;
   const conditionId = condition.id;
 
-  // Check ID-based overrides first
-  if (activatedIds?.includes(conditionId)) return true;
-  if (deactivatedIds?.includes(conditionId)) return false;
+  // Check ID-based overrides first (only if conditionId is defined)
+  if (conditionId && activatedIds?.includes(conditionId)) return true;
+  if (conditionId && deactivatedIds?.includes(conditionId)) return false;
 
   // Check if custom evaluator is provided for this rule type
   const customEvaluator = customEvaluators?.[condition.type as RulesType];
