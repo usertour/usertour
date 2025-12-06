@@ -206,6 +206,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @private
    */
   private async show(step: SessionStep, reportStepSeen = true): Promise<void> {
+    // Early return if the step is already open
+    if (this.isOpen() && step.cvid === this.currentStepCvid) {
+      return;
+    }
     // Reset tour state and set new step
     this.reset();
     this.currentStepCvid = step.cvid;

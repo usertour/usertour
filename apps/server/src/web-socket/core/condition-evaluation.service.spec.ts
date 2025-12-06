@@ -4,7 +4,14 @@ import {
   ConditionEvaluationContext,
 } from './condition-evaluation.service';
 import { PrismaService } from 'nestjs-prisma';
-import { RulesCondition, BizAttributeTypes, ChecklistData, RulesType } from '@usertour/types';
+import {
+  RulesCondition,
+  BizAttributeTypes,
+  ChecklistData,
+  RulesType,
+  ContentConditionLogic,
+  BizEvents,
+} from '@usertour/types';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { Step } from '@/common/types/schema';
 
@@ -107,8 +114,10 @@ describe('ConditionEvaluationService', () => {
     ] as any,
   });
 
+  let mockPrismaService: any;
+
   beforeEach(async () => {
-    const mockPrismaService = {
+    mockPrismaService = {
       attribute: {
         findMany: jest.fn(),
       },
@@ -116,6 +125,25 @@ describe('ConditionEvaluationService', () => {
         findMany: jest.fn(),
       },
       bizEvent: {
+        findFirst: jest.fn(),
+      },
+      segment: {
+        findFirst: jest.fn(),
+      },
+      bizUserOnSegment: {
+        findFirst: jest.fn(),
+      },
+      bizUser: {
+        findFirst: jest.fn(),
+      },
+      bizUserOnCompany: {
+        findFirst: jest.fn(),
+      },
+      bizCompanyOnSegment: {
+        findFirst: jest.fn(),
+      },
+      bizSession: {
+        count: jest.fn(),
         findFirst: jest.fn(),
       },
     };
@@ -414,6 +442,362 @@ describe('ConditionEvaluationService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].trigger).toBeUndefined();
+    });
+  });
+
+  describe('Content Condition Evaluation', () => {
+    describe('Activation Condition (activated/unactivated)', () => {
+      it('should return true when content is activated and logic is actived', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(1);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.ACTIVED,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(true);
+        expect(mockPrismaService.bizSession.count).toHaveBeenCalledWith({
+          where: {
+            contentId: 'content-1',
+            bizUserId: 'biz-user-1',
+            deleted: false,
+            state: 0,
+          },
+        });
+      });
+
+      it('should return false when content is not activated and logic is actived', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(0);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.ACTIVED,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(false);
+      });
+
+      it('should return true when content is not activated and logic is unactived', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(0);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.UNACTIVED,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(true);
+      });
+
+      it('should return false when content is activated and logic is unactived', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(1);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.UNACTIVED,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(false);
+      });
+    });
+
+    describe('Seen Condition (seen/unseen)', () => {
+      it('should return true when content is seen and logic is seen', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(1);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.SEEN,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(true);
+        expect(mockPrismaService.bizSession.count).toHaveBeenCalledWith({
+          where: {
+            contentId: 'content-1',
+            bizUserId: 'biz-user-1',
+            deleted: false,
+            bizEvent: { some: { event: { codeName: BizEvents.FLOW_STEP_SEEN } } },
+          },
+        });
+      });
+
+      it('should return false when content is not seen and logic is seen', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(0);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.SEEN,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(false);
+      });
+
+      it('should return true when content is not seen and logic is unseen', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(0);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.UNSEEN,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(true);
+      });
+
+      it('should return false when content is seen and logic is unseen', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(1);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.UNSEEN,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(false);
+      });
+    });
+
+    describe('Completed Condition (completed/uncompleted)', () => {
+      it('should return true when content is completed and logic is completed', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(1);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.COMPLETED,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(true);
+        expect(mockPrismaService.bizSession.count).toHaveBeenCalledWith({
+          where: {
+            contentId: 'content-1',
+            bizUserId: 'biz-user-1',
+            deleted: false,
+            bizEvent: { some: { event: { codeName: BizEvents.FLOW_COMPLETED } } },
+          },
+        });
+      });
+
+      it('should return false when content is not completed and logic is completed', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(0);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.COMPLETED,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(false);
+      });
+
+      it('should return true when content is not completed and logic is uncompleted', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(0);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.UNCOMPLETED,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(true);
+      });
+
+      it('should return false when content is completed and logic is uncompleted', async () => {
+        mockPrismaService.bizSession.count.mockResolvedValue(1);
+
+        const conditions: RulesCondition[] = [
+          {
+            id: 'rule-1',
+            type: RulesType.CONTENT,
+            operators: 'and',
+            data: {
+              contentId: 'content-1',
+              logic: ContentConditionLogic.UNCOMPLETED,
+            },
+          },
+        ];
+
+        const context = createMockContext();
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].actived).toBe(false);
+      });
+    });
+
+    it('should return false for content condition with missing contentId', async () => {
+      const conditions: RulesCondition[] = [
+        {
+          id: 'rule-1',
+          type: RulesType.CONTENT,
+          operators: 'and',
+          data: {
+            logic: ContentConditionLogic.ACTIVED,
+          },
+        },
+      ];
+
+      const context = createMockContext();
+      const result = await service.evaluateRulesConditions(conditions, context);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].actived).toBe(false);
+      expect(mockPrismaService.bizSession.count).not.toHaveBeenCalled();
+    });
+
+    it('should return false for content condition with missing logic', async () => {
+      const conditions: RulesCondition[] = [
+        {
+          id: 'rule-1',
+          type: RulesType.CONTENT,
+          operators: 'and',
+          data: {
+            contentId: 'content-1',
+          },
+        },
+      ];
+
+      const context = createMockContext();
+      const result = await service.evaluateRulesConditions(conditions, context);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].actived).toBe(false);
+      expect(mockPrismaService.bizSession.count).not.toHaveBeenCalled();
+    });
+
+    it('should return false for unknown content condition logic', async () => {
+      const conditions: RulesCondition[] = [
+        {
+          id: 'rule-1',
+          type: RulesType.CONTENT,
+          operators: 'and',
+          data: {
+            contentId: 'content-1',
+            logic: 'unknown-logic',
+          },
+        },
+      ];
+
+      const context = createMockContext();
+      const result = await service.evaluateRulesConditions(conditions, context);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].actived).toBe(false);
     });
   });
 });

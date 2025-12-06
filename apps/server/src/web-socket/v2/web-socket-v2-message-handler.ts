@@ -134,7 +134,7 @@ export class WebSocketV2MessageHandler {
 
   async handle(server: Server, socket: Socket, kind: string, payload: any): Promise<boolean> {
     const startTime = Date.now();
-    const lockKey = buildSocketLockKey(socket.id);
+    const lockKey = buildSocketLockKey(socket);
 
     const result = await this.distributedLockService.withRetryLock(
       lockKey,

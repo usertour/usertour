@@ -171,7 +171,7 @@ export class SocketOperationService {
       lastDismissedFlowId: undefined,
     };
 
-    return await this.socketDataService.set(socket.id, updatedSocketData, true);
+    return await this.socketDataService.set(socket, updatedSocketData, true);
   }
 
   /**
@@ -217,7 +217,7 @@ export class SocketOperationService {
       lastDismissedChecklistId: undefined,
     };
 
-    return await this.socketDataService.set(socket.id, updatedSocketData, true);
+    return await this.socketDataService.set(socket, updatedSocketData, true);
   }
 
   /**
@@ -266,7 +266,7 @@ export class SocketOperationService {
       }),
     };
 
-    return await this.socketDataService.set(socket.id, updatedSocketData, true);
+    return await this.socketDataService.set(socket, updatedSocketData, true);
   }
 
   // ============================================================================
@@ -313,7 +313,7 @@ export class SocketOperationService {
       contentType === ContentDataType.LAUNCHER ? { launcherSessions: updatedSessions } : {};
 
     return await this.socketDataService.set(
-      socket.id,
+      socket,
       {
         ...updateData,
         clientConditions: updatedConditions,
@@ -362,7 +362,7 @@ export class SocketOperationService {
       contentType === ContentDataType.LAUNCHER ? { launcherSessions: updatedSessions } : {};
 
     return await this.socketDataService.set(
-      socket.id,
+      socket,
       {
         ...updateData,
         clientConditions: updatedConditions,
@@ -416,7 +416,7 @@ export class SocketOperationService {
     const newClientConditions = [...clientConditions, ...trackedClientConditions];
 
     return await this.socketDataService.set(
-      socket.id,
+      socket,
       {
         clientConditions: newClientConditions,
       },
@@ -458,7 +458,7 @@ export class SocketOperationService {
     }
 
     return await this.socketDataService.set(
-      socket.id,
+      socket,
       {
         waitTimers: [...existingTimers, ...startedTimers],
       },
