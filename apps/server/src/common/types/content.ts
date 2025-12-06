@@ -1,4 +1,4 @@
-import { BizSessionWithEvents, VersionWithStepsAndContent } from './schema';
+import { BizSessionWithEvents, VersionWithStepsAndContent, BizEventWithEvent } from './schema';
 import {
   ClientCondition,
   CustomContentSession,
@@ -13,9 +13,11 @@ import { Environment } from './schema';
 import { Server, Socket } from 'socket.io';
 
 export type ContentSessionCollection = {
-  latestSession?: BizSessionWithEvents;
+  activeSession?: BizSessionWithEvents;
   totalSessions: number;
   completedSessions: number;
+  latestEvent?: BizEventWithEvent; // Latest event across all same-type contents (for atLeast frequency check)
+  latestDismissedEvent?: BizEventWithEvent; // Latest dismissed event for current content (for every frequency check)
 };
 
 /**
@@ -39,6 +41,8 @@ export interface SocketData {
   environment: Environment;
   externalUserId: string;
   externalCompanyId?: string;
+  bizUserId?: string;
+  bizCompanyId?: string;
   clientContext: ClientContext;
   clientConditions?: ClientCondition[];
   waitTimers?: ConditionWaitTimer[];

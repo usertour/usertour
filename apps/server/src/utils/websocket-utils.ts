@@ -7,18 +7,31 @@ import {
 } from '@usertour/types';
 import { SocketData } from '@/common/types/content';
 import { hasContentSessionChanges } from '@/utils/content-utils';
+import { Socket } from 'socket.io';
 
 // ============================================================================
 // ID/Key Building Functions
 // ============================================================================
 
 /**
+ * Get global unique socket ID from socket object
+ * Uses globalSocketId stored in socket.data if available, otherwise falls back to socket.id
+ * This ensures uniqueness across multiple server instances
+ * @param socket - The socket object
+ * @returns The global unique socket ID
+ */
+export const getGlobalSocketId = (socket: Socket): string => {
+  return (socket.data?.globalSocketId as string) ?? socket.id;
+};
+
+/**
  * Build the socket lock key for distributed locking
  * Uses hash tag to ensure cluster compatibility
- * @param socketId - The socket ID
+ * @param socket - The socket object
  * @returns The socket lock key
  */
-export const buildSocketLockKey = (socketId: string): string => {
+export const buildSocketLockKey = (socket: Socket): string => {
+  const socketId = getGlobalSocketId(socket);
   return `{${socketId}}:socket_lock`;
 };
 

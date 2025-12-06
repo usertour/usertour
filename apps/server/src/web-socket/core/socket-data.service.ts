@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@/shared/redis.service';
 import { SocketData } from '@/common/types/content';
+import { Socket } from 'socket.io';
+import { getGlobalSocketId } from '@/utils/websocket-utils';
 
 // ============================================================================
 // Socket Data Service
@@ -24,7 +26,7 @@ export class SocketDataService {
   /**
    * Build Redis key for socket data
    * Uses hash tag to ensure cluster compatibility
-   * @param socketId - The socket ID
+   * @param socketId - The global unique socket ID
    * @returns The Redis key
    */
   private key(socketId: string): string {
@@ -37,23 +39,24 @@ export class SocketDataService {
 
   /**
    * Set socket data in Redis
-   * @param socketId - The socket ID
+   * @param socket - The socket object
    * @param socketData - The socket data to store (can be partial for updates)
    * @param exists - If true, only set if key already exists (for updates)
    * @returns Promise<boolean> - True if the data was set successfully
    */
   async set(
-    socketId: string,
+    socket: Socket,
     socketData: SocketData | Partial<SocketData>,
     exists = false,
   ): Promise<boolean> {
+    const globalSocketId = getGlobalSocketId(socket);
     try {
-      const key = this.key(socketId);
+      const key = this.key(globalSocketId);
 
       // Get existing data if exists=true
-      const existingData = exists ? await this.get(socketId) : null;
+      const existingData = exists ? await this.get(socket) : null;
       if (exists && !existingData) {
-        this.logger.warn(`No existing data found for socket ${socketId}, cannot update`);
+        this.logger.warn(`No existing data found for socket ${globalSocketId}, cannot update`);
         return false;
       }
 
@@ -62,38 +65,39 @@ export class SocketDataService {
         ...existingData,
         ...socketData,
         lastUpdated: Date.now(),
-        socketId,
+        socketId: globalSocketId,
       };
 
       await this.redisService.setex(key, this.DEFAULT_TTL_SECONDS, JSON.stringify(finalData));
-      this.logger.debug(`Client data set for socket ${socketId}`);
+      this.logger.debug(`Client data set for socket ${globalSocketId}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to set socket data for socket ${socketId}:`, error);
+      this.logger.error(`Failed to set socket data for socket ${globalSocketId}:`, error);
       return false;
     }
   }
 
   /**
    * Get socket data from Redis
-   * @param socketId - The socket ID
+   * @param socket - The socket object
    * @returns Promise<SocketData | null> - The socket data or null if not found
    */
-  async get(socketId: string): Promise<SocketData | null> {
+  async get(socket: Socket): Promise<SocketData | null> {
+    const globalSocketId = getGlobalSocketId(socket);
     try {
-      const key = this.key(socketId);
+      const key = this.key(globalSocketId);
       const value = await this.redisService.get(key);
 
       if (!value) {
-        this.logger.debug(`No socket data found for socket ${socketId}`);
+        this.logger.debug(`No socket data found for socket ${globalSocketId}`);
         return null;
       }
 
       const socketData = JSON.parse(value) as SocketData;
-      this.logger.debug(`Retrieved socket data for socket ${socketId}`);
+      this.logger.debug(`Retrieved socket data for socket ${globalSocketId}`);
       return socketData;
     } catch (error) {
-      this.logger.error(`Failed to get socket data for socket ${socketId}:`, error);
+      this.logger.error(`Failed to get socket data for socket ${globalSocketId}:`, error);
       return null;
     }
   }
@@ -101,21 +105,22 @@ export class SocketDataService {
   /**
    * Delete socket data from Redis
    * Simplified as clientConditions are now stored within SocketData
-   * @param socketId - The socket ID
+   * @param socket - The socket object
    * @returns Promise<boolean> - True if the data was deleted successfully
    */
-  async delete(socketId: string): Promise<boolean> {
+  async delete(socket: Socket): Promise<boolean> {
+    const globalSocketId = getGlobalSocketId(socket);
     try {
-      const key = this.key(socketId);
+      const key = this.key(globalSocketId);
       const client = this.redisService.getClient();
 
       // Remove socket data
       await client.del(key);
 
-      this.logger.debug(`Removed socket data for socket ${socketId}`);
+      this.logger.debug(`Removed socket data for socket ${globalSocketId}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to remove socket data for socket ${socketId}:`, error);
+      this.logger.error(`Failed to remove socket data for socket ${globalSocketId}:`, error);
       return false;
     }
   }

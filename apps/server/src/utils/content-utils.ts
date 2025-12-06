@@ -80,6 +80,15 @@ export const ALL_CONTENT_TYPES: ContentDataType[] = [
   ContentDataType.LAUNCHER,
 ];
 
+/**
+ * Events that indicate the user has seen the content
+ */
+export const CONTENT_SEEN_EVENTS: BizEvents[] = [
+  BizEvents.FLOW_STEP_SEEN,
+  BizEvents.CHECKLIST_SEEN,
+  BizEvents.LAUNCHER_SEEN,
+];
+
 // ============================================================================
 // Rule Checking Functions
 // ============================================================================
@@ -244,20 +253,19 @@ export const findCurrentStepCvid = (
   const { stepCvid } = options ?? {};
   const steps = customContentVersion?.steps ?? [];
   const session = customContentVersion.session;
-  const contentType = customContentVersion.content.type as ContentDataType;
 
   if (stepCvid) {
     return stepCvid;
   }
 
-  if (!sessionIsAvailable(session.latestSession, contentType)) {
+  if (!session.activeSession) {
     return steps?.[0]?.cvid;
   }
 
-  const currentStepId = session.latestSession.currentStepId;
+  const currentStepId = session.activeSession.currentStepId;
   const currentStepCvid = steps.find((step) => step.id === currentStepId)?.cvid ?? null;
 
-  return currentStepCvid || findLatestStepCvid(session.latestSession?.bizEvent);
+  return currentStepCvid || findLatestStepCvid(session.activeSession?.bizEvent);
 };
 
 /**
@@ -346,38 +354,6 @@ const priorityCompare = (a: CustomContentVersion, b: CustomContentVersion) => {
 };
 
 /**
- * Gets the latest event from other content versions
- * @param currentContent - The current content version
- * @param contents - Array of all content versions
- * @returns The latest event from other content versions
- */
-const getLatestEvent = (currentContent: CustomContentVersion, contents: CustomContentVersion[]) => {
-  const bizEvents: BizEventWithEvent[] = [];
-  const contentId = currentContent.id;
-  const contentType = currentContent.content.type;
-  for (let index = 0; index < contents.length; index++) {
-    const content = contents[index];
-    if (content.id === contentId || content.content.type !== contentType) {
-      continue;
-    }
-    const sessionBizEvents = content.session.latestSession?.bizEvent;
-    if (sessionBizEvents && sessionBizEvents.length > 0) {
-      bizEvents.push(...sessionBizEvents);
-    }
-  }
-  return findLatestEvent(bizEvents);
-};
-
-/**
- * Mapping of content types to their dismissed event names
- */
-const dismissedEventMapping = {
-  [ContentDataType.FLOW]: BizEvents.FLOW_ENDED,
-  [ContentDataType.LAUNCHER]: BizEvents.LAUNCHER_DISMISSED,
-  [ContentDataType.CHECKLIST]: BizEvents.CHECKLIST_DISMISSED,
-};
-
-/**
  * Checks if the duration between two dates is greater than the specified duration
  * @param dateLeft - The left date
  * @param dateRight - The right date
@@ -421,13 +397,9 @@ const isGreaterThenDuration = (
 /**
  * Checks if content is allowed by auto-start rules setting
  * @param customContentVersion - The custom content version to check
- * @param customContentVersions - All custom content versions for context
  * @returns True if allowed, false otherwise
  */
-export const isAllowedByAutoStartRulesSetting = (
-  customContentVersion: CustomContentVersion,
-  customContentVersions: CustomContentVersion[],
-) => {
+export const isAllowedByAutoStartRulesSetting = (customContentVersion: CustomContentVersion) => {
   const now = new Date();
 
   const { frequency, startIfNotComplete } = customContentVersion.config.autoStartRulesSetting;
@@ -444,18 +416,15 @@ export const isAllowedByAutoStartRulesSetting = (
     return true;
   }
 
-  const contentType = customContentVersion.content.type as ContentDataType;
-
-  const lastEvent = getLatestEvent(customContentVersion, customContentVersions);
-  const contentEvents = customContentVersion.session.latestSession?.bizEvent;
+  const latestEvent = customContentVersion.session.latestEvent;
 
   if (
-    lastEvent &&
+    latestEvent &&
     frequency &&
     frequency.atLeast &&
     !isGreaterThenDuration(
       now,
-      new Date(lastEvent.createdAt),
+      new Date(latestEvent.createdAt),
       frequency.atLeast.unit,
       frequency.atLeast.duration,
     )
@@ -471,14 +440,13 @@ export const isAllowedByAutoStartRulesSetting = (
     return true;
   }
 
-  const dismissedEventName = dismissedEventMapping[contentType];
-  const dismissedEvent = contentEvents?.find((e) => e?.event?.codeName === dismissedEventName);
+  const latestDismissedEvent = customContentVersion.session.latestDismissedEvent;
 
-  if (!dismissedEvent) {
+  if (!latestDismissedEvent) {
     return true;
   }
 
-  const dismissedEventDate = new Date(dismissedEvent.createdAt);
+  const dismissedEventDate = new Date(latestDismissedEvent.createdAt);
 
   if (frequency.frequency === Frequency.MULTIPLE) {
     if (frequency.every.times && totalSessions >= frequency.every.times) {
@@ -586,7 +554,7 @@ export const filterAvailableAutoStartContentVersions = (
       }
 
       // Check auto-start rules settings
-      if (!isAllowedByAutoStartRulesSetting(customContentVersion, customContentVersions)) {
+      if (!isAllowedByAutoStartRulesSetting(customContentVersion)) {
         return false;
       }
 
@@ -610,13 +578,11 @@ export const filterAvailableAutoStartContentVersions = (
 /**
  * Helper function to check if auto-start content is eligible
  * @param customContentVersion - The content version to check
- * @param allContentVersions - All content versions for context
  * @param allowedConditionTypes - Allowed condition types for filtering
  * @returns True if the content is eligible for auto-start
  */
 const isAutoStartContentEligible = (
   customContentVersion: CustomContentVersion,
-  allContentVersions: CustomContentVersion[],
   allowedConditionTypes: RulesType[],
 ): boolean => {
   // Check if auto-start rules are enabled
@@ -625,7 +591,7 @@ const isAutoStartContentEligible = (
   }
 
   // Check auto-start rules settings
-  if (!isAllowedByAutoStartRulesSetting(customContentVersion, allContentVersions)) {
+  if (!isAllowedByAutoStartRulesSetting(customContentVersion)) {
     return false;
   }
 
@@ -679,9 +645,7 @@ export const filterActivatedContentWithoutClientConditions = (
     }
 
     // Path 1: Check auto-start content versions
-    if (
-      isAutoStartContentEligible(customContentVersion, customContentVersions, allowedConditionTypes)
-    ) {
+    if (isAutoStartContentEligible(customContentVersion, allowedConditionTypes)) {
       return true;
     }
 
@@ -691,7 +655,7 @@ export const filterActivatedContentWithoutClientConditions = (
     }
 
     // Path 2: Check activated content versions (session-based)
-    return sessionIsAvailable(customContentVersion.session.latestSession, contentType);
+    return !!customContentVersion.session.activeSession;
   });
 };
 
@@ -709,85 +673,68 @@ export const isSingletonContentType = (contentType: ContentDataType): boolean =>
 };
 
 /**
- * Checks if a session is available
- * @param latestSession - The latest session (may be null or undefined)
- * @param contentType - The content type
- * @returns True if the session is available, false otherwise
+ * Checks if the content version ID doesn't match the active session's version ID
+ * This happens when the content type is FLOW, there's an active session,
+ * and the current version ID doesn't match the active session's version ID
+ * @param customContentVersion - The custom content version to check
+ * @param contentType - The content type to check, defaults to FLOW
+ * @returns True if the version ID doesn't match the active session's version ID, false otherwise
  */
-export const sessionIsAvailable = (
-  latestSession: BizSessionWithEvents | null | undefined,
-  contentType: ContentDataType,
+export const isVersionMismatchWithActiveSession = (
+  customContentVersion: CustomContentVersion,
+  contentType: ContentDataType = ContentDataType.FLOW,
 ): boolean => {
-  if (contentType === ContentDataType.CHECKLIST) {
-    if (latestSession && !checklistIsDimissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  if (contentType === ContentDataType.FLOW) {
-    if (latestSession && !flowIsDismissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  if (contentType === ContentDataType.LAUNCHER) {
-    if (latestSession && !launcherIsDismissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  return false;
+  const activeSession = customContentVersion.session?.activeSession;
+  return (
+    customContentVersion.content.type === contentType &&
+    !!activeSession &&
+    customContentVersion.id !== activeSession?.versionId
+  );
 };
 
 /**
- * Checks if a session is dismissed
- * @param latestSession - The latest session (may be null or undefined)
- * @param contentType - The content type
- * @returns True if the session is dismissed, false otherwise
+ * Unset activeSession if version mismatches.
+ * @param customContentVersion - The custom content version
+ * @returns The custom content version with the active session unset
  */
-export const sessionIsDismissed = (
-  latestSession: BizSessionWithEvents | null | undefined,
-  contentType: ContentDataType,
-): boolean => {
-  if (contentType === ContentDataType.CHECKLIST) {
-    if (latestSession && checklistIsDimissed(latestSession.bizEvent)) {
-      return true;
-    }
+export const unsetActiveSessionOnVersionMismatch = (
+  customContentVersion: CustomContentVersion,
+): CustomContentVersion => {
+  const activeSessionVersionId = customContentVersion.session?.activeSession?.versionId;
+  if (customContentVersion.id === activeSessionVersionId) {
+    return customContentVersion;
   }
-  if (contentType === ContentDataType.FLOW) {
-    if (latestSession && flowIsDismissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  if (contentType === ContentDataType.LAUNCHER) {
-    if (latestSession && launcherIsDismissed(latestSession.bizEvent)) {
-      return true;
-    }
-  }
-  return false;
+  return {
+    ...customContentVersion,
+    session: {
+      ...customContentVersion.session,
+      activeSession: null,
+    },
+  };
 };
 
 /**
  * Finds the latest activated custom content version
  * @param customContentVersions - The custom content versions
- * @param contentType - The content type
  * @param clientConditions - The client conditions
  * @returns The latest activated custom content version
  */
 export const findLatestActivatedCustomContentVersions = (
   customContentVersions: CustomContentVersion[],
-  contentType: ContentDataType,
   clientConditions: ClientCondition[],
 ): CustomContentVersion[] | undefined => {
   return customContentVersions
     .filter((customContentVersion) => {
       return (
-        sessionIsAvailable(customContentVersion.session.latestSession, contentType) &&
+        customContentVersion.session.activeSession &&
         isAllowedByHideRules(customContentVersion, clientConditions) &&
-        customContentVersion.session.latestSession?.createdAt
+        customContentVersion.session.activeSession?.createdAt
       );
     })
     .sort(
       (a, b) =>
-        new Date(b.session.latestSession!.createdAt).getTime() -
-        new Date(a.session.latestSession!.createdAt).getTime(),
+        new Date(b.session.activeSession!.createdAt).getTime() -
+        new Date(a.session.activeSession!.createdAt).getTime(),
     );
 };
 
@@ -1335,54 +1282,19 @@ export const extractChecklistAttrCodes = (checklist: ChecklistData): string[] =>
 // ============================================================================
 
 /**
- * Gets the initial display of a checklist
- * @param customContentVersion - The custom content version
- * @returns The initial display of the checklist
- */
-export const getChecklistInitialDisplay = (
-  customContentVersion: CustomContentVersion,
-): ChecklistInitialDisplay => {
-  const latestSession = customContentVersion.session.latestSession;
-  const checklistData = customContentVersion.data as unknown as ChecklistData;
-  if (!latestSession || checklistIsDimissed(latestSession.bizEvent)) {
-    return checklistData.initialDisplay;
-  }
-  // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
-  const hiddenOrSeenEvents = latestSession.bizEvent?.filter(
-    (event) =>
-      event.event?.codeName === BizEvents.CHECKLIST_HIDDEN ||
-      event.event?.codeName === BizEvents.CHECKLIST_SEEN,
-  );
-
-  if (!hiddenOrSeenEvents || hiddenOrSeenEvents.length === 0) {
-    return checklistData.initialDisplay;
-  }
-
-  // Get the latest hidden or seen event
-  const latestHiddenOrSeenEvent = hiddenOrSeenEvents.reduce((latest, current) => {
-    return isAfter(new Date(current.createdAt), new Date(latest.createdAt)) ? current : latest;
-  });
-  if (latestHiddenOrSeenEvent.event?.codeName === BizEvents.CHECKLIST_SEEN) {
-    return ChecklistInitialDisplay.EXPANDED;
-  }
-
-  return ChecklistInitialDisplay.BUTTON;
-};
-
-/**
  * Checks if the checklist is expand pending
  * @param customContentVersion - The custom content version
  * @returns True if the checklist is expand pending, false otherwise
  */
 export const isExpandPending = (customContentVersion: CustomContentVersion): boolean => {
-  const latestSession = customContentVersion.session.latestSession;
+  const activeSession = customContentVersion.session.activeSession;
   const checklistData = customContentVersion.data as unknown as ChecklistData;
   // Find the latest CHECKLIST_HIDDEN or CHECKLIST_SEEN event
   const seenEvents =
-    latestSession?.bizEvent?.filter(
+    activeSession?.bizEvent?.filter(
       (event) => event.event?.codeName === BizEvents.CHECKLIST_SEEN,
     ) ?? [];
-  if (!latestSession || checklistIsDimissed(latestSession.bizEvent) || seenEvents.length === 0) {
+  if (!activeSession || seenEvents.length === 0) {
     return checklistData.initialDisplay === ChecklistInitialDisplay.EXPANDED;
   }
   return false;
@@ -1486,7 +1398,7 @@ export const evaluateChecklistItems = async (
   const processedItems: ChecklistItemType[] = [];
 
   for (const item of items) {
-    const bizEvents = customContentVersion.session.latestSession?.bizEvent || [];
+    const bizEvents = customContentVersion.session.activeSession?.bizEvent || [];
     const isClicked = checklistItemIsClicked(bizEvents, item) || item.isClicked || false;
 
     // Check completion conditions using item's isClicked state
@@ -1755,12 +1667,12 @@ const hasChecklistCompletedEvent = (bizEvents: BizEventWithEvent[] | undefined):
 /**
  * Checks if a checklist is all completed and can send CHECKLIST_COMPLETED event
  * @param items - The checklist items
- * @param latestSession - The latest session
+ * @param activeSession - The active session
  * @returns True if the checklist is all completed and can send the event, false otherwise
  */
 export const canSendChecklistCompletedEvent = (
   items: ChecklistItemType[] = [],
-  latestSession?: BizSessionWithEvents | undefined,
+  activeSession?: BizSessionWithEvents | undefined,
 ) => {
   // Check if all visible items are completed
   const visibleItemsCount = checklistVisibleItemsCount(items);
@@ -1771,7 +1683,7 @@ export const canSendChecklistCompletedEvent = (
   }
 
   // Check event prerequisites
-  const bizEvents = latestSession?.bizEvent;
+  const bizEvents = activeSession?.bizEvent;
 
   // Must have at least one CHECKLIST_TASK_COMPLETED event
   if (!hasChecklistTaskCompletedEvent(bizEvents)) {

@@ -18,7 +18,6 @@ import {
   extractClientTrackConditions,
   evaluateCustomContentVersion,
   extractClientConditionWaitTimers,
-  sessionIsAvailable,
   extractChecklistNewCompletedItems,
   extractChecklistTrackConditions,
   hasContentSessionChanges,
@@ -26,7 +25,9 @@ import {
   canSendChecklistCompletedEvent,
   evaluateChecklistItemsWithContext,
   isSingletonContentType,
-  sessionIsDismissed,
+  CONTENT_SEEN_EVENTS,
+  isVersionMismatchWithActiveSession,
+  unsetActiveSessionOnVersionMismatch,
 } from '@/utils/content-utils';
 import {
   buildExternalUserRoomId,
@@ -138,7 +139,7 @@ export class ContentOrchestratorService {
     } = context;
 
     const socketData = await this.getSocketData(socket);
-    const bizSession = await this.sessionBuilderService.getBizSession(sessionId);
+    const bizSession = await this.contentDataService.findBizSession(sessionId);
     if (!socketData || !bizSession) {
       return false;
     }
@@ -195,7 +196,7 @@ export class ContentOrchestratorService {
     socketData: SocketData,
     sessionId: string,
   ): Promise<CustomContentSession | null> {
-    const session = await this.sessionBuilderService.getBizSession(sessionId);
+    const session = await this.contentDataService.findBizSession(sessionId);
     if (!session) {
       return null;
     }
@@ -205,12 +206,14 @@ export class ContentOrchestratorService {
       contentType,
       session.versionId,
     );
-    if (
-      !customContentVersion ||
-      customContentVersion.session.latestSession?.id !== sessionId ||
-      !sessionIsAvailable(customContentVersion.session.latestSession, contentType)
-    ) {
+
+    if (!customContentVersion) {
       return null;
+    }
+    const activeSession = customContentVersion?.session?.activeSession;
+    if (activeSession?.id !== sessionId) {
+      const bizSession = await this.contentDataService.findBizSessionWithEvents(sessionId);
+      customContentVersion.session.activeSession = bizSession;
     }
     return await this.initializeSession(customContentVersion, socketData, undefined);
   }
@@ -244,7 +247,6 @@ export class ContentOrchestratorService {
       context.socketData,
       preparationResult.startReason,
       preparationResult.versionId,
-      contentType,
     );
 
     return await this.executeBatchOperations(
@@ -279,10 +281,8 @@ export class ContentOrchestratorService {
       contentType,
       versionId,
     );
-    if (
-      !customContentVersion ||
-      !sessionIsAvailable(customContentVersion.session.latestSession, contentType)
-    ) {
+    // If active session is not found, return null
+    if (!customContentVersion?.session?.activeSession) {
       return null;
     }
     return await this.initializeSession(customContentVersion, socketData);
@@ -375,7 +375,7 @@ export class ContentOrchestratorService {
    * @returns Promise<SocketData | null>
    */
   private async getSocketData(socket: Socket): Promise<SocketData | null> {
-    return await this.socketDataService.get(socket.id);
+    return await this.socketDataService.get(socket);
   }
 
   /**
@@ -473,16 +473,30 @@ export class ContentOrchestratorService {
    */
   private async tryStartByContentId(context: ContentStartContext): Promise<ContentStartResult> {
     const { contentType, options, socketData } = context;
-    const { contentId } = options!;
-    const { environment } = socketData;
+    const { contentId } = options;
+    const { environment, bizUserId } = socketData;
 
     const publishedVersionId = await this.findPublishedVersionId(contentId, environment);
-    if (!publishedVersionId) {
+    if (!publishedVersionId || !bizUserId) {
       return {
         success: false,
         reason: 'Content not found or not published',
       };
     }
+    if (options?.once) {
+      const hasSeen = await this.contentDataService.hasBizEvent(
+        contentId,
+        bizUserId,
+        CONTENT_SEEN_EVENTS,
+      );
+      if (hasSeen) {
+        return {
+          success: false,
+          reason: 'Content already seen',
+        };
+      }
+    }
+
     const evaluatedContentVersion = await this.findEvaluatedContentVersion(
       socketData,
       contentType,
@@ -494,13 +508,12 @@ export class ContentOrchestratorService {
         reason: 'Content version not available or not activated',
       };
     }
-    const latestActivatedContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
-      socketData,
-      contentType,
-      evaluatedContentVersion,
-    );
-    const steps = latestActivatedContentVersion?.steps ?? [];
-    const stepCvid = options?.stepCvid || steps?.[0]?.cvid;
+    // If version mismatches, clear activeSession
+    const customContentVersion = unsetActiveSessionOnVersionMismatch(evaluatedContentVersion);
+
+    const steps = customContentVersion?.steps ?? [];
+    const stepCvid = options?.stepCvid ?? (!options?.continue ? steps?.[0]?.cvid : undefined);
+
     const contentStartContext = {
       ...context,
       options: {
@@ -509,7 +522,7 @@ export class ContentOrchestratorService {
       },
     };
 
-    return await this.handleContentVersion(contentStartContext, latestActivatedContentVersion);
+    return await this.handleContentVersion(contentStartContext, customContentVersion);
   }
 
   /**
@@ -671,26 +684,35 @@ export class ContentOrchestratorService {
     const { contentType, socketData } = context;
     const { clientConditions } = socketData;
 
-    const latestActivatedContentVersions = findLatestActivatedCustomContentVersions(
+    const customContentVersions = findLatestActivatedCustomContentVersions(
       evaluatedContentVersions,
-      contentType,
       clientConditions,
     );
-    const latestActivatedContentVersion = latestActivatedContentVersions?.[0];
+    let customContentVersion = customContentVersions?.[0];
 
     // Check if content version is allowed by hide rules
-    if (!latestActivatedContentVersion) {
+    if (!customContentVersion) {
       return {
         success: false,
         reason: 'No latest activated content version found',
       };
     }
 
-    const customContentVersion = await this.findAndUpdateActivatedCustomContentVersion(
-      socketData,
-      contentType,
-      latestActivatedContentVersion,
-    );
+    if (isVersionMismatchWithActiveSession(customContentVersion)) {
+      const activeSession = customContentVersion.session?.activeSession;
+      customContentVersion = await this.findEvaluatedContentVersion(
+        socketData,
+        contentType,
+        activeSession?.versionId,
+      );
+      // If the active session version is not found, return error
+      if (!customContentVersion) {
+        return {
+          success: false,
+          reason: 'Active session version not found',
+        };
+      }
+    }
 
     const result = await this.handleContentVersion(context, customContentVersion);
 
@@ -923,18 +945,10 @@ export class ContentOrchestratorService {
     const contentType = customContentVersion.content.type as ContentDataType;
     const currentStepCvid = findCurrentStepCvid(customContentVersion, startOptions);
 
-    if (sessionIsAvailable(session.latestSession, contentType)) {
-      const sessionId = session.latestSession!.id;
-      const existingBizSession = await this.sessionBuilderService.getBizSession(sessionId);
-      if (!existingBizSession) {
-        return {
-          success: false,
-          reason: 'BizSession not found or already dismissed',
-        };
-      }
+    if (session.activeSession) {
       return {
         success: true,
-        sessionId,
+        sessionId: session.activeSession.id,
         currentStepCvid,
       };
     }
@@ -1015,39 +1029,6 @@ export class ContentOrchestratorService {
       hideRulesActivated,
       reason: 'Content session created successfully',
     };
-  }
-
-  /**
-   * Find the latest activated content version, potentially updated by latest session version
-   */
-  private async findAndUpdateActivatedCustomContentVersion(
-    socketData: SocketData,
-    contentType: ContentDataType,
-    evaluatedContentVersion: CustomContentVersion,
-  ): Promise<CustomContentVersion> {
-    // For checklist, always return the evaluated content version (the new published version)
-    if (
-      !sessionIsAvailable(evaluatedContentVersion.session.latestSession, contentType) ||
-      contentType === ContentDataType.CHECKLIST
-    ) {
-      return evaluatedContentVersion;
-    }
-    const latestActivatedContentVersionId =
-      evaluatedContentVersion.session.latestSession?.versionId;
-    if (
-      latestActivatedContentVersionId &&
-      evaluatedContentVersion.id !== latestActivatedContentVersionId
-    ) {
-      const activatedContentVersion = await this.findEvaluatedContentVersion(
-        socketData,
-        contentType,
-        latestActivatedContentVersionId,
-      );
-      if (activatedContentVersion) {
-        return activatedContentVersion;
-      }
-    }
-    return evaluatedContentVersion;
   }
 
   /**
@@ -1219,7 +1200,7 @@ export class ContentOrchestratorService {
    */
   private async activateOtherSocketSession(params: ActivateSessionParams) {
     const { socket } = params;
-    const lockKey = buildSocketLockKey(socket.id);
+    const lockKey = buildSocketLockKey(socket);
 
     return (
       (await this.distributedLockService.withRetryLock(
@@ -1455,7 +1436,7 @@ export class ContentOrchestratorService {
    */
   private async cancelOtherSocketSession(params: CancelSessionParams) {
     const { socket } = params;
-    const lockKey = buildSocketLockKey(socket.id);
+    const lockKey = buildSocketLockKey(socket);
 
     return (
       (await this.distributedLockService.withRetryLock(
@@ -1526,17 +1507,13 @@ export class ContentOrchestratorService {
     evaluatedContentVersion: CustomContentVersion,
   ): Promise<void> {
     const { environment, clientContext, clientConditions } = socketData;
-    const latestSession = evaluatedContentVersion.session.latestSession;
+    const activeSession = evaluatedContentVersion.session.activeSession;
     const contentType = evaluatedContentVersion.content.type;
-    if (
-      !latestSession?.id ||
-      contentType !== ContentDataType.CHECKLIST ||
-      !sessionIsAvailable(latestSession, ContentDataType.CHECKLIST)
-    ) {
+    if (!activeSession || contentType !== ContentDataType.CHECKLIST) {
       return;
     }
 
-    const sessionId = latestSession.id;
+    const sessionId = activeSession.id;
     const trackingParams = {
       environment,
       sessionId,
@@ -1553,7 +1530,7 @@ export class ContentOrchestratorService {
     await this.eventTrackingService.updateChecklistSession(sessionId, items);
 
     // Track new completed task events
-    const newCompletedItems = extractChecklistNewCompletedItems(items, latestSession.bizEvent);
+    const newCompletedItems = extractChecklistNewCompletedItems(items, activeSession.bizEvent);
     if (newCompletedItems.length > 0) {
       const taskIds = newCompletedItems.map((item) => item.id);
       // Track events for each completed task
@@ -1570,7 +1547,7 @@ export class ContentOrchestratorService {
     }
 
     // Check and track checklist completed event if all items are done
-    if (canSendChecklistCompletedEvent(items, latestSession)) {
+    if (canSendChecklistCompletedEvent(items, activeSession)) {
       await this.eventTrackingService.trackEventByType(
         BizEvents.CHECKLIST_COMPLETED,
         trackingParams,
@@ -1631,9 +1608,11 @@ export class ContentOrchestratorService {
       versionId,
     );
 
-    // Filter out dismissed versions first
+    // Keep versions that have active session OR have total sessions = 0
+    // Filter out versions that have neither active session nor total sessions = 0
     const activeEvaluatedVersions = evaluatedVersions.filter(
-      (contentVersion) => !sessionIsDismissed(contentVersion.session.latestSession, contentType),
+      (contentVersion) =>
+        contentVersion.session.activeSession || contentVersion.session.totalSessions === 0,
     );
 
     const availableVersions = filterAvailableAutoStartContentVersions(
@@ -1672,12 +1651,11 @@ export class ContentOrchestratorService {
     socketData: SocketData,
     startReason: contentStartReason,
     versionId: string | undefined,
-    contentType: ContentDataType,
   ): Promise<CustomContentSession[]> {
     const sessions = await Promise.all(
       availableVersions.map(async (contentVersion) => {
-        const isAvailable = sessionIsAvailable(contentVersion.session.latestSession, contentType);
-        const skipBizSession = !isAvailable && !versionId;
+        const activeSession = contentVersion.session.activeSession;
+        const skipBizSession = !activeSession && !versionId;
 
         return this.initializeSession(contentVersion, socketData, { startReason }, skipBizSession);
       }),

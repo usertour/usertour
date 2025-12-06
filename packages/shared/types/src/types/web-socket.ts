@@ -147,6 +147,8 @@ export type StartContentDto = {
   contentId: string;
   startReason: contentStartReason;
   stepCvid?: string;
+  once?: boolean;
+  continue?: boolean; // If true, continue the content if it's in progress. Default is false (restart)
 };
 
 /**
@@ -303,6 +305,8 @@ export type StartContentOptions = {
   startReason: contentStartReason;
   contentId?: string;
   stepCvid?: string;
+  once?: boolean;
+  continue?: boolean;
 };
 
 // ============================================================================

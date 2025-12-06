@@ -123,6 +123,15 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Gets the open state of the component
+   * @returns true if the component is open, false otherwise
+   */
+  isOpen(): boolean {
+    const storeData = this.getStoreData();
+    return storeData?.openState ?? false;
+  }
+
+  /**
    * Updates the session
    * @param session - The new session data
    */

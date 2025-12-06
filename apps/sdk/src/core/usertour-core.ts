@@ -340,6 +340,8 @@ export class UsertourCore extends Evented {
     // Build start options
     const startOptions = {
       stepCvid: opts?.cvid,
+      once: opts?.once,
+      continue: opts?.continue,
       startReason,
       contentId,
     };
