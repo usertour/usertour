@@ -9,7 +9,7 @@ RUN npm install -g pnpm
 # Copy server files directly
 COPY apps/server ./
 
-RUN pnpm install
+RUN pnpm install --ignore-scripts
 RUN pnpm build
 
 # Copy email templates after build
