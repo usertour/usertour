@@ -3,13 +3,16 @@ FROM node:22.13-alpine AS server-builder
 
 WORKDIR /app
 
+# Install OpenSSL 3.0 for Prisma to detect correct version
+RUN apk add --no-cache openssl openssl-dev
+
 # Set npm registry and install pnpm
 RUN npm install -g pnpm
 
 # Copy server files directly
 COPY apps/server ./
 
-RUN pnpm install
+RUN pnpm install --ignore-scripts
 RUN pnpm build
 
 # Copy email templates after build
@@ -62,7 +65,6 @@ RUN npm install -g pnpm
 
 # Install system dependencies
 RUN apk add --no-cache nginx openssl openssl-dev libc6-compat gettext
-RUN apk add --no-cache openssl3 openssl3-dev
 
 # Copy nginx configuration
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
