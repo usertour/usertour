@@ -138,12 +138,14 @@ const useUserTracking = (userInfo: any) => {
     if (!userInfo || !userInfo.id) {
       return;
     }
-    usertour.init(userTourToken);
-    usertour.identify(`${userInfo.id}`, {
-      name: userInfo?.name,
-      email: userInfo?.email,
-      signed_up_at: userInfo.createdAt,
-    });
+    if (userTourToken) {
+      usertour.init(userTourToken);
+      usertour.identify(`${userInfo.id}`, {
+        name: userInfo?.name,
+        email: userInfo?.email,
+        signed_up_at: userInfo.createdAt,
+      });
+    }
     posthog?.identify(userInfo.id, {
       email: userInfo.email,
     });
