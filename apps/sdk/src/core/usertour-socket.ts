@@ -19,7 +19,7 @@ import {
   ClientMessageKind,
   SocketAuthData,
 } from '@usertour/types';
-import { Socket, logger, window } from '@/utils';
+import { Socket, logger, timerManager } from '@/utils';
 import { getWsUri } from '@/core/usertour-env';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
 import { getClientContext } from '@/core/usertour-helper';
@@ -93,8 +93,12 @@ export class UsertourSocket implements IUsertourSocket {
   private socket: Socket;
   private authCredentials: SocketAuthData | undefined;
   private inBatch = false;
-  private endBatchTimeout?: number;
   private readonly BATCH_TIMEOUT = 50; // ms
+  private readonly BATCH_TIMEOUT_ID = 'socket-batch-timeout';
+  private readonly CONNECT_TIMEOUT = 30000; // 30 seconds
+  private readonly CONNECT_TIMEOUT_ID = 'socket-connect-timeout';
+  // Cache for ongoing connection promise to avoid duplicate attempts for same user
+  private connectingPromise: Promise<boolean> | null = null;
   // Promise chain for serializing event handlers (especially SERVER_MESSAGE)
   private eventHandlerQueues = new Map<string, Promise<boolean>>();
 
@@ -143,30 +147,47 @@ export class UsertourSocket implements IUsertourSocket {
 
   /**
    * Connect socket and return a promise that resolves when connection is established
+   * Waits for Socket.IO to connect (including automatic reconnection attempts)
+   * Uses a timeout as a safety net
+   * Caches the promise to avoid duplicate connection attempts for the same user
    */
   private connectWithPromise(): Promise<boolean> {
-    return new Promise((resolve) => {
-      // Set up one-time event listeners
+    // If already connected, resolve immediately
+    if (this.socket.isConnected()) {
+      return Promise.resolve(true);
+    }
+
+    // Return cached promise if connection is already in progress
+    if (this.connectingPromise) {
+      return this.connectingPromise;
+    }
+
+    this.connectingPromise = new Promise<boolean>((resolve) => {
+      // Set up timeout as safety net (managed by timerManager for proper cleanup on reset)
+      timerManager.setTimeout(
+        this.CONNECT_TIMEOUT_ID,
+        () => {
+          this.socket.off('connect', onConnect);
+          // Final check before giving up
+          resolve(this.socket.isConnected());
+        },
+        this.CONNECT_TIMEOUT,
+      );
+
+      // Wait for successful connection (Socket.IO handles retries automatically)
       const onConnect = () => {
+        timerManager.clearTimeout(this.CONNECT_TIMEOUT_ID);
         this.socket.off('connect', onConnect);
-        this.socket.off('connect_error', onConnectError);
         resolve(true);
       };
 
-      const onConnectError = (error: Error) => {
-        this.socket.off('connect', onConnect);
-        this.socket.off('connect_error', onConnectError);
-        logger.error('Socket connection failed:', error);
-        resolve(false);
-      };
-
-      // Listen for connection events
       this.socket.on('connect', onConnect);
-      this.socket.on('connect_error', onConnectError);
-
-      // Start connection
       this.socket.connect();
+    }).finally(() => {
+      this.connectingPromise = null;
     });
+
+    return this.connectingPromise;
   }
 
   /**
@@ -176,6 +197,9 @@ export class UsertourSocket implements IUsertourSocket {
     logger.info('Disconnecting socket and clearing credentials...');
     // Clear event handler queues to prevent memory leaks
     this.eventHandlerQueues.clear();
+
+    // Clear cached connection promise
+    this.connectingPromise = null;
 
     // Disconnect the socket
     this.socket.disconnect();
@@ -196,6 +220,9 @@ export class UsertourSocket implements IUsertourSocket {
 
     // Disconnect first
     this.socket.disconnect();
+
+    // Clear cached connection promise since we're connecting with new credentials
+    this.connectingPromise = null;
 
     // Update credentials after disconnect
     this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
@@ -239,10 +266,7 @@ export class UsertourSocket implements IUsertourSocket {
   async endBatch(): Promise<void> {
     if (this.inBatch) {
       this.inBatch = false;
-      if (this.endBatchTimeout && window) {
-        window.clearTimeout(this.endBatchTimeout);
-        this.endBatchTimeout = undefined;
-      }
+      timerManager.clearTimeout(this.BATCH_TIMEOUT_ID);
       await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
         kind: ClientMessageKind.END_BATCH,
         payload: {},
@@ -275,11 +299,6 @@ export class UsertourSocket implements IUsertourSocket {
     }
 
     if (this.inBatch) {
-      // Clear existing timeout
-      if (this.endBatchTimeout && window) {
-        window.clearTimeout(this.endBatchTimeout);
-      }
-
       if (options?.endBatch) {
         // End batch immediately after sending this message
         const result = (await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
@@ -291,12 +310,8 @@ export class UsertourSocket implements IUsertourSocket {
         return result;
       }
 
-      // Set timeout to auto-end batch
-      if (window) {
-        this.endBatchTimeout = window.setTimeout(() => {
-          this.endBatch();
-        }, this.BATCH_TIMEOUT);
-      }
+      // Set timeout to auto-end batch (timerManager auto-clears previous timeout with same ID)
+      timerManager.setTimeout(this.BATCH_TIMEOUT_ID, () => this.endBatch(), this.BATCH_TIMEOUT);
     }
 
     return await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
