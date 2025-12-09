@@ -112,26 +112,27 @@ const fillCache = new Map();
  */
 const isActiveRulesByElement = async (rules: RulesCondition) => {
   const { data } = rules;
-  if (!document) {
+  // Add null check for data and elementData
+  if (!document || !data?.elementData) {
     return false;
   }
   const el = finderV2(data.elementData, document);
 
   const isPresent = el ? await isVisible(el) : false;
-  const elementDisabled = isDisabled(el);
+
   switch (data.logic) {
     case ElementConditionLogic.PRESENT:
       return isPresent;
     case ElementConditionLogic.UNPRESENT:
       return !isPresent;
     case ElementConditionLogic.DISABLED:
-      return el && elementDisabled;
+      return el ? isDisabled(el) : false;
     case ElementConditionLogic.UNDISABLED:
-      return el && !elementDisabled;
+      return el ? !isDisabled(el) : false;
     case ElementConditionLogic.CLICKED:
-      return el && isClicked(el);
+      return el ? isClicked(el) : false;
     case ElementConditionLogic.UNCLICKED:
-      return el && !isClicked(el);
+      return el ? !isClicked(el) : false;
     default:
       return false;
   }
@@ -143,34 +144,36 @@ const isActiveRulesByElement = async (rules: RulesCondition) => {
  * @returns True if the rules are active, false otherwise
  */
 const isActiveRulesByTextInput = async (rules: RulesCondition) => {
-  const {
-    data: { elementData, logic, value },
-  } = rules;
-  if (!document) {
+  const { data } = rules;
+  // Add null check for data and elementData
+  if (!document || !data?.elementData) {
     return false;
   }
+  const { elementData, logic, value } = data;
   const el = finderV2(elementData, document) as HTMLInputElement;
   if (!el) {
     return false;
   }
-  const elValue = el.value;
+  const elValue = el.value ?? '';
+  const compareValue = value ?? '';
+
   switch (logic) {
     case StringConditionLogic.IS:
-      return elValue === value;
+      return elValue === compareValue;
     case StringConditionLogic.NOT:
-      return elValue !== value;
+      return elValue !== compareValue;
     case StringConditionLogic.CONTAINS:
-      return elValue.includes(value);
+      return elValue.includes(compareValue);
     case StringConditionLogic.NOT_CONTAIN:
-      return !elValue.includes(value);
+      return !elValue.includes(compareValue);
     case StringConditionLogic.STARTS_WITH:
-      return elValue.startsWith(value);
+      return elValue.startsWith(compareValue);
     case StringConditionLogic.ENDS_WITH:
-      return elValue.endsWith(value);
+      return elValue.endsWith(compareValue);
     case StringConditionLogic.MATCH:
-      return elValue.search(value) !== -1;
+      return elValue.search(compareValue) !== -1;
     case StringConditionLogic.UNMATCH:
-      return elValue.search(value) === -1;
+      return elValue.search(compareValue) === -1;
     case StringConditionLogic.ANY:
       return true;
     case StringConditionLogic.EMPTY:
@@ -186,12 +189,12 @@ const isActiveRulesByTextInput = async (rules: RulesCondition) => {
  * @returns True if the rules are active, false otherwise
  */
 const isActiveRulesByTextFill = async (rules: RulesCondition) => {
-  const {
-    data: { elementData },
-  } = rules;
-  if (!document) {
+  const { data } = rules;
+  // Add null check for data and elementData
+  if (!document || !data?.elementData) {
     return false;
   }
+  const { elementData } = data;
   const el = finderV2(elementData, document) as HTMLInputElement;
   if (!el) {
     return false;
@@ -199,8 +202,8 @@ const isActiveRulesByTextFill = async (rules: RulesCondition) => {
   const now = new Date().getTime();
   const onKeyup = () => {
     const cacheData = fillCache.get(el);
-    const data = { ...cacheData, timestamp: new Date().getTime() };
-    fillCache.set(el, data);
+    const fillData = { ...cacheData, timestamp: new Date().getTime() };
+    fillCache.set(el, fillData);
   };
   if (fillCache.has(el)) {
     const { timestamp, value, isActive } = fillCache.get(el);
@@ -208,7 +211,8 @@ const isActiveRulesByTextFill = async (rules: RulesCondition) => {
       return true;
     }
     if (timestamp !== -1 && now - timestamp > 1000 && value !== el.value) {
-      off(document, 'click', onKeyup);
+      // BUG FIX: Changed from 'click' to 'keyup' to match the event listener added below
+      off(document, 'keyup', onKeyup);
       fillCache.set(el, { timestamp, value, isActive: true });
       return true;
     }
@@ -263,7 +267,7 @@ export const convertToAttributeEvaluationOptions = (sessionAttributes: SessionAt
     const { value, ...attributeDefinition } = sessionAttr;
 
     // Add to attributes definition array (exclude value field)
-    attributes?.push(attributeDefinition);
+    attributes.push(attributeDefinition);
 
     // Distribute values by business type
     const { codeName, bizType } = sessionAttr;
@@ -349,7 +353,7 @@ export const extensionIsRunning = () => {
     return false;
   }
 
-  return el?.dataset?.started === 'true';
+  return el.dataset.started === 'true';
 };
 
 /**
@@ -363,15 +367,14 @@ export const extensionIsRunning = () => {
  */
 export const createQuestionAnswerEventData = (
   element: ContentEditorQuestionElement,
-  value: any,
+  value: unknown,
   sessionId: string,
 ): AnswerQuestionDto => {
   const { data, type } = element;
-  const { cvid } = data;
 
   const eventData: AnswerQuestionDto = {
-    questionCvid: cvid,
-    questionName: data.name,
+    questionCvid: data?.cvid ?? '',
+    questionName: data?.name ?? '',
     questionType: type,
     sessionId,
   };
@@ -381,19 +384,19 @@ export const createQuestionAnswerEventData = (
     if (element.data.allowMultiple) {
       eventData.listAnswer = value as string[];
     } else {
-      eventData.textAnswer = value;
+      eventData.textAnswer = value as string;
     }
   } else if (
     element.type === ContentEditorElementType.SCALE ||
     element.type === ContentEditorElementType.NPS ||
     element.type === ContentEditorElementType.STAR_RATING
   ) {
-    eventData.numberAnswer = value;
+    eventData.numberAnswer = value as number;
   } else if (
     element.type === ContentEditorElementType.SINGLE_LINE_TEXT ||
     element.type === ContentEditorElementType.MULTI_LINE_TEXT
   ) {
-    eventData.textAnswer = value;
+    eventData.textAnswer = value as string;
   }
 
   return eventData;
