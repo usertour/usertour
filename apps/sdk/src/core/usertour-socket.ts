@@ -97,6 +97,8 @@ export class UsertourSocket implements IUsertourSocket {
   private readonly BATCH_TIMEOUT_ID = 'socket-batch-timeout';
   private readonly CONNECT_TIMEOUT = 30000; // 30 seconds
   private readonly CONNECT_TIMEOUT_ID = 'socket-connect-timeout';
+  // Cache for ongoing connection promise to avoid duplicate attempts for same user
+  private connectingPromise: Promise<boolean> | null = null;
   // Promise chain for serializing event handlers (especially SERVER_MESSAGE)
   private eventHandlerQueues = new Map<string, Promise<boolean>>();
 
@@ -147,15 +149,20 @@ export class UsertourSocket implements IUsertourSocket {
    * Connect socket and return a promise that resolves when connection is established
    * Waits for Socket.IO to connect (including automatic reconnection attempts)
    * Uses a timeout as a safety net
+   * Caches the promise to avoid duplicate connection attempts for the same user
    */
   private connectWithPromise(): Promise<boolean> {
-    return new Promise((resolve) => {
-      // If already connected, resolve immediately
-      if (this.socket.isConnected()) {
-        resolve(true);
-        return;
-      }
+    // If already connected, resolve immediately
+    if (this.socket.isConnected()) {
+      return Promise.resolve(true);
+    }
 
+    // Return cached promise if connection is already in progress
+    if (this.connectingPromise) {
+      return this.connectingPromise;
+    }
+
+    this.connectingPromise = new Promise<boolean>((resolve) => {
       // Set up timeout as safety net (managed by timerManager for proper cleanup on reset)
       timerManager.setTimeout(
         this.CONNECT_TIMEOUT_ID,
@@ -176,7 +183,11 @@ export class UsertourSocket implements IUsertourSocket {
 
       this.socket.on('connect', onConnect);
       this.socket.connect();
+    }).finally(() => {
+      this.connectingPromise = null;
     });
+
+    return this.connectingPromise;
   }
 
   /**
@@ -186,6 +197,9 @@ export class UsertourSocket implements IUsertourSocket {
     logger.info('Disconnecting socket and clearing credentials...');
     // Clear event handler queues to prevent memory leaks
     this.eventHandlerQueues.clear();
+
+    // Clear cached connection promise
+    this.connectingPromise = null;
 
     // Disconnect the socket
     this.socket.disconnect();
@@ -206,6 +220,9 @@ export class UsertourSocket implements IUsertourSocket {
 
     // Disconnect first
     this.socket.disconnect();
+
+    // Clear cached connection promise since we're connecting with new credentials
+    this.connectingPromise = null;
 
     // Update credentials after disconnect
     this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
