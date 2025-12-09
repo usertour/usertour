@@ -136,12 +136,15 @@ export class UsertourCore extends Evented {
     // Ensure the SDK has been initialized before calling identify
     this.ensureInit();
 
-    if (isNullish(userId) || isEmptyString(userId)) {
+    // Convert to string, null/undefined becomes empty string for validation
+    const externalUserId = isNullish(userId) ? '' : String(userId);
+
+    if (isEmptyString(externalUserId)) {
       throw new Error(formatErrorMessage(ErrorMessages.INVALID_USER_ID, userId));
     }
 
     // Reset if user ID has changed
-    if (this.externalUserId !== userId) {
+    if (this.externalUserId !== externalUserId) {
       this.reset();
     }
 
@@ -151,7 +154,7 @@ export class UsertourCore extends Evented {
 
     const { token } = this.startOptions;
     // Use dedicated initialization method
-    if (!(await this.socketService.connect(userId, token))) {
+    if (!(await this.socketService.connect(externalUserId, token))) {
       logger.error('Failed to initialize socket');
       return;
     }
@@ -159,7 +162,7 @@ export class UsertourCore extends Evented {
     // First call API with new attributes
     const result = await this.socketService.upsertUser(
       {
-        externalUserId: userId,
+        externalUserId,
         attributes,
       },
       { batch: true },
@@ -169,11 +172,14 @@ export class UsertourCore extends Evented {
     }
 
     // Only update local state after successful API call
-    this.externalUserId = userId;
+    this.externalUserId = externalUserId;
     if (attributes) {
       this.attributeManager.setUserAttributes(attributes);
     }
-    this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, { userId, attributes });
+    this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, {
+      userId: externalUserId,
+      attributes,
+    });
   }
 
   /**
@@ -238,20 +244,23 @@ export class UsertourCore extends Evented {
     // Ensure the SDK has been initialized before calling group
     const externalUserId = this.ensureIdentify();
 
+    // Convert to string, null/undefined becomes empty string for validation
+    const externalCompanyId = isNullish(companyId) ? '' : String(companyId);
+
     // Validate company ID
-    if (isNullish(companyId) || isEmptyString(companyId)) {
+    if (isEmptyString(externalCompanyId)) {
       throw new Error(formatErrorMessage(ErrorMessages.INVALID_COMPANY_ID, companyId));
     }
 
     // Clear company and membership attributes if company ID has changed
-    if (this.externalCompanyId !== companyId) {
+    if (this.externalCompanyId !== externalCompanyId) {
       this.attributeManager.clearCompanyAndMembershipAttributes();
     }
 
     const result = await this.socketService.upsertCompany(
       {
         externalUserId,
-        externalCompanyId: companyId,
+        externalCompanyId,
         attributes,
         membership: opts?.membership,
       },
@@ -262,7 +271,7 @@ export class UsertourCore extends Evented {
     }
 
     // Only update local state after successful API call
-    this.externalCompanyId = companyId;
+    this.externalCompanyId = externalCompanyId;
     if (attributes) {
       this.attributeManager.setCompanyAttributes(attributes);
     }
