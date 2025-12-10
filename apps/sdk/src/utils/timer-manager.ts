@@ -93,12 +93,17 @@ export class TimerManager {
 
   /**
    * Set a timeout with automatic cleanup tracking
+   * Callbacks are wrapped in try-catch to prevent errors from crashing the customer's site
    */
   setTimeout(id: string, callback: () => void, delay: number): void {
     this.clearTimeout(id); // Clear existing timeout with same id
 
     const timeoutId = setTimeout(() => {
-      callback();
+      try {
+        callback();
+      } catch (error) {
+        logger.error(`Timer timeout ${id} failed:`, error);
+      }
       this.timeouts.delete(id);
     }, delay);
 
@@ -118,11 +123,18 @@ export class TimerManager {
 
   /**
    * Set an interval with automatic cleanup tracking
+   * Callbacks are wrapped in try-catch to prevent errors from crashing the customer's site
    */
   setInterval(id: string, callback: () => void, interval: number): void {
     this.clearInterval(id); // Clear existing interval with same id
 
-    const intervalId = setInterval(callback, interval);
+    const intervalId = setInterval(() => {
+      try {
+        callback();
+      } catch (error) {
+        logger.error(`Timer interval ${id} failed:`, error);
+      }
+    }, interval);
     this.intervals.set(id, intervalId);
   }
 

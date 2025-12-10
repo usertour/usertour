@@ -1,10 +1,20 @@
 import React, { useSyncExternalStore } from 'react';
 import ReactDOM from 'react-dom/client';
+import { ErrorBoundary } from 'react-error-boundary';
 import { ExternalStore } from '../utils/store';
 import { UsertourTour } from '../core/usertour-tour';
 import { UsertourChecklist } from '../core/usertour-checklist';
 import { UsertourLauncher } from '@/core/usertour-launcher';
+import { logger } from '@/utils';
 import '../index.css';
+
+/**
+ * Error handler for widget errors
+ * Logs the error but does not crash the customer's site
+ */
+const handleWidgetError = (error: Error, info: React.ErrorInfo) => {
+  logger.error('Widget error:', error, info.componentStack);
+};
 
 // Extract widgets into a constant to improve readability
 const WIDGETS = {
@@ -31,7 +41,7 @@ interface AppProps {
   launchersStore: ExternalStore<UsertourLauncher[]>;
 }
 
-// Optimize App component with better type safety and error boundaries
+// App component with error boundaries to prevent crashes on customer sites
 const App = ({ toursStore, checklistsStore, launchersStore }: AppProps) => {
   // Use custom hook to reduce repetition
   const useStore = <T,>(store: ExternalStore<T>) =>
@@ -40,19 +50,40 @@ const App = ({ toursStore, checklistsStore, launchersStore }: AppProps) => {
   const tours = useStore(toursStore);
   const checklists = useStore(checklistsStore);
   const launchers = useStore(launchersStore);
+
   return (
     <React.StrictMode>
-      <React.Suspense fallback={null}>
-        {tours?.map((tour) => (
-          <WIDGETS.Tour tour={tour} key={tour.getId()} />
-        ))}
-        {checklists?.map((checklist) => (
-          <WIDGETS.Checklist checklist={checklist} key={checklist.getId()} />
-        ))}
-        {launchers?.map((launcher) => (
-          <WIDGETS.Launcher launcher={launcher} key={launcher.getId()} />
-        ))}
-      </React.Suspense>
+      <ErrorBoundary fallbackRender={() => null} onError={handleWidgetError}>
+        <React.Suspense fallback={null}>
+          {tours?.map((tour) => (
+            <ErrorBoundary
+              key={tour.getId()}
+              fallbackRender={() => null}
+              onError={handleWidgetError}
+            >
+              <WIDGETS.Tour tour={tour} />
+            </ErrorBoundary>
+          ))}
+          {checklists?.map((checklist) => (
+            <ErrorBoundary
+              key={checklist.getId()}
+              fallbackRender={() => null}
+              onError={handleWidgetError}
+            >
+              <WIDGETS.Checklist checklist={checklist} />
+            </ErrorBoundary>
+          ))}
+          {launchers?.map((launcher) => (
+            <ErrorBoundary
+              key={launcher.getId()}
+              fallbackRender={() => null}
+              onError={handleWidgetError}
+            >
+              <WIDGETS.Launcher launcher={launcher} />
+            </ErrorBoundary>
+          ))}
+        </React.Suspense>
+      </ErrorBoundary>
     </React.StrictMode>
   );
 };
