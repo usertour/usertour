@@ -3,6 +3,7 @@ import {
   MESSAGE_CRX_SEND_PROXY,
 } from '@usertour-packages/constants';
 import { window } from './globals';
+import { logger } from './logger';
 
 export const postPageMessage = (message: any, targetOrigin?: string) => {
   window?.postMessage(message, targetOrigin ?? window?.origin);
@@ -27,7 +28,7 @@ export const getValidMessage = (e: MessageEvent): any => {
   // Only accept messages from the same window AND same origin
   const sameWindow = e.source === window && e.origin === window.origin;
   if (!sameWindow) {
-    console.warn(
+    logger.warn(
       `Usertour crx: Declined handling ${message.kind} message from different window/origin`,
     );
     return null;

@@ -509,7 +509,7 @@ export class UsertourSocket implements IUsertourSocket {
    */
   updateCredentials(authInfo: Partial<SocketAuthData>): void {
     if (!this.socket) {
-      console.warn('Socket not initialized. Cannot update auth.');
+      logger.warn('Socket not initialized. Cannot update auth.');
       return;
     }
 

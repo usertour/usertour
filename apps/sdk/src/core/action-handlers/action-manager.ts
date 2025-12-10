@@ -1,5 +1,6 @@
 import { ContentActionsItemType, RulesCondition } from '@usertour/types';
 import { ActionHandler, ActionHandlerContext } from './action-handler.interface';
+import { logger } from '@/utils';
 
 /**
  * Manages action handlers and executes actions
@@ -65,6 +66,7 @@ export class ActionManager {
 
   /**
    * Execute a single action
+   * Wrapped in try-catch to prevent one failing action from stopping subsequent actions
    * @param action - The action to execute
    * @param context - The context object with component methods
    */
@@ -74,9 +76,13 @@ export class ActionManager {
   ): Promise<void> {
     const handler = this.findHandler(action.type as ContentActionsItemType);
     if (handler) {
-      await handler.handle(action, context);
+      try {
+        await handler.handle(action, context);
+      } catch (error) {
+        logger.error(`Failed to execute action ${action.type}:`, error);
+      }
     } else {
-      console.warn(`No handler found for action type: ${action.type}`);
+      logger.warn(`No handler found for action type: ${action.type}`);
     }
   }
 
