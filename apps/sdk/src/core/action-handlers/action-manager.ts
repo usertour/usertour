@@ -1,5 +1,6 @@
 import { ContentActionsItemType, RulesCondition } from '@usertour/types';
 import { ActionHandler, ActionHandlerContext } from './action-handler.interface';
+import { logger } from '@/utils';
 
 /**
  * Manages action handlers and executes actions
@@ -76,7 +77,7 @@ export class ActionManager {
     if (handler) {
       await handler.handle(action, context);
     } else {
-      console.warn(`No handler found for action type: ${action.type}`);
+      logger.warn(`No handler found for action type: ${action.type}`);
     }
   }
 
