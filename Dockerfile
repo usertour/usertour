@@ -87,6 +87,10 @@ RUN mkdir -p /var/cache/nginx
 COPY scripts/start.sh /start.sh
 RUN chmod +x /start.sh
 
+# Default environment variables
+ENV PORT=80
+ENV NEST_SERVER_PORT=3000
+
 EXPOSE 80
 
 CMD ["/start.sh"] 
