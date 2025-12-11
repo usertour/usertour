@@ -88,6 +88,7 @@ COPY scripts/start.sh /start.sh
 RUN chmod +x /start.sh
 
 # Default environment variables
+ENV NODE_ENV=production
 ENV PORT=80
 ENV NEST_SERVER_PORT=3000
 
