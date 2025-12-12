@@ -83,14 +83,15 @@ COPY --from=server-builder /app/prisma ./prisma
 # Create nginx cache directory
 RUN mkdir -p /var/cache/nginx
 
-# Copy start script
-COPY scripts/start.sh /start.sh
-RUN chmod +x /start.sh
+# Copy scripts
+COPY scripts/start.sh ./scripts/start.sh
+RUN chmod +x ./scripts/start.sh
 
 # Default environment variables
+ENV NODE_ENV=production
 ENV PORT=80
 ENV NEST_SERVER_PORT=3000
 
 EXPOSE 80
 
-CMD ["/start.sh"] 
+CMD ["/app/scripts/start.sh"] 
