@@ -40,6 +40,11 @@ Visit http://localhost:8011 to start using Usertour.
 
 View details in [Self-hosting](https://docs.usertour.io/open-source/self-hosting/).
 
+### One Click Deployment
+
+These platforms are easy to deploy with one click and come with free credits.
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/usertour?referralCode=npdaK5&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
 ### Local Development
 View details in [CONTRIBUTING](./CONTRIBUTING.md).
 
