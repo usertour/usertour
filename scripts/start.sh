@@ -25,26 +25,6 @@ sed -i "s/\${NEST_SERVER_PORT}/$NEST_SERVER_PORT/g" /etc/nginx/conf.d/default.co
 # Start nginx
 nginx
 
-# Wait for database to be ready
-# Use DATABASE_DIRECT_URL for connection check (used by Prisma migrate)
-# Fallback to DATABASE_URL if DATABASE_DIRECT_URL is not set
-echo "Waiting for database to be ready..."
-
-# Parse database URL using dedicated script (avoids shell escaping issues)
-DB_INFO=$(node /app/scripts/parse-db-url.js) || exit 1
-DB_HOST=${DB_INFO%:*}
-DB_PORT=${DB_INFO#*:}
-DB_WAIT_TIMEOUT=${DB_WAIT_TIMEOUT:-60}
-
-echo "Database host: $DB_HOST, port: $DB_PORT, timeout: ${DB_WAIT_TIMEOUT}s"
-
-/app/scripts/wait-for "$DB_HOST:$DB_PORT" -t "$DB_WAIT_TIMEOUT" -- echo "Database is ready!"
-
-if [ $? -ne 0 ]; then
-    echo "ERROR: Database is not available after ${DB_WAIT_TIMEOUT} seconds"
-    exit 1
-fi
-
 # Run database migrations with retry
 MAX_RETRIES=${DB_MIGRATE_RETRIES:-3}
 RETRY_INTERVAL=3
