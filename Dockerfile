@@ -63,8 +63,8 @@ WORKDIR /app
 # Set npm registry and install base tools
 RUN npm install -g pnpm
 
-# Install system dependencies
-RUN apk add --no-cache nginx openssl openssl-dev libc6-compat gettext
+# Install system dependencies (netcat-openbsd for wait-for script)
+RUN apk add --no-cache nginx openssl openssl-dev libc6-compat gettext netcat-openbsd
 
 # Copy nginx configuration
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
@@ -83,9 +83,11 @@ COPY --from=server-builder /app/prisma ./prisma
 # Create nginx cache directory
 RUN mkdir -p /var/cache/nginx
 
-# Copy start script
-COPY scripts/start.sh /start.sh
-RUN chmod +x /start.sh
+# Copy scripts
+COPY scripts/start.sh ./scripts/start.sh
+COPY scripts/wait-for ./scripts/wait-for
+COPY scripts/parse-db-url.js ./scripts/parse-db-url.js
+RUN chmod +x ./scripts/start.sh ./scripts/wait-for
 
 # Default environment variables
 ENV NODE_ENV=production
@@ -94,4 +96,4 @@ ENV NEST_SERVER_PORT=3000
 
 EXPOSE 80
 
-CMD ["/start.sh"] 
+CMD ["/app/scripts/start.sh"] 
