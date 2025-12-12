@@ -94,4 +94,5 @@ ENV NEST_SERVER_PORT=3000
 
 EXPOSE 80
 
-CMD ["/app/scripts/start.sh"] 
+# Use shell form for proper stdout/stderr log flushing
+CMD /app/scripts/start.sh 
