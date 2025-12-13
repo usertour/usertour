@@ -29,7 +29,6 @@ import { uuidV4 } from '@usertour/helpers';
 // Batch options interface for consistency
 export interface BatchOptions {
   batch?: boolean;
-  endBatch?: boolean;
 }
 
 /**
@@ -201,6 +200,9 @@ export class UsertourSocket implements IUsertourSocket {
     // Clear cached connection promise
     this.connectingPromise = null;
 
+    // Clear batch state and pending timeout
+    this.resetBatchState();
+
     // Disconnect the socket
     this.socket.disconnect();
 
@@ -217,6 +219,9 @@ export class UsertourSocket implements IUsertourSocket {
     token: string,
   ): Promise<boolean> {
     logger.info('Credentials changed, reconnecting socket...');
+
+    // Clear batch state before reconnecting
+    this.resetBatchState();
 
     // Disconnect first
     this.socket.disconnect();
@@ -249,6 +254,14 @@ export class UsertourSocket implements IUsertourSocket {
 
   // === Batch Management ===
   /**
+   * Reset batch state without sending EndBatch message
+   */
+  private resetBatchState(): void {
+    this.inBatch = false;
+    timerManager.clearTimeout(this.BATCH_TIMEOUT_ID);
+  }
+
+  /**
    * Begin batch internally (send BeginBatch message)
    */
   private async beginBatchInternal(): Promise<void> {
@@ -265,13 +278,16 @@ export class UsertourSocket implements IUsertourSocket {
    */
   async endBatch(): Promise<void> {
     if (this.inBatch) {
-      this.inBatch = false;
-      timerManager.clearTimeout(this.BATCH_TIMEOUT_ID);
-      await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-        kind: ClientMessageKind.END_BATCH,
-        payload: {},
-        requestId: uuidV4(),
-      });
+      this.resetBatchState();
+      try {
+        await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+          kind: ClientMessageKind.END_BATCH,
+          payload: {},
+          requestId: uuidV4(),
+        });
+      } catch (error) {
+        logger.error('Failed to send end batch message:', error);
+      }
     }
   }
 
@@ -293,32 +309,41 @@ export class UsertourSocket implements IUsertourSocket {
   ): Promise<boolean> {
     if (!this.socket) return false;
 
-    // Handle batch options
-    if (options?.batch && !this.inBatch) {
-      await this.beginBatchInternal();
-    }
-
-    if (this.inBatch) {
-      if (options?.endBatch) {
-        // End batch immediately after sending this message
-        const result = (await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-          kind,
-          payload,
-          requestId: uuidV4(),
-        })) as boolean;
-        await this.endBatch();
-        return result;
+    try {
+      // For batch messages, clear any pending timeout and ensure batch is started
+      if (options?.batch) {
+        timerManager.clearTimeout(this.BATCH_TIMEOUT_ID);
+        if (!this.inBatch) {
+          await this.beginBatchInternal();
+        }
       }
 
-      // Set timeout to auto-end batch (timerManager auto-clears previous timeout with same ID)
-      timerManager.setTimeout(this.BATCH_TIMEOUT_ID, () => this.endBatch(), this.BATCH_TIMEOUT);
-    }
+      // Send the message
+      const result = (await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+        kind,
+        payload,
+        requestId: uuidV4(),
+      })) as boolean;
 
-    return await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-      kind,
-      payload,
-      requestId: uuidV4(),
-    });
+      // Schedule batch end after message is sent
+      // If batch was ended during emitWithAck (e.g., another call's timeout fired),
+      // restart it to guarantee endBatch will be called
+      if (options?.batch) {
+        if (!this.inBatch) {
+          await this.beginBatchInternal();
+        }
+        timerManager.setTimeout(this.BATCH_TIMEOUT_ID, () => this.endBatch(), this.BATCH_TIMEOUT);
+      }
+
+      return result;
+    } catch (error) {
+      // On error, reset batch state directly since socket may be broken
+      if (options?.batch) {
+        this.resetBatchState();
+      }
+      logger.error('Failed to send client message:', error);
+      return false;
+    }
   }
 
   // === User and Company Operations ===
