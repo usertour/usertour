@@ -273,6 +273,7 @@ export class UsertourSocket implements IUsertourSocket {
    * Always sends EndBatch to ensure toggleContents is triggered on server
    */
   private async endBatchInternal(): Promise<void> {
+    if (!this.inBatch) return;
     this.inBatch = false;
     await this.emitClientMessage(ClientMessageKind.END_BATCH);
   }
