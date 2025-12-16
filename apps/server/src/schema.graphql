@@ -373,14 +373,7 @@ input ContentUpdateInput {
 }
 
 input ContentVersionInput {
-  buildUrl: String
   config: JSON
-  data: JSON
-  environmentId: String
-  name: String
-  steps: [StepInput!]
-  themeId: String
-  type: String
   versionId: String!
 }
 

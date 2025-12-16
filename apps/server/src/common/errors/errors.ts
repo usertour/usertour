@@ -331,6 +331,15 @@ export class SDKAuthenticationError extends BaseError {
   };
 }
 
+export class EmailConfigNotSetError extends BaseError {
+  code = 'E0020';
+  messageDict = {
+    en: 'Email service is not configured. Please set up email environment variables to use this feature. See: https://docs.usertour.io/open-source/env',
+    'zh-CN':
+      '邮件服务未配置，请设置邮件相关的环境变量以使用此功能。参考文档：https://docs.usertour.io/open-source/env',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -369,6 +378,7 @@ const errorMap = {
   E1016: InvalidOrderByError,
   E1017: ValidationError,
   E1018: SDKAuthenticationError,
+  E0020: EmailConfigNotSetError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {
