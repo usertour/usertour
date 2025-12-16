@@ -12,7 +12,7 @@
     "build:fast": "tsup src"
   },
   "dependencies": {
-    "@usertour/helpers": "^0.0.50",
+    "@usertour/helpers": "^0.0.51",
     "recharts": "^2.7.2"
   },
   "peerDependencies": {

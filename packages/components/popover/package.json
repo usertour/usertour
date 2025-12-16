@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.0.6",
-    "@usertour/helpers": "^0.0.50"
+    "@usertour/helpers": "^0.0.51"
   },
   "peerDependencies": {
     "react": "^18.2.0"

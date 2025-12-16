@@ -338,29 +338,17 @@ type StepLike = {
  * Core function to duplicate a single step by removing database-specific fields
  * and regenerating IDs in triggers, target actions, and question elements
  * @param step - The step to duplicate
- * @param options - Options for duplication behavior
- * @param options.preserveUndefined - If true, undefined data/trigger remain undefined; if false (default), they become empty arrays
  * @returns A new step object with regenerated IDs, without id/cvid/timestamps/versionId
  */
 export const duplicateStep = <T extends StepLike>(
   step: T,
-  options?: { preserveUndefined?: boolean },
 ): Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId' | 'cvid'> => {
   const { id, cvid, createdAt, updatedAt, versionId, trigger, target, data, ...rest } = step;
-  const preserveUndefined = options?.preserveUndefined ?? false;
 
   return {
     ...rest,
-    data: data
-      ? processQuestionElements(data as ContentEditorRoot[])
-      : preserveUndefined
-        ? data
-        : [],
-    trigger: trigger
-      ? duplicateTriggers(trigger as StepTrigger[])
-      : preserveUndefined
-        ? trigger
-        : [],
+    data: data ? processQuestionElements(data as ContentEditorRoot[]) : [],
+    trigger: trigger ? duplicateTriggers(trigger as StepTrigger[]) : [],
     target: duplicateTarget(target as Step['target']),
   } as Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId' | 'cvid'>;
 };
@@ -378,8 +366,7 @@ export const duplicateSteps = <T extends StepLike>(
     return [];
   }
 
-  // Preserve undefined for server-side duplication to maintain original behavior
-  return steps.map((step) => duplicateStep(step, { preserveUndefined: true }));
+  return steps.map((step) => duplicateStep(step));
 };
 
 /**
