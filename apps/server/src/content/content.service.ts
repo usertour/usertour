@@ -13,8 +13,7 @@ import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
 import { regenerateConditionIds } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';
-import { duplicateSteps } from '@/utils/content-duplicate';
-import { duplicateConfig, duplicateData } from '@usertour/helpers';
+import { duplicateConfig, duplicateData, duplicateSteps } from '@usertour/helpers';
 
 @Injectable()
 export class ContentService {

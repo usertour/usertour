@@ -7,6 +7,7 @@ import type {
   ContentEditorRoot,
   ContentEditorRootColumn,
   ContentEditorRootElement,
+  LauncherData,
   Step,
   StepTrigger,
 } from '@usertour/types';
@@ -217,6 +218,7 @@ export const duplicateTarget = (target: Step['target']): Step['target'] => {
 /**
  * Process ChecklistData to regenerate condition IDs in RulesCondition[] fields
  * Handles clickedActions, completeConditions, and onlyShowTaskConditions for each item
+ * Also processes content field using processQuestionElements
  * @param data - The checklist data to process
  * @returns Processed checklist data with regenerated condition IDs
  */
@@ -229,6 +231,7 @@ export const duplicateChecklistData = (data: unknown): unknown => {
 
   return {
     ...checklistData,
+    content: processQuestionElements(checklistData.content),
     items: checklistData.items.map((item) => ({
       ...item,
       id: uuidV4(),
@@ -242,6 +245,38 @@ export const duplicateChecklistData = (data: unknown): unknown => {
         ? regenerateConditionIds(item.onlyShowTaskConditions)
         : item.onlyShowTaskConditions,
     })),
+  };
+};
+
+/**
+ * Process LauncherData to regenerate condition IDs in behavior.actions
+ * Also processes tooltip.content using processQuestionElements
+ * @param data - The launcher data to process
+ * @returns Processed launcher data with regenerated condition IDs
+ */
+export const duplicateLauncherData = (data: unknown): unknown => {
+  if (!data || !isObject(data)) {
+    return data;
+  }
+
+  const launcherData = data as LauncherData;
+
+  return {
+    ...launcherData,
+    behavior: launcherData.behavior
+      ? {
+          ...launcherData.behavior,
+          actions: isArray(launcherData.behavior.actions)
+            ? regenerateConditionIds(launcherData.behavior.actions)
+            : launcherData.behavior.actions,
+        }
+      : launcherData.behavior,
+    tooltip: launcherData.tooltip
+      ? {
+          ...launcherData.tooltip,
+          content: processQuestionElements(launcherData.tooltip.content),
+        }
+      : launcherData.tooltip,
   };
 };
 
@@ -267,7 +302,7 @@ export const duplicateConfig = (config: ContentConfigObject): ContentConfigObjec
 /**
  * Process version data based on content type to regenerate condition IDs
  * @param data - The version data to process
- * @param contentType - The type of content (checklist, flow, etc.)
+ * @param contentType - The type of content (checklist, launcher, flow, etc.)
  * @returns Processed data with regenerated condition IDs
  */
 export const duplicateData = (data: unknown, contentType: string): unknown => {
@@ -275,28 +310,96 @@ export const duplicateData = (data: unknown, contentType: string): unknown => {
     return duplicateChecklistData(data) as unknown;
   }
 
+  if (contentType === ContentDataType.LAUNCHER) {
+    return duplicateLauncherData(data) as unknown;
+  }
+
   return data;
 };
 
-// Helper function to create a copy of a step
-export const createStepCopy = (
-  originalStep: Step,
-  sequence: number,
-  existingStepNames?: string[],
-): Step => {
-  const { id, cvid, updatedAt, createdAt, ...rest } = originalStep;
+/**
+ * Step-like type that works with both Prisma Step and @usertour/types Step
+ * This allows the function to be used in both server and client contexts
+ * Uses unknown for data/trigger to accept Prisma's JsonValue type
+ */
+type StepLike = {
+  id?: string;
+  cvid?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  versionId?: string;
+  data?: unknown;
+  trigger?: unknown;
+  target?: unknown;
+  [key: string]: unknown;
+};
 
-  const name = generateUniqueCopyName(originalStep?.name, existingStepNames);
-  const trigger = originalStep?.trigger ? duplicateTriggers(originalStep?.trigger) : [];
-  const data = originalStep?.data ? processQuestionElements(originalStep?.data) : [];
-  const target = duplicateTarget(originalStep?.target);
+/**
+ * Core function to duplicate a single step by removing database-specific fields
+ * and regenerating IDs in triggers, target actions, and question elements
+ * @param step - The step to duplicate
+ * @param options - Options for duplication behavior
+ * @param options.preserveUndefined - If true, undefined data/trigger remain undefined; if false (default), they become empty arrays
+ * @returns A new step object with regenerated IDs, without id/cvid/timestamps/versionId
+ */
+export const duplicateStep = <T extends StepLike>(
+  step: T,
+  options?: { preserveUndefined?: boolean },
+): Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId' | 'cvid'> => {
+  const { id, cvid, createdAt, updatedAt, versionId, trigger, target, data, ...rest } = step;
+  const preserveUndefined = options?.preserveUndefined ?? false;
 
   return {
     ...rest,
-    data,
-    trigger,
-    target,
-    name,
+    data: data
+      ? processQuestionElements(data as ContentEditorRoot[])
+      : preserveUndefined
+        ? data
+        : [],
+    trigger: trigger
+      ? duplicateTriggers(trigger as StepTrigger[])
+      : preserveUndefined
+        ? trigger
+        : [],
+    target: duplicateTarget(target as Step['target']),
+  } as Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId' | 'cvid'>;
+};
+
+/**
+ * Process multiple steps for duplication
+ * Works with both Prisma Step type (server) and @usertour/types Step (client)
+ * @param steps - Array of steps to process
+ * @returns Array of steps ready for creation with regenerated IDs
+ */
+export const duplicateSteps = <T extends StepLike>(
+  steps: T[],
+): Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId' | 'cvid'>[] => {
+  if (!isArray(steps)) {
+    return [];
+  }
+
+  // Preserve undefined for server-side duplication to maintain original behavior
+  return steps.map((step) => duplicateStep(step, { preserveUndefined: true }));
+};
+
+/**
+ * Duplicate a single step with a new unique name and sequence
+ * Used for UI operations when duplicating a step within the same version
+ * @param originalStep - The step to duplicate
+ * @param sequence - The new sequence number for the duplicated step
+ * @param existingStepNames - Optional array of existing step names to avoid conflicts
+ * @returns A new step object ready for creation
+ */
+export const duplicateStepWithRename = (
+  originalStep: Step,
+  sequence: number,
+  existingStepNames?: string[],
+): Omit<Step, 'id' | 'cvid' | 'updatedAt' | 'createdAt'> => {
+  const duplicated = duplicateStep(originalStep);
+
+  return {
+    ...duplicated,
+    name: generateUniqueCopyName(originalStep.name, existingStepNames),
     sequence,
   };
 };

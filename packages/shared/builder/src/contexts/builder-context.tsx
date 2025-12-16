@@ -14,7 +14,7 @@ import { useToast } from '@usertour-packages/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
 import { getDefaultDataForType } from '@usertour-packages/shared-editor';
-import { createStepCopy } from '@usertour/helpers';
+import { duplicateStepWithRename } from '@usertour/helpers';
 import {
   useGetContentLazyQuery,
   useGetContentVersionLazyQuery,
@@ -287,7 +287,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     const existingStepNames = currentVersion?.steps?.map((step) => step.name) ?? [];
 
     const step: Step = duplicateStep
-      ? createStepCopy(duplicateStep, sequence, existingStepNames)
+      ? duplicateStepWithRename(duplicateStep, sequence, existingStepNames)
       : {
           ...defaultStep,
           type: finalStepType,

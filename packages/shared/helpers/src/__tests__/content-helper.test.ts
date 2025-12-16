@@ -23,7 +23,7 @@ import {
   duplicateChecklistData,
   duplicateConfig,
   duplicateData,
-  createStepCopy,
+  duplicateStepWithRename,
 } from '../content-helper';
 
 // Mock cuid and uuidV4 to return predictable values
@@ -718,8 +718,8 @@ describe('duplicateData', () => {
   });
 });
 
-describe('createStepCopy', () => {
-  test('should create a copy of the step with new name', () => {
+describe('duplicateStepWithRename', () => {
+  test('should duplicate the step with new name', () => {
     const originalStep: Step = {
       id: 'step-1',
       cvid: 'cvid-1',
@@ -732,7 +732,7 @@ describe('createStepCopy', () => {
       updatedAt: new Date(),
     } as unknown as Step;
 
-    const result = createStepCopy(originalStep, 1);
+    const result = duplicateStepWithRename(originalStep, 1);
     expect(result.name).toBe('Original Step (copy)');
     expect(result.sequence).toBe(1);
     expect(result).not.toHaveProperty('id');
@@ -752,11 +752,11 @@ describe('createStepCopy', () => {
       target: undefined,
     } as unknown as Step;
 
-    const result = createStepCopy(originalStep, 1, ['Step (copy)']);
+    const result = duplicateStepWithRename(originalStep, 1, ['Step (copy)']);
     expect(result.name).toBe('Step (copy 2)');
   });
 
-  test('should process triggers in step copy', () => {
+  test('should process triggers in step duplicate', () => {
     const originalStep: Step = {
       id: 'step-1',
       cvid: 'cvid-1',
@@ -773,11 +773,11 @@ describe('createStepCopy', () => {
       target: undefined,
     } as unknown as Step;
 
-    const result = createStepCopy(originalStep, 1);
+    const result = duplicateStepWithRename(originalStep, 1);
     expect(result.trigger?.[0].id).toBe('mock-cuid');
   });
 
-  test('should process target in step copy', () => {
+  test('should process target in step duplicate', () => {
     const originalStep: Step = {
       id: 'step-1',
       cvid: 'cvid-1',
@@ -790,7 +790,7 @@ describe('createStepCopy', () => {
       },
     } as unknown as Step;
 
-    const result = createStepCopy(originalStep, 1);
+    const result = duplicateStepWithRename(originalStep, 1);
     expect(result.target?.actions?.[0].id).toBe('regenerated-action-1');
   });
 
@@ -805,7 +805,7 @@ describe('createStepCopy', () => {
       target: undefined,
     } as unknown as Step;
 
-    const result = createStepCopy(originalStep, 1);
+    const result = duplicateStepWithRename(originalStep, 1);
     expect(result.trigger).toEqual([]);
   });
 
@@ -820,7 +820,7 @@ describe('createStepCopy', () => {
       target: undefined,
     } as unknown as Step;
 
-    const result = createStepCopy(originalStep, 1);
+    const result = duplicateStepWithRename(originalStep, 1);
     expect(result.data).toEqual([]);
   });
 });

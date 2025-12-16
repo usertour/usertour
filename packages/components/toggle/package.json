@@ -14,7 +14,7 @@
   "dependencies": {
     "@radix-ui/react-toggle": "^1.0.3",
     "class-variance-authority": "^0.4.0",
-    "@usertour/helpers": "^0.0.48"
+    "@usertour/helpers": "^0.0.50"
   },
   "peerDependencies": {
     "react": "^18.2.0"
