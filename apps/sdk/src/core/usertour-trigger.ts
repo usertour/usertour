@@ -1,9 +1,10 @@
 import { StepTrigger, RulesCondition, SessionAttribute } from '@usertour/types';
 import { uuidV4, isConditionsActived } from '@usertour/helpers';
-import { evaluateConditions } from '@/core/usertour-helper';
+import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 import { timerManager } from '@/utils/timer-manager';
 import { autoBind } from '@/utils';
 import { Evented } from '@/utils/evented';
+import { logger } from '@/utils/logger';
 
 /**
  * Manages trigger conditions and execution for a single step
@@ -17,12 +18,14 @@ export class UsertourTrigger extends Evented {
   private triggers: StepTrigger[] = [];
   private readonly actionExecutor: (actions: RulesCondition[]) => Promise<void>;
   private readonly getSessionAttributes: () => SessionAttribute[];
+  private readonly contentId: string; // Content ID for rules evaluation
   private readonly id: string; // Unique identifier for this trigger
   private activeTimeouts: Set<string> = new Set(); // Track active timeout keys
   private isProcessing = false; // Flag to prevent concurrent execution
 
   // === Constructor ===
   constructor(
+    contentId: string,
     triggers: StepTrigger[],
     getSessionAttributes: () => SessionAttribute[],
     actionExecutor: (actions: RulesCondition[]) => Promise<void>,
@@ -30,6 +33,7 @@ export class UsertourTrigger extends Evented {
     super();
     autoBind(this);
     this.triggers = [...triggers]; // Copy to avoid modifying original
+    this.contentId = contentId;
     this.actionExecutor = actionExecutor;
     this.id = uuidV4();
     this.getSessionAttributes = getSessionAttributes;
@@ -52,55 +56,79 @@ export class UsertourTrigger extends Evented {
     this.isProcessing = true;
     try {
       const remainingTriggers: StepTrigger[] = [];
-      // Get fresh session attributes on each process call
       const sessionAttributes = this.getSessionAttributes();
+      const evaluator = rulesEvaluatorManager.getEvaluator(this.contentId);
 
       for (let i = 0; i < this.triggers.length; i++) {
         const trigger = this.triggers[i];
-        const { conditions, ...rest } = trigger;
-        const activatedConditions = await evaluateConditions(conditions, sessionAttributes);
+        const result = await this.evaluateTriggerConditions(trigger, evaluator, sessionAttributes);
 
-        if (!isConditionsActived(activatedConditions)) {
-          // Conditions not met, keep for next check
-          remainingTriggers.push({
-            ...rest,
-            conditions: activatedConditions,
-          });
+        if (result === null) {
+          // Evaluation failed, keep original trigger for next check
+          remainingTriggers.push(trigger);
+        } else if (!result.activated) {
+          // Conditions not met, keep updated trigger for next check
+          remainingTriggers.push(result.updatedTrigger);
         } else {
           // Conditions met, execute actions
-          const waitTime = Math.min(trigger.wait ?? 0, UsertourTrigger.MAX_WAIT_TIME);
-
-          if (waitTime > 0) {
-            // Execute with delay using timer manager
-            const triggerId = trigger.id || `trigger-${i}`;
-            const timeoutKey = `${this.id}-${triggerId}`;
-
-            // Track the timeout key for cleanup
-            this.activeTimeouts.add(timeoutKey);
-
-            timerManager.setTimeout(
-              timeoutKey,
-              async () => {
-                await this.actionExecutor(trigger.actions);
-                // Remove from tracking after execution
-                this.activeTimeouts.delete(timeoutKey);
-              },
-              waitTime * 1000,
-            );
-          } else {
-            // Execute immediately
-            await this.actionExecutor(trigger.actions);
-          }
+          await this.executeTriggerActions(trigger, i);
         }
       }
 
-      // Update remaining triggers
       this.triggers = remainingTriggers;
-
-      // Return true if there are still pending triggers
       return this.triggers.length > 0;
     } finally {
       this.isProcessing = false;
+    }
+  }
+
+  // === Private Methods ===
+  /**
+   * Evaluates conditions for a single trigger
+   * @returns null if evaluation failed, otherwise returns activation result
+   */
+  private async evaluateTriggerConditions(
+    trigger: StepTrigger,
+    evaluator: ReturnType<typeof rulesEvaluatorManager.getEvaluator>,
+    sessionAttributes: SessionAttribute[],
+  ): Promise<{ activated: boolean; updatedTrigger: StepTrigger } | null> {
+    const { conditions, ...rest } = trigger;
+
+    try {
+      const activatedConditions = await evaluator.evaluate(conditions, sessionAttributes);
+      return {
+        activated: isConditionsActived(activatedConditions),
+        updatedTrigger: { ...rest, conditions: activatedConditions },
+      };
+    } catch (error) {
+      logger.error(`Error evaluating trigger conditions for trigger ${trigger.id}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Executes actions for a triggered condition
+   * Supports delayed execution via timer manager
+   */
+  private async executeTriggerActions(trigger: StepTrigger, index: number): Promise<void> {
+    const waitTime = Math.min(trigger.wait ?? 0, UsertourTrigger.MAX_WAIT_TIME);
+
+    if (waitTime > 0) {
+      const triggerId = trigger.id || `trigger-${index}`;
+      const timeoutKey = `${this.id}-${triggerId}`;
+
+      this.activeTimeouts.add(timeoutKey);
+
+      timerManager.setTimeout(
+        timeoutKey,
+        async () => {
+          await this.actionExecutor(trigger.actions);
+          this.activeTimeouts.delete(timeoutKey);
+        },
+        waitTime * 1000,
+      );
+    } else {
+      await this.actionExecutor(trigger.actions);
     }
   }
 

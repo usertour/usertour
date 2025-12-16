@@ -43,6 +43,7 @@ import {
   timerManager,
 } from '@/utils';
 import { getClientContext } from '@/core/usertour-helper';
+import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 import { ErrorMessages } from '@/types';
 import { formatErrorMessage } from '@/types/error-messages';
 import { UsertourChecklist } from './usertour-checklist';
@@ -592,6 +593,8 @@ export class UsertourCore extends Evented {
     this.cleanupURLMonitor();
     // Cleanup time manager
     this.cleanupTimeManager();
+    // Cleanup rules evaluator manager
+    this.cleanupRulesEvaluatorManager();
   }
 
   // === Event Listeners Initialization ===
@@ -1201,5 +1204,12 @@ export class UsertourCore extends Evented {
    */
   private cleanupTimeManager(): void {
     timerManager.cleanup();
+  }
+
+  /**
+   * Clean up all rules evaluators
+   */
+  private cleanupRulesEvaluatorManager(): void {
+    rulesEvaluatorManager.cleanup();
   }
 }

@@ -220,6 +220,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Create trigger for this step if it has triggers
     if (step.trigger?.length && step.trigger.length > 0) {
       this.stepTrigger = new UsertourTrigger(
+        this.getContentId(),
         step.trigger,
         () => this.getSessionAttributes(), // Simple function that gets fresh attributes
         (actions) => this.handleActions(actions),
