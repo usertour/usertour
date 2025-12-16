@@ -213,8 +213,8 @@ export class ContentService {
           throw new ParamsError();
         }
 
-        const { content } = sourceVersion;
-        const { editedVersion } = content;
+        const editedVersion = sourceVersion.content.editedVersion;
+        const contentId = editedVersion.contentId;
 
         // Prepare steps by removing database-specific fields
         const steps = sourceVersion.steps.map(
@@ -227,17 +227,17 @@ export class ContentService {
         const version = await tx.version.create({
           data: {
             sequence: editedVersion.sequence + 1,
-            contentId: content.id,
             config: newConfig,
             data: editedVersion.data,
             themeId: editedVersion.themeId,
+            contentId,
             steps: { create: steps },
           } as any,
         });
 
         // Update content to point to the new edited version
         await tx.content.update({
-          where: { id: content.id },
+          where: { id: contentId },
           data: { editedVersionId: version.id } as any,
         });
 
