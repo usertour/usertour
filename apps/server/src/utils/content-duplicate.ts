@@ -1,5 +1,4 @@
 import {
-  cuid,
   duplicateTarget,
   duplicateTriggers,
   isArray,
@@ -17,16 +16,17 @@ import type { Step } from '@/common/types/schema';
  */
 export const duplicateSteps = (
   steps: Step[],
-): Omit<Step, 'id' | 'createdAt' | 'updatedAt' | 'versionId'>[] => {
+): Omit<Step, 'id' | 'createdAt' | 'updatedAt' | 'versionId' | 'cvid'>[] => {
   if (!isArray(steps)) {
     return [];
   }
 
-  return steps.map(({ id, createdAt, updatedAt, versionId, trigger, target, data, ...rest }) => ({
-    ...rest,
-    cvid: cuid(),
-    data: data ? processQuestionElements(data as ContentEditorRoot[]) : data,
-    trigger: trigger ? duplicateTriggers(trigger as StepTrigger[]) : trigger,
-    target: duplicateTarget(target as StepType['target']),
-  }));
+  return steps.map(
+    ({ id, cvid, createdAt, updatedAt, versionId, trigger, target, data, ...rest }) => ({
+      ...rest,
+      data: data ? processQuestionElements(data as ContentEditorRoot[]) : data,
+      trigger: trigger ? duplicateTriggers(trigger as StepTrigger[]) : trigger,
+      target: duplicateTarget(target as StepType['target']),
+    }),
+  );
 };
