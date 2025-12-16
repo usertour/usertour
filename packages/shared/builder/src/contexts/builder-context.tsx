@@ -14,7 +14,7 @@ import { useToast } from '@usertour-packages/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
 import { getDefaultDataForType } from '@usertour-packages/shared-editor';
-import { createStepCopy } from '@usertour-packages/shared-editor';
+import { createStepCopy } from '@usertour/helpers';
 import {
   useGetContentLazyQuery,
   useGetContentVersionLazyQuery,

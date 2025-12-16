@@ -1,33 +1,25 @@
-import { isArray, isObject, regenerateConditionIds, uuidV4 } from '@usertour/helpers';
-import { ChecklistData } from '@usertour/types';
+import { cuid, duplicateTarget, duplicateTriggers, isArray } from '@usertour/helpers';
+import type { StepTrigger, Step as StepType } from '@usertour/types';
+
+import type { Step } from '@/common/types/schema';
 
 /**
- * Process ChecklistData to regenerate condition IDs in RulesCondition[] fields
- * Handles clickedActions, completeConditions, and onlyShowTaskConditions for each item
- * @param data - The checklist data to process (can be any type, will only process if it's ChecklistData)
- * @returns Processed checklist data with regenerated condition IDs, or original data if not ChecklistData
+ * Process steps for duplication by removing database-specific fields
+ * and regenerating IDs in triggers and target actions
+ * @param steps - Array of database steps to process
+ * @returns Array of steps ready for creation with regenerated IDs
  */
-export const duplicateChecklistData = (data: any): any => {
-  if (!data || !isObject(data) || !isArray(data.items)) {
-    return data;
+export const duplicateSteps = (
+  steps: Step[],
+): Omit<Step, 'id' | 'createdAt' | 'updatedAt' | 'versionId'>[] => {
+  if (!isArray(steps)) {
+    return [];
   }
 
-  const checklistData = data as ChecklistData;
-
-  return {
-    ...checklistData,
-    items: checklistData.items.map((item) => ({
-      ...item,
-      id: uuidV4(),
-      clickedActions: isArray(item.clickedActions)
-        ? regenerateConditionIds(item.clickedActions)
-        : item.clickedActions,
-      completeConditions: isArray(item.completeConditions)
-        ? regenerateConditionIds(item.completeConditions)
-        : item.completeConditions,
-      onlyShowTaskConditions: isArray(item.onlyShowTaskConditions)
-        ? regenerateConditionIds(item.onlyShowTaskConditions)
-        : item.onlyShowTaskConditions,
-    })),
-  };
+  return steps.map(({ id, createdAt, updatedAt, versionId, trigger, target, ...rest }) => ({
+    ...rest,
+    cvid: cuid(),
+    trigger: trigger ? duplicateTriggers(trigger as StepTrigger[]) : trigger,
+    target: duplicateTarget(target as StepType['target']),
+  }));
 };

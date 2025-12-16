@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { EDITOR_OVERLAY } from '@usertour-packages/constants';
-import { replaceUserAttr } from '@usertour/helpers';
+import { isClickableElement, replaceUserAttr } from '@usertour/helpers';
 import { UserTourTypes } from '@usertour/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -34,7 +34,7 @@ import {
   ContentEditorRootElement,
   ContentEditorSideBarType,
 } from '../types/editor';
-import { defaultInitialValue, isClickableElement } from '../utils/helper';
+import { defaultInitialValue } from '../utils/helper';
 import { ContentEditorButton, ContentEditorButtonSerialize } from './components/button';
 import {
   ContentEditorColumn,

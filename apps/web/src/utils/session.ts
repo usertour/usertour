@@ -7,12 +7,9 @@ import {
   EventAttributes,
   flowReasonTitleMap,
 } from '@usertour/types';
-import {
-  ContentEditorElementType,
-  contentTypesConfig,
-  extractQuestionData,
-} from '@usertour-packages/shared-editor';
+import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
 import { formatDistanceStrict } from 'date-fns';
+import { extractQuestionData } from '@usertour/helpers';
 
 /**
  * Builds a map from question cvid to step index for sorting purposes

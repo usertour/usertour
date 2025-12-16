@@ -12,8 +12,9 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
 import { regenerateConditionIds } from '@usertour/helpers';
-import { ContentConfigObject, ContentDataType } from '@usertour/types';
-import { duplicateChecklistData } from '@/utils/content-duplicate';
+import { ContentConfigObject } from '@usertour/types';
+import { duplicateSteps } from '@/utils/content-duplicate';
+import { duplicateConfig, duplicateData } from '@usertour/helpers';
 
 @Injectable()
 export class ContentService {
@@ -421,16 +422,6 @@ export class ContentService {
           where: { id: duplicateContent.editedVersionId },
           include: { steps: true },
         });
-        // const steps = editedVersion.steps.map(
-        //   ({ id, createdAt, updatedAt, versionId, cvid, ...step }) => {
-        //     return step;
-        //   },
-        // );
-        const steps = editedVersion.steps.map(
-          ({ id, createdAt, updatedAt, versionId, ...step }) => {
-            return step;
-          },
-        );
 
         const content = await tx.content.create({
           data: {
@@ -442,26 +433,16 @@ export class ContentService {
           },
         });
 
-        const config = editedVersion.config as ContentConfigObject;
-
-        const newConfig = {
-          ...config,
-          autoStartRules: regenerateConditionIds(config.autoStartRules),
-          hideRules: regenerateConditionIds(config.hideRules),
-        };
-
-        let processedData = editedVersion.data;
-        // Process checklist data to regenerate condition IDs
-        if (duplicateContent.type === ContentDataType.CHECKLIST) {
-          processedData = duplicateChecklistData(editedVersion.data);
-        }
+        const steps = duplicateSteps(editedVersion.steps);
+        const newConfig = duplicateConfig(editedVersion.config as ContentConfigObject);
+        const processedData = duplicateData(editedVersion.data, duplicateContent.type);
 
         const version = await tx.version.create({
           data: {
             sequence: 0,
             contentId: content.id,
             config: newConfig,
-            data: processedData,
+            data: processedData as Prisma.JsonValue,
             themeId: editedVersion.themeId,
             steps: { create: [...steps] },
           },

@@ -8,8 +8,7 @@ import {
   ContentEditorQuestionElement,
   ContentEditorSideBarType,
 } from '../../types/editor';
-import { cuid } from '@usertour/helpers';
-import { isQuestionElement } from '../../utils/helper';
+import { cuid, isQuestionElement } from '@usertour/helpers';
 import { contentTypesConfig } from '../../utils/config';
 
 const selectStyle: CSSProperties = {

@@ -1,4 +1,4 @@
-import { uuidV4 } from '@usertour/helpers';
+import { isRestrictedType, uuidV4 } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { createContext, useContext, useEffect, useState } from 'react';
 import {
@@ -13,7 +13,7 @@ import {
   ContentEditorRootColumn,
   ContentEditorRootElement,
 } from '../types/editor';
-import { createNewColumn, createNewGroup, isRestrictedType } from '../utils/helper';
+import { createNewColumn, createNewGroup } from '../utils/helper';
 
 const ContentEditorContext = createContext<ContentEditorContextProps | undefined>(undefined);
 
