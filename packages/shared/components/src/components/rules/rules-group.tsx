@@ -1,4 +1,3 @@
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +20,7 @@ import { RulesCondition, RulesType } from '@usertour/types';
 import { cuid, deepClone } from '@usertour/helpers';
 import { ReactNode, useCallback, useEffect } from 'react';
 import { useState } from 'react';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesGroupContext } from '../contexts/rules-group-context';
 import { RulesContent } from './rules-content';
 import { RulesCurrentTime } from './rules-current-time';
@@ -114,12 +113,14 @@ interface RulesAddDropdownProps {
 
 const RulesAddDropdown = (props: RulesAddDropdownProps) => {
   const { children, onSelect, items, disabled = false } = props;
+  const { dropdown: zIndex } = useRulesZIndex();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild disabled={disabled}>
         {children}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
+      <DropdownMenuContent align="start" style={{ zIndex }}>
         {items?.map(({ type, text, IconElement }, index) => (
           <DropdownMenuItem
             key={index}

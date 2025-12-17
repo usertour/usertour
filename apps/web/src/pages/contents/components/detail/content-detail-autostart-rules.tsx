@@ -1,6 +1,7 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { WebZIndex } from '@usertour-packages/constants';
 import { Label } from '@usertour-packages/label';
 import {
   Rules,
@@ -150,6 +151,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               currentContent={content}
               token={getAuthToken()}
               disabled={disabled}
+              baseZIndex={WebZIndex.RULES}
             />
           )}
 

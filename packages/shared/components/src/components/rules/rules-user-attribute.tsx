@@ -24,7 +24,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getUserAttrError } from '@usertour/helpers';
 import {
@@ -34,7 +33,7 @@ import {
   RulesUserAttributeData,
   RulesUserAttributeProps,
 } from '@usertour/types';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
@@ -125,6 +124,7 @@ const RulesAttributeDatePicker = (props: {
   setDate: Dispatch<SetStateAction<Date | undefined>>;
 }) => {
   const { date, setDate } = props;
+  const { popover: zIndex } = useRulesZIndex();
 
   return (
     <Popover>
@@ -140,14 +140,7 @@ const RulesAttributeDatePicker = (props: {
           {date ? format(date, 'yyyy-MM-dd') : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-auto p-0 z-50"
-        align="start"
-        style={{
-          zIndex: EXTENSION_CONTENT_RULES,
-        }}
-        withoutPortal
-      >
+      <PopoverContent className="w-auto p-0" align="start" style={{ zIndex }} withoutPortal>
         <Calendar
           mode="single"
           defaultMonth={date}
@@ -164,6 +157,7 @@ const RulesUserAttributeName = () => {
   const [open, setOpen] = useState(false);
   const { selectedPreset, setSelectedPreset, updateLocalData } = useRulesUserAttributeContext();
   const { attributes } = useRulesContext();
+  const { popover: zIndex } = useRulesZIndex();
   const handleOnSelected = (item: Attribute) => {
     setSelectedPreset(item);
     updateLocalData({ attrId: item.id });
@@ -201,17 +195,13 @@ const RulesUserAttributeName = () => {
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent
-          className="w-[350px] p-0"
-          style={{ zIndex: EXTENSION_CONTENT_RULES }}
-          withoutPortal
-        >
+        <PopoverContent className="w-[350px] p-0" style={{ zIndex }} withoutPortal>
           <Command filter={handleFilter}>
             <CommandInput placeholder="Search attribute..." />
             <CommandEmpty>No items found.</CommandEmpty>
             <ScrollArea className="h-72">
               {userAttributes.length > 0 && (
-                <CommandGroup heading="User attribute" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
+                <CommandGroup heading="User attribute">
                   {userAttributes.map((item) => (
                     <CommandItem
                       key={item.id}
@@ -234,10 +224,7 @@ const RulesUserAttributeName = () => {
               )}
 
               {companyAttributes.length > 0 && (
-                <CommandGroup
-                  heading="Company attribute"
-                  style={{ zIndex: EXTENSION_CONTENT_RULES }}
-                >
+                <CommandGroup heading="Company attribute">
                   {companyAttributes.map((item) => (
                     <CommandItem
                       key={item.id}
@@ -260,10 +247,7 @@ const RulesUserAttributeName = () => {
               )}
 
               {membershipAttributes.length > 0 && (
-                <CommandGroup
-                  heading="Membership attribute"
-                  style={{ zIndex: EXTENSION_CONTENT_RULES }}
-                >
+                <CommandGroup heading="Membership attribute">
                   {membershipAttributes.map((item) => (
                     <CommandItem
                       key={item.id}
@@ -294,6 +278,7 @@ const RulesUserAttributeName = () => {
 
 const RulesUserAttributeCondition = () => {
   const { localData, updateLocalData, activeConditionMapping } = useRulesUserAttributeContext();
+  const { combobox: zIndex } = useRulesZIndex();
 
   const handleConditionChange = useCallback(
     (value: string) => {
@@ -308,7 +293,7 @@ const RulesUserAttributeCondition = () => {
       value={localData?.logic}
       onValueChange={handleConditionChange}
       placeholder="Select condition"
-      contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+      contentStyle={{ zIndex }}
     />
   );
 };

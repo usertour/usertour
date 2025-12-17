@@ -3,7 +3,7 @@
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
-import { EXTENSION_SELECT } from '@usertour-packages/constants';
+import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
 import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
@@ -137,6 +137,7 @@ const ChecklistItemBody = () => {
               contents={contents}
               segments={segmentList}
               token={token}
+              baseZIndex={EXTENSION_CONTENT_RULES}
             />
           </div>
           <div className="flex flex-col space-y-2">
@@ -159,6 +160,7 @@ const ChecklistItemBody = () => {
                 contents={contents}
                 segments={segmentList}
                 token={token}
+                baseZIndex={EXTENSION_CONTENT_RULES}
               />
             )}
           </div>

@@ -23,14 +23,13 @@ import {
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getSegmentError } from '@usertour/helpers';
 import { Segment } from '@usertour/types';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 
 export interface SelectItemType {
   id: string;
@@ -158,6 +157,7 @@ const RulesSegmentName = () => {
 
 const RulesSegmentCondition = () => {
   const { conditionValue, setConditionValue } = useRulesSegmentContext();
+  const { combobox: zIndex } = useRulesZIndex();
 
   return (
     <ComboBox
@@ -165,7 +165,7 @@ const RulesSegmentCondition = () => {
       value={conditionValue}
       onValueChange={setConditionValue}
       placeholder="Select condition"
-      contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+      contentStyle={{ zIndex }}
     />
   );
 };

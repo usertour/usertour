@@ -65,6 +65,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
                 (item) => item !== 'segment' && item !== 'content',
               )}
               onElementChange={onRulesConditionElementChange}
+              baseZIndex={EXTENSION_CONTENT_RULES}
             />
             <RulesWait defaultValue={wait} onValueChange={onWaitChange} disabled={false} />
             <Label>Action to perform when triggered</Label>

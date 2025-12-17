@@ -1,7 +1,6 @@
 import { CalendarIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { Calendar } from '@usertour-packages/calendar';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { TimeIcon } from '@usertour-packages/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour/helpers';
@@ -20,7 +19,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 
 export interface RulesCurrentTimeProps {
   index: number;
@@ -147,6 +146,7 @@ const RulesCurrentTimeDatePicker = (props: {
   setDate: Dispatch<SetStateAction<Date | undefined>>;
 }) => {
   const { date, setDate } = props;
+  const { popover: zIndex } = useRulesZIndex();
 
   return (
     <Popover>
@@ -162,12 +162,7 @@ const RulesCurrentTimeDatePicker = (props: {
           {date ? format(date, 'PPP') : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-auto p-0"
-        align="start"
-        style={{ zIndex: EXTENSION_CONTENT_RULES }}
-        withoutPortal
-      >
+      <PopoverContent className="w-auto p-0" align="start" style={{ zIndex }} withoutPortal>
         <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
       </PopoverContent>
     </Popover>
@@ -181,6 +176,7 @@ const RulesCurrentTimeTimer = (props: {
   onValueChange?(value: string): void;
 }) => {
   const { num, defaultValue = '00', onValueChange } = props;
+  const { combobox: zIndex } = useRulesZIndex();
 
   const options = useMemo(
     () =>
@@ -198,7 +194,7 @@ const RulesCurrentTimeTimer = (props: {
       onValueChange={onValueChange || (() => {})}
       className="w-16 px-2"
       contentClassName="w-15 min-w-15"
-      contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+      contentStyle={{ zIndex }}
     />
   );
 };

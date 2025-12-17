@@ -15,13 +15,12 @@ import {
 } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 
 export interface RulesTextInputProps {
   index: number;
@@ -81,6 +80,7 @@ const RulesTextInputInput = () => {
 
 const RulesTextInputCondition = () => {
   const { conditionValue, setConditionValue } = useRulesTextInputContext();
+  const { combobox: zIndex } = useRulesZIndex();
 
   return (
     <ComboBox
@@ -88,7 +88,7 @@ const RulesTextInputCondition = () => {
       value={conditionValue}
       onValueChange={setConditionValue}
       placeholder="Select condition"
-      contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+      contentStyle={{ zIndex }}
     />
   );
 };
