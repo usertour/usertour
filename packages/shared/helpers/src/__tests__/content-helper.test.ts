@@ -5,6 +5,7 @@ import type {
   ContentEditorElement,
   ContentEditorQuestionElement,
   ContentEditorRoot,
+  LauncherData,
   RulesCondition,
   Step,
   StepTrigger,
@@ -21,8 +22,11 @@ import {
   duplicateTriggers,
   duplicateTarget,
   duplicateChecklistData,
+  duplicateLauncherData,
   duplicateConfig,
   duplicateData,
+  duplicateStep,
+  duplicateSteps,
   duplicateStepWithRename,
 } from '../content-helper';
 
@@ -525,6 +529,78 @@ describe('duplicateTriggers', () => {
     expect(result[0].actions).toBeUndefined();
     expect(result[0].conditions).toBeUndefined();
   });
+
+  test('should handle empty array', () => {
+    const triggers: StepTrigger[] = [];
+    const result = duplicateTriggers(triggers);
+    expect(result).toEqual([]);
+  });
+
+  test('should handle multiple triggers', () => {
+    const triggers: StepTrigger[] = [
+      {
+        id: 'trigger-1',
+        actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+        conditions: [],
+      },
+      {
+        id: 'trigger-2',
+        actions: [],
+        conditions: [{ id: 'condition-1', type: 'test', operators: 'and', data: {} }],
+      },
+    ] as unknown as StepTrigger[];
+
+    const result = duplicateTriggers(triggers);
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe('mock-cuid');
+    expect(result[1].id).toBe('mock-cuid');
+    expect(result[0].actions[0].id).toBe('regenerated-action-1');
+    expect(result[1].conditions[0].id).toBe('regenerated-condition-1');
+  });
+
+  test('should preserve other trigger properties', () => {
+    const triggers: StepTrigger[] = [
+      {
+        id: 'trigger-1',
+        customType: 'click',
+        customSelector: '.button',
+        delay: 1000,
+        actions: [],
+        conditions: [],
+      } as unknown as StepTrigger,
+    ];
+
+    const result = duplicateTriggers(triggers);
+    expect((result[0] as any).customType).toBe('click');
+    expect((result[0] as any).customSelector).toBe('.button');
+    expect((result[0] as any).delay).toBe(1000);
+  });
+
+  test('should handle triggers with non-array actions', () => {
+    const triggers: StepTrigger[] = [
+      {
+        id: 'trigger-1',
+        actions: 'not-an-array',
+        conditions: [],
+      } as unknown as StepTrigger,
+    ];
+
+    const result = duplicateTriggers(triggers);
+    expect(result[0].actions).toBe('not-an-array');
+  });
+
+  test('should handle triggers with non-array conditions', () => {
+    const triggers: StepTrigger[] = [
+      {
+        id: 'trigger-1',
+        actions: [],
+        conditions: 'not-an-array',
+      } as unknown as StepTrigger,
+    ];
+
+    const result = duplicateTriggers(triggers);
+    expect(result[0].conditions).toBe('not-an-array');
+  });
 });
 
 describe('duplicateTarget', () => {
@@ -563,6 +639,46 @@ describe('duplicateTarget', () => {
 
     const result = duplicateTarget(target);
     expect(result).toEqual(target);
+  });
+
+  test('should handle target with empty actions array', () => {
+    const target: Step['target'] = {
+      selector: '.test',
+      actions: [],
+    } as unknown as Step['target'];
+
+    const result = duplicateTarget(target);
+    expect(result?.actions).toEqual([]);
+  });
+
+  test('should handle target with multiple actions', () => {
+    const target: Step['target'] = {
+      selector: '.test',
+      actions: [
+        { id: 'action-1', type: 'test1', operators: 'and', data: {} },
+        { id: 'action-2', type: 'test2', operators: 'or', data: {} },
+      ],
+    } as unknown as Step['target'];
+
+    const result = duplicateTarget(target);
+    expect(result?.actions).toHaveLength(2);
+    expect(result?.actions?.[0].id).toBe('regenerated-action-1');
+    expect(result?.actions?.[1].id).toBe('regenerated-action-2');
+  });
+
+  test('should preserve other target properties', () => {
+    const target: Step['target'] = {
+      selectors: ['.test-selector'],
+      customPlacement: 'bottom',
+      offset: { x: 10, y: 20 },
+      actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+    } as unknown as Step['target'];
+
+    const result = duplicateTarget(target);
+    expect((result as any)?.selectors).toEqual(['.test-selector']);
+    expect((result as any)?.customPlacement).toBe('bottom');
+    expect((result as any)?.offset).toEqual({ x: 10, y: 20 });
+    expect(result?.actions?.[0].id).toBe('regenerated-action-1');
   });
 });
 
@@ -652,6 +768,273 @@ describe('duplicateChecklistData', () => {
     const result = duplicateChecklistData(data) as ChecklistData;
     expect(result.items[0].onlyShowTaskConditions[0].id).toBe('regenerated-condition-1');
   });
+
+  test('should process content field with question elements', () => {
+    const questionElement: ContentEditorQuestionElement = {
+      type: ContentEditorElementType.NPS,
+      data: { name: 'NPS Question', cvid: 'old-cvid' },
+    } as ContentEditorQuestionElement;
+
+    const data: ChecklistData = {
+      content: [
+        {
+          type: 'root',
+          children: [
+            {
+              type: 'column',
+              children: [
+                {
+                  type: 'element',
+                  element: questionElement,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      items: [
+        {
+          id: 'item-1',
+          clickedActions: [],
+          completeConditions: [],
+          onlyShowTaskConditions: [],
+        },
+      ],
+    } as unknown as ChecklistData;
+
+    const result = duplicateChecklistData(data) as ChecklistData;
+    const processedElement = result.content?.[0].children[0].children[0]
+      .element as ContentEditorQuestionElement;
+    expect(processedElement.data.cvid).toBe('mock-cuid');
+  });
+
+  test('should handle multiple items', () => {
+    const data: ChecklistData = {
+      items: [
+        {
+          id: 'item-1',
+          title: 'Task 1',
+          clickedActions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+          completeConditions: [],
+          onlyShowTaskConditions: [],
+        },
+        {
+          id: 'item-2',
+          title: 'Task 2',
+          clickedActions: [],
+          completeConditions: [{ id: 'condition-2', type: 'test', operators: 'and', data: {} }],
+          onlyShowTaskConditions: [],
+        },
+      ],
+    } as unknown as ChecklistData;
+
+    const result = duplicateChecklistData(data) as ChecklistData;
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0].id).toBe('mock-uuid');
+    expect(result.items[1].id).toBe('mock-uuid');
+    expect(result.items[0].clickedActions[0].id).toBe('regenerated-action-1');
+    expect(result.items[1].completeConditions[0].id).toBe('regenerated-condition-2');
+  });
+
+  test('should handle items without conditions arrays', () => {
+    const data: ChecklistData = {
+      items: [
+        {
+          id: 'item-1',
+          title: 'Task 1',
+        },
+      ],
+    } as unknown as ChecklistData;
+
+    const result = duplicateChecklistData(data) as ChecklistData;
+    expect(result.items[0].id).toBe('mock-uuid');
+    expect(result.items[0].clickedActions).toBeUndefined();
+    expect(result.items[0].completeConditions).toBeUndefined();
+    expect(result.items[0].onlyShowTaskConditions).toBeUndefined();
+  });
+
+  test('should preserve other item properties', () => {
+    const data: ChecklistData = {
+      items: [
+        {
+          id: 'item-1',
+          name: 'Task 1',
+          description: 'A task description',
+          isCompleted: false,
+          clickedActions: [],
+          completeConditions: [],
+          onlyShowTaskConditions: [],
+        },
+      ],
+    } as unknown as ChecklistData;
+
+    const result = duplicateChecklistData(data) as ChecklistData;
+    expect((result.items[0] as any).name).toBe('Task 1');
+    expect((result.items[0] as any).description).toBe('A task description');
+    expect(result.items[0].isCompleted).toBe(false);
+  });
+});
+
+describe('duplicateLauncherData', () => {
+  test('should return data as-is for null', () => {
+    const result = duplicateLauncherData(null);
+    expect(result).toBeNull();
+  });
+
+  test('should return data as-is for undefined', () => {
+    const result = duplicateLauncherData(undefined);
+    expect(result).toBeUndefined();
+  });
+
+  test('should return data as-is for non-object', () => {
+    const result = duplicateLauncherData('string');
+    expect(result).toBe('string');
+  });
+
+  test('should return data as-is for number', () => {
+    const result = duplicateLauncherData(123);
+    expect(result).toBe(123);
+  });
+
+  test('should regenerate behavior.actions IDs', () => {
+    const data: LauncherData = {
+      behavior: {
+        actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+      },
+    } as unknown as LauncherData;
+
+    const result = duplicateLauncherData(data) as LauncherData;
+    expect(result.behavior?.actions[0].id).toBe('regenerated-action-1');
+  });
+
+  test('should handle behavior without actions', () => {
+    const data: LauncherData = {
+      behavior: {
+        behaviorType: 'click',
+      },
+    } as unknown as LauncherData;
+
+    const result = duplicateLauncherData(data) as LauncherData;
+    expect((result.behavior as any)?.behaviorType).toBe('click');
+    expect(result.behavior?.actions).toBeUndefined();
+  });
+
+  test('should handle behavior with non-array actions', () => {
+    const data: LauncherData = {
+      behavior: {
+        actions: 'not-an-array',
+      },
+    } as unknown as LauncherData;
+
+    const result = duplicateLauncherData(data) as LauncherData;
+    expect(result.behavior?.actions).toBe('not-an-array');
+  });
+
+  test('should process tooltip.content with question elements', () => {
+    const questionElement: ContentEditorQuestionElement = {
+      type: ContentEditorElementType.NPS,
+      data: { name: 'NPS Question', cvid: 'old-cvid' },
+    } as ContentEditorQuestionElement;
+
+    const data: LauncherData = {
+      tooltip: {
+        content: [
+          {
+            type: 'root',
+            children: [
+              {
+                type: 'column',
+                children: [
+                  {
+                    type: 'element',
+                    element: questionElement,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    } as unknown as LauncherData;
+
+    const result = duplicateLauncherData(data) as LauncherData;
+    const processedElement = result.tooltip?.content?.[0].children[0].children[0]
+      .element as ContentEditorQuestionElement;
+    expect(processedElement.data.cvid).toBe('mock-cuid');
+  });
+
+  test('should handle data without behavior', () => {
+    const data: LauncherData = {
+      tooltip: {
+        content: [],
+      },
+    } as unknown as LauncherData;
+
+    const result = duplicateLauncherData(data) as LauncherData;
+    expect(result.behavior).toBeUndefined();
+    expect(result.tooltip?.content).toEqual([]);
+  });
+
+  test('should handle data without tooltip', () => {
+    const data: LauncherData = {
+      behavior: {
+        actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+      },
+    } as unknown as LauncherData;
+
+    const result = duplicateLauncherData(data) as LauncherData;
+    expect(result.tooltip).toBeUndefined();
+    expect(result.behavior?.actions[0].id).toBe('regenerated-action-1');
+  });
+
+  test('should handle both behavior and tooltip', () => {
+    const questionElement: ContentEditorQuestionElement = {
+      type: ContentEditorElementType.NPS,
+      data: { name: 'NPS Question', cvid: 'old-cvid' },
+    } as ContentEditorQuestionElement;
+
+    const data: LauncherData = {
+      behavior: {
+        actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+      },
+      tooltip: {
+        content: [
+          {
+            type: 'root',
+            children: [
+              {
+                type: 'column',
+                children: [
+                  {
+                    type: 'element',
+                    element: questionElement,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    } as unknown as LauncherData;
+
+    const result = duplicateLauncherData(data) as LauncherData;
+    expect(result.behavior?.actions[0].id).toBe('regenerated-action-1');
+    const processedElement = result.tooltip?.content?.[0].children[0].children[0]
+      .element as ContentEditorQuestionElement;
+    expect(processedElement.data.cvid).toBe('mock-cuid');
+  });
+
+  test('should preserve other data properties', () => {
+    const data: LauncherData = {
+      customProperty: 'value',
+      behavior: {
+        actions: [],
+      },
+    } as unknown as LauncherData;
+
+    const result = duplicateLauncherData(data) as LauncherData;
+    expect((result as any).customProperty).toBe('value');
+  });
 });
 
 describe('duplicateConfig', () => {
@@ -692,6 +1075,63 @@ describe('duplicateConfig', () => {
     expect(result.autoStartRules).toBeUndefined();
     expect(result.hideRules).toBeUndefined();
   });
+
+  test('should handle config with both autoStartRules and hideRules', () => {
+    const config: ContentConfigObject = {
+      autoStartRules: [{ id: 'auto-rule-1', type: 'test', operators: 'and', data: {} }],
+      hideRules: [{ id: 'hide-rule-1', type: 'test', operators: 'and', data: {} }],
+    } as unknown as ContentConfigObject;
+
+    const result = duplicateConfig(config);
+    expect(result.autoStartRules?.[0].id).toBe('regenerated-auto-rule-1');
+    expect(result.hideRules?.[0].id).toBe('regenerated-hide-rule-1');
+  });
+
+  test('should handle config with empty rules arrays', () => {
+    const config: ContentConfigObject = {
+      autoStartRules: [],
+      hideRules: [],
+    } as unknown as ContentConfigObject;
+
+    const result = duplicateConfig(config);
+    expect(result.autoStartRules).toEqual([]);
+    expect(result.hideRules).toEqual([]);
+  });
+
+  test('should preserve other config properties', () => {
+    const config: ContentConfigObject = {
+      autoStartRules: [{ id: 'rule-1', type: 'test', operators: 'and', data: {} }],
+      frequency: 'once',
+      dismissible: true,
+      priority: 100,
+    } as unknown as ContentConfigObject;
+
+    const result = duplicateConfig(config);
+    expect((result as any).frequency).toBe('once');
+    expect((result as any).dismissible).toBe(true);
+    expect((result as any).priority).toBe(100);
+  });
+
+  test('should handle config with multiple rules in arrays', () => {
+    const config: ContentConfigObject = {
+      autoStartRules: [
+        { id: 'rule-1', type: 'test1', operators: 'and', data: {} },
+        { id: 'rule-2', type: 'test2', operators: 'or', data: {} },
+      ],
+      hideRules: [
+        { id: 'rule-3', type: 'test3', operators: 'and', data: {} },
+        { id: 'rule-4', type: 'test4', operators: 'or', data: {} },
+      ],
+    } as unknown as ContentConfigObject;
+
+    const result = duplicateConfig(config);
+    expect(result.autoStartRules).toHaveLength(2);
+    expect(result.hideRules).toHaveLength(2);
+    expect(result.autoStartRules?.[0].id).toBe('regenerated-rule-1');
+    expect(result.autoStartRules?.[1].id).toBe('regenerated-rule-2');
+    expect(result.hideRules?.[0].id).toBe('regenerated-rule-3');
+    expect(result.hideRules?.[1].id).toBe('regenerated-rule-4');
+  });
 });
 
 describe('duplicateData', () => {
@@ -711,10 +1151,403 @@ describe('duplicateData', () => {
     expect(result.items[0].id).toBe('mock-uuid');
   });
 
-  test('should return data as-is for non-CHECKLIST content type', () => {
+  test('should process launcher data for LAUNCHER content type', () => {
+    const data: LauncherData = {
+      behavior: {
+        actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+      },
+    } as unknown as LauncherData;
+
+    const result = duplicateData(data, ContentDataType.LAUNCHER) as LauncherData;
+    expect(result.behavior?.actions[0].id).toBe('regenerated-action-1');
+  });
+
+  test('should return data as-is for FLOW content type', () => {
     const data = { someData: 'value' };
     const result = duplicateData(data, 'flow');
     expect(result).toEqual(data);
+  });
+
+  test('should return data as-is for unknown content type', () => {
+    const data = { someData: 'value' };
+    const result = duplicateData(data, 'unknown-type');
+    expect(result).toEqual(data);
+  });
+
+  test('should return null data as-is', () => {
+    const result = duplicateData(null, ContentDataType.CHECKLIST);
+    expect(result).toBeNull();
+  });
+
+  test('should return undefined data as-is', () => {
+    const result = duplicateData(undefined, ContentDataType.LAUNCHER);
+    expect(result).toBeUndefined();
+  });
+});
+
+describe('duplicateStep', () => {
+  test('should remove id, cvid, createdAt, updatedAt, versionId fields', () => {
+    const step = {
+      id: 'step-id',
+      cvid: 'step-cvid',
+      name: 'Test Step',
+      sequence: 0,
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-02'),
+      versionId: 'version-id',
+      data: [],
+      trigger: [],
+      target: undefined,
+    };
+
+    const result = duplicateStep(step);
+    expect(result).not.toHaveProperty('id');
+    expect(result).not.toHaveProperty('cvid');
+    expect(result).not.toHaveProperty('createdAt');
+    expect(result).not.toHaveProperty('updatedAt');
+    expect(result).not.toHaveProperty('versionId');
+  });
+
+  test('should preserve name and sequence', () => {
+    const step = {
+      id: 'step-id',
+      cvid: 'step-cvid',
+      name: 'Test Step',
+      sequence: 5,
+      data: [],
+      trigger: [],
+      target: undefined,
+    };
+
+    const result = duplicateStep(step);
+    expect(result.name).toBe('Test Step');
+    expect(result.sequence).toBe(5);
+  });
+
+  test('should process data field with question elements', () => {
+    const questionElement: ContentEditorQuestionElement = {
+      type: ContentEditorElementType.NPS,
+      data: { name: 'NPS Question', cvid: 'old-cvid' },
+    } as ContentEditorQuestionElement;
+
+    const step = {
+      id: 'step-id',
+      cvid: 'step-cvid',
+      name: 'Test Step',
+      sequence: 0,
+      data: [
+        {
+          type: 'root',
+          children: [
+            {
+              type: 'column',
+              children: [
+                {
+                  type: 'element',
+                  element: questionElement,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      trigger: [],
+      target: undefined,
+    };
+
+    const result = duplicateStep(step);
+    const processedElement = result.data?.[0].children[0].children[0]
+      .element as ContentEditorQuestionElement;
+    expect(processedElement.data.cvid).toBe('mock-cuid');
+  });
+
+  test('should process trigger field', () => {
+    const step = {
+      id: 'step-id',
+      cvid: 'step-cvid',
+      name: 'Test Step',
+      sequence: 0,
+      data: [],
+      trigger: [
+        {
+          id: 'trigger-1',
+          actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+          conditions: [{ id: 'condition-1', type: 'test', operators: 'and', data: {} }],
+        },
+      ],
+      target: undefined,
+    };
+
+    const result = duplicateStep(step);
+    expect(result.trigger?.[0].id).toBe('mock-cuid');
+    expect(result.trigger?.[0].actions[0].id).toBe('regenerated-action-1');
+    expect(result.trigger?.[0].conditions[0].id).toBe('regenerated-condition-1');
+  });
+
+  test('should process target field with actions', () => {
+    const step = {
+      id: 'step-id',
+      cvid: 'step-cvid',
+      name: 'Test Step',
+      sequence: 0,
+      data: [],
+      trigger: [],
+      target: {
+        selector: '.test',
+        actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+      },
+    };
+
+    const result = duplicateStep(step);
+    expect(result.target?.actions?.[0].id).toBe('regenerated-action-1');
+    expect(result.target?.selector).toBe('.test');
+  });
+
+  test('should return empty array for undefined data', () => {
+    const step = {
+      id: 'step-id',
+      cvid: 'step-cvid',
+      name: 'Test Step',
+      sequence: 0,
+      data: undefined,
+      trigger: [],
+      target: undefined,
+    };
+
+    const result = duplicateStep(step);
+    expect(result.data).toEqual([]);
+  });
+
+  test('should return empty array for undefined trigger', () => {
+    const step = {
+      id: 'step-id',
+      cvid: 'step-cvid',
+      name: 'Test Step',
+      sequence: 0,
+      data: [],
+      trigger: undefined,
+      target: undefined,
+    };
+
+    const result = duplicateStep(step);
+    expect(result.trigger).toEqual([]);
+  });
+
+  test('should return undefined for undefined target', () => {
+    const step = {
+      id: 'step-id',
+      cvid: 'step-cvid',
+      name: 'Test Step',
+      sequence: 0,
+      data: [],
+      trigger: [],
+      target: undefined,
+    };
+
+    const result = duplicateStep(step);
+    expect(result.target).toBeUndefined();
+  });
+
+  test('should preserve custom properties', () => {
+    const step = {
+      id: 'step-id',
+      cvid: 'step-cvid',
+      name: 'Test Step',
+      sequence: 0,
+      data: [],
+      trigger: [],
+      target: undefined,
+      customField: 'custom-value',
+      anotherField: 123,
+    };
+
+    const result = duplicateStep(step);
+    expect(result.customField).toBe('custom-value');
+    expect(result.anotherField).toBe(123);
+  });
+});
+
+describe('duplicateSteps', () => {
+  test('should return empty array for non-array input', () => {
+    const result = duplicateSteps(null as unknown as any[]);
+    expect(result).toEqual([]);
+  });
+
+  test('should return empty array for undefined input', () => {
+    const result = duplicateSteps(undefined as unknown as any[]);
+    expect(result).toEqual([]);
+  });
+
+  test('should return empty array for empty array input', () => {
+    const result = duplicateSteps([]);
+    expect(result).toEqual([]);
+  });
+
+  test('should duplicate a single step', () => {
+    const steps = [
+      {
+        id: 'step-1',
+        cvid: 'cvid-1',
+        name: 'Step 1',
+        sequence: 0,
+        data: [],
+        trigger: [],
+        target: undefined,
+      },
+    ];
+
+    const result = duplicateSteps(steps);
+    expect(result).toHaveLength(1);
+    expect(result[0]).not.toHaveProperty('id');
+    expect(result[0]).not.toHaveProperty('cvid');
+    expect(result[0].name).toBe('Step 1');
+  });
+
+  test('should duplicate multiple steps', () => {
+    const steps = [
+      {
+        id: 'step-1',
+        cvid: 'cvid-1',
+        name: 'Step 1',
+        sequence: 0,
+        data: [],
+        trigger: [],
+        target: undefined,
+      },
+      {
+        id: 'step-2',
+        cvid: 'cvid-2',
+        name: 'Step 2',
+        sequence: 1,
+        data: [],
+        trigger: [],
+        target: undefined,
+      },
+      {
+        id: 'step-3',
+        cvid: 'cvid-3',
+        name: 'Step 3',
+        sequence: 2,
+        data: [],
+        trigger: [],
+        target: undefined,
+      },
+    ];
+
+    const result = duplicateSteps(steps);
+    expect(result).toHaveLength(3);
+    expect(result[0].name).toBe('Step 1');
+    expect(result[0].sequence).toBe(0);
+    expect(result[1].name).toBe('Step 2');
+    expect(result[1].sequence).toBe(1);
+    expect(result[2].name).toBe('Step 3');
+    expect(result[2].sequence).toBe(2);
+  });
+
+  test('should process data in all steps', () => {
+    const questionElement: ContentEditorQuestionElement = {
+      type: ContentEditorElementType.NPS,
+      data: { name: 'NPS Question', cvid: 'old-cvid' },
+    } as ContentEditorQuestionElement;
+
+    const steps = [
+      {
+        id: 'step-1',
+        cvid: 'cvid-1',
+        name: 'Step 1',
+        sequence: 0,
+        data: [
+          {
+            type: 'root',
+            children: [
+              {
+                type: 'column',
+                children: [{ type: 'element', element: questionElement }],
+              },
+            ],
+          },
+        ],
+        trigger: [],
+        target: undefined,
+      },
+    ];
+
+    const result = duplicateSteps(steps);
+    const processedElement = result[0].data?.[0].children[0].children[0]
+      .element as ContentEditorQuestionElement;
+    expect(processedElement.data.cvid).toBe('mock-cuid');
+  });
+
+  test('should process triggers in all steps', () => {
+    const steps = [
+      {
+        id: 'step-1',
+        cvid: 'cvid-1',
+        name: 'Step 1',
+        sequence: 0,
+        data: [],
+        trigger: [
+          {
+            id: 'trigger-1',
+            actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+            conditions: [],
+          },
+        ],
+        target: undefined,
+      },
+      {
+        id: 'step-2',
+        cvid: 'cvid-2',
+        name: 'Step 2',
+        sequence: 1,
+        data: [],
+        trigger: [
+          {
+            id: 'trigger-2',
+            actions: [],
+            conditions: [{ id: 'condition-2', type: 'test', operators: 'and', data: {} }],
+          },
+        ],
+        target: undefined,
+      },
+    ];
+
+    const result = duplicateSteps(steps);
+    expect(result[0].trigger?.[0].id).toBe('mock-cuid');
+    expect(result[0].trigger?.[0].actions[0].id).toBe('regenerated-action-1');
+    expect(result[1].trigger?.[0].id).toBe('mock-cuid');
+    expect(result[1].trigger?.[0].conditions[0].id).toBe('regenerated-condition-2');
+  });
+
+  test('should process targets in all steps', () => {
+    const steps = [
+      {
+        id: 'step-1',
+        cvid: 'cvid-1',
+        name: 'Step 1',
+        sequence: 0,
+        data: [],
+        trigger: [],
+        target: {
+          actions: [{ id: 'action-1', type: 'test', operators: 'and', data: {} }],
+        },
+      },
+      {
+        id: 'step-2',
+        cvid: 'cvid-2',
+        name: 'Step 2',
+        sequence: 1,
+        data: [],
+        trigger: [],
+        target: {
+          actions: [{ id: 'action-2', type: 'test', operators: 'and', data: {} }],
+        },
+      },
+    ];
+
+    const result = duplicateSteps(steps);
+    expect(result[0].target?.actions?.[0].id).toBe('regenerated-action-1');
+    expect(result[1].target?.actions?.[0].id).toBe('regenerated-action-2');
   });
 });
 
