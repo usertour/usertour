@@ -26,7 +26,7 @@ import {
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getContentError } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
@@ -78,6 +78,7 @@ const RulesContentName = () => {
   const [open, setOpen] = useState(false);
   const { selectedPreset, setSelectedPreset } = useRulesContentContext();
   const { contents } = useRulesContext();
+  const { popover: zIndex } = useRulesZIndex();
   const handleOnSelected = (item: SelectItemType) => {
     setSelectedPreset(item);
     setOpen(false);
@@ -104,7 +105,7 @@ const RulesContentName = () => {
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </Popover.PopoverTrigger>
-        <Popover.PopoverContent className="w-[350px] p-0">
+        <Popover.PopoverContent className="w-[350px] p-0" style={{ zIndex }}>
           <Command filter={handleFilter}>
             <CommandInput placeholder="Search flow..." />
             <CommandEmpty>No items found.</CommandEmpty>

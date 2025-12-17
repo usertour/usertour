@@ -70,6 +70,7 @@ function useRulesSegmentContext(): RulesSegmentContextValue {
 const RulesSegmentName = () => {
   const [open, setOpen] = useState(false);
   const { segmentId, setSegmentId, segments } = useRulesSegmentContext();
+  const { popover: zIndex } = useRulesZIndex();
   const selectedSegment = segments?.find((segment) => segment.id === segmentId);
   const handleOnSelected = (item: Segment) => {
     setSegmentId(item.id);
@@ -98,7 +99,7 @@ const RulesSegmentName = () => {
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </Popover.PopoverTrigger>
-        <Popover.PopoverContent className="w-[350px] p-0">
+        <Popover.PopoverContent className="w-[350px] p-0" style={{ zIndex }}>
           <Command filter={handleFilter}>
             <CommandInput placeholder="" />
             <CommandEmpty>No items found.</CommandEmpty>
