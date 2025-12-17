@@ -21,6 +21,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
+import { useToast } from '@usertour-packages/use-toast';
+import { getErrorMessage } from '@usertour/helpers';
 import Upload from 'rc-upload';
 import { useCallback, useMemo, useState } from 'react';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -265,8 +267,8 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
     deleteElementInColumn,
     updateElement,
   } = useContentEditorContext();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Memoized style calculation
   const imageStyle = useMemo(() => transformsStyle(element), [element.width, element.margin]);
@@ -275,7 +277,6 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
   const insertImg = useCallback(
     async (option: ContentEditorUploadRequestOption) => {
       try {
-        setError(null);
         let url = '';
 
         if (customUploadRequest) {
@@ -295,13 +296,13 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
         if (url) {
           updateElement({ ...element, url }, id);
         } else {
-          setError('Failed to upload image');
+          toast({ variant: 'destructive', title: 'Failed to upload image' });
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Upload failed');
+        toast({ variant: 'destructive', title: getErrorMessage(err) });
       }
     },
-    [customUploadRequest, element, id, updateElement],
+    [customUploadRequest, element, id, toast, updateElement],
   );
 
   // Event handlers
@@ -374,7 +375,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
           style={imageStyle}
           className="cursor-pointer"
           alt="Editable content"
-          onError={() => setError('Failed to load image')}
+          onError={() => toast({ variant: 'destructive', title: 'Failed to load image' })}
         />
       </Popover.Trigger>
       <Popover.Portal>
@@ -456,8 +457,6 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
 
   return (
     <div className="group relative flex max-w-lg flex-col">
-      {error && <div className="mb-2 text-sm text-red-500">{error}</div>}
-
       {element.url ? (
         isLoading ? (
           <LoadingSpinner size={DEFAULT_IMAGE_SIZE} />

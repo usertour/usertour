@@ -1,5 +1,4 @@
 import { GqlAuthGuard } from '@/auth/guard/gql-auth.guard';
-import { EmailConfigGuard } from '@/common/guards/email-config.guard';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -51,7 +50,6 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
     AuthResolver,
     JwtStrategy,
     GqlAuthGuard,
-    EmailConfigGuard,
     PasswordService,
     GithubOauthStrategy,
     GoogleOauthStrategy,

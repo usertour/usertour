@@ -340,6 +340,15 @@ export class EmailConfigNotSetError extends BaseError {
   };
 }
 
+export class S3ConfigNotSetError extends BaseError {
+  code = 'E0021';
+  messageDict = {
+    en: 'AWS S3 service is not configured. Please set up S3 environment variables to use this feature. See: https://docs.usertour.io/open-source/env',
+    'zh-CN':
+      'AWS S3 服务未配置，请设置 S3 相关的环境变量以使用此功能。参考文档：https://docs.usertour.io/open-source/env',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -379,6 +388,7 @@ const errorMap = {
   E1017: ValidationError,
   E1018: SDKAuthenticationError,
   E0020: EmailConfigNotSetError,
+  E0021: S3ConfigNotSetError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {
