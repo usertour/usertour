@@ -1,7 +1,16 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@usertour-packages/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@usertour-packages/command';
 import { SegmentIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour/helpers';
+import { ComboBox } from '@usertour-packages/combo-box';
 import {
   Dispatch,
   SetStateAction,
@@ -11,16 +20,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-
-import { Button } from '@usertour-packages/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@usertour-packages/command';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getSegmentError } from '@usertour/helpers';
 import { Segment } from '@usertour/types';
@@ -31,6 +30,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 
 export interface SelectItemType {
   id: string;
@@ -157,54 +157,16 @@ const RulesSegmentName = () => {
 };
 
 const RulesSegmentCondition = () => {
-  const [open, setOpen] = useState(false);
   const { conditionValue, setConditionValue } = useRulesSegmentContext();
-  const selectedCondition = conditions.find((c) => c.value === conditionValue);
-
-  const handleOnSelected = useCallback(
-    (item: (typeof conditions)[0]) => {
-      setConditionValue(item.value);
-      setOpen(false);
-    },
-    [setConditionValue],
-  );
 
   return (
-    <Popover.Popover open={open} onOpenChange={setOpen}>
-      <Popover.PopoverTrigger asChild>
-        <Button variant="outline" className="flex-1 justify-between">
-          {selectedCondition?.name ?? 'Select condition'}
-          <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </Popover.PopoverTrigger>
-      <Popover.PopoverContent className="w-[350px] p-0">
-        <Command>
-          <CommandList>
-            <CommandEmpty>No items found.</CommandEmpty>
-            <CommandGroup>
-              {conditions.map((item) => (
-                <CommandItem
-                  key={item.value}
-                  value={item.value}
-                  className="cursor-pointer"
-                  onSelect={() => {
-                    handleOnSelected(item);
-                  }}
-                >
-                  {item.name}
-                  <CheckIcon
-                    className={cn(
-                      'ml-auto h-4 w-4',
-                      conditionValue === item.value ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </Popover.PopoverContent>
-    </Popover.Popover>
+    <ComboBox
+      options={conditions}
+      value={conditionValue}
+      onValueChange={setConditionValue}
+      placeholder="Select condition"
+      contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+    />
   );
 };
 

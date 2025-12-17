@@ -1,16 +1,7 @@
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import {
   Tooltip,
   TooltipContent,
@@ -18,6 +9,8 @@ import {
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
 import { Content, ElementSelectorPropsData } from '@usertour/types';
+import { ComboBox } from '@usertour-packages/combo-box';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 
 export interface ElementSelectorProps {
@@ -57,9 +50,20 @@ export const ElementSelector = (props: ElementSelectorProps) => {
     const value = e.target.value;
     updateInnerData({ customSelector: value });
   };
-  const handleSequenceValueChange = (value: string) => {
-    updateInnerData({ sequence: value });
-  };
+  const sequenceOptions = [
+    { value: '1st', name: 'select 1st element' },
+    { value: '2st', name: 'select 2nd element' },
+    { value: '3st', name: 'select 3rd element' },
+    { value: '4st', name: 'select 4th element' },
+    { value: '5st', name: 'select 5th element' },
+  ];
+
+  const handleSequenceValueChange = useCallback(
+    (value: string) => {
+      updateInnerData({ sequence: value });
+    },
+    [updateInnerData],
+  );
 
   return (
     <div className="space-y-3" ref={ref}>
@@ -144,34 +148,15 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <Select onValueChange={handleSequenceValueChange} defaultValue={innerData.sequence}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a option" />
-              </SelectTrigger>
-              <SelectContent
-                style={{
-                  zIndex: EXTENSION_CONTENT_RULES,
-                }}
-              >
-                <SelectGroup>
-                  <SelectItem value="1st">
-                    <div className="flex">select 1st element</div>
-                  </SelectItem>
-                  <SelectItem value="2st">
-                    <div className="flex">select 2st element</div>
-                  </SelectItem>
-                  <SelectItem value="3st">
-                    <div className="flex">select 3st element</div>
-                  </SelectItem>
-                  <SelectItem value="4st">
-                    <div className="flex">select 4st element</div>
-                  </SelectItem>
-                  <SelectItem value="5st">
-                    <div className="flex">select 5st element</div>
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <ComboBox
+              options={sequenceOptions}
+              value={innerData.sequence}
+              onValueChange={handleSequenceValueChange}
+              placeholder="Select a option"
+              className="w-full"
+              contentClassName="w-80"
+              contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+            />
           </div>
         </div>
       </div>

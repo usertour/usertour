@@ -1,22 +1,13 @@
 import { CalendarIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-packages/button';
 import { Calendar } from '@usertour-packages/calendar';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { TimeIcon } from '@usertour-packages/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import { cn } from '@usertour/helpers';
 import { format, parseISO } from 'date-fns';
-import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
-
-import { Button } from '@usertour-packages/button';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
-import { ScrollArea } from '@usertour-packages/scroll-area';
+import { ComboBox } from '@usertour-packages/combo-box';
+import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   getCurrentTimeError,
   isTimeConditionDataV2,
@@ -190,25 +181,25 @@ const RulesCurrentTimeTimer = (props: {
   onValueChange?(value: string): void;
 }) => {
   const { num, defaultValue = '00', onValueChange } = props;
-  const items = Array.from({ length: num }, (_, i) => i.toString().padStart(2, '0'));
+
+  const options = useMemo(
+    () =>
+      Array.from({ length: num }, (_, i) => {
+        const val = i.toString().padStart(2, '0');
+        return { value: val, name: val };
+      }),
+    [num],
+  );
 
   return (
-    <Select defaultValue={defaultValue} onValueChange={onValueChange}>
-      <SelectTrigger className="w-16">
-        <SelectValue className="text-left" />
-      </SelectTrigger>
-      <SelectPortal>
-        <SelectContent className="w-16 min-w-16" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
-          <ScrollArea className="h-60">
-            {items.map((item) => (
-              <SelectItem key={item} value={item} className="cursor-pointer">
-                {item}
-              </SelectItem>
-            ))}
-          </ScrollArea>
-        </SelectContent>
-      </SelectPortal>
-    </Select>
+    <ComboBox
+      options={options}
+      value={defaultValue}
+      onValueChange={onValueChange || (() => {})}
+      className="w-16 px-2"
+      contentClassName="w-15 min-w-15"
+      contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+    />
   );
 };
 

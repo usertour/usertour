@@ -1,9 +1,19 @@
 import { CalendarIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-packages/button';
+import { Calendar } from '@usertour-packages/calendar';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@usertour-packages/command';
 import { CloseIcon, UserIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn, isUndefined } from '@usertour/helpers';
 import { format } from 'date-fns';
+import { ComboBox } from '@usertour-packages/combo-box';
 import {
   Dispatch,
   SetStateAction,
@@ -14,17 +24,6 @@ import {
   useRef,
   useState,
 } from 'react';
-
-import { Button } from '@usertour-packages/button';
-import { Calendar } from '@usertour-packages/calendar';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@usertour-packages/command';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getUserAttrError } from '@usertour/helpers';
@@ -294,58 +293,23 @@ const RulesUserAttributeName = () => {
 };
 
 const RulesUserAttributeCondition = () => {
-  const [open, setOpen] = useState(false);
   const { localData, updateLocalData, activeConditionMapping } = useRulesUserAttributeContext();
-  const selectedCondition = activeConditionMapping?.find((c) => c.value === localData?.logic);
 
-  const handleOnSelected = useCallback(
-    (item: (typeof activeConditionMapping)[0]) => {
-      updateLocalData({ logic: item.value });
-      setOpen(false);
+  const handleConditionChange = useCallback(
+    (value: string) => {
+      updateLocalData({ logic: value });
     },
     [updateLocalData],
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="flex-1 justify-between">
-          {selectedCondition?.display || selectedCondition?.name || 'Select condition'}
-          <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-[350px] p-0"
-        style={{ zIndex: EXTENSION_CONTENT_RULES }}
-        withoutPortal
-      >
-        <Command>
-          <CommandList>
-            <CommandEmpty>No items found.</CommandEmpty>
-            <CommandGroup>
-              {activeConditionMapping?.map((item) => (
-                <CommandItem
-                  key={item.value}
-                  value={item.value}
-                  className="cursor-pointer"
-                  onSelect={() => {
-                    handleOnSelected(item);
-                  }}
-                >
-                  {item.display || item.name}
-                  <CheckIcon
-                    className={cn(
-                      'ml-auto h-4 w-4',
-                      localData?.logic === item.value ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <ComboBox
+      options={activeConditionMapping || []}
+      value={localData?.logic}
+      onValueChange={handleConditionChange}
+      placeholder="Select condition"
+      contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+    />
   );
 };
 

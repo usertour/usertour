@@ -1,14 +1,6 @@
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { ComboBox } from '@usertour-packages/combo-box';
 import { TextInputIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import { getTextInputError } from '@usertour/helpers';
 import { ElementSelectorPropsData } from '@usertour/types';
 import {
@@ -21,14 +13,15 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
+import { useRulesContext } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 
 export interface RulesTextInputProps {
   index: number;
@@ -88,31 +81,15 @@ const RulesTextInputInput = () => {
 
 const RulesTextInputCondition = () => {
   const { conditionValue, setConditionValue } = useRulesTextInputContext();
+
   return (
-    <>
-      <Select defaultValue={conditionValue} onValueChange={setConditionValue}>
-        <SelectTrigger className="justify-start flex h-9">
-          <div className="grow text-left">
-            <SelectValue placeholder={''} />
-          </div>
-        </SelectTrigger>
-        <SelectPortal>
-          <SelectContent
-            style={{
-              zIndex: EXTENSION_CONTENT_RULES,
-            }}
-          >
-            {conditions.map((item, index) => {
-              return (
-                <SelectItem key={index} value={item.value} className="cursor-pointer">
-                  {item.name}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </SelectPortal>
-      </Select>
-    </>
+    <ComboBox
+      options={conditions}
+      value={conditionValue}
+      onValueChange={setConditionValue}
+      placeholder="Select condition"
+      contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+    />
   );
 };
 
