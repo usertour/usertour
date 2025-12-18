@@ -4,19 +4,12 @@ import { DragHandleDots2Icon, GearIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import { cn } from '@usertour-packages/button/src/utils';
+import { ComboBox, ComboBoxOption } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import {
   Tooltip,
   TooltipContent,
@@ -59,6 +52,29 @@ const ALIGN_ITEMS_OPTIONS = {
 const DEFAULT_WIDTH_TYPE = WIDTH_TYPES.PERCENT;
 const DEFAULT_JUSTIFY_CONTENT = JUSTIFY_CONTENT_OPTIONS.START;
 const DEFAULT_ALIGN_ITEMS = ALIGN_ITEMS_OPTIONS.START;
+
+// ComboBox options
+const WIDTH_TYPE_OPTIONS: ComboBoxOption[] = [
+  { value: WIDTH_TYPES.PERCENT, name: '%' },
+  { value: WIDTH_TYPES.PIXELS, name: 'pixels' },
+  { value: WIDTH_TYPES.FILL, name: 'fill' },
+];
+
+const JUSTIFY_CONTENT_OPTIONS_LIST: ComboBoxOption[] = [
+  { value: JUSTIFY_CONTENT_OPTIONS.START, name: 'Left' },
+  { value: JUSTIFY_CONTENT_OPTIONS.CENTER, name: 'Center' },
+  { value: JUSTIFY_CONTENT_OPTIONS.END, name: 'Right' },
+  { value: JUSTIFY_CONTENT_OPTIONS.BETWEEN, name: 'Space Between' },
+  { value: JUSTIFY_CONTENT_OPTIONS.EVENLY, name: 'Space Evenly' },
+  { value: JUSTIFY_CONTENT_OPTIONS.AROUND, name: 'Space Around' },
+];
+
+const ALIGN_ITEMS_OPTIONS_LIST: ComboBoxOption[] = [
+  { value: ALIGN_ITEMS_OPTIONS.START, name: 'Top' },
+  { value: ALIGN_ITEMS_OPTIONS.CENTER, name: 'Center' },
+  { value: ALIGN_ITEMS_OPTIONS.END, name: 'Bottom' },
+  { value: ALIGN_ITEMS_OPTIONS.BASELINE, name: 'Baseline' },
+];
 
 // CSS Classes
 const activeClasses = 'outline-1 outline-primary outline';
@@ -333,57 +349,36 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                     className="bg-background flex-none w-[120px]"
                   />
                 )}
-                <Select onValueChange={handleWidthTypeChange} value={width.type}>
-                  <SelectTrigger className="shrink">
-                    <SelectValue placeholder="Select a distribute" />
-                  </SelectTrigger>
-                  <SelectContent style={{ zIndex: zIndex + EDITOR_SELECT }}>
-                    <SelectGroup>
-                      <SelectItem value={WIDTH_TYPES.PERCENT}>%</SelectItem>
-                      <SelectItem value={WIDTH_TYPES.PIXELS}>pixels</SelectItem>
-                      <SelectItem value={WIDTH_TYPES.FILL}>fill</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <ComboBox
+                  options={WIDTH_TYPE_OPTIONS}
+                  value={width.type}
+                  onValueChange={handleWidthTypeChange}
+                  placeholder="Select width type"
+                  className="shrink"
+                  contentClassName="w-[var(--radix-popover-trigger-width)]"
+                  contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+                />
               </div>
 
               <Label>Distribute content</Label>
-              <Select
-                onValueChange={handleDistributeValueChange}
+              <ComboBox
+                options={JUSTIFY_CONTENT_OPTIONS_LIST}
                 value={element.justifyContent || DEFAULT_JUSTIFY_CONTENT}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a distribute" />
-                </SelectTrigger>
-                <SelectContent style={{ zIndex: zIndex + EDITOR_SELECT }}>
-                  <SelectGroup>
-                    <SelectItem value={JUSTIFY_CONTENT_OPTIONS.START}>Left</SelectItem>
-                    <SelectItem value={JUSTIFY_CONTENT_OPTIONS.CENTER}>Center</SelectItem>
-                    <SelectItem value={JUSTIFY_CONTENT_OPTIONS.END}>Right</SelectItem>
-                    <SelectItem value={JUSTIFY_CONTENT_OPTIONS.BETWEEN}>Space Between</SelectItem>
-                    <SelectItem value={JUSTIFY_CONTENT_OPTIONS.EVENLY}>Space Evenly</SelectItem>
-                    <SelectItem value={JUSTIFY_CONTENT_OPTIONS.AROUND}>Space Around</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+                onValueChange={handleDistributeValueChange}
+                placeholder="Select a distribute"
+                contentClassName="w-[var(--radix-popover-trigger-width)]"
+                contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+              />
 
               <Label>Align Items</Label>
-              <Select
-                onValueChange={handleAlignValueChange}
+              <ComboBox
+                options={ALIGN_ITEMS_OPTIONS_LIST}
                 value={element.alignItems || DEFAULT_ALIGN_ITEMS}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a distribute" />
-                </SelectTrigger>
-                <SelectContent style={{ zIndex: zIndex + EDITOR_SELECT }}>
-                  <SelectGroup>
-                    <SelectItem value={ALIGN_ITEMS_OPTIONS.START}>Top</SelectItem>
-                    <SelectItem value={ALIGN_ITEMS_OPTIONS.CENTER}>Center</SelectItem>
-                    <SelectItem value={ALIGN_ITEMS_OPTIONS.END}>Bottom</SelectItem>
-                    <SelectItem value={ALIGN_ITEMS_OPTIONS.BASELINE}>Baseline</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+                onValueChange={handleAlignValueChange}
+                placeholder="Select align items"
+                contentClassName="w-[var(--radix-popover-trigger-width)]"
+                contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+              />
 
               <ActionButtons
                 onDelete={handleDelete}
