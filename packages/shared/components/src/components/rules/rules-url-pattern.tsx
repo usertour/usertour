@@ -16,7 +16,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesContainerWrapper, RulesPopoverTriggerWrapper } from './rules-wrapper';
 
 export interface RulesUrlPatternProps {
@@ -76,6 +76,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
   const { disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
   const [errorInfo, setErrorInfo] = useState('');
 
   const deleteIncludeItem = (index: number) => {
@@ -298,7 +299,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
             <RulesRemove index={index} />
           </RulesConditionRightContent>
         </RulesErrorAnchor>
-        <RulesErrorContent>{errorInfo}</RulesErrorContent>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </RulesContainerWrapper>
     </RulesError>
   );

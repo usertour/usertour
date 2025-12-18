@@ -160,6 +160,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               defaultValue={setting.wait ?? 0}
               onValueChange={(value) => updateSettings({ wait: value })}
               disabled={disabled}
+              baseZIndex={WebZIndex.RULES}
             />
           )}
           {showFrequency && (

@@ -2,7 +2,7 @@ import { TextFillIcon } from '@usertour-packages/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { getTextFillError } from '@usertour/helpers';
 import { ElementSelectorPropsData } from '@usertour/types';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
@@ -36,6 +36,7 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
   const { updateConditionData } = useRulesGroupContext();
   const [errorInfo, setErrorInfo] = useState('');
   const { currentContent, token, onElementChange, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   useEffect(() => {
     const updates = {
@@ -134,7 +135,7 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
             <RulesRemove index={index} />
           </RulesConditionRightContent>
         </RulesErrorAnchor>
-        <RulesErrorContent>{errorInfo}</RulesErrorContent>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </div>
     </RulesError>
   );

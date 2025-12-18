@@ -111,6 +111,7 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
   const [open, setOpen] = useState(false);
   const { updateConditionData } = useRulesGroupContext();
   const { currentContent, token, onElementChange, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   useEffect(() => {
     const updates = {
@@ -239,7 +240,7 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
               <RulesRemove index={index} />
             </RulesConditionRightContent>
           </RulesErrorAnchor>
-          <RulesErrorContent>{errorInfo}</RulesErrorContent>
+          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
         </div>
       </RulesError>
     </RulesTextInputContext.Provider>

@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { getElementError } from '@usertour/helpers';
 import { ElementSelectorPropsData } from '@usertour/types';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
@@ -93,6 +93,7 @@ export const RulesElement = (props: RulesElementProps) => {
   const { updateConditionData } = useRulesGroupContext();
   const [errorInfo, setErrorInfo] = useState('');
   const { currentContent, token, onElementChange, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   const value = {
     conditionValue,
@@ -198,7 +199,7 @@ export const RulesElement = (props: RulesElementProps) => {
               <RulesRemove index={index} />
             </RulesConditionRightContent>
           </RulesErrorAnchor>
-          <RulesErrorContent>{errorInfo}</RulesErrorContent>
+          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
         </div>
       </RulesError>
     </RulesElementContext.Provider>

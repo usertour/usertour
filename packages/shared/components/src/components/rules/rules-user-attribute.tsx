@@ -505,6 +505,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
   const [displayValue, setDisplayValue] = useState<string>('');
 
   const { disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   useEffect(() => {
     if (attributes && data?.attrId) {
@@ -645,7 +646,7 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
               <RulesRemove index={index} />
             </RulesConditionRightContent>
           </RulesErrorAnchor>
-          <RulesErrorContent>{errorInfo}</RulesErrorContent>
+          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
         </RulesContainerWrapper>
       </RulesError>
     </RulesUserAttributeContext.Provider>

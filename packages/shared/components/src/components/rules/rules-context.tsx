@@ -30,7 +30,7 @@ export function useRulesContext(): RulesContextValue {
 
 /**
  * Hook to get z-index values for rules components
- * Falls back to default z-index when used outside RulesContext (e.g., RulesWait)
+ * Falls back to default z-index when used outside RulesContext
  */
 export function useRulesZIndex() {
   const context = useContext(RulesContext);

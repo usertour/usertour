@@ -174,6 +174,7 @@ const RulesSegmentCondition = () => {
 export const RulesSegment = (props: RulesSegmentProps) => {
   const { index, data } = props;
   const { segments, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
   const [segmentId, setSegmentId] = useState<string>(data?.segmentId ?? '');
   const [conditionValue, setConditionValue] = useState(data?.logic ?? 'is');
   const [openError, setOpenError] = useState(false);
@@ -264,7 +265,7 @@ export const RulesSegment = (props: RulesSegmentProps) => {
               <RulesRemove index={index} />
             </RulesConditionRightContent>
           </RulesErrorAnchor>
-          <RulesErrorContent>{errorInfo}</RulesErrorContent>
+          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
         </div>
       </RulesError>
     </RulesSegmentContext.Provider>

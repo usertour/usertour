@@ -163,6 +163,7 @@ export const RulesContent = (props: RulesContentProps) => {
   const { index, data } = props;
   const { updateConditionData } = useRulesGroupContext();
   const { contents, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   const [selectedPreset, setSelectedPreset] = useState<SelectItemType | null>(null);
   const [openError, setOpenError] = useState(false);
@@ -251,7 +252,7 @@ export const RulesContent = (props: RulesContentProps) => {
               <RulesRemove index={index} />
             </RulesConditionRightContent>
           </RulesErrorAnchor>
-          <RulesErrorContent>{errorInfo}</RulesErrorContent>
+          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
         </div>
       </RulesError>
     </RulesContentContext.Provider>

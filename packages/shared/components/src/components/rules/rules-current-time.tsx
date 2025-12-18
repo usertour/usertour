@@ -207,6 +207,7 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
   const [errorInfo, setErrorInfo] = useState('');
   const { updateConditionData } = useRulesGroupContext();
   const { disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   const {
     startDate,
@@ -330,7 +331,7 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
             <RulesRemove index={index} />
           </RulesConditionRightContent>
         </RulesErrorAnchor>
-        <RulesErrorContent>{errorInfo}</RulesErrorContent>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </div>
     </RulesError>
   );
