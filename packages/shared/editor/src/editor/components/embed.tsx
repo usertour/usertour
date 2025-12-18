@@ -11,15 +11,7 @@ import {
 } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { ComboBox } from '@usertour-packages/combo-box';
 import {
   QuestionTooltip,
   Tooltip,
@@ -240,19 +232,17 @@ const DimensionControl = ({
           onChange={onValueChange}
           className="bg-background grow"
         />
-        <Select onValueChange={onTypeChange} value={dimension.type}>
-          <SelectTrigger className="shrink w-56">
-            <SelectValue placeholder="Select unit" />
-          </SelectTrigger>
-          <SelectPortal style={{ zIndex: EDITOR_SELECT }}>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="percent">%</SelectItem>
-                <SelectItem value="pixels">pixels</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </SelectPortal>
-        </Select>
+        <ComboBox
+          options={[
+            { value: 'percent', name: '%' },
+            { value: 'pixels', name: 'pixels' },
+          ]}
+          value={dimension.type}
+          onValueChange={onTypeChange}
+          placeholder="Select unit"
+          className="flex-none w-20 h-auto"
+          contentStyle={{ zIndex: EDITOR_SELECT }}
+        />
       </div>
     </>
   );
@@ -539,7 +529,7 @@ export const ContentEditorEmbed = ({ element, path, id }: ContentEditorEmbedProp
                 disabled={isLoading}
               />
               <Button
-                className="flex-none"
+                className="flex-none w-20"
                 variant="ghost"
                 size="default"
                 onClick={handleSubmitUrl}
