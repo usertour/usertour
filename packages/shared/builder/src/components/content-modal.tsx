@@ -65,7 +65,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme);
+    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme, 'modal');
 
     const handleEditorValueChange = (value: any) => {
       setData(value);
