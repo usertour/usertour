@@ -1,23 +1,9 @@
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
-import {
-  ArrowRightIcon,
-  CloseCircleIcon,
-  DeleteIcon,
-  InsertColumnLeftIcon,
-  InsertColumnRightIcon,
-} from '@usertour-packages/icons';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { ComboBox } from '@usertour-packages/combo-box';
 import {
   Tooltip,
   TooltipContent,
@@ -138,45 +124,29 @@ export const ButtonElement = (props: RenderElementProps & { className?: string }
               onChange={handleButtonTextChange}
             />
             <Label>Button style</Label>
-            <Select onValueChange={handleButtonStyleChange} defaultValue={element.data.type}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a distribute" />
-              </SelectTrigger>
-              <SelectPortal style={{ zIndex: zIndex + 2 }}>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="default">Primary</SelectItem>
-                    <SelectItem value="secondary">Secondary</SelectItem>
-                    <SelectItem value="destructive">Destructive</SelectItem>
-                    <SelectItem value="outline">Outline</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </SelectPortal>
-            </Select>
+            <ComboBox
+              options={[
+                { value: 'default', name: 'Primary' },
+                { value: 'secondary', name: 'Secondary' },
+                { value: 'destructive', name: 'Destructive' },
+                { value: 'outline', name: 'Outline' },
+              ]}
+              value={element.data.type}
+              onValueChange={handleButtonStyleChange}
+              placeholder="Select a style"
+              contentStyle={{ zIndex: zIndex + 2 }}
+            />
             <Label>When button is clicked</Label>
-            <Select onValueChange={handleButtonActionChange} defaultValue={element.data.action}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a distribute" />
-              </SelectTrigger>
-              <SelectPortal style={{ zIndex: zIndex + 2 }}>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="goto">
-                      <div className="flex">
-                        <ArrowRightIcon className="mx-2 my-1" />
-                        Go to step
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="dismiss">
-                      <div className="flex">
-                        <CloseCircleIcon className="flex-none mx-2 my-1" />
-                        <div className="grow">Dismiss flow</div>
-                      </div>
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </SelectPortal>
-            </Select>
+            <ComboBox
+              options={[
+                { value: 'goto', name: 'Go to step' },
+                { value: 'dismiss', name: 'Dismiss flow' },
+              ]}
+              value={element.data.action}
+              onValueChange={handleButtonActionChange}
+              placeholder="Select an action"
+              contentStyle={{ zIndex: zIndex + 2 }}
+            />
             <div className="flex items-center">
               <TooltipProvider>
                 <Tooltip>

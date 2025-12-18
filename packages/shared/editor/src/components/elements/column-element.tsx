@@ -5,15 +5,7 @@ import { cn } from '@usertour-packages/button/src/utils';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { ComboBox } from '@usertour-packages/combo-box';
 import {
   Tooltip,
   TooltipContent,
@@ -257,45 +249,34 @@ export const ColumnElement = (props: RenderElementProps & { className?: string }
                     className="bg-background flex-none w-[120px]"
                   />
                 )}
-                <Select
+                <ComboBox
+                  options={[
+                    { value: 'percent', name: '%' },
+                    { value: 'pixels', name: 'pixels' },
+                    { value: 'fill', name: 'fill' },
+                  ]}
+                  value={element.width?.type ?? 'percent'}
                   onValueChange={handleWidthTypeChange}
-                  defaultValue={element.width?.type ?? 'percent'}
-                >
-                  <SelectTrigger className="shrink">
-                    <SelectValue placeholder="Select a distribute" />
-                  </SelectTrigger>
-                  <SelectPortal style={{ zIndex: zIndex + 2 }}>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="percent">%</SelectItem>
-                        <SelectItem value="pixels">pixels</SelectItem>
-                        <SelectItem value="fill">fill</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                  placeholder="Select a type"
+                  className="shrink"
+                  contentStyle={{ zIndex: zIndex + 2 }}
+                />
               </div>
               <Label>Distribute content</Label>
-              <Select
+              <ComboBox
+                options={[
+                  { value: 'start', name: 'Top' },
+                  { value: 'center', name: 'Center' },
+                  { value: 'end', name: 'Bottom' },
+                  { value: 'space-between', name: 'Space Between' },
+                  { value: 'space-evenly', name: 'Space Evenly' },
+                  { value: 'space-around', name: 'Space Around' },
+                ]}
+                value={element.style.justifyContent}
                 onValueChange={handleDistributeValueChange}
-                defaultValue={element.style.justifyContent}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a distribute" />
-                </SelectTrigger>
-                <SelectPortal style={{ zIndex: zIndex + 2 }}>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="start">Top</SelectItem>
-                      <SelectItem value="center">Center</SelectItem>
-                      <SelectItem value="end">Bottom</SelectItem>
-                      <SelectItem value="space-between">Space Between</SelectItem>
-                      <SelectItem value="space-evenly">Space Evenly</SelectItem>
-                      <SelectItem value="space-around">Space Around</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </SelectPortal>
-              </Select>
+                placeholder="Select a distribute"
+                contentStyle={{ zIndex: zIndex + 2 }}
+              />
               <Label htmlFor="spacing">Column spacing</Label>
               <Input
                 type="spacing"
