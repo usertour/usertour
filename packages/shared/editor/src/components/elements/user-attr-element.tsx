@@ -1,16 +1,9 @@
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
+import { ComboBox } from '@usertour-packages/combo-box';
 import { DeleteIcon, UserIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import {
   Tooltip,
   TooltipContent,
@@ -18,13 +11,11 @@ import {
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
 import { Attribute } from '@usertour/types';
-import { ChangeEvent, MouseEvent, useCallback, useEffect, useState } from 'react';
+import { ChangeEvent, MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Transforms } from 'slate';
 import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
 import { UserAttributeElementType } from '../../types/slate';
 import { usePopperEditorContext } from '../editor';
-import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour/helpers';
 
 export const UserAttributeElement = (props: RenderElementProps) => {
   const { zIndex, attributes } = usePopperEditorContext();
@@ -96,7 +87,16 @@ export const UserAttributeElement = (props: RenderElementProps) => {
     event.preventDefault();
   };
 
-  const userAttributes = attributes?.filter((attr: Attribute) => attr.bizType === 1);
+  const userAttributeOptions = useMemo(() => {
+    return (
+      attributes
+        ?.filter((attr: Attribute) => attr.bizType === 1)
+        ?.map((attr: Attribute) => ({
+          value: attr.codeName,
+          name: attr.displayName,
+        })) ?? []
+    );
+  }, [attributes]);
 
   return (
     <Popover.Root open={open} onOpenChange={handleOnOpenChange}>
@@ -121,24 +121,13 @@ export const UserAttributeElement = (props: RenderElementProps) => {
           alignOffset={-2}
         >
           <div className="flex flex-col gap-2.5">
-            <Select onValueChange={handleButtonActionChange} defaultValue={element.attrCode}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a distribute" />
-              </SelectTrigger>
-              <SelectPortal style={{ zIndex: zIndex + 2 }}>
-                <SelectContent>
-                  <ScrollArea
-                    className={cn(userAttributes && userAttributes?.length > 10 ? 'h-72' : '')}
-                  >
-                    {userAttributes?.map((attr: Attribute) => (
-                      <SelectItem value={attr.codeName} key={attr.id}>
-                        {attr.displayName}
-                      </SelectItem>
-                    ))}
-                  </ScrollArea>
-                </SelectContent>
-              </SelectPortal>
-            </Select>
+            <ComboBox
+              options={userAttributeOptions}
+              value={element.attrCode}
+              onValueChange={handleButtonActionChange}
+              placeholder="Select a distribute"
+              contentStyle={{ zIndex: zIndex + 2 }}
+            />
             <Label htmlFor="button-text">Fallback</Label>
             <Input
               type="button-text"
