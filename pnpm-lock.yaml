@@ -3677,6 +3677,9 @@ importers:
       '@usertour-packages/checkbox':
         specifier: workspace:^
         version: link:../../components/checkbox
+      '@usertour-packages/combo-box':
+        specifier: workspace:^
+        version: link:../../components/combo-box
       '@usertour-packages/command':
         specifier: workspace:^
         version: link:../../components/command
