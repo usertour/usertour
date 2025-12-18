@@ -437,7 +437,7 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
       <button
         type="button"
         className={cn(
-          'rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-sdk-xbutton absolute top-[5px] right-[5px] hover:bg-sdk-primary/40 outline-none cursor-default',
+          'rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-sdk-xbutton absolute top-[5px] right-[5px] hover:bg-sdk-primary/40 outline-none cursor-default z-50',
           className,
         )}
         aria-label="Close"
