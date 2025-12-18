@@ -27,6 +27,7 @@ export interface ComboBoxProps {
   className?: string;
   contentClassName?: string;
   contentStyle?: CSSProperties;
+  disabled?: boolean;
 }
 
 export const ComboBox = ({
@@ -38,6 +39,7 @@ export const ComboBox = ({
   className,
   contentClassName,
   contentStyle,
+  disabled = false,
 }: ComboBoxProps) => {
   const [open, setOpen] = useState(false);
   const selectedOption = options.find((opt) => opt.value === value);
@@ -51,9 +53,13 @@ export const ComboBox = ({
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className={cn('flex-1 justify-between', className)}>
+        <Button
+          variant="outline"
+          className={cn('flex-1 justify-between', className)}
+          disabled={disabled}
+        >
           {selectedOption?.display || selectedOption?.name || placeholder}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
