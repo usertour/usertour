@@ -5,19 +5,21 @@ import { cn } from '@usertour-packages/button/src/utils';
 export const HeadingElement = (
   props: RenderElementProps & { className?: string; headingSize: 1 | 2 | 3 },
 ) => {
-  const CustomTag = `h${props.headingSize}` as 'h1' | 'h2' | 'h3';
+  const { attributes, children, className, headingSize } = props;
+  const CustomTag = `h${headingSize}` as 'h1' | 'h2' | 'h3';
 
   return (
     <div
+      {...attributes}
       className={cn(
         'font-bold',
-        props.headingSize === 1 && 'text-3xl',
-        props.headingSize === 2 && 'text-2xl',
-        props.headingSize === 3 && 'text-xl',
-        props.className,
+        headingSize === 1 && 'text-3xl',
+        headingSize === 2 && 'text-2xl',
+        headingSize === 3 && 'text-xl',
+        className,
       )}
     >
-      <CustomTag>{props.children}</CustomTag>
+      <CustomTag>{children}</CustomTag>
     </div>
   );
 };
@@ -46,4 +48,4 @@ export const HeadingElementSerialize = (props: HeadingElementSerializeType) => {
   );
 };
 
-HeadingElement.display = 'HeadingElement';
+HeadingElement.displayName = 'HeadingElement';

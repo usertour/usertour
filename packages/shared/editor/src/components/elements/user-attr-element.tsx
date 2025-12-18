@@ -22,7 +22,7 @@ export const UserAttributeElement = (props: RenderElementProps) => {
   const element = props.element as UserAttributeElementType;
   const editor = useSlateStatic();
   const [attrName, setAttrName] = useState<string>();
-  const [fallback, setFallback] = useState<string>(element.fallback);
+  const [fallback, setFallback] = useState<string>(element.fallback ?? '');
   const [open, setOpen] = useState<boolean>(false);
 
   const handleButtonActionChange = (attrCode: string) => {
@@ -66,7 +66,7 @@ export const UserAttributeElement = (props: RenderElementProps) => {
         );
       }
     },
-    [fallback],
+    [editor, element, fallback],
   );
 
   const handleDelete = () => {
@@ -150,7 +150,7 @@ export const UserAttributeElement = (props: RenderElementProps) => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
-                  <p>Delete use attribute</p>
+                  <p>Delete user attribute</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -162,12 +162,12 @@ export const UserAttributeElement = (props: RenderElementProps) => {
 };
 UserAttributeElement.displayName = 'UserElement';
 
-type TodoElementSerializeType = {
+type UserAttributeElementSerializeType = {
   className?: string;
   children: React.ReactNode;
   element: UserAttributeElementType;
 };
-export const UserAttributeElementSerialize = (props: TodoElementSerializeType) => {
+export const UserAttributeElementSerialize = (props: UserAttributeElementSerializeType) => {
   const { element } = props;
   return <span>{element.value}</span>;
 };

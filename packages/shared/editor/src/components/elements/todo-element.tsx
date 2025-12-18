@@ -1,14 +1,15 @@
 import { RenderElementProps } from 'slate-react';
 
 const TodoElement = (props: RenderElementProps) => {
+  const { attributes, children } = props;
   return (
-    <div className="mb-4 flex items-center">
+    <div {...attributes} className="mb-4 flex items-center">
       <input
-        {...props.attributes}
         type="checkbox"
         className="mr-2 h-5 w-5 cursor-pointer accent-blue-300 checked:border-0"
+        contentEditable={false}
       />
-      {props.children}
+      {children}
     </div>
   );
 };
