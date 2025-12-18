@@ -57,6 +57,13 @@ export const serializeLeaf = (node: Descendant, key = '') => {
     return null;
   }
   const string = node.text;
+
+  // Skip empty text nodes to avoid rendering unnecessary &nbsp;
+  // These are typically created by Slate around inline elements
+  if (!string) {
+    return null;
+  }
+
   const style: CSSProperties = {};
   if (node.bold) {
     style.fontWeight = 'bold';
@@ -72,7 +79,7 @@ export const serializeLeaf = (node: Descendant, key = '') => {
   }
   return (
     <span style={{ ...style }} key={key}>
-      {string || '\u00A0'}
+      {string}
     </span>
   );
 };
