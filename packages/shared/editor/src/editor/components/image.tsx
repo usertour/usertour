@@ -1,20 +1,22 @@
+import { useCallback, useMemo, useState } from 'react';
+
 import * as Popover from '@radix-ui/react-popover';
+import Upload from 'rc-upload';
+
 import { Button } from '@usertour-packages/button';
 import { Checkbox } from '@usertour-packages/checkbox';
+import { ComboBox } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
-import { ImageEditIcon, ImageIcon, SpinnerIcon } from '@usertour-packages/icons';
-import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
+import {
+  DeleteIcon,
+  ImageEditIcon,
+  ImageIcon,
+  InsertColumnLeftIcon,
+  InsertColumnRightIcon,
+  SpinnerIcon,
+} from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import {
   Tooltip,
   TooltipContent,
@@ -23,8 +25,6 @@ import {
 } from '@usertour-packages/tooltip';
 import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
-import Upload from 'rc-upload';
-import { useCallback, useMemo, useState } from 'react';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 /* eslint-disable @next/next/no-img-element */
 import {
@@ -46,6 +46,11 @@ const WIDTH_TYPES = {
   PERCENT: 'percent',
   PIXELS: 'pixels',
 } as const;
+
+const WIDTH_TYPE_OPTIONS = [
+  { value: WIDTH_TYPES.PERCENT, name: '%' },
+  { value: WIDTH_TYPES.PIXELS, name: 'pixels' },
+];
 
 const MARGIN_POSITIONS = ['left', 'top', 'bottom', 'right'] as const;
 
@@ -394,24 +399,16 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                 value={ensureDimensionWithDefaults(element.width).value?.toString() || ''}
                 placeholder="Column width"
                 onChange={handleWidthValueChange}
-                className="bg-background flex-none w-[120px]"
+                className="bg-background"
               />
-              <Select
-                onValueChange={handleWidthTypeChange}
+              <ComboBox
+                options={WIDTH_TYPE_OPTIONS}
                 value={ensureDimensionWithDefaults(element.width).type}
-              >
-                <SelectTrigger className="shrink">
-                  <SelectValue placeholder="Select a distribute" />
-                </SelectTrigger>
-                <SelectPortal style={{ zIndex: zIndex + EDITOR_SELECT }}>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value={WIDTH_TYPES.PERCENT}>%</SelectItem>
-                      <SelectItem value={WIDTH_TYPES.PIXELS}>pixels</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </SelectPortal>
-              </Select>
+                onValueChange={handleWidthTypeChange}
+                placeholder="Select type"
+                className="flex-none w-20 h-auto px-2"
+                contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+              />
             </div>
 
             <MarginControls
