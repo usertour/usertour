@@ -193,7 +193,6 @@ const RulesCurrentTimeTimer = (props: {
       value={defaultValue}
       onValueChange={onValueChange || (() => {})}
       className="w-16 px-2"
-      contentClassName="w-15 min-w-15"
       contentStyle={{ zIndex }}
     />
   );

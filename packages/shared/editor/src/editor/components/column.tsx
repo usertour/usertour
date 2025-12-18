@@ -355,7 +355,6 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                   onValueChange={handleWidthTypeChange}
                   placeholder="Select width type"
                   className="shrink"
-                  contentClassName="w-[var(--radix-popover-trigger-width)]"
                   contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
                 />
               </div>
@@ -366,7 +365,6 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                 value={element.justifyContent || DEFAULT_JUSTIFY_CONTENT}
                 onValueChange={handleDistributeValueChange}
                 placeholder="Select a distribute"
-                contentClassName="w-[var(--radix-popover-trigger-width)]"
                 contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
               />
 
@@ -376,7 +374,6 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                 value={element.alignItems || DEFAULT_ALIGN_ITEMS}
                 onValueChange={handleAlignValueChange}
                 placeholder="Select align items"
-                contentClassName="w-[var(--radix-popover-trigger-width)]"
                 contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
               />
 

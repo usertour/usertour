@@ -58,7 +58,10 @@ export const ComboBox = ({
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn('w-[350px] p-0', contentClassName)} style={contentStyle}>
+      <PopoverContent
+        className={cn('w-[var(--radix-popover-trigger-width)] p-0', contentClassName)}
+        style={contentStyle}
+      >
         <Command>
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>

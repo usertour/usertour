@@ -154,7 +154,6 @@ export const ElementSelector = (props: ElementSelectorProps) => {
               onValueChange={handleSequenceValueChange}
               placeholder="Select a option"
               className="w-full"
-              contentClassName="w-80"
               contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
             />
           </div>
