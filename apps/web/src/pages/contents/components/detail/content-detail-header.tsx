@@ -8,6 +8,7 @@ import { EditIcon, PlaneIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour/helpers';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
+import { useEvent } from 'react-use';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import { ContentPublishForm } from '../shared/content-publish-form';
@@ -72,6 +73,13 @@ export const ContentDetailHeader = () => {
   const { openBuilder } = useContentBuilder();
   const { environmentList } = useEnvironmentListContext();
   const [_, setSearchParams] = useSearchParams();
+
+  // Warn user when closing page while saving
+  useEvent('beforeunload', (e: BeforeUnloadEvent) => {
+    if (isSaving) {
+      e.preventDefault();
+    }
+  });
 
   // Show skeleton if content is loading
   if (loading) {
