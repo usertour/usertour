@@ -17,7 +17,7 @@ import {
   RulesFrequencyValueEvery,
 } from '@usertour/types';
 import { ChangeEvent, useEffect, useState } from 'react';
-import { HelpTooltip } from '../common/help-tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 
 const itemsMapping = [
@@ -57,9 +57,9 @@ const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
             <span>{itemsMapping.find((item) => item.key === frequency)?.value}</span>
             <ChevronDownIcon width={16} height={16} />
           </div>
-          <HelpTooltip>
+          <QuestionTooltip>
             Whether the {contentType} can auto-start for the same user just once, or many times.
-          </HelpTooltip>
+          </QuestionTooltip>
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
@@ -176,7 +176,7 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
         />
         <EveryTimes disabled={disabled} />
         <span className="text-sm">apart </span>
-        <HelpTooltip>
+        <QuestionTooltip>
           <p>
             The {contentType} may auto-start up to {data.times} times, with at least {data.duration}{' '}
             {data.unit} passing in between.
@@ -184,7 +184,7 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
             <br />
             Note that manual and programmatic starts are included in the limit.
           </p>
-        </HelpTooltip>
+        </QuestionTooltip>
       </div>
     );
   }
@@ -201,10 +201,10 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
         placeholder={''}
       />
       <EveryTimes />
-      <HelpTooltip>
+      <QuestionTooltip>
         The {contentType} may auto-start unlimited times, with at least {data.duration} {data.unit}{' '}
         passing in between.
-      </HelpTooltip>
+      </QuestionTooltip>
     </div>
   );
 };
@@ -267,11 +267,11 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
         </DropdownMenuContent>
       </DropdownMenu>
       <span className="text-sm">after any {contentType}</span>
-      <HelpTooltip>
+      <QuestionTooltip>
         If enabled, the {contentType} will only auto-start if no other {contentType} has shown in
         the period you pick. This is useful to make sure you don't overwhelm users with too much{' '}
         {contentType} at the same time.
-      </HelpTooltip>
+      </QuestionTooltip>
     </div>
   );
 };

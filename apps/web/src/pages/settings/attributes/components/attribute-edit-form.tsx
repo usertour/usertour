@@ -4,7 +4,6 @@ import { Icons } from '@/components/atoms/icons';
 import { Attribute } from '@usertour/types';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {
   Dialog,
@@ -32,12 +31,7 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { getErrorMessage } from '@usertour/helpers';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
@@ -156,16 +150,9 @@ export const AttributeEditForm = (props: EditFormProps) => {
                     <FormItem>
                       <FormLabel className="flex flex-row">
                         Objet type
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs bg-slate-700">
-                              <p>Determines which kind of objects this attribute can be set for.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <QuestionTooltip className="inline ml-1">
+                          Determines which kind of objects this attribute can be set for.
+                        </QuestionTooltip>
                       </FormLabel>
                       <Select
                         onValueChange={field.onChange}
@@ -215,18 +202,9 @@ export const AttributeEditForm = (props: EditFormProps) => {
                     <FormItem>
                       <FormLabel className="flex flex-row">
                         Data type
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs bg-slate-700">
-                              <p>
-                                Determines what kind of values will be stored in this attribute.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <QuestionTooltip className="inline ml-1">
+                          Determines what kind of values will be stored in this attribute.
+                        </QuestionTooltip>
                       </FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
@@ -257,20 +235,10 @@ export const AttributeEditForm = (props: EditFormProps) => {
                     <FormItem>
                       <FormLabel className="flex flex-row">
                         Display name
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs bg-slate-700">
-                              <p>
-                                Human-friendly name shown in Usertour. we recommend using Word Case
-                                (i.e.uppercasefrst letter, spaces between words) such as"Billing
-                                Plan".
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <QuestionTooltip className="inline ml-1">
+                          Human-friendly name shown in Usertour. we recommend using Word Case
+                          (i.e.uppercasefrst letter, spaces between words) such as"Billing Plan".
+                        </QuestionTooltip>
                       </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter display name" className="w-72" {...field} />
@@ -286,20 +254,11 @@ export const AttributeEditForm = (props: EditFormProps) => {
                     <FormItem>
                       <FormLabel className="flex flex-row">
                         Code name
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs bg-slate-700">
-                              <p>
-                                Code-friendly name used in Webhooks and integrations to analytics
-                                providers. we recommend using snake_case (i.e. lowercaseletters with
-                                words separated by underscore).
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <QuestionTooltip className="inline ml-1">
+                          Code-friendly name used in Webhooks and integrations to analytics
+                          providers. we recommend using snake_case (i.e. lowercaseletters with words
+                          separated by underscore).
+                        </QuestionTooltip>
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -321,16 +280,9 @@ export const AttributeEditForm = (props: EditFormProps) => {
                   <FormItem>
                     <FormLabel className="flex flex-row">
                       Description
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-slate-700">
-                            <p>Put any additional information for your ownreference here.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <QuestionTooltip className="inline ml-1">
+                        Put any additional information for your ownreference here.
+                      </QuestionTooltip>
                     </FormLabel>
                     <FormControl>
                       <Input placeholder="Optional description" className="w-full" {...field} />

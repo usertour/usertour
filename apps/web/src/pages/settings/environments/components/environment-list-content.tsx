@@ -1,7 +1,7 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { Environment } from '@usertour/types';
-import { CopyIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { CopyIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {
   Table,
@@ -11,12 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { cn } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { format } from 'date-fns';
@@ -79,17 +74,10 @@ export const EnvironmentListContent = () => {
               <TableHead>Environment name</TableHead>
               <TableHead>
                 Usertour.js Token
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <QuestionMarkCircledIcon className="inline ml-1 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs bg-foreground text-background">
-                      You need this when installing Usertour.js in your web app. See
-                      https://docs.usertour.io for more details.
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <QuestionTooltip className="inline ml-1">
+                  You need this when installing Usertour.js in your web app. See
+                  https://docs.usertour.io for more details.
+                </QuestionTooltip>
               </TableHead>
               <TableHead>CreatedAt</TableHead>
               <TableHead />

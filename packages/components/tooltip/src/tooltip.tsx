@@ -38,13 +38,14 @@ TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
 interface QuestionTooltipProps {
   children: React.ReactNode;
+  className?: string;
 }
 
-const QuestionTooltip = ({ children }: QuestionTooltipProps) => (
+const QuestionTooltip = ({ children, className }: QuestionTooltipProps) => (
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
-        <QuestionMarkCircledIcon className="cursor-help" />
+        <QuestionMarkCircledIcon className={cn('cursor-help', className)} />
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">{children}</TooltipContent>
     </Tooltip>

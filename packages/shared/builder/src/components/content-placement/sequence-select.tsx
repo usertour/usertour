@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { HelpTooltip } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 
 interface SequenceSelectProps {
   value?: string;
@@ -25,13 +25,13 @@ export const SequenceSelect = ({ value = '1st', onChange, zIndex }: SequenceSele
     <div className="flex flex-col space-y-2">
       <div className="flex justify-start items-center space-x-1	">
         <Label>If multiple matches</Label>
-        <HelpTooltip>
+        <QuestionTooltip>
           If multiple elements match your criteria, you can tell Usertour which of the elements to
           select.
           <br />
           Elements are sorted first by vertical position and second by horizontal position. l.e. an
           element higher up on the page and more towards the left takes precedence.{' '}
-        </HelpTooltip>
+        </QuestionTooltip>
       </div>
       <Select onValueChange={onChange} defaultValue={value}>
         <SelectTrigger>

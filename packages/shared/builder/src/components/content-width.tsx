@@ -1,4 +1,4 @@
-import { HelpTooltip } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { InputNumber } from './shared/input';
 
 export interface ContentWidthProps {
@@ -24,7 +24,7 @@ export const ContentWidth = (props: ContentWidthProps) => {
     <div className="space-y-3 ">
       <div className="flex justify-start items-center space-x-1	">
         <h1 className="text-sm">Width</h1>
-        <HelpTooltip>{tooltipContent[type]}</HelpTooltip>
+        <QuestionTooltip>{tooltipContent[type]}</QuestionTooltip>
       </div>
       <InputNumber defaultNumber={width} onValueChange={handleWidthChange} />
     </div>

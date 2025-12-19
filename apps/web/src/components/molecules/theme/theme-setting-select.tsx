@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { HelpTooltip } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { cn } from '@usertour/helpers';
 
 export type ThemeSettingSelectItemsType = {
@@ -53,7 +53,7 @@ export const ThemeSettingSelect = (props: ThemeSelectProps) => {
         <label htmlFor={name} className="block text-sm leading-9">
           {text}
         </label>
-        {tooltip && <HelpTooltip>{tooltip}</HelpTooltip>}
+        {tooltip && <QuestionTooltip>{tooltip}</QuestionTooltip>}
       </div>
       <div className={cn('relative', vertical ? 'w-full' : 'flex-none w-36')}>
         <Select defaultValue={defaultValue} onValueChange={onValueChange}>

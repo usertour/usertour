@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { HelpTooltip } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 
 interface PrecisionSelectProps {
   value?: string;
@@ -20,7 +20,9 @@ export const PrecisionSelect = ({ value, onChange, zIndex }: PrecisionSelectProp
     <div className="items-center space-y-2">
       <div className="flex justify-start items-center space-x-1">
         <Label>Precision</Label>
-        <HelpTooltip>How flexible Usertour should be when looking for the element. If</HelpTooltip>
+        <QuestionTooltip>
+          How flexible Usertour should be when looking for the element. If
+        </QuestionTooltip>
       </div>
       <Select onValueChange={onChange} defaultValue={value}>
         <SelectTrigger>

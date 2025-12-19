@@ -1,5 +1,5 @@
 import { Label } from '@usertour-packages/label';
-import { HelpTooltip } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { Align, AlignType, ContentAlignmentData, Side } from '@usertour/types';
 import { useState } from 'react';
@@ -42,11 +42,11 @@ export const ContentAlignment = (props: ContentAlignmentProps) => {
     <div className="space-y-3">
       <div className="flex justify-start items-center space-x-1	">
         <h1 className="text-sm">{title}</h1>
-        <HelpTooltip>
+        <QuestionTooltip>
           Customize which side of the target element the hen tooltip should appear on. By default,
           tooltips Ad are placed on the optimal side depending on the target's position and your
           user's screen size.
-        </HelpTooltip>
+        </QuestionTooltip>
       </div>
       <Tabs defaultValue={data.alignType} onValueChange={handleAlignTypeChange}>
         <TabsList
