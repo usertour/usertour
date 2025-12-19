@@ -1,13 +1,7 @@
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Content, ElementSelectorPropsData } from '@usertour/types';
 import { ComboBox } from '@usertour-packages/combo-box';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
@@ -72,16 +66,9 @@ export const ElementSelector = (props: ElementSelectorProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex justify-start items-center space-x-1	">
               <Label htmlFor="button-manual-element-text">Element text</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <QuestionMarkCircledIcon />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs bg-foreground text-background">
-                    <p>Usertour will select an element containing the text you write here.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <QuestionTooltip>
+                Usertour will select an element containing the text you write here.
+              </QuestionTooltip>
             </div>
             <Input
               id="button-manual-element-text"
@@ -91,21 +78,12 @@ export const ElementSelector = (props: ElementSelectorProps) => {
             />
             <div className="flex justify-start items-center space-x-1	">
               <Label htmlFor="button-manual-css-selector">CSS selector</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <QuestionMarkCircledIcon />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs bg-foreground text-background">
-                    <p>
-                      Advanced feature: If possible, we recommend selecting elements using text. lf
-                      an element does not have text, or the text is very generic, you can select it
-                      using a CSS selector instead. lf both text and CSS selector is filled in,
-                      Usertour will select an element matching both.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <QuestionTooltip>
+                Advanced feature: If possible, we recommend selecting elements using text. lf an
+                element does not have text, or the text is very generic, you can select it using a
+                CSS selector instead. lf both text and CSS selector is filled in, Usertour will
+                select an element matching both.
+              </QuestionTooltip>
             </div>
             <Input
               id="button-manual-css-selector"
@@ -129,24 +107,16 @@ export const ElementSelector = (props: ElementSelectorProps) => {
             </div>
             <div className="flex justify-start items-center space-x-1	">
               <Label htmlFor="button-manual-css-selector">If multiple matches</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <QuestionMarkCircledIcon />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs bg-foreground text-background">
-                    <p>
-                      If multiple elements match your criteria, you can tell Usertour which of the
-                      elements to select.
-                    </p>
-                    <p>
-                      Elements are sorted first by vertical position and second by horizontal
-                      position. l.e. an element higher up on the page and more towards the left
-                      takes precedence.{' '}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <QuestionTooltip>
+                <p>
+                  If multiple elements match your criteria, you can tell Usertour which of the
+                  elements to select.
+                </p>
+                <p>
+                  Elements are sorted first by vertical position and second by horizontal position.
+                  l.e. an element higher up on the page and more towards the left takes precedence.
+                </p>
+              </QuestionTooltip>
             </div>
             <ComboBox
               options={sequenceOptions}

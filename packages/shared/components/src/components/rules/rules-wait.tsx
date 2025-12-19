@@ -1,12 +1,6 @@
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { RulesZIndexOffset, WebZIndex } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { ChangeEvent, useState } from 'react';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 
@@ -54,16 +48,9 @@ export const RulesWait = (props: RulesCurrentTimeProps) => {
             />
           </RulesErrorAnchor>
           <div className="text-muted-foreground text-sm">second before starting</div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-sm">
-                Condition must stay true while waiting
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+            Condition must stay true while waiting
+          </QuestionTooltip>
         </div>
         <RulesErrorContent className="w-60" zIndex={errorZIndex}>
           Wait time must not be greater than {maxSeconds} seconds ({Math.floor(maxSeconds / 60)}{' '}

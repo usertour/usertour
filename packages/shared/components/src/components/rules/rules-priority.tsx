@@ -1,4 +1,4 @@
-import { ChevronDownIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { ChevronDownIcon } from '@radix-ui/react-icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,12 +6,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { ContentPriority } from '@usertour/types';
 import { useState } from 'react';
 
@@ -55,19 +50,10 @@ export const RulesPriority = (props: RulesPriorityProps) => {
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <QuestionMarkCircledIcon className="cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs bg-foreground text-background">
-            <p>
-              if a user matches start conditions for 2 contents, the one with the higher
-              prioritywill be started. Choose a high priority for your most important content
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <QuestionTooltip>
+        if a user matches start conditions for 2 contents, the one with the higher priority will be
+        started. Choose a high priority for your most important content
+      </QuestionTooltip>
     </div>
   );
 };
