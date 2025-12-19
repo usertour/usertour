@@ -34,6 +34,7 @@ export interface ChecklistContextValue {
   setCurrentItem: React.Dispatch<React.SetStateAction<ChecklistItemType | null>>;
   currentItem: ChecklistItemType | null;
   saveCurrentItem: () => void;
+  flushSave: () => Promise<void>;
 }
 
 export const ChecklistContext = createContext<ChecklistContextValue | undefined>(undefined);
@@ -218,6 +219,13 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
     [debouncedSave],
   );
 
+  const flushSave = useCallback(async () => {
+    debouncedSave.cancel();
+    if (localData) {
+      await update(localData);
+    }
+  }, [debouncedSave, localData, update]);
+
   // Only sync localData with server data when server data changes
   useEffect(() => {
     if (data && !isEqual(data, lastSavedDataRef.current)) {
@@ -239,6 +247,7 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
     currentItem,
     addItem,
     saveCurrentItem,
+    flushSave,
   };
 
   return <ChecklistContext.Provider value={value}>{children}</ChecklistContext.Provider>;

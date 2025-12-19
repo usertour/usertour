@@ -8,17 +8,12 @@ import {
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
 
-import { useBuilderContext } from '../../contexts';
+export interface SidebarFooterProps {
+  onSave: () => Promise<void>;
+  isLoading?: boolean;
+}
 
-export const SidebarFooter = () => {
-  const { saveContent, isLoading, onSaved } = useBuilderContext();
-  const handleSaveStep = async () => {
-    await saveContent();
-    if (onSaved) {
-      return await onSaved();
-    }
-  };
-
+export const SidebarFooter = ({ onSave, isLoading = false }: SidebarFooterProps) => {
   return (
     <>
       <div className="flex-none relative mr-8 ml-4">
@@ -36,7 +31,7 @@ export const SidebarFooter = () => {
           </TooltipProvider>
         )}
       </div>
-      <Button className="grow w-full h-10" onClick={handleSaveStep} disabled={isLoading}>
+      <Button className="grow w-full h-10" onClick={onSave} disabled={isLoading}>
         <ExitIcon className="mr-2" />
         Save preferences
       </Button>

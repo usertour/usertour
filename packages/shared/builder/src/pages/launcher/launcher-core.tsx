@@ -2,7 +2,7 @@
 
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { useBuilderContext } from '../../contexts';
+import { useBuilderContext, useLauncherContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar';
 import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
@@ -40,9 +40,17 @@ const LauncherCoreHeader = () => {
 };
 
 const LauncherCoreFooter = () => {
+  const { isLoading, onSaved } = useBuilderContext();
+  const { flushSave } = useLauncherContext();
+
+  const handleSave = async () => {
+    await flushSave();
+    await onSaved?.();
+  };
+
   return (
     <CardFooter className="flex p-5">
-      <SidebarFooter />
+      <SidebarFooter onSave={handleSave} isLoading={isLoading} />
     </CardFooter>
   );
 };

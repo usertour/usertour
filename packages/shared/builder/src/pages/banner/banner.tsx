@@ -36,9 +36,16 @@ const BannerBuilderHeader = () => {
 };
 
 const BannerBuilderFooter = () => {
+  const { saveContent, isLoading, onSaved } = useBuilderContext();
+
+  const handleSave = async () => {
+    await saveContent();
+    await onSaved?.();
+  };
+
   return (
     <CardFooter className="flex p-5">
-      <SidebarFooter />
+      <SidebarFooter onSave={handleSave} isLoading={isLoading} />
     </CardFooter>
   );
 };
