@@ -14,7 +14,7 @@ export const HelpTooltip = ({ children }: HelpTooltipProps) => (
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
-        <QuestionMarkCircledIcon />
+        <QuestionMarkCircledIcon className="cursor-help" />
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">{children}</TooltipContent>
     </Tooltip>

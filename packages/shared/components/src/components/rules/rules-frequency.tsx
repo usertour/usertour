@@ -1,4 +1,5 @@
-import { ChevronDownIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { RulesZIndexOffset, WebZIndex } from '@usertour-packages/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,12 +8,6 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { Input } from '@usertour-packages/input';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
 import {
   ContentDataType,
   Frequency,
@@ -23,6 +18,7 @@ import {
 } from '@usertour/types';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { HelpTooltip } from '../common/help-tooltip';
+import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 
 const itemsMapping = [
   { key: Frequency.ONCE, value: 'Once per user' },
@@ -61,16 +57,9 @@ const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
             <span>{itemsMapping.find((item) => item.key === frequency)?.value}</span>
             <ChevronDownIcon width={16} height={16} />
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <QuestionMarkCircledIcon className="cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs bg-foreground text-background">
-                Whether the {contentType} can auto-start for the same user just once, or many times.
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <HelpTooltip>
+            Whether the {contentType} can auto-start for the same user just once, or many times.
+          </HelpTooltip>
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
@@ -93,9 +82,13 @@ interface RulesFrequencyEveryProps {
   contentType: ContentDataType;
   disabled?: boolean;
 }
+
 const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
   const { defaultValue, frequency, onChange, contentType, disabled = false } = props;
   const [data, setData] = useState<RulesFrequencyValueEvery>(defaultValue);
+  const [openError, setOpenError] = useState(false);
+
+  const errorZIndex = WebZIndex.RULES + RulesZIndexOffset.ERROR;
 
   const update = (params: Partial<RulesFrequencyValueEvery>) => {
     setData((pre) => {
@@ -108,10 +101,18 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
   };
 
   const handleTimesInputOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    update({ times: Number.parseInt(e.target.value) });
+    const value = Number.parseInt(e.target.value) || 0;
+    if (frequency === Frequency.MULTIPLE && value < 2) {
+      // Only update local state without propagating invalid value to parent
+      setData((pre) => ({ ...pre, times: value }));
+      setOpenError(true);
+    } else {
+      setOpenError(false);
+      update({ times: value });
+    }
   };
   const handleDurationInputOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    update({ duration: Number.parseInt(e.target.value) });
+    update({ duration: Number.parseInt(e.target.value) || 0 });
   };
   const handleUnitOnChange = (value: string) => {
     update({ unit: value as FrequencyUnits });
@@ -147,45 +148,43 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
   if (frequency === Frequency.MULTIPLE) {
     return (
       <div className="flex flex-row items-center space-x-2">
-        <Input
-          type="text"
-          id={'border-width'}
-          name={'Border width'}
-          onChange={handleTimesInputOnChange}
-          value={data.times}
-          disabled={disabled}
-          className="rounded-lg text-sm w-16 h-6 "
-          placeholder={''}
-        />
+        <RulesError open={openError}>
+          <RulesErrorAnchor asChild>
+            <Input
+              type="text"
+              id={'times-input'}
+              name={'Times'}
+              onChange={handleTimesInputOnChange}
+              value={data.times}
+              disabled={disabled}
+              className="rounded-lg text-sm w-16 h-6"
+              placeholder={''}
+            />
+          </RulesErrorAnchor>
+          <RulesErrorContent zIndex={errorZIndex}>Must be at least 2</RulesErrorContent>
+        </RulesError>
         <span className="text-sm">times, </span>
         <Input
           type="text"
-          id={'border-width'}
-          name={'Border width'}
+          id={'duration-input'}
+          name={'Duration'}
           onChange={handleDurationInputOnChange}
           value={data.duration}
           disabled={disabled}
-          className="rounded-lg text-sm w-16 h-6 "
+          className="rounded-lg text-sm w-16 h-6"
           placeholder={''}
         />
         <EveryTimes disabled={disabled} />
         <span className="text-sm">apart </span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <QuestionMarkCircledIcon className="cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs bg-foreground text-background">
-              <p>
-                The {contentType} may auto-start up to {data.times} times, with at least{' '}
-                {data.duration} {data.unit} passing in between.
-                <br />
-                <br />
-                Note that manual and programmatic starts are included in the limit.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <HelpTooltip>
+          <p>
+            The {contentType} may auto-start up to {data.times} times, with at least {data.duration}{' '}
+            {data.unit} passing in between.
+            <br />
+            <br />
+            Note that manual and programmatic starts are included in the limit.
+          </p>
+        </HelpTooltip>
       </div>
     );
   }
@@ -194,11 +193,11 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
       <span className="text-sm">Every </span>
       <Input
         type="text"
-        id={'border-width'}
-        name={'Border width'}
+        id={'duration-input'}
+        name={'Duration'}
         onChange={handleDurationInputOnChange}
         value={data.duration}
-        className="rounded-lg text-sm w-16 h-6 "
+        className="rounded-lg text-sm w-16 h-6"
         placeholder={''}
       />
       <EveryTimes />
@@ -231,7 +230,7 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
     });
   };
   const handleInputOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    update({ duration: Number.parseInt(e.target.value) });
+    update({ duration: Number.parseInt(e.target.value) || 0 });
   };
   const handleUnitOnChange = (value: string) => {
     update({ unit: value as FrequencyUnits });
@@ -242,12 +241,12 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
       <span className="text-sm">At least</span>
       <Input
         type="text"
-        id={'border-width'}
-        name={'Border width'}
+        id={'at-least-duration-input'}
+        name={'At least duration'}
         onChange={handleInputOnChange}
         disabled={disabled}
         value={data.duration}
-        className="rounded-lg text-sm w-16 h-6 "
+        className="rounded-lg text-sm w-16 h-6"
         placeholder={''}
       />
       <DropdownMenu>
@@ -268,18 +267,11 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
         </DropdownMenuContent>
       </DropdownMenu>
       <span className="text-sm">after any {contentType}</span>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <QuestionMarkCircledIcon className="cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs bg-foreground text-background">
-            If enabled, the {contentType} will only auto-start if no other {contentType} has shown
-            in the period you pick. This is useful to make sure you don't overwhelm users with too
-            much {contentType} at the same time.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <HelpTooltip>
+        If enabled, the {contentType} will only auto-start if no other {contentType} has shown in
+        the period you pick. This is useful to make sure you don't overwhelm users with too much{' '}
+        {contentType} at the same time.
+      </HelpTooltip>
     </div>
   );
 };
@@ -287,9 +279,9 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
 const initialValue: RulesFrequencyValue = {
   frequency: Frequency.ONCE,
   every: {
-    times: 0,
-    duration: 0,
-    unit: FrequencyUnits.MINUTES,
+    times: 2,
+    duration: 1,
+    unit: FrequencyUnits.DAYES,
   },
   atLeast: {
     duration: 0,
@@ -304,6 +296,7 @@ export interface RulesFrequencyProps {
   contentType?: ContentDataType;
   disabled?: boolean;
 }
+
 export const RulesFrequency = (props: RulesFrequencyProps) => {
   const {
     onChange,
