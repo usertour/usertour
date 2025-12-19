@@ -1,3 +1,4 @@
+import { AuthService } from '@/auth/auth.service';
 import { PasswordService } from '@/auth/password.service';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -11,6 +12,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private passwordService: PasswordService,
+    private authService: AuthService,
   ) {}
 
   updateUser(userId: string, newUserData: UpdateUserInput) {
@@ -45,14 +47,7 @@ export class UsersService {
       throw new PasswordIncorrect();
     }
 
-    const hashedPassword = await this.passwordService.hashPassword(changePassword.newPassword);
-
-    return this.prisma.user.update({
-      data: {
-        password: hashedPassword,
-      },
-      where: { id: userId },
-    });
+    return this.authService.updatePasswordAndRevokeTokens(userId, changePassword.newPassword);
   }
 
   async changeEmail(userId: string, userPassword: string, input: ChangeEmailInput) {

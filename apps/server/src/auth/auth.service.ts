@@ -309,6 +309,31 @@ export class AuthService {
     });
   }
 
+  /**
+   * Update user password and revoke all refresh tokens in a single transaction
+   * @param userId - The user ID
+   * @param newPassword - The new plain text password
+   * @returns The updated user
+   */
+  async updatePasswordAndRevokeTokens(userId: string, newPassword: string) {
+    const hashedPassword = await this.passwordService.hashPassword(newPassword);
+
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        data: { password: hashedPassword },
+        where: { id: userId },
+      });
+
+      // Revoke all existing refresh tokens after password change
+      await tx.refreshToken.updateMany({
+        where: { userId },
+        data: { revoked: true },
+      });
+
+      return user;
+    });
+  }
+
   async createMagicLink(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) {
@@ -507,13 +532,7 @@ export class AuthService {
     }
 
     try {
-      const hashedPassword = await this.passwordService.hashPassword(password);
-      await this.prisma.user.update({
-        data: {
-          password: hashedPassword,
-        },
-        where: { id: user.id },
-      });
+      await this.updatePasswordAndRevokeTokens(user.id, password);
       return { success: true };
     } catch (_) {
       throw new UnknownError();

@@ -129,7 +129,7 @@ const SignInRoot = (props: SignInRootProps) => {
         variables.inviteCode = inviteCode;
       }
       const ret = await invoke(variables);
-      if (ret.redirectUrl) {
+      if (ret?.redirectUrl) {
         window.location.href = ret.redirectUrl;
       }
       setIsLoading(false);
