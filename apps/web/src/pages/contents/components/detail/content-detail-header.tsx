@@ -67,7 +67,7 @@ export const ContentDetailHeader = () => {
   const navigator = useNavigate();
   const { content, refetch, contentType, loading } = useContentDetailContext();
   const [openPublish, setOpenPublish] = useState(false);
-  const { version, isSaveing } = useContentVersionContext();
+  const { version, isSaving } = useContentVersionContext();
   const { environment, isViewOnly } = useAppContext();
   const { openBuilder } = useContentBuilder();
   const { environmentList } = useEnvironmentListContext();
@@ -108,8 +108,8 @@ export const ContentDetailHeader = () => {
             </ContentRenameForm>
             <MainNav className="mx-6" />
             <div className="ml-auto flex items-center space-x-4">
-              {isSaveing && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-              {!isSaveing && (
+              {isSaving && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              {!isSaving && (
                 <div className="px-1 text-sm text-muted-foreground min-w-60 text-right">
                   {content.editedVersionId !== content.publishedVersionId && version && (
                     <>Autosaved {formatDistanceToNow(new Date(version?.updatedAt))} ago</>
@@ -126,13 +126,13 @@ export const ContentDetailHeader = () => {
                 variant={'outline'}
                 onClick={() => openBuilder(content, contentType)}
                 className="flex-none"
-                disabled={isViewOnly}
+                disabled={isViewOnly || isSaving}
               >
                 <EnterIcon className="mr-2" />
                 Edit In Builder
               </Button>
               <Button
-                disabled={isDisabled || isViewOnly}
+                disabled={isDisabled || isViewOnly || isSaving}
                 onClick={() => {
                   setOpenPublish(true);
                 }}
@@ -143,7 +143,7 @@ export const ContentDetailHeader = () => {
               {content && (
                 <ContentEditDropdownMenu
                   content={content}
-                  disabled={isViewOnly}
+                  disabled={isViewOnly || isSaving}
                   onSubmit={(action: string) => {
                     if (action === 'delete') {
                       navigator(`/env/${environment?.id}/${contentType}`);
