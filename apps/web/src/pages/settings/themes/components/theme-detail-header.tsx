@@ -5,9 +5,10 @@ import { ArrowLeftIcon, DotsHorizontalIcon, InfoCircledIcon } from '@radix-ui/re
 import { Button } from '@usertour-packages/button';
 import { updateTheme } from '@usertour-packages/gql';
 import { EditIcon } from '@usertour-packages/icons';
-import { getErrorMessage } from '@usertour/helpers';
+import { getErrorMessage, isEqual } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
+import { useEvent } from 'react-use';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
 import { ThemeRenameForm } from './theme-rename-form';
@@ -21,6 +22,16 @@ export const ThemeDetailHeader = () => {
   const navigator = useNavigate();
   const { toast } = useToast();
   const { isViewOnly } = useAppContext();
+
+  // Warn user when closing page with unsaved changes
+  useEvent('beforeunload', (e: BeforeUnloadEvent) => {
+    const hasUnsavedChanges =
+      !isEqual(theme?.settings, settings) || !isEqual(theme?.variations, variations);
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+    }
+  });
+
   const handleSaveTheme = async () => {
     if (!theme) {
       return;
