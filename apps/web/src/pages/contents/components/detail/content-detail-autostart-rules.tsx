@@ -1,6 +1,5 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { WebZIndex } from '@usertour-packages/constants';
 import { Label } from '@usertour-packages/label';
 import {
@@ -14,12 +13,7 @@ import { useContentListQuery } from '@usertour-packages/shared-hooks';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
 import { Switch } from '@usertour-packages/switch';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import {
   Content,
   ContentPriority,
@@ -131,14 +125,9 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
           <Label htmlFor={id} className="flex flex-col space-y-1">
             <span className="font-normal">{name}</span>
           </Label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-sm">{featureTooltip}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+            {featureTooltip}
+          </QuestionTooltip>
         </div>
         <div className="space-y-3">
           {enabled && (
