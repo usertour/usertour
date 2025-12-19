@@ -22,6 +22,8 @@ export type SDKContent = ContentVersion &
 
 export enum contentEndReason {
   USER_CLOSED = 'user_closed',
+  ACTION = 'action',
+  REPLACED = 'replaced',
   TOOLTIP_TARGET_MISSING = 'tooltip_target_missing',
   SYSTEM_CLOSED = 'system_closed',
   AUTO_DISMISSED = 'auto_dismissed',
@@ -54,7 +56,9 @@ export const flowReasonTitleMap = {
   [contentStartReason.START_FROM_CONTENT_ID]: 'Started from content id',
   [contentStartReason.START_FROM_MANUAL]: 'Manually started',
   [contentStartReason.START_FROM_ACTION]: 'Button clicked',
-  [contentEndReason.USER_CLOSED]: 'User closed',
+  [contentEndReason.USER_CLOSED]: 'User dismissed flow',
+  [contentEndReason.ACTION]: 'Ended by action in this flow',
+  [contentEndReason.REPLACED]: 'Replaced by another flow',
   [contentEndReason.TOOLTIP_TARGET_MISSING]: 'Tooltip target missing',
   [contentEndReason.CONTENT_NOT_FOUND]: 'Content not found',
   [contentEndReason.SESSION_TIMEOUT]: 'Session timeout',

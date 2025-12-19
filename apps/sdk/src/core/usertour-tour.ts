@@ -45,7 +45,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     return {
       ...baseContext,
       showStepByCvid: (stepCvid: string) => this.showStepByCvid(stepCvid),
-      handleDismiss: (reason?: contentEndReason) => this.handleDismiss(reason),
+      handleDismiss: (reason?: contentEndReason) =>
+        this.handleDismiss(reason ?? contentEndReason.ACTION),
     };
   }
 
