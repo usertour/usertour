@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useEvent } from 'react-use';
 
 import { useToast } from '@usertour-packages/use-toast';
 import { debug } from '../utils/logger';
@@ -308,6 +309,13 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       saveContent();
     }
   }, [currentVersion, backupVersion]);
+
+  // Warn user when closing page while saving
+  useEvent('beforeunload', (e: BeforeUnloadEvent) => {
+    if (isLoading) {
+      e.preventDefault();
+    }
+  });
 
   const value = {
     currentMode,

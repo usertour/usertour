@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { useEvent } from 'react-use';
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
 import { useToast } from '@usertour-packages/use-toast';
@@ -191,6 +192,14 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
       lastSavedDataRef.current = deepClone(serverData);
     }
   }, [currentVersion]);
+
+  // Warn user when closing page with unsaved changes
+  useEvent('beforeunload', (e: BeforeUnloadEvent) => {
+    const hasUnsavedChanges = localData && !isEqual(localData, lastSavedDataRef.current);
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+    }
+  });
 
   const value: LauncherContextValue = {
     zIndex,
