@@ -281,7 +281,7 @@ export const AttributeEditForm = (props: EditFormProps) => {
                     <FormLabel className="flex flex-row">
                       Description
                       <QuestionTooltip className="inline ml-1">
-                        Put any additional information for your ownreference here.
+                        Put any additional information for your own reference here.
                       </QuestionTooltip>
                     </FormLabel>
                     <FormControl>
