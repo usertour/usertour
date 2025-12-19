@@ -39,6 +39,9 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  // Only execute query when both from and to dates are selected
+  const isDateRangeComplete = Boolean(dateRange?.from && dateRange?.to);
+
   const { data, refetch, loading } = useQuery(queryContentAnalytics, {
     variables: {
       environmentId: environment?.id,
@@ -47,6 +50,7 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
       endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,
       timezone,
     },
+    skip: !isDateRangeComplete,
   });
 
   useEffect(() => {
