@@ -79,6 +79,7 @@ export class WebSocketV2Service {
 
   /**
    * Initialize and validate socket data from socket handshake auth
+   * Creates the user if it doesn't exist (ensures bizUserId is always set on successful connection)
    * @param auth - Authentication data from socket handshake
    * @returns Initialized SocketData or null if validation fails
    */
@@ -97,7 +98,10 @@ export class WebSocketV2Service {
     }
     const environmentId = environment.id;
 
-    const bizUser = await this.bizService.getBizUser(externalUserId, environmentId);
+    // Ensure user exists - guarantees bizUserId is always set on successful connection
+    // ensureBizUser will throw if creation fails, caught by gateway's try-catch
+    const bizUser = await this.bizService.ensureBizUser(externalUserId, environmentId);
+
     const bizCompany = externalCompanyId
       ? await this.bizService.getBizCompany(externalCompanyId, environmentId)
       : null;
@@ -110,7 +114,7 @@ export class WebSocketV2Service {
       externalCompanyId,
       waitTimers: [],
       clientConditions,
-      bizUserId: bizUser?.id,
+      bizUserId: bizUser.id,
       bizCompanyId: bizCompany?.id,
     };
 

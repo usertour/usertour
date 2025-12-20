@@ -822,6 +822,27 @@ export class BizService {
     });
   }
 
+  /**
+   * Ensure a user exists by external ID, creating if necessary
+   * Used during socket connection to guarantee user exists
+   * Does not handle attributes - use upsertBizUsers for that
+   * Note: Caller must validate environmentId exists before calling
+   */
+  async ensureBizUser(externalUserId: string, environmentId: string): Promise<BizUser> {
+    const existing = await this.prisma.bizUser.findFirst({
+      where: { externalId: String(externalUserId), environmentId },
+    });
+    if (existing) return existing;
+
+    return await this.prisma.bizUser.create({
+      data: {
+        externalId: String(externalUserId),
+        environmentId,
+        data: {},
+      },
+    });
+  }
+
   async upsertUser(
     externalUserId: string,
     environmentId: string,
