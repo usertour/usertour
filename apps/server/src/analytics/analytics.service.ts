@@ -1,4 +1,4 @@
-import { BizEvents, EventAttributes } from '@usertour/types';
+import { BizEvents, EventAttributes, StepSettings } from '@usertour/types';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -526,9 +526,13 @@ export class AnalyticsService {
       if (totalUniqueViews === undefined) {
         totalUniqueViews = uniqueViews;
       }
+      const explicitCompletionStep =
+        (stepInfo.setting as StepSettings)?.explicitCompletionStep ?? false;
+
       ret.push({
         name: stepInfo.name,
         stepIndex: index,
+        explicitCompletionStep,
         analytics: {
           uniqueViews,
           totalViews,
