@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
+import { WebSocketThrottlerGuard } from './web-socket-throttler.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { SocketAuthData } from '@usertour/types';
@@ -107,12 +108,17 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
    * All client messages go through this single handler
    * Messages are routed based on 'kind' field and executed in order
    *
-   * The WebSocketMessageValidationPipe validates:
-   * 1. Message structure (kind, payload, requestId)
-   * 2. Payload size limits (prevents DoS)
-   * 3. Payload schema based on message kind
+   * Security measures:
+   * 1. WebSocketThrottlerGuard: Rate limiting per socket connection
+   *    - Short: 30 requests/second (burst protection)
+   *    - Medium: 300 requests/minute (sustained rate limiting)
+   * 2. WebSocketMessageValidationPipe validates:
+   *    - Message structure (kind, payload, requestId)
+   *    - Payload size limits (prevents DoS)
+   *    - Payload schema based on message kind
    */
   @SubscribeMessage('client-message')
+  @UseGuards(WebSocketThrottlerGuard)
   async handleClientMessage(
     @ConnectedSocket() socket: Socket,
     @MessageBody(WebSocketMessageValidationPipe) message: ClientMessageDto,
