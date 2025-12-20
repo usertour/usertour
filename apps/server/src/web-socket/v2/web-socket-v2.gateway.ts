@@ -18,6 +18,7 @@ import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 import { cuid } from '@usertour/helpers';
+import { WebSocketMessageValidationPipe } from './web-socket-message-validation.pipe';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -105,11 +106,16 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
    * Unified client message entry point
    * All client messages go through this single handler
    * Messages are routed based on 'kind' field and executed in order
+   *
+   * The WebSocketMessageValidationPipe validates:
+   * 1. Message structure (kind, payload, requestId)
+   * 2. Payload size limits (prevents DoS)
+   * 3. Payload schema based on message kind
    */
   @SubscribeMessage('client-message')
   async handleClientMessage(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() message: ClientMessageDto,
+    @MessageBody(WebSocketMessageValidationPipe) message: ClientMessageDto,
   ): Promise<boolean> {
     const { kind, payload, requestId } = message;
 
