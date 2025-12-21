@@ -41,14 +41,18 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
   const { error: errorZIndex } = useRulesZIndex();
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       elementData,
     };
     const { showError, errorInfo } = getTextFillError(updates);
-    if (showError && !open) {
+    if (showError) {
       setOpenError(showError);
       setErrorInfo(errorInfo);
-      return;
     }
   }, [elementData, open, setErrorInfo, setOpenError]);
 

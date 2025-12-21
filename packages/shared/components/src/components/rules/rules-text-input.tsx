@@ -116,13 +116,18 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
   const { error: errorZIndex } = useRulesZIndex();
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       logic: conditionValue,
       elementData,
       value: inputValue,
     };
     const { showError, errorInfo } = getTextInputError(updates);
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }

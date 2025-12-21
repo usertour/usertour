@@ -198,12 +198,17 @@ export const RulesSegment = (props: RulesSegmentProps) => {
   };
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       segmentId: segmentId,
       logic: conditionValue,
     };
     const { showError, errorInfo } = getSegmentError(updates);
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }

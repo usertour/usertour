@@ -227,9 +227,14 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
   } = useTimeState(data);
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const timeData = getTimeData();
     const { showError, errorInfo } = getCurrentTimeError(timeData);
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }

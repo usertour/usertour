@@ -66,17 +66,22 @@ const UrlPatternText = ({ includesValues, excludesValues }: UrlPatternTextProps)
 export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
   const { data = {}, index, conditionId } = props;
   const { excludes = [], includes = [] } = data;
+  const { updateConditionData, newlyAddedIdRef } = useRulesGroupContext();
+
+  // Check if this is a newly added condition with no data
+  const isNewlyAdded = !!(conditionId && newlyAddedIdRef.current === conditionId);
+  const shouldShowDefaultInput = isNewlyAdded && includes.length === 0 && excludes.length === 0;
+
   const [excludesValues, setExcludesValues] = useState(excludes);
-  const [includesValues, setIncludesValues] = useState(includes);
+  const [includesValues, setIncludesValues] = useState(shouldShowDefaultInput ? [''] : includes);
   const [filterExcludesValues, setFilterExcludesValues] = useState(
     excludes.filter((v) => v !== ''),
   );
   const [filterIncludesValues, setFilterIncludesValues] = useState(
-    includesValues.filter((v) => v !== ''),
+    includes.filter((v) => v !== ''),
   );
   const [openError, setOpenError] = useState(false);
   const [open, setOpen] = useAutoOpenPopover(conditionId);
-  const { updateConditionData } = useRulesGroupContext();
   const { disabled } = useRulesContext();
   const { error: errorZIndex } = useRulesZIndex();
   const [errorInfo, setErrorInfo] = useState('');
@@ -109,15 +114,20 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
   }, [includesValues, excludesValues]);
 
   useEffect(() => {
+    // Clear error when popover opens
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       excludes: filterExcludesValues,
       includes: filterIncludesValues,
     };
     const { showError, errorInfo } = getUrlPatternError(updates);
-    if (showError && !open) {
+    if (showError) {
       setOpenError(showError);
       setErrorInfo(errorInfo);
-      return;
     }
   }, [filterExcludesValues, filterIncludesValues, open]);
 

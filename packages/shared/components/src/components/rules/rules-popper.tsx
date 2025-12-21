@@ -1,7 +1,7 @@
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 
 import { cn } from '@usertour/helpers';
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { useRulesZIndex } from './rules-context';
 
 const RulesPopover = PopoverPrimitive.Root;
@@ -30,7 +30,7 @@ const RulesPopoverContent = React.forwardRef<
       onFocusOutside,
       ...props
     },
-    ref,
+    forwardedRef,
   ) => {
     const { popover: zIndex } = useRulesZIndex();
 
@@ -40,9 +40,36 @@ const RulesPopoverContent = React.forwardRef<
       onFocusOutside?.(e);
     };
 
+    // Track if we've already focused to avoid stealing focus on re-renders
+    const hasFocusedRef = useRef(false);
+
+    // Focus the first input element only on initial mount
+    // Don't reset on null - ref changes during re-render also call with null
+    // When popover actually closes & reopens, component remounts with fresh ref
+    const contentRef = useCallback((node: HTMLDivElement | null) => {
+      if (node && !hasFocusedRef.current) {
+        const firstInput = node.querySelector('input, textarea, select') as HTMLElement | null;
+        firstInput?.focus();
+        hasFocusedRef.current = true;
+      }
+    }, []);
+
+    // Merge refs
+    const mergedRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        contentRef(node);
+        if (typeof forwardedRef === 'function') {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          forwardedRef.current = node;
+        }
+      },
+      [contentRef, forwardedRef],
+    );
+
     return (
       <PopoverPrimitive.Content
-        ref={ref}
+        ref={mergedRef}
         align={align}
         side={side}
         sideOffset={sideOffset}

@@ -189,13 +189,19 @@ export const RulesContent = (props: RulesContentProps) => {
       }
     }
 
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
+
     const { showError, errorInfo } = getContentError({
       contentId: data?.contentId || '',
       type: 'flow',
       logic: conditionValue,
     });
 
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }

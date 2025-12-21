@@ -105,12 +105,17 @@ export const RulesElement = (props: RulesElementProps) => {
   };
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       logic: conditionValue,
       elementData,
     };
     const { showError, errorInfo } = getElementError(updates);
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }
