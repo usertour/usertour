@@ -20,6 +20,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 interface RulesElementProps {
   index: number;
@@ -28,6 +29,7 @@ interface RulesElementProps {
     elementData: ElementSelectorPropsData;
     logic: string;
   };
+  conditionId?: string;
 }
 
 const conditions = [
@@ -83,13 +85,13 @@ const defaultData = {
 };
 
 export const RulesElement = (props: RulesElementProps) => {
-  const { index, data, type } = props;
+  const { index, data, type, conditionId } = props;
   const [conditionValue, setConditionValue] = useState(data.logic || defaultData.logic);
   const [elementData, setElementData] = useState<ElementSelectorPropsData>(
     data.elementData || defaultData.elementData,
   );
   const [openError, setOpenError] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const { updateConditionData } = useRulesGroupContext();
   const [errorInfo, setErrorInfo] = useState('');
   const { currentContent, token, onElementChange, disabled } = useRulesContext();

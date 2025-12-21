@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent } from './rules-popper';
@@ -26,6 +27,7 @@ export interface RulesUrlPatternProps {
     excludes?: string[];
     includes?: string[];
   };
+  conditionId?: string;
 }
 
 interface UrlPatternTextProps {
@@ -62,7 +64,7 @@ const UrlPatternText = ({ includesValues, excludesValues }: UrlPatternTextProps)
 };
 
 export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
-  const { data = {}, index } = props;
+  const { data = {}, index, conditionId } = props;
   const { excludes = [], includes = [] } = data;
   const [excludesValues, setExcludesValues] = useState(excludes);
   const [includesValues, setIncludesValues] = useState(includes);
@@ -73,7 +75,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
     includesValues.filter((v) => v !== ''),
   );
   const [openError, setOpenError] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const { updateConditionData } = useRulesGroupContext();
   const { disabled } = useRulesContext();
   const { error: errorZIndex } = useRulesZIndex();

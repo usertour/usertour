@@ -18,8 +18,7 @@ import {
 } from '@usertour-packages/icons';
 import { RulesCondition, RulesType } from '@usertour/types';
 import { cuid, deepClone } from '@usertour/helpers';
-import { ReactNode, useCallback, useEffect } from 'react';
-import { useState } from 'react';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesGroupContext } from '../contexts/rules-group-context';
 import { RulesContent } from './rules-content';
@@ -167,6 +166,9 @@ export const RulesGroup = (props: RulesGroupProps) => {
       : 'and') ?? 'and',
   );
 
+  // Use ref to store newlyAddedId to avoid being affected by external state updates
+  const newlyAddedIdRef = useRef<string | null>(null);
+
   const setNewConditions = (newConditions: RulesCondition[]) => {
     setConditions((prev) => {
       if (isEqual(prev, newConditions)) {
@@ -181,14 +183,17 @@ export const RulesGroup = (props: RulesGroupProps) => {
 
   const handleOnSelect = useCallback(
     (type: string) => {
+      const newId = cuid();
       if (type === 'group') {
-        setNewConditions([...conditions, { type, data: {}, conditions: [], id: cuid() }]);
+        setNewConditions([...conditions, { type, data: {}, conditions: [], id: newId }]);
       } else {
-        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: cuid() }]);
+        newlyAddedIdRef.current = newId;
+        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: newId }]);
       }
     },
     [conditionType, conditions],
   );
+
   const handleOnChange = (index: number, conds: RulesCondition[]) => {
     const newConds = conditions.map((condition, i) => {
       if (i === index) {
@@ -234,6 +239,7 @@ export const RulesGroup = (props: RulesGroupProps) => {
     conditions,
     setNewConditions,
     updateConditionData,
+    newlyAddedIdRef,
   };
 
   return (
@@ -266,7 +272,15 @@ export const RulesGroup = (props: RulesGroupProps) => {
             );
           }
           if (ITEM?.RulesElement) {
-            return <ITEM.RulesElement key={i} index={i} data={condition.data} type={ITEM.type} />;
+            return (
+              <ITEM.RulesElement
+                key={i}
+                index={i}
+                data={condition.data}
+                type={ITEM.type}
+                conditionId={condition.id}
+              />
+            );
           }
           return null;
         })}

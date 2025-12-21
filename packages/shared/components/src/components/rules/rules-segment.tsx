@@ -30,6 +30,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface SelectItemType {
   id: string;
@@ -42,6 +43,7 @@ export interface RulesSegmentProps {
     logic: string;
     segmentId: string;
   };
+  conditionId?: string;
 }
 
 const conditions = [
@@ -172,14 +174,14 @@ const RulesSegmentCondition = () => {
 };
 
 export const RulesSegment = (props: RulesSegmentProps) => {
-  const { index, data } = props;
+  const { index, data, conditionId } = props;
   const { segments, disabled } = useRulesContext();
   const { error: errorZIndex } = useRulesZIndex();
   const [segmentId, setSegmentId] = useState<string>(data?.segmentId ?? '');
   const [conditionValue, setConditionValue] = useState(data?.logic ?? 'is');
   const [openError, setOpenError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const { updateConditionData } = useRulesGroupContext();
 
   const selectedPreset =

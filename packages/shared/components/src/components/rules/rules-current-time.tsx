@@ -20,11 +20,13 @@ import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 import { useRulesContext, useRulesZIndex } from './rules-context';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface RulesCurrentTimeProps {
   index: number;
   type: string;
   data?: TimeConditionData;
+  conditionId?: string;
 }
 
 /**
@@ -200,9 +202,9 @@ const RulesCurrentTimeTimer = (props: {
 
 // Main Component
 export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
-  const { index, data } = props;
+  const { index, data, conditionId } = props;
   const [openError, setOpenError] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const [errorInfo, setErrorInfo] = useState('');
   const { updateConditionData } = useRulesGroupContext();
   const { disabled } = useRulesContext();

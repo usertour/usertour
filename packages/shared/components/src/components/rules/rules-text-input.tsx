@@ -21,6 +21,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface RulesTextInputProps {
   index: number;
@@ -30,6 +31,7 @@ export interface RulesTextInputProps {
     logic: string;
     value: string;
   };
+  conditionId?: string;
 }
 
 const conditions = [
@@ -94,7 +96,7 @@ const RulesTextInputCondition = () => {
 };
 
 export const RulesTextInput = (props: RulesTextInputProps) => {
-  const { index, data, type } = props;
+  const { index, data, type, conditionId } = props;
   const [conditionValue, setConditionValue] = useState(data.logic ?? 'is');
   const [inputValue, setInputValue] = useState(data.value ?? '');
 
@@ -108,7 +110,7 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
   );
   const [openError, setOpenError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const { updateConditionData } = useRulesGroupContext();
   const { currentContent, token, onElementChange, disabled } = useRulesContext();
   const { error: errorZIndex } = useRulesZIndex();

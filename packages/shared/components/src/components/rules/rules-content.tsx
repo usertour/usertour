@@ -32,6 +32,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface SelectItemType {
   id: string;
@@ -46,6 +47,7 @@ export interface RulesContentProps {
   };
   type: string;
   index: number;
+  conditionId?: string;
 }
 
 const conditionsMapping = [
@@ -160,7 +162,7 @@ const RulesContentRadios = () => {
 };
 
 export const RulesContent = (props: RulesContentProps) => {
-  const { index, data } = props;
+  const { index, data, conditionId } = props;
   const { updateConditionData } = useRulesGroupContext();
   const { contents, disabled } = useRulesContext();
   const { error: errorZIndex } = useRulesZIndex();
@@ -168,7 +170,7 @@ export const RulesContent = (props: RulesContentProps) => {
   const [selectedPreset, setSelectedPreset] = useState<SelectItemType | null>(null);
   const [openError, setOpenError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const [conditionValue, setConditionValue] = useState(data?.logic ?? 'seen');
 
   const value = {

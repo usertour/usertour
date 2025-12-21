@@ -27,11 +27,18 @@ const RulesPopoverContent = React.forwardRef<
       alignOffset = -32,
       side = 'bottom',
       children,
+      onFocusOutside,
       ...props
     },
     ref,
   ) => {
     const { popover: zIndex } = useRulesZIndex();
+
+    // Prevent focus outside from closing the popover (e.g., when DropdownMenu closes)
+    const handleFocusOutside: NonNullable<typeof onFocusOutside> = (e) => {
+      e.preventDefault();
+      onFocusOutside?.(e);
+    };
 
     return (
       <PopoverPrimitive.Content
@@ -46,6 +53,7 @@ const RulesPopoverContent = React.forwardRef<
           filter:
             'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
         }}
+        onFocusOutside={handleFocusOutside}
         {...props}
       >
         {children}

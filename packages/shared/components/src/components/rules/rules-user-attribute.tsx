@@ -41,6 +41,7 @@ import { RulesPopover, RulesPopoverContent } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
 import { RulesContainerWrapper, RulesPopoverTriggerWrapper } from './rules-wrapper';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export const conditionsTypeMapping = {
   [AttributeDataType.Number]: [
@@ -488,13 +489,13 @@ const RulesUserAttributeInput = () => {
   );
 };
 
-export const RulesUserAttribute = (props: RulesUserAttributeProps) => {
-  const { index, data, type } = props;
+export const RulesUserAttribute = (props: RulesUserAttributeProps & { conditionId?: string }) => {
+  const { index, data, type, conditionId } = props;
   const { attributes } = useRulesContext();
   const [selectedPreset, setSelectedPreset] = useState<Attribute | null>(null);
   const { updateConditionData } = useRulesGroupContext();
   const [openError, setOpenError] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const [activeConditionMapping, setActiveConditionMapping] = useState<
     (typeof conditionsTypeMapping)[AttributeDataType.Number]
   >(conditionsTypeMapping[AttributeDataType.Number]);
