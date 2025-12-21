@@ -15,7 +15,7 @@ import { useToast } from '@usertour-packages/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
 import { getDefaultDataForType } from '@usertour-packages/shared-editor';
-import { duplicateStepWithRename } from '@usertour/helpers';
+import { duplicateStep, generateUniqueCopyName } from '@usertour/helpers';
 import {
   useGetContentLazyQuery,
   useGetContentVersionLazyQuery,
@@ -282,24 +282,34 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     currentVersion: ContentVersion,
     sequence: number,
     stepType?: string,
-    duplicateStep?: Step,
+    stepToDuplicate?: Step,
   ) => {
-    const finalStepType = stepType || duplicateStep?.type || 'tooltip';
+    const finalStepType = stepType || stepToDuplicate?.type || 'tooltip';
     const existingStepNames = currentVersion?.steps?.map((step) => step.name) ?? [];
 
-    const step: Step = duplicateStep
-      ? duplicateStepWithRename(duplicateStep, sequence, existingStepNames)
-      : {
-          ...defaultStep,
-          type: finalStepType,
-          name: 'Untitled',
-          data: getDefaultDataForType(finalStepType),
-          sequence,
-          setting: {
-            ...defaultStep.setting,
-            width: finalStepType === 'modal' ? 550 : defaultStep.setting.width,
-          },
-        };
+    let step: Step;
+    if (stepToDuplicate) {
+      // Duplicate step within the same flow - need new cvid
+      const duplicated = duplicateStep(stepToDuplicate);
+      step = {
+        ...duplicated,
+        cvid: undefined, // Remove cvid to generate new one within the same flow
+        name: generateUniqueCopyName(stepToDuplicate.name, existingStepNames),
+        sequence,
+      } as Step;
+    } else {
+      step = {
+        ...defaultStep,
+        type: finalStepType,
+        name: 'Untitled',
+        data: getDefaultDataForType(finalStepType),
+        sequence,
+        setting: {
+          ...defaultStep.setting,
+          width: finalStepType === 'modal' ? 550 : defaultStep.setting.width,
+        },
+      };
+    }
 
     return await createStep(currentVersion, step);
   };

@@ -88,8 +88,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/shared/tailwind
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.35
         version: 0.0.35
@@ -341,8 +341,8 @@ importers:
         specifier: ^4.7.1
         version: 4.7.4
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@4.9.5)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@4.9.5)
       '@usertour/license':
         specifier: ^0.0.2
         version: 0.0.2
@@ -741,8 +741,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.35
         version: 0.0.35
@@ -916,8 +916,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -959,8 +959,8 @@ importers:
   packages/components/alert:
     dependencies:
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       class-variance-authority:
         specifier: ^0.4.0
         version: 0.4.0(typescript@5.1.6)
@@ -1011,8 +1011,8 @@ importers:
         specifier: workspace:*
         version: link:../button
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       class-variance-authority:
         specifier: ^0.4.0
         version: 0.4.0(typescript@5.1.6)
@@ -1103,8 +1103,8 @@ importers:
         specifier: ^1.0.3
         version: 1.1.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -1146,8 +1146,8 @@ importers:
   packages/components/badge:
     dependencies:
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       class-variance-authority:
         specifier: ^0.4.0
         version: 0.4.0(typescript@5.1.6)
@@ -1250,8 +1250,8 @@ importers:
         specifier: workspace:*
         version: link:../button
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       react-day-picker:
         specifier: ^8.7.1
         version: 8.10.1(date-fns@3.6.0)(react@18.2.0)
@@ -1296,8 +1296,8 @@ importers:
   packages/components/card:
     dependencies:
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -1339,8 +1339,8 @@ importers:
   packages/components/chart:
     dependencies:
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       recharts:
         specifier: ^2.7.2
         version: 2.13.2(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -1391,8 +1391,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -1437,8 +1437,8 @@ importers:
         specifier: ^1.0.3
         version: 1.1.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -1544,8 +1544,8 @@ importers:
         specifier: workspace:*
         version: link:../dialog
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       cmdk:
         specifier: ^0.2.0
         version: 0.2.1(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -1596,8 +1596,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -1645,8 +1645,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -1694,8 +1694,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -1746,8 +1746,8 @@ importers:
         specifier: workspace:*
         version: link:../label
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       react-hook-form:
         specifier: ^7.44.2
         version: 7.53.1(react@18.2.0)
@@ -1841,8 +1841,8 @@ importers:
         specifier: ^1.0.6
         version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -1884,8 +1884,8 @@ importers:
   packages/components/input:
     dependencies:
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -1930,8 +1930,8 @@ importers:
         specifier: ^2.0.2
         version: 2.1.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       class-variance-authority:
         specifier: ^0.4.0
         version: 0.4.0(typescript@5.1.6)
@@ -1982,8 +1982,8 @@ importers:
         specifier: ^1.0.3
         version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2031,8 +2031,8 @@ importers:
         specifier: ^1.1.3
         version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       class-variance-authority:
         specifier: ^0.4.0
         version: 0.4.0(typescript@5.1.6)
@@ -2080,8 +2080,8 @@ importers:
         specifier: ^1.0.6
         version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2126,8 +2126,8 @@ importers:
         specifier: ^1.0.3
         version: 1.1.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2175,8 +2175,8 @@ importers:
         specifier: ^1.1.3
         version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2221,8 +2221,8 @@ importers:
         specifier: ^1.0.4
         version: 1.2.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2270,8 +2270,8 @@ importers:
         specifier: ^1.2.2
         version: 1.2.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2316,8 +2316,8 @@ importers:
         specifier: ^1.0.3
         version: 1.1.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2365,8 +2365,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       class-variance-authority:
         specifier: ^0.4.0
         version: 0.4.0(typescript@5.1.6)
@@ -2411,8 +2411,8 @@ importers:
   packages/components/skeleton:
     dependencies:
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2460,8 +2460,8 @@ importers:
         specifier: ^1.1.2
         version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2506,8 +2506,8 @@ importers:
         specifier: ^1.0.3
         version: 1.1.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2549,8 +2549,8 @@ importers:
   packages/components/table:
     dependencies:
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2595,8 +2595,8 @@ importers:
         specifier: ^1.0.4
         version: 1.1.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2644,8 +2644,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -2690,8 +2690,8 @@ importers:
         specifier: ^1.0.3
         version: 1.1.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       class-variance-authority:
         specifier: ^0.4.0
         version: 0.4.0(typescript@5.1.6)
@@ -2742,8 +2742,8 @@ importers:
         specifier: ^1.0.6
         version: 1.1.3(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -3233,8 +3233,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.35
         version: 0.0.35
@@ -3480,8 +3480,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.35
         version: 0.0.35
@@ -3741,8 +3741,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.35
         version: 0.0.35
@@ -3994,8 +3994,8 @@ importers:
         specifier: workspace:^
         version: link:../gql
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.35
         version: 0.0.35
@@ -4124,8 +4124,8 @@ importers:
         specifier: workspace:^
         version: link:../../radix/use-size
       '@usertour/helpers':
-        specifier: ^0.0.51
-        version: 0.0.51(typescript@5.1.6)
+        specifier: ^0.0.52
+        version: 0.0.52(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.35
         version: 0.0.35
@@ -8659,14 +8659,11 @@ packages:
   '@ungap/structured-clone@1.2.0':
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  '@usertour/helpers@0.0.51':
-    resolution: {integrity: sha512-nSxmlB7AUsf0lcHy7EogSJCLtrpoepUoHBOQGCy80tuDNf8UoddB+a9zaHOny5y+peQavzsCE20q9NoyqBw0Uw==}
+  '@usertour/helpers@0.0.52':
+    resolution: {integrity: sha512-3RNEPLWcPDKW+b6lKujhVKF+XcQaP98EgjazpkqOv3KdH8h/69lCCEOAuA9ilvQKtsDyWsZE0YF9JCb3bbpATw==}
 
   '@usertour/license@0.0.2':
     resolution: {integrity: sha512-9TbX5kfupLmJ04vwDr6vOrfSNQ8lW5lArvx/9V62uDDuOnAqV4T7/lhk/ijJXrKf4KfgmeCVMG7YR1+3lKCQJw==}
-
-  '@usertour/types@0.0.33':
-    resolution: {integrity: sha512-CvRtOFjRHpPmeoH82+NBJ1uBMGl5NSkfMwIqEkPjs60uSckYS5jizB8zWEr0UUiuY9iURC7EueyP7LbyVevoaQ==}
 
   '@usertour/types@0.0.35':
     resolution: {integrity: sha512-povL2gJ2ao6HomYnUDRkAMSJ334+hxhLmi17AgtlmOFO1NP8ZTDs4JMlysGYRColVRrw+B/CU2/p9fpFDln5Ag==}
@@ -20619,10 +20616,10 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@usertour/helpers@0.0.51(typescript@4.9.5)':
+  '@usertour/helpers@0.0.52(typescript@4.9.5)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
-      '@usertour/types': 0.0.33
+      '@usertour/types': 0.0.35
       chroma-js: 3.1.2
       class-variance-authority: 0.4.0(typescript@4.9.5)
       clsx: 1.2.1
@@ -20634,10 +20631,10 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.51(typescript@5.1.6)':
+  '@usertour/helpers@0.0.52(typescript@5.1.6)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
-      '@usertour/types': 0.0.33
+      '@usertour/types': 0.0.35
       chroma-js: 3.1.2
       class-variance-authority: 0.4.0(typescript@5.1.6)
       clsx: 1.2.1
@@ -20652,8 +20649,6 @@ snapshots:
   '@usertour/license@0.0.2':
     dependencies:
       jsonwebtoken: 9.0.2
-
-  '@usertour/types@0.0.33': {}
 
   '@usertour/types@0.0.35': {}
 

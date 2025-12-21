@@ -24,13 +24,13 @@ import {
   ZoomInIcon,
 } from '@usertour-packages/icons';
 import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour-packages/shared-hooks';
-import { BizEvent, BizSession } from '@usertour/types';
+import { BizSession } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { Fragment, ReactNode, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour-packages/dialog';
 import { SessionResponse } from '@/components/molecules/session-detail';
-import { deduplicateAnswerEvents } from '@/utils/session';
+import { getOrderedQuestionAnswers, QuestionWithAnswer } from '@/utils/session';
 
 // Create a custom hook for form handling
 const useSessionForm = (
@@ -81,7 +81,7 @@ type SessionFormProps = {
 type ResponseDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  answerEvents: BizEvent[];
+  questions: QuestionWithAnswer[];
 };
 
 type SessionActionDropdownMenuProps = {
@@ -97,19 +97,19 @@ type SessionActionDropdownMenuProps = {
 };
 
 // Dialog component for displaying session responses
-const ResponseDialog = ({ open, onOpenChange, answerEvents }: ResponseDialogProps) => (
+const ResponseDialog = ({ open, onOpenChange, questions }: ResponseDialogProps) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="sm:max-w-[600px]">
       <DialogHeader>
         <DialogTitle>Question Response</DialogTitle>
       </DialogHeader>
-      {answerEvents?.length === 0 ? (
+      {questions?.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-gray-500">
           <EmptyPlaceholderIcon className="h-10 w-10 text-muted-foreground" />
-          <p>No responses yet</p>
+          <p>No questions found</p>
         </div>
       ) : (
-        <SessionResponse answerEvents={answerEvents} />
+        <SessionResponse questions={questions} />
       )}
     </DialogContent>
   </Dialog>
@@ -287,7 +287,7 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
   const { isViewOnly, environment } = useAppContext();
   const navigate = useNavigate();
 
-  const answerEvents = deduplicateAnswerEvents(session);
+  const questionAnswers = getOrderedQuestionAnswers(session);
 
   // State for controlling different dialogs
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -347,7 +347,7 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
       <ResponseDialog
         open={responseOpen}
         onOpenChange={setResponseOpen}
-        answerEvents={answerEvents ?? []}
+        questions={questionAnswers ?? []}
       />
     </>
   );

@@ -337,56 +337,19 @@ type StepLike = {
 /**
  * Core function to duplicate a single step by removing database-specific fields
  * and regenerating IDs in triggers, target actions, and question elements
+ * Preserves cvid to maintain step references in triggers/actions when duplicating entire content
  * @param step - The step to duplicate
- * @returns A new step object with regenerated IDs, without id/cvid/timestamps/versionId
+ * @returns A new step object with regenerated IDs, preserving cvid
  */
 export const duplicateStep = <T extends StepLike>(
   step: T,
-): Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId' | 'cvid'> => {
-  const { id, cvid, createdAt, updatedAt, versionId, trigger, target, data, ...rest } = step;
+): Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId'> => {
+  const { id, createdAt, updatedAt, versionId, trigger, target, data, ...rest } = step;
 
   return {
     ...rest,
     data: data ? processQuestionElements(data as ContentEditorRoot[]) : [],
     trigger: trigger ? duplicateTriggers(trigger as StepTrigger[]) : [],
     target: duplicateTarget(target as Step['target']),
-  } as Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId' | 'cvid'>;
-};
-
-/**
- * Process multiple steps for duplication
- * Works with both Prisma Step type (server) and @usertour/types Step (client)
- * @param steps - Array of steps to process
- * @returns Array of steps ready for creation with regenerated IDs
- */
-export const duplicateSteps = <T extends StepLike>(
-  steps: T[],
-): Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId' | 'cvid'>[] => {
-  if (!isArray(steps)) {
-    return [];
-  }
-
-  return steps.map((step) => duplicateStep(step));
-};
-
-/**
- * Duplicate a single step with a new unique name and sequence
- * Used for UI operations when duplicating a step within the same version
- * @param originalStep - The step to duplicate
- * @param sequence - The new sequence number for the duplicated step
- * @param existingStepNames - Optional array of existing step names to avoid conflicts
- * @returns A new step object ready for creation
- */
-export const duplicateStepWithRename = (
-  originalStep: Step,
-  sequence: number,
-  existingStepNames?: string[],
-): Omit<Step, 'id' | 'cvid' | 'updatedAt' | 'createdAt'> => {
-  const duplicated = duplicateStep(originalStep);
-
-  return {
-    ...duplicated,
-    name: generateUniqueCopyName(originalStep.name, existingStepNames),
-    sequence,
-  };
+  } as Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId'>;
 };

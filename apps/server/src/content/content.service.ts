@@ -12,7 +12,7 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
 import { ContentConfigObject } from '@usertour/types';
-import { duplicateConfig, duplicateData, duplicateSteps } from '@usertour/helpers';
+import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
 
 @Injectable()
 export class ContentService {
@@ -437,7 +437,7 @@ export class ContentService {
           },
         });
 
-        const steps = duplicateSteps(editedVersion.steps);
+        const steps = editedVersion.steps.map((step) => duplicateStep(step));
         const newConfig = duplicateConfig(editedVersion.config as ContentConfigObject);
         const processedData = duplicateData(editedVersion.data, duplicateContent.type);
 

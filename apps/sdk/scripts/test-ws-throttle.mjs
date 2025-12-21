@@ -169,8 +169,12 @@ function printResults() {
   console.log(`Duration:        ${duration.toFixed(1)}s`);
   console.log(`Messages sent:   ${stats.sent}`);
   console.log(`Actual rate:     ${actualRate} msg/sec`);
-  console.log(`Success:         ${stats.success} (${((stats.success / stats.sent) * 100).toFixed(1)}%)`);
-  console.log(`Throttled:       ${stats.throttled} (${((stats.throttled / stats.sent) * 100).toFixed(1)}%)`);
+  console.log(
+    `Success:         ${stats.success} (${((stats.success / stats.sent) * 100).toFixed(1)}%)`,
+  );
+  console.log(
+    `Throttled:       ${stats.throttled} (${((stats.throttled / stats.sent) * 100).toFixed(1)}%)`,
+  );
   console.log(`Other errors:    ${stats.errors - stats.throttled}`);
   console.log('='.repeat(50));
 
