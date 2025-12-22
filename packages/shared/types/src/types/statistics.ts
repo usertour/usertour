@@ -37,6 +37,7 @@ export type AnalyticsViewsByDay = AnalyticsViews & {
 
 export type AnalyticsViewsByStep = {
   name: string;
+  cvid: string;
   stepIndex: number;
   explicitCompletionStep: boolean;
   analytics: AnalyticsViews;

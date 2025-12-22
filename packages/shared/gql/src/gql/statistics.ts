@@ -175,6 +175,54 @@ export const listSessionsDetail = gql`
   }
 `;
 
+export const queryTooltipTargetMissingSessions = gql`
+  query queryTooltipTargetMissingSessions(
+    $first: Int
+    $last: Int
+    $after: String
+    $before: String
+    $query: TooltipTargetMissingQuery!
+    $orderBy: AnalyticsOrder!
+  ) {
+    queryTooltipTargetMissingSessions(
+      first: $first
+      last: $last
+      after: $after
+      before: $before
+      query: $query
+      orderBy: $orderBy
+    ) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          createdAt
+          bizUserId
+          bizUser {
+            externalId
+            data
+          }
+          bizEvent {
+            id
+            createdAt
+            data
+            event {
+              codeName
+            }
+          }
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+`;
+
 export const querySessionsByExternalId = gql`
   query querySessionsByExternalId(
     $first: Int

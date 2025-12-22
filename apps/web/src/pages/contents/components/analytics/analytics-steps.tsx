@@ -8,14 +8,26 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
+import { Button } from '@usertour-packages/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { AnalyticsViewsByStep } from '@usertour/types';
+import { useState } from 'react';
+import { AlertTriangleIcon } from 'lucide-react';
 
 import { GoalStepBadge } from '@/components/molecules/goal-step-badge';
 
 import { AnalyticsStepsSkeleton } from './analytics-skeleton';
+import { TooltipTargetMissingDialog } from './components/tooltip-target-missing-dialog';
 
 export const AnalyticsSteps = () => {
   const { analyticsData, loading } = useAnalyticsContext();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedStep, setSelectedStep] = useState<{ cvid: string; name: string } | null>(null);
 
   if (loading) {
     return <AnalyticsStepsSkeleton />;
@@ -40,6 +52,11 @@ export const AnalyticsSteps = () => {
     return index === (analyticsData?.viewsByStep?.length ?? 0) - 1;
   };
 
+  const handleOpenDialog = (step: AnalyticsViewsByStep) => {
+    setSelectedStep({ cvid: step.cvid, name: step.name });
+    setDialogOpen(true);
+  };
+
   return (
     <>
       <Card>
@@ -56,12 +73,13 @@ export const AnalyticsSteps = () => {
                 <TableHead className="w-28">Unique views</TableHead>
                 <TableHead className="w-24">View rate</TableHead>
                 <TableHead />
+                <TableHead className="w-16" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {analyticsData?.viewsByStep ? (
                 analyticsData?.viewsByStep.map((step: AnalyticsViewsByStep, index) => (
-                  <TableRow key={index} onClick={() => {}}>
+                  <TableRow key={index}>
                     <TableCell className="py-[1px]">
                       <div className="flex items-center justify-between gap-2 min-w-0">
                         <span className="truncate" title={step.name}>
@@ -82,11 +100,30 @@ export const AnalyticsSteps = () => {
                         }}
                       />
                     </TableCell>
+                    <TableCell className="py-[1px]">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleOpenDialog(step)}
+                            >
+                              <AlertTriangleIcon className="h-4 w-4 text-muted-foreground hover:text-warning" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Click to view tooltip targets not found</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>
@@ -95,6 +132,15 @@ export const AnalyticsSteps = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {selectedStep && (
+        <TooltipTargetMissingDialog
+          stepCvid={selectedStep.cvid}
+          stepName={selectedStep.name}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+        />
+      )}
     </>
   );
 };

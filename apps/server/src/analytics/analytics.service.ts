@@ -8,6 +8,7 @@ import { addDays, isBefore, lightFormat, format, subDays, endOfDay, startOfDay }
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
+import { TooltipTargetMissingQuery } from './dto/tooltip-target-missing-query.input';
 import { toZonedTime } from 'date-fns-tz';
 import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
@@ -531,6 +532,7 @@ export class AnalyticsService {
 
       ret.push({
         name: stepInfo.name,
+        cvid: stepInfo.cvid,
         stepIndex: index,
         explicitCompletionStep,
         analytics: {
@@ -953,39 +955,158 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * Query sessions that have tooltip target missing events
+   * @param query - Query parameters including contentId, environmentId, date range and stepCvid
+   * @param pagination - Pagination parameters
+   * @param orderBy - Order by parameters
+   * @returns Paginated list of sessions with tooltip target missing events
+   */
+  async queryTooltipTargetMissingSessions(
+    query: TooltipTargetMissingQuery,
+    pagination: PaginationArgs,
+    orderBy: AnalyticsOrder,
+  ) {
+    const { contentId, environmentId, startDate, endDate, stepCvid } = query;
+    const { first, last, before, after } = pagination;
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+
+    try {
+      // Get projectId from environment
+      const environment = await this.prisma.environment.findUnique({
+        where: { id: environmentId },
+      });
+      if (!environment) {
+        return {
+          edges: [],
+          pageInfo: {
+            hasNextPage: false,
+            hasPreviousPage: false,
+            startCursor: null,
+            endCursor: null,
+          },
+          totalCount: 0,
+        };
+      }
+      const projectId = environment.projectId;
+
+      // Find the tooltip_target_missing event
+      const tooltipTargetMissingEvent = await this.prisma.event.findFirst({
+        where: {
+          projectId,
+          codeName: BizEvents.TOOLTIP_TARGET_MISSING,
+        },
+      });
+
+      if (!tooltipTargetMissingEvent) {
+        return {
+          edges: [],
+          pageInfo: {
+            hasNextPage: false,
+            hasPreviousPage: false,
+            startCursor: null,
+            endCursor: null,
+          },
+          totalCount: 0,
+        };
+      }
+
+      // Build the event filter condition with stepCvid
+      const eventFilter: Prisma.BizEventWhereInput = {
+        eventId: tooltipTargetMissingEvent.id,
+        createdAt: {
+          gte: startDateObj,
+          lte: endDateObj,
+        },
+        data: {
+          path: ['flow_step_cvid'],
+          equals: stepCvid,
+        },
+      };
+
+      const resp = await findManyCursorConnection(
+        (args) =>
+          this.prisma.bizSession.findMany({
+            where: {
+              contentId,
+              environmentId,
+              deleted: false,
+              bizEvent: {
+                some: eventFilter,
+              },
+            },
+            include: {
+              bizUser: { include: { bizUsersOnCompany: { include: { bizCompany: true } } } },
+              bizEvent: {
+                where: eventFilter,
+                include: { event: true },
+                orderBy: { createdAt: 'desc' },
+              },
+              content: true,
+              version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+            },
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+            ...args,
+          }),
+        () =>
+          this.prisma.bizSession.count({
+            where: {
+              contentId,
+              environmentId,
+              deleted: false,
+              bizEvent: {
+                some: eventFilter,
+              },
+            },
+          }),
+        { first, last, before, after },
+      );
+
+      return resp;
+    } catch (_) {
+      throw new UnknownError('Failed to query tooltip target missing sessions');
+    }
+  }
+
   async endSession(sessionId: string) {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { content: true },
+      include: { content: true, environment: true },
     });
 
-    if (!bizSession || bizSession.state === 1) {
+    if (!bizSession || bizSession.state === 1 || !bizSession.environment) {
       return false;
     }
+
+    const projectId = bizSession.environment.projectId;
+
     if (bizSession.content.type === ContentType.FLOW) {
-      return await this.endFlowSession(bizSession);
+      return await this.endFlowSession(bizSession, projectId);
     }
     if (bizSession.content.type === ContentType.CHECKLIST) {
-      return await this.endChecklistSession(bizSession);
+      return await this.endChecklistSession(bizSession, projectId);
     }
     if (bizSession.content.type === ContentType.LAUNCHER) {
-      return await this.endLauncherSession(bizSession);
+      return await this.endLauncherSession(bizSession, projectId);
     }
     return false;
   }
 
   /**
    * End a flow session
-   * @param session - The session to end
+   * @param bizSession - The session to end
+   * @param projectId - The project ID for event lookup
    * @returns True if the session was ended successfully, false otherwise
    */
-  async endFlowSession(bizSession: BizSession) {
+  private async endFlowSession(bizSession: BizSession, projectId: string) {
     const sessionId = bizSession.id;
+
     const endEvent = await this.prisma.event.findFirst({
-      where: { codeName: BizEvents.FLOW_ENDED },
+      where: { projectId, codeName: BizEvents.FLOW_ENDED },
     });
     const seenEvent = await this.prisma.event.findFirst({
-      where: { codeName: BizEvents.FLOW_STEP_SEEN },
+      where: { projectId, codeName: BizEvents.FLOW_STEP_SEEN },
     });
     const seenBizEvent = await this.prisma.bizEvent.findFirst({
       where: { bizSessionId: sessionId, eventId: seenEvent.id },
@@ -1033,13 +1154,15 @@ export class AnalyticsService {
 
   /**
    * End a checklist session
-   * @param session - The session to end
+   * @param bizSession - The session to end
+   * @param projectId - The project ID for event lookup
    * @returns True if the session was ended successfully, false otherwise
    */
-  async endChecklistSession(bizSession: BizSession) {
+  private async endChecklistSession(bizSession: BizSession, projectId: string) {
     const sessionId = bizSession.id;
+
     const endEvent = await this.prisma.event.findFirst({
-      where: { codeName: BizEvents.CHECKLIST_DISMISSED },
+      where: { projectId, codeName: BizEvents.CHECKLIST_DISMISSED },
     });
     const latestBizEvent = await this.prisma.bizEvent.findFirst({
       where: { bizSessionId: sessionId },
@@ -1087,13 +1210,15 @@ export class AnalyticsService {
 
   /**
    * End a launcher session
-   * @param session - The session to end
+   * @param bizSession - The session to end
+   * @param projectId - The project ID for event lookup
    * @returns True if the session was ended successfully, false otherwise
    */
-  async endLauncherSession(bizSession: BizSession) {
+  private async endLauncherSession(bizSession: BizSession, projectId: string) {
     const sessionId = bizSession.id;
+
     const endEvent = await this.prisma.event.findFirst({
-      where: { codeName: BizEvents.LAUNCHER_DISMISSED },
+      where: { projectId, codeName: BizEvents.LAUNCHER_DISMISSED },
     });
     const latestBizEvent = await this.prisma.bizEvent.findFirst({
       where: { bizSessionId: sessionId },
