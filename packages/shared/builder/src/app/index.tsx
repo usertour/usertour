@@ -62,11 +62,12 @@ export interface WebBuilderProps {
   usertourjsUrl?: string;
   onSaved: () => Promise<void>;
   isLoading?: boolean;
+  initialStepIndex?: number;
 }
 
 // Inner component that uses the provider context
 function WebBuilderContent(props: WebBuilderProps) {
-  const { contentId, environmentId, versionId, projectId, envToken } = props;
+  const { contentId, environmentId, versionId, projectId, envToken, initialStepIndex } = props;
   const { initContent } = useBuilderContext();
   const { isLoading: providerLoading } = useWebBuilderProvider();
   const [isInitializing, setIsInitializing] = useState(true);
@@ -79,6 +80,7 @@ function WebBuilderContent(props: WebBuilderProps) {
         versionId,
         projectId,
         envToken,
+        initialStepIndex,
       };
       await initContent(params);
       setIsInitializing(false);

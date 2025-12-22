@@ -104,7 +104,10 @@ interface BuilderContextProps {
   isShowError: boolean;
   setIsShowError: React.Dispatch<React.SetStateAction<boolean>>;
   contentRef: React.MutableRefObject<HTMLDivElement | undefined>;
-  fetchContentAndVersion: (contentId: string, versionId: string) => Promise<boolean | Content>;
+  fetchContentAndVersion: (
+    contentId: string,
+    versionId: string,
+  ) => Promise<false | { content: Content; version: ContentVersion }>;
   createStep: (currentVersion: ContentVersion, step: Step) => Promise<Step | undefined>;
   createNewStep: (
     currentVersion: ContentVersion,
@@ -196,11 +199,19 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     }
     setCurrentVersion(JSON.parse(JSON.stringify(version)));
     setBackupVersion(JSON.parse(JSON.stringify(version)));
-    return content;
+    return { content, version };
   };
 
   const initContent = async (message: any) => {
-    const { contentId, environmentId, envToken, url = '', versionId, projectId } = message;
+    const {
+      contentId,
+      environmentId,
+      envToken,
+      url = '',
+      versionId,
+      projectId,
+      initialStepIndex,
+    } = message;
     if (!environmentId || (!isWebBuilder && !envToken)) {
       return false;
     }
@@ -210,15 +221,36 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     setCurrentLocation(url);
     setEnvironmentId(environmentId);
     setProjectId(projectId);
-    const version = await fetchContentAndVersion(contentId, versionId);
-    if (!version) {
+    const result = await fetchContentAndVersion(contentId, versionId);
+    if (!result) {
       setIsLoading(false);
       return false;
     }
     setIsLoading(false);
-    const versionType = version.type.toString();
+
+    const { content, version } = result;
+    const versionType = content.type.toString();
     const versionMode = versionType as BuilderMode;
     const hasMode = Object.values(BuilderMode).includes(versionMode);
+
+    // Handle initial step for flow type - directly open step editor
+    if (
+      versionType === ContentDataType.FLOW &&
+      initialStepIndex !== undefined &&
+      version.steps?.[initialStepIndex]
+    ) {
+      const step = version.steps[initialStepIndex];
+      const _step = JSON.parse(
+        JSON.stringify({
+          ...step,
+          setting: { ...defaultStep.setting, ...step.setting },
+        }),
+      );
+      setCurrentStep(_step);
+      setCurrentIndex(initialStepIndex);
+      setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
+      return true;
+    }
 
     if (versionType !== ContentDataType.FLOW && hasMode) {
       setCurrentMode({ mode: versionType as BuilderMode });

@@ -373,7 +373,7 @@ export const ContentDetailContent = () => {
         {contentType === ContentTypeName.FLOWS &&
           version.steps?.map((step, index) => (
             <ContentDetailContentStep
-              onEdit={() => openBuilder(content, contentType)}
+              onEdit={() => openBuilder(content, contentType, index)}
               currentStep={step}
               index={index}
               key={index}
