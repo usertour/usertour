@@ -4,6 +4,7 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
   CommandList,
 } from '@usertour-packages/command';
@@ -69,6 +70,7 @@ export const ComboBox = ({
         style={contentStyle}
       >
         <Command>
+          <CommandInput placeholder="Search..." />
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
