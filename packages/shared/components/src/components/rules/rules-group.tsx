@@ -1,3 +1,4 @@
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -119,7 +120,11 @@ const RulesAddDropdown = (props: RulesAddDropdownProps) => {
       <DropdownMenuTrigger asChild disabled={disabled}>
         {children}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" style={{ zIndex }}>
+      <DropdownMenuContent
+        align="start"
+        style={{ zIndex }}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {items?.map(({ type, text, IconElement }, index) => (
           <DropdownMenuItem
             key={index}
@@ -304,10 +309,10 @@ export const RulesGroup = (props: RulesGroupProps) => {
                 : rulesItems
             }
           >
-            <div className="h-8 text-primary items-center flex flex-row justify-center rounded-md text-sm font-medium cursor-pointer">
+            <Button variant="ghost" className="text-primary">
               <PlusIcon width={16} height={16} />
               {addButtonText}
-            </div>
+            </Button>
           </RulesAddDropdown>
         </div>
       </div>
