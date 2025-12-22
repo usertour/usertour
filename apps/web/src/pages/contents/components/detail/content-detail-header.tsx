@@ -102,7 +102,9 @@ export const ContentDetailHeader = () => {
       <>
         <div className="border-b bg-white flex-col md:flex w-full fixed z-10 top-0">
           <div className="flex h-16 items-center px-4">
-            <ArrowLeftIcon className="ml-4 h-6 w-8 cursor-pointer flex-none" onClick={handleBack} />
+            <Button variant="ghost" className="ml-4 mr-2 flex-none p-0" onClick={handleBack}>
+              <ArrowLeftIcon className="h-6 w-8" />
+            </Button>
             <span className="flex-none max-w-40	truncate ...	">{content?.name}</span>
             <ContentRenameForm
               data={content}
