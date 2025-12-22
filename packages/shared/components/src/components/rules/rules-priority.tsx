@@ -1,4 +1,5 @@
 import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,10 +36,10 @@ export const RulesPriority = (props: RulesPriorityProps) => {
     <div className="flex flex-row items-center space-x-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={disabled}>
-          <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer w-fit">
+          <Button variant="ghost" className="text-primary h-auto p-0">
             <span>{itemsMapping.find((item) => item.key === value)?.value}</span>
-            <ChevronDownIcon width={16} height={16} />
-          </div>
+            <ChevronDownIcon width={16} height={16} className="ml-2" />
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuRadioGroup value={value} onValueChange={handleOnValueChange}>

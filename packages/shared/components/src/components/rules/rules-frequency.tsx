@@ -1,4 +1,5 @@
 import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-packages/button';
 import { RulesZIndexOffset, WebZIndex } from '@usertour-packages/constants';
 import {
   DropdownMenu,
@@ -50,28 +51,28 @@ const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
   const [frequency, setFrequency] = useState<Frequency>(_frequency);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild disabled={disabled}>
-        <div className="flex flex-row items-center space-x-2">
-          <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer w-fit">
+    <div className="flex flex-row items-center space-x-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild disabled={disabled}>
+          <Button variant="ghost" className="text-primary h-auto p-0">
             <span>{itemsMapping.find((item) => item.key === frequency)?.value}</span>
-            <ChevronDownIcon width={16} height={16} />
-          </div>
-          <QuestionTooltip>
-            Whether the {contentType} can auto-start for the same user just once, or many times.
-          </QuestionTooltip>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuRadioGroup value={frequency} onValueChange={handleValueChange}>
-          {itemsMapping.map((item) => (
-            <DropdownMenuRadioItem value={item.key} key={item.key}>
-              {item.value}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <ChevronDownIcon width={16} height={16} className="ml-2" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuRadioGroup value={frequency} onValueChange={handleValueChange}>
+            {itemsMapping.map((item) => (
+              <DropdownMenuRadioItem value={item.key} key={item.key}>
+                {item.value}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <QuestionTooltip>
+        Whether the {contentType} can auto-start for the same user just once, or many times.
+      </QuestionTooltip>
+    </div>
   );
 };
 
@@ -123,10 +124,10 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={disabled}>
-          <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer">
+          <Button variant="ghost" className="text-primary h-auto p-0">
             <span>{data.unit}</span>
-            <ChevronDownIcon width={16} height={16} />
-          </div>
+            <ChevronDownIcon width={16} height={16} className="ml-2" />
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuRadioGroup value={data.unit} onValueChange={handleUnitOnChange}>
@@ -251,10 +252,10 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={disabled}>
-          <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer">
+          <Button variant="ghost" className="text-primary h-auto p-0">
             <span>{data.unit}</span>
-            <ChevronDownIcon width={16} height={16} />
-          </div>
+            <ChevronDownIcon width={16} height={16} className="ml-2" />
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuRadioGroup value={data.unit} onValueChange={handleUnitOnChange}>
