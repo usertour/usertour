@@ -183,13 +183,20 @@ export const RulesGroup = (props: RulesGroupProps) => {
 
   const handleOnSelect = useCallback(
     (type: string) => {
-      const newId = cuid();
-      if (type === 'group') {
-        setNewConditions([...conditions, { type, data: {}, conditions: [], id: newId }]);
-      } else {
-        newlyAddedIdRef.current = newId;
-        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: newId }]);
-      }
+      // Delay adding new condition until DropdownMenu fully closes
+      // This prevents focus competition between DropdownMenu and Popover
+      setTimeout(() => {
+        const newId = cuid();
+        if (type === 'group') {
+          setNewConditions([...conditions, { type, data: {}, conditions: [], id: newId }]);
+        } else {
+          newlyAddedIdRef.current = newId;
+          setNewConditions([
+            ...conditions,
+            { type, data: {}, operators: conditionType, id: newId },
+          ]);
+        }
+      }, 150);
     },
     [conditionType, conditions],
   );
