@@ -2185,3 +2185,21 @@ export const FlagIcon = React.forwardRef<SVGSVGElement, IconProps>(({ ...props }
     </svg>
   );
 });
+
+export const TaskArrowIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 1024 1024"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M512.950857 144.530286l438.857143 364.397714-438.857143 365.714286zM65.828571 371.565714h447.122286v269.165715H65.828571z m0 0" />
+      </svg>
+    );
+  },
+);
+
+TaskArrowIcon.displayName = 'TaskArrowIcon';
