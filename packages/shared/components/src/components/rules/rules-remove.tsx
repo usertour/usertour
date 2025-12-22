@@ -23,13 +23,8 @@ export const RulesRemove = (props: RulesRemoveProps) => {
     <>
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <CloseIcon
-              width={18}
-              height={18}
-              className="absolute top-1 right-1 cursor-pointer"
-              onClick={handleOnClick}
-            />
+          <TooltipTrigger className="absolute top-1 right-1 cursor-pointer" onClick={handleOnClick}>
+            <CloseIcon width={18} height={18} />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs bg-foreground text-background">
             Remove condition
