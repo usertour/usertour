@@ -8,7 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { Button } from '@usertour-packages/button';
 import {
   Tooltip,
   TooltipContent,
@@ -22,12 +21,15 @@ import { AlertTriangleIcon } from 'lucide-react';
 import { GoalStepBadge } from '@/components/molecules/goal-step-badge';
 
 import { AnalyticsStepsSkeleton } from './analytics-skeleton';
-import { TooltipTargetMissingDialog } from './components/tooltip-target-missing-dialog';
+import {
+  TooltipTargetMissingDialog,
+  TooltipTargetMissingStepData,
+} from './components/tooltip-target-missing-dialog';
 
 export const AnalyticsSteps = () => {
   const { analyticsData, loading } = useAnalyticsContext();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedStep, setSelectedStep] = useState<{ cvid: string; name: string } | null>(null);
+  const [selectedStep, setSelectedStep] = useState<TooltipTargetMissingStepData | null>(null);
 
   if (loading) {
     return <AnalyticsStepsSkeleton />;
@@ -53,8 +55,21 @@ export const AnalyticsSteps = () => {
   };
 
   const handleOpenDialog = (step: AnalyticsViewsByStep) => {
-    setSelectedStep({ cvid: step.cvid, name: step.name });
+    setSelectedStep({
+      cvid: step.cvid,
+      name: step.name,
+      tooltipTargetMissingCount: step.analytics.tooltipTargetMissingCount ?? 0,
+      uniqueTooltipTargetMissingCount: step.analytics.uniqueTooltipTargetMissingCount ?? 0,
+      totalViews: step.analytics.totalViews,
+    });
     setDialogOpen(true);
+  };
+
+  const computeFailureRate = (step: AnalyticsViewsByStep) => {
+    const totalViews = step.analytics.totalViews || 0;
+    const tooltipTargetMissingCount = step.analytics.tooltipTargetMissingCount ?? 0;
+    if (totalViews === 0) return 0;
+    return Math.round((tooltipTargetMissingCount / totalViews) * 100);
   };
 
   return (
@@ -73,7 +88,20 @@ export const AnalyticsSteps = () => {
                 <TableHead className="w-28">Unique views</TableHead>
                 <TableHead className="w-24">View rate</TableHead>
                 <TableHead />
-                <TableHead className="w-16" />
+                <TableHead className="w-28 text-center">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center cursor-help">
+                          <AlertTriangleIcon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Tooltip target not found</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -100,18 +128,16 @@ export const AnalyticsSteps = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell className="py-[1px]">
+                    <TableCell className="py-[1px] text-center">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
+                            <span
+                              className="text-destructive cursor-pointer hover:underline underline-offset-4"
                               onClick={() => handleOpenDialog(step)}
                             >
-                              <AlertTriangleIcon className="h-4 w-4 text-muted-foreground hover:text-warning" />
-                            </Button>
+                              {computeFailureRate(step)}%
+                            </span>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Click to view tooltip targets not found</p>
@@ -135,8 +161,7 @@ export const AnalyticsSteps = () => {
 
       {selectedStep && (
         <TooltipTargetMissingDialog
-          stepCvid={selectedStep.cvid}
-          stepName={selectedStep.name}
+          stepData={selectedStep}
           open={dialogOpen}
           onOpenChange={setDialogOpen}
         />

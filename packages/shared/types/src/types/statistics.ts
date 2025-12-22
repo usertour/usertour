@@ -29,6 +29,8 @@ export type AnalyticsViews = {
   totalViews: number;
   uniqueCompletions: number;
   totalCompletions: number;
+  tooltipTargetMissingCount?: number;
+  uniqueTooltipTargetMissingCount?: number;
 };
 
 export type AnalyticsViewsByDay = AnalyticsViews & {

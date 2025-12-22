@@ -44,9 +44,16 @@ interface TooltipTargetMissingSession {
   }>;
 }
 
+export interface TooltipTargetMissingStepData {
+  cvid: string;
+  name: string;
+  tooltipTargetMissingCount: number;
+  uniqueTooltipTargetMissingCount: number;
+  totalViews: number;
+}
+
 interface TooltipTargetMissingDialogProps {
-  stepCvid: string;
-  stepName: string;
+  stepData: TooltipTargetMissingStepData;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -54,8 +61,7 @@ interface TooltipTargetMissingDialogProps {
 const PAGE_SIZE = 10;
 
 export const TooltipTargetMissingDialog = ({
-  stepCvid,
-  stepName,
+  stepData,
   open,
   onOpenChange,
 }: TooltipTargetMissingDialogProps) => {
@@ -71,8 +77,13 @@ export const TooltipTargetMissingDialog = ({
     fetchPolicy: 'network-only',
   });
 
+  const failureRate =
+    stepData.totalViews > 0
+      ? Math.round((stepData.tooltipTargetMissingCount / stepData.totalViews) * 100)
+      : 0;
+
   const loadData = useCallback(
-    async (after?: string) => {
+    async (after?: string, currentPageIndex?: number) => {
       if (!environment?.id || !dateRange?.from || !dateRange?.to) return;
 
       const result = await fetchSessions({
@@ -85,7 +96,7 @@ export const TooltipTargetMissingDialog = ({
             startDate: startOfDay(new Date(dateRange.from)).toISOString(),
             endDate: endOfDay(new Date(dateRange.to)).toISOString(),
             timezone,
-            stepCvid,
+            stepCvid: stepData.cvid,
           },
           orderBy: {
             field: 'createdAt',
@@ -100,31 +111,64 @@ export const TooltipTargetMissingDialog = ({
         setTotalCount(data.totalCount);
 
         // Store the end cursor for next page navigation
+        const pageIdx = currentPageIndex ?? pageIndex;
         if (data.pageInfo.endCursor && after !== data.pageInfo.endCursor) {
           setCursors((prev) => {
             const newCursors = [...prev];
-            newCursors[pageIndex] = data.pageInfo.endCursor;
+            newCursors[pageIdx] = data.pageInfo.endCursor;
             return newCursors;
           });
         }
       }
     },
-    [environment?.id, dateRange, contentId, timezone, stepCvid, fetchSessions, pageIndex],
+    [environment?.id, dateRange, contentId, timezone, stepData.cvid, fetchSessions, pageIndex],
   );
 
+  // Only load data when dialog opens
   useEffect(() => {
     if (open) {
       setPageIndex(0);
       setCursors([]);
-      loadData();
+      setSessions([]);
+      setTotalCount(0);
+      // Call API directly to avoid dependency issues
+      if (environment?.id && dateRange?.from && dateRange?.to) {
+        fetchSessions({
+          variables: {
+            first: PAGE_SIZE,
+            query: {
+              environmentId: environment.id,
+              contentId,
+              startDate: startOfDay(new Date(dateRange.from)).toISOString(),
+              endDate: endOfDay(new Date(dateRange.to)).toISOString(),
+              timezone,
+              stepCvid: stepData.cvid,
+            },
+            orderBy: {
+              field: 'createdAt',
+              direction: 'desc',
+            },
+          },
+        }).then((result) => {
+          if (result.data?.queryTooltipTargetMissingSessions) {
+            const data = result.data.queryTooltipTargetMissingSessions;
+            setSessions(data.edges.map((edge: { node: TooltipTargetMissingSession }) => edge.node));
+            setTotalCount(data.totalCount);
+            if (data.pageInfo.endCursor) {
+              setCursors([data.pageInfo.endCursor]);
+            }
+          }
+        });
+      }
     }
-  }, [open, loadData]);
+  }, [open, environment?.id, dateRange, contentId, timezone, stepData.cvid, fetchSessions]);
 
   const handleNextPage = () => {
     const cursor = cursors[pageIndex];
     if (cursor) {
-      setPageIndex((prev) => prev + 1);
-      loadData(cursor);
+      const newPageIndex = pageIndex + 1;
+      setPageIndex(newPageIndex);
+      loadData(cursor, newPageIndex);
     }
   };
 
@@ -133,13 +177,13 @@ export const TooltipTargetMissingDialog = ({
       const newPageIndex = pageIndex - 1;
       setPageIndex(newPageIndex);
       const cursor = newPageIndex === 0 ? undefined : cursors[newPageIndex - 1];
-      loadData(cursor);
+      loadData(cursor, newPageIndex);
     }
   };
 
   const handleFirstPage = () => {
     setPageIndex(0);
-    loadData();
+    loadData(undefined, 0);
   };
 
   const pageCount = Math.ceil(totalCount / PAGE_SIZE);
@@ -161,8 +205,26 @@ export const TooltipTargetMissingDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Tooltip Target Missing - {stepName}</DialogTitle>
+          <DialogTitle>Tooltip Target Missing - {stepData.name}</DialogTitle>
         </DialogHeader>
+
+        {/* Stats summary */}
+        <div className="flex items-center gap-8 py-4 border-b">
+          <div className="flex flex-col">
+            <span className="text-2xl font-semibold">
+              {stepData.uniqueTooltipTargetMissingCount}
+            </span>
+            <span className="text-sm text-muted-foreground">Unique views</span>
+            <span className="text-xs text-muted-foreground">
+              {stepData.tooltipTargetMissingCount} in total
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2xl font-semibold text-destructive">{failureRate}%</span>
+            <span className="text-sm text-muted-foreground">Failure rate</span>
+            <span className="text-xs text-muted-foreground">{failureRate}% in total</span>
+          </div>
+        </div>
 
         <div className="flex-1 overflow-auto">
           {loading ? (

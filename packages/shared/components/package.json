@@ -57,7 +57,7 @@
     "@usertour-packages/tailwind": "workspace:^",
     "@usertour-packages/textarea": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
-    "@usertour/types": "^0.0.36",
+    "@usertour/types": "^0.0.37",
     "@usertour-packages/use-toast": "workspace:^",
     "date-fns": "^2.30.0",
     "deepmerge-ts": "^7.1.3",

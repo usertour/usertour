@@ -91,6 +91,7 @@ const EVENTS = [
   BizEvents.LAUNCHER_ACTIVATED,
   BizEvents.CHECKLIST_STARTED,
   BizEvents.CHECKLIST_COMPLETED,
+  BizEvents.TOOLTIP_TARGET_MISSING,
 ];
 
 export interface ChecklistData {
@@ -183,9 +184,13 @@ export class AnalyticsService {
 
     const stepSeenEventFilter = (ev: Event) => ev.codeName === BizEvents.FLOW_STEP_SEEN;
 
+    const tooltipTargetMissingEventFilter = (ev: Event) =>
+      ev.codeName === BizEvents.TOOLTIP_TARGET_MISSING;
+
     const startEvent = events.find(startEventFilter);
     const completeEvent = events.find(completeEventFilter);
     const stepSeenEvent = events.find(stepSeenEventFilter);
+    const tooltipTargetMissingEvent = events.find(tooltipTargetMissingEventFilter);
 
     if (!startEvent || !completeEvent || !stepSeenEvent) {
       return false;
@@ -220,6 +225,7 @@ export class AnalyticsService {
       condition,
       stepSeenEvent,
       completeEvent,
+      tooltipTargetMissingEvent,
     );
     const viewsByTask = await this.aggregationTasksByContent(condition, projectId);
     const viewsByDay = await this.aggregationViewsByDay(
@@ -479,6 +485,7 @@ export class AnalyticsService {
     condition: AnalyticsConditions,
     startEvent: Event,
     completeEvent: Event,
+    tooltipTargetMissingEvent?: Event,
   ) {
     const { contentId } = condition;
     const content = await this.prisma.content.findFirst({
@@ -524,6 +531,29 @@ export class AnalyticsService {
         eventId: completeEvent.id,
         isDistinct: false,
       });
+
+      // Query tooltip target missing counts for each step
+      let tooltipTargetMissingCount = 0;
+      let uniqueTooltipTargetMissingCount = 0;
+      if (tooltipTargetMissingEvent) {
+        const itemCondition = {
+          ...condition,
+          eventId: tooltipTargetMissingEvent.id,
+          key: 'flow_step_cvid',
+          value: stepInfo.cvid,
+        };
+        // Count unique users
+        uniqueTooltipTargetMissingCount = await this.aggregationByItem({
+          ...itemCondition,
+          isDistinct: true,
+        });
+        // Count total sessions
+        tooltipTargetMissingCount = await this.aggregationByItem({
+          ...itemCondition,
+          isDistinct: false,
+        });
+      }
+
       if (totalUniqueViews === undefined) {
         totalUniqueViews = uniqueViews;
       }
@@ -540,6 +570,8 @@ export class AnalyticsService {
           totalViews,
           uniqueCompletions,
           totalCompletions,
+          tooltipTargetMissingCount,
+          uniqueTooltipTargetMissingCount,
         },
       });
     }
@@ -652,8 +684,9 @@ export class AnalyticsService {
     const endDate = new Date(endDateStr);
 
     if (!isDistinct) {
+      // Count total sessions
       const data = await this.prisma.$queryRaw`
-      SELECT Count("BizEvent"."bizUserId") from "BizEvent" 
+      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -661,6 +694,7 @@ export class AnalyticsService {
       return Number.parseInt(data[0].count.toString());
     }
 
+    // Count unique users
     const data = await this.prisma.$queryRaw`
       SELECT Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
@@ -677,15 +711,17 @@ export class AnalyticsService {
 
     let data: [{ day: string; count: number }];
     if (!isDistinct) {
+      // Count total sessions per day
       data = await this.prisma.$queryRaw`
         SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
-          Count("BizEvent"."bizUserId") from "BizEvent" 
+          Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
           AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
           GROUP BY DAY
         `;
     } else {
+      // Count unique users per day
       data = await this.prisma.$queryRaw`
         SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
           Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent" 
@@ -779,8 +815,9 @@ export class AnalyticsService {
     const stepIndexStr = String(stepIndex);
 
     if (!isDistinct) {
+      // Count total sessions
       const data = await this.prisma.$queryRaw`
-      SELECT Count("BizEvent"."bizUserId") from "BizEvent" 
+      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -789,6 +826,7 @@ export class AnalyticsService {
       return Number.parseInt(data[0].count.toString());
     }
 
+    // Count unique users
     const data = await this.prisma.$queryRaw`
       SELECT Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
@@ -806,8 +844,9 @@ export class AnalyticsService {
     const endDate = new Date(endDateStr);
 
     if (!isDistinct) {
+      // Count total sessions
       const data = await this.prisma.$queryRaw`
-      SELECT Count("BizEvent"."bizUserId") from "BizEvent" 
+      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -816,6 +855,7 @@ export class AnalyticsService {
       return Number.parseInt(data[0].count.toString());
     }
 
+    // Count unique users
     const data = await this.prisma.$queryRaw`
       SELECT Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
