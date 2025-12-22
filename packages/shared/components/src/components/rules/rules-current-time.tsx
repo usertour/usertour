@@ -18,7 +18,7 @@ import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
@@ -279,11 +279,8 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
         <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
-            <RulesConditionIcon>
-              <TimeIcon width={16} height={16} />
-            </RulesConditionIcon>
             <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTrigger>
+              <RulesPopoverTrigger icon={<TimeIcon width={16} height={16} />}>
                 <div className="grow pr-6 text-sm text-wrap break-all">
                   Current time is {endDate ? 'between' : 'after'}{' '}
                   {startDate && (

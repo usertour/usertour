@@ -19,7 +19,7 @@ import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 interface RulesElementProps {
@@ -151,11 +151,11 @@ export const RulesElement = (props: RulesElementProps) => {
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
-              <RulesConditionIcon>
-                <ElementIcon width={16} height={16} />
-              </RulesConditionIcon>
               <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-                <RulesPopoverTrigger className="space-y-1">
+                <RulesPopoverTrigger
+                  className="space-y-1"
+                  icon={<ElementIcon width={16} height={16} />}
+                >
                   <div className="grow pr-6 text-sm text-wrap break-all space-y-1">
                     If this element{' '}
                   </div>

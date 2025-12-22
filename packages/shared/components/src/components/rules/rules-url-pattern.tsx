@@ -16,7 +16,7 @@ import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesContainerWrapper, RulesPopoverTriggerWrapper } from './rules-wrapper';
 
@@ -160,11 +160,8 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
         <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
-            <RulesConditionIcon>
-              <PagesIcon width={16} height={16} />
-            </RulesConditionIcon>
             <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTriggerWrapper>
+              <RulesPopoverTriggerWrapper icon={<PagesIcon width={16} height={16} />}>
                 <UrlPatternText
                   includesValues={filterIncludesValues}
                   excludesValues={filterExcludesValues}

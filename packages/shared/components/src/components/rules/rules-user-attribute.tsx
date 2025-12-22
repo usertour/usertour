@@ -39,7 +39,7 @@ import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
 import { RulesContainerWrapper, RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
@@ -613,11 +613,8 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps & { conditionI
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
-              <RulesConditionIcon>
-                <UserIcon width={16} height={16} />
-              </RulesConditionIcon>
               <RulesPopover onOpenChange={handleOpenChange} open={open}>
-                <RulesPopoverTriggerWrapper>
+                <RulesPopoverTriggerWrapper icon={<UserIcon width={16} height={16} />}>
                   <span className="font-bold">{selectedPreset?.displayName} </span>
                   {displayCondition} <span className="font-bold ">{displayValue}</span>
                   {localData?.logic === 'between' && (

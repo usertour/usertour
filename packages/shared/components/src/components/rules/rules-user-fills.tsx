@@ -9,7 +9,7 @@ import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 interface RulesUserFillsProps {
@@ -84,11 +84,11 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
         <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
-            <RulesConditionIcon>
-              <TextFillIcon width={16} height={16} />
-            </RulesConditionIcon>
             <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTrigger className="space-y-1">
+              <RulesPopoverTrigger
+                className="space-y-1"
+                icon={<TextFillIcon width={16} height={16} />}
+              >
                 <div className="grow pr-6 text-sm text-wrap break-all">
                   User fills in this input{' '}
                 </div>

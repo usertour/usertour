@@ -6,12 +6,28 @@ import { useRulesZIndex } from './rules-context';
 
 const RulesPopover = PopoverPrimitive.Root;
 
+interface RulesPopoverTriggerProps
+  extends React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger> {
+  icon?: React.ReactNode;
+}
+
 const RulesPopoverTrigger = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+  RulesPopoverTriggerProps
+>(({ className, children, icon, ...props }, ref) => (
   <PopoverPrimitive.Trigger ref={ref} asChild {...props}>
-    <div className={cn('grow pr-6 text-sm  py-2 text-wrap	 break-all', className)}>{children}</div>
+    <button
+      type="button"
+      className={cn(
+        'grow pr-6 text-sm py-2 text-wrap break-all text-left flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        className,
+      )}
+    >
+      {icon && (
+        <span className="flex-none px-2 inline-flex items-center justify-center">{icon}</span>
+      )}
+      <span className="flex-1">{children}</span>
+    </button>
   </PopoverPrimitive.Trigger>
 ));
 
@@ -24,7 +40,7 @@ const RulesPopoverContent = React.forwardRef<
       className,
       align = 'start',
       sideOffset = 5,
-      alignOffset = -32,
+      alignOffset = 0,
       side = 'bottom',
       children,
       ...props
