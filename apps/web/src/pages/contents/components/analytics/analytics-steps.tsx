@@ -129,21 +129,25 @@ export const AnalyticsSteps = () => {
                       />
                     </TableCell>
                     <TableCell className="py-[1px] text-center">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span
-                              className="text-destructive cursor-pointer hover:underline underline-offset-4"
-                              onClick={() => handleOpenDialog(step)}
-                            >
-                              {computeFailureRate(step)}%
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Click to view tooltip targets not found</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      {computeFailureRate(step) === 0 ? (
+                        <span className="text-muted-foreground">-</span>
+                      ) : (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                className="text-destructive cursor-pointer hover:underline underline-offset-4"
+                                onClick={() => handleOpenDialog(step)}
+                              >
+                                {computeFailureRate(step)}%
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Click to view tooltip targets not found</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
