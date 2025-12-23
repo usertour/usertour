@@ -1,10 +1,56 @@
 import { useQuery } from '@apollo/client';
 import { queryContentAnalytics } from '@usertour-packages/gql';
 import { AnalyticsData, AnalyticsQuery } from '@usertour/types';
-import { endOfDay, startOfDay, subDays } from 'date-fns';
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { endOfDay, startOfDay, subDays, subMonths } from 'date-fns';
+import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { useAppContext } from './app-context';
+
+// Date range preset types and options
+export type DatePresetKey = '30d' | '3m' | '6m' | '12m';
+
+export interface DatePresetOption {
+  key: DatePresetKey;
+  label: string;
+  getRange: () => DateRange;
+}
+
+export const DATE_PRESET_OPTIONS: DatePresetOption[] = [
+  {
+    key: '30d',
+    label: 'Past 30 days',
+    getRange: () => {
+      const today = new Date();
+      return { from: startOfDay(subDays(today, 29)), to: endOfDay(today) };
+    },
+  },
+  {
+    key: '3m',
+    label: 'Past 3 months',
+    getRange: () => {
+      const today = new Date();
+      return { from: startOfDay(subMonths(today, 3)), to: endOfDay(today) };
+    },
+  },
+  {
+    key: '6m',
+    label: 'Past 6 months',
+    getRange: () => {
+      const today = new Date();
+      return { from: startOfDay(subMonths(today, 6)), to: endOfDay(today) };
+    },
+  },
+  {
+    key: '12m',
+    label: 'Past 12 months',
+    getRange: () => {
+      const today = new Date();
+      return { from: startOfDay(subMonths(today, 12)), to: endOfDay(today) };
+    },
+  },
+];
+
+export const DEFAULT_PRESET_KEY: DatePresetKey = '30d';
 
 export interface AnalyticsProviderProps {
   children?: ReactNode;
@@ -19,6 +65,8 @@ export interface AnalyticsContextValue {
   setQuery: React.Dispatch<React.SetStateAction<AnalyticsQuery>>;
   dateRange: DateRange | undefined;
   setDateRange: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
+  selectedPreset: DatePresetKey | null;
+  setSelectedPreset: React.Dispatch<React.SetStateAction<DatePresetKey | null>>;
   timezone: string;
   contentId: string;
 }
@@ -29,11 +77,14 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
   const { children, contentId } = props;
   const [query, setQuery] = useState<AnalyticsQuery>({ contentId, startDate: '', endDate: '' });
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | undefined>();
-  const now = new Date();
-  const defaultDateRange = {
-    from: startOfDay(new Date(subDays(now, 29))),
-    to: endOfDay(new Date(now)),
-  };
+  const [selectedPreset, setSelectedPreset] = useState<DatePresetKey | null>(DEFAULT_PRESET_KEY);
+
+  // Generate default date range from default preset
+  const defaultDateRange = useMemo(() => {
+    const preset = DATE_PRESET_OPTIONS.find((p) => p.key === DEFAULT_PRESET_KEY);
+    return preset?.getRange();
+  }, []);
+
   const [dateRange, setDateRange] = useState<DateRange | undefined>(defaultDateRange);
   const { environment } = useAppContext();
 
@@ -67,6 +118,8 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
     setQuery,
     dateRange,
     setDateRange,
+    selectedPreset,
+    setSelectedPreset,
     timezone,
     contentId,
   };
