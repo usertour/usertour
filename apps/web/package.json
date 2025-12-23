@@ -73,6 +73,7 @@
     "@usertour-packages/tabs": "workspace:^",
     "@usertour-packages/tailwind": "workspace:^",
     "@usertour-packages/textarea": "workspace:^",
+    "@usertour-packages/toggle": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
     "@usertour/helpers": "^0.0.52",
