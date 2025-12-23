@@ -230,7 +230,7 @@ export const TooltipTargetMissingDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Tooltip targets not found - {stepData.name}</DialogTitle>
         </DialogHeader>
@@ -249,8 +249,8 @@ export const TooltipTargetMissingDialog = ({
               <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
                   <TableHead className="w-1/3">User</TableHead>
-                  <TableHead className="w-1/3">URL</TableHead>
-                  <TableHead className="w-1/3">Time</TableHead>
+                  <TableHead className="w-1/2">URL</TableHead>
+                  <TableHead className="w-1/6">Time</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
