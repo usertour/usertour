@@ -48,25 +48,41 @@ const getEventData = (session: BizSession) => {
 const StatsSummary = ({ stepData }: { stepData: AnalyticsViewsByStep }) => {
   const uniqueTooltipTargetMissingCount = stepData.analytics.uniqueTooltipTargetMissingCount ?? 0;
   const totalViews = stepData.analytics.totalViews;
+  const uniqueViews = stepData.analytics.uniqueViews;
   const tooltipTargetMissingCount = stepData.analytics.tooltipTargetMissingCount ?? 0;
   const customSelector = stepData?.target?.customSelector ?? '';
 
-  const failureRate =
+  const uniqueFailureRate =
+    uniqueViews > 0 ? Math.round((uniqueTooltipTargetMissingCount / uniqueViews) * 100) : 0;
+  const totalFailureRate =
     totalViews > 0 ? Math.round((tooltipTargetMissingCount / totalViews) * 100) : 0;
   return (
-    <div className="flex items-center gap-8 py-4 border-b">
-      <div className="w-48 h-48 bg-muted rounded-lg p-1 text-muted-foreground flex items-center justify-center overflow-hidden break-words">
+    <div className="flex items-center gap-8 py-6">
+      <div className="w-56 h-36 bg-muted rounded-lg p-1 text-muted-foreground flex items-center justify-center overflow-hidden break-words">
         {customSelector}
       </div>
-      <div className="flex flex-col">
-        <span className="text-2xl font-semibold">{uniqueTooltipTargetMissingCount}</span>
-        <span className="text-sm text-muted-foreground">Unique views</span>
-        <span className="text-xs text-muted-foreground">{totalViews} in total</span>
+      <div className="flex-1 flex items-center justify-center gap-3">
+        <span className="text-5xl font-semibold text-primary">{uniqueViews}</span>
+        <div className="flex flex-col justify-center gap-1">
+          <span className="text-base text-muted-foreground leading-tight">Unique views</span>
+          <span className="text-sm leading-tight">{totalViews} in total</span>
+        </div>
       </div>
-      <div className="flex flex-col">
-        <span className="text-2xl font-semibold text-destructive">{failureRate}%</span>
-        <span className="text-sm text-muted-foreground">Failure rate</span>
-        <span className="text-xs text-muted-foreground">{failureRate}% in total</span>
+      <div className="flex-1 flex items-center justify-center gap-3">
+        <span className="text-5xl font-semibold text-destructive">
+          {uniqueTooltipTargetMissingCount}
+        </span>
+        <div className="flex flex-col justify-center gap-1">
+          <span className="text-base text-muted-foreground leading-tight">Times not found</span>
+          <span className="text-sm leading-tight">{tooltipTargetMissingCount} in total</span>
+        </div>
+      </div>
+      <div className="flex-1 flex items-center justify-center gap-3">
+        <span className="text-5xl font-semibold text-destructive">{uniqueFailureRate}%</span>
+        <div className="flex flex-col justify-center gap-1">
+          <span className="text-base text-muted-foreground leading-tight">Failure rate</span>
+          <span className="text-sm leading-tight">{totalFailureRate}% in total</span>
+        </div>
       </div>
     </div>
   );
@@ -221,8 +237,8 @@ export const TooltipTargetMissingDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>Tooltip targets not found - {stepData.name}</DialogTitle>
         </DialogHeader>
 
@@ -230,36 +246,40 @@ export const TooltipTargetMissingDialog = ({
           <LoadingSpinner size="lg" />
         ) : (
           <div ref={setScrollContainer} className="flex-1 min-h-0 overflow-auto">
-            <StatsSummary stepData={stepData} />
+            <div className="px-6">
+              <StatsSummary stepData={stepData} />
+            </div>
 
-            <Table>
-              <TableHeader className="sticky top-0 bg-background z-10">
-                <TableRow>
-                  <TableHead className="w-1/3">User</TableHead>
-                  <TableHead className="w-1/2">URL</TableHead>
-                  <TableHead className="w-1/6">Time</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sessions.length > 0 ? (
-                  sessions.map((session) => (
-                    <SessionRow
-                      key={session.id}
-                      session={session}
-                      environmentId={environment?.id || ''}
-                    />
-                  ))
-                ) : (
-                  <EmptyState />
-                )}
-              </TableBody>
-            </Table>
+            <div className="px-6 pb-6">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead className="w-1/3">User</TableHead>
+                    <TableHead className="w-1/2">URL</TableHead>
+                    <TableHead className="w-1/6">Time</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sessions.length > 0 ? (
+                    sessions.map((session) => (
+                      <SessionRow
+                        key={session.id}
+                        session={session}
+                        environmentId={environment?.id || ''}
+                      />
+                    ))
+                  ) : (
+                    <EmptyState />
+                  )}
+                </TableBody>
+              </Table>
 
-            {pageInfo.hasNextPage && (
-              <div ref={sentinelRef} className="py-4">
-                {loadingMore && <LoadingSpinner size="sm" />}
-              </div>
-            )}
+              {pageInfo.hasNextPage && (
+                <div ref={sentinelRef} className="py-4">
+                  {loadingMore && <LoadingSpinner size="sm" />}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </DialogContent>
