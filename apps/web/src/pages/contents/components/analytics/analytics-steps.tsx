@@ -21,15 +21,12 @@ import { AlertTriangleIcon } from 'lucide-react';
 import { GoalStepBadge } from '@/components/molecules/goal-step-badge';
 
 import { AnalyticsStepsSkeleton } from './analytics-skeleton';
-import {
-  TooltipTargetMissingDialog,
-  TooltipTargetMissingStepData,
-} from './components/tooltip-target-missing-dialog';
+import { TooltipTargetMissingDialog } from './components/tooltip-target-missing-dialog';
 
 export const AnalyticsSteps = () => {
   const { analyticsData, loading } = useAnalyticsContext();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedStep, setSelectedStep] = useState<TooltipTargetMissingStepData | null>(null);
+  const [selectedStep, setSelectedStep] = useState<AnalyticsViewsByStep | null>(null);
 
   if (loading) {
     return <AnalyticsStepsSkeleton />;
@@ -55,13 +52,7 @@ export const AnalyticsSteps = () => {
   };
 
   const handleOpenDialog = (step: AnalyticsViewsByStep) => {
-    setSelectedStep({
-      cvid: step.cvid,
-      name: step.name,
-      tooltipTargetMissingCount: step.analytics.tooltipTargetMissingCount ?? 0,
-      uniqueTooltipTargetMissingCount: step.analytics.uniqueTooltipTargetMissingCount ?? 0,
-      totalViews: step.analytics.totalViews,
-    });
+    setSelectedStep(step);
     setDialogOpen(true);
   };
 

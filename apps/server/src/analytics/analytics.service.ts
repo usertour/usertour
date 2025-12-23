@@ -559,12 +559,16 @@ export class AnalyticsService {
       }
       const explicitCompletionStep =
         (stepInfo.setting as StepSettings)?.explicitCompletionStep ?? false;
+      const target = stepInfo.target;
+      const type = stepInfo.type;
 
       ret.push({
         name: stepInfo.name,
         cvid: stepInfo.cvid,
         stepIndex: index,
         explicitCompletionStep,
+        target,
+        type,
         analytics: {
           uniqueViews,
           totalViews,

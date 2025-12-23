@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { useQueryTooltipTargetMissingSessionsLazyQuery } from '@usertour-packages/shared-hooks';
-import type { BizSession, BizEvent } from '@usertour/types';
+import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
 import { UserAvatar } from '@/components/molecules/user-avatar';
@@ -21,16 +21,8 @@ import { SpinnerIcon } from '@usertour-packages/icons';
 import { BizEvents, EventAttributes } from '@usertour/types';
 import { useInView } from 'react-intersection-observer';
 
-export interface TooltipTargetMissingStepData {
-  cvid: string;
-  name: string;
-  tooltipTargetMissingCount: number;
-  uniqueTooltipTargetMissingCount: number;
-  totalViews: number;
-}
-
 interface TooltipTargetMissingDialogProps {
-  stepData: TooltipTargetMissingStepData;
+  stepData: AnalyticsViewsByStep;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -53,28 +45,32 @@ const getEventData = (session: BizSession) => {
 };
 
 // Stats summary component
-const StatsSummary = ({
-  uniqueCount,
-  totalCount,
-  failureRate,
-}: {
-  uniqueCount: number;
-  totalCount: number;
-  failureRate: number;
-}) => (
-  <div className="flex items-center gap-8 py-4 border-b">
-    <div className="flex flex-col">
-      <span className="text-2xl font-semibold">{uniqueCount}</span>
-      <span className="text-sm text-muted-foreground">Unique views</span>
-      <span className="text-xs text-muted-foreground">{totalCount} in total</span>
+const StatsSummary = ({ stepData }: { stepData: AnalyticsViewsByStep }) => {
+  const uniqueTooltipTargetMissingCount = stepData.analytics.uniqueTooltipTargetMissingCount ?? 0;
+  const totalViews = stepData.analytics.totalViews;
+  const tooltipTargetMissingCount = stepData.analytics.tooltipTargetMissingCount ?? 0;
+  const customSelector = stepData?.target?.customSelector ?? '';
+
+  const failureRate =
+    totalViews > 0 ? Math.round((tooltipTargetMissingCount / totalViews) * 100) : 0;
+  return (
+    <div className="flex items-center gap-8 py-4 border-b">
+      <div className="w-48 h-48 bg-muted rounded-lg p-1 text-muted-foreground flex items-center justify-center overflow-hidden break-words">
+        {customSelector}
+      </div>
+      <div className="flex flex-col">
+        <span className="text-2xl font-semibold">{uniqueTooltipTargetMissingCount}</span>
+        <span className="text-sm text-muted-foreground">Unique views</span>
+        <span className="text-xs text-muted-foreground">{totalViews} in total</span>
+      </div>
+      <div className="flex flex-col">
+        <span className="text-2xl font-semibold text-destructive">{failureRate}%</span>
+        <span className="text-sm text-muted-foreground">Failure rate</span>
+        <span className="text-xs text-muted-foreground">{failureRate}% in total</span>
+      </div>
     </div>
-    <div className="flex flex-col">
-      <span className="text-2xl font-semibold text-destructive">{failureRate}%</span>
-      <span className="text-sm text-muted-foreground">Failure rate</span>
-      <span className="text-xs text-muted-foreground">{failureRate}% in total</span>
-    </div>
-  </div>
-);
+  );
+};
 
 // Session row component
 const SessionRow = ({
@@ -159,11 +155,6 @@ export const TooltipTargetMissingDialog = ({
     root: scrollContainer,
   });
 
-  const failureRate =
-    stepData.totalViews > 0
-      ? Math.round((stepData.tooltipTargetMissingCount / stepData.totalViews) * 100)
-      : 0;
-
   const buildQueryParams = useCallback(() => {
     if (!environment?.id || !dateRange?.from || !dateRange?.to) return null;
     return {
@@ -239,11 +230,7 @@ export const TooltipTargetMissingDialog = ({
           <LoadingSpinner size="lg" />
         ) : (
           <div ref={setScrollContainer} className="flex-1 min-h-0 overflow-auto">
-            <StatsSummary
-              uniqueCount={stepData.uniqueTooltipTargetMissingCount}
-              totalCount={stepData.tooltipTargetMissingCount}
-              failureRate={failureRate}
-            />
+            <StatsSummary stepData={stepData} />
 
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10">

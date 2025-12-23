@@ -1,5 +1,5 @@
 import { BizEvent, BizUser } from './biz';
-import { Content, ContentVersion } from './contents';
+import { Content, ContentVersion, ElementSelectorPropsData } from './contents';
 
 export type ContentAnalytics = {
   id: string;
@@ -43,6 +43,8 @@ export type AnalyticsViewsByStep = {
   stepIndex: number;
   explicitCompletionStep: boolean;
   analytics: AnalyticsViews;
+  target: ElementSelectorPropsData;
+  type: string;
 };
 
 export type AnalyticsViewsByTask = {
