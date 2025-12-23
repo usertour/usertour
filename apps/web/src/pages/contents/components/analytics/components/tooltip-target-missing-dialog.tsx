@@ -20,6 +20,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { BizEvents, EventAttributes } from '@usertour/types';
 import { useInView } from 'react-intersection-observer';
+import { calculateUniqueFailureRate, calculateTotalFailureRate } from '@/utils/analytics';
 
 interface TooltipTargetMissingDialogProps {
   stepData: AnalyticsViewsByStep;
@@ -52,10 +53,12 @@ const StatsSummary = ({ stepData }: { stepData: AnalyticsViewsByStep }) => {
   const tooltipTargetMissingCount = stepData.analytics.tooltipTargetMissingCount ?? 0;
   const customSelector = stepData?.target?.customSelector ?? '';
 
-  const uniqueFailureRate =
-    uniqueViews > 0 ? Math.round((uniqueTooltipTargetMissingCount / uniqueViews) * 100) : 0;
-  const totalFailureRate =
-    totalViews > 0 ? Math.round((tooltipTargetMissingCount / totalViews) * 100) : 0;
+  const uniqueFailureRate = calculateUniqueFailureRate(
+    uniqueTooltipTargetMissingCount,
+    uniqueViews,
+  );
+  const totalFailureRate = calculateTotalFailureRate(tooltipTargetMissingCount, totalViews);
+
   return (
     <div className="flex items-center gap-8 py-6">
       <div className="w-56 h-36 bg-muted rounded-lg p-1 text-muted-foreground flex items-center justify-center overflow-hidden break-words">
@@ -239,7 +242,9 @@ export const TooltipTargetMissingDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 pt-6">
-          <DialogTitle>Tooltip targets not found - {stepData.name}</DialogTitle>
+          <DialogTitle>
+            Tooltip targets not found - Step {stepData.stepIndex + 1}. {stepData.name}
+          </DialogTitle>
         </DialogHeader>
 
         {isInitialLoading ? (

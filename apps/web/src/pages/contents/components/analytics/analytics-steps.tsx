@@ -14,11 +14,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { AnalyticsViewsByStep } from '@usertour/types';
+import { AnalyticsViewsByStep, StepContentType } from '@usertour/types';
 import { useState } from 'react';
 import { AlertTriangleIcon } from 'lucide-react';
 
 import { GoalStepBadge } from '@/components/molecules/goal-step-badge';
+import { calculateUniqueFailureRate } from '@/utils/analytics';
 
 import { AnalyticsStepsSkeleton } from './analytics-skeleton';
 import { TooltipTargetMissingDialog } from './components/tooltip-target-missing-dialog';
@@ -57,10 +58,10 @@ export const AnalyticsSteps = () => {
   };
 
   const computeFailureRate = (step: AnalyticsViewsByStep) => {
-    const totalViews = step.analytics.totalViews || 0;
-    const tooltipTargetMissingCount = step.analytics.tooltipTargetMissingCount ?? 0;
-    if (totalViews === 0) return 0;
-    return Math.round((tooltipTargetMissingCount / totalViews) * 100);
+    return calculateUniqueFailureRate(
+      step.analytics.uniqueTooltipTargetMissingCount ?? 0,
+      step.analytics.uniqueViews || 0,
+    );
   };
 
   return (
@@ -120,7 +121,7 @@ export const AnalyticsSteps = () => {
                       />
                     </TableCell>
                     <TableCell className="py-[1px] text-center">
-                      {computeFailureRate(step) === 0 ? (
+                      {computeFailureRate(step) === 0 || step.type !== StepContentType.TOOLTIP ? (
                         <span className="text-muted-foreground">-</span>
                       ) : (
                         <TooltipProvider>
