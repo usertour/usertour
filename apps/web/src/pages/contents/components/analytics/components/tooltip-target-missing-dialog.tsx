@@ -232,7 +232,7 @@ export const TooltipTargetMissingDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Tooltip Target Missing - {stepData.name}</DialogTitle>
+          <DialogTitle>Tooltip targets not found - {stepData.name}</DialogTitle>
         </DialogHeader>
 
         {isInitialLoading ? (
