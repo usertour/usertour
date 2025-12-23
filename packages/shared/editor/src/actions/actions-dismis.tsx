@@ -11,6 +11,7 @@ export interface ContentActionsDismissProps {
   type: string;
   index: number;
   text?: string;
+  conditionId?: string;
 }
 
 export const ContentActionsDismiss = (props: ContentActionsDismissProps) => {

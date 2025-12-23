@@ -38,6 +38,7 @@ import {
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-packages/icons';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface SelectItemType {
   id: string;
@@ -53,6 +54,7 @@ export interface ContentActionsContentsProps {
   };
   type: string;
   index: number;
+  conditionId?: string;
 }
 
 interface ContentActionsContentsContextValue {
@@ -335,7 +337,7 @@ const useErrorHandling = (
 };
 
 export const ContentActionsContents = (props: ContentActionsContentsProps) => {
-  const { index, data } = props;
+  const { index, data, conditionId } = props;
   const { updateConditionData } = useActionsGroupContext();
   const { contents, zIndex } = useContentActionsContext();
 
@@ -352,7 +354,7 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
     initialItem ? { id: initialItem?.id, name: initialItem?.name || '' } : null,
   );
   const [stepCvid, setStepCvid] = useState<string | undefined>(data?.stepCvid);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
 
   // Memoize context value
   const contextValue = useMemo(

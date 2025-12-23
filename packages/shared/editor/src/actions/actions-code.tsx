@@ -18,6 +18,7 @@ import {
 } from './actions-popper';
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface ContentActionsCodeProps {
   index: number;
@@ -26,6 +27,7 @@ export interface ContentActionsCodeProps {
     openType: string;
     value: string;
   };
+  conditionId?: string;
 }
 
 // Custom hook for code error handling
@@ -106,12 +108,12 @@ const CodeDisplayText = ({ value }: { value: string }) => {
 };
 
 export const ContentActionsCode = (props: ContentActionsCodeProps) => {
-  const { data, index } = props;
+  const { data, index, conditionId } = props;
   const { zIndex } = useContentActionsContext();
 
   // Initialize state with memoized initial value
   const initialValue = useMemo(() => data?.value || '', [data?.value]);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const [value, setValue] = useState(initialValue);
 
   // Handle error state
