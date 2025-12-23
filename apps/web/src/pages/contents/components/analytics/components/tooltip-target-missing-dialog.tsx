@@ -14,6 +14,8 @@ import { useQueryTooltipTargetMissingSessionsLazyQuery } from '@usertour-package
 import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
+import type { DatePresetKey } from '@/utils/date-presets';
+import type { DateRange } from 'react-day-picker';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { formatDistanceToNow, endOfDay, startOfDay } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
@@ -21,6 +23,7 @@ import { SpinnerIcon } from '@usertour-packages/icons';
 import { BizEvents, EventAttributes } from '@usertour/types';
 import { useInView } from 'react-intersection-observer';
 import { calculateUniqueFailureRate, calculateTotalFailureRate } from '@/utils/analytics';
+import { DateRangePicker } from '@/components/molecules/date-range-picker';
 
 interface TooltipTargetMissingDialogProps {
   stepData: AnalyticsViewsByStep;
@@ -60,7 +63,7 @@ const StatsSummary = ({ stepData }: { stepData: AnalyticsViewsByStep }) => {
   const totalFailureRate = calculateTotalFailureRate(tooltipTargetMissingCount, totalViews);
 
   return (
-    <div className="flex items-center gap-8 py-6">
+    <div className="flex items-center gap-8">
       <div className="w-56 h-36 bg-muted rounded-lg p-1 text-muted-foreground flex items-center justify-center overflow-hidden break-words">
         {customSelector}
       </div>
@@ -161,13 +164,33 @@ export const TooltipTargetMissingDialog = ({
   onOpenChange,
 }: TooltipTargetMissingDialogProps) => {
   const { environment } = useAppContext();
-  const { contentId, dateRange, timezone } = useAnalyticsContext();
+  const {
+    contentId,
+    dateRange: globalDateRange,
+    selectedPreset: globalSelectedPreset,
+    timezone,
+  } = useAnalyticsContext();
   const { invoke: fetchSessions, loading } = useQueryTooltipTargetMissingSessionsLazyQuery();
+
+  // Local date range state (independent from global context)
+  const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(globalDateRange);
+  const [localSelectedPreset, setLocalSelectedPreset] = useState<DatePresetKey | null>(
+    globalSelectedPreset,
+  );
 
   const [sessions, setSessions] = useState<BizSession[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo>({ endCursor: null, hasNextPage: false });
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isRefetching, setIsRefetching] = useState(false);
   const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null);
+
+  // Sync local state with global state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setLocalDateRange(globalDateRange);
+      setLocalSelectedPreset(globalSelectedPreset);
+    }
+  }, [open, globalDateRange, globalSelectedPreset]);
 
   const { ref: sentinelRef, inView } = useInView({
     threshold: 0,
@@ -175,16 +198,16 @@ export const TooltipTargetMissingDialog = ({
   });
 
   const buildQueryParams = useCallback(() => {
-    if (!environment?.id || !dateRange?.from || !dateRange?.to) return null;
+    if (!environment?.id || !localDateRange?.from || !localDateRange?.to) return null;
     return {
       environmentId: environment.id,
       contentId,
-      startDate: startOfDay(new Date(dateRange.from)).toISOString(),
-      endDate: endOfDay(new Date(dateRange.to)).toISOString(),
+      startDate: startOfDay(new Date(localDateRange.from)).toISOString(),
+      endDate: endOfDay(new Date(localDateRange.to)).toISOString(),
       timezone,
       stepCvid: stepData.cvid,
     };
-  }, [environment?.id, dateRange, contentId, timezone, stepData.cvid]);
+  }, [environment?.id, localDateRange, contentId, timezone, stepData.cvid]);
 
   const handleFetchResult = useCallback((data: any, append = false) => {
     if (!data) return;
@@ -216,27 +239,38 @@ export const TooltipTargetMissingDialog = ({
     }
   }, [inView, pageInfo.hasNextPage, loadingMore, loading, loadMore]);
 
-  // Load initial data when dialog opens
+  // Load initial data when dialog opens or local date range changes
   useEffect(() => {
-    if (!open || !environment?.id || !dateRange?.from || !dateRange?.to) return;
+    if (!open || !environment?.id || !localDateRange?.from || !localDateRange?.to) return;
 
+    setIsRefetching(true);
     setSessions([]);
     setPageInfo({ endCursor: null, hasNextPage: false });
 
     const queryParams = {
       environmentId: environment.id,
       contentId,
-      startDate: startOfDay(new Date(dateRange.from)).toISOString(),
-      endDate: endOfDay(new Date(dateRange.to)).toISOString(),
+      startDate: startOfDay(new Date(localDateRange.from)).toISOString(),
+      endDate: endOfDay(new Date(localDateRange.to)).toISOString(),
       timezone,
       stepCvid: stepData.cvid,
     };
 
-    fetchSessions(queryParams, { first: PAGE_SIZE }).then(handleFetchResult);
+    fetchSessions(queryParams, { first: PAGE_SIZE })
+      .then(handleFetchResult)
+      .finally(() => setIsRefetching(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, environment?.id, contentId, timezone, stepData.cvid]);
+  }, [
+    open,
+    environment?.id,
+    contentId,
+    timezone,
+    stepData.cvid,
+    localDateRange?.from,
+    localDateRange?.to,
+  ]);
 
-  const isInitialLoading = loading && sessions.length === 0;
+  const isInitialLoading = (loading || isRefetching) && sessions.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -251,11 +285,19 @@ export const TooltipTargetMissingDialog = ({
           <LoadingSpinner size="lg" />
         ) : (
           <div ref={setScrollContainer} className="flex-1 min-h-0 overflow-auto">
+            <div className="px-6 flex justify-end">
+              <DateRangePicker
+                dateRange={localDateRange}
+                setDateRange={setLocalDateRange}
+                selectedPreset={localSelectedPreset}
+                setSelectedPreset={setLocalSelectedPreset}
+              />
+            </div>
             <div className="px-6">
               <StatsSummary stepData={stepData} />
             </div>
 
-            <div className="px-6 pb-6">
+            <div className="p-6">
               <Table>
                 <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
