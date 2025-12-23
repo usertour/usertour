@@ -5,11 +5,8 @@ import { format } from 'date-fns';
 import { useCallback, useMemo, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 
-import {
-  DATE_PRESET_OPTIONS,
-  type DatePresetOption,
-  useAnalyticsContext,
-} from '@/contexts/analytics-context';
+import { useAnalyticsContext } from '@/contexts/analytics-context';
+import { DATE_PRESET_OPTIONS, type DatePresetOption } from '@/utils/date-presets';
 import { Button } from '@usertour-packages/button';
 import { Calendar } from '@usertour-packages/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
