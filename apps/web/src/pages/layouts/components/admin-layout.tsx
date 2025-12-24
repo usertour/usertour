@@ -1,13 +1,10 @@
 import { useAppContext } from '@/contexts/app-context';
 import { AttributeListProvider } from '@/contexts/attribute-list-context';
-import {
-  EnvironmentListProvider,
-  useEnvironmentListContext,
-} from '@/contexts/environment-list-context';
+import { EnvironmentListProvider } from '@/contexts/environment-list-context';
 import { SubscriptionProvider } from '@/contexts/subscription-context';
+import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { userTourToken } from '@/utils/env';
 import { Button } from '@usertour-packages/button';
-import { storage } from '@usertour/helpers';
 import { cn } from '@usertour/helpers';
 import { UserProfile } from '@usertour/types';
 import { usePostHog } from 'posthog-js/react';
@@ -65,21 +62,7 @@ interface AdminLayoutBodyProps {
 
 export const AdminLayoutContent = (props: AdminLayoutBodyProps) => {
   const { children } = props;
-  const { envId } = useParams();
-  const { setEnvironment } = useAppContext();
-
-  const { environmentList } = useEnvironmentListContext();
-
-  useEffect(() => {
-    const _envId = envId || storage.getLocalStorage('environmentId');
-    if (environmentList) {
-      const currentEnv = environmentList.find((env) => env.id === _envId) || environmentList[0];
-      if (currentEnv) {
-        setEnvironment(currentEnv);
-        storage.setLocalStorage('environmentId', currentEnv?.id);
-      }
-    }
-  }, [envId, environmentList, setEnvironment]);
+  useEnvironmentSelection();
 
   return <div className="flex-col md:flex">{children}</div>;
 };
@@ -93,52 +76,7 @@ interface AdminLayoutNewContentProps {
 
 export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
   const { children, className } = props;
-  const { envId } = useParams();
-  const { setEnvironment } = useAppContext();
-
-  const { environmentList } = useEnvironmentListContext();
-
-  useEffect(() => {
-    if (!environmentList || environmentList.length === 0) {
-      return;
-    }
-
-    // Priority 1: Use envId from URL params if provided
-    if (envId) {
-      const matchedEnv = environmentList.find((env) => env.id === envId);
-      if (matchedEnv) {
-        setEnvironment(matchedEnv);
-        storage.setLocalStorage('environmentId', matchedEnv.id);
-        return;
-      }
-    }
-
-    // Priority 2: Use environmentId from localStorage
-    const storedEnvId = storage.getLocalStorage('environmentId');
-    if (storedEnvId) {
-      const matchedEnv = environmentList.find((env) => env.id === storedEnvId);
-      if (matchedEnv) {
-        setEnvironment(matchedEnv);
-        storage.setLocalStorage('environmentId', matchedEnv.id);
-        return;
-      }
-    }
-
-    // Priority 3: Use environment with isPrimary === true
-    const primaryEnv = environmentList.find((env) => env.isPrimary === true);
-    if (primaryEnv) {
-      setEnvironment(primaryEnv);
-      storage.setLocalStorage('environmentId', primaryEnv.id);
-      return;
-    }
-
-    // Priority 4: Fallback to first environment
-    const currentEnv = environmentList[0];
-    if (currentEnv) {
-      setEnvironment(currentEnv);
-      storage.setLocalStorage('environmentId', currentEnv.id);
-    }
-  }, [envId, environmentList, setEnvironment]);
+  useEnvironmentSelection();
 
   return (
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
