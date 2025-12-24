@@ -21,9 +21,10 @@ import { EnvironmentListAction } from './environment-list-action';
 
 interface EnvironmentListContentTableRowProps {
   environment: Environment;
+  environmentCount: number;
 }
 const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowProps) => {
-  const { environment } = props;
+  const { environment, environmentCount } = props;
   const [_, copyToClipboard] = useCopyToClipboard();
   const [isShowCopy, setIsShowCopy] = useState<boolean>(false);
   const { toast } = useToast();
@@ -53,7 +54,7 @@ const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowPro
       </TableCell>
       <TableCell>{format(new Date(environment.createdAt), 'PPpp')}</TableCell>
       <TableCell>
-        <EnvironmentListAction environment={environment} />
+        <EnvironmentListAction environment={environment} environmentCount={environmentCount} />
       </TableCell>
     </TableRow>
   );
@@ -86,7 +87,11 @@ export const EnvironmentListContent = () => {
           <TableBody>
             {environmentList ? (
               environmentList?.map((environment: Environment) => (
-                <EnvironmentListContentTableRow environment={environment} key={environment.id} />
+                <EnvironmentListContentTableRow
+                  environment={environment}
+                  environmentCount={environmentList.length}
+                  key={environment.id}
+                />
               ))
             ) : (
               <TableRow>

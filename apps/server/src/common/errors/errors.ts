@@ -349,6 +349,14 @@ export class S3ConfigNotSetError extends BaseError {
   };
 }
 
+export class LastEnvironmentCannotBeDeletedError extends BaseError {
+  code = 'E0022';
+  messageDict = {
+    en: 'Cannot delete the last environment. At least one environment is required.',
+    'zh-CN': '无法删除最后一个环境。至少需要保留一个环境。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -389,6 +397,7 @@ const errorMap = {
   E1018: SDKAuthenticationError,
   E0020: EmailConfigNotSetError,
   E0021: S3ConfigNotSetError,
+  E0022: LastEnvironmentCannotBeDeletedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

@@ -16,13 +16,15 @@ import { EnvironmentEditForm } from './environment-edit-form';
 import { useAppContext } from '@/contexts/app-context';
 type EnvironmentListActionProps = {
   environment: Environment;
+  environmentCount?: number;
 };
 export const EnvironmentListAction = (props: EnvironmentListActionProps) => {
-  const { environment } = props;
+  const { environment, environmentCount = 0 } = props;
   const [open, setOpen] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const { refetch } = useEnvironmentListContext();
   const { isViewOnly } = useAppContext();
+  const isDeleteDisabled = environmentCount <= 1 || isViewOnly;
   const handleOpen = () => {
     setOpen(true);
   };
@@ -57,7 +59,8 @@ export const EnvironmentListAction = (props: EnvironmentListActionProps) => {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={handleDeleteOpen}
-            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+            disabled={isDeleteDisabled}
+            className="text-destructive focus:bg-destructive/10 focus:text-destructive disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Delete2Icon className="w-4 h-4 mr-2" />
             Delete

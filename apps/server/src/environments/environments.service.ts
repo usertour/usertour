@@ -2,7 +2,7 @@ import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
-import { ParamsError } from '@/common/errors';
+import { LastEnvironmentCannotBeDeletedError, ParamsError } from '@/common/errors';
 import { CreateAccessTokenInput } from './dto/access-token.dto';
 
 @Injectable()
@@ -48,6 +48,27 @@ export class EnvironmentsService {
 
   async delete(id: string) {
     return await this.prisma.$transaction(async (tx) => {
+      // Get the environment to find its projectId
+      const environment = await tx.environment.findUnique({
+        where: { id },
+      });
+
+      if (!environment) {
+        throw new ParamsError();
+      }
+
+      // Check if there is only one environment in the project
+      const environmentCount = await tx.environment.count({
+        where: {
+          projectId: environment.projectId,
+          deleted: false,
+        },
+      });
+
+      if (environmentCount <= 1) {
+        throw new LastEnvironmentCannotBeDeletedError();
+      }
+
       // Check if there are any ContentOnEnvironment records
       const contentCount = await tx.contentOnEnvironment.count({
         where: { environmentId: id },
