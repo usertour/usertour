@@ -1,6 +1,6 @@
 'use client';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useMemberContext } from '@/contexts/member-context';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -244,7 +244,7 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Send invite
               </Button>
             </DialogFooter>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
@@ -246,7 +246,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
                   // onClick={handleOpenEditor}
                 >
                   {form.getValues('type') === BuilderType.EXTENSION && openTarget.isLoading && (
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Submit
                 </Button>

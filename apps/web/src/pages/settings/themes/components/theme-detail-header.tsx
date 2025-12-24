@@ -1,10 +1,9 @@
-import { Icons } from '@/components/atoms/icons';
 import { useThemeDetailContext } from '@/contexts/theme-detail-context';
 import { useMutation } from '@apollo/client';
 import { ArrowLeftIcon, DotsHorizontalIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { updateTheme } from '@usertour-packages/gql';
-import { EditIcon } from '@usertour-packages/icons';
+import { EditIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { getErrorMessage, isEqual } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
@@ -97,7 +96,7 @@ export const ThemeDetailHeader = () => {
         {/* <MainNav className="mx-6" /> */}
         <div className="ml-auto flex items-center space-x-4">
           <Button onClick={handleSaveTheme} disabled={theme?.isSystem || isViewOnly}>
-            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
           <ThemeEditDropdownMenu theme={theme!} onSubmit={handleOnSubmit}>
