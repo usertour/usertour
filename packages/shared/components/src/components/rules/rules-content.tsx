@@ -37,6 +37,7 @@ import { useAutoOpenPopover } from './use-auto-open-popover';
 export interface SelectItemType {
   id: string;
   name: string;
+  type: string;
 }
 
 export interface RulesContentProps {
@@ -109,10 +110,10 @@ const RulesContentName = () => {
         </Popover.PopoverTrigger>
         <Popover.PopoverContent className="w-[350px] p-0" style={{ zIndex }}>
           <Command filter={handleFilter}>
-            <CommandInput placeholder="Search flow..." />
+            <CommandInput placeholder="Search content..." />
             <CommandEmpty>No items found.</CommandEmpty>
-            <CommandGroup heading="Flow">
-              <ScrollArea className="h-72">
+            <ScrollArea className="h-72">
+              <CommandGroup heading="Flow">
                 {contents
                   ?.filter((c) => c.type === ContentDataType.FLOW)
                   .map((item) => (
@@ -124,6 +125,7 @@ const RulesContentName = () => {
                         handleOnSelected({
                           id: item.id,
                           name: item.name || '',
+                          type: item.type,
                         });
                       }}
                     >
@@ -136,8 +138,34 @@ const RulesContentName = () => {
                       />
                     </CommandItem>
                   ))}
-              </ScrollArea>
-            </CommandGroup>
+              </CommandGroup>
+              <CommandGroup heading="Checklist">
+                {contents
+                  ?.filter((c) => c.type === ContentDataType.CHECKLIST)
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      value={item.id}
+                      className="cursor-pointer"
+                      onSelect={() => {
+                        handleOnSelected({
+                          id: item.id,
+                          name: item.name || '',
+                          type: item.type,
+                        });
+                      }}
+                    >
+                      {item.name}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+            </ScrollArea>
           </Command>
         </Popover.PopoverContent>
       </Popover.Popover>
@@ -180,24 +208,34 @@ export const RulesContent = (props: RulesContentProps) => {
     setConditionValue,
   };
 
+  // Initialize or sync selectedPreset from data.contentId when component mounts or data changes
+  // This only runs when data.contentId or contents change, not when user selects
   useEffect(() => {
-    if (data?.contentId && contents.length > 0) {
+    if (data?.contentId && contents && contents.length > 0) {
       const newItem = contents.find((item) => item.id === data.contentId);
-      if (newItem) {
-        setSelectedPreset({ id: newItem.id, name: newItem.name || '' });
-        return;
+      // Only sync if selectedPreset doesn't match data.contentId (initialization or external update)
+      if (newItem && selectedPreset?.id !== data.contentId) {
+        setSelectedPreset({
+          id: newItem.id,
+          name: newItem.name || '',
+          type: newItem.type || data?.type || 'flow',
+        });
       }
     }
+  }, [data?.contentId, data?.type, contents]);
 
+  // Error checking when popover closes or condition changes
+  useEffect(() => {
     if (open) {
       setOpenError(false);
       setErrorInfo('');
       return;
     }
 
+    // Use selectedPreset?.id instead of data?.contentId to check user's current selection
     const { showError, errorInfo } = getContentError({
-      contentId: data?.contentId || '',
-      type: 'flow',
+      contentId: selectedPreset?.id || data?.contentId || '',
+      type: selectedPreset?.type || data?.type || 'flow',
       logic: conditionValue,
     });
 
@@ -205,7 +243,7 @@ export const RulesContent = (props: RulesContentProps) => {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }
-  }, [data?.contentId, contents, conditionValue, open]);
+  }, [data?.contentId, data?.type, conditionValue, open, selectedPreset?.id, selectedPreset?.type]);
 
   const handleOnOpenChange = useCallback(
     (open: boolean) => {
@@ -218,7 +256,7 @@ export const RulesContent = (props: RulesContentProps) => {
 
       const updates = {
         contentId: selectedPreset?.id || '',
-        type: 'flow',
+        type: selectedPreset?.type || 'flow',
         logic: conditionValue,
       };
 
@@ -231,7 +269,7 @@ export const RulesContent = (props: RulesContentProps) => {
 
       updateConditionData(index, updates);
     },
-    [selectedPreset, conditionValue, index, updateConditionData],
+    [selectedPreset, conditionValue, index, updateConditionData, setOpen],
   );
 
   return (
@@ -243,12 +281,15 @@ export const RulesContent = (props: RulesContentProps) => {
             <RulesConditionRightContent disabled={disabled}>
               <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
                 <RulesPopoverTrigger icon={<ContentIcon width={16} height={16} />}>
-                  Flow <span className="font-bold">{selectedPreset?.name} </span>
+                  {selectedPreset?.type === ContentDataType.CHECKLIST ? 'Checklist' : 'Flow'}{' '}
+                  <span className="font-bold">{selectedPreset?.name} </span>
                   {conditionsMapping.find((c) => c.value === conditionValue)?.name}{' '}
                 </RulesPopoverTrigger>
                 <RulesPopoverContent>
                   <div className="flex flex-col space-y-2">
-                    <div>Flow</div>
+                    <div>
+                      {selectedPreset?.type === ContentDataType.CHECKLIST ? 'Checklist' : 'Flow'}
+                    </div>
                     <RulesContentName />
                     <RulesContentRadios />
                   </div>

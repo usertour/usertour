@@ -144,7 +144,8 @@ export const getContentError = (data: any) => {
   const ret = { showError: false, errorInfo: '' };
   if (!data.contentId) {
     ret.showError = true;
-    ret.errorInfo = 'Please select a flow';
+    const contentType = data.type === 'checklist' ? 'checklist' : 'flow';
+    ret.errorInfo = `Please select a ${contentType}`;
   }
   return ret;
 };
