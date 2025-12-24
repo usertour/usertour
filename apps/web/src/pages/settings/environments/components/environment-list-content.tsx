@@ -12,6 +12,7 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Badge } from '@usertour-packages/badge';
 import { cn } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { format } from 'date-fns';
@@ -38,7 +39,12 @@ const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowPro
 
   return (
     <TableRow className="cursor-pointer">
-      <TableCell>{environment.name}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {environment.name}
+          {environment.isPrimary === true && <Badge variant={'success'}>Primary</Badge>}
+        </div>
+      </TableCell>
       <TableCell onMouseEnter={() => setIsShowCopy(true)} onMouseLeave={() => setIsShowCopy(false)}>
         <div className="flex flex-row items-center space-x-1">
           <span>{environment.token} </span>

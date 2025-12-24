@@ -2,7 +2,11 @@ import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
-import { LastEnvironmentCannotBeDeletedError, ParamsError } from '@/common/errors';
+import {
+  LastEnvironmentCannotBeDeletedError,
+  ParamsError,
+  PrimaryEnvironmentCannotBeDeletedError,
+} from '@/common/errors';
 import { CreateAccessTokenInput } from './dto/access-token.dto';
 
 @Injectable()
@@ -10,39 +14,84 @@ export class EnvironmentsService {
   constructor(private prisma: PrismaService) {}
 
   async create(newData: CreateEnvironmentInput) {
-    return await this.prisma.environment.create({
-      data: {
-        ...newData,
-        segments: {
-          create: [
-            {
-              name: 'All Users',
-              bizType: SegmentBizType.USER,
-              dataType: SegmentDataType.ALL,
-              data: [],
-            },
-            {
-              name: 'All Companies',
-              bizType: SegmentBizType.COMPANY,
-              dataType: SegmentDataType.ALL,
-              data: [],
-            },
-          ],
+    return await this.prisma.$transaction(async (tx) => {
+      // Check if there's already a primary environment in the project
+      const primaryEnvCount = await tx.environment.count({
+        where: {
+          projectId: newData.projectId,
+          isPrimary: true,
+          deleted: false,
         },
-      },
+      });
+
+      // If no primary environment exists, set this one as primary
+      const isPrimary = primaryEnvCount === 0;
+
+      return await tx.environment.create({
+        data: {
+          ...newData,
+          isPrimary,
+          segments: {
+            create: [
+              {
+                name: 'All Users',
+                bizType: SegmentBizType.USER,
+                dataType: SegmentDataType.ALL,
+                data: [],
+              },
+              {
+                name: 'All Companies',
+                bizType: SegmentBizType.COMPANY,
+                dataType: SegmentDataType.ALL,
+                data: [],
+              },
+            ],
+          },
+        },
+      });
     });
   }
 
   async update(input: UpdateEnvironmentInput) {
-    const env = await this.prisma.environment.findUnique({
-      where: { id: input.id },
-    });
-    if (!env) {
-      throw new ParamsError();
-    }
-    return await this.prisma.environment.update({
-      where: { id: env.id },
-      data: { name: input.name },
+    return await this.prisma.$transaction(async (tx) => {
+      const env = await tx.environment.findUnique({
+        where: { id: input.id },
+      });
+      if (!env) {
+        throw new ParamsError();
+      }
+
+      const updateData: { name: string; isPrimary?: boolean } = {
+        name: input.name,
+      };
+
+      // If isPrimary is being set to true, ensure no other environment is primary
+      if (input.isPrimary === true) {
+        // Unset primary flag from other environments in the same project
+        await tx.environment.updateMany({
+          where: {
+            projectId: env.projectId,
+            id: { not: env.id },
+            isPrimary: true,
+            deleted: false,
+          },
+          data: { isPrimary: false },
+        });
+        updateData.isPrimary = true;
+      } else if (input.isPrimary === false) {
+        // Allow setting to false regardless of whether there are other primary environments
+        // Projects can exist without a primary environment
+        // Only update if current environment is actually primary
+        if (env.isPrimary === true) {
+          updateData.isPrimary = false;
+        }
+        // If current environment is not primary, ignore the request (don't update isPrimary field)
+      }
+
+      return await tx.environment.update({
+        where: { id: env.id },
+        data: updateData,
+      });
     });
   }
 
@@ -55,6 +104,11 @@ export class EnvironmentsService {
 
       if (!environment) {
         throw new ParamsError();
+      }
+
+      // Check if this is the primary environment
+      if (environment.isPrimary) {
+        throw new PrimaryEnvironmentCannotBeDeletedError();
       }
 
       // Check if there is only one environment in the project

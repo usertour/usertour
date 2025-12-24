@@ -357,6 +357,14 @@ export class LastEnvironmentCannotBeDeletedError extends BaseError {
   };
 }
 
+export class PrimaryEnvironmentCannotBeDeletedError extends BaseError {
+  code = 'E0023';
+  messageDict = {
+    en: 'Cannot delete the primary environment. Please set another environment as primary first.',
+    'zh-CN': '无法删除主环境。请先将其他环境设置为主环境。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -398,6 +406,7 @@ const errorMap = {
   E0020: EmailConfigNotSetError,
   E0021: S3ConfigNotSetError,
   E0022: LastEnvironmentCannotBeDeletedError,
+  E0023: PrimaryEnvironmentCannotBeDeletedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

@@ -649,6 +649,7 @@ export class AuthService {
           create: [
             {
               name: 'Production',
+              isPrimary: true,
             },
           ],
         },
