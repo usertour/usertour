@@ -14,10 +14,11 @@ import { useParams } from 'react-router-dom';
  * 4. First environment (fallback)
  *
  * @returns selectEnvironment - Function to manually select an environment (updates both context and localStorage)
+ * @returns isNonPrimary - Whether current environment is non-primary (only true if there's a primary env in list and current is not primary)
  */
 export const useEnvironmentSelection = () => {
   const { envId } = useParams();
-  const { setEnvironment, userInfo } = useAppContext();
+  const { setEnvironment, userInfo, environment } = useAppContext();
   const { environmentList } = useEnvironmentListContext();
 
   // Memoize storage key to avoid recalculation
@@ -76,5 +77,15 @@ export const useEnvironmentSelection = () => {
     }
   }, [envId, environmentList, selectEnvironment, storageKey, userInfo?.id]);
 
-  return { selectEnvironment };
+  // Check if there's a primary environment in the list and current environment is not primary
+  const hasPrimaryEnv = useMemo(
+    () => environmentList?.some((env) => env.isPrimary === true) ?? false,
+    [environmentList],
+  );
+  const isNonPrimary = useMemo(
+    () => environment && hasPrimaryEnv && environment.isPrimary !== true,
+    [environment, hasPrimaryEnv],
+  );
+
+  return { selectEnvironment, isNonPrimary };
 };

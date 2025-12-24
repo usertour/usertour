@@ -76,16 +76,23 @@ interface AdminLayoutNewContentProps {
 
 export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
   const { children, className } = props;
-  useEnvironmentSelection();
+  const { isNonPrimary } = useEnvironmentSelection();
+  const { environment } = useAppContext();
 
   return (
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
       <div
         className={cn(
-          'w-full min-w-0 overflow-hidden  flex relative rounded-md border border-border bg-white h-full dark:border-border/60 dark:bg-card/60',
+          'w-full min-w-0 overflow-hidden flex relative rounded-md border border-border bg-white h-full dark:border-border/60 dark:bg-card/60',
+          isNonPrimary && 'border-t-2 border-t-warning dark:border-t-warning',
           className,
         )}
       >
+        {isNonPrimary && environment?.name && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center rounded-b-md rounded-t-none border-0 bg-warning text-white px-3 pt-0 pb-1 text-xs leading-none">
+            {environment.name}
+          </div>
+        )}
         <div className="group/sidebar-wrapper flex h-full w-full">{children}</div>
       </div>
     </div>
