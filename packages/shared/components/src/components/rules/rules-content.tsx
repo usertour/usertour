@@ -11,6 +11,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
@@ -272,6 +273,16 @@ export const RulesContent = (props: RulesContentProps) => {
     [selectedPreset, conditionValue, index, updateConditionData, setOpen],
   );
 
+  const contentTypeLabel = useMemo(() => {
+    if (selectedPreset?.type === ContentDataType.CHECKLIST) {
+      return 'Checklist';
+    }
+    if (selectedPreset?.type === ContentDataType.FLOW) {
+      return 'Flow';
+    }
+    return 'Flow/Checklist';
+  }, [selectedPreset?.type]);
+
   return (
     <RulesContentContext.Provider value={value}>
       <RulesError open={openError}>
@@ -281,15 +292,12 @@ export const RulesContent = (props: RulesContentProps) => {
             <RulesConditionRightContent disabled={disabled}>
               <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
                 <RulesPopoverTrigger icon={<ContentIcon width={16} height={16} />}>
-                  {selectedPreset?.type === ContentDataType.CHECKLIST ? 'Checklist' : 'Flow'}{' '}
-                  <span className="font-bold">{selectedPreset?.name} </span>
+                  {contentTypeLabel} <span className="font-bold">{selectedPreset?.name} </span>
                   {conditionsMapping.find((c) => c.value === conditionValue)?.name}{' '}
                 </RulesPopoverTrigger>
                 <RulesPopoverContent>
                   <div className="flex flex-col space-y-2">
-                    <div>
-                      {selectedPreset?.type === ContentDataType.CHECKLIST ? 'Checklist' : 'Flow'}
-                    </div>
+                    <div>{contentTypeLabel}</div>
                     <RulesContentName />
                     <RulesContentRadios />
                   </div>
