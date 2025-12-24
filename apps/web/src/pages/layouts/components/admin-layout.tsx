@@ -99,13 +99,44 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
   const { environmentList } = useEnvironmentListContext();
 
   useEffect(() => {
-    const _envId = envId || storage.getLocalStorage('environmentId');
-    if (environmentList) {
-      const currentEnv = environmentList.find((env) => env.id === _envId) || environmentList[0];
-      if (currentEnv) {
-        setEnvironment(currentEnv);
-        storage.setLocalStorage('environmentId', currentEnv?.id);
+    if (!environmentList || environmentList.length === 0) {
+      return;
+    }
+
+    // Priority 1: Use envId from URL params if provided
+    if (envId) {
+      const matchedEnv = environmentList.find((env) => env.id === envId);
+      if (matchedEnv) {
+        setEnvironment(matchedEnv);
+        storage.setLocalStorage('environmentId', matchedEnv.id);
+        return;
       }
+    }
+
+    // Priority 2: Use environmentId from localStorage
+    const storedEnvId = storage.getLocalStorage('environmentId');
+    if (storedEnvId) {
+      const matchedEnv = environmentList.find((env) => env.id === storedEnvId);
+      if (matchedEnv) {
+        setEnvironment(matchedEnv);
+        storage.setLocalStorage('environmentId', matchedEnv.id);
+        return;
+      }
+    }
+
+    // Priority 3: Use environment with isPrimary === true
+    const primaryEnv = environmentList.find((env) => env.isPrimary === true);
+    if (primaryEnv) {
+      setEnvironment(primaryEnv);
+      storage.setLocalStorage('environmentId', primaryEnv.id);
+      return;
+    }
+
+    // Priority 4: Fallback to first environment
+    const currentEnv = environmentList[0];
+    if (currentEnv) {
+      setEnvironment(currentEnv);
+      storage.setLocalStorage('environmentId', currentEnv.id);
     }
   }, [envId, environmentList, setEnvironment]);
 
