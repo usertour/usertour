@@ -40,7 +40,7 @@ export const AdminEnvSwitcher = () => {
       }
       setOpen(false);
     },
-    [environment, location.pathname, navigate],
+    [environment, location.pathname, navigate, setEnvironment],
   );
   const handleCreate = () => {
     setShowNewEnvDialog(true);

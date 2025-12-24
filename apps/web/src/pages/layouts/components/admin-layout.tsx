@@ -9,6 +9,7 @@ import { userTourToken } from '@/utils/env';
 import { Button } from '@usertour-packages/button';
 import { storage } from '@usertour/helpers';
 import { cn } from '@usertour/helpers';
+import { UserProfile } from '@usertour/types';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -32,7 +33,6 @@ export const AdminLayoutHeader = () => {
             loading="eager"
           />
         </div>
-        {/* <EnvSwitcher /> */}
         <AdminMainNav className="mx-6" />
         <div className="ml-auto flex items-center space-x-4">
           <a
@@ -130,8 +130,7 @@ interface AdminLayoutProps {
 }
 
 // Add new custom hook
-//biome-ignore lint/suspicious/noExplicitAny: <explanation>
-const useUserTracking = (userInfo: any) => {
+const useUserTracking = (userInfo: UserProfile | null | undefined) => {
   const posthog = usePostHog();
 
   useEffect(() => {
