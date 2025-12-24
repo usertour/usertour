@@ -1,7 +1,15 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
 import { Label } from '@usertour-packages//label';
-import { ContentIcon } from '@usertour-packages/icons';
+import {
+  CheckboxCircleFillIcon,
+  ContentIcon,
+  EyeFillIcon,
+  EyeNoneIcon,
+  ForbidFillIcon,
+  PlayCircleFillIcon,
+  StopCircleFillIcon,
+} from '@usertour-packages/icons';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
 import { cn } from '@usertour/helpers';
 import {
@@ -53,12 +61,12 @@ export interface RulesContentProps {
 }
 
 const conditionsMapping = [
-  { value: 'seen', name: 'seen' },
-  { value: 'unseen', name: 'not seen' },
-  { value: 'completed', name: 'completed' },
-  { value: 'uncompleted', name: 'not completed' },
-  { value: 'actived', name: 'is currently actived' },
-  { value: 'unactived', name: 'is not currently actived' },
+  { value: 'seen', name: 'seen', icon: EyeFillIcon },
+  { value: 'unseen', name: 'not seen', icon: EyeNoneIcon },
+  { value: 'completed', name: 'completed', icon: CheckboxCircleFillIcon },
+  { value: 'uncompleted', name: 'not completed', icon: ForbidFillIcon },
+  { value: 'actived', name: 'is currently actived', icon: PlayCircleFillIcon },
+  { value: 'unactived', name: 'is not currently actived', icon: StopCircleFillIcon },
 ];
 
 interface RulesContentContextValue {
@@ -283,6 +291,17 @@ export const RulesContent = (props: RulesContentProps) => {
     return 'Flow/Checklist';
   }, [selectedPreset?.type]);
 
+  const conditionIcon = useMemo(() => {
+    const condition = conditionsMapping.find((c) => c.value === conditionValue);
+    const IconComponent = condition?.icon;
+
+    if (IconComponent) {
+      return <IconComponent width={16} height={16} />;
+    }
+
+    return <ContentIcon width={16} height={16} />;
+  }, [conditionValue]);
+
   return (
     <RulesContentContext.Provider value={value}>
       <RulesError open={openError}>
@@ -291,7 +310,7 @@ export const RulesContent = (props: RulesContentProps) => {
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
               <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-                <RulesPopoverTrigger icon={<ContentIcon width={16} height={16} />}>
+                <RulesPopoverTrigger icon={conditionIcon}>
                   {contentTypeLabel} <span className="font-bold">{selectedPreset?.name} </span>
                   {conditionsMapping.find((c) => c.value === conditionValue)?.name}{' '}
                 </RulesPopoverTrigger>

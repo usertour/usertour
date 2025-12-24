@@ -62,7 +62,7 @@ export const RULES_ITEMS = [
   },
   {
     type: RulesType.CONTENT,
-    text: 'Flow',
+    text: 'Flow/Checklist',
     IconElement: ContentIcon,
     RulesElement: RulesContent,
   },
