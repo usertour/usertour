@@ -19,7 +19,7 @@ import { useState } from 'react';
 import { AlertTriangleIcon } from 'lucide-react';
 
 import { GoalStepBadge } from '@/components/molecules/goal-step-badge';
-import { calculateUniqueFailureRate } from '@/utils/analytics';
+import { calculateRate, calculateUniqueFailureRate } from '@/utils/analytics';
 
 import { AnalyticsStepsSkeleton } from './analytics-skeleton';
 import { TooltipTargetMissingDialog } from './components/tooltip-target-missing-dialog';
@@ -32,13 +32,6 @@ export const AnalyticsSteps = () => {
   if (loading) {
     return <AnalyticsStepsSkeleton />;
   }
-
-  const computeRate = (step: AnalyticsViewsByStep, firstStep: AnalyticsViewsByStep) => {
-    if (!step || !step.analytics || !firstStep.analytics.uniqueViews) {
-      return 0;
-    }
-    return Math.round((step.analytics.uniqueViews / firstStep.analytics.uniqueViews) * 100);
-  };
 
   const hasExplicitGoalStep = analyticsData?.viewsByStep?.some(
     (step) => step.explicitCompletionStep,
@@ -55,13 +48,6 @@ export const AnalyticsSteps = () => {
   const handleOpenDialog = (step: AnalyticsViewsByStep) => {
     setSelectedStep(step);
     setDialogOpen(true);
-  };
-
-  const computeFailureRate = (step: AnalyticsViewsByStep) => {
-    return calculateUniqueFailureRate(
-      step.analytics.uniqueTooltipTargetMissingCount ?? 0,
-      step.analytics.uniqueViews || 0,
-    );
   };
 
   return (
@@ -98,51 +84,61 @@ export const AnalyticsSteps = () => {
             </TableHeader>
             <TableBody>
               {analyticsData?.viewsByStep ? (
-                analyticsData?.viewsByStep.map((step: AnalyticsViewsByStep, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="py-[1px]">
-                      <div className="flex items-center justify-between gap-2 min-w-0">
-                        <span className="truncate" title={step.name}>
-                          {step.name}
-                        </span>
-                        {isGoalStep(step, index) && <GoalStepBadge />}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-[1px]">{step.analytics.uniqueViews}</TableCell>
-                    <TableCell className="py-[1px]">
-                      {computeRate(step, analyticsData.viewsByStep[0])}%
-                    </TableCell>
-                    <TableCell className="py-[1px] px-0">
-                      <div
-                        className="bg-success h-10"
-                        style={{
-                          width: `${computeRate(step, analyticsData.viewsByStep[0])}%`,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell className="py-[1px] text-center">
-                      {computeFailureRate(step) === 0 || step.type !== StepContentType.TOOLTIP ? (
-                        <span className="text-muted-foreground">-</span>
-                      ) : (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span
-                                className="text-destructive cursor-pointer hover:underline underline-offset-4"
-                                onClick={() => handleOpenDialog(step)}
-                              >
-                                {computeFailureRate(step)}%
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Click to view tooltip targets not found</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
+                analyticsData?.viewsByStep.map((step: AnalyticsViewsByStep, index) => {
+                  const viewRate = calculateRate(
+                    step.analytics.uniqueViews,
+                    analyticsData.uniqueViews,
+                  );
+                  return (
+                    <TableRow key={index}>
+                      <TableCell className="py-[1px]">
+                        <div className="flex items-center justify-between gap-2 min-w-0">
+                          <span className="truncate" title={step.name}>
+                            {step.name}
+                          </span>
+                          {isGoalStep(step, index) && <GoalStepBadge />}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-[1px]">{step.analytics.uniqueViews}</TableCell>
+                      <TableCell className="py-[1px]">{viewRate}%</TableCell>
+                      <TableCell className="py-[1px] px-0">
+                        <div
+                          className="bg-success h-10 max-w-full"
+                          style={{
+                            width: `${viewRate}%`,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell className="py-[1px] text-center">
+                        {(() => {
+                          const failureRate = calculateUniqueFailureRate(
+                            step.analytics.uniqueTooltipTargetMissingCount ?? 0,
+                            step.analytics.uniqueViews || 0,
+                          );
+                          return failureRate === 0 || step.type !== StepContentType.TOOLTIP ? (
+                            <span className="text-muted-foreground">-</span>
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span
+                                    className="text-destructive cursor-pointer hover:underline underline-offset-4"
+                                    onClick={() => handleOpenDialog(step)}
+                                  >
+                                    {failureRate}%
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Click to view tooltip targets not found</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        })()}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">

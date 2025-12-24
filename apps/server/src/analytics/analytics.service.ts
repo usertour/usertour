@@ -509,25 +509,29 @@ export class AnalyticsService {
     const maxStepIndex = version.steps.length;
 
     const ret = [];
-    let totalUniqueViews: number;
     for (let index = 0; index < maxStepIndex; index++) {
       const stepInfo = version.steps[index];
-      const stepCondition = {
+      const itemCondition = {
         ...condition,
-        stepIndex: index,
         eventId: startEvent.id,
+        key: 'flow_step_cvid',
+        value: stepInfo.cvid,
       };
-      const uniqueViews = await this.aggregationByStep(stepCondition);
-      const totalViews = await this.aggregationByStep({
-        ...stepCondition,
+      const uniqueViews = await this.aggregationByItem({
+        ...itemCondition,
+        isDistinct: true,
+      });
+      const totalViews = await this.aggregationByItem({
+        ...itemCondition,
         isDistinct: false,
       });
-      const uniqueCompletions = await this.aggregationByStep({
-        ...stepCondition,
+      const uniqueCompletions = await this.aggregationByItem({
+        ...itemCondition,
         eventId: completeEvent.id,
+        isDistinct: true,
       });
-      const totalCompletions = await this.aggregationByStep({
-        ...stepCondition,
+      const totalCompletions = await this.aggregationByItem({
+        ...itemCondition,
         eventId: completeEvent.id,
         isDistinct: false,
       });
@@ -552,10 +556,6 @@ export class AnalyticsService {
           ...itemCondition,
           isDistinct: false,
         });
-      }
-
-      if (totalUniqueViews === undefined) {
-        totalUniqueViews = uniqueViews;
       }
       const explicitCompletionStep =
         (stepInfo.setting as StepSettings)?.explicitCompletionStep ?? false;
@@ -617,7 +617,6 @@ export class AnalyticsService {
     const totalItem = checklistData.items.length;
 
     const ret = [];
-    let totalUniqueViews: number;
     for (let index = 0; index < totalItem; index++) {
       const item = checklistData.items[index];
       const taskCondition = {
@@ -628,6 +627,7 @@ export class AnalyticsService {
       };
       const uniqueViews = await this.aggregationByItem({
         ...taskCondition,
+        isDistinct: true,
       });
       const totalViews = await this.aggregationByItem({
         ...taskCondition,
@@ -638,6 +638,7 @@ export class AnalyticsService {
         eventId: completeEvent.id,
         key: 'checklist_task_id',
         value: item.id,
+        isDistinct: true,
       });
       const totalCompletions = await this.aggregationByItem({
         ...taskCondition,
@@ -646,10 +647,6 @@ export class AnalyticsService {
         value: item.id,
         isDistinct: false,
       });
-
-      if (totalUniqueViews === undefined) {
-        totalUniqueViews = uniqueViews;
-      }
       ret.push({
         name: item.name,
         taskId: item.id,

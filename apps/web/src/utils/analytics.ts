@@ -6,7 +6,7 @@
  */
 export const calculateRate = (numerator: number, denominator: number): number => {
   if (denominator === 0) return 0;
-  return Math.round((numerator / denominator) * 100);
+  return Math.min(Math.round((numerator / denominator) * 100), 100);
 };
 
 /**
