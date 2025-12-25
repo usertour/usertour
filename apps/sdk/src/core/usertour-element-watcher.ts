@@ -19,7 +19,6 @@ type CheckContentIsVisible = {
 };
 
 // === Constants ===
-const RETRY_LIMIT = 30; // Maximum number of retry attempts
 const RETRY_DELAY = 200; // Delay between retries in milliseconds
 const DEFAULT_TARGET_MISSING_SECONDS = 6;
 
@@ -59,7 +58,8 @@ export class UsertourElementWatcher extends Evented {
   findElement(retryTimes = 0): void {
     timerManager.clearTimeout(`${this.id}-retry`);
 
-    if (retryTimes >= RETRY_LIMIT || retryTimes * RETRY_DELAY > this.targetMissingSeconds * 1000) {
+    // Timeout based on configured targetMissingSeconds only
+    if (retryTimes * RETRY_DELAY > this.targetMissingSeconds * 1000) {
       this.trigger(SDKClientEvents.ELEMENT_FOUND_TIMEOUT);
       return;
     }

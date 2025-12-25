@@ -1,5 +1,5 @@
 import { RulesCondition } from '@usertour/types';
-import { Dispatch, SetStateAction, createContext, useContext } from 'react';
+import { Dispatch, MutableRefObject, SetStateAction, createContext, useContext } from 'react';
 
 export interface ActionsGroupContextValue {
   conditionType: 'and' | 'or';
@@ -7,6 +7,7 @@ export interface ActionsGroupContextValue {
   conditions: RulesCondition[];
   setNewConditions: (conditions: RulesCondition[]) => void;
   updateConditionData: (index: number, data: any) => void;
+  newlyAddedIdRef: MutableRefObject<string | null>;
 }
 export const ActionsGroupContext = createContext<ActionsGroupContextValue | undefined>(undefined);
 

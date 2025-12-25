@@ -20,14 +20,6 @@ export class ProjectsResolver {
     return this.projectsService.getProjectLicenseInfo(projectId);
   }
 
-  // @Mutation(() => Project)
-  // async createProject(
-  //   @UserEntity() user: User,
-  //   @Args("data") newData: CreateProjectInput
-  // ) {
-  //   return this.projectsService.createProject(user.id, newData);
-  // }
-
   @Mutation(() => Project)
   @UseGuards(ProjectsGuard)
   @Roles([RolesScopeEnum.OWNER])

@@ -624,7 +624,10 @@ export class ConditionEvaluationService {
    */
   private async evaluateSeenCondition(params: ContentConditionParams): Promise<boolean> {
     const { contentId, bizUserId, logic } = params;
-    const hasSeen = await this.hasBizEvent(contentId, bizUserId, BizEvents.FLOW_STEP_SEEN);
+    const hasSeen = await this.hasBizEvent(contentId, bizUserId, [
+      BizEvents.FLOW_STEP_SEEN,
+      BizEvents.CHECKLIST_SEEN,
+    ]);
     return logic === ContentConditionLogic.SEEN ? hasSeen : !hasSeen;
   }
 
@@ -633,7 +636,10 @@ export class ConditionEvaluationService {
    */
   private async evaluateCompletedCondition(params: ContentConditionParams): Promise<boolean> {
     const { contentId, bizUserId, logic } = params;
-    const hasCompleted = await this.hasBizEvent(contentId, bizUserId, BizEvents.FLOW_COMPLETED);
+    const hasCompleted = await this.hasBizEvent(contentId, bizUserId, [
+      BizEvents.FLOW_COMPLETED,
+      BizEvents.CHECKLIST_COMPLETED,
+    ]);
     return logic === ContentConditionLogic.COMPLETED ? hasCompleted : !hasCompleted;
   }
 
@@ -689,20 +695,25 @@ export class ConditionEvaluationService {
    * Check if the user has a biz event
    * @param contentId - The ID of the content
    * @param bizUserId - The ID of the business user
-   * @param eventCodeName - The code name of the event
-   * @returns true if the user has the event, false otherwise
+   * @param eventCodeName - The code names of the events (array of strings)
+   * @returns true if the user has any of the events, false otherwise
    */
   private async hasBizEvent(
     contentId: string,
     bizUserId: string,
-    eventCodeName: string,
+    eventCodeName: string[],
   ): Promise<boolean> {
+    // Early return if no events to check
+    if (!eventCodeName || eventCodeName.length === 0) {
+      return false;
+    }
+
     const count = await this.prisma.bizSession.count({
       where: {
         contentId,
         bizUserId,
         deleted: false,
-        bizEvent: { some: { event: { codeName: eventCodeName } } },
+        bizEvent: { some: { event: { codeName: { in: eventCodeName } } } },
       },
     });
     return count > 0;

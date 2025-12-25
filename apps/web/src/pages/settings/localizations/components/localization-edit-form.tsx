@@ -1,9 +1,8 @@
 'use client';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {
   Dialog,
@@ -24,12 +23,7 @@ import { updateLocalization } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { LocateItem, LocateSelect } from '@usertour-packages/shared-components';
 import { getErrorMessage } from '@usertour/helpers';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Localization } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
@@ -129,18 +123,11 @@ export const LocalizationEditForm = (props: EditFormProps) => {
                 name="locale"
                 render={() => (
                   <FormItem>
-                    <FormLabel className="flex flex-row">
+                    <FormLabel className="flex flex-row items-center">
                       Locale
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-slate-700">
-                            A locale represents a user's language and region.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <QuestionTooltip className="ml-1">
+                        A locale represents a user's language and region.
+                      </QuestionTooltip>
                     </FormLabel>
                     <LocateSelect
                       popperContentClass="w-[450px]"
@@ -160,18 +147,11 @@ export const LocalizationEditForm = (props: EditFormProps) => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex flex-row">
+                    <FormLabel className="flex flex-row items-center">
                       Name
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-slate-700">
-                            Human-readable name of the locale
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <QuestionTooltip className="ml-1">
+                        Human-readable name of the locale
+                      </QuestionTooltip>
                     </FormLabel>
                     <FormControl>
                       <Input placeholder="Enter display name" {...field} />
@@ -185,22 +165,15 @@ export const LocalizationEditForm = (props: EditFormProps) => {
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex flex-row">
+                    <FormLabel className="flex flex-row items-center">
                       Code
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-slate-700">
-                            The value that users of this locale must have in their locale_code
-                            attribute in your Usertour.js installation. It's important that this
-                            code matches exactly. If a user has a missing or invalid locale code,
-                            they will be regarded as having no locale, which means they'll see the
-                            flow in the base locale.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <QuestionTooltip className="ml-1">
+                        The value that users of this locale must have in their locale_code attribute
+                        in your Usertour.js installation. It's important that this code matches
+                        exactly. If a user has a missing or invalid locale code, they will be
+                        regarded as having no locale, which means they'll see the flow in the base
+                        locale.
+                      </QuestionTooltip>
                     </FormLabel>
                     <FormControl>
                       <Input placeholder="Enter code name" {...field} />
@@ -216,7 +189,7 @@ export const LocalizationEditForm = (props: EditFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Save Localization
               </Button>
             </DialogFooter>

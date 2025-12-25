@@ -7,6 +7,7 @@ import { Cross2Icon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
 import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
+import { WebZIndex } from '@usertour-packages/constants';
 import { Rules } from '@usertour-packages/shared-components';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
@@ -102,6 +103,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
             attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || []
           }
           disabled={isViewOnly}
+          baseZIndex={WebZIndex.RULES}
         />
       </div>
       {table.getFilteredSelectedRowModel().rows.length > 0 && (

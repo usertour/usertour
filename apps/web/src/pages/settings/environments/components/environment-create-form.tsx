@@ -1,6 +1,6 @@
 'use client';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
@@ -178,7 +178,7 @@ export const EnvironmentCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
             </DialogFooter>

@@ -29,14 +29,13 @@ export const LinkElement = (props: RenderElementProps) => {
   const [data, setData] = useState(element.data ?? initialValue);
   const [openType, setOpenType] = useState(element.openType || 'same');
 
-  const path = ReactEditor.findPath(editor, element);
-
   const handleOnOpenChange = useCallback(
     (open: boolean) => {
       setOpen(open);
       if (open) {
         return;
       }
+      const path = ReactEditor.findPath(editor, element);
       Transforms.setNodes(
         editor,
         {
@@ -47,14 +46,15 @@ export const LinkElement = (props: RenderElementProps) => {
         { at: path },
       );
     },
-    [openType, data],
+    [editor, element, openType, data],
   );
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
+    const path = ReactEditor.findPath(editor, element);
     Transforms.unwrapNodes(editor, {
       at: path,
     });
-  };
+  }, [editor, element]);
 
   const handleMouseDown = (event: MouseEvent) => {
     event.stopPropagation();

@@ -40,8 +40,8 @@ export type CustomContentVersion = Omit<VersionWithStepsAndContent, 'config'> & 
 export interface SocketData {
   environment: Environment;
   externalUserId: string;
+  bizUserId: string; // Required - ensured during connection via ensureBizUser
   externalCompanyId?: string;
-  bizUserId?: string;
   bizCompanyId?: string;
   clientContext: ClientContext;
   clientConditions?: ClientCondition[];

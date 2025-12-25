@@ -2,6 +2,7 @@
 
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { EnvironmentCreateForm } from '@/pages/settings/environments/components/environment-create-form';
 import { Environment } from '@usertour/types';
 import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
@@ -24,23 +25,31 @@ export const AdminEnvSwitcher = () => {
   const [showNewEnvDialog, setShowNewEnvDialog] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { setEnvironment, environment, isViewOnly } = useAppContext();
+  const { environment, isViewOnly } = useAppContext();
+  const { selectEnvironment } = useEnvironmentSelection();
 
   const { environmentList, refetch } = useEnvironmentListContext();
 
   const handleItemClick = React.useCallback(
     (env: Environment) => {
       if (env.id) {
-        if (environment?.id) {
-          const currentPath = location.pathname;
-          const newPath = currentPath.replace(environment.id, env.id);
-          navigate(newPath);
+        const currentPath = location.pathname;
+        // If path starts with /env/, extract and replace envId
+        if (currentPath.startsWith('/env/')) {
+          const match = currentPath.match(/^\/env\/([^/]+)/);
+          if (match) {
+            const [, currentEnvId] = match;
+            // Replace envId in path, handle both /env/:id and /env/:id/... cases
+            const newPath = currentPath.replace(`/env/${currentEnvId}`, `/env/${env.id}`);
+            navigate(newPath);
+          }
         }
-        setEnvironment(env);
+        // Always update environment context
+        selectEnvironment(env);
       }
       setOpen(false);
     },
-    [environment, location.pathname, navigate],
+    [location.pathname, navigate, selectEnvironment],
   );
   const handleCreate = () => {
     setShowNewEnvDialog(true);

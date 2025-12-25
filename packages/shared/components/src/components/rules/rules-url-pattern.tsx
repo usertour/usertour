@@ -11,12 +11,13 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
-import { useRulesContext } from './rules-context';
+import { RulesConditionRightContent } from './rules-template';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesContainerWrapper, RulesPopoverTriggerWrapper } from './rules-wrapper';
 
 export interface RulesUrlPatternProps {
@@ -26,6 +27,7 @@ export interface RulesUrlPatternProps {
     excludes?: string[];
     includes?: string[];
   };
+  conditionId?: string;
 }
 
 interface UrlPatternTextProps {
@@ -62,20 +64,26 @@ const UrlPatternText = ({ includesValues, excludesValues }: UrlPatternTextProps)
 };
 
 export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
-  const { data = {}, index } = props;
+  const { data = {}, index, conditionId } = props;
   const { excludes = [], includes = [] } = data;
+  const { updateConditionData, newlyAddedIdRef } = useRulesGroupContext();
+
+  // Check if this is a newly added condition with no data
+  const isNewlyAdded = !!(conditionId && newlyAddedIdRef.current === conditionId);
+  const shouldShowDefaultInput = isNewlyAdded && includes.length === 0 && excludes.length === 0;
+
   const [excludesValues, setExcludesValues] = useState(excludes);
-  const [includesValues, setIncludesValues] = useState(includes);
+  const [includesValues, setIncludesValues] = useState(shouldShowDefaultInput ? [''] : includes);
   const [filterExcludesValues, setFilterExcludesValues] = useState(
     excludes.filter((v) => v !== ''),
   );
   const [filterIncludesValues, setFilterIncludesValues] = useState(
-    includesValues.filter((v) => v !== ''),
+    includes.filter((v) => v !== ''),
   );
   const [openError, setOpenError] = useState(false);
-  const [open, setOpen] = useState(false);
-  const { updateConditionData } = useRulesGroupContext();
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const { disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
   const [errorInfo, setErrorInfo] = useState('');
 
   const deleteIncludeItem = (index: number) => {
@@ -106,15 +114,20 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
   }, [includesValues, excludesValues]);
 
   useEffect(() => {
+    // Clear error when popover opens
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       excludes: filterExcludesValues,
       includes: filterIncludesValues,
     };
     const { showError, errorInfo } = getUrlPatternError(updates);
-    if (showError && !open) {
+    if (showError) {
       setOpenError(showError);
       setErrorInfo(errorInfo);
-      return;
     }
   }, [filterExcludesValues, filterIncludesValues, open]);
 
@@ -147,11 +160,8 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
         <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
-            <RulesConditionIcon>
-              <PagesIcon width={16} height={16} />
-            </RulesConditionIcon>
             <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTriggerWrapper>
+              <RulesPopoverTriggerWrapper icon={<PagesIcon width={16} height={16} />}>
                 <UrlPatternText
                   includesValues={filterIncludesValues}
                   excludesValues={filterExcludesValues}
@@ -298,7 +308,7 @@ export const RulesUrlPattern = (props: RulesUrlPatternProps) => {
             <RulesRemove index={index} />
           </RulesConditionRightContent>
         </RulesErrorAnchor>
-        <RulesErrorContent>{errorInfo}</RulesErrorContent>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </RulesContainerWrapper>
     </RulesError>
   );

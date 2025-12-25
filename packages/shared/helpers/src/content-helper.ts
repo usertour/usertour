@@ -1,17 +1,21 @@
-import {
+import type {
+  ChecklistData,
+  ContentConfigObject,
   ContentEditorClickableElement,
   ContentEditorElement,
-  ContentEditorElementType,
   ContentEditorQuestionElement,
   ContentEditorRoot,
   ContentEditorRootColumn,
   ContentEditorRootElement,
+  LauncherData,
   Step,
   StepTrigger,
 } from '@usertour/types';
-import { cuid } from './helper';
+import { ContentDataType, ContentEditorElementType } from '@usertour/types';
+
+import { cuid, uuidV4 } from './helper';
 import { regenerateConditionIds } from './conditions';
-import { isArray, isEmptyString } from './type-utils';
+import { isArray, isEmptyString, isObject } from './type-utils';
 
 // Helper function to check if type is restricted
 export const isRestrictedType = (type: ContentEditorElementType): boolean => {
@@ -153,35 +157,6 @@ export const processQuestionElements = (
   }));
 };
 
-export const regenerateTrigger = (trigger: StepTrigger[]): StepTrigger[] => {
-  return trigger.map((t) => ({
-    ...t,
-    id: cuid(),
-    conditions: regenerateConditionIds(t.conditions),
-    actions: regenerateConditionIds(t.actions),
-  }));
-};
-
-/**
- * Process target to regenerate condition IDs in actions field
- * @param target - The target object to process
- * @returns A new target object with regenerated action condition IDs, or undefined if target is undefined
- */
-export const regenerateTarget = (target: Step['target']): Step['target'] => {
-  if (!target) {
-    return undefined;
-  }
-
-  if (target.actions && isArray(target.actions)) {
-    return {
-      ...target,
-      actions: regenerateConditionIds(target.actions),
-    };
-  }
-
-  return target;
-};
-
 /**
  * Generate a unique copy name based on the original name and existing names
  * @param originalName - The original name to base the copy name on
@@ -200,25 +175,181 @@ export const generateUniqueCopyName = (originalName: string, existingNames?: str
   return name;
 };
 
-// Helper function to create a copy of a step
-export const createStepCopy = (
-  originalStep: Step,
-  sequence: number,
-  existingStepNames?: string[],
-): Step => {
-  const { id, cvid, updatedAt, createdAt, ...rest } = originalStep;
+/**
+ * Regenerate IDs for step triggers and their nested actions/conditions
+ * @param triggers - Array of step triggers to process
+ * @returns New array with regenerated IDs for triggers, actions, and conditions
+ */
+export const duplicateTriggers = (triggers: StepTrigger[]): StepTrigger[] => {
+  if (!isArray(triggers)) {
+    return triggers;
+  }
 
-  const name = generateUniqueCopyName(originalStep?.name, existingStepNames);
-  const trigger = originalStep?.trigger ? regenerateTrigger(originalStep?.trigger) : [];
-  const data = originalStep?.data ? processQuestionElements(originalStep?.data) : [];
-  const target = regenerateTarget(originalStep?.target);
+  return triggers.map((trigger) => ({
+    ...trigger,
+    id: cuid(),
+    actions: isArray(trigger.actions) ? regenerateConditionIds(trigger.actions) : trigger.actions,
+    conditions: isArray(trigger.conditions)
+      ? regenerateConditionIds(trigger.conditions)
+      : trigger.conditions,
+  }));
+};
+
+/**
+ * Process target to regenerate condition IDs in actions field
+ * @param target - The target object to process
+ * @returns A new target object with regenerated action condition IDs, or undefined if target is undefined
+ */
+export const duplicateTarget = (target: Step['target']): Step['target'] => {
+  if (!target) {
+    return undefined;
+  }
+
+  if (target.actions && isArray(target.actions)) {
+    return {
+      ...target,
+      actions: regenerateConditionIds(target.actions),
+    };
+  }
+
+  return target;
+};
+
+/**
+ * Process ChecklistData to regenerate condition IDs in RulesCondition[] fields
+ * Handles clickedActions, completeConditions, and onlyShowTaskConditions for each item
+ * Also processes content field using processQuestionElements
+ * @param data - The checklist data to process
+ * @returns Processed checklist data with regenerated condition IDs
+ */
+export const duplicateChecklistData = (data: unknown): unknown => {
+  if (!data || !isObject(data) || !isArray((data as ChecklistData).items)) {
+    return data;
+  }
+
+  const checklistData = data as ChecklistData;
+
+  return {
+    ...checklistData,
+    content: processQuestionElements(checklistData.content),
+    items: checklistData.items.map((item) => ({
+      ...item,
+      id: uuidV4(),
+      clickedActions: isArray(item.clickedActions)
+        ? regenerateConditionIds(item.clickedActions)
+        : item.clickedActions,
+      completeConditions: isArray(item.completeConditions)
+        ? regenerateConditionIds(item.completeConditions)
+        : item.completeConditions,
+      onlyShowTaskConditions: isArray(item.onlyShowTaskConditions)
+        ? regenerateConditionIds(item.onlyShowTaskConditions)
+        : item.onlyShowTaskConditions,
+    })),
+  };
+};
+
+/**
+ * Process LauncherData to regenerate condition IDs in behavior.actions
+ * Also processes tooltip.content using processQuestionElements
+ * @param data - The launcher data to process
+ * @returns Processed launcher data with regenerated condition IDs
+ */
+export const duplicateLauncherData = (data: unknown): unknown => {
+  if (!data || !isObject(data)) {
+    return data;
+  }
+
+  const launcherData = data as LauncherData;
+
+  return {
+    ...launcherData,
+    behavior: launcherData.behavior
+      ? {
+          ...launcherData.behavior,
+          actions: isArray(launcherData.behavior.actions)
+            ? regenerateConditionIds(launcherData.behavior.actions)
+            : launcherData.behavior.actions,
+        }
+      : launcherData.behavior,
+    tooltip: launcherData.tooltip
+      ? {
+          ...launcherData.tooltip,
+          content: processQuestionElements(launcherData.tooltip.content),
+        }
+      : launcherData.tooltip,
+  };
+};
+
+/**
+ * Process version config to regenerate condition IDs in autoStartRules and hideRules
+ * @param config - The content config object to process
+ * @returns New config object with regenerated condition IDs
+ */
+export const duplicateConfig = (config: ContentConfigObject): ContentConfigObject => {
+  if (!config) {
+    return config;
+  }
+
+  return {
+    ...config,
+    autoStartRules: config.autoStartRules
+      ? regenerateConditionIds(config.autoStartRules)
+      : config.autoStartRules,
+    hideRules: config.hideRules ? regenerateConditionIds(config.hideRules) : config.hideRules,
+  };
+};
+
+/**
+ * Process version data based on content type to regenerate condition IDs
+ * @param data - The version data to process
+ * @param contentType - The type of content (checklist, launcher, flow, etc.)
+ * @returns Processed data with regenerated condition IDs
+ */
+export const duplicateData = (data: unknown, contentType: string): unknown => {
+  if (contentType === ContentDataType.CHECKLIST) {
+    return duplicateChecklistData(data) as unknown;
+  }
+
+  if (contentType === ContentDataType.LAUNCHER) {
+    return duplicateLauncherData(data) as unknown;
+  }
+
+  return data;
+};
+
+/**
+ * Step-like type that works with both Prisma Step and @usertour/types Step
+ * This allows the function to be used in both server and client contexts
+ * Uses unknown for data/trigger to accept Prisma's JsonValue type
+ */
+type StepLike = {
+  id?: string;
+  cvid?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  versionId?: string;
+  data?: unknown;
+  trigger?: unknown;
+  target?: unknown;
+  [key: string]: unknown;
+};
+
+/**
+ * Core function to duplicate a single step by removing database-specific fields
+ * and regenerating IDs in triggers, target actions, and question elements
+ * Preserves cvid to maintain step references in triggers/actions when duplicating entire content
+ * @param step - The step to duplicate
+ * @returns A new step object with regenerated IDs, preserving cvid
+ */
+export const duplicateStep = <T extends StepLike>(
+  step: T,
+): Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId'> => {
+  const { id, createdAt, updatedAt, versionId, trigger, target, data, ...rest } = step;
 
   return {
     ...rest,
-    data,
-    trigger,
-    target,
-    name,
-    sequence,
-  };
+    data: data ? processQuestionElements(data as ContentEditorRoot[]) : [],
+    trigger: trigger ? duplicateTriggers(trigger as StepTrigger[]) : [],
+    target: duplicateTarget(target as Step['target']),
+  } as Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId'>;
 };

@@ -9,12 +9,13 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useEvent } from 'react-use';
 
 import { useToast } from '@usertour-packages/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
 import { getDefaultDataForType } from '@usertour-packages/shared-editor';
-import { createStepCopy } from '@usertour-packages/shared-editor';
+import { duplicateStep, generateUniqueCopyName } from '@usertour/helpers';
 import {
   useGetContentLazyQuery,
   useGetContentVersionLazyQuery,
@@ -103,7 +104,10 @@ interface BuilderContextProps {
   isShowError: boolean;
   setIsShowError: React.Dispatch<React.SetStateAction<boolean>>;
   contentRef: React.MutableRefObject<HTMLDivElement | undefined>;
-  fetchContentAndVersion: (contentId: string, versionId: string) => Promise<boolean | Content>;
+  fetchContentAndVersion: (
+    contentId: string,
+    versionId: string,
+  ) => Promise<false | { content: Content; version: ContentVersion }>;
   createStep: (currentVersion: ContentVersion, step: Step) => Promise<Step | undefined>;
   createNewStep: (
     currentVersion: ContentVersion,
@@ -195,11 +199,19 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     }
     setCurrentVersion(JSON.parse(JSON.stringify(version)));
     setBackupVersion(JSON.parse(JSON.stringify(version)));
-    return content;
+    return { content, version };
   };
 
   const initContent = async (message: any) => {
-    const { contentId, environmentId, envToken, url = '', versionId, projectId } = message;
+    const {
+      contentId,
+      environmentId,
+      envToken,
+      url = '',
+      versionId,
+      projectId,
+      initialStepIndex,
+    } = message;
     if (!environmentId || (!isWebBuilder && !envToken)) {
       return false;
     }
@@ -209,15 +221,36 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     setCurrentLocation(url);
     setEnvironmentId(environmentId);
     setProjectId(projectId);
-    const version = await fetchContentAndVersion(contentId, versionId);
-    if (!version) {
+    const result = await fetchContentAndVersion(contentId, versionId);
+    if (!result) {
       setIsLoading(false);
       return false;
     }
     setIsLoading(false);
-    const versionType = version.type.toString();
+
+    const { content, version } = result;
+    const versionType = content.type.toString();
     const versionMode = versionType as BuilderMode;
     const hasMode = Object.values(BuilderMode).includes(versionMode);
+
+    // Handle initial step for flow type - directly open step editor
+    if (
+      versionType === ContentDataType.FLOW &&
+      initialStepIndex !== undefined &&
+      version.steps?.[initialStepIndex]
+    ) {
+      const step = version.steps[initialStepIndex];
+      const _step = JSON.parse(
+        JSON.stringify({
+          ...step,
+          setting: { ...defaultStep.setting, ...step.setting },
+        }),
+      );
+      setCurrentStep(_step);
+      setCurrentIndex(initialStepIndex);
+      setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
+      return true;
+    }
 
     if (versionType !== ContentDataType.FLOW && hasMode) {
       setCurrentMode({ mode: versionType as BuilderMode });
@@ -281,24 +314,34 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     currentVersion: ContentVersion,
     sequence: number,
     stepType?: string,
-    duplicateStep?: Step,
+    stepToDuplicate?: Step,
   ) => {
-    const finalStepType = stepType || duplicateStep?.type || 'tooltip';
+    const finalStepType = stepType || stepToDuplicate?.type || 'tooltip';
     const existingStepNames = currentVersion?.steps?.map((step) => step.name) ?? [];
 
-    const step: Step = duplicateStep
-      ? createStepCopy(duplicateStep, sequence, existingStepNames)
-      : {
-          ...defaultStep,
-          type: finalStepType,
-          name: 'Untitled',
-          data: getDefaultDataForType(finalStepType),
-          sequence,
-          setting: {
-            ...defaultStep.setting,
-            width: finalStepType === 'modal' ? 550 : defaultStep.setting.width,
-          },
-        };
+    let step: Step;
+    if (stepToDuplicate) {
+      // Duplicate step within the same flow - need new cvid
+      const duplicated = duplicateStep(stepToDuplicate);
+      step = {
+        ...duplicated,
+        cvid: undefined, // Remove cvid to generate new one within the same flow
+        name: generateUniqueCopyName(stepToDuplicate.name, existingStepNames),
+        sequence,
+      } as Step;
+    } else {
+      step = {
+        ...defaultStep,
+        type: finalStepType,
+        name: 'Untitled',
+        data: getDefaultDataForType(finalStepType),
+        sequence,
+        setting: {
+          ...defaultStep.setting,
+          width: finalStepType === 'modal' ? 550 : defaultStep.setting.width,
+        },
+      };
+    }
 
     return await createStep(currentVersion, step);
   };
@@ -308,6 +351,13 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       saveContent();
     }
   }, [currentVersion, backupVersion]);
+
+  // Warn user when closing page while saving
+  useEvent('beforeunload', (e: BeforeUnloadEvent) => {
+    if (isLoading) {
+      e.preventDefault();
+    }
+  });
 
   const value = {
     currentMode,

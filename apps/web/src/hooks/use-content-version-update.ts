@@ -10,7 +10,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { isVersionPublished } from '@/utils/content';
 
 export const useContentVersionUpdate = () => {
-  const { version, refetch: refetchVersion, setIsSaveing } = useContentVersionContext();
+  const { version, refetch: refetchVersion, setIsSaving } = useContentVersionContext();
   const { content, refetch: refetchContent } = useContentDetailContext();
   const [mutation] = useMutation(updateContentVersion);
   const [createVersion] = useMutation(createContentVersion);
@@ -69,7 +69,7 @@ export const useContentVersionUpdate = () => {
   const updateVersion = useCallback(
     async (cfg: ContentConfigObject) => {
       try {
-        setIsSaveing(true);
+        setIsSaving(true);
         await processVersion(cfg);
 
         toast({
@@ -82,10 +82,10 @@ export const useContentVersionUpdate = () => {
           title: getErrorMessage(error),
         });
       } finally {
-        setIsSaveing(false);
+        setIsSaving(false);
       }
     },
-    [processVersion, setIsSaveing, toast],
+    [processVersion, setIsSaving, toast],
   );
 
   // Create a debounced version of updateVersion

@@ -1,6 +1,6 @@
 'use client';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useMutation } from '@apollo/client';
 import { Button } from '@usertour-packages/button';
@@ -198,7 +198,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
             disabled={isLoading || selectedEnvironments.length === 0}
             onClick={handleOnSubmit}
           >
-            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
             {getUnpublishButtonText()}
           </Button>
         </DialogFooter>

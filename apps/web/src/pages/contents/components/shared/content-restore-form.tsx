@@ -1,5 +1,5 @@
 'use client';
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { useMutation } from '@apollo/client';
 import { Button } from '@usertour-packages/button';
 import {
@@ -70,7 +70,7 @@ export const ContentRestoreForm = (props: ContentRestoreFormProps) => {
             </Button>
           </DialogClose>
           <Button className="flex-none" type="submit" disabled={isLoading} onClick={handleOnSubmit}>
-            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
             Yes, restore
           </Button>
         </DialogFooter>

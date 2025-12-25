@@ -1,5 +1,5 @@
 import { BizEvent, BizUser } from './biz';
-import { Content, ContentVersion } from './contents';
+import { Content, ContentVersion, ElementSelectorPropsData } from './contents';
 
 export type ContentAnalytics = {
   id: string;
@@ -29,6 +29,8 @@ export type AnalyticsViews = {
   totalViews: number;
   uniqueCompletions: number;
   totalCompletions: number;
+  tooltipTargetMissingCount?: number;
+  uniqueTooltipTargetMissingCount?: number;
 };
 
 export type AnalyticsViewsByDay = AnalyticsViews & {
@@ -37,8 +39,12 @@ export type AnalyticsViewsByDay = AnalyticsViews & {
 
 export type AnalyticsViewsByStep = {
   name: string;
+  cvid: string;
   stepIndex: number;
+  explicitCompletionStep: boolean;
   analytics: AnalyticsViews;
+  target: ElementSelectorPropsData;
+  type: string;
 };
 
 export type AnalyticsViewsByTask = {

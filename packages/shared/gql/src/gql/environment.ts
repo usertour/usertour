@@ -7,6 +7,7 @@ export const getUserEnvironments = gql`
       name
       token
       createdAt
+      isPrimary
     }
   }
 `;
@@ -17,16 +18,18 @@ export const createEnvironments = gql`
       id
       name
       token
+      isPrimary
     }
   }
 `;
 
 export const updateEnvironments = gql`
-  mutation updateEnvironments($id: String!, $name: String!) {
-    updateEnvironments(data: { id: $id, name: $name }) {
+  mutation updateEnvironments($id: String!, $name: String!, $isPrimary: Boolean) {
+    updateEnvironments(data: { id: $id, name: $name, isPrimary: $isPrimary }) {
       id
       name
       token
+      isPrimary
     }
   }
 `;

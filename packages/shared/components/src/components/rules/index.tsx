@@ -18,6 +18,7 @@ interface RulesProps {
   token?: string;
   onElementChange?: (conditionIndex: number, type: string) => void;
   disabled?: boolean;
+  baseZIndex: number;
 }
 
 export const defaultRulesItems: string[] = [
@@ -49,6 +50,7 @@ export const Rules = (props: RulesProps) => {
     token = '',
     onElementChange,
     disabled = false,
+    baseZIndex,
   } = props;
 
   const handleOnChange = (conds: RulesCondition[]) => {
@@ -71,6 +73,7 @@ export const Rules = (props: RulesProps) => {
     token,
     onElementChange,
     disabled,
+    baseZIndex,
   };
 
   return (

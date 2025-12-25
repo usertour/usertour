@@ -12,8 +12,9 @@ import { BizEvent } from '@usertour/types';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
 import { cn } from '@usertour/helpers';
 import { QuestionStarRating } from './question';
+import type { QuestionWithAnswer } from '@/utils/session';
 
-// Add color utility functions from analytics-nps.tsx
+// Get color based on score and type
 const getDarkBarColor = (score: number, type: 'NPS' | 'SCALE') => {
   if (type === 'NPS') {
     if (score <= 6) return 'bg-red-500';
@@ -51,6 +52,12 @@ const TextAnswer = ({ text }: { text: string }) => (
   <div className="whitespace-pre-line">{text}</div>
 );
 
+const NotAnswered = () => null;
+
+/**
+ * Renders the answer value based on question type
+ * Used for displaying answers in both SessionResponse and activity feed
+ */
 const QuestionAnswer = ({ answerEvent }: { answerEvent: BizEvent }) => {
   switch (answerEvent.data.question_type) {
     case ContentEditorElementType.STAR_RATING:
@@ -83,10 +90,14 @@ const QuestionAnswer = ({ answerEvent }: { answerEvent: BizEvent }) => {
 QuestionAnswer.displayName = 'QuestionAnswer';
 
 interface SessionResponseProps {
-  answerEvents: BizEvent[];
+  questions: QuestionWithAnswer[];
 }
 
-const SessionResponse = ({ answerEvents }: SessionResponseProps) => {
+/**
+ * Displays a table of questions with their answers
+ * Questions are ordered by step sequence, showing both answered and unanswered questions
+ */
+const SessionResponse = ({ questions }: SessionResponseProps) => {
   return (
     <div className="flex flex-col items-center w-full h-full justify-center">
       <Table>
@@ -97,31 +108,37 @@ const SessionResponse = ({ answerEvents }: SessionResponseProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {answerEvents ? (
-            answerEvents.map((answerEvent: BizEvent) => (
-              <Fragment key={`${answerEvent.id}`}>
+          {questions.length > 0 ? (
+            questions.map((item) => (
+              <Fragment key={item.question.cvid}>
                 <TableRow className="h-10">
                   <TableCell>
                     <div className="flex flex-row gap-2 items-center">
-                      <span>{answerEvent.data.question_name}</span>
+                      <span>{item.question.name}</span>
                       <Badge variant="secondary">
                         {
                           contentTypesConfig.find(
-                            (config) => config.element.type === answerEvent.data.question_type,
+                            (config) => config.element.type === item.question.type,
                           )?.name
                         }
                       </Badge>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <QuestionAnswer answerEvent={answerEvent} />
+                    {item.isAnswered && item.answer ? (
+                      <QuestionAnswer answerEvent={item.answer} />
+                    ) : (
+                      <NotAnswered />
+                    )}
                   </TableCell>
                 </TableRow>
               </Fragment>
             ))
           ) : (
             <TableRow>
-              <TableCell className="h-24 text-center">No results.</TableCell>
+              <TableCell colSpan={2} className="h-24 text-center">
+                No questions found.
+              </TableCell>
             </TableRow>
           )}
         </TableBody>

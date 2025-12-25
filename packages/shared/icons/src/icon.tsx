@@ -342,6 +342,26 @@ export const EyeOpenIcon = React.forwardRef<SVGSVGElement, IconProps>(
   },
 );
 
+EyeOpenIcon.displayName = 'EyeOpenIcon';
+
+export const EyeFillIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M1.18164 12C2.12215 6.87976 6.60812 3 12.0003 3C17.3924 3 21.8784 6.87976 22.8189 12C21.8784 17.1202 17.3924 21 12.0003 21C6.60812 21 2.12215 17.1202 1.18164 12ZM12.0003 17C14.7617 17 17.0003 14.7614 17.0003 12C17.0003 9.23858 14.7617 7 12.0003 7C9.23884 7 7.00026 9.23858 7.00026 12C7.00026 14.7614 9.23884 17 12.0003 17ZM12.0003 15C10.3434 15 9.00026 13.6569 9.00026 12C9.00026 10.3431 10.3434 9 12.0003 9C13.6571 9 15.0003 10.3431 15.0003 12C15.0003 13.6569 13.6571 15 12.0003 15Z" />
+      </svg>
+    );
+  },
+);
+
+EyeFillIcon.displayName = 'EyeFillIcon';
+
 export const SlideRightIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
@@ -1478,6 +1498,44 @@ export const PlayIcon = React.forwardRef<SVGSVGElement, IconProps>(({ ...props }
   );
 });
 
+PlayIcon.displayName = 'PlayIcon';
+
+export const PlayCircleFillIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM10.6219 8.41459C10.5562 8.37078 10.479 8.34741 10.4 8.34741C10.1791 8.34741 10 8.52649 10 8.74741V15.2526C10 15.3316 10.0234 15.4088 10.0672 15.4745C10.1897 15.6583 10.4381 15.708 10.6219 15.5854L15.5008 12.3328C15.5447 12.3035 15.5824 12.2658 15.6117 12.2219C15.7343 12.0381 15.6846 11.7897 15.5008 11.6672L10.6219 8.41459Z" />
+      </svg>
+    );
+  },
+);
+
+PlayCircleFillIcon.displayName = 'PlayCircleFillIcon';
+
+export const StopCircleFillIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM9 9V15H15V9H9Z" />
+      </svg>
+    );
+  },
+);
+
+StopCircleFillIcon.displayName = 'StopCircleFillIcon';
+
 export const CancelIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
@@ -1751,6 +1809,8 @@ export const EyeNoneIcon = React.forwardRef<SVGSVGElement, IconProps>(
   },
 );
 
+EyeNoneIcon.displayName = 'EyeNoneIcon';
+
 export const CheckboxIcon2 = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
@@ -1782,6 +1842,26 @@ export const CheckboxBlankLine = React.forwardRef<SVGSVGElement, IconProps>(
     );
   },
 );
+
+CheckboxBlankLine.displayName = 'CheckboxBlankLine';
+
+export const CheckboxCircleFillIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM17.4571 9.45711L11 15.9142L6.79289 11.7071L8.20711 10.2929L11 13.0858L16.0429 8.04289L17.4571 9.45711Z" />
+      </svg>
+    );
+  },
+);
+
+CheckboxCircleFillIcon.displayName = 'CheckboxCircleFillIcon';
 
 export const QuestionMarkCircledIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
@@ -2171,3 +2251,89 @@ export const ClickIcon = React.forwardRef<SVGSVGElement, IconProps>(
     );
   },
 );
+
+export const FlagIcon = React.forwardRef<SVGSVGElement, IconProps>(({ ...props }, forwardedRef) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1024 1024"
+      fill="currentColor"
+      {...props}
+      ref={forwardedRef}
+    >
+      <path d="M614.4 256H853.333333v426.666667h-298.666666l-17.066667-85.333334H298.666667v298.666667H213.333333V170.666667h384l17.066667 85.333333m-17.066667 341.333333h85.333334v-85.333333h85.333333v-85.333333h-85.333333V341.333333h-85.333334v85.333334l-42.666666-85.333334V256h-85.333334v85.333333H384V256H298.666667v85.333333h85.333333v85.333334H298.666667v85.333333h85.333333v-85.333333h85.333333v85.333333h85.333334v-85.333333l42.666666 85.333333v85.333333m-128-170.666666V341.333333h85.333334v85.333334h-85.333334m128 0h85.333334v85.333333h-85.333334v-85.333333z" />
+    </svg>
+  );
+});
+
+export const TaskArrowIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 1024 1024"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M512.950857 144.530286l438.857143 364.397714-438.857143 365.714286zM65.828571 371.565714h447.122286v269.165715H65.828571z m0 0" />
+      </svg>
+    );
+  },
+);
+
+TaskArrowIcon.displayName = 'TaskArrowIcon';
+
+export const ProhibitedIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M7.0943 5.68009L18.3199 16.9057C19.3736 15.5506 20 13.8491 20 12C20 7.58172 16.4183 4 12 4C10.1509 4 8.44939 4.62644 7.0943 5.68009ZM16.9057 18.3199L5.68009 7.0943C4.62644 8.44939 4 10.1509 4 12C4 16.4183 7.58172 20 12 20C13.8491 20 15.5506 19.3736 16.9057 18.3199ZM4.92893 4.92893C6.73748 3.12038 9.23885 2 12 2C17.5228 2 22 6.47715 22 12C22 14.7611 20.8796 17.2625 19.0711 19.0711C17.2625 20.8796 14.7611 22 12 22C6.47715 22 2 17.5228 2 12C2 9.23885 3.12038 6.73748 4.92893 4.92893Z" />
+      </svg>
+    );
+  },
+);
+
+ProhibitedIcon.displayName = 'ProhibitedIcon';
+
+export const ProhibitedFillIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M19.7429 18.3287C21.1536 16.6049 22 14.4013 22 12C22 6.47715 17.5228 2 12 2C9.59873 2 7.39514 2.84637 5.67127 4.25705L19.7429 18.3287ZM4.25705 5.67127C2.84637 7.39514 2 9.59873 2 12C2 17.5228 6.47715 22 12 22C14.4013 22 16.6049 21.1536 18.3287 19.7429L4.25705 5.67127Z" />
+      </svg>
+    );
+  },
+);
+
+ProhibitedFillIcon.displayName = 'ProhibitedFillIcon';
+
+export const ForbidFillIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM8.52313 7.10891C8.25459 7.30029 7.99828 7.51644 7.75736 7.75736C7.51644 7.99828 7.30029 8.25459 7.10891 8.52313L15.4769 16.8911C15.7454 16.6997 16.0017 16.4836 16.2426 16.2426C16.4836 16.0017 16.6997 15.7454 16.8911 15.4769L8.52313 7.10891Z" />
+      </svg>
+    );
+  },
+);
+
+ForbidFillIcon.displayName = 'ForbidFillIcon';

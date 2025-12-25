@@ -24,3 +24,20 @@ export enum WidgetZIndex {
   CHECKLIST_OFFSET = 100,
   LAUNCHER_OFFSET = 0,
 }
+
+/**
+ * Rules component z-index layer offsets relative to baseZIndex
+ */
+export enum RulesZIndexOffset {
+  POPOVER = 0,
+  DROPDOWN = 0,
+  COMBOBOX = 0,
+  ERROR = 1,
+}
+
+/**
+ * Web app z-index values
+ */
+export enum WebZIndex {
+  RULES = 50,
+}

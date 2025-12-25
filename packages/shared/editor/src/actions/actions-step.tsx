@@ -32,6 +32,7 @@ import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { cn } from '@usertour/helpers';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface ContentActionsStepProps {
   data?: {
@@ -42,6 +43,7 @@ export interface ContentActionsStepProps {
   };
   type: string;
   index: number;
+  conditionId?: string;
 }
 
 // Get step type icon
@@ -223,11 +225,11 @@ const StepDisplayText = ({
 };
 
 export const ContentActionsStep = (props: ContentActionsStepProps) => {
-  const { index, data } = props;
+  const { index, data, conditionId } = props;
   const { updateConditionData } = useActionsGroupContext();
   const { currentVersion, zIndex, currentStep, createStep } = useContentActionsContext();
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const [stepCvid, setStepCvid] = useState<string | undefined>(data?.stepCvid);
 
   // Handle error state

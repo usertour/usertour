@@ -26,7 +26,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@usertour-packages/form';
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 
 interface ApiCreateFormProps {
   visible: boolean;
@@ -136,7 +136,7 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={creating}>
-                  {creating && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                  {creating && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                   {creating ? 'Creating...' : 'Create'}
                 </Button>
               </DialogFooter>

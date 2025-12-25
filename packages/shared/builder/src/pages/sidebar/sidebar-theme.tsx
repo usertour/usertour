@@ -1,6 +1,6 @@
 'use client';
 
-import { CubeIcon, OpenInNewWindowIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { CubeIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { EXTENSION_SELECT, MESSAGE_CRX_OPEN_NEW_TARGET } from '@usertour-packages/constants';
 import { useThemeListContext } from '@usertour-packages/contexts';
@@ -12,12 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Theme } from '@usertour/types';
 import { useCallback, useEffect } from 'react';
 
@@ -98,16 +93,9 @@ export const SidebarTheme = () => {
       <div className="flex justify-between items-center space-x-1	">
         <div className="flex flex-row justify-between items-center space-x-1 ">
           <h1 className="text-sm">Theme</h1>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <QuestionMarkCircledIcon />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                This is the flow theme that will be used by default in every step
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <QuestionTooltip>
+            This is the flow theme that will be used by default in every step
+          </QuestionTooltip>
         </div>
 
         <Button variant="link" onClick={handleEditTheme} className="p-0 h-full	text-sm	">

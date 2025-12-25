@@ -14,6 +14,7 @@ import {
   useState,
 } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { useEvent } from 'react-use';
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
 import { deepClone } from '@usertour/helpers';
@@ -34,6 +35,7 @@ export interface ChecklistContextValue {
   setCurrentItem: React.Dispatch<React.SetStateAction<ChecklistItemType | null>>;
   currentItem: ChecklistItemType | null;
   saveCurrentItem: () => void;
+  flushSave: () => Promise<void>;
 }
 
 export const ChecklistContext = createContext<ChecklistContextValue | undefined>(undefined);
@@ -218,6 +220,13 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
     [debouncedSave],
   );
 
+  const flushSave = useCallback(async () => {
+    debouncedSave.cancel();
+    if (localData) {
+      await update(localData);
+    }
+  }, [debouncedSave, localData, update]);
+
   // Only sync localData with server data when server data changes
   useEffect(() => {
     if (data && !isEqual(data, lastSavedDataRef.current)) {
@@ -226,6 +235,14 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
       lastSavedDataRef.current = deepClone(data);
     }
   }, [data]);
+
+  // Warn user when closing page with unsaved changes
+  useEvent('beforeunload', (e: BeforeUnloadEvent) => {
+    const hasUnsavedChanges = localData && !isEqual(localData, lastSavedDataRef.current);
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+    }
+  });
 
   const value: ChecklistContextValue = {
     zIndex,
@@ -239,6 +256,7 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
     currentItem,
     addItem,
     saveCurrentItem,
+    flushSave,
   };
 
   return <ChecklistContext.Provider value={value}>{children}</ChecklistContext.Provider>;

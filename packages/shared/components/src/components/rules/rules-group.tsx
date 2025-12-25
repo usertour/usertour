@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,9 +19,8 @@ import {
 } from '@usertour-packages/icons';
 import { RulesCondition, RulesType } from '@usertour/types';
 import { cuid, deepClone } from '@usertour/helpers';
-import { ReactNode, useCallback, useEffect } from 'react';
-import { useState } from 'react';
-import { useRulesContext } from './rules-context';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesGroupContext } from '../contexts/rules-group-context';
 import { RulesContent } from './rules-content';
 import { RulesCurrentTime } from './rules-current-time';
@@ -63,7 +62,7 @@ export const RULES_ITEMS = [
   },
   {
     type: RulesType.CONTENT,
-    text: 'Flow',
+    text: 'Flow/Checklist',
     IconElement: ContentIcon,
     RulesElement: RulesContent,
   },
@@ -114,12 +113,18 @@ interface RulesAddDropdownProps {
 
 const RulesAddDropdown = (props: RulesAddDropdownProps) => {
   const { children, onSelect, items, disabled = false } = props;
+  const { dropdown: zIndex } = useRulesZIndex();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild disabled={disabled}>
         {children}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
+      <DropdownMenuContent
+        align="start"
+        style={{ zIndex }}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {items?.map(({ type, text, IconElement }, index) => (
           <DropdownMenuItem
             key={index}
@@ -166,6 +171,9 @@ export const RulesGroup = (props: RulesGroupProps) => {
       : 'and') ?? 'and',
   );
 
+  // Use ref to store newlyAddedId to avoid being affected by external state updates
+  const newlyAddedIdRef = useRef<string | null>(null);
+
   const setNewConditions = (newConditions: RulesCondition[]) => {
     setConditions((prev) => {
       if (isEqual(prev, newConditions)) {
@@ -180,14 +188,24 @@ export const RulesGroup = (props: RulesGroupProps) => {
 
   const handleOnSelect = useCallback(
     (type: string) => {
-      if (type === 'group') {
-        setNewConditions([...conditions, { type, data: {}, conditions: [], id: cuid() }]);
-      } else {
-        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: cuid() }]);
-      }
+      // Delay adding new condition until DropdownMenu fully closes
+      // This prevents focus competition between DropdownMenu and Popover
+      setTimeout(() => {
+        const newId = cuid();
+        if (type === 'group') {
+          setNewConditions([...conditions, { type, data: {}, conditions: [], id: newId }]);
+        } else {
+          newlyAddedIdRef.current = newId;
+          setNewConditions([
+            ...conditions,
+            { type, data: {}, operators: conditionType, id: newId },
+          ]);
+        }
+      }, 150);
     },
     [conditionType, conditions],
   );
+
   const handleOnChange = (index: number, conds: RulesCondition[]) => {
     const newConds = conditions.map((condition, i) => {
       if (i === index) {
@@ -233,6 +251,7 @@ export const RulesGroup = (props: RulesGroupProps) => {
     conditions,
     setNewConditions,
     updateConditionData,
+    newlyAddedIdRef,
   };
 
   return (
@@ -265,7 +284,15 @@ export const RulesGroup = (props: RulesGroupProps) => {
             );
           }
           if (ITEM?.RulesElement) {
-            return <ITEM.RulesElement key={i} index={i} data={condition.data} type={ITEM.type} />;
+            return (
+              <ITEM.RulesElement
+                key={i}
+                index={i}
+                data={condition.data}
+                type={ITEM.type}
+                conditionId={condition.id}
+              />
+            );
           }
           return null;
         })}
@@ -282,10 +309,10 @@ export const RulesGroup = (props: RulesGroupProps) => {
                 : rulesItems
             }
           >
-            <div className="h-8 text-primary items-center flex flex-row justify-center rounded-md text-sm font-medium cursor-pointer">
+            <Button variant="ghost" className="text-primary">
               <PlusIcon width={16} height={16} />
               {addButtonText}
-            </div>
+            </Button>
           </RulesAddDropdown>
         </div>
       </div>

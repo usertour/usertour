@@ -1,6 +1,6 @@
 import { Button } from '@usertour-packages/button';
 import { Label } from '@usertour-packages/label';
-import { HelpTooltip } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { ModalPosition } from '@usertour/types';
 import { ContentModalPlacementData } from '@usertour/types';
 import { cn } from '@usertour/helpers';
@@ -61,7 +61,7 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
     <div className="space-y-3">
       <div className="flex justify-start items-center space-x-1	">
         <h1 className="text-sm">Placement</h1>
-        <HelpTooltip>Controls which corner the {name} should be placed at.</HelpTooltip>
+        <QuestionTooltip>Controls which corner the {name} should be placed at.</QuestionTooltip>
       </div>
       <div className="flex flex-col bg-background-700 p-3.5 rounded-lg space-y-6 mt-2">
         <div className="flex justify-between">
@@ -106,10 +106,10 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex space-x-1 justify-start items-center">
               <Label htmlFor="button-distance-element">The horizontal offset</Label>
-              <HelpTooltip>
+              <QuestionTooltip>
                 How far in pixels from the horizontal edge of the browser window the {name} should
                 be positioned.
-              </HelpTooltip>
+              </QuestionTooltip>
             </div>
             <InputNumber
               defaultNumber={data.positionOffsetX || 0}
@@ -119,10 +119,10 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex space-x-1 justify-start items-center">
               <Label htmlFor="button-distance-element">The vertical offset</Label>
-              <HelpTooltip>
+              <QuestionTooltip>
                 How far in pixels from the vertical edge of the browser window the {name} should be
                 positioned.
-              </HelpTooltip>
+              </QuestionTooltip>
             </div>
             <InputNumber
               defaultNumber={data.positionOffsetY || 0}

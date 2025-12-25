@@ -1,14 +1,15 @@
-import { Controller, Get, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 import { GithubOauthGuard } from './guard/github-oauth.guard';
 import { GoogleOauthGuard } from './guard/google-oauth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { UserEntity } from '../common/decorators/user.decorator';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { Logger } from '@nestjs/common';
 import { User } from '@/users/models/user.model';
-import { OAuthError } from '@/common/errors';
+import { AuthenticationExpiredError, OAuthError } from '@/common/errors';
+import { REFRESH_TOKEN_COOKIE } from '@/utils/cookie';
 
 @Controller('api/auth')
 export class AuthController {
@@ -60,6 +61,26 @@ export class AuthController {
     } catch (error) {
       this.logger.error('Google OAuth callback failed:', error.stack);
       throw new OAuthError();
+    }
+  }
+
+  @Post('refresh')
+  @Public()
+  async refresh(@Req() req: Request, @Res() res: Response) {
+    try {
+      const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+
+      if (!refreshToken) {
+        throw new AuthenticationExpiredError();
+      }
+
+      const tokens = await this.auth.refreshAccessToken(refreshToken);
+      this.auth.setAuthCookie(res, tokens);
+
+      return res.json({ success: true });
+    } catch (error) {
+      this.logger.error('Token refresh failed:', error.stack);
+      throw new AuthenticationExpiredError();
     }
   }
 }

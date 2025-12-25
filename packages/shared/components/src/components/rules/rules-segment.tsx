@@ -1,15 +1,16 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
-import { SegmentIcon } from '@usertour-packages/icons';
+import { Button } from '@usertour-packages/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@usertour-packages/command';
+import { SegmentIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour/helpers';
+import { ComboBox } from '@usertour-packages/combo-box';
 import {
   Dispatch,
   SetStateAction,
@@ -19,26 +20,17 @@ import {
   useEffect,
   useState,
 } from 'react';
-
-import { Button } from '@usertour-packages/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@usertour-packages/command';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getSegmentError } from '@usertour/helpers';
 import { Segment } from '@usertour/types';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface SelectItemType {
   id: string;
@@ -51,6 +43,7 @@ export interface RulesSegmentProps {
     logic: string;
     segmentId: string;
   };
+  conditionId?: string;
 }
 
 const conditions = [
@@ -79,6 +72,7 @@ function useRulesSegmentContext(): RulesSegmentContextValue {
 const RulesSegmentName = () => {
   const [open, setOpen] = useState(false);
   const { segmentId, setSegmentId, segments } = useRulesSegmentContext();
+  const { popover: zIndex } = useRulesZIndex();
   const selectedSegment = segments?.find((segment) => segment.id === segmentId);
   const handleOnSelected = (item: Segment) => {
     setSegmentId(item.id);
@@ -107,7 +101,7 @@ const RulesSegmentName = () => {
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </Popover.PopoverTrigger>
-        <Popover.PopoverContent className="w-[350px] p-0">
+        <Popover.PopoverContent className="w-[350px] p-0" style={{ zIndex }}>
           <Command filter={handleFilter}>
             <CommandInput placeholder="" />
             <CommandEmpty>No items found.</CommandEmpty>
@@ -166,42 +160,28 @@ const RulesSegmentName = () => {
 
 const RulesSegmentCondition = () => {
   const { conditionValue, setConditionValue } = useRulesSegmentContext();
+  const { combobox: zIndex } = useRulesZIndex();
+
   return (
-    <>
-      <Select defaultValue={conditionValue} onValueChange={setConditionValue}>
-        <SelectTrigger className="justify-start flex h-9">
-          <div className="grow text-left">
-            <SelectValue placeholder={''} />
-          </div>
-        </SelectTrigger>
-        <SelectPortal>
-          <SelectContent
-            style={{
-              zIndex: EXTENSION_CONTENT_RULES,
-            }}
-          >
-            {conditions.map((item, index) => {
-              return (
-                <SelectItem key={index} value={item.value} className="cursor-pointer">
-                  {item.name}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </SelectPortal>
-      </Select>
-    </>
+    <ComboBox
+      options={conditions}
+      value={conditionValue}
+      onValueChange={setConditionValue}
+      placeholder="Select condition"
+      contentStyle={{ zIndex }}
+    />
   );
 };
 
 export const RulesSegment = (props: RulesSegmentProps) => {
-  const { index, data } = props;
+  const { index, data, conditionId } = props;
   const { segments, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
   const [segmentId, setSegmentId] = useState<string>(data?.segmentId ?? '');
   const [conditionValue, setConditionValue] = useState(data?.logic ?? 'is');
   const [openError, setOpenError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const { updateConditionData } = useRulesGroupContext();
 
   const selectedPreset =
@@ -218,12 +198,17 @@ export const RulesSegment = (props: RulesSegmentProps) => {
   };
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       segmentId: segmentId,
       logic: conditionValue,
     };
     const { showError, errorInfo } = getSegmentError(updates);
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }
@@ -259,11 +244,8 @@ export const RulesSegment = (props: RulesSegmentProps) => {
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
-              <RulesConditionIcon>
-                <SegmentIcon width={16} height={16} />
-              </RulesConditionIcon>
               <RulesPopover onOpenChange={handleOnOpenChange} open={open} defaultOpen={false}>
-                <RulesPopoverTrigger>
+                <RulesPopoverTrigger icon={<SegmentIcon width={16} height={16} />}>
                   {selectedPreset === undefined && 'User'}
                   {selectedPreset?.bizType === 'USER' && 'User'}
                   {selectedPreset?.bizType === 'COMPANY' && 'Company'}{' '}
@@ -287,7 +269,7 @@ export const RulesSegment = (props: RulesSegmentProps) => {
               <RulesRemove index={index} />
             </RulesConditionRightContent>
           </RulesErrorAnchor>
-          <RulesErrorContent>{errorInfo}</RulesErrorContent>
+          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
         </div>
       </RulesError>
     </RulesSegmentContext.Provider>

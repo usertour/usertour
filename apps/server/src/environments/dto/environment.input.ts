@@ -21,6 +21,9 @@ export class UpdateEnvironmentInput {
   @Field()
   @IsNotEmpty()
   name: string;
+
+  @Field(() => Boolean, { nullable: true })
+  isPrimary?: boolean;
 }
 
 @InputType()

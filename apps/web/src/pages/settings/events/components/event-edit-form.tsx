@@ -1,13 +1,12 @@
 'use client';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { ListSkeletonCount } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { Event } from '@usertour/types';
 import { Attribute } from '@usertour/types';
 import { useMutation, useQuery } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {
   Dialog,
@@ -31,12 +30,7 @@ import { CloseIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@usertour-packages/select';
 import { getErrorMessage } from '@usertour/helpers';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
@@ -199,20 +193,10 @@ export const EventEditForm = (props: EditFormProps) => {
                       <FormItem>
                         <FormLabel className="flex flex-row">
                           Display name
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs bg-slate-700">
-                                <p>
-                                  Human-friendly name shown in Usertour. we recommend using Word
-                                  Case (i.e.uppercasefrst letter, spaces between words) such
-                                  as"Billing Plan".
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <QuestionTooltip className="ml-1">
+                            Human-friendly name shown in Usertour. we recommend using Word Case
+                            (i.e.uppercasefrst letter, spaces between words) such as"Billing Plan".
+                          </QuestionTooltip>
                         </FormLabel>
                         <FormControl>
                           <Input placeholder="Enter display name" className="w-72" {...field} />
@@ -229,20 +213,11 @@ export const EventEditForm = (props: EditFormProps) => {
                       <FormItem>
                         <FormLabel className="flex flex-row">
                           Code name
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs bg-slate-700">
-                                <p>
-                                  Code-friendly name used in Webhooks and integrations to analytics
-                                  providers. we recommend using snake_case (i.e. lowercaseletters
-                                  with words separated by underscore).
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <QuestionTooltip className="ml-1">
+                            Code-friendly name used in Webhooks and integrations to analytics
+                            providers. we recommend using snake_case (i.e. lowercaseletters with
+                            words separated by underscore).
+                          </QuestionTooltip>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -265,16 +240,9 @@ export const EventEditForm = (props: EditFormProps) => {
                     <FormItem>
                       <FormLabel className="flex flex-row">
                         Description
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs bg-slate-700">
-                              <p>Put any additional information for your ownreference here.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <QuestionTooltip className="ml-1">
+                          Put any additional information for your own reference here.
+                        </QuestionTooltip>
                       </FormLabel>
                       <FormControl>
                         <Input placeholder="Optional description" className="w-full" {...field} />
@@ -293,18 +261,9 @@ export const EventEditForm = (props: EditFormProps) => {
                     <FormItem>
                       <FormLabel className="flex flex-row">
                         Event attributes
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs bg-slate-700">
-                              <p>
-                                Determines what kind of values will be stored in this attribute.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <QuestionTooltip className="ml-1">
+                          Determines what kind of values will be stored in this attribute.
+                        </QuestionTooltip>
                       </FormLabel>
                       <hr className="border-t" />
                       {loading && <ListSkeletonCount count={1} />}
@@ -391,7 +350,7 @@ export const EventEditForm = (props: EditFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Save Event
               </Button>
             </DialogFooter>

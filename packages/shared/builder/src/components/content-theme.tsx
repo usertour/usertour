@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { HelpTooltip } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Theme } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -43,10 +43,10 @@ export const ContentTheme = (props: ContentThemeProps) => {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-1">
           <h1 className="text-sm">Theme</h1>
-          <HelpTooltip>
+          <QuestionTooltip>
             If this step has special requirements, you can use a different theme than the rest of
             the flow uses. You can design your themes under Settings - Themes.
-          </HelpTooltip>
+          </QuestionTooltip>
         </div>
 
         <Button variant="link" onClick={onEdited} className="p-0 h-full">

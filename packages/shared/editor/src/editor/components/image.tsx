@@ -1,28 +1,30 @@
+import { useCallback, useMemo, useState } from 'react';
+
 import * as Popover from '@radix-ui/react-popover';
+import Upload from 'rc-upload';
+
 import { Button } from '@usertour-packages/button';
 import { Checkbox } from '@usertour-packages/checkbox';
+import { ComboBox } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
-import { ImageEditIcon, ImageIcon, SpinnerIcon } from '@usertour-packages/icons';
-import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
+import {
+  DeleteIcon,
+  ImageEditIcon,
+  ImageIcon,
+  InsertColumnLeftIcon,
+  InsertColumnRightIcon,
+  SpinnerIcon,
+} from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import Upload from 'rc-upload';
-import { useCallback, useMemo, useState } from 'react';
+import { useToast } from '@usertour-packages/use-toast';
+import { getErrorMessage } from '@usertour/helpers';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 /* eslint-disable @next/next/no-img-element */
 import {
@@ -44,6 +46,11 @@ const WIDTH_TYPES = {
   PERCENT: 'percent',
   PIXELS: 'pixels',
 } as const;
+
+const WIDTH_TYPE_OPTIONS = [
+  { value: WIDTH_TYPES.PERCENT, name: '%' },
+  { value: WIDTH_TYPES.PIXELS, name: 'pixels' },
+];
 
 const MARGIN_POSITIONS = ['left', 'top', 'bottom', 'right'] as const;
 
@@ -265,8 +272,8 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
     deleteElementInColumn,
     updateElement,
   } = useContentEditorContext();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Memoized style calculation
   const imageStyle = useMemo(() => transformsStyle(element), [element.width, element.margin]);
@@ -275,7 +282,6 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
   const insertImg = useCallback(
     async (option: ContentEditorUploadRequestOption) => {
       try {
-        setError(null);
         let url = '';
 
         if (customUploadRequest) {
@@ -295,13 +301,13 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
         if (url) {
           updateElement({ ...element, url }, id);
         } else {
-          setError('Failed to upload image');
+          toast({ variant: 'destructive', title: 'Failed to upload image' });
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Upload failed');
+        toast({ variant: 'destructive', title: getErrorMessage(err) });
       }
     },
-    [customUploadRequest, element, id, updateElement],
+    [customUploadRequest, element, id, toast, updateElement],
   );
 
   // Event handlers
@@ -374,7 +380,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
           style={imageStyle}
           className="cursor-pointer"
           alt="Editable content"
-          onError={() => setError('Failed to load image')}
+          onError={() => toast({ variant: 'destructive', title: 'Failed to load image' })}
         />
       </Popover.Trigger>
       <Popover.Portal>
@@ -393,24 +399,16 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
                 value={ensureDimensionWithDefaults(element.width).value?.toString() || ''}
                 placeholder="Column width"
                 onChange={handleWidthValueChange}
-                className="bg-background flex-none w-[120px]"
+                className="bg-background"
               />
-              <Select
-                onValueChange={handleWidthTypeChange}
+              <ComboBox
+                options={WIDTH_TYPE_OPTIONS}
                 value={ensureDimensionWithDefaults(element.width).type}
-              >
-                <SelectTrigger className="shrink">
-                  <SelectValue placeholder="Select a distribute" />
-                </SelectTrigger>
-                <SelectPortal style={{ zIndex: zIndex + EDITOR_SELECT }}>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value={WIDTH_TYPES.PERCENT}>%</SelectItem>
-                      <SelectItem value={WIDTH_TYPES.PIXELS}>pixels</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </SelectPortal>
-              </Select>
+                onValueChange={handleWidthTypeChange}
+                placeholder="Select type"
+                className="flex-none w-20 h-auto px-2"
+                contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+              />
             </div>
 
             <MarginControls
@@ -456,8 +454,6 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
 
   return (
     <div className="group relative flex max-w-lg flex-col">
-      {error && <div className="mb-2 text-sm text-red-500">{error}</div>}
-
       {element.url ? (
         isLoading ? (
           <LoadingSpinner size={DEFAULT_IMAGE_SIZE} />

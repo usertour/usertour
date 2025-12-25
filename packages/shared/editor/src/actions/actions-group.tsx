@@ -9,8 +9,7 @@ import {
 import { ArrowRightIcon, CloseCircleIcon, PlusIcon } from '@usertour-packages/icons';
 import { cuid, hasActionError } from '@usertour/helpers';
 import { ContentActionsItemType, RulesCondition } from '@usertour/types';
-import { ReactNode, useCallback, useEffect } from 'react';
-import { useState } from 'react';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { ActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
 import { ContentActionsCode } from './actions-code';
@@ -128,6 +127,9 @@ export const ContentActionsGroup = () => {
 
   const [dropdownItems, setDropdownItems] = useState<typeof contentActionsItem>(rulesItems);
 
+  // Use ref to store newlyAddedId to avoid being affected by external state updates
+  const newlyAddedIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     const newItems = rulesItems
       .filter((item) => {
@@ -173,11 +175,20 @@ export const ContentActionsGroup = () => {
 
   const handleOnSelect = useCallback(
     (type: string) => {
-      if (type === 'group') {
-        setNewConditions([...conditions, { type, data: {}, conditions: [], id: cuid() }]);
-      } else {
-        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: cuid() }]);
-      }
+      // Delay adding new condition until DropdownMenu fully closes
+      // This prevents focus competition between DropdownMenu and Popover
+      setTimeout(() => {
+        const newId = cuid();
+        if (type === 'group') {
+          setNewConditions([...conditions, { type, data: {}, conditions: [], id: newId }]);
+        } else {
+          newlyAddedIdRef.current = newId;
+          setNewConditions([
+            ...conditions,
+            { type, data: {}, operators: conditionType, id: newId },
+          ]);
+        }
+      }, 150);
     },
     [conditionType, conditions],
   );
@@ -216,6 +227,7 @@ export const ContentActionsGroup = () => {
     conditions,
     setNewConditions,
     updateConditionData,
+    newlyAddedIdRef,
   };
 
   return (
@@ -235,6 +247,7 @@ export const ContentActionsGroup = () => {
                   data={condition.data}
                   type={rulesItem.type}
                   text={rulesItem.text}
+                  conditionId={condition.id}
                 />
               );
             }
@@ -244,6 +257,7 @@ export const ContentActionsGroup = () => {
                 index={i}
                 data={condition.data}
                 type={rulesItem.type}
+                conditionId={condition.id}
               />
             );
           }

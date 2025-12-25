@@ -7,7 +7,7 @@ import { resendMagicLink } from '@usertour-packages/gql';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { getErrorMessage } from '@usertour/helpers';
 
 export type SignUpSuccessProps = {
@@ -51,7 +51,7 @@ export const SignUpSuccess = ({ registerId, email }: SignUpSuccessProps) => {
       </CardHeader>
       <CardFooter className="flex flex-col">
         <Button className="w-full" onClick={onSubmit} disabled={isLoading}>
-          {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+          {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
           Resend verification link
         </Button>
       </CardFooter>

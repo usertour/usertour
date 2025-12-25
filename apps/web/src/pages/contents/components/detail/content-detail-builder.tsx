@@ -4,7 +4,8 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 import { WebBuilder } from '@usertour-packages/builder';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface ContentDetailBuilderProps {
   contentId: string;
@@ -13,14 +14,24 @@ interface ContentDetailBuilderProps {
   environmentId: string;
   envToken: string;
   contentType: string;
+  initialStepIndex?: number;
 }
 export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
-  const { contentId, environmentId, contentType } = props;
+  const { contentId, environmentId, contentType, initialStepIndex } = props;
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { loading: environmentLoading } = useEnvironmentListContext();
   const { loading: attributeLoading } = useAttributeListContext();
   const { loading: subscriptionLoading } = useSubscriptionContext();
   const { loading: appLoading } = useAppContext();
+
+  // Clear step query parameter after it's been captured
+  useEffect(() => {
+    if (searchParams.has('step')) {
+      searchParams.delete('step');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
 
   const handleOnSaved = async () => {
     const url = `/env/${environmentId}/${contentType}/${contentId}/detail`;
@@ -36,6 +47,7 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   return (
     <WebBuilder
       {...props}
+      initialStepIndex={initialStepIndex}
       onSaved={handleOnSaved}
       usertourjsUrl={`${import.meta.env.VITE_USERTOUR_JSURL}`}
     />

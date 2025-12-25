@@ -14,6 +14,7 @@ import { useEffect } from 'react';
 import { ContentVersionAction } from './content-version-action';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { ListSkeleton } from '@/components/molecules/skeleton';
+import { Badge } from '@usertour-packages/badge';
 
 export const ContentVersionTable = () => {
   const { content, loading: contentLoading } = useContentDetailContext();
@@ -60,12 +61,9 @@ export const ContentVersionTable = () => {
                 <div className="flex flex-row items-center">
                   <div>v{version.sequence + 1}</div>
                   {getPublishedEnvironmentsForVersion(version.id)?.map((name) => (
-                    <div
-                      key={name}
-                      className="ml-2 rounded-md bg-green-500 px-1.5 text-xs no-underline group-hover:no-underline leading-6 font-bold text-primary-foreground"
-                    >
+                    <Badge key={name} variant="success" className="ml-2">
                       {name}
-                    </div>
+                    </Badge>
                   ))}
                 </div>
               </TableCell>

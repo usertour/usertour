@@ -6,12 +6,6 @@ import React, { CSSProperties, useCallback, useMemo, useState } from 'react';
 import { Descendant, Text, createEditor } from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
-import {
-  inertButtonBlock,
-  inertEmbedBlock,
-  inertGroupBlock,
-  inertImageBlock,
-} from '../lib/editorHelper';
 import { toggleTextProps } from '../lib/text';
 import { withButton } from '../lib/withButton';
 import { withEmbed } from '../lib/withEmbed';
@@ -28,13 +22,6 @@ const HOTKEYS = {
   'mod+i': 'italic',
   'mod+u': 'underline',
   'mod+`': 'code',
-};
-
-const HOTKEYS_ELEMENT = {
-  'mod+shift+b': inertButtonBlock,
-  'mod+shift+c': inertGroupBlock,
-  'mod+shift+v': inertEmbedBlock,
-  'mod+shift+m': inertImageBlock,
 };
 
 export const ALIGN_MAPPING = {
@@ -70,6 +57,13 @@ export const serializeLeaf = (node: Descendant, key = '') => {
     return null;
   }
   const string = node.text;
+
+  // Skip empty text nodes to avoid rendering unnecessary &nbsp;
+  // These are typically created by Slate around inline elements
+  if (!string) {
+    return null;
+  }
+
   const style: CSSProperties = {};
   if (node.bold) {
     style.fontWeight = 'bold';
@@ -85,7 +79,7 @@ export const serializeLeaf = (node: Descendant, key = '') => {
   }
   return (
     <span style={{ ...style }} key={key}>
-      {string || '\u00A0'}
+      {string}
     </span>
   );
 };
@@ -169,12 +163,6 @@ export const PopperEditor = (props: PopperEditorProps) => {
         event.preventDefault();
         const mark = HOTKEYS[hotkey as keyof typeof HOTKEYS];
         toggleTextProps(editor, mark);
-      }
-    }
-    for (const hotkey in HOTKEYS_ELEMENT) {
-      if (isHotkey(hotkey, event as any)) {
-        event.preventDefault();
-        HOTKEYS_ELEMENT[hotkey as keyof typeof HOTKEYS_ELEMENT](editor);
       }
     }
   };

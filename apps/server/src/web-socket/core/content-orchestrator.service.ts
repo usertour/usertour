@@ -839,7 +839,9 @@ export class ContentOrchestratorService {
 
     // Early return if operation failed
     if (!success || !socketData) {
-      this.logger.warn(`Handle content start result, failed, reason: ${result.reason}`);
+      this.logger.warn(
+        `Handle content start result, failed, reason: ${result.reason}, contentType: ${contentType}`,
+      );
       return false;
     }
 

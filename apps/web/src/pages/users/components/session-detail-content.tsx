@@ -22,10 +22,10 @@ import { SessionActionDropdownMenu } from '@/components/molecules/session-action
 import { QuestionAnswer, SessionResponse } from '@/components/molecules/session-detail';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import {
-  deduplicateAnswerEvents,
   getEndReasonTitle,
   getEventDisplaySuffix,
   getFieldValue,
+  getOrderedQuestionAnswers,
   getStartReasonTitle,
   sortEventDataEntries,
 } from '@/utils/session';
@@ -122,7 +122,7 @@ const SessionDetailContentInner = ({
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  const answerEvents = deduplicateAnswerEvents(session);
+  const questionAnswers = getOrderedQuestionAnswers(session);
 
   const startReason = getStartReasonTitle(contentType, startEvent);
   const endReason = getEndReasonTitle(contentType, endEvent);
@@ -225,10 +225,10 @@ const SessionDetailContentInner = ({
           )}
         </SessionItemContainer>
 
-        {answerEvents && answerEvents.length > 0 && (
+        {questionAnswers && questionAnswers.length > 0 && (
           <SessionItemContainer>
             <div className="mb-2 flex flex-row items-center font-bold">Response</div>
-            <SessionResponse answerEvents={answerEvents} />
+            <SessionResponse questions={questionAnswers} />
           </SessionItemContainer>
         )}
 

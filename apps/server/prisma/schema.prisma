@@ -65,6 +65,7 @@ model Register {
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   code      String   @default(cuid())
   email     String
+  processed Boolean  @default(false)
 }
 
 model Invite {
@@ -137,6 +138,8 @@ model Environment {
   name                  String?
   token                 String                 @default(cuid())
   deleted               Boolean                @default(false)
+  /// Whether this is the primary environment for the project
+  isPrimary             Boolean                @default(false)
   project               Project                @relation(fields: [projectId], references: [id])
   projectId             String
   contents              Content[]

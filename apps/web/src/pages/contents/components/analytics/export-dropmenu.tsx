@@ -18,17 +18,14 @@ import type {
   contentEndReason,
 } from '@usertour/types';
 import { AttributeBizTypes, BizEvents, EventAttributes, flowReasonTitleMap } from '@usertour/types';
-import {
-  ContentEditorElementType,
-  extractQuestionData,
-  contentTypesConfig,
-} from '@usertour-packages/shared-editor';
+import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
 import { useToast } from '@usertour-packages/use-toast';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { format } from 'date-fns';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useAppContext } from '@/contexts/app-context';
+import { extractQuestionData } from '@usertour/helpers';
 // Utility functions
 const formatDate = (date: string | null | undefined) => {
   if (!date) return '';

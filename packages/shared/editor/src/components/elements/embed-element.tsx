@@ -10,15 +10,7 @@ import {
 } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { ComboBox } from '@usertour-packages/combo-box';
 import { CSSProperties, ChangeEvent, useEffect, useState } from 'react';
 /* eslint-disable @next/next/no-img-element */
 import { Path, Transforms } from 'slate';
@@ -237,22 +229,17 @@ export const EmbedElement = (props: RenderElementProps) => {
                   onChange={handleWidthValueChange}
                   className="bg-background grow "
                 />
-                <Select
+                <ComboBox
+                  options={[
+                    { value: 'percent', name: '%' },
+                    { value: 'pixels', name: 'pixels' },
+                  ]}
+                  value={element.width?.type ?? 'percent'}
                   onValueChange={handleWidthTypeChange}
-                  defaultValue={element.width?.type ?? 'percent'}
-                >
-                  <SelectTrigger className="shrink w-56">
-                    <SelectValue placeholder="Select a distribute" />
-                  </SelectTrigger>
-                  <SelectPortal style={{ zIndex: zIndex + 2 }}>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="percent">%</SelectItem>
-                        <SelectItem value="pixels">pixels</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                  placeholder="Select a type"
+                  className="shrink w-56"
+                  contentStyle={{ zIndex: zIndex + 2 }}
+                />
               </div>
               <div className="flex gap-x-2">
                 <Checkbox

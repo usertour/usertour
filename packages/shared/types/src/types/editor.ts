@@ -210,6 +210,7 @@ export interface ContentEditorMultipleChoiceElement {
     highRange?: number;
     bindToAttribute?: boolean;
     selectedAttribute?: string;
+    otherPlaceholder?: string;
   };
 }
 

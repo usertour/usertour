@@ -10,7 +10,7 @@ export const useContentBuilder = () => {
   const { invoke: createVersion } = useCreateContentVersionMutation();
   const { environment } = useAppContext();
 
-  const openBuilder = async (content: Content, contentType: string) => {
+  const openBuilder = async (content: Content, contentType: string, stepIndex?: number) => {
     let versionId = content?.editedVersionId;
 
     if (content?.published && content.editedVersionId === content.publishedVersionId) {
@@ -46,7 +46,9 @@ export const useContentBuilder = () => {
       }
     }
 
-    navigate(`/env/${environment?.id}/${contentType}/${content?.id}/builder/${versionId}`);
+    const baseUrl = `/env/${environment?.id}/${contentType}/${content?.id}/builder/${versionId}`;
+    const url = stepIndex !== undefined ? `${baseUrl}?step=${stepIndex}` : baseUrl;
+    navigate(url);
     return true;
   };
 

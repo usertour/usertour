@@ -1,23 +1,10 @@
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Content, ElementSelectorPropsData } from '@usertour/types';
+import { ComboBox } from '@usertour-packages/combo-box';
+import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 
 export interface ElementSelectorProps {
@@ -57,9 +44,20 @@ export const ElementSelector = (props: ElementSelectorProps) => {
     const value = e.target.value;
     updateInnerData({ customSelector: value });
   };
-  const handleSequenceValueChange = (value: string) => {
-    updateInnerData({ sequence: value });
-  };
+  const sequenceOptions = [
+    { value: '1st', name: 'select 1st element' },
+    { value: '2st', name: 'select 2nd element' },
+    { value: '3st', name: 'select 3rd element' },
+    { value: '4st', name: 'select 4th element' },
+    { value: '5st', name: 'select 5th element' },
+  ];
+
+  const handleSequenceValueChange = useCallback(
+    (value: string) => {
+      updateInnerData({ sequence: value });
+    },
+    [updateInnerData],
+  );
 
   return (
     <div className="space-y-3" ref={ref}>
@@ -68,16 +66,9 @@ export const ElementSelector = (props: ElementSelectorProps) => {
           <div className="flex flex-col space-y-2">
             <div className="flex justify-start items-center space-x-1	">
               <Label htmlFor="button-manual-element-text">Element text</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <QuestionMarkCircledIcon />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs bg-foreground text-background">
-                    <p>Usertour will select an element containing the text you write here.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <QuestionTooltip>
+                Usertour will select an element containing the text you write here.
+              </QuestionTooltip>
             </div>
             <Input
               id="button-manual-element-text"
@@ -87,21 +78,12 @@ export const ElementSelector = (props: ElementSelectorProps) => {
             />
             <div className="flex justify-start items-center space-x-1	">
               <Label htmlFor="button-manual-css-selector">CSS selector</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <QuestionMarkCircledIcon />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs bg-foreground text-background">
-                    <p>
-                      Advanced feature: If possible, we recommend selecting elements using text. lf
-                      an element does not have text, or the text is very generic, you can select it
-                      using a CSS selector instead. lf both text and CSS selector is filled in,
-                      Usertour will select an element matching both.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <QuestionTooltip>
+                Advanced feature: If possible, we recommend selecting elements using text. lf an
+                element does not have text, or the text is very generic, you can select it using a
+                CSS selector instead. lf both text and CSS selector is filled in, Usertour will
+                select an element matching both.
+              </QuestionTooltip>
             </div>
             <Input
               id="button-manual-css-selector"
@@ -125,53 +107,25 @@ export const ElementSelector = (props: ElementSelectorProps) => {
             </div>
             <div className="flex justify-start items-center space-x-1	">
               <Label htmlFor="button-manual-css-selector">If multiple matches</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <QuestionMarkCircledIcon />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs bg-foreground text-background">
-                    <p>
-                      If multiple elements match your criteria, you can tell Usertour which of the
-                      elements to select.
-                    </p>
-                    <p>
-                      Elements are sorted first by vertical position and second by horizontal
-                      position. l.e. an element higher up on the page and more towards the left
-                      takes precedence.{' '}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <QuestionTooltip>
+                <p>
+                  If multiple elements match your criteria, you can tell Usertour which of the
+                  elements to select.
+                </p>
+                <p>
+                  Elements are sorted first by vertical position and second by horizontal position.
+                  l.e. an element higher up on the page and more towards the left takes precedence.
+                </p>
+              </QuestionTooltip>
             </div>
-            <Select onValueChange={handleSequenceValueChange} defaultValue={innerData.sequence}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a option" />
-              </SelectTrigger>
-              <SelectContent
-                style={{
-                  zIndex: EXTENSION_CONTENT_RULES,
-                }}
-              >
-                <SelectGroup>
-                  <SelectItem value="1st">
-                    <div className="flex">select 1st element</div>
-                  </SelectItem>
-                  <SelectItem value="2st">
-                    <div className="flex">select 2st element</div>
-                  </SelectItem>
-                  <SelectItem value="3st">
-                    <div className="flex">select 3st element</div>
-                  </SelectItem>
-                  <SelectItem value="4st">
-                    <div className="flex">select 4st element</div>
-                  </SelectItem>
-                  <SelectItem value="5st">
-                    <div className="flex">select 5st element</div>
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <ComboBox
+              options={sequenceOptions}
+              value={innerData.sequence}
+              onValueChange={handleSequenceValueChange}
+              placeholder="Select a option"
+              className="w-full"
+              contentStyle={{ zIndex: EXTENSION_CONTENT_RULES }}
+            />
           </div>
         </div>
       </div>

@@ -1,12 +1,8 @@
 import { computePosition, hide } from '@floating-ui/dom';
-import { finderV2 } from '@usertour-packages/finder';
 import {
   RulesCondition,
-  ElementConditionLogic,
-  StringConditionLogic,
   RulesType,
   BizUserInfo,
-  RulesTypeControl,
   AnswerQuestionDto,
   SessionAttribute,
   AttributeBizTypes,
@@ -16,8 +12,8 @@ import {
   ContentEditorQuestionElement,
   ContentEditorElementType,
 } from '@usertour-packages/shared-editor';
-import { document, location, off, on, window } from '@/utils';
-import { uuidV4, evaluateRulesConditions } from '@usertour/helpers';
+import { document, location, window } from '@/utils';
+import { uuidV4 } from '@usertour/helpers';
 
 // ============================================================================
 // Element Visibility and Interaction Functions
@@ -40,216 +36,6 @@ export const isVisible = async (el: HTMLElement) => {
     return false;
   }
   return true;
-};
-
-/**
- * Cache for tracking clicked elements
- */
-const cache = new Map();
-
-/**
- * Check if an element has been clicked
- * @param el - The HTML element to check
- * @returns True if the element has been clicked, false otherwise
- */
-const isClicked = (el: HTMLElement) => {
-  if (cache.has(el)) {
-    return cache.get(el);
-  }
-  const onClick = () => {
-    cache.set(el, true);
-    off(el, 'click', onClick);
-  };
-  on(el, 'click', onClick);
-  cache.set(el, false);
-  return false;
-};
-
-/**
- * Check if an element is disabled
- * For form controls (input, button, select, etc.), uses the disabled property for accurate state detection
- * For other elements, checks if the disabled attribute exists
- * @param el - The HTML element to check
- * @returns True if the element is disabled, false otherwise
- */
-const isDisabled = (el: HTMLElement | null): boolean => {
-  if (!el) {
-    return false;
-  }
-
-  // For form controls, use the disabled property which reflects the actual state
-  if ('disabled' in el) {
-    return Boolean(
-      (
-        el as
-          | HTMLInputElement
-          | HTMLButtonElement
-          | HTMLSelectElement
-          | HTMLTextAreaElement
-          | HTMLOptionElement
-          | HTMLFieldSetElement
-      ).disabled,
-    );
-  }
-
-  // For other elements, check if the disabled attribute exists
-  return el.hasAttribute('disabled');
-};
-
-/**
- * Cache for tracking text fill events
- */
-const fillCache = new Map();
-
-// ============================================================================
-// Rule Evaluation Functions
-// ============================================================================
-
-/**
- * Check if element-based rules are active
- * @param rules - The rules condition to check
- * @returns True if the rules are active, false otherwise
- */
-const isActiveRulesByElement = async (rules: RulesCondition) => {
-  const { data } = rules;
-  // Add null check for data and elementData
-  if (!document || !data?.elementData) {
-    return false;
-  }
-  const el = finderV2(data.elementData, document);
-
-  const isPresent = el ? await isVisible(el) : false;
-
-  switch (data.logic) {
-    case ElementConditionLogic.PRESENT:
-      return isPresent;
-    case ElementConditionLogic.UNPRESENT:
-      return !isPresent;
-    case ElementConditionLogic.DISABLED:
-      return el ? isDisabled(el) : false;
-    case ElementConditionLogic.UNDISABLED:
-      return el ? !isDisabled(el) : false;
-    case ElementConditionLogic.CLICKED:
-      return el ? isClicked(el) : false;
-    case ElementConditionLogic.UNCLICKED:
-      return el ? !isClicked(el) : false;
-    default:
-      return false;
-  }
-};
-
-/**
- * Check if text input-based rules are active
- * @param rules - The rules condition to check
- * @returns True if the rules are active, false otherwise
- */
-const isActiveRulesByTextInput = async (rules: RulesCondition) => {
-  const { data } = rules;
-  // Add null check for data and elementData
-  if (!document || !data?.elementData) {
-    return false;
-  }
-  const { elementData, logic, value } = data;
-  const el = finderV2(elementData, document) as HTMLInputElement;
-  if (!el) {
-    return false;
-  }
-  const elValue = el.value ?? '';
-  const compareValue = value ?? '';
-
-  switch (logic) {
-    case StringConditionLogic.IS:
-      return elValue === compareValue;
-    case StringConditionLogic.NOT:
-      return elValue !== compareValue;
-    case StringConditionLogic.CONTAINS:
-      return elValue.includes(compareValue);
-    case StringConditionLogic.NOT_CONTAIN:
-      return !elValue.includes(compareValue);
-    case StringConditionLogic.STARTS_WITH:
-      return elValue.startsWith(compareValue);
-    case StringConditionLogic.ENDS_WITH:
-      return elValue.endsWith(compareValue);
-    case StringConditionLogic.MATCH:
-      return elValue.search(compareValue) !== -1;
-    case StringConditionLogic.UNMATCH:
-      return elValue.search(compareValue) === -1;
-    case StringConditionLogic.ANY:
-      return true;
-    case StringConditionLogic.EMPTY:
-      return !elValue;
-    default:
-      return false;
-  }
-};
-
-/**
- * Check if text fill-based rules are active
- * @param rules - The rules condition to check
- * @returns True if the rules are active, false otherwise
- */
-const isActiveRulesByTextFill = async (rules: RulesCondition) => {
-  const { data } = rules;
-  // Add null check for data and elementData
-  if (!document || !data?.elementData) {
-    return false;
-  }
-  const { elementData } = data;
-  const el = finderV2(elementData, document) as HTMLInputElement;
-  if (!el) {
-    return false;
-  }
-  const now = new Date().getTime();
-  const onKeyup = () => {
-    const cacheData = fillCache.get(el);
-    const fillData = { ...cacheData, timestamp: new Date().getTime() };
-    fillCache.set(el, fillData);
-  };
-  if (fillCache.has(el)) {
-    const { timestamp, value, isActive } = fillCache.get(el);
-    if (isActive) {
-      return true;
-    }
-    if (timestamp !== -1 && now - timestamp > 1000 && value !== el.value) {
-      // BUG FIX: Changed from 'click' to 'keyup' to match the event listener added below
-      off(document, 'keyup', onKeyup);
-      fillCache.set(el, { timestamp, value, isActive: true });
-      return true;
-    }
-    return false;
-  }
-  on(document, 'keyup', onKeyup);
-  fillCache.set(el, { timestamp: -1, value: el.value, isActive: false });
-  return false;
-};
-
-/**
- * Evaluate rules conditions by session attributes
- * @param conditions - Rules conditions to evaluate
- * @param attributes - Session attributes to evaluate
- * @returns Evaluation result
- */
-export const evaluateConditions = async (
-  conditions: RulesCondition[],
-  attributes?: SessionAttribute[],
-) => {
-  const typeControl: RulesTypeControl = {
-    [RulesType.CURRENT_PAGE]: true,
-    [RulesType.TIME]: true,
-    ...(attributes ? { [RulesType.USER_ATTR]: true } : {}),
-  };
-  const clientContext = getClientContext();
-
-  return await evaluateRulesConditions(conditions, {
-    clientContext,
-    typeControl,
-    customEvaluators: {
-      [RulesType.ELEMENT]: isActiveRulesByElement,
-      [RulesType.TEXT_INPUT]: isActiveRulesByTextInput,
-      [RulesType.TEXT_FILL]: isActiveRulesByTextFill,
-    },
-    ...(attributes ? convertToAttributeEvaluationOptions(attributes) : {}),
-  });
 };
 
 /**

@@ -1,4 +1,5 @@
-import { ChevronDownIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-packages/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,12 +7,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { ContentPriority } from '@usertour/types';
 import { useState } from 'react';
 
@@ -40,10 +36,10 @@ export const RulesPriority = (props: RulesPriorityProps) => {
     <div className="flex flex-row items-center space-x-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={disabled}>
-          <div className="flex flex-row items-center space-x-2 text-sm text-primary cursor-pointer w-fit">
+          <Button variant="ghost" className="text-primary h-auto p-0">
             <span>{itemsMapping.find((item) => item.key === value)?.value}</span>
-            <ChevronDownIcon width={16} height={16} />
-          </div>
+            <ChevronDownIcon width={16} height={16} className="ml-2" />
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuRadioGroup value={value} onValueChange={handleOnValueChange}>
@@ -55,19 +51,10 @@ export const RulesPriority = (props: RulesPriorityProps) => {
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <QuestionMarkCircledIcon className="cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs bg-foreground text-background">
-            <p>
-              if a user matches start conditions for 2 contents, the one with the higher
-              prioritywill be started. Choose a high priority for your most important content
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <QuestionTooltip>
+        if a user matches start conditions for 2 contents, the one with the higher priority will be
+        started. Choose a high priority for your most important content
+      </QuestionTooltip>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { Environment } from '@usertour/types';
-import { CopyIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons';
+import { CopyIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {
   Table,
@@ -11,12 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Badge } from '@usertour-packages/badge';
 import { cn } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { format } from 'date-fns';
@@ -26,9 +22,10 @@ import { EnvironmentListAction } from './environment-list-action';
 
 interface EnvironmentListContentTableRowProps {
   environment: Environment;
+  environmentCount: number;
 }
 const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowProps) => {
-  const { environment } = props;
+  const { environment, environmentCount } = props;
   const [_, copyToClipboard] = useCopyToClipboard();
   const [isShowCopy, setIsShowCopy] = useState<boolean>(false);
   const { toast } = useToast();
@@ -42,7 +39,12 @@ const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowPro
 
   return (
     <TableRow className="cursor-pointer">
-      <TableCell>{environment.name}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {environment.name}
+          {environment.isPrimary === true && <Badge variant={'success'}>Primary</Badge>}
+        </div>
+      </TableCell>
       <TableCell onMouseEnter={() => setIsShowCopy(true)} onMouseLeave={() => setIsShowCopy(false)}>
         <div className="flex flex-row items-center space-x-1">
           <span>{environment.token} </span>
@@ -58,7 +60,7 @@ const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowPro
       </TableCell>
       <TableCell>{format(new Date(environment.createdAt), 'PPpp')}</TableCell>
       <TableCell>
-        <EnvironmentListAction environment={environment} />
+        <EnvironmentListAction environment={environment} environmentCount={environmentCount} />
       </TableCell>
     </TableRow>
   );
@@ -79,17 +81,10 @@ export const EnvironmentListContent = () => {
               <TableHead>Environment name</TableHead>
               <TableHead>
                 Usertour.js Token
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <QuestionMarkCircledIcon className="inline ml-1 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs bg-foreground text-background">
-                      You need this when installing Usertour.js in your web app. See
-                      https://docs.usertour.io for more details.
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <QuestionTooltip className="inline ml-1">
+                  You need this when installing Usertour.js in your web app. See
+                  https://docs.usertour.io for more details.
+                </QuestionTooltip>
               </TableHead>
               <TableHead>CreatedAt</TableHead>
               <TableHead />
@@ -98,7 +93,11 @@ export const EnvironmentListContent = () => {
           <TableBody>
             {environmentList ? (
               environmentList?.map((environment: Environment) => (
-                <EnvironmentListContentTableRow environment={environment} key={environment.id} />
+                <EnvironmentListContentTableRow
+                  environment={environment}
+                  environmentCount={environmentList.length}
+                  key={environment.id}
+                />
               ))
             ) : (
               <TableRow>

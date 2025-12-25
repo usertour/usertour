@@ -37,267 +37,6 @@ interface ContentEditorMultipleChoiceProps {
 const itemBaseClass =
   'flex items-center overflow-hidden group cursor-pointer relative border bg-sdk-question/10 text-sdk-question border-sdk-question hover:text-sdk-question hover:bg-sdk-question/40 rounded-md main-transition p-2 gap-2 w-auto pr-0 h-8 items-center justify-center min-w-0';
 
-// Memoized Radio Option component
-const RadioOption = memo(
-  ({
-    option,
-    index,
-    itemBaseClass,
-  }: {
-    option: ContentEditorMultipleChoiceOption;
-    index: number;
-    itemBaseClass: string;
-  }) => (
-    <div className={itemBaseClass} key={index}>
-      <RadioGroupItem
-        value={option.value}
-        id={`r1${index}`}
-        className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
-      />
-      <Label htmlFor={`r1${index}`} className="cursor-pointer grow">
-        {option.label || option.value}
-      </Label>
-    </div>
-  ),
-);
-
-RadioOption.displayName = 'RadioOption';
-
-// Memoized Checkbox Option component
-const CheckboxOption = memo(
-  ({
-    option,
-    index,
-    itemBaseClass,
-    handleOptionChange,
-  }: {
-    option: ContentEditorMultipleChoiceOption;
-    index: number;
-    itemBaseClass: string;
-    handleOptionChange: (
-      index: number,
-      field: keyof ContentEditorMultipleChoiceOption,
-      value: string | boolean,
-    ) => void;
-  }) => (
-    <div className={itemBaseClass} key={index}>
-      <Checkbox
-        checked={option.checked}
-        id={`c1${index}`}
-        className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
-        onCheckedChange={(checked) => handleOptionChange(index, 'checked', checked)}
-      />
-      <Label htmlFor={`c1${index}`} className="grow cursor-pointer text-sm">
-        {option.label || option.value || `${DEFAULT_OPTION_PREFIX} ${index + 1}`}
-      </Label>
-    </div>
-  ),
-);
-
-CheckboxOption.displayName = 'CheckboxOption';
-
-// Memoized Other Option component for editor
-const OtherOptionEditor = memo(
-  ({
-    itemBaseClass,
-    isRadio = false,
-  }: {
-    itemBaseClass: string;
-    isRadio?: boolean;
-  }) => (
-    <div className={cn(itemBaseClass)}>
-      {isRadio ? (
-        <RadioGroupItem
-          value="other"
-          id="other-radio"
-          className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
-        />
-      ) : (
-        <Checkbox className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background" />
-      )}
-      <div className="flex items-center grow gap-2 relative">
-        <span className="grow cursor-pointer leading-none">Other...</span>
-      </div>
-    </div>
-  ),
-);
-
-OtherOptionEditor.displayName = 'OtherOptionEditor';
-
-// Memoized Options Editor component
-const OptionsEditor = memo(
-  ({
-    options,
-    handleOptionChange,
-    handleDataChange,
-  }: {
-    options: ContentEditorMultipleChoiceOption[];
-    handleOptionChange: (
-      index: number,
-      field: keyof ContentEditorMultipleChoiceOption,
-      value: string | boolean,
-    ) => void;
-    handleDataChange: (data: Partial<ContentEditorMultipleChoiceElement['data']>) => void;
-  }) => (
-    <div className="space-y-2">
-      <Label>Options</Label>
-      {options.map((option, index) => (
-        <div key={index} className="flex gap-2">
-          <Input
-            value={option.value}
-            onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
-            placeholder="Value"
-          />
-          <Input
-            value={option.label}
-            onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
-            placeholder="Option label"
-          />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className="flex-none hover:bg-red-200"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    handleDataChange({
-                      options: options.filter((_, i) => i !== index),
-                    })
-                  }
-                >
-                  <DeleteIcon className="fill-red-500" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">Remove option</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      ))}
-
-      <Button
-        onClick={() =>
-          handleDataChange({
-            options: [...options, { label: '', value: '', checked: false }],
-          })
-        }
-        size="sm"
-        variant={'link'}
-        className="hover:no-underline"
-      >
-        <PlusIcon width={16} height={16} />
-        Add answer option
-      </Button>
-    </div>
-  ),
-);
-
-OptionsEditor.displayName = 'OptionsEditor';
-
-// Memoized Multiple Selection Settings component
-const MultipleSelectionSettings = memo(
-  ({
-    localData,
-    handleDataChange,
-  }: {
-    localData: ContentEditorMultipleChoiceElement['data'];
-    handleDataChange: (data: Partial<ContentEditorMultipleChoiceElement['data']>) => void;
-  }) => (
-    <>
-      <Label className="flex items-center gap-1">Number of options required</Label>
-      <div className="flex flex-row gap-2 items-center">
-        <Input
-          type="number"
-          value={localData.lowRange}
-          placeholder="Default"
-          onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
-        />
-        <p>-</p>
-        <Input
-          type="number"
-          value={localData.highRange}
-          placeholder="Default"
-          onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="button-text">Submit button text</Label>
-        <Input
-          id="button-text"
-          value={localData.buttonText}
-          onChange={(e) => handleDataChange({ buttonText: e.target.value })}
-          placeholder="Enter button text"
-        />
-      </div>
-    </>
-  ),
-);
-
-MultipleSelectionSettings.displayName = 'MultipleSelectionSettings';
-
-// Memoized Settings Switches component
-const SettingsSwitches = memo(
-  ({
-    localData,
-    handleDataChange,
-    contextProps,
-  }: {
-    localData: ContentEditorMultipleChoiceElement['data'];
-    handleDataChange: (data: Partial<ContentEditorMultipleChoiceElement['data']>) => void;
-    contextProps: {
-      zIndex: number;
-      projectId: string;
-    };
-  }) => {
-    const { zIndex, projectId } = contextProps;
-
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="shuffle"
-            checked={localData.shuffleOptions}
-            className="data-[state=unchecked]:bg-muted"
-            onCheckedChange={(checked) => handleDataChange({ shuffleOptions: checked })}
-          />
-          <Label htmlFor="shuffle">Shuffle option order</Label>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="other"
-            checked={localData.enableOther}
-            className="data-[state=unchecked]:bg-muted"
-            onCheckedChange={(checked) => handleDataChange({ enableOther: checked })}
-          />
-          <Label htmlFor="other">Enable "Other" option</Label>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="multiple"
-            checked={localData.allowMultiple}
-            className="data-[state=unchecked]:bg-muted"
-            onCheckedChange={(checked) => handleDataChange({ allowMultiple: checked })}
-          />
-          <Label htmlFor="multiple">Allow multiple selection</Label>
-        </div>
-        <BindAttribute
-          zIndex={zIndex}
-          bindToAttribute={localData.bindToAttribute || false}
-          selectedAttribute={localData.selectedAttribute}
-          onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
-          onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
-          dataType={localData.allowMultiple ? BizAttributeTypes.List : BizAttributeTypes.String}
-          projectId={projectId}
-        />
-      </div>
-    );
-  },
-);
-
-SettingsSwitches.displayName = 'SettingsSwitches';
-
 export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoiceProps) => {
   const { element, id } = props;
   const {
@@ -407,7 +146,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
             <div className="flex flex-col gap-2 w-full">
               <div className="space-y-2">
                 {!localData.allowMultiple ? (
-                  <RadioGroup defaultValue={localData.options[0].value}>
+                  <RadioGroup defaultValue={localData.options[0]?.value}>
                     {radioOptions}
                     {localData.enableOther && (
                       <div className={cn(itemBaseClass)}>
@@ -417,7 +156,9 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                           className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
                         />
                         <div className="flex items-center grow gap-2 relative">
-                          <span className="grow cursor-pointer leading-none">Other...</span>
+                          <span className="grow cursor-pointer leading-none">
+                            {localData.otherPlaceholder || 'Other...'}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -429,7 +170,9 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                       <div className={cn(itemBaseClass)}>
                         <Checkbox className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background" />
                         <div className="flex items-center grow gap-2 relative">
-                          <span className="grow cursor-pointer leading-none">Other...</span>
+                          <span className="grow cursor-pointer leading-none">
+                            {localData.otherPlaceholder || 'Other...'}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -573,6 +316,17 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                     />
                     <Label htmlFor="other">Enable "Other" option</Label>
                   </div>
+                  {localData.enableOther && (
+                    <div className="space-y-2 ml-8">
+                      <Label htmlFor="other-placeholder">Other option placeholder</Label>
+                      <Input
+                        id="other-placeholder"
+                        value={localData.otherPlaceholder || ''}
+                        onChange={(e) => handleDataChange({ otherPlaceholder: e.target.value })}
+                        placeholder="Other..."
+                      />
+                    </div>
+                  )}
 
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -644,7 +398,7 @@ const OtherOptionSerialize = memo(
           <>
             <input
               ref={otherInputRef}
-              placeholder="Other..."
+              placeholder={element.data.otherPlaceholder || 'Other...'}
               value={otherValue}
               onChange={(e) => {
                 setOtherValue(e.target.value);
@@ -672,7 +426,7 @@ const OtherOptionSerialize = memo(
               setIsEditing(true);
             }}
           >
-            {otherValue || 'Other...'}
+            {otherValue || element.data.otherPlaceholder || 'Other...'}
           </span>
         )}
       </div>
@@ -706,7 +460,9 @@ export const ContentEditorMultipleChoiceSerialize = memo(
       const isValidSelection = useCallback(() => {
         const count = selectedValues.length + (isOtherChecked && otherValue ? 1 : 0);
         const lowRange = Number(element.data.lowRange) || 0;
-        const highRange = Number(element.data.highRange) || options.length;
+        // When enableOther is true, the max selectable count should include the "Other" option
+        const maxOptions = options.length + (element.data.enableOther ? 1 : 0);
+        const highRange = Number(element.data.highRange) || maxOptions;
         return count >= lowRange && count <= highRange;
       }, [
         selectedValues.length,
@@ -714,6 +470,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
         otherValue,
         element.data.lowRange,
         element.data.highRange,
+        element.data.enableOther,
         options.length,
       ]);
 
@@ -780,7 +537,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
                     {isEditing ? (
                       <input
                         ref={otherInputRef}
-                        placeholder="Other..."
+                        placeholder={element.data.otherPlaceholder || 'Other...'}
                         value={otherValue}
                         onChange={(e) => {
                           setOtherValue(e.target.value);
@@ -796,7 +553,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
                           setIsEditing(true);
                         }}
                       >
-                        {otherValue || 'Other...'}
+                        {otherValue || element.data.otherPlaceholder || 'Other...'}
                       </span>
                     )}
                   </div>

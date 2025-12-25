@@ -5,6 +5,7 @@ import { UsertourSession } from '@/core/usertour-session';
 import { UsertourCore } from '@/core/usertour-core';
 import { UsertourSocket } from '@/core/usertour-socket';
 import { UsertourTheme } from '@/core/usertour-theme';
+import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 import { autoBind } from '@/utils';
 import {
   ChecklistData,
@@ -236,6 +237,8 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     this.stopChecking();
     // Reset component state
     this.reset();
+    // Destroy the rules evaluator for this content
+    rulesEvaluatorManager.destroyEvaluator(this.getContentId());
     // Call component-specific cleanup
     this.onDestroy();
   }
@@ -481,7 +484,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       return null;
     }
 
-    return await UsertourTheme.getThemeSettings(themeToUse);
+    return await UsertourTheme.getThemeSettings(this.getContentId(), themeToUse);
   }
 
   /**

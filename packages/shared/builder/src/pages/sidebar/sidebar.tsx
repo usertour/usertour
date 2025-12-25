@@ -14,8 +14,14 @@ import { SidebarMini } from './sidebar-mini';
 import { SidebarTheme } from './sidebar-theme';
 
 export const BuilderSideBar = () => {
-  const { position, currentContent, currentVersion, zIndex } = useBuilderContext();
+  const { position, currentContent, currentVersion, zIndex, saveContent, isLoading, onSaved } =
+    useBuilderContext();
   const sidbarRef = useRef<HTMLDivElement | null>(null);
+
+  const handleSave = async () => {
+    await saveContent();
+    await onSaved?.();
+  };
 
   return (
     <div
@@ -40,7 +46,7 @@ export const BuilderSideBar = () => {
           </ScrollArea>
         </CardContent>
         <CardFooter className="flex p-5">
-          <SidebarFooter />
+          <SidebarFooter onSave={handleSave} isLoading={isLoading} />
         </CardFooter>
       </Card>
     </div>

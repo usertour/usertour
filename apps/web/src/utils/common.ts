@@ -8,6 +8,30 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Threshold for showing compact format (numbers >= 10000 will be compacted)
+const COMPACT_THRESHOLD = 10000;
+
+/**
+ * Format a number to compact notation (e.g., 1.2K, 3.4M, 5.6B)
+ * Only applies to numbers >= 10000, smaller numbers are shown in full with locale formatting
+ */
+export const formatCompactNumber = (num: number): string => {
+  if (num < COMPACT_THRESHOLD) {
+    return num.toLocaleString('en-US');
+  }
+  return new Intl.NumberFormat('en', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(num);
+};
+
+/**
+ * Check if a number should display a tooltip with the full value
+ */
+export const shouldShowFullNumberTooltip = (num: number): boolean => {
+  return num >= COMPACT_THRESHOLD;
+};
+
 // Utility function to format different data types for display based on AttributeDataType
 export const formatAttributeValue = (value: any, dataType: number): string => {
   if (isUndefined(value) || isUndefined(dataType)) {

@@ -43,6 +43,7 @@ Table Register {
   updatedAt DateTime [not null]
   code String [not null]
   email String [not null]
+  processed Boolean [not null, default: false]
 }
 
 Table Invite {
@@ -114,6 +115,7 @@ Table Environment {
   name String
   token String [not null]
   deleted Boolean [not null, default: false]
+  isPrimary Boolean [not null, default: false, note: 'Whether this is the primary environment for the project']
   project Project [not null]
   projectId String [not null]
   contents Content [not null]

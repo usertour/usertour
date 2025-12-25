@@ -4,13 +4,16 @@ import {
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
-import { isUndefined } from '@usertour/helpers';
 import { LauncherStore, BaseStore } from '@/types/store';
 import { UsertourComponent } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
+
+// Launcher timeout: 1 hour (3600 seconds)
+// Longer timeout for launcher since multiple launchers can coexist without affecting each other
+const LAUNCHER_TARGET_MISSING_SECONDS = 3600;
 
 export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   // === Properties ===
@@ -144,10 +147,9 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     }
 
     this.watcher = new UsertourElementWatcher(targetElement);
-    const targetMissingSeconds = this.instance.getTargetMissingSeconds();
-    if (!isUndefined(targetMissingSeconds)) {
-      this.watcher.setTargetMissingSeconds(targetMissingSeconds);
-    }
+
+    // Use launcher-specific timeout (1 hour) for continuous element monitoring
+    this.watcher.setTargetMissingSeconds(LAUNCHER_TARGET_MISSING_SECONDS);
 
     // Handle element found
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
