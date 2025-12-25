@@ -24,10 +24,9 @@ export class SendMagicLinkEmailProcessor extends WorkerHost {
   async process(job: Job<SendMagicLinkEmailJobData>) {
     const { sessionId } = job.data;
     try {
-      this.logger.log(`Sending magic link email for sessionId ${sessionId}`);
-      await this.authService.sendMagicLinkEmailBySessionId(sessionId);
+      await this.authService.processMagicLinkEmail(sessionId);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Failed to process magic link email for sessionId ${sessionId}`, error);
     }
   }
 }

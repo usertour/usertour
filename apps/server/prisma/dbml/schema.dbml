@@ -43,6 +43,7 @@ Table Register {
   updatedAt DateTime [not null]
   code String [not null]
   email String [not null]
+  processed Boolean [not null, default: false]
 }
 
 Table Invite {

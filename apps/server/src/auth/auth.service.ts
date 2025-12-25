@@ -2,7 +2,7 @@ import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { initialization, initializationThemes } from '@/common/initialization/initialization';
 import { Injectable, Logger } from '@nestjs/common';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
@@ -37,6 +37,11 @@ import {
 } from '@/common/consts/queen';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { RedisService, LockReleaseFn } from '@/shared/redis.service';
+
+const EMAIL_COOLDOWN_MS = 60 * 1000; // 60 seconds - minimum interval between email sends
+const REGISTER_REUSE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours - reuse existing register record within this window
+const EMAIL_LOCK_KEY_PREFIX = 'magic-link-email:';
 
 @Injectable()
 export class AuthService {
@@ -48,6 +53,7 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
     private readonly teamService: TeamService,
+    private readonly redisService: RedisService,
     @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
     @InjectQueue(QUEUE_SEND_RESET_PASSWORD_EMAIL) private resetPasswordQueue: Queue,
     @InjectQueue(QUEUE_INITIALIZE_PROJECT) private initializeProjectQueue: Queue,
@@ -341,14 +347,35 @@ export class AuthService {
     }
 
     try {
+      // Check if there's a recent Register record for this email (within reuse window)
+      const existingRegister = await this.prisma.register.findFirst({
+        where: {
+          email,
+          createdAt: {
+            gte: new Date(Date.now() - REGISTER_REUSE_WINDOW_MS),
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // If a recent record exists, reuse it and trigger email job
+      if (existingRegister) {
+        this.logger.log(`Reusing existing register record for email: ${email}`);
+        await this.addSendMagicLinkEmailJob(existingRegister.id);
+        return existingRegister;
+      }
+
+      // Create new record if no recent one exists
       const result = await this.prisma.register.create({
         data: {
           email,
+          processed: false,
         },
       });
       await this.addSendMagicLinkEmailJob(result.id);
       return result;
-    } catch (_) {
+    } catch (error) {
+      this.logger.error(`Failed to create magic link for email: ${email}`, error);
       throw new UnknownError();
     }
   }
@@ -358,10 +385,12 @@ export class AuthService {
     if (!data) {
       throw new InvalidVerificationSession();
     }
+
     try {
       await this.addSendMagicLinkEmailJob(data.id);
       return data;
-    } catch (_) {
+    } catch (error) {
+      this.logger.error(`Failed to resend magic link for registerId: ${id}`, error);
       throw new UnknownError();
     }
   }
@@ -382,12 +411,57 @@ export class AuthService {
     await this.resetPasswordQueue.add('sendResetPasswordEmail', { sessionId });
   }
 
-  async sendMagicLinkEmailBySessionId(sessionId: string) {
-    const data = await this.prisma.register.findUnique({ where: { id: sessionId } });
-    if (!data) {
+  async processMagicLinkEmail(sessionId: string) {
+    const current = await this.prisma.register.findUnique({ where: { id: sessionId } });
+    if (!current) {
       throw new InvalidVerificationSession();
     }
-    await this.sendMagicLinkEmail(data.code, data.email);
+
+    // Acquire distributed lock to prevent concurrent email sending for the same email
+    const emailHash = createHash('md5').update(current.email).digest('hex');
+    const lockKey = `${EMAIL_LOCK_KEY_PREFIX}${emailHash}`;
+    let releaseLock: LockReleaseFn | null = null;
+
+    try {
+      releaseLock = await this.redisService.acquireLock(lockKey);
+      if (!releaseLock) {
+        this.logger.warn(
+          `Could not acquire lock for ${current.email}, another instance is processing`,
+        );
+        return;
+      }
+
+      // Get the last record where email was actually sent (processed=true means email was sent)
+      const lastEmailSent = await this.prisma.register.findFirst({
+        where: {
+          email: current.email,
+          processed: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      // Check cooldown based on last actual email send time
+      if (lastEmailSent) {
+        const interval = Date.now() - lastEmailSent.updatedAt.getTime();
+        if (interval < EMAIL_COOLDOWN_MS) {
+          this.logger.warn(
+            `Skipping email for ${current.email}, interval: ${interval}ms < ${EMAIL_COOLDOWN_MS}ms`,
+          );
+          // Don't mark as processed - only sent emails count toward cooldown
+          return;
+        }
+      }
+
+      // Send email and mark as processed (processed=true means email was sent)
+      await this.sendMagicLinkEmail(current.code, current.email);
+      await this.prisma.register.update({ where: { id: sessionId }, data: { processed: true } });
+      this.logger.log(`Magic link email sent for ${current.email}`);
+    } finally {
+      // Always release the lock
+      if (releaseLock) {
+        await releaseLock();
+      }
+    }
   }
 
   async addSendMagicLinkEmailJob(sessionId: string) {
@@ -442,7 +516,16 @@ export class AuthService {
 
   // Add new helper methods
   private async validateSignupCode(code: string, isInvite: boolean) {
-    const register = !isInvite ? await this.prisma.register.findFirst({ where: { code } }) : null;
+    const register = !isInvite
+      ? await this.prisma.register.findFirst({
+          where: {
+            code,
+            createdAt: {
+              gte: new Date(Date.now() - REGISTER_REUSE_WINDOW_MS), // Magic link expires after 24 hours
+            },
+          },
+        })
+      : null;
 
     const invite = isInvite ? await this.teamService.getValidInviteByCode(code) : null;
 

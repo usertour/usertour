@@ -65,6 +65,7 @@ model Register {
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   code      String   @default(cuid())
   email     String
+  processed Boolean  @default(false)
 }
 
 model Invite {
