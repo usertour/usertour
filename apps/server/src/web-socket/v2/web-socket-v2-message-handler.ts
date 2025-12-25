@@ -4,7 +4,7 @@ import { ClientMessageKind } from '@usertour/types';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { DistributedLockService } from '../core/distributed-lock.service';
-import { buildSocketLockKey } from '@/utils/websocket-utils';
+import { buildSocketLockKey, getSocketToken } from '@/utils/websocket-utils';
 
 interface MessageHandler {
   handle(context: WebSocketContext, payload?: any): Promise<boolean>;
@@ -145,7 +145,10 @@ export class WebSocketV2MessageHandler {
     );
 
     const duration = Date.now() - startTime;
-    this.logger.log(`[WS] handleClientMessage kind=${kind} - Completed in ${duration}ms`);
+    const token = getSocketToken(socket);
+    this.logger.log(
+      `[WS] handleClientMessage socketId=${socket.id} token=${token || 'N/A'} kind=${kind} - Completed in ${duration}ms`,
+    );
 
     return result ?? false;
   }

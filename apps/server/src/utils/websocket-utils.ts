@@ -25,6 +25,16 @@ export const getGlobalSocketId = (socket: Socket): string => {
 };
 
 /**
+ * Get token from socket object
+ * Returns token stored in socket.data if available
+ * @param socket - The socket object
+ * @returns The token or undefined if not available
+ */
+export const getSocketToken = (socket: Socket): string | undefined => {
+  return socket.data?.token as string | undefined;
+};
+
+/**
  * Build the socket lock key for distributed locking
  * Uses hash tag to ensure cluster compatibility
  * @param socket - The socket object
