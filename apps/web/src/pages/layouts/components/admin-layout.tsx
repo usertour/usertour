@@ -8,7 +8,7 @@ import { Button } from '@usertour-packages/button';
 import { cn } from '@usertour/helpers';
 import { UserProfile } from '@usertour/types';
 import { usePostHog } from 'posthog-js/react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import usertour from 'usertour.js';
@@ -119,18 +119,20 @@ interface AdminLayoutProps {
 // Add new custom hook
 const useUserTracking = (userInfo: UserProfile | null | undefined) => {
   const posthog = usePostHog();
+  const usertourInitialized = useRef(false);
 
   useEffect(() => {
-    if (!userInfo || !userInfo.id) {
+    if (!userInfo?.id) {
       return;
     }
-    if (userTourToken) {
+    if (userTourToken && !usertourInitialized.current) {
       usertour.init(userTourToken);
       usertour.identify(`${userInfo.id}`, {
         name: userInfo?.name,
         email: userInfo?.email,
         signed_up_at: userInfo.createdAt,
       });
+      usertourInitialized.current = true;
     }
     posthog?.identify(userInfo.id, {
       email: userInfo.email,
