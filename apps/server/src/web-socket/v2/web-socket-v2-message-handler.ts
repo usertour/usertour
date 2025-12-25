@@ -145,7 +145,9 @@ export class WebSocketV2MessageHandler {
     );
 
     const duration = Date.now() - startTime;
-    this.logger.log(`[WS] handleClientMessage kind=${kind} - Completed in ${duration}ms`);
+    this.logger.log(
+      `[WS] handleClientMessage socketId=${socket.id} kind=${kind} - Completed in ${duration}ms`,
+    );
 
     return result ?? false;
   }

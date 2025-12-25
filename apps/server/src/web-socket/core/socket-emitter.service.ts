@@ -244,15 +244,20 @@ export class SocketEmitterService {
       const duration = Date.now() - startTime;
       if (!success) {
         this.logger.warn(
-          `[WS] emitWithAck kind=${kind} - Client failed to process in ${duration}ms`,
+          `[WS] emitWithAck socketId=${socket.id} kind=${kind} - Client failed to process in ${duration}ms`,
         );
       } else {
-        this.logger.log(`[WS] emitWithAck kind=${kind} - Completed in ${duration}ms`);
+        this.logger.log(
+          `[WS] emitWithAck socketId=${socket.id} kind=${kind} - Completed in ${duration}ms`,
+        );
       }
       return !!success;
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.logger.error(`[WS] emitWithAck kind=${kind} - Failed in ${duration}ms:`, error);
+      this.logger.error(
+        `[WS] emitWithAck socketId=${socket.id} kind=${kind} - Failed in ${duration}ms:`,
+        error,
+      );
       return false;
     }
   }
