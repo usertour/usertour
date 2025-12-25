@@ -3,7 +3,7 @@ import { convertToCssVars } from '@usertour/helpers';
 import { Theme, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useState } from 'react';
 
-export const useThemeStyles = (theme: Theme) => {
+export const useThemeStyles = (theme: Theme, type = 'tooltip') => {
   const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
   const [globalStyle, setGlobalStyle] = useState<string>('');
 
@@ -15,9 +15,9 @@ export const useThemeStyles = (theme: Theme) => {
 
   useEffect(() => {
     if (themeSetting) {
-      setGlobalStyle(convertToCssVars(convertSettings(themeSetting)));
+      setGlobalStyle(convertToCssVars(convertSettings(themeSetting), type));
     }
-  }, [themeSetting]);
+  }, [themeSetting, type]);
 
   return { globalStyle, themeSetting };
 };

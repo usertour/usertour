@@ -7,51 +7,46 @@ import {
   EventAttributes,
   flowReasonTitleMap,
 } from '@usertour/types';
-import {
-  ContentEditorElementType,
-  contentTypesConfig,
-  extractQuestionData,
-} from '@usertour-packages/shared-editor';
+import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
 import { formatDistanceStrict } from 'date-fns';
+import { extractQuestionData } from '@usertour/helpers';
 
 /**
- * Builds a map from question cvid to step index for sorting purposes
- * @param steps - Array of steps from version
- * @returns Map of question cvid to step index
+ * Represents a question with its optional answer
  */
-const buildCvidToStepIndexMap = (
-  steps: Array<{ sequence?: number; data?: any }>,
-): Map<string, number> => {
-  const cvidToStepIndexMap = new Map<string, number>();
-  const sortedSteps = [...steps].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
+export interface QuestionWithAnswer {
+  /** Question information from step data */
+  question: {
+    /** Unique identifier for the question */
+    cvid: string;
+    /** Question display name */
+    name: string;
+    /** Question type (NPS, STAR_RATING, SCALE, etc.) */
+    type: ContentEditorElementType;
+    /** Index of the step containing this question */
+    stepIndex: number;
+    /** Name of the step containing this question */
+    stepName?: string;
+  };
+  /** Answer event from bizEvent, null if not answered */
+  answer: BizEvent | null;
+  /** Whether the question has been answered */
+  isAnswered: boolean;
+}
 
-  for (let index = 0; index < sortedSteps.length; index++) {
-    const step = sortedSteps[index];
-    if (!step.data) {
-      continue;
-    }
+/**
+ * Builds a map from question cvid to the latest answer event
+ * @param bizEvents - Array of business events
+ * @returns Map of question cvid to the latest answer event
+ */
+const buildAnswerMap = (bizEvents: BizEvent[] | undefined): Map<string, BizEvent> => {
+  const answerMap = new Map<string, BizEvent>();
 
-    const questionData = extractQuestionData(step.data);
-    for (const question of questionData) {
-      const cvid = question.data?.cvid;
-      if (cvid) {
-        cvidToStepIndexMap.set(cvid, index);
-      }
-    }
+  if (!bizEvents?.length) {
+    return answerMap;
   }
 
-  return cvidToStepIndexMap;
-};
-
-/**
- * Deduplicates events by QUESTION_CVID, keeping the latest event for each unique question
- * @param events - Array of business events sorted by createdAt (descending)
- * @returns Map of question cvid to the latest event
- */
-const deduplicateEventsByCvid = (events: BizEvent[]): Map<string, BizEvent> => {
-  const eventMap = new Map<string, BizEvent>();
-
-  for (const bizEvent of events) {
+  for (const bizEvent of bizEvents) {
     if (bizEvent.event?.codeName !== BizEvents.QUESTION_ANSWERED) {
       continue;
     }
@@ -61,74 +56,73 @@ const deduplicateEventsByCvid = (events: BizEvent[]): Map<string, BizEvent> => {
       continue;
     }
 
-    const existingEvent = eventMap.get(questionCvid);
+    const existingEvent = answerMap.get(questionCvid);
     if (
       !existingEvent ||
       new Date(bizEvent.createdAt).getTime() > new Date(existingEvent.createdAt).getTime()
     ) {
-      eventMap.set(questionCvid, bizEvent);
+      answerMap.set(questionCvid, bizEvent);
     }
   }
 
-  return eventMap;
+  return answerMap;
 };
 
 /**
- * Sorts events by step order based on cvid to step index mapping
- * @param events - Array of events to sort
- * @param cvidToStepIndexMap - Map of question cvid to step index
- * @returns Sorted array of events
- */
-const sortEventsByStepOrder = (
-  events: BizEvent[],
-  cvidToStepIndexMap: Map<string, number>,
-): BizEvent[] => {
-  return events.sort((a, b) => {
-    const questionCvidA = a.data?.[EventAttributes.QUESTION_CVID];
-    const questionCvidB = b.data?.[EventAttributes.QUESTION_CVID];
-
-    const stepIndexA = questionCvidA ? cvidToStepIndexMap.get(questionCvidA) : undefined;
-    const stepIndexB = questionCvidB ? cvidToStepIndexMap.get(questionCvidB) : undefined;
-
-    if (stepIndexA === undefined && stepIndexB === undefined) {
-      return 0;
-    }
-    if (stepIndexA === undefined) {
-      return 1;
-    }
-    if (stepIndexB === undefined) {
-      return -1;
-    }
-
-    return stepIndexA - stepIndexB;
-  });
-};
-
-/**
- * Deduplicates answer events by QUESTION_CVID, keeping the latest event for each unique question.
- * Events without QUESTION_CVID are skipped.
- * Results are sorted by the order of steps in the version.
+ * Gets ordered question answers by iterating through steps first,
+ * then matching answers by question cvid.
+ * This approach ensures questions are in the correct step order
+ * and can show unanswered questions.
  *
  * @param session - Session object containing bizEvents and version with steps
- * @returns Array of deduplicated answer events, sorted by step order
+ * @returns Array of questions with their answers, ordered by step sequence
  */
-export const deduplicateAnswerEvents = (session: BizSession): BizEvent[] => {
-  const bizEvents = session?.bizEvent?.sort((a, b) => {
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
-
-  if (!bizEvents?.length) {
+export const getOrderedQuestionAnswers = (session: BizSession): QuestionWithAnswer[] => {
+  const steps = session?.version?.steps;
+  if (!steps?.length) {
     return [];
   }
 
-  const cvidToStepIndexMap = session?.version?.steps
-    ? buildCvidToStepIndexMap(session.version.steps)
-    : new Map<string, number>();
+  // Build answer map from bizEvents
+  const answerMap = buildAnswerMap(session?.bizEvent);
 
-  const eventMap = deduplicateEventsByCvid(bizEvents);
-  const deduplicatedEvents = Array.from(eventMap.values());
+  // Sort steps by sequence
+  const sortedSteps = [...steps].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
 
-  return sortEventsByStepOrder(deduplicatedEvents, cvidToStepIndexMap);
+  const result: QuestionWithAnswer[] = [];
+
+  for (let stepIndex = 0; stepIndex < sortedSteps.length; stepIndex++) {
+    const step = sortedSteps[stepIndex];
+    if (!step.data) {
+      continue;
+    }
+
+    // Extract questions from step data
+    const questions = extractQuestionData(step.data);
+
+    for (const questionElement of questions) {
+      const cvid = questionElement.data?.cvid;
+      if (!cvid) {
+        continue;
+      }
+
+      const answerEvent = answerMap.get(cvid) ?? null;
+
+      result.push({
+        question: {
+          cvid,
+          name: questionElement.data?.name ?? '',
+          type: questionElement.type as ContentEditorElementType,
+          stepIndex,
+          stepName: step.name,
+        },
+        answer: answerEvent,
+        isAnswered: answerEvent !== null,
+      });
+    }
+  }
+
+  return result;
 };
 
 /**

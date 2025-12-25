@@ -23,7 +23,7 @@ import {
   PopperContentFrame,
   PopperContentProps,
 } from './popper';
-import { CheckmarkIcon, DropDownIcon } from '@usertour-packages/icons';
+import { TaskArrowIcon, CheckmarkIcon, DropDownIcon } from '@usertour-packages/icons';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { computePositionStyle } from './utils/position';
 import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
@@ -734,7 +734,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
   return (
     <div
       className={cn(
-        'flex items-center px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
+        'group flex items-center px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
         cursorStyle,
       )}
       onClick={() => (isClickable ? onClick(item, index) : undefined)}
@@ -751,6 +751,17 @@ const ChecklistItem = (props: ChecklistItemProps) => {
           <span className="text-sdk-xs opacity-75 leading-3">{item.description}</span>
         )}
       </div>
+      {!isCompleted && isClickable && (
+        <TaskArrowIcon
+          className={cn(
+            'w-4 h-4 ml-4 flex-shrink-0',
+            'opacity-0 -translate-x-4',
+            'group-hover:opacity-100 group-hover:translate-x-0',
+            'transition-all duration-200 ease-out',
+            'text-sdk-checklist-checkmark',
+          )}
+        />
+      )}
     </div>
   );
 };

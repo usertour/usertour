@@ -12,14 +12,15 @@ import {
 } from 'react';
 import { getElementError } from '@usertour/helpers';
 import { ElementSelectorPropsData } from '@usertour/types';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 interface RulesElementProps {
   index: number;
@@ -28,6 +29,7 @@ interface RulesElementProps {
     elementData: ElementSelectorPropsData;
     logic: string;
   };
+  conditionId?: string;
 }
 
 const conditions = [
@@ -83,16 +85,17 @@ const defaultData = {
 };
 
 export const RulesElement = (props: RulesElementProps) => {
-  const { index, data, type } = props;
+  const { index, data, type, conditionId } = props;
   const [conditionValue, setConditionValue] = useState(data.logic || defaultData.logic);
   const [elementData, setElementData] = useState<ElementSelectorPropsData>(
     data.elementData || defaultData.elementData,
   );
   const [openError, setOpenError] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const { updateConditionData } = useRulesGroupContext();
   const [errorInfo, setErrorInfo] = useState('');
   const { currentContent, token, onElementChange, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   const value = {
     conditionValue,
@@ -102,12 +105,17 @@ export const RulesElement = (props: RulesElementProps) => {
   };
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       logic: conditionValue,
       elementData,
     };
     const { showError, errorInfo } = getElementError(updates);
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }
@@ -143,11 +151,11 @@ export const RulesElement = (props: RulesElementProps) => {
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
-              <RulesConditionIcon>
-                <ElementIcon width={16} height={16} />
-              </RulesConditionIcon>
               <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-                <RulesPopoverTrigger className="space-y-1">
+                <RulesPopoverTrigger
+                  className="space-y-1"
+                  icon={<ElementIcon width={16} height={16} />}
+                >
                   <div className="grow pr-6 text-sm text-wrap break-all space-y-1">
                     If this element{' '}
                   </div>
@@ -198,7 +206,7 @@ export const RulesElement = (props: RulesElementProps) => {
               <RulesRemove index={index} />
             </RulesConditionRightContent>
           </RulesErrorAnchor>
-          <RulesErrorContent>{errorInfo}</RulesErrorContent>
+          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
         </div>
       </RulesError>
     </RulesElementContext.Provider>

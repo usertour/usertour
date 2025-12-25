@@ -164,10 +164,11 @@ export class WebSocketV2MessageHandler {
     }
 
     try {
-      // Pre-load socket data for all handlers
+      // Pre-load socket data and validate user authentication
+      // User is created during connection, so bizUserId should always be set
       const socketData = await this.service.getSocketData(socket);
-      if (!socketData) {
-        this.logger.warn(`No client data found for socket ${socket.id}`);
+      if (!socketData || !socketData.bizUserId) {
+        this.logger.warn(`No authenticated user found for socket ${socket.id}, rejecting ${kind}`);
         return false;
       }
 

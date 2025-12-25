@@ -6,6 +6,7 @@ import { RulesPopoverTrigger } from './rules-popper';
 interface RulesWrapperProps {
   children: ReactNode;
   className?: string;
+  icon?: ReactNode;
 }
 
 export const RulesContainerWrapper = forwardRef<HTMLDivElement, RulesWrapperProps>((props, ref) => {
@@ -29,10 +30,14 @@ RulesContainerWrapper.displayName = 'RulesContainerWrapper';
 
 export const RulesPopoverTriggerWrapper = forwardRef<HTMLButtonElement, RulesWrapperProps>(
   (props, ref) => {
-    const { children, className } = props;
+    const { children, className, icon } = props;
     const { isHorizontal } = useRulesContext();
     return (
-      <RulesPopoverTrigger className={cn(isHorizontal ? 'w-auto' : '', className)} ref={ref}>
+      <RulesPopoverTrigger
+        className={cn(isHorizontal ? 'w-auto' : '', className)}
+        ref={ref}
+        icon={icon}
+      >
         {children}
       </RulesPopoverTrigger>
     );

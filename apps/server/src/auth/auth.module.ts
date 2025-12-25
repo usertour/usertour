@@ -12,6 +12,7 @@ import { AuthController } from './auth.controller';
 import { GithubOauthStrategy } from './strategy/github-oauth.strategy';
 import { GoogleOauthStrategy } from './strategy/google-oauth.strategy';
 import { TeamModule } from '@/team/team.module';
+import { SharedModule } from '@/shared/shared.module';
 import { BullModule } from '@nestjs/bullmq';
 import {
   QUEUE_INITIALIZE_PROJECT,
@@ -43,6 +44,7 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
     BullModule.registerQueue({ name: QUEUE_SEND_RESET_PASSWORD_EMAIL }),
     BullModule.registerQueue({ name: QUEUE_INITIALIZE_PROJECT }),
     TeamModule,
+    SharedModule,
     (StripeModule as any).externallyConfigured(StripeModule, 0),
   ],
   providers: [

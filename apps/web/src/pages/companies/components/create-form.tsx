@@ -1,9 +1,8 @@
 'use client';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {
   Dialog,
@@ -24,12 +23,7 @@ import { createSegment } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
 import { getErrorMessage } from '@usertour/helpers';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
@@ -132,18 +126,11 @@ export const CompanySegmentCreateForm = (props: CreateFormProps) => {
                 name="dataType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex flex-row">
+                    <FormLabel className="flex flex-row items-center">
                       Segment Type
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <QuestionMarkCircledIcon className="ml-1 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-slate-700">
-                            <p>Determines which kind of segment can be set.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <QuestionTooltip className="ml-1">
+                        Determines which kind of segment can be set.
+                      </QuestionTooltip>
                     </FormLabel>
                     <FormControl>
                       <RadioGroup
@@ -174,7 +161,7 @@ export const CompanySegmentCreateForm = (props: CreateFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Create Segment
               </Button>
             </DialogFooter>

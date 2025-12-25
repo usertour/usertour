@@ -8,6 +8,7 @@ import { EditIcon, PlaneIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour/helpers';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
+import { useEvent } from 'react-use';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import { ContentPublishForm } from '../shared/content-publish-form';
@@ -67,11 +68,18 @@ export const ContentDetailHeader = () => {
   const navigator = useNavigate();
   const { content, refetch, contentType, loading } = useContentDetailContext();
   const [openPublish, setOpenPublish] = useState(false);
-  const { version, isSaveing } = useContentVersionContext();
+  const { version, isSaving } = useContentVersionContext();
   const { environment, isViewOnly } = useAppContext();
   const { openBuilder } = useContentBuilder();
   const { environmentList } = useEnvironmentListContext();
   const [_, setSearchParams] = useSearchParams();
+
+  // Warn user when closing page while saving
+  useEvent('beforeunload', (e: BeforeUnloadEvent) => {
+    if (isSaving) {
+      e.preventDefault();
+    }
+  });
 
   // Show skeleton if content is loading
   if (loading) {
@@ -91,86 +99,90 @@ export const ContentDetailHeader = () => {
 
   return (
     <>
-      <>
-        <div className="border-b bg-white flex-col md:flex w-full fixed z-10 top-0">
-          <div className="flex h-16 items-center px-4">
-            <ArrowLeftIcon className="ml-4 h-6 w-8 cursor-pointer flex-none" onClick={handleBack} />
-            <span className="flex-none max-w-40	truncate ...	">{content?.name}</span>
-            <ContentRenameForm
-              data={content}
-              onSubmit={() => {
-                refetch();
+      <div className="border-b bg-white flex-col md:flex w-full fixed z-10 top-0">
+        <div className="flex h-16 items-center px-4">
+          <Button
+            variant="ghost"
+            className="ml-4 mr-2 flex-none p-0"
+            onClick={handleBack}
+            disabled={isSaving}
+          >
+            <ArrowLeftIcon className="h-6 w-8" />
+          </Button>
+          <span className="flex-none max-w-40	truncate ...	">{content?.name}</span>
+          <ContentRenameForm
+            data={content}
+            onSubmit={() => {
+              refetch();
+            }}
+          >
+            <Button variant={'ghost'} className="hover:bg-transparent" disabled={isViewOnly}>
+              <EditIcon className="ml-1 cursor-pointer" width={16} height={16} />
+            </Button>
+          </ContentRenameForm>
+          <MainNav className="mx-6" />
+          <div className="ml-auto flex items-center space-x-4">
+            {isSaving && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+            {!isSaving && (
+              <div className="px-1 text-sm text-muted-foreground min-w-60 text-right">
+                {content.editedVersionId !== content.publishedVersionId && version && (
+                  <>Autosaved {formatDistanceToNow(new Date(version?.updatedAt))} ago</>
+                )}
+                {content.editedVersionId === content.publishedVersionId && content.publishedAt && (
+                  <>Published {formatDistanceToNow(new Date(content.publishedAt))} ago</>
+                )}
+              </div>
+            )}
+            {/* <ContentOpenBuilder content={content} /> */}
+            <Button
+              type="button"
+              variant={'outline'}
+              onClick={() => openBuilder(content, contentType)}
+              className="flex-none"
+              disabled={isViewOnly || isSaving}
+            >
+              <EnterIcon className="mr-2" />
+              Edit In Builder
+            </Button>
+            <Button
+              disabled={isDisabled || isViewOnly || isSaving}
+              onClick={() => {
+                setOpenPublish(true);
               }}
             >
-              <Button variant={'ghost'} className="hover:bg-transparent" disabled={isViewOnly}>
-                <EditIcon className="ml-1 cursor-pointer" width={16} height={16} />
-              </Button>
-            </ContentRenameForm>
-            <MainNav className="mx-6" />
-            <div className="ml-auto flex items-center space-x-4">
-              {isSaveing && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-              {!isSaveing && (
-                <div className="px-1 text-sm text-muted-foreground min-w-60 text-right">
-                  {content.editedVersionId !== content.publishedVersionId && version && (
-                    <>Autosaved {formatDistanceToNow(new Date(version?.updatedAt))} ago</>
-                  )}
-                  {content.editedVersionId === content.publishedVersionId &&
-                    content.publishedAt && (
-                      <>Published {formatDistanceToNow(new Date(content.publishedAt))} ago</>
-                    )}
-                </div>
-              )}
-              {/* <ContentOpenBuilder content={content} /> */}
-              <Button
-                type="button"
-                variant={'outline'}
-                onClick={() => openBuilder(content, contentType)}
-                className="flex-none"
-                disabled={isViewOnly}
-              >
-                <EnterIcon className="mr-2" />
-                Edit In Builder
-              </Button>
-              <Button
-                disabled={isDisabled || isViewOnly}
-                onClick={() => {
-                  setOpenPublish(true);
+              <PlaneIcon className="mr-1" width={20} height={20} />
+              Publish
+            </Button>
+            {content && (
+              <ContentEditDropdownMenu
+                content={content}
+                disabled={isViewOnly || isSaving}
+                onSubmit={(action: string) => {
+                  if (action === 'delete') {
+                    navigator(`/env/${environment?.id}/${contentType}`);
+                  } else {
+                    refetch();
+                  }
                 }}
               >
-                <PlaneIcon className="mr-1" width={20} height={20} />
-                Publish
-              </Button>
-              {content && (
-                <ContentEditDropdownMenu
-                  content={content}
-                  disabled={isViewOnly}
-                  onSubmit={(action: string) => {
-                    if (action === 'delete') {
-                      navigator(`/env/${environment?.id}/${contentType}`);
-                    } else {
-                      refetch();
-                    }
-                  }}
-                >
-                  <Button variant="secondary">
-                    <span className="sr-only">Actions</span>
-                    <DotsHorizontalIcon className="h-4 w-4" />
-                  </Button>
-                </ContentEditDropdownMenu>
-              )}
-            </div>
+                <Button variant="secondary">
+                  <span className="sr-only">Actions</span>
+                  <DotsHorizontalIcon className="h-4 w-4" />
+                </Button>
+              </ContentEditDropdownMenu>
+            )}
           </div>
         </div>
-        <ContentPublishForm
-          versionId={content.editedVersionId || ''}
-          open={openPublish}
-          onOpenChange={setOpenPublish}
-          onSubmit={async () => {
-            setOpenPublish(false);
-            await refetch();
-          }}
-        />
-      </>
+      </div>
+      <ContentPublishForm
+        versionId={content.editedVersionId || ''}
+        open={openPublish}
+        onOpenChange={setOpenPublish}
+        onSubmit={async () => {
+          setOpenPublish(false);
+          await refetch();
+        }}
+      />
     </>
   );
 };

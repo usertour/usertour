@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@usertour-packages/form';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import {
   Card,
   CardContent,
@@ -146,7 +146,7 @@ export const PasswordReset = () => {
           </CardContent>
           <CardFooter className="flex flex-col">
             <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
               Change password
             </Button>
           </CardFooter>

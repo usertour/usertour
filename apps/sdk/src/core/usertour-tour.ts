@@ -2,7 +2,6 @@ import { smoothScroll } from '@usertour-packages/dom';
 import {
   ContentEditorClickableElement,
   ContentEditorQuestionElement,
-  isQuestionElement,
 } from '@usertour-packages/shared-editor';
 import {
   AttributeBizTypes,
@@ -12,7 +11,7 @@ import {
   SessionStep,
   SessionTheme,
 } from '@usertour/types';
-import { isUndefined } from '@usertour/helpers';
+import { isUndefined, isQuestionElement } from '@usertour/helpers';
 import { TourStore, BaseStore } from '@/types/store';
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import { UsertourComponent } from '@/core/usertour-component';
@@ -46,7 +45,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     return {
       ...baseContext,
       showStepByCvid: (stepCvid: string) => this.showStepByCvid(stepCvid),
-      handleDismiss: (reason?: contentEndReason) => this.handleDismiss(reason),
+      handleDismiss: (reason?: contentEndReason) =>
+        this.handleDismiss(reason ?? contentEndReason.ACTION),
     };
   }
 
@@ -220,6 +220,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Create trigger for this step if it has triggers
     if (step.trigger?.length && step.trigger.length > 0) {
       this.stepTrigger = new UsertourTrigger(
+        this.getContentId(),
         step.trigger,
         () => this.getSessionAttributes(), // Simple function that gets fresh attributes
         (actions) => this.handleActions(actions),

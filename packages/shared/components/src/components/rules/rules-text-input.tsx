@@ -1,14 +1,6 @@
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { ComboBox } from '@usertour-packages/combo-box';
 import { TextInputIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import { getTextInputError } from '@usertour/helpers';
 import { ElementSelectorPropsData } from '@usertour/types';
 import {
@@ -21,14 +13,15 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface RulesTextInputProps {
   index: number;
@@ -38,6 +31,7 @@ export interface RulesTextInputProps {
     logic: string;
     value: string;
   };
+  conditionId?: string;
 }
 
 const conditions = [
@@ -88,36 +82,21 @@ const RulesTextInputInput = () => {
 
 const RulesTextInputCondition = () => {
   const { conditionValue, setConditionValue } = useRulesTextInputContext();
+  const { combobox: zIndex } = useRulesZIndex();
+
   return (
-    <>
-      <Select defaultValue={conditionValue} onValueChange={setConditionValue}>
-        <SelectTrigger className="justify-start flex h-9">
-          <div className="grow text-left">
-            <SelectValue placeholder={''} />
-          </div>
-        </SelectTrigger>
-        <SelectPortal>
-          <SelectContent
-            style={{
-              zIndex: EXTENSION_CONTENT_RULES,
-            }}
-          >
-            {conditions.map((item, index) => {
-              return (
-                <SelectItem key={index} value={item.value} className="cursor-pointer">
-                  {item.name}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </SelectPortal>
-      </Select>
-    </>
+    <ComboBox
+      options={conditions}
+      value={conditionValue}
+      onValueChange={setConditionValue}
+      placeholder="Select condition"
+      contentStyle={{ zIndex }}
+    />
   );
 };
 
 export const RulesTextInput = (props: RulesTextInputProps) => {
-  const { index, data, type } = props;
+  const { index, data, type, conditionId } = props;
   const [conditionValue, setConditionValue] = useState(data.logic ?? 'is');
   const [inputValue, setInputValue] = useState(data.value ?? '');
 
@@ -131,18 +110,24 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
   );
   const [openError, setOpenError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const { updateConditionData } = useRulesGroupContext();
   const { currentContent, token, onElementChange, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       logic: conditionValue,
       elementData,
       value: inputValue,
     };
     const { showError, errorInfo } = getTextInputError(updates);
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }
@@ -197,11 +182,11 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
-              <RulesConditionIcon>
-                <TextInputIcon width={16} height={16} />
-              </RulesConditionIcon>
               <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-                <RulesPopoverTrigger className="space-y-1">
+                <RulesPopoverTrigger
+                  className="space-y-1"
+                  icon={<TextInputIcon width={16} height={16} />}
+                >
                   <div className="grow pr-6 text-sm text-wrap break-all">
                     The value of this input{' '}
                   </div>
@@ -262,7 +247,7 @@ export const RulesTextInput = (props: RulesTextInputProps) => {
               <RulesRemove index={index} />
             </RulesConditionRightContent>
           </RulesErrorAnchor>
-          <RulesErrorContent>{errorInfo}</RulesErrorContent>
+          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
         </div>
       </RulesError>
     </RulesTextInputContext.Provider>

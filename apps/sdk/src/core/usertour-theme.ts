@@ -2,7 +2,8 @@ import { AssetAttributes } from '@usertour-packages/frame';
 import { ThemeTypesSetting, SessionTheme } from '@usertour/types';
 import { convertSettings, convertToCssVars, isConditionsActived } from '@usertour/helpers';
 import { getUserTourCss } from '@/core/usertour-env';
-import { evaluateConditions } from '@/core/usertour-helper';
+import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
+import { logger } from '@/utils/logger';
 
 // === Private Helpers ===
 /**
@@ -43,8 +44,11 @@ const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
 export const UsertourTheme = {
   /**
    * Gets theme settings with variation support
+   * @param contentId - The content ID for rules evaluation
+   * @param sessionTheme - The session theme data
    */
   getThemeSettings: async (
+    contentId: string,
     sessionTheme: SessionTheme | undefined,
   ): Promise<ThemeTypesSetting | null> => {
     if (!sessionTheme) {
@@ -56,10 +60,16 @@ export const UsertourTheme = {
     }
 
     // Process variations asynchronously to check conditions
+    const evaluator = rulesEvaluatorManager.getEvaluator(contentId);
     for (const item of variations) {
-      const activatedConditions = await evaluateConditions(item.conditions, attributes);
-      if (isConditionsActived(activatedConditions)) {
-        return item.settings;
+      try {
+        const activatedConditions = await evaluator.evaluate(item.conditions, attributes);
+        if (isConditionsActived(activatedConditions)) {
+          return item.settings;
+        }
+      } catch (error) {
+        logger.error('Error evaluating theme variation conditions:', error);
+        // Continue to check other variations
       }
     }
     return settings;

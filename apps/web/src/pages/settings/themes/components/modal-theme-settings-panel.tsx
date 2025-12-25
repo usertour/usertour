@@ -1,7 +1,8 @@
 import { Attribute, ThemeTypesSetting } from '@usertour/types';
 import { Button } from '@usertour-packages/button';
-import { OutlineInput } from '@usertour-packages/input';
+import { WebZIndex } from '@usertour-packages/constants';
 import { Delete2Icon } from '@usertour-packages/icons';
+import { OutlineInput } from '@usertour-packages/input';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Rules } from '@usertour-packages/shared-components';
 import { ThemeSettingsPanel, ThemeSettingsAccordionContent } from './theme-settings-panel';
@@ -170,6 +171,7 @@ export const ModalThemeSettingsPanel = ({
                 addButtonText={'Add condition'}
                 attributes={attributeList || []}
                 disabled={isViewOnly}
+                baseZIndex={WebZIndex.RULES}
               />
             </div>
           )}

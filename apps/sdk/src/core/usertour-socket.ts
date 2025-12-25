@@ -29,7 +29,6 @@ import { uuidV4 } from '@usertour/helpers';
 // Batch options interface for consistency
 export interface BatchOptions {
   batch?: boolean;
-  endBatch?: boolean;
 }
 
 /**
@@ -71,7 +70,6 @@ export interface IUsertourSocket {
   disconnect(): void;
   isConnected(): boolean;
   isInBatch(): boolean;
-  endBatch(): Promise<void>;
 
   // Auth management
   updateCredentials(authInfo: Partial<SocketAuthData>): void;
@@ -201,6 +199,9 @@ export class UsertourSocket implements IUsertourSocket {
     // Clear cached connection promise
     this.connectingPromise = null;
 
+    // Clear batch state and pending timeout
+    this.resetBatchState();
+
     // Disconnect the socket
     this.socket.disconnect();
 
@@ -217,6 +218,9 @@ export class UsertourSocket implements IUsertourSocket {
     token: string,
   ): Promise<boolean> {
     logger.info('Credentials changed, reconnecting socket...');
+
+    // Clear batch state before reconnecting
+    this.resetBatchState();
 
     // Disconnect first
     this.socket.disconnect();
@@ -249,30 +253,29 @@ export class UsertourSocket implements IUsertourSocket {
 
   // === Batch Management ===
   /**
+   * Reset batch state without sending EndBatch message
+   */
+  private resetBatchState(): void {
+    this.inBatch = false;
+    timerManager.clearTimeout(this.BATCH_TIMEOUT_ID);
+  }
+
+  /**
    * Begin batch internally (send BeginBatch message)
    */
   private async beginBatchInternal(): Promise<void> {
     this.inBatch = true;
-    await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-      kind: ClientMessageKind.BEGIN_BATCH,
-      payload: {},
-      requestId: uuidV4(),
-    });
+    await this.emitClientMessage(ClientMessageKind.BEGIN_BATCH);
   }
 
   /**
    * End batch and send EndBatch message
+   * Always sends EndBatch to ensure toggleContents is triggered on server
    */
-  async endBatch(): Promise<void> {
-    if (this.inBatch) {
-      this.inBatch = false;
-      timerManager.clearTimeout(this.BATCH_TIMEOUT_ID);
-      await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-        kind: ClientMessageKind.END_BATCH,
-        payload: {},
-        requestId: uuidV4(),
-      });
-    }
+  private async endBatchInternal(): Promise<void> {
+    if (!this.inBatch) return;
+    this.inBatch = false;
+    await this.emitClientMessage(ClientMessageKind.END_BATCH);
   }
 
   /**
@@ -284,7 +287,25 @@ export class UsertourSocket implements IUsertourSocket {
 
   // === Message Sending ===
   /**
-   * Send a client message with unified format
+   * Emit a client message with unified error handling
+   * Returns false on error, logs the error, and never throws
+   */
+  private async emitClientMessage(kind: ClientMessageKind, payload: any = {}): Promise<boolean> {
+    try {
+      const result = (await this.socket?.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
+        kind,
+        payload,
+        requestId: uuidV4(),
+      })) as boolean | undefined;
+      return result ?? false;
+    } catch (error) {
+      logger.error(`Failed to emit ${kind}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send a client message with batch support
    */
   private async sendClientMessage(
     kind: ClientMessageKind,
@@ -293,32 +314,28 @@ export class UsertourSocket implements IUsertourSocket {
   ): Promise<boolean> {
     if (!this.socket) return false;
 
-    // Handle batch options
-    if (options?.batch && !this.inBatch) {
-      await this.beginBatchInternal();
-    }
-
-    if (this.inBatch) {
-      if (options?.endBatch) {
-        // End batch immediately after sending this message
-        const result = (await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-          kind,
-          payload,
-          requestId: uuidV4(),
-        })) as boolean;
-        await this.endBatch();
-        return result;
+    // For batch messages, clear any pending timeout and ensure batch is started
+    if (options?.batch) {
+      timerManager.clearTimeout(this.BATCH_TIMEOUT_ID);
+      if (!this.inBatch) {
+        await this.beginBatchInternal();
       }
-
-      // Set timeout to auto-end batch (timerManager auto-clears previous timeout with same ID)
-      timerManager.setTimeout(this.BATCH_TIMEOUT_ID, () => this.endBatch(), this.BATCH_TIMEOUT);
     }
 
-    return await this.socket.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-      kind,
-      payload,
-      requestId: uuidV4(),
-    });
+    // Send the message
+    const result = await this.emitClientMessage(kind, payload);
+
+    // Schedule batch end after message is sent (regardless of success/failure)
+    // endBatchInternal triggers toggleContents which is needed even if some messages fail
+    if (options?.batch) {
+      timerManager.setTimeout(
+        this.BATCH_TIMEOUT_ID,
+        () => this.endBatchInternal(),
+        this.BATCH_TIMEOUT,
+      );
+    }
+
+    return result;
   }
 
   // === User and Company Operations ===

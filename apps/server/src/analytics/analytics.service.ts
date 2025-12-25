@@ -1,4 +1,4 @@
-import { BizEvents, EventAttributes } from '@usertour/types';
+import { BizEvents, EventAttributes, StepSettings } from '@usertour/types';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -8,6 +8,7 @@ import { addDays, isBefore, lightFormat, format, subDays, endOfDay, startOfDay }
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
+import { TooltipTargetMissingQuery } from './dto/tooltip-target-missing-query.input';
 import { toZonedTime } from 'date-fns-tz';
 import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
@@ -90,6 +91,7 @@ const EVENTS = [
   BizEvents.LAUNCHER_ACTIVATED,
   BizEvents.CHECKLIST_STARTED,
   BizEvents.CHECKLIST_COMPLETED,
+  BizEvents.TOOLTIP_TARGET_MISSING,
 ];
 
 export interface ChecklistData {
@@ -143,6 +145,21 @@ interface RatingMetricsByDay extends BaseMetricsByDay {
   };
 }
 
+interface StepAnalyticsMetrics {
+  uniqueViews: number;
+  totalViews: number;
+  uniqueCompletions: number;
+  totalCompletions: number;
+  uniqueTooltipTargetMissingCount: number;
+  tooltipTargetMissingCount: number;
+}
+
+interface StepAnalyticsEvents {
+  stepSeenEvent?: Event;
+  completeEvent?: Event;
+  tooltipTargetMissingEvent?: Event;
+}
+
 @Injectable()
 export class AnalyticsService {
   constructor(private prisma: PrismaService) {}
@@ -182,9 +199,13 @@ export class AnalyticsService {
 
     const stepSeenEventFilter = (ev: Event) => ev.codeName === BizEvents.FLOW_STEP_SEEN;
 
+    const tooltipTargetMissingEventFilter = (ev: Event) =>
+      ev.codeName === BizEvents.TOOLTIP_TARGET_MISSING;
+
     const startEvent = events.find(startEventFilter);
     const completeEvent = events.find(completeEventFilter);
     const stepSeenEvent = events.find(stepSeenEventFilter);
+    const tooltipTargetMissingEvent = events.find(tooltipTargetMissingEventFilter);
 
     if (!startEvent || !completeEvent || !stepSeenEvent) {
       return false;
@@ -219,6 +240,7 @@ export class AnalyticsService {
       condition,
       stepSeenEvent,
       completeEvent,
+      tooltipTargetMissingEvent,
     );
     const viewsByTask = await this.aggregationTasksByContent(condition, projectId);
     const viewsByDay = await this.aggregationViewsByDay(
@@ -476,8 +498,9 @@ export class AnalyticsService {
 
   async aggregationStepsByContent(
     condition: AnalyticsConditions,
-    startEvent: Event,
+    stepSeenEvent: Event,
     completeEvent: Event,
+    tooltipTargetMissingEvent?: Event,
   ) {
     const { contentId } = condition;
     const content = await this.prisma.content.findFirst({
@@ -501,40 +524,27 @@ export class AnalyticsService {
     const maxStepIndex = version.steps.length;
 
     const ret = [];
-    let totalUniqueViews: number;
     for (let index = 0; index < maxStepIndex; index++) {
       const stepInfo = version.steps[index];
-      const stepCondition = {
-        ...condition,
-        stepIndex: index,
-        eventId: startEvent.id,
-      };
-      const uniqueViews = await this.aggregationByStep(stepCondition);
-      const totalViews = await this.aggregationByStep({
-        ...stepCondition,
-        isDistinct: false,
+      const analytics = await this.getStepAnalyticsMetrics(condition, stepInfo.cvid, {
+        stepSeenEvent,
+        completeEvent,
+        tooltipTargetMissingEvent,
       });
-      const uniqueCompletions = await this.aggregationByStep({
-        ...stepCondition,
-        eventId: completeEvent.id,
-      });
-      const totalCompletions = await this.aggregationByStep({
-        ...stepCondition,
-        eventId: completeEvent.id,
-        isDistinct: false,
-      });
-      if (totalUniqueViews === undefined) {
-        totalUniqueViews = uniqueViews;
-      }
+
+      const explicitCompletionStep =
+        (stepInfo.setting as StepSettings)?.explicitCompletionStep ?? false;
+      const target = stepInfo.target;
+      const type = stepInfo.type;
+
       ret.push({
         name: stepInfo.name,
+        cvid: stepInfo.cvid,
         stepIndex: index,
-        analytics: {
-          uniqueViews,
-          totalViews,
-          uniqueCompletions,
-          totalCompletions,
-        },
+        explicitCompletionStep,
+        target,
+        type,
+        analytics,
       });
     }
     return ret;
@@ -575,7 +585,6 @@ export class AnalyticsService {
     const totalItem = checklistData.items.length;
 
     const ret = [];
-    let totalUniqueViews: number;
     for (let index = 0; index < totalItem; index++) {
       const item = checklistData.items[index];
       const taskCondition = {
@@ -586,6 +595,7 @@ export class AnalyticsService {
       };
       const uniqueViews = await this.aggregationByItem({
         ...taskCondition,
+        isDistinct: true,
       });
       const totalViews = await this.aggregationByItem({
         ...taskCondition,
@@ -596,6 +606,7 @@ export class AnalyticsService {
         eventId: completeEvent.id,
         key: 'checklist_task_id',
         value: item.id,
+        isDistinct: true,
       });
       const totalCompletions = await this.aggregationByItem({
         ...taskCondition,
@@ -604,10 +615,6 @@ export class AnalyticsService {
         value: item.id,
         isDistinct: false,
       });
-
-      if (totalUniqueViews === undefined) {
-        totalUniqueViews = uniqueViews;
-      }
       ret.push({
         name: item.name,
         taskId: item.id,
@@ -646,8 +653,9 @@ export class AnalyticsService {
     const endDate = new Date(endDateStr);
 
     if (!isDistinct) {
+      // Count total sessions
       const data = await this.prisma.$queryRaw`
-      SELECT Count("BizEvent"."bizUserId") from "BizEvent" 
+      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -655,6 +663,7 @@ export class AnalyticsService {
       return Number.parseInt(data[0].count.toString());
     }
 
+    // Count unique users
     const data = await this.prisma.$queryRaw`
       SELECT Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
@@ -671,15 +680,17 @@ export class AnalyticsService {
 
     let data: [{ day: string; count: number }];
     if (!isDistinct) {
+      // Count total sessions per day
       data = await this.prisma.$queryRaw`
         SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
-          Count("BizEvent"."bizUserId") from "BizEvent" 
+          Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
           AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
           GROUP BY DAY
         `;
     } else {
+      // Count unique users per day
       data = await this.prisma.$queryRaw`
         SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
           Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent" 
@@ -773,8 +784,9 @@ export class AnalyticsService {
     const stepIndexStr = String(stepIndex);
 
     if (!isDistinct) {
+      // Count total sessions
       const data = await this.prisma.$queryRaw`
-      SELECT Count("BizEvent"."bizUserId") from "BizEvent" 
+      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -783,6 +795,7 @@ export class AnalyticsService {
       return Number.parseInt(data[0].count.toString());
     }
 
+    // Count unique users
     const data = await this.prisma.$queryRaw`
       SELECT Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
@@ -800,8 +813,9 @@ export class AnalyticsService {
     const endDate = new Date(endDateStr);
 
     if (!isDistinct) {
+      // Count total sessions
       const data = await this.prisma.$queryRaw`
-      SELECT Count("BizEvent"."bizUserId") from "BizEvent" 
+      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -810,6 +824,7 @@ export class AnalyticsService {
       return Number.parseInt(data[0].count.toString());
     }
 
+    // Count unique users
     const data = await this.prisma.$queryRaw`
       SELECT Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
@@ -818,6 +833,92 @@ export class AnalyticsService {
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
         `;
     return Number.parseInt(data[0].count.toString());
+  }
+
+  /**
+   * Get analytics metrics for a specific step
+   * Unified method to aggregate views, completions, and tooltip target missing counts
+   * @param baseCondition - Base analytics conditions
+   * @param stepCvid - Step CVID to query
+   * @param events - Event configuration (all optional)
+   * @returns Unified step analytics metrics
+   */
+  private async getStepAnalyticsMetrics(
+    baseCondition: Omit<AnalyticsConditions, 'eventId' | 'isDistinct'>,
+    stepCvid: string,
+    events: StepAnalyticsEvents,
+  ): Promise<StepAnalyticsMetrics> {
+    const { stepSeenEvent, completeEvent, tooltipTargetMissingEvent } = events;
+
+    const itemCondition = {
+      ...baseCondition,
+      key: 'flow_step_cvid',
+      value: stepCvid,
+    };
+
+    const [
+      uniqueViews,
+      totalViews,
+      uniqueCompletions,
+      totalCompletions,
+      uniqueTooltipTargetMissingCount,
+      tooltipTargetMissingCount,
+    ] = await Promise.all([
+      // Views stats (if stepSeenEvent provided)
+      stepSeenEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: stepSeenEvent.id,
+            isDistinct: true,
+          })
+        : Promise.resolve(0),
+      stepSeenEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: stepSeenEvent.id,
+            isDistinct: false,
+          })
+        : Promise.resolve(0),
+      // Completions stats (if completeEvent provided)
+      completeEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: completeEvent.id,
+            isDistinct: true,
+          })
+        : Promise.resolve(0),
+      completeEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: completeEvent.id,
+            isDistinct: false,
+          })
+        : Promise.resolve(0),
+      // Tooltip target missing stats (if tooltipTargetMissingEvent provided)
+      tooltipTargetMissingEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: tooltipTargetMissingEvent.id,
+            isDistinct: true,
+          })
+        : Promise.resolve(0),
+      tooltipTargetMissingEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: tooltipTargetMissingEvent.id,
+            isDistinct: false,
+          })
+        : Promise.resolve(0),
+    ]);
+
+    return {
+      uniqueViews,
+      totalViews,
+      uniqueCompletions,
+      totalCompletions,
+      uniqueTooltipTargetMissingCount,
+      tooltipTargetMissingCount,
+    };
   }
 
   async queryRecentSessions(
@@ -949,39 +1050,196 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * Query sessions that have tooltip target missing events
+   * @param query - Query parameters including contentId, environmentId, date range and stepCvid
+   * @param pagination - Pagination parameters
+   * @param orderBy - Order by parameters
+   * @returns Paginated list of sessions with tooltip target missing events and step analytics
+   */
+  async queryTooltipTargetMissingSessions(
+    query: TooltipTargetMissingQuery,
+    pagination: PaginationArgs,
+    orderBy: AnalyticsOrder,
+  ) {
+    const { contentId, environmentId, startDate, endDate, stepCvid } = query;
+    const { first, last, before, after } = pagination;
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+
+    // Default empty response structure
+    const emptyResponse = {
+      sessions: {
+        edges: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      },
+      stepAnalytics: {
+        uniqueViews: 0,
+        totalViews: 0,
+        uniqueCompletions: 0,
+        totalCompletions: 0,
+        uniqueTooltipTargetMissingCount: 0,
+        tooltipTargetMissingCount: 0,
+      },
+    };
+
+    try {
+      // Get projectId from environment
+      const environment = await this.prisma.environment.findUnique({
+        where: { id: environmentId },
+      });
+      if (!environment) {
+        return emptyResponse;
+      }
+      const projectId = environment.projectId;
+
+      // Find required events
+      const [tooltipTargetMissingEvent, flowStepSeenEvent, flowCompletedEvent] = await Promise.all([
+        this.prisma.event.findFirst({
+          where: {
+            projectId,
+            codeName: BizEvents.TOOLTIP_TARGET_MISSING,
+          },
+        }),
+        this.prisma.event.findFirst({
+          where: {
+            projectId,
+            codeName: BizEvents.FLOW_STEP_SEEN,
+          },
+        }),
+        this.prisma.event.findFirst({
+          where: {
+            projectId,
+            codeName: BizEvents.FLOW_COMPLETED,
+          },
+        }),
+      ]);
+
+      if (!tooltipTargetMissingEvent) {
+        return emptyResponse;
+      }
+
+      // Build the event filter condition with stepCvid
+      const eventFilter: Prisma.BizEventWhereInput = {
+        eventId: tooltipTargetMissingEvent.id,
+        createdAt: {
+          gte: startDateObj,
+          lte: endDateObj,
+        },
+        data: {
+          path: ['flow_step_cvid'],
+          equals: stepCvid,
+        },
+      };
+
+      // Query sessions and step analytics in parallel
+      const baseCondition = {
+        environmentId,
+        contentId,
+        startDateStr: startDate,
+        endDateStr: endDate,
+      };
+
+      const [sessions, stepAnalytics] = await Promise.all([
+        // Query sessions
+        findManyCursorConnection(
+          (args) =>
+            this.prisma.bizSession.findMany({
+              where: {
+                contentId,
+                environmentId,
+                deleted: false,
+                bizEvent: {
+                  some: eventFilter,
+                },
+              },
+              include: {
+                bizUser: { include: { bizUsersOnCompany: { include: { bizCompany: true } } } },
+                bizEvent: {
+                  where: eventFilter,
+                  include: { event: true },
+                  orderBy: { createdAt: 'desc' },
+                },
+                content: true,
+                version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+              },
+              orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+              ...args,
+            }),
+          () =>
+            this.prisma.bizSession.count({
+              where: {
+                contentId,
+                environmentId,
+                deleted: false,
+                bizEvent: {
+                  some: eventFilter,
+                },
+              },
+            }),
+          { first, last, before, after },
+        ),
+        // Query step analytics using unified method
+        this.getStepAnalyticsMetrics(baseCondition, stepCvid, {
+          stepSeenEvent: flowStepSeenEvent ?? undefined,
+          completeEvent: flowCompletedEvent ?? undefined,
+          tooltipTargetMissingEvent,
+        }),
+      ]);
+
+      return {
+        sessions,
+        stepAnalytics,
+      };
+    } catch (_) {
+      throw new UnknownError('Failed to query tooltip target missing sessions');
+    }
+  }
+
   async endSession(sessionId: string) {
     const bizSession = await this.prisma.bizSession.findUnique({
       where: { id: sessionId },
-      include: { content: true },
+      include: { content: true, environment: true },
     });
 
-    if (!bizSession || bizSession.state === 1) {
+    if (!bizSession || bizSession.state === 1 || !bizSession.environment) {
       return false;
     }
+
+    const projectId = bizSession.environment.projectId;
+
     if (bizSession.content.type === ContentType.FLOW) {
-      return await this.endFlowSession(bizSession);
+      return await this.endFlowSession(bizSession, projectId);
     }
     if (bizSession.content.type === ContentType.CHECKLIST) {
-      return await this.endChecklistSession(bizSession);
+      return await this.endChecklistSession(bizSession, projectId);
     }
     if (bizSession.content.type === ContentType.LAUNCHER) {
-      return await this.endLauncherSession(bizSession);
+      return await this.endLauncherSession(bizSession, projectId);
     }
     return false;
   }
 
   /**
    * End a flow session
-   * @param session - The session to end
+   * @param bizSession - The session to end
+   * @param projectId - The project ID for event lookup
    * @returns True if the session was ended successfully, false otherwise
    */
-  async endFlowSession(bizSession: BizSession) {
+  private async endFlowSession(bizSession: BizSession, projectId: string) {
     const sessionId = bizSession.id;
+
     const endEvent = await this.prisma.event.findFirst({
-      where: { codeName: BizEvents.FLOW_ENDED },
+      where: { projectId, codeName: BizEvents.FLOW_ENDED },
     });
     const seenEvent = await this.prisma.event.findFirst({
-      where: { codeName: BizEvents.FLOW_STEP_SEEN },
+      where: { projectId, codeName: BizEvents.FLOW_STEP_SEEN },
     });
     const seenBizEvent = await this.prisma.bizEvent.findFirst({
       where: { bizSessionId: sessionId, eventId: seenEvent.id },
@@ -1029,13 +1287,15 @@ export class AnalyticsService {
 
   /**
    * End a checklist session
-   * @param session - The session to end
+   * @param bizSession - The session to end
+   * @param projectId - The project ID for event lookup
    * @returns True if the session was ended successfully, false otherwise
    */
-  async endChecklistSession(bizSession: BizSession) {
+  private async endChecklistSession(bizSession: BizSession, projectId: string) {
     const sessionId = bizSession.id;
+
     const endEvent = await this.prisma.event.findFirst({
-      where: { codeName: BizEvents.CHECKLIST_DISMISSED },
+      where: { projectId, codeName: BizEvents.CHECKLIST_DISMISSED },
     });
     const latestBizEvent = await this.prisma.bizEvent.findFirst({
       where: { bizSessionId: sessionId },
@@ -1083,13 +1343,15 @@ export class AnalyticsService {
 
   /**
    * End a launcher session
-   * @param session - The session to end
+   * @param bizSession - The session to end
+   * @param projectId - The project ID for event lookup
    * @returns True if the session was ended successfully, false otherwise
    */
-  async endLauncherSession(bizSession: BizSession) {
+  private async endLauncherSession(bizSession: BizSession, projectId: string) {
     const sessionId = bizSession.id;
+
     const endEvent = await this.prisma.event.findFirst({
-      where: { codeName: BizEvents.LAUNCHER_DISMISSED },
+      where: { projectId, codeName: BizEvents.LAUNCHER_DISMISSED },
     });
     const latestBizEvent = await this.prisma.bizEvent.findFirst({
       where: { bizSessionId: sessionId },

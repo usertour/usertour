@@ -16,6 +16,7 @@ import { Invite } from './models/invite.model';
 import { Public } from '@/common/decorators/public.decorator';
 import { UseGuards } from '@nestjs/common';
 import { TeamGuard } from './team.guard';
+import { EmailConfigGuard } from '@/common/guards/email-config.guard';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { Roles } from '@/common/decorators/roles.decorator';
 
@@ -45,6 +46,7 @@ export class TeamResolver {
 
   @Mutation(() => Boolean)
   @Roles([RolesScopeEnum.OWNER])
+  @UseGuards(EmailConfigGuard)
   async inviteTeamMember(@UserEntity() user: User, @Args('data') data: InviteTeamMemberInput) {
     this.logger.log(`Inviting team member: ${user.id}`);
     await this.teamService.inviteTeamMember(

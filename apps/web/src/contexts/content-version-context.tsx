@@ -20,8 +20,8 @@ export interface ContentVersionContextValue {
   version: ContentVersion | null;
   loading: boolean;
   refetch: any;
-  isSaveing: boolean;
-  setIsSaveing: Dispatch<SetStateAction<boolean>>;
+  isSaving: boolean;
+  setIsSaving: Dispatch<SetStateAction<boolean>>;
 }
 export const ContentVersionContext = createContext<ContentVersionContextValue | undefined>(
   undefined,
@@ -31,7 +31,7 @@ export function ContentVersionProvider(props: ContentVersionProviderProps): JSX.
   const { children } = props;
   const { content } = useContentDetailContext();
   const [version, setVersion] = useState<ContentVersion | null>(null);
-  const [isSaveing, setIsSaveing] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const { data, refetch, loading } = useQuery(getContentVersion, {
     variables: { versionId: content?.editedVersionId },
     skip: !content?.editedVersionId,
@@ -50,8 +50,8 @@ export function ContentVersionProvider(props: ContentVersionProviderProps): JSX.
   }, [content?.editedVersionId]);
 
   const value: ContentVersionContextValue = {
-    isSaveing,
-    setIsSaveing,
+    isSaving,
+    setIsSaving,
     version,
     loading,
     refetch,

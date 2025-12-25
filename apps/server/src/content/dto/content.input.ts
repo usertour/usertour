@@ -1,4 +1,4 @@
-import { Field, InputType, PartialType } from '@nestjs/graphql';
+import { Field, InputType, PickType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { IsNotEmpty } from 'class-validator';
 import GraphQLJSON from 'graphql-type-json';
@@ -33,7 +33,7 @@ export class ContentInput {
 }
 
 @InputType()
-export class ContentVersionInput extends PartialType(ContentInput) {
+export class ContentVersionInput extends PickType(ContentInput, ['config'] as const) {
   @Field()
   versionId: string;
 }

@@ -3,7 +3,7 @@ import { Button } from '@usertour-packages/button';
 import { EXTENSION_SELECT } from '@usertour-packages/constants';
 import { Label } from '@usertour-packages/label';
 import { SelectorDialog } from '@usertour-packages/shared-components';
-import { HelpTooltip } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Switch } from '@usertour-packages/switch';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from '../content-error';
 import { useContentPlacement } from './content-placement-context';
@@ -85,10 +85,10 @@ export const ContentPlacementAuto = () => {
         <div className="flex items-center justify-between space-x-2">
           <div className="flex space-x-2 grow">
             <Label htmlFor="dynamic-content">Dynamic text</Label>
-            <HelpTooltip>
+            <QuestionTooltip>
               If the element's text is dynamic and may change, enabled this switch to make Usertour
               find it without considering its current text.
-            </HelpTooltip>
+            </QuestionTooltip>
           </div>
           <Switch
             id="dynamic-content"

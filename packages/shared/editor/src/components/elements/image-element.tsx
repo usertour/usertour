@@ -5,15 +5,7 @@ import { ImageEditIcon, ImageIcon } from '@usertour-packages/icons';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { ComboBox } from '@usertour-packages/combo-box';
 import {
   Tooltip,
   TooltipContent,
@@ -206,22 +198,17 @@ const ImageElement = (props: RenderElementProps) => {
                     onChange={handleWidthValueChange}
                     className="bg-background flex-none w-[120px]"
                   />
-                  <Select
+                  <ComboBox
+                    options={[
+                      { value: 'percent', name: '%' },
+                      { value: 'pixels', name: 'pixels' },
+                    ]}
+                    value={element.width?.type ?? 'percent'}
                     onValueChange={handleWidthTypeChange}
-                    defaultValue={element.width?.type ?? 'percent'}
-                  >
-                    <SelectTrigger className="shrink">
-                      <SelectValue placeholder="Select a distribute" />
-                    </SelectTrigger>
-                    <SelectPortal style={{ zIndex: zIndex + 2 }}>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="percent">%</SelectItem>
-                          <SelectItem value="pixels">pixels</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                    placeholder="Select a type"
+                    className="shrink"
+                    contentStyle={{ zIndex: zIndex + 2 }}
+                  />
                 </div>
                 <div className="flex gap-x-2">
                   <Checkbox

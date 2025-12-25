@@ -331,6 +331,40 @@ export class SDKAuthenticationError extends BaseError {
   };
 }
 
+export class EmailConfigNotSetError extends BaseError {
+  code = 'E0020';
+  messageDict = {
+    en: 'Email service is not configured. Please set up email environment variables to use this feature. See: https://docs.usertour.io/open-source/env',
+    'zh-CN':
+      '邮件服务未配置，请设置邮件相关的环境变量以使用此功能。参考文档：https://docs.usertour.io/open-source/env',
+  };
+}
+
+export class S3ConfigNotSetError extends BaseError {
+  code = 'E0021';
+  messageDict = {
+    en: 'AWS S3 service is not configured. Please set up S3 environment variables to use this feature. See: https://docs.usertour.io/open-source/env',
+    'zh-CN':
+      'AWS S3 服务未配置，请设置 S3 相关的环境变量以使用此功能。参考文档：https://docs.usertour.io/open-source/env',
+  };
+}
+
+export class LastEnvironmentCannotBeDeletedError extends BaseError {
+  code = 'E0022';
+  messageDict = {
+    en: 'Cannot delete the last environment. At least one environment is required.',
+    'zh-CN': '无法删除最后一个环境。至少需要保留一个环境。',
+  };
+}
+
+export class PrimaryEnvironmentCannotBeDeletedError extends BaseError {
+  code = 'E0023';
+  messageDict = {
+    en: 'Cannot delete the primary environment. Please set another environment as primary first.',
+    'zh-CN': '无法删除主环境。请先将其他环境设置为主环境。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -369,6 +403,10 @@ const errorMap = {
   E1016: InvalidOrderByError,
   E1017: ValidationError,
   E1018: SDKAuthenticationError,
+  E0020: EmailConfigNotSetError,
+  E0021: S3ConfigNotSetError,
+  E0022: LastEnvironmentCannotBeDeletedError,
+  E0023: PrimaryEnvironmentCannotBeDeletedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

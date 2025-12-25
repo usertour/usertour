@@ -1,5 +1,5 @@
 import { Input } from '@usertour-packages/input';
-import { HelpTooltip } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { cn } from '@usertour/helpers';
 import { ChangeEvent } from 'react';
 
@@ -34,7 +34,7 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
         <label htmlFor={name} className="block text-sm leading-9">
           {text}
         </label>
-        {tooltip && <HelpTooltip>{tooltip}</HelpTooltip>}
+        {tooltip && <QuestionTooltip>{tooltip}</QuestionTooltip>}
       </div>
       <div className="flex-none w-36 relative">
         <Input

@@ -2,14 +2,15 @@ import { TextFillIcon } from '@usertour-packages/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { getTextFillError } from '@usertour/helpers';
 import { ElementSelectorPropsData } from '@usertour/types';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 interface RulesUserFillsProps {
   index: number;
@@ -19,10 +20,11 @@ interface RulesUserFillsProps {
     logic: string;
     value: string;
   };
+  conditionId?: string;
 }
 
 export const RulesUserFills = (props: RulesUserFillsProps) => {
-  const { index, data, type } = props;
+  const { index, data, type, conditionId } = props;
   const [elementData, setElementData] = useState<ElementSelectorPropsData>(
     data.elementData || {
       type: 'auto',
@@ -32,20 +34,25 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
     },
   );
   const [openError, setOpenError] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const { updateConditionData } = useRulesGroupContext();
   const [errorInfo, setErrorInfo] = useState('');
   const { currentContent, token, onElementChange, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const updates = {
       elementData,
     };
     const { showError, errorInfo } = getTextFillError(updates);
-    if (showError && !open) {
+    if (showError) {
       setOpenError(showError);
       setErrorInfo(errorInfo);
-      return;
     }
   }, [elementData, open, setErrorInfo, setOpenError]);
 
@@ -77,11 +84,11 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
         <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
-            <RulesConditionIcon>
-              <TextFillIcon width={16} height={16} />
-            </RulesConditionIcon>
             <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTrigger className="space-y-1">
+              <RulesPopoverTrigger
+                className="space-y-1"
+                icon={<TextFillIcon width={16} height={16} />}
+              >
                 <div className="grow pr-6 text-sm text-wrap break-all">
                   User fills in this input{' '}
                 </div>
@@ -134,7 +141,7 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
             <RulesRemove index={index} />
           </RulesConditionRightContent>
         </RulesErrorAnchor>
-        <RulesErrorContent>{errorInfo}</RulesErrorContent>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </div>
     </RulesError>
   );

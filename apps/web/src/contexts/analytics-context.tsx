@@ -1,9 +1,11 @@
 import { useQuery } from '@apollo/client';
 import { queryContentAnalytics } from '@usertour-packages/gql';
 import { AnalyticsData, AnalyticsQuery } from '@usertour/types';
-import { endOfDay, startOfDay, subDays } from 'date-fns';
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { endOfDay, startOfDay } from 'date-fns';
+import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
+
+import { DATE_PRESET_OPTIONS, DEFAULT_PRESET_KEY, type DatePresetKey } from '@/utils/date-presets';
 import { useAppContext } from './app-context';
 
 export interface AnalyticsProviderProps {
@@ -19,6 +21,8 @@ export interface AnalyticsContextValue {
   setQuery: React.Dispatch<React.SetStateAction<AnalyticsQuery>>;
   dateRange: DateRange | undefined;
   setDateRange: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
+  selectedPreset: DatePresetKey | null;
+  setSelectedPreset: React.Dispatch<React.SetStateAction<DatePresetKey | null>>;
   timezone: string;
   contentId: string;
 }
@@ -29,15 +33,21 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
   const { children, contentId } = props;
   const [query, setQuery] = useState<AnalyticsQuery>({ contentId, startDate: '', endDate: '' });
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | undefined>();
-  const now = new Date();
-  const defaultDateRange = {
-    from: startOfDay(new Date(subDays(now, 29))),
-    to: endOfDay(new Date(now)),
-  };
+  const [selectedPreset, setSelectedPreset] = useState<DatePresetKey | null>(DEFAULT_PRESET_KEY);
+
+  // Generate default date range from default preset
+  const defaultDateRange = useMemo(() => {
+    const preset = DATE_PRESET_OPTIONS.find((p) => p.key === DEFAULT_PRESET_KEY);
+    return preset?.getRange();
+  }, []);
+
   const [dateRange, setDateRange] = useState<DateRange | undefined>(defaultDateRange);
   const { environment } = useAppContext();
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Only execute query when both from and to dates are selected
+  const isDateRangeComplete = Boolean(dateRange?.from && dateRange?.to);
 
   const { data, refetch, loading } = useQuery(queryContentAnalytics, {
     variables: {
@@ -47,6 +57,7 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
       endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,
       timezone,
     },
+    skip: !isDateRangeComplete,
   });
 
   useEffect(() => {
@@ -63,6 +74,8 @@ export function AnalyticsProvider(props: AnalyticsProviderProps): JSX.Element {
     setQuery,
     dateRange,
     setDateRange,
+    selectedPreset,
+    setSelectedPreset,
     timezone,
     contentId,
   };

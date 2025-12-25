@@ -1,5 +1,4 @@
 import { Label } from '@usertour-packages/label';
-import { HelpTooltip } from '@usertour-packages/shared-components';
 import { Switch } from '@usertour-packages/switch';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useState } from 'react';
@@ -79,12 +78,12 @@ export const ContentSettings = (props: ContentSettingsProps) => {
             <Label htmlFor="enable-backdrop" className="flex space-y-1">
               <span className="font-normal">Add backdrop</span>
             </Label>
-            <HelpTooltip>
+            <QuestionTooltip>
               {type === 'tooltip' &&
                 'Adds a semi-transparent layer on top of your app, which only reveals the tooltip and the target element. Use this to force users to interact with the target element.'}
               {type === 'modal' &&
                 'Adds a semi-transparent layer on top of your app, which only reveals the modal.'}
-            </HelpTooltip>
+            </QuestionTooltip>
           </div>
           <Switch
             id="enable-backdrop"

@@ -189,9 +189,17 @@ const ChecklistCoreHeader = () => {
 };
 
 const ChecklistCoreFooter = () => {
+  const { isLoading, onSaved } = useBuilderContext();
+  const { flushSave } = useChecklistContext();
+
+  const handleSave = async () => {
+    await flushSave();
+    await onSaved?.();
+  };
+
   return (
     <CardFooter className="flex p-5">
-      <SidebarFooter />
+      <SidebarFooter onSave={handleSave} isLoading={isLoading} />
     </CardFooter>
   );
 };

@@ -11,9 +11,8 @@ import { WebSocketV2Gateway } from '@/web-socket/v2/web-socket-v2.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
-import { regenerateConditionIds } from '@usertour/helpers';
-import { ContentConfigObject, ContentDataType } from '@usertour/types';
-import { duplicateChecklistData } from '@/utils/content-duplicate';
+import { ContentConfigObject } from '@usertour/types';
+import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
 
 @Injectable()
 export class ContentService {
@@ -195,53 +194,59 @@ export class ContentService {
   }
 
   async createContentVersion(input: ContentVersionInput) {
-    const { versionId, steps = [], config, data, themeId } = input;
+    const { versionId, config } = input;
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const oldVersion = await tx.version.findUnique({
-          where: {
-            id: versionId,
+        // Fetch source version with related content and its edited version in one query
+        const sourceVersion = await tx.version.findUnique({
+          where: { id: versionId },
+          include: {
+            steps: true,
+            content: {
+              include: { editedVersion: true },
+            },
           },
-          include: { steps: true },
         });
-        const content = await tx.content.findUnique({
-          where: { id: oldVersion.contentId },
-        });
-        const editedVersion = await tx.version.findUnique({
-          where: { id: content.editedVersionId },
-        });
-        const oldSteps = oldVersion.steps.map(
-          ({ id, createdAt, updatedAt, versionId, ...step }) => {
-            return step;
-          },
+
+        if (!sourceVersion?.content?.editedVersion) {
+          throw new ParamsError();
+        }
+
+        const editedVersion = sourceVersion.content.editedVersion;
+        const contentId = editedVersion.contentId;
+
+        // Prepare steps by removing database-specific fields
+        const steps = sourceVersion.steps.map(
+          ({ id, createdAt, updatedAt, versionId, ...step }) => step,
         );
 
-        const editedConfig = (config || editedVersion.config) as ContentConfigObject;
-
-        const newConfig = {
-          ...editedConfig,
-          autoStartRules: regenerateConditionIds(editedConfig.autoStartRules),
-          hideRules: regenerateConditionIds(editedConfig.hideRules),
-        };
+        // Create new version with regenerated config IDs
+        const newConfig = duplicateConfig((config ?? editedVersion.config) as ContentConfigObject);
 
         const version = await tx.version.create({
           data: {
             sequence: editedVersion.sequence + 1,
-            contentId: content.id,
             config: newConfig,
-            data: data || editedVersion.data || {},
-            themeId: themeId || editedVersion.themeId || undefined,
-            steps: { create: steps.length > 0 ? [...steps] : [...oldSteps] },
+            data: editedVersion.data,
+            themeId: editedVersion.themeId,
+            contentId,
+            steps: { create: steps },
           } as any,
         });
+
+        // Update content to point to the new edited version
         await tx.content.update({
-          where: { id: content.id },
+          where: { id: contentId },
           data: { editedVersionId: version.id } as any,
         });
+
         return version;
       });
-    } catch (_) {
+    } catch (error) {
+      if (error instanceof ParamsError) {
+        throw error;
+      }
       throw new UnknownError();
     }
   }
@@ -421,16 +426,6 @@ export class ContentService {
           where: { id: duplicateContent.editedVersionId },
           include: { steps: true },
         });
-        // const steps = editedVersion.steps.map(
-        //   ({ id, createdAt, updatedAt, versionId, cvid, ...step }) => {
-        //     return step;
-        //   },
-        // );
-        const steps = editedVersion.steps.map(
-          ({ id, createdAt, updatedAt, versionId, ...step }) => {
-            return step;
-          },
-        );
 
         const content = await tx.content.create({
           data: {
@@ -442,26 +437,16 @@ export class ContentService {
           },
         });
 
-        const config = editedVersion.config as ContentConfigObject;
-
-        const newConfig = {
-          ...config,
-          autoStartRules: regenerateConditionIds(config.autoStartRules),
-          hideRules: regenerateConditionIds(config.hideRules),
-        };
-
-        let processedData = editedVersion.data;
-        // Process checklist data to regenerate condition IDs
-        if (duplicateContent.type === ContentDataType.CHECKLIST) {
-          processedData = duplicateChecklistData(editedVersion.data);
-        }
+        const steps = editedVersion.steps.map((step) => duplicateStep(step));
+        const newConfig = duplicateConfig(editedVersion.config as ContentConfigObject);
+        const processedData = duplicateData(editedVersion.data, duplicateContent.type);
 
         const version = await tx.version.create({
           data: {
             sequence: 0,
             contentId: content.id,
             config: newConfig,
-            data: processedData,
+            data: processedData as Prisma.JsonValue,
             themeId: editedVersion.themeId,
             steps: { create: [...steps] },
           },

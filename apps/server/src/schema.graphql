@@ -373,14 +373,7 @@ input ContentUpdateInput {
 }
 
 input ContentVersionInput {
-  buildUrl: String
   config: JSON
-  data: JSON
-  environmentId: String
-  name: String
-  steps: [StepInput!]
-  themeId: String
-  type: String
   versionId: String!
 }
 
@@ -521,6 +514,7 @@ type Environment {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   id: ID!
+  isPrimary: Boolean!
   name: String!
   projectId: String!
   token: String!
@@ -834,6 +828,7 @@ type Query {
   queryOembedInfo(url: String!): OEmbed!
   querySessionDetail(sessionId: String!): BizSession!
   querySessionsByExternalId(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: SessionQuery!, skip: Int): BizSessionConnection!
+  queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): TooltipTargetMissingResponse!
   userEnvironments(projectId: String!): [Environment!]!
 }
 
@@ -966,6 +961,15 @@ type Step {
   versionId: String!
 }
 
+type StepAnalytics {
+  tooltipTargetMissingCount: Int!
+  totalCompletions: Int!
+  totalViews: Int!
+  uniqueCompletions: Int!
+  uniqueTooltipTargetMissingCount: Int!
+  uniqueViews: Int!
+}
+
 input StepInput {
   data: JSON
   id: String
@@ -1032,6 +1036,20 @@ type Theme {
   variations: JSON
 }
 
+input TooltipTargetMissingQuery {
+  contentId: String!
+  endDate: String!
+  environmentId: String!
+  startDate: String!
+  stepCvid: String!
+  timezone: String!
+}
+
+type TooltipTargetMissingResponse {
+  sessions: BizSessionConnection!
+  stepAnalytics: StepAnalytics!
+}
+
 input UpdateAttributeInput {
   bizType: Int
   codeName: String
@@ -1049,6 +1067,7 @@ input UpdateContentInput {
 
 input UpdateEnvironmentInput {
   id: String!
+  isPrimary: Boolean
   name: String!
 }
 

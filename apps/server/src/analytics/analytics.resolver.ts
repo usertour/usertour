@@ -7,8 +7,10 @@ import { AnalyticsIdArgs } from './args/analytics-query.args';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
 import { SessionQuery } from './dto/session-query.input';
+import { TooltipTargetMissingQuery } from './dto/tooltip-target-missing-query.input';
 import { Analytics } from './models/analytics';
 import { BizSessionConnection } from './models/analytics-connection.model';
+import { TooltipTargetMissingResponse } from './models/tooltip-target-missing-response';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { BizSession } from './models/biz-session';
@@ -95,5 +97,15 @@ export class AnalyticsResolver {
     @Args('orderBy') orderBy: AnalyticsOrder,
   ) {
     return await this.service.querySessionsByExternalId(query, pagination, orderBy);
+  }
+
+  @Query(() => TooltipTargetMissingResponse)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  async queryTooltipTargetMissingSessions(
+    @Args() pagination: PaginationArgs,
+    @Args('query') query: TooltipTargetMissingQuery,
+    @Args('orderBy') orderBy: AnalyticsOrder,
+  ) {
+    return await this.service.queryTooltipTargetMissingSessions(query, pagination, orderBy);
   }
 }

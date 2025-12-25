@@ -1,6 +1,6 @@
 'use client';
 
-import { Icons } from '@/components/atoms/icons';
+import { SpinnerIcon } from '@usertour-packages/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -98,7 +98,7 @@ export const AccountProfileForm = () => {
           />
 
           <Button type="submit" disabled={form.watch('name') === user?.name}>
-            {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
             Save
           </Button>
         </form>

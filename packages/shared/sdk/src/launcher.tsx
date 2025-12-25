@@ -309,7 +309,7 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
   const combinedStyles = {
     ...parseStyleString(globalStyle),
     ...floatingStyles,
-    zIndex: zIndex + 1,
+    zIndex,
     transform: isPositioned ? floatingStyles.transform : 'translate(0, -200%)',
     opacity: isPositioned ? '1' : '0',
     ...(middlewareData.customHide?.referenceHidden ? hiddenStyle : {}),

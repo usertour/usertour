@@ -1,12 +1,6 @@
-import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { Checkbox } from '@usertour-packages/checkbox';
 import { Label } from '@usertour-packages/label';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { ContentDataType } from '@usertour/types';
 import { useId, useState } from 'react';
 
@@ -37,17 +31,9 @@ export const RulesIfCompleted = (props: RulesIfCompletedProps) => {
       <Label htmlFor={id} className="flex flex-col space-y-1">
         <span className="font-normal">Only start if not complete</span>
       </Label>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <QuestionMarkCircledIcon className="cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs bg-foreground text-background">
-            If enabled, the {contentType} will only auto-start if the user has not completed it
-            before.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <QuestionTooltip>
+        If enabled, the {contentType} will only auto-start if the user has not completed it before.
+      </QuestionTooltip>
     </div>
   );
 };

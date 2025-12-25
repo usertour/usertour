@@ -259,14 +259,19 @@ export class ContentDataService {
    * Check if the user has a biz event
    * @param contentId - The ID of the content
    * @param bizUserId - The ID of the business user
-   * @param eventCodeName - The code name of the event
-   * @returns true if the user has the event, false otherwise
+   * @param eventCodeNames - The code names of the events (array of strings)
+   * @returns true if the user has any of the events, false otherwise
    */
   async hasBizEvent(
     contentId: string,
     bizUserId: string,
     eventCodeNames: string[],
   ): Promise<boolean> {
+    // Early return if no events to check
+    if (!eventCodeNames || eventCodeNames.length === 0) {
+      return false;
+    }
+
     const count = await this.prisma.bizSession.count({
       where: {
         contentId,

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
+import { WebSocketThrottlerGuard } from './web-socket-throttler.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { SocketAuthData } from '@usertour/types';
@@ -18,6 +19,7 @@ import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 import { cuid } from '@usertour/helpers';
+import { WebSocketMessageValidationPipe } from './web-socket-message-validation.pipe';
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -105,11 +107,21 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
    * Unified client message entry point
    * All client messages go through this single handler
    * Messages are routed based on 'kind' field and executed in order
+   *
+   * Security measures:
+   * 1. WebSocketThrottlerGuard: Rate limiting per socket connection
+   *    - Short: 30 requests/second (burst protection)
+   *    - Medium: 300 requests/minute (sustained rate limiting)
+   * 2. WebSocketMessageValidationPipe validates:
+   *    - Message structure (kind, payload, requestId)
+   *    - Payload size limits (prevents DoS)
+   *    - Payload schema based on message kind
    */
   @SubscribeMessage('client-message')
+  @UseGuards(WebSocketThrottlerGuard)
   async handleClientMessage(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() message: ClientMessageDto,
+    @MessageBody(WebSocketMessageValidationPipe) message: ClientMessageDto,
   ): Promise<boolean> {
     const { kind, payload, requestId } = message;
 

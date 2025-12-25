@@ -23,4 +23,4 @@ export const CodeElementSerialize = (props: CodeElementSerializeType) => {
   );
 };
 
-CodeElement.display = 'CodeElement';
+CodeElement.displayName = 'CodeElement';

@@ -1,7 +1,15 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
 import { Label } from '@usertour-packages//label';
-import { ContentIcon } from '@usertour-packages/icons';
+import {
+  CheckboxCircleFillIcon,
+  ContentIcon,
+  EyeFillIcon,
+  EyeNoneIcon,
+  ForbidFillIcon,
+  PlayCircleFillIcon,
+  StopCircleFillIcon,
+} from '@usertour-packages/icons';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
 import { cn } from '@usertour/helpers';
 import {
@@ -11,6 +19,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
@@ -26,16 +35,18 @@ import {
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getContentError } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
-import { useRulesContext } from './rules-context';
+import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesConditionRightContent } from './rules-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface SelectItemType {
   id: string;
   name: string;
+  type: string;
 }
 
 export interface RulesContentProps {
@@ -46,15 +57,16 @@ export interface RulesContentProps {
   };
   type: string;
   index: number;
+  conditionId?: string;
 }
 
 const conditionsMapping = [
-  { value: 'seen', name: 'seen' },
-  { value: 'unseen', name: 'not seen' },
-  { value: 'completed', name: 'completed' },
-  { value: 'uncompleted', name: 'not completed' },
-  { value: 'actived', name: 'is currently actived' },
-  { value: 'unactived', name: 'is not currently actived' },
+  { value: 'seen', name: 'seen', icon: EyeFillIcon },
+  { value: 'unseen', name: 'not seen', icon: EyeNoneIcon },
+  { value: 'completed', name: 'completed', icon: CheckboxCircleFillIcon },
+  { value: 'uncompleted', name: 'not completed', icon: ForbidFillIcon },
+  { value: 'actived', name: 'is currently actived', icon: PlayCircleFillIcon },
+  { value: 'unactived', name: 'is not currently actived', icon: StopCircleFillIcon },
 ];
 
 interface RulesContentContextValue {
@@ -78,6 +90,7 @@ const RulesContentName = () => {
   const [open, setOpen] = useState(false);
   const { selectedPreset, setSelectedPreset } = useRulesContentContext();
   const { contents } = useRulesContext();
+  const { popover: zIndex } = useRulesZIndex();
   const handleOnSelected = (item: SelectItemType) => {
     setSelectedPreset(item);
     setOpen(false);
@@ -104,12 +117,12 @@ const RulesContentName = () => {
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </Popover.PopoverTrigger>
-        <Popover.PopoverContent className="w-[350px] p-0">
+        <Popover.PopoverContent className="w-[350px] p-0" style={{ zIndex }}>
           <Command filter={handleFilter}>
-            <CommandInput placeholder="Search flow..." />
+            <CommandInput placeholder="Search content..." />
             <CommandEmpty>No items found.</CommandEmpty>
-            <CommandGroup heading="Flow">
-              <ScrollArea className="h-72">
+            <ScrollArea className="h-72">
+              <CommandGroup heading="Flow">
                 {contents
                   ?.filter((c) => c.type === ContentDataType.FLOW)
                   .map((item) => (
@@ -121,6 +134,7 @@ const RulesContentName = () => {
                         handleOnSelected({
                           id: item.id,
                           name: item.name || '',
+                          type: item.type,
                         });
                       }}
                     >
@@ -133,8 +147,34 @@ const RulesContentName = () => {
                       />
                     </CommandItem>
                   ))}
-              </ScrollArea>
-            </CommandGroup>
+              </CommandGroup>
+              <CommandGroup heading="Checklist">
+                {contents
+                  ?.filter((c) => c.type === ContentDataType.CHECKLIST)
+                  .map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      value={item.id}
+                      className="cursor-pointer"
+                      onSelect={() => {
+                        handleOnSelected({
+                          id: item.id,
+                          name: item.name || '',
+                          type: item.type,
+                        });
+                      }}
+                    >
+                      {item.name}
+                      <CheckIcon
+                        className={cn(
+                          'ml-auto h-4 w-4',
+                          selectedPreset?.id === item.id ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+            </ScrollArea>
           </Command>
         </Popover.PopoverContent>
       </Popover.Popover>
@@ -159,14 +199,15 @@ const RulesContentRadios = () => {
 };
 
 export const RulesContent = (props: RulesContentProps) => {
-  const { index, data } = props;
+  const { index, data, conditionId } = props;
   const { updateConditionData } = useRulesGroupContext();
   const { contents, disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   const [selectedPreset, setSelectedPreset] = useState<SelectItemType | null>(null);
   const [openError, setOpenError] = useState(false);
   const [errorInfo, setErrorInfo] = useState('');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const [conditionValue, setConditionValue] = useState(data?.logic ?? 'seen');
 
   const value = {
@@ -176,26 +217,42 @@ export const RulesContent = (props: RulesContentProps) => {
     setConditionValue,
   };
 
+  // Initialize or sync selectedPreset from data.contentId when component mounts or data changes
+  // This only runs when data.contentId or contents change, not when user selects
   useEffect(() => {
-    if (data?.contentId && contents.length > 0) {
+    if (data?.contentId && contents && contents.length > 0) {
       const newItem = contents.find((item) => item.id === data.contentId);
-      if (newItem) {
-        setSelectedPreset({ id: newItem.id, name: newItem.name || '' });
-        return;
+      // Only sync if selectedPreset doesn't match data.contentId (initialization or external update)
+      if (newItem && selectedPreset?.id !== data.contentId) {
+        setSelectedPreset({
+          id: newItem.id,
+          name: newItem.name || '',
+          type: newItem.type || data?.type || 'flow',
+        });
       }
     }
+  }, [data?.contentId, data?.type, contents]);
 
+  // Error checking when popover closes or condition changes
+  useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
+
+    // Use selectedPreset?.id instead of data?.contentId to check user's current selection
     const { showError, errorInfo } = getContentError({
-      contentId: data?.contentId || '',
-      type: 'flow',
+      contentId: selectedPreset?.id || data?.contentId || '',
+      type: selectedPreset?.type || data?.type || 'flow',
       logic: conditionValue,
     });
 
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }
-  }, [data?.contentId, contents, conditionValue, open]);
+  }, [data?.contentId, data?.type, conditionValue, open, selectedPreset?.id, selectedPreset?.type]);
 
   const handleOnOpenChange = useCallback(
     (open: boolean) => {
@@ -208,7 +265,7 @@ export const RulesContent = (props: RulesContentProps) => {
 
       const updates = {
         contentId: selectedPreset?.id || '',
-        type: 'flow',
+        type: selectedPreset?.type || 'flow',
         logic: conditionValue,
       };
 
@@ -221,8 +278,29 @@ export const RulesContent = (props: RulesContentProps) => {
 
       updateConditionData(index, updates);
     },
-    [selectedPreset, conditionValue, index, updateConditionData],
+    [selectedPreset, conditionValue, index, updateConditionData, setOpen],
   );
+
+  const contentTypeLabel = useMemo(() => {
+    if (selectedPreset?.type === ContentDataType.CHECKLIST) {
+      return 'Checklist';
+    }
+    if (selectedPreset?.type === ContentDataType.FLOW) {
+      return 'Flow';
+    }
+    return 'Flow/Checklist';
+  }, [selectedPreset?.type]);
+
+  const conditionIcon = useMemo(() => {
+    const condition = conditionsMapping.find((c) => c.value === conditionValue);
+    const IconComponent = condition?.icon;
+
+    if (IconComponent) {
+      return <IconComponent width={16} height={16} />;
+    }
+
+    return <ContentIcon width={16} height={16} />;
+  }, [conditionValue]);
 
   return (
     <RulesContentContext.Provider value={value}>
@@ -231,17 +309,14 @@ export const RulesContent = (props: RulesContentProps) => {
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
-              <RulesConditionIcon>
-                <ContentIcon width={16} height={16} />
-              </RulesConditionIcon>
               <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-                <RulesPopoverTrigger>
-                  Flow <span className="font-bold">{selectedPreset?.name} </span>
+                <RulesPopoverTrigger icon={conditionIcon}>
+                  {contentTypeLabel} <span className="font-bold">{selectedPreset?.name} </span>
                   {conditionsMapping.find((c) => c.value === conditionValue)?.name}{' '}
                 </RulesPopoverTrigger>
                 <RulesPopoverContent>
                   <div className="flex flex-col space-y-2">
-                    <div>Flow</div>
+                    <div>{contentTypeLabel}</div>
                     <RulesContentName />
                     <RulesContentRadios />
                   </div>
@@ -250,7 +325,7 @@ export const RulesContent = (props: RulesContentProps) => {
               <RulesRemove index={index} />
             </RulesConditionRightContent>
           </RulesErrorAnchor>
-          <RulesErrorContent>{errorInfo}</RulesErrorContent>
+          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
         </div>
       </RulesError>
     </RulesContentContext.Provider>

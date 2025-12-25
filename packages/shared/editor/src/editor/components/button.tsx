@@ -1,18 +1,11 @@
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import { Checkbox } from '@usertour-packages/checkbox';
+import { ComboBox, ComboBoxOption } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import {
   Tooltip,
   TooltipContent,
@@ -43,6 +36,12 @@ const BUTTON_STYLES = {
 } as const;
 
 const MARGIN_POSITIONS = ['left', 'top', 'bottom', 'right'] as const;
+
+// ComboBox options
+const BUTTON_STYLE_OPTIONS: ComboBoxOption[] = [
+  { value: BUTTON_STYLES.DEFAULT, name: 'Primary' },
+  { value: BUTTON_STYLES.SECONDARY, name: 'Secondary' },
+];
 
 // Types
 type MarginPosition = keyof typeof MARGIN_KEY_MAPPING;
@@ -308,17 +307,13 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
                 />
 
                 <Label>Button style</Label>
-                <Select onValueChange={handleButtonStyleChange} value={element.data.type}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a distribute" />
-                  </SelectTrigger>
-                  <SelectContent style={{ zIndex: zIndex + EDITOR_SELECT }}>
-                    <SelectGroup>
-                      <SelectItem value={BUTTON_STYLES.DEFAULT}>Primary</SelectItem>
-                      <SelectItem value={BUTTON_STYLES.SECONDARY}>Secondary</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <ComboBox
+                  options={BUTTON_STYLE_OPTIONS}
+                  value={element.data.type}
+                  onValueChange={handleButtonStyleChange}
+                  placeholder="Select a style"
+                  contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+                />
 
                 <MarginControls
                   element={element}

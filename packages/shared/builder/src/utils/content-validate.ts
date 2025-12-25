@@ -3,8 +3,8 @@ import {
   ContentEditorElementType,
   ContentEditorQuestionElement,
   ContentEditorRoot,
-  isRestrictedType,
 } from '@usertour-packages/shared-editor';
+import { isRestrictedType } from '@usertour/helpers';
 import { ContentActionsItemType, Step } from '@usertour/types';
 
 export const stepIsReachable = (steps: Step[], currentStep: Step) => {

@@ -135,7 +135,7 @@ const RegistrationRoot = ({
             companyName: others.companyName,
           };
       const data = await invoke(variables);
-      if (data.redirectUrl) {
+      if (data?.redirectUrl) {
         window.location.href = data.redirectUrl;
       }
     } catch (error) {

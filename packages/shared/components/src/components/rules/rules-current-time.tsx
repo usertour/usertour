@@ -1,22 +1,12 @@
 import { CalendarIcon } from '@radix-ui/react-icons';
+import { Button } from '@usertour-packages/button';
 import { Calendar } from '@usertour-packages/calendar';
 import { TimeIcon } from '@usertour-packages/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
 import { cn } from '@usertour/helpers';
 import { format, parseISO } from 'date-fns';
-import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
-
-import { Button } from '@usertour-packages/button';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
-import { ScrollArea } from '@usertour-packages/scroll-area';
+import { ComboBox } from '@usertour-packages/combo-box';
+import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   getCurrentTimeError,
   isTimeConditionDataV2,
@@ -28,13 +18,15 @@ import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
 import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
-import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
-import { useRulesContext } from './rules-context';
+import { RulesConditionRightContent } from './rules-template';
+import { useRulesContext, useRulesZIndex } from './rules-context';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface RulesCurrentTimeProps {
   index: number;
   type: string;
   data?: TimeConditionData;
+  conditionId?: string;
 }
 
 /**
@@ -156,6 +148,7 @@ const RulesCurrentTimeDatePicker = (props: {
   setDate: Dispatch<SetStateAction<Date | undefined>>;
 }) => {
   const { date, setDate } = props;
+  const { popover: zIndex } = useRulesZIndex();
 
   return (
     <Popover>
@@ -171,12 +164,7 @@ const RulesCurrentTimeDatePicker = (props: {
           {date ? format(date, 'PPP') : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-auto p-0"
-        align="start"
-        style={{ zIndex: EXTENSION_CONTENT_RULES }}
-        withoutPortal
-      >
+      <PopoverContent className="w-auto p-0" align="start" style={{ zIndex }} withoutPortal>
         <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
       </PopoverContent>
     </Popover>
@@ -190,36 +178,37 @@ const RulesCurrentTimeTimer = (props: {
   onValueChange?(value: string): void;
 }) => {
   const { num, defaultValue = '00', onValueChange } = props;
-  const items = Array.from({ length: num }, (_, i) => i.toString().padStart(2, '0'));
+  const { combobox: zIndex } = useRulesZIndex();
+
+  const options = useMemo(
+    () =>
+      Array.from({ length: num }, (_, i) => {
+        const val = i.toString().padStart(2, '0');
+        return { value: val, name: val };
+      }),
+    [num],
+  );
 
   return (
-    <Select defaultValue={defaultValue} onValueChange={onValueChange}>
-      <SelectTrigger className="w-16">
-        <SelectValue className="text-left" />
-      </SelectTrigger>
-      <SelectPortal>
-        <SelectContent className="w-16 min-w-16" style={{ zIndex: EXTENSION_CONTENT_RULES }}>
-          <ScrollArea className="h-60">
-            {items.map((item) => (
-              <SelectItem key={item} value={item} className="cursor-pointer">
-                {item}
-              </SelectItem>
-            ))}
-          </ScrollArea>
-        </SelectContent>
-      </SelectPortal>
-    </Select>
+    <ComboBox
+      options={options}
+      value={defaultValue}
+      onValueChange={onValueChange || (() => {})}
+      className="w-16 px-2"
+      contentStyle={{ zIndex }}
+    />
   );
 };
 
 // Main Component
 export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
-  const { index, data } = props;
+  const { index, data, conditionId } = props;
   const [openError, setOpenError] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
   const [errorInfo, setErrorInfo] = useState('');
   const { updateConditionData } = useRulesGroupContext();
   const { disabled } = useRulesContext();
+  const { error: errorZIndex } = useRulesZIndex();
 
   const {
     startDate,
@@ -238,9 +227,14 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
   } = useTimeState(data);
 
   useEffect(() => {
+    if (open) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const timeData = getTimeData();
     const { showError, errorInfo } = getCurrentTimeError(timeData);
-    if (showError && !open) {
+    if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
     }
@@ -285,11 +279,8 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
         <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
-            <RulesConditionIcon>
-              <TimeIcon width={16} height={16} />
-            </RulesConditionIcon>
             <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTrigger>
+              <RulesPopoverTrigger icon={<TimeIcon width={16} height={16} />}>
                 <div className="grow pr-6 text-sm text-wrap break-all">
                   Current time is {endDate ? 'between' : 'after'}{' '}
                   {startDate && (
@@ -343,7 +334,7 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
             <RulesRemove index={index} />
           </RulesConditionRightContent>
         </RulesErrorAnchor>
-        <RulesErrorContent>{errorInfo}</RulesErrorContent>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </div>
     </RulesError>
   );

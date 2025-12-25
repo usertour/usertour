@@ -11,10 +11,11 @@ import { SignupInput } from './dto/signup.input';
 import { Auth, AuthConfigItem } from './models/auth.model';
 import { Common } from './models/common.model';
 import { Register } from './models/register.model';
-import { Logger } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { UserEntity } from '@/common/decorators/user.decorator';
+import { EmailConfigGuard } from '@/common/guards/email-config.guard';
 
 @Resolver(() => Auth)
 export class AuthResolver {
@@ -26,6 +27,7 @@ export class AuthResolver {
 
   @Mutation(() => Register)
   @Public()
+  @UseGuards(EmailConfigGuard)
   createMagicLink(@Args('data') data: MagicLinkInput) {
     data.email = data.email.toLowerCase();
     return this.auth.createMagicLink(data.email);
@@ -33,12 +35,14 @@ export class AuthResolver {
 
   @Mutation(() => Register)
   @Public()
+  @UseGuards(EmailConfigGuard)
   resendMagicLink(@Args('data') data: ResendLinkInput) {
     return this.auth.resendMargicLink(data.id);
   }
 
   @Mutation(() => Common)
   @Public()
+  @UseGuards(EmailConfigGuard)
   resetUserPassword(@Args('data') data: ResetPasswordInput) {
     data.email = data.email.toLowerCase();
     return this.auth.resetUserPassword(data.email);

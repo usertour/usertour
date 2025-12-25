@@ -1,14 +1,12 @@
 import { useAppContext } from '@/contexts/app-context';
 import { AttributeListProvider } from '@/contexts/attribute-list-context';
-import {
-  EnvironmentListProvider,
-  useEnvironmentListContext,
-} from '@/contexts/environment-list-context';
+import { EnvironmentListProvider } from '@/contexts/environment-list-context';
 import { SubscriptionProvider } from '@/contexts/subscription-context';
+import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { userTourToken } from '@/utils/env';
 import { Button } from '@usertour-packages/button';
-import { storage } from '@usertour/helpers';
 import { cn } from '@usertour/helpers';
+import { UserProfile } from '@usertour/types';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -32,7 +30,6 @@ export const AdminLayoutHeader = () => {
             loading="eager"
           />
         </div>
-        {/* <EnvSwitcher /> */}
         <AdminMainNav className="mx-6" />
         <div className="ml-auto flex items-center space-x-4">
           <a
@@ -65,21 +62,7 @@ interface AdminLayoutBodyProps {
 
 export const AdminLayoutContent = (props: AdminLayoutBodyProps) => {
   const { children } = props;
-  const { envId } = useParams();
-  const { setEnvironment } = useAppContext();
-
-  const { environmentList } = useEnvironmentListContext();
-
-  useEffect(() => {
-    const _envId = envId || storage.getLocalStorage('environmentId');
-    if (environmentList) {
-      const currentEnv = environmentList.find((env) => env.id === _envId) || environmentList[0];
-      if (currentEnv) {
-        setEnvironment(currentEnv);
-        storage.setLocalStorage('environmentId', currentEnv?.id);
-      }
-    }
-  }, [envId, environmentList, setEnvironment]);
+  useEnvironmentSelection();
 
   return <div className="flex-col md:flex">{children}</div>;
 };
@@ -93,30 +76,34 @@ interface AdminLayoutNewContentProps {
 
 export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
   const { children, className } = props;
-  const { envId } = useParams();
-  const { setEnvironment } = useAppContext();
+  const { settingType } = useParams<{ settingType?: string }>();
+  const { isNonPrimary } = useEnvironmentSelection();
+  const { environment } = useAppContext();
 
-  const { environmentList } = useEnvironmentListContext();
-
-  useEffect(() => {
-    const _envId = envId || storage.getLocalStorage('environmentId');
-    if (environmentList) {
-      const currentEnv = environmentList.find((env) => env.id === _envId) || environmentList[0];
-      if (currentEnv) {
-        setEnvironment(currentEnv);
-        storage.setLocalStorage('environmentId', currentEnv?.id);
-      }
-    }
-  }, [envId, environmentList, setEnvironment]);
+  // On Settings pages: only show warning on API or Environments page when environment is non-primary
+  // On other pages: show warning whenever environment is non-primary
+  const isSettingsPage = !!settingType;
+  const shouldShowWarning = isSettingsPage
+    ? (settingType === 'api' || settingType === 'environments') && isNonPrimary
+    : isNonPrimary;
 
   return (
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
       <div
         className={cn(
-          'w-full min-w-0 overflow-hidden  flex relative rounded-md border border-border bg-white h-full dark:border-border/60 dark:bg-card/60',
+          'w-full min-w-0 overflow-hidden flex relative rounded-md border border-border bg-white h-full dark:border-border/60 dark:bg-card/60',
+          shouldShowWarning && [
+            'border-t-warning dark:border-t-warning',
+            'before:content-[""] before:absolute before:top-0 before:left-0 before:right-0 before:h-[1px] before:bg-warning before:z-[10] before:rounded-t-md dark:before:bg-warning',
+          ],
           className,
         )}
       >
+        {shouldShowWarning && environment?.name && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center rounded-b-md rounded-t-none border-0 bg-warning text-white px-3 pt-0 py-0.5 text-xs leading-none">
+            {environment.name}
+          </div>
+        )}
         <div className="group/sidebar-wrapper flex h-full w-full">{children}</div>
       </div>
     </div>
@@ -130,8 +117,7 @@ interface AdminLayoutProps {
 }
 
 // Add new custom hook
-//biome-ignore lint/suspicious/noExplicitAny: <explanation>
-const useUserTracking = (userInfo: any) => {
+const useUserTracking = (userInfo: UserProfile | null | undefined) => {
   const posthog = usePostHog();
   const usertourInitialized = useRef(false);
 

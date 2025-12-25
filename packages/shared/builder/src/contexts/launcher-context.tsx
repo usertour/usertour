@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { useEvent } from 'react-use';
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
 import { useToast } from '@usertour-packages/use-toast';
@@ -33,6 +34,7 @@ export interface LauncherContextValue {
   setLauncherTooltip: React.Dispatch<React.SetStateAction<LauncherData['tooltip'] | undefined>>;
   launcherTarget: LauncherData['target'] | undefined;
   setLauncherTarget: React.Dispatch<React.SetStateAction<LauncherData['target'] | undefined>>;
+  flushSave: () => Promise<void>;
 }
 
 export const LauncherContext = createContext<LauncherContextValue | undefined>(undefined);
@@ -169,6 +171,13 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     setLauncherTarget(localData?.target);
   }, [setCurrentMode, localData?.target, setLauncherTarget]);
 
+  const flushSave = useCallback(async () => {
+    debouncedSaveData.cancel();
+    if (localData) {
+      await saveData(localData);
+    }
+  }, [debouncedSaveData, localData, saveData]);
+
   // Only sync localData with server data when server data changes
   useEffect(() => {
     if (!currentVersion) {
@@ -184,6 +193,14 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     }
   }, [currentVersion]);
 
+  // Warn user when closing page with unsaved changes
+  useEvent('beforeunload', (e: BeforeUnloadEvent) => {
+    const hasUnsavedChanges = localData && !isEqual(localData, lastSavedDataRef.current);
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+    }
+  });
+
   const value: LauncherContextValue = {
     zIndex,
     isLoading,
@@ -198,6 +215,7 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     setLauncherTooltip,
     launcherTarget,
     setLauncherTarget,
+    flushSave,
   };
 
   return <LauncherContext.Provider value={value}>{children}</LauncherContext.Provider>;

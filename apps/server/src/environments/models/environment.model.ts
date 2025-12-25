@@ -12,6 +12,9 @@ export class Environment extends BaseModel {
   @Field(() => String)
   projectId: string;
 
+  @Field(() => Boolean)
+  isPrimary: boolean;
+
   // @Field(() => Boolean)
   // published: boolean;
 }

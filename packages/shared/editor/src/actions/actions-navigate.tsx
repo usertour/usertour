@@ -19,6 +19,7 @@ import {
 } from './actions-popper';
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
+import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface ContentActionsNavigateProps {
   index: number;
@@ -27,6 +28,7 @@ export interface ContentActionsNavigateProps {
     openType: string;
     value: Descendant[];
   };
+  conditionId?: string;
 }
 
 const initialValue: Descendant[] = [
@@ -164,7 +166,7 @@ const NavigationDisplayText = ({ value }: { value: Descendant[] }) => {
 };
 
 export const ContentActionsNavigate = (props: ContentActionsNavigateProps) => {
-  const { data, index } = props;
+  const { data, index, conditionId } = props;
   const { attributes, zIndex } = useContentActionsContext();
 
   // Initialize state with memoized initial values
@@ -173,7 +175,7 @@ export const ContentActionsNavigate = (props: ContentActionsNavigateProps) => {
 
   const [value, setValue] = useState(initialValueMemo);
   const [openType, setOpenType] = useState(initialOpenType);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useAutoOpenPopover(conditionId);
 
   // Handle error state
   const { openError, errorInfo, handleOnOpenChange } = useNavigationErrorHandling(

@@ -3,6 +3,7 @@ export type Environment = {
   name: string;
   token: string;
   createdAt: string;
+  isPrimary?: boolean;
 };
 
 export type Project = {
