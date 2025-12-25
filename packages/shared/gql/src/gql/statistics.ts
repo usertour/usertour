@@ -224,6 +224,8 @@ export const queryTooltipTargetMissingSessions = gql`
       stepAnalytics {
         uniqueViews
         totalViews
+        uniqueCompletions
+        totalCompletions
         uniqueTooltipTargetMissingCount
         tooltipTargetMissingCount
       }

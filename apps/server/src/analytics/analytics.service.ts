@@ -145,6 +145,21 @@ interface RatingMetricsByDay extends BaseMetricsByDay {
   };
 }
 
+interface StepAnalyticsMetrics {
+  uniqueViews: number;
+  totalViews: number;
+  uniqueCompletions: number;
+  totalCompletions: number;
+  uniqueTooltipTargetMissingCount: number;
+  tooltipTargetMissingCount: number;
+}
+
+interface StepAnalyticsEvents {
+  stepSeenEvent?: Event;
+  completeEvent?: Event;
+  tooltipTargetMissingEvent?: Event;
+}
+
 @Injectable()
 export class AnalyticsService {
   constructor(private prisma: PrismaService) {}
@@ -511,52 +526,12 @@ export class AnalyticsService {
     const ret = [];
     for (let index = 0; index < maxStepIndex; index++) {
       const stepInfo = version.steps[index];
-      const itemCondition = {
-        ...condition,
-        eventId: stepSeenEvent.id,
-        key: 'flow_step_cvid',
-        value: stepInfo.cvid,
-      };
-      const uniqueViews = await this.aggregationByItem({
-        ...itemCondition,
-        isDistinct: true,
-      });
-      const totalViews = await this.aggregationByItem({
-        ...itemCondition,
-        isDistinct: false,
-      });
-      const uniqueCompletions = await this.aggregationByItem({
-        ...itemCondition,
-        eventId: completeEvent.id,
-        isDistinct: true,
-      });
-      const totalCompletions = await this.aggregationByItem({
-        ...itemCondition,
-        eventId: completeEvent.id,
-        isDistinct: false,
+      const analytics = await this.getStepAnalyticsMetrics(condition, stepInfo.cvid, {
+        stepSeenEvent,
+        completeEvent,
+        tooltipTargetMissingEvent,
       });
 
-      // Query tooltip target missing counts for each step
-      let tooltipTargetMissingCount = 0;
-      let uniqueTooltipTargetMissingCount = 0;
-      if (tooltipTargetMissingEvent) {
-        const itemCondition = {
-          ...condition,
-          eventId: tooltipTargetMissingEvent.id,
-          key: 'flow_step_cvid',
-          value: stepInfo.cvid,
-        };
-        // Count unique users
-        uniqueTooltipTargetMissingCount = await this.aggregationByItem({
-          ...itemCondition,
-          isDistinct: true,
-        });
-        // Count total sessions
-        tooltipTargetMissingCount = await this.aggregationByItem({
-          ...itemCondition,
-          isDistinct: false,
-        });
-      }
       const explicitCompletionStep =
         (stepInfo.setting as StepSettings)?.explicitCompletionStep ?? false;
       const target = stepInfo.target;
@@ -569,14 +544,7 @@ export class AnalyticsService {
         explicitCompletionStep,
         target,
         type,
-        analytics: {
-          uniqueViews,
-          totalViews,
-          uniqueCompletions,
-          totalCompletions,
-          tooltipTargetMissingCount,
-          uniqueTooltipTargetMissingCount,
-        },
+        analytics,
       });
     }
     return ret;
@@ -867,6 +835,92 @@ export class AnalyticsService {
     return Number.parseInt(data[0].count.toString());
   }
 
+  /**
+   * Get analytics metrics for a specific step
+   * Unified method to aggregate views, completions, and tooltip target missing counts
+   * @param baseCondition - Base analytics conditions
+   * @param stepCvid - Step CVID to query
+   * @param events - Event configuration (all optional)
+   * @returns Unified step analytics metrics
+   */
+  private async getStepAnalyticsMetrics(
+    baseCondition: Omit<AnalyticsConditions, 'eventId' | 'isDistinct'>,
+    stepCvid: string,
+    events: StepAnalyticsEvents,
+  ): Promise<StepAnalyticsMetrics> {
+    const { stepSeenEvent, completeEvent, tooltipTargetMissingEvent } = events;
+
+    const itemCondition = {
+      ...baseCondition,
+      key: 'flow_step_cvid',
+      value: stepCvid,
+    };
+
+    const [
+      uniqueViews,
+      totalViews,
+      uniqueCompletions,
+      totalCompletions,
+      uniqueTooltipTargetMissingCount,
+      tooltipTargetMissingCount,
+    ] = await Promise.all([
+      // Views stats (if stepSeenEvent provided)
+      stepSeenEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: stepSeenEvent.id,
+            isDistinct: true,
+          })
+        : Promise.resolve(0),
+      stepSeenEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: stepSeenEvent.id,
+            isDistinct: false,
+          })
+        : Promise.resolve(0),
+      // Completions stats (if completeEvent provided)
+      completeEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: completeEvent.id,
+            isDistinct: true,
+          })
+        : Promise.resolve(0),
+      completeEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: completeEvent.id,
+            isDistinct: false,
+          })
+        : Promise.resolve(0),
+      // Tooltip target missing stats (if tooltipTargetMissingEvent provided)
+      tooltipTargetMissingEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: tooltipTargetMissingEvent.id,
+            isDistinct: true,
+          })
+        : Promise.resolve(0),
+      tooltipTargetMissingEvent
+        ? this.aggregationByItem({
+            ...itemCondition,
+            eventId: tooltipTargetMissingEvent.id,
+            isDistinct: false,
+          })
+        : Promise.resolve(0),
+    ]);
+
+    return {
+      uniqueViews,
+      totalViews,
+      uniqueCompletions,
+      totalCompletions,
+      uniqueTooltipTargetMissingCount,
+      tooltipTargetMissingCount,
+    };
+  }
+
   async queryRecentSessions(
     query: AnalyticsQuery,
     pagination: PaginationArgs,
@@ -1028,6 +1082,8 @@ export class AnalyticsService {
       stepAnalytics: {
         uniqueViews: 0,
         totalViews: 0,
+        uniqueCompletions: 0,
+        totalCompletions: 0,
         uniqueTooltipTargetMissingCount: 0,
         tooltipTargetMissingCount: 0,
       },
@@ -1044,7 +1100,7 @@ export class AnalyticsService {
       const projectId = environment.projectId;
 
       // Find required events
-      const [tooltipTargetMissingEvent, flowStepSeenEvent] = await Promise.all([
+      const [tooltipTargetMissingEvent, flowStepSeenEvent, flowCompletedEvent] = await Promise.all([
         this.prisma.event.findFirst({
           where: {
             projectId,
@@ -1055,6 +1111,12 @@ export class AnalyticsService {
           where: {
             projectId,
             codeName: BizEvents.FLOW_STEP_SEEN,
+          },
+        }),
+        this.prisma.event.findFirst({
+          where: {
+            projectId,
+            codeName: BizEvents.FLOW_COMPLETED,
           },
         }),
       ]);
@@ -1084,13 +1146,7 @@ export class AnalyticsService {
         endDateStr: endDate,
       };
 
-      const [
-        sessions,
-        uniqueViews,
-        totalViews,
-        uniqueTooltipTargetMissingCount,
-        tooltipTargetMissingCount,
-      ] = await Promise.all([
+      const [sessions, stepAnalytics] = await Promise.all([
         // Query sessions
         findManyCursorConnection(
           (args) =>
@@ -1129,52 +1185,17 @@ export class AnalyticsService {
             }),
           { first, last, before, after },
         ),
-        // Query step analytics - uniqueViews
-        flowStepSeenEvent
-          ? this.aggregationByItem({
-              ...baseCondition,
-              eventId: flowStepSeenEvent.id,
-              key: 'flow_step_cvid',
-              value: stepCvid,
-              isDistinct: true,
-            })
-          : 0,
-        // Query step analytics - totalViews
-        flowStepSeenEvent
-          ? this.aggregationByItem({
-              ...baseCondition,
-              eventId: flowStepSeenEvent.id,
-              key: 'flow_step_cvid',
-              value: stepCvid,
-              isDistinct: false,
-            })
-          : 0,
-        // Query step analytics - uniqueTooltipTargetMissingCount
-        this.aggregationByItem({
-          ...baseCondition,
-          eventId: tooltipTargetMissingEvent.id,
-          key: 'flow_step_cvid',
-          value: stepCvid,
-          isDistinct: true,
-        }),
-        // Query step analytics - tooltipTargetMissingCount
-        this.aggregationByItem({
-          ...baseCondition,
-          eventId: tooltipTargetMissingEvent.id,
-          key: 'flow_step_cvid',
-          value: stepCvid,
-          isDistinct: false,
+        // Query step analytics using unified method
+        this.getStepAnalyticsMetrics(baseCondition, stepCvid, {
+          stepSeenEvent: flowStepSeenEvent ?? undefined,
+          completeEvent: flowCompletedEvent ?? undefined,
+          tooltipTargetMissingEvent,
         }),
       ]);
 
       return {
         sessions,
-        stepAnalytics: {
-          uniqueViews,
-          totalViews,
-          uniqueTooltipTargetMissingCount,
-          tooltipTargetMissingCount,
-        },
+        stepAnalytics,
       };
     } catch (_) {
       throw new UnknownError('Failed to query tooltip target missing sessions');

@@ -10,6 +10,12 @@ export class StepAnalytics {
   totalViews: number;
 
   @Field(() => Int)
+  uniqueCompletions: number;
+
+  @Field(() => Int)
+  totalCompletions: number;
+
+  @Field(() => Int)
   uniqueTooltipTargetMissingCount: number;
 
   @Field(() => Int)

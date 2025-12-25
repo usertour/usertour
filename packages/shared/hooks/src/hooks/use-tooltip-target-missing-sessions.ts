@@ -15,6 +15,8 @@ export interface TooltipTargetMissingQuery {
 export interface StepAnalytics {
   uniqueViews: number;
   totalViews: number;
+  uniqueCompletions: number;
+  totalCompletions: number;
   uniqueTooltipTargetMissingCount: number;
   tooltipTargetMissingCount: number;
 }

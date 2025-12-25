@@ -963,7 +963,9 @@ type Step {
 
 type StepAnalytics {
   tooltipTargetMissingCount: Int!
+  totalCompletions: Int!
   totalViews: Int!
+  uniqueCompletions: Int!
   uniqueTooltipTargetMissingCount: Int!
   uniqueViews: Int!
 }
