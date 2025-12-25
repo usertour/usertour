@@ -281,6 +281,10 @@ export class WebSocketV2Service {
     const { server, socket } = context;
     const { sessionId, endReason } = endContentDto;
 
+    // Handle checklist completed events before dismiss
+    // Some state must be updated before dismiss since session info cannot be updated after
+    await this.contentOrchestratorService.handleChecklistCompletedEvents(socket);
+
     const success = await this.contentOrchestratorService.cancelContent({
       server,
       socket,
