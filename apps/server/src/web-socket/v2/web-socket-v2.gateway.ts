@@ -49,6 +49,11 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
 
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
 
+        // Store token in socket.data for logging purposes
+        if (auth.token && typeof auth.token === 'string') {
+          socket.data.token = auth.token;
+        }
+
         // Initialize and validate client data
         const socketData = await this.service.initializeSocketData(
           auth as unknown as SocketAuthData,
