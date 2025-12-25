@@ -10,7 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { useQueryTooltipTargetMissingSessionsLazyQuery } from '@usertour-packages/shared-hooks';
+import {
+  useQueryTooltipTargetMissingSessionsLazyQuery,
+  type StepAnalytics,
+  type TooltipTargetMissingResponse,
+} from '@usertour-packages/shared-hooks';
 import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
@@ -24,6 +28,13 @@ import { BizEvents, EventAttributes } from '@usertour/types';
 import { useInView } from 'react-intersection-observer';
 import { calculateUniqueFailureRate, calculateTotalFailureRate } from '@/utils/analytics';
 import { DateRangePicker } from '@/components/molecules/date-range-picker';
+import { cn, formatCompactNumber, shouldShowFullNumberTooltip } from '@/utils/common';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 
 interface TooltipTargetMissingDialogProps {
   stepData: AnalyticsViewsByStep;
@@ -48,13 +59,97 @@ const getEventData = (session: BizSession) => {
   return { url, time: event.createdAt };
 };
 
+// Component for displaying formatted numbers with optional tooltip for large values
+const FormattedNumber = ({
+  value,
+  className,
+  suffix,
+}: {
+  value: number;
+  className?: string;
+  suffix?: string;
+}) => {
+  const formatted = formatCompactNumber(value);
+  const showTooltip = shouldShowFullNumberTooltip(value);
+
+  const content = (
+    <span className={className}>
+      {formatted}
+      {suffix}
+    </span>
+  );
+
+  if (!showTooltip) {
+    return content;
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={cn(className, 'cursor-help')}>
+            {formatted}
+            {suffix}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>
+            {value.toLocaleString('en-US')}
+            {suffix}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+// Reusable stat item component
+const StatItem = ({
+  mainValue,
+  totalValue,
+  label,
+  variant = 'primary',
+  isPercentage = false,
+}: {
+  mainValue: number;
+  totalValue: number;
+  label: string;
+  variant?: 'primary' | 'destructive';
+  isPercentage?: boolean;
+}) => {
+  const colorClass = variant === 'primary' ? 'text-primary' : 'text-destructive';
+
+  return (
+    <div className="flex items-center gap-3">
+      {isPercentage ? (
+        <span className={`text-5xl font-semibold ${colorClass}`}>{mainValue}%</span>
+      ) : (
+        <FormattedNumber value={mainValue} className={`text-5xl font-semibold ${colorClass}`} />
+      )}
+      <div className="flex flex-col justify-center gap-1">
+        <span className="text-base text-muted-foreground leading-tight whitespace-nowrap">
+          {label}
+        </span>
+        <span className="text-sm leading-tight whitespace-nowrap">
+          {isPercentage ? `${totalValue}%` : <FormattedNumber value={totalValue} />} in total
+        </span>
+      </div>
+    </div>
+  );
+};
+
 // Stats summary component
-const StatsSummary = ({ stepData }: { stepData: AnalyticsViewsByStep }) => {
-  const uniqueTooltipTargetMissingCount = stepData.analytics.uniqueTooltipTargetMissingCount ?? 0;
-  const totalViews = stepData.analytics.totalViews;
-  const uniqueViews = stepData.analytics.uniqueViews;
-  const tooltipTargetMissingCount = stepData.analytics.tooltipTargetMissingCount ?? 0;
-  const customSelector = stepData?.target?.customSelector ?? '';
+const StatsSummary = ({
+  stepAnalytics,
+  customSelector,
+}: {
+  stepAnalytics: StepAnalytics | null;
+  customSelector: string;
+}) => {
+  const uniqueViews = stepAnalytics?.uniqueViews ?? 0;
+  const totalViews = stepAnalytics?.totalViews ?? 0;
+  const uniqueTooltipTargetMissingCount = stepAnalytics?.uniqueTooltipTargetMissingCount ?? 0;
+  const tooltipTargetMissingCount = stepAnalytics?.tooltipTargetMissingCount ?? 0;
 
   const uniqueFailureRate = calculateUniqueFailureRate(
     uniqueTooltipTargetMissingCount,
@@ -64,31 +159,24 @@ const StatsSummary = ({ stepData }: { stepData: AnalyticsViewsByStep }) => {
 
   return (
     <div className="flex items-center gap-8">
-      <div className="w-56 h-36 bg-muted rounded-lg p-1 text-muted-foreground flex items-center justify-center overflow-hidden break-words">
+      <div className="w-56 h-36 bg-muted rounded-lg p-1 text-muted-foreground flex items-center justify-center overflow-hidden break-words shrink-0">
         {customSelector}
       </div>
-      <div className="flex-1 flex items-center justify-center gap-3">
-        <span className="text-5xl font-semibold text-primary">{uniqueViews}</span>
-        <div className="flex flex-col justify-center gap-1">
-          <span className="text-base text-muted-foreground leading-tight">Unique views</span>
-          <span className="text-sm leading-tight">{totalViews} in total</span>
-        </div>
-      </div>
-      <div className="flex-1 flex items-center justify-center gap-3">
-        <span className="text-5xl font-semibold text-destructive">
-          {uniqueTooltipTargetMissingCount}
-        </span>
-        <div className="flex flex-col justify-center gap-1">
-          <span className="text-base text-muted-foreground leading-tight">Times not found</span>
-          <span className="text-sm leading-tight">{tooltipTargetMissingCount} in total</span>
-        </div>
-      </div>
-      <div className="flex-1 flex items-center justify-center gap-3">
-        <span className="text-5xl font-semibold text-destructive">{uniqueFailureRate}%</span>
-        <div className="flex flex-col justify-center gap-1">
-          <span className="text-base text-muted-foreground leading-tight">Failure rate</span>
-          <span className="text-sm leading-tight">{totalFailureRate}% in total</span>
-        </div>
+      <div className="flex-1 flex items-center justify-evenly">
+        <StatItem mainValue={uniqueViews} totalValue={totalViews} label="Unique views" />
+        <StatItem
+          mainValue={uniqueTooltipTargetMissingCount}
+          totalValue={tooltipTargetMissingCount}
+          label="Times not found"
+          variant="destructive"
+        />
+        <StatItem
+          mainValue={uniqueFailureRate}
+          totalValue={totalFailureRate}
+          label="Failure rate"
+          variant="destructive"
+          isPercentage
+        />
       </div>
     </div>
   );
@@ -184,11 +272,16 @@ export const TooltipTargetMissingDialog = ({
   const [isRefetching, setIsRefetching] = useState(false);
   const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null);
 
+  // Local step analytics state - fetched from API based on local date range
+  const [localStepAnalytics, setLocalStepAnalytics] = useState<StepAnalytics | null>(null);
+
   // Sync local state with global state when dialog opens
   useEffect(() => {
     if (open) {
       setLocalDateRange(globalDateRange);
       setLocalSelectedPreset(globalSelectedPreset);
+      // Reset step analytics - will be fetched from API
+      setLocalStepAnalytics(null);
     }
   }, [open, globalDateRange, globalSelectedPreset]);
 
@@ -209,15 +302,23 @@ export const TooltipTargetMissingDialog = ({
     };
   }, [environment?.id, localDateRange, contentId, timezone, stepData.cvid]);
 
-  const handleFetchResult = useCallback((data: any, append = false) => {
-    if (!data) return;
-    const newSessions = data.edges.map((edge: { node: BizSession }) => edge.node);
-    setSessions((prev) => (append ? [...prev, ...newSessions] : newSessions));
-    setPageInfo({
-      endCursor: data.pageInfo.endCursor || null,
-      hasNextPage: data.pageInfo.hasNextPage,
-    });
-  }, []);
+  const handleFetchResult = useCallback(
+    (data: TooltipTargetMissingResponse | undefined, append = false) => {
+      if (!data) return;
+      const { sessions: sessionsData, stepAnalytics } = data;
+      const newSessions = sessionsData.edges.map((edge: { node: BizSession }) => edge.node);
+      setSessions((prev) => (append ? [...prev, ...newSessions] : newSessions));
+      setPageInfo({
+        endCursor: sessionsData.pageInfo.endCursor || null,
+        hasNextPage: sessionsData.pageInfo.hasNextPage,
+      });
+      // Only update step analytics on initial fetch (not on load more)
+      if (!append) {
+        setLocalStepAnalytics(stepAnalytics);
+      }
+    },
+    [],
+  );
 
   const loadMore = useCallback(async () => {
     const queryParams = buildQueryParams();
@@ -294,7 +395,10 @@ export const TooltipTargetMissingDialog = ({
               />
             </div>
             <div className="px-6">
-              <StatsSummary stepData={stepData} />
+              <StatsSummary
+                stepAnalytics={localStepAnalytics}
+                customSelector={stepData?.target?.customSelector ?? ''}
+              />
             </div>
 
             <div className="p-6">

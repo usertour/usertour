@@ -828,7 +828,7 @@ type Query {
   queryOembedInfo(url: String!): OEmbed!
   querySessionDetail(sessionId: String!): BizSession!
   querySessionsByExternalId(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: SessionQuery!, skip: Int): BizSessionConnection!
-  queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): BizSessionConnection!
+  queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): TooltipTargetMissingResponse!
   userEnvironments(projectId: String!): [Environment!]!
 }
 
@@ -961,6 +961,13 @@ type Step {
   versionId: String!
 }
 
+type StepAnalytics {
+  tooltipTargetMissingCount: Int!
+  totalViews: Int!
+  uniqueTooltipTargetMissingCount: Int!
+  uniqueViews: Int!
+}
+
 input StepInput {
   data: JSON
   id: String
@@ -1034,6 +1041,11 @@ input TooltipTargetMissingQuery {
   startDate: String!
   stepCvid: String!
   timezone: String!
+}
+
+type TooltipTargetMissingResponse {
+  sessions: BizSessionConnection!
+  stepAnalytics: StepAnalytics!
 }
 
 input UpdateAttributeInput {

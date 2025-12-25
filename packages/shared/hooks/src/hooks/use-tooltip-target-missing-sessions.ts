@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useLazyQuery } from '@apollo/client';
 import { queryTooltipTargetMissingSessions } from '@usertour-packages/gql';
-import type { Pagination } from '@usertour/types';
+import type { Pagination, BizSession } from '@usertour/types';
 
 export interface TooltipTargetMissingQuery {
   environmentId: string;
@@ -10,6 +10,27 @@ export interface TooltipTargetMissingQuery {
   endDate: string;
   timezone: string;
   stepCvid: string;
+}
+
+export interface StepAnalytics {
+  uniqueViews: number;
+  totalViews: number;
+  uniqueTooltipTargetMissingCount: number;
+  tooltipTargetMissingCount: number;
+}
+
+export interface TooltipTargetMissingResponse {
+  sessions: {
+    totalCount: number;
+    edges: Array<{ cursor: string; node: BizSession }>;
+    pageInfo: {
+      startCursor: string | null;
+      endCursor: string | null;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  };
+  stepAnalytics: StepAnalytics;
 }
 
 export const useQueryTooltipTargetMissingSessionsLazyQuery = () => {
@@ -25,7 +46,7 @@ export const useQueryTooltipTargetMissingSessionsLazyQuery = () => {
         field: 'createdAt',
         direction: 'desc',
       },
-    ) => {
+    ): Promise<TooltipTargetMissingResponse | undefined> => {
       const response = await query({
         variables: {
           ...pagination,

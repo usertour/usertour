@@ -1001,7 +1001,7 @@ export class AnalyticsService {
    * @param query - Query parameters including contentId, environmentId, date range and stepCvid
    * @param pagination - Pagination parameters
    * @param orderBy - Order by parameters
-   * @returns Paginated list of sessions with tooltip target missing events
+   * @returns Paginated list of sessions with tooltip target missing events and step analytics
    */
   async queryTooltipTargetMissingSessions(
     query: TooltipTargetMissingQuery,
@@ -1013,44 +1013,54 @@ export class AnalyticsService {
     const startDateObj = new Date(startDate);
     const endDateObj = new Date(endDate);
 
+    // Default empty response structure
+    const emptyResponse = {
+      sessions: {
+        edges: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      },
+      stepAnalytics: {
+        uniqueViews: 0,
+        totalViews: 0,
+        uniqueTooltipTargetMissingCount: 0,
+        tooltipTargetMissingCount: 0,
+      },
+    };
+
     try {
       // Get projectId from environment
       const environment = await this.prisma.environment.findUnique({
         where: { id: environmentId },
       });
       if (!environment) {
-        return {
-          edges: [],
-          pageInfo: {
-            hasNextPage: false,
-            hasPreviousPage: false,
-            startCursor: null,
-            endCursor: null,
-          },
-          totalCount: 0,
-        };
+        return emptyResponse;
       }
       const projectId = environment.projectId;
 
-      // Find the tooltip_target_missing event
-      const tooltipTargetMissingEvent = await this.prisma.event.findFirst({
-        where: {
-          projectId,
-          codeName: BizEvents.TOOLTIP_TARGET_MISSING,
-        },
-      });
+      // Find required events
+      const [tooltipTargetMissingEvent, flowStepSeenEvent] = await Promise.all([
+        this.prisma.event.findFirst({
+          where: {
+            projectId,
+            codeName: BizEvents.TOOLTIP_TARGET_MISSING,
+          },
+        }),
+        this.prisma.event.findFirst({
+          where: {
+            projectId,
+            codeName: BizEvents.FLOW_STEP_SEEN,
+          },
+        }),
+      ]);
 
       if (!tooltipTargetMissingEvent) {
-        return {
-          edges: [],
-          pageInfo: {
-            hasNextPage: false,
-            hasPreviousPage: false,
-            startCursor: null,
-            endCursor: null,
-          },
-          totalCount: 0,
-        };
+        return emptyResponse;
       }
 
       // Build the event filter condition with stepCvid
@@ -1066,45 +1076,106 @@ export class AnalyticsService {
         },
       };
 
-      const resp = await findManyCursorConnection(
-        (args) =>
-          this.prisma.bizSession.findMany({
-            where: {
-              contentId,
-              environmentId,
-              deleted: false,
-              bizEvent: {
-                some: eventFilter,
-              },
-            },
-            include: {
-              bizUser: { include: { bizUsersOnCompany: { include: { bizCompany: true } } } },
-              bizEvent: {
-                where: eventFilter,
-                include: { event: true },
-                orderBy: { createdAt: 'desc' },
-              },
-              content: true,
-              version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
-            },
-            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
-            ...args,
-          }),
-        () =>
-          this.prisma.bizSession.count({
-            where: {
-              contentId,
-              environmentId,
-              deleted: false,
-              bizEvent: {
-                some: eventFilter,
-              },
-            },
-          }),
-        { first, last, before, after },
-      );
+      // Query sessions and step analytics in parallel
+      const baseCondition = {
+        environmentId,
+        contentId,
+        startDateStr: startDate,
+        endDateStr: endDate,
+      };
 
-      return resp;
+      const [
+        sessions,
+        uniqueViews,
+        totalViews,
+        uniqueTooltipTargetMissingCount,
+        tooltipTargetMissingCount,
+      ] = await Promise.all([
+        // Query sessions
+        findManyCursorConnection(
+          (args) =>
+            this.prisma.bizSession.findMany({
+              where: {
+                contentId,
+                environmentId,
+                deleted: false,
+                bizEvent: {
+                  some: eventFilter,
+                },
+              },
+              include: {
+                bizUser: { include: { bizUsersOnCompany: { include: { bizCompany: true } } } },
+                bizEvent: {
+                  where: eventFilter,
+                  include: { event: true },
+                  orderBy: { createdAt: 'desc' },
+                },
+                content: true,
+                version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+              },
+              orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+              ...args,
+            }),
+          () =>
+            this.prisma.bizSession.count({
+              where: {
+                contentId,
+                environmentId,
+                deleted: false,
+                bizEvent: {
+                  some: eventFilter,
+                },
+              },
+            }),
+          { first, last, before, after },
+        ),
+        // Query step analytics - uniqueViews
+        flowStepSeenEvent
+          ? this.aggregationByItem({
+              ...baseCondition,
+              eventId: flowStepSeenEvent.id,
+              key: 'flow_step_cvid',
+              value: stepCvid,
+              isDistinct: true,
+            })
+          : 0,
+        // Query step analytics - totalViews
+        flowStepSeenEvent
+          ? this.aggregationByItem({
+              ...baseCondition,
+              eventId: flowStepSeenEvent.id,
+              key: 'flow_step_cvid',
+              value: stepCvid,
+              isDistinct: false,
+            })
+          : 0,
+        // Query step analytics - uniqueTooltipTargetMissingCount
+        this.aggregationByItem({
+          ...baseCondition,
+          eventId: tooltipTargetMissingEvent.id,
+          key: 'flow_step_cvid',
+          value: stepCvid,
+          isDistinct: true,
+        }),
+        // Query step analytics - tooltipTargetMissingCount
+        this.aggregationByItem({
+          ...baseCondition,
+          eventId: tooltipTargetMissingEvent.id,
+          key: 'flow_step_cvid',
+          value: stepCvid,
+          isDistinct: false,
+        }),
+      ]);
+
+      return {
+        sessions,
+        stepAnalytics: {
+          uniqueViews,
+          totalViews,
+          uniqueTooltipTargetMissingCount,
+          tooltipTargetMissingCount,
+        },
+      };
     } catch (_) {
       throw new UnknownError('Failed to query tooltip target missing sessions');
     }

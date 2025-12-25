@@ -192,32 +192,40 @@ export const queryTooltipTargetMissingSessions = gql`
       query: $query
       orderBy: $orderBy
     ) {
-      totalCount
-      edges {
-        cursor
-        node {
-          id
-          createdAt
-          bizUserId
-          bizUser {
-            externalId
-            data
-          }
-          bizEvent {
+      sessions {
+        totalCount
+        edges {
+          cursor
+          node {
             id
             createdAt
-            data
-            event {
-              codeName
+            bizUserId
+            bizUser {
+              externalId
+              data
+            }
+            bizEvent {
+              id
+              createdAt
+              data
+              event {
+                codeName
+              }
             }
           }
         }
+        pageInfo {
+          startCursor
+          endCursor
+          hasNextPage
+          hasPreviousPage
+        }
       }
-      pageInfo {
-        startCursor
-        endCursor
-        hasNextPage
-        hasPreviousPage
+      stepAnalytics {
+        uniqueViews
+        totalViews
+        uniqueTooltipTargetMissingCount
+        tooltipTargetMissingCount
       }
     }
   }
