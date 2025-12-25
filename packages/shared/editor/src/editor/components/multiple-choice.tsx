@@ -460,7 +460,9 @@ export const ContentEditorMultipleChoiceSerialize = memo(
       const isValidSelection = useCallback(() => {
         const count = selectedValues.length + (isOtherChecked && otherValue ? 1 : 0);
         const lowRange = Number(element.data.lowRange) || 0;
-        const highRange = Number(element.data.highRange) || options.length;
+        // When enableOther is true, the max selectable count should include the "Other" option
+        const maxOptions = options.length + (element.data.enableOther ? 1 : 0);
+        const highRange = Number(element.data.highRange) || maxOptions;
         return count >= lowRange && count <= highRange;
       }, [
         selectedValues.length,
@@ -468,6 +470,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
         otherValue,
         element.data.lowRange,
         element.data.highRange,
+        element.data.enableOther,
         options.length,
       ]);
 
