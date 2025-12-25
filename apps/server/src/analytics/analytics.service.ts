@@ -483,7 +483,7 @@ export class AnalyticsService {
 
   async aggregationStepsByContent(
     condition: AnalyticsConditions,
-    startEvent: Event,
+    stepSeenEvent: Event,
     completeEvent: Event,
     tooltipTargetMissingEvent?: Event,
   ) {
@@ -513,7 +513,7 @@ export class AnalyticsService {
       const stepInfo = version.steps[index];
       const itemCondition = {
         ...condition,
-        eventId: startEvent.id,
+        eventId: stepSeenEvent.id,
         key: 'flow_step_cvid',
         value: stepInfo.cvid,
       };
