@@ -7,6 +7,7 @@ import {
   ConditionWaitTimer,
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
+import { getSocketToken } from '@/utils/websocket-utils';
 
 // ============================================================================
 // Socket Emitter Service
@@ -234,6 +235,7 @@ export class SocketEmitterService {
     timeout = this.DEFAULT_TIMEOUT,
   ): Promise<boolean> {
     const startTime = Date.now();
+    const token = getSocketToken(socket);
     try {
       const message = {
         kind,
@@ -244,18 +246,18 @@ export class SocketEmitterService {
       const duration = Date.now() - startTime;
       if (!success) {
         this.logger.warn(
-          `[WS] emitWithAck socketId=${socket.id} kind=${kind} - Client failed to process in ${duration}ms`,
+          `[WS] emitWithAck socketId=${socket.id} token=${token || 'N/A'} kind=${kind} - Client failed to process in ${duration}ms`,
         );
       } else {
         this.logger.log(
-          `[WS] emitWithAck socketId=${socket.id} kind=${kind} - Completed in ${duration}ms`,
+          `[WS] emitWithAck socketId=${socket.id} token=${token || 'N/A'} kind=${kind} - Completed in ${duration}ms`,
         );
       }
       return !!success;
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logger.error(
-        `[WS] emitWithAck socketId=${socket.id} kind=${kind} - Failed in ${duration}ms:`,
+        `[WS] emitWithAck socketId=${socket.id} token=${token || 'N/A'} kind=${kind} - Failed in ${duration}ms:`,
         error,
       );
       return false;
