@@ -92,6 +92,9 @@ export class UsertourCore extends Evented {
   private serverMessageHandlerManager: ServerMessageHandlerManager;
   // Map of sessionId to Set of unacked task IDs
   private taskIsUnacked = new Map<string, Set<string>>();
+  // Set of session IDs that have been dismissed by the user
+  // Prevents re-displaying sessions that the user has explicitly closed
+  private dismissedSessionIds = new Set<string>();
   // Server message handler context (initialized in initializeServerMessageHandlerContext)
   private serverMessageHandlerContext!: ServerMessageHandlerContext;
 
@@ -585,6 +588,10 @@ export class UsertourCore extends Evented {
     this.cleanupLaunchers();
     // Clear all unacked tasks
     this.clearUnackedTasks();
+    // Note: We don't clear dismissedSessionIds here because:
+    // 1. SessionId is globally unique (primary key)
+    // 2. Dismissed is a terminal state - once dismissed, the session should never be re-displayed
+    // 3. Even if user/environment changes, if it's the same sessionId, it should remain dismissed
     // Cleanup condition monitor
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
@@ -613,10 +620,11 @@ export class UsertourCore extends Evented {
 
   /**
    * Sets up UI manager initialization when DOM is loaded
+   * Note: Called by event system which doesn't await
    */
   private setupUIManagerInitialization() {
-    this.once(SDKClientEvents.DOM_LOADED, async () => {
-      await this.ensureUIManagerInitialized();
+    this.once(SDKClientEvents.DOM_LOADED, () => {
+      this.ensureUIManagerInitialized();
     });
   }
 
@@ -655,7 +663,7 @@ export class UsertourCore extends Evented {
    * Handles preview messages from the builder
    * @param e - Message event containing preview data
    */
-  private handlePreviewMessage(e: MessageEvent) {
+  private async handlePreviewMessage(e: MessageEvent) {
     const message = getValidMessage(e);
     if (!message) {
       return;
@@ -667,7 +675,7 @@ export class UsertourCore extends Evented {
     }
     // send success message to builder
     sendPreviewSuccessMessage(idempotentKey);
-    this.preview({
+    await this.preview({
       token,
       environmentId,
       contentId,
@@ -709,17 +717,85 @@ export class UsertourCore extends Evented {
 
   /**
    * Handles user identified event - checks URL for 'usertour' parameter and starts the content if found
+   * Note: Called by event system which doesn't await, so we fire-and-forget
    */
   private handleUserFirstIdentified() {
     this.checkUrlAndStartContent();
   }
 
   // === Session Management ===
+
+  /**
+   * Checks if a session has been dismissed by the user
+   * Once a session is dismissed, it will never be re-displayed (terminal state)
+   * @param sessionId - The session ID to check
+   * @returns True if the session has been dismissed
+   */
+  private isSessionDismissed(sessionId: string | undefined): boolean {
+    // Only check non-empty session IDs
+    // isEmptyString only returns true for empty strings, not undefined/null
+    // So we need to check isNullish first
+    if (isNullish(sessionId) || isEmptyString(sessionId)) {
+      return false;
+    }
+    return this.dismissedSessionIds.has(sessionId);
+  }
+
+  /**
+   * Marks a session as dismissed when component is closed
+   * This is a terminal state - dismissed sessions will never be re-displayed
+   * Once dismissed, the session will never be re-displayed, regardless of server messages
+   * @param sessionId - The session ID to mark as dismissed
+   */
+  private markSessionAsDismissed(sessionId: string | undefined): void {
+    // Only mark non-empty session IDs as dismissed
+    // isEmptyString only returns true for empty strings, not undefined/null
+    // So we need to check isNullish first
+    if (isNullish(sessionId) || isEmptyString(sessionId)) {
+      return;
+    }
+    this.dismissedSessionIds.add(sessionId);
+  }
+
+  /**
+   * Sets up a dismiss handler for a component
+   * Marks the session as dismissed when component is closed (terminal state)
+   * @param component - The component instance
+   * @param onDismissed - Optional callback when component is dismissed
+   */
+  private setupComponentDismissHandler(
+    component: UsertourTour | UsertourChecklist | UsertourLauncher,
+    onDismissed?: (sessionId: string) => void | Promise<void>,
+  ): void {
+    component.on(SDKClientEvents.COMPONENT_CLOSED, (eventData: unknown) => {
+      const { sessionId } = eventData as { sessionId?: string };
+      // Only process non-empty session IDs
+      // isEmptyString only returns true for empty strings, not undefined/null
+      // So we need to check isNullish first
+      if (isNullish(sessionId) || isEmptyString(sessionId)) {
+        return;
+      }
+      // Mark this session as dismissed (terminal state)
+      // Once dismissed, the session will never be re-displayed
+      this.markSessionAsDismissed(sessionId);
+      // Call optional callback (fire-and-forget since event system doesn't await)
+      if (onDismissed) {
+        onDismissed(sessionId);
+      }
+    });
+  }
+
   /**
    * Sets the flow session and manages tour lifecycle
    * @param session - The SDK content session to set
    */
   private async setFlowSession(session: CustomContentSession): Promise<boolean> {
+    // Check if this session has been dismissed (terminal state check)
+    if (this.isSessionDismissed(session.id)) {
+      logger.info(`Ignoring setFlowSession for dismissed session: ${session.id}`);
+      return false;
+    }
+
     const hasActivatedTour = this.activatedTour !== null;
 
     if (this.activatedTour) {
@@ -733,11 +809,10 @@ export class UsertourCore extends Evented {
 
     // Create new tour
     const usertourTour = new UsertourTour(this, new UsertourSession(session));
-    usertourTour.on(SDKClientEvents.COMPONENT_CLOSED, (eventData: unknown) => {
-      const { sessionId } = eventData as { sessionId: string };
-      if (this?.activatedTour?.getSessionId() === sessionId) {
+    this.setupComponentDismissHandler(usertourTour, async (sessionId) => {
+      if (this.activatedTour?.getSessionId() === sessionId) {
         this.cleanupActivatedTour();
-        this.expandChecklist();
+        await this.expandChecklist();
       }
     });
     this.activatedTour = usertourTour;
@@ -750,7 +825,7 @@ export class UsertourCore extends Evented {
       await usertourTour.showStepByIndex(0, false);
     }
     if (!hasActivatedTour) {
-      this.collapseChecklist();
+      await this.collapseChecklist();
     }
     return true;
   }
@@ -763,6 +838,8 @@ export class UsertourCore extends Evented {
     if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
       return false;
     }
+    // Note: We don't clear dismissedSessionIds here because dismissed is a terminal state
+    // Once a user dismisses a session, it should never be re-displayed, regardless of server messages
     this.cleanupActivatedTour();
     await this.expandChecklist();
     return true;
@@ -787,9 +864,15 @@ export class UsertourCore extends Evented {
    * @param session - The SDK content session to set
    */
   private async setChecklistSession(session: CustomContentSession): Promise<boolean> {
+    // Check if this session has been dismissed (terminal state check)
+    if (this.isSessionDismissed(session.id)) {
+      logger.info(`Ignoring setChecklistSession for dismissed session: ${session.id}`);
+      return false;
+    }
+
     if (this.activatedChecklist) {
       if (this.activatedChecklist.getSessionId() === session.id) {
-        this.activatedChecklist.update(session);
+        await this.activatedChecklist.update(session);
         await this.expandChecklist();
         return true;
       }
@@ -798,8 +881,7 @@ export class UsertourCore extends Evented {
 
     // Create new checklist
     this.activatedChecklist = new UsertourChecklist(this, new UsertourSession(session));
-    this.activatedChecklist.on(SDKClientEvents.COMPONENT_CLOSED, (eventData: unknown) => {
-      const { sessionId } = eventData as { sessionId: string };
+    this.setupComponentDismissHandler(this.activatedChecklist, (sessionId) => {
       if (this.activatedChecklist?.getSessionId() === sessionId) {
         this.cleanupActivatedChecklist();
       }
@@ -807,7 +889,7 @@ export class UsertourCore extends Evented {
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
     // Show checklist with appropriate expanded state
-    this.activatedChecklist.show();
+    await this.activatedChecklist.show();
     return true;
   }
 
@@ -819,6 +901,8 @@ export class UsertourCore extends Evented {
     if (!this.activatedChecklist || this.activatedChecklist.getSessionId() !== sessionId) {
       return false;
     }
+    // Note: We don't clear dismissedSessionIds here because dismissed is a terminal state
+    // Once a user dismisses a session, it should never be re-displayed, regardless of server messages
     this.cleanupActivatedChecklist();
     // Note: We don't clear unacked tasks here because they might be needed
     // if ChecklistTaskCompleted messages arrive after unsetChecklistSession
@@ -837,9 +921,9 @@ export class UsertourCore extends Evented {
   /**
    * Collapses the checklist
    */
-  private collapseChecklist() {
+  private async collapseChecklist() {
     if (this.activatedChecklist) {
-      this.activatedChecklist.expand(false);
+      await this.activatedChecklist.expand(false);
     }
   }
 
@@ -850,6 +934,12 @@ export class UsertourCore extends Evented {
    * @returns True if the launcher was added, false otherwise
    */
   private async addLauncher(session: CustomContentSession): Promise<boolean> {
+    // Check if this session has been dismissed (terminal state check)
+    if (this.isSessionDismissed(session.id)) {
+      logger.info(`Ignoring addLauncher for dismissed session: ${session.id}`);
+      return false;
+    }
+
     const contentId = session.content.id;
     const existingLauncher = this.launchers.find(
       (launcher) => launcher.getContentId() === contentId,
@@ -861,13 +951,14 @@ export class UsertourCore extends Evented {
       return true;
     }
     const launcher = new UsertourLauncher(this, new UsertourSession(session));
-    launcher.on(SDKClientEvents.COMPONENT_CLOSED, () => {
-      this.removeLauncher(contentId);
+    this.setupComponentDismissHandler(launcher, async (_sessionId) => {
+      // Launcher removal is based on contentId, not sessionId
+      await this.removeLauncher(contentId);
     });
     this.launchers.push(launcher);
     // Sync store
     this.syncLaunchersStore(this.launchers);
-    launcher.show();
+    await launcher.show();
     return true;
   }
 
@@ -881,11 +972,13 @@ export class UsertourCore extends Evented {
     if (!launcher) {
       return false;
     }
+    // Note: We don't clear dismissedSessionIds here because dismissed is a terminal state
+    // Once a user dismisses a session, it should never be re-displayed, regardless of server messages
     // Destroy the launcher
     launcher.destroy();
     // Remove from the launchers array
     this.launchers = this.launchers.filter((item) => item.getContentId() !== contentId);
-    this.launchersStore.setData(this.launchers);
+    this.syncLaunchersStore(this.launchers);
     return true;
   }
 
@@ -1175,7 +1268,7 @@ export class UsertourCore extends Evented {
       launcher.destroy();
     }
     this.launchers = [];
-    this.launchersStore.setData([]);
+    this.syncLaunchersStore(this.launchers);
   }
 
   /**
