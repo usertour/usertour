@@ -458,18 +458,26 @@ export class UsertourSocket implements IUsertourSocket {
   /**
    * Register an event handler with queue-based execution support
    * Handlers are queued and executed sequentially to maintain message order
+   *
+   * ARCHITECTURE NOTE: To prevent deadlocks, this method uses "fire-and-forget ACK" pattern:
+   * - ACK is returned immediately (indicating message received)
+   * - Message processing happens asynchronously in queue
+   * - This breaks the circular await dependency between server and SDK:
+   *   Server waiting for SDK ACK -> SDK handler sending message -> Server queue blocked
+   *
    * @param event - The event name to handle
    * @param handler - Event handler function that returns boolean indicating success
    */
   onQueue(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void {
-    this.socket?.on(event, async (message: unknown, callback: (success: boolean) => void) => {
-      try {
-        const result = await this.executeHandlerInOrder(event, () => handler(message));
-        callback?.(result);
-      } catch (error) {
+    this.socket?.on(event, (message: unknown, callback: (success: boolean) => void) => {
+      // CRITICAL: Return ACK immediately to prevent deadlock
+      // This breaks the circular dependency: server won't block waiting for SDK processing
+      callback?.(true);
+
+      // Process message asynchronously in queue
+      this.executeHandlerInOrder(event, () => handler(message)).catch((error) => {
         logger.error(`Failed to process ${event}:`, error, message);
-        callback?.(false);
-      }
+      });
     });
   }
 

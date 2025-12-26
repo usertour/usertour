@@ -369,9 +369,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       }
     });
 
-    // Handle element not found
-    this.watcher.once(SDKClientEvents.ELEMENT_FOUND_TIMEOUT, async () => {
-      await this.handleElementNotFound(step);
+    // Handle element not found (fire-and-forget since event system doesn't await)
+    this.watcher.once(SDKClientEvents.ELEMENT_FOUND_TIMEOUT, () => {
+      this.handleElementNotFound(step);
     });
 
     // Handle element changed
