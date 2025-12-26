@@ -1818,15 +1818,14 @@ const hasChecklistItemChanges = (oldItems: ChecklistItemType[], newItems: Checkl
     return true;
   }
 
-  // Check if any changes occurred
   return oldItems.some((item) => {
     const newItem = newItems.find((newItem) => newItem.id === item.id);
-    return (
-      newItem &&
-      (item.isCompleted !== newItem.isCompleted ||
-        item.isVisible !== newItem.isVisible ||
-        item.isShowAnimation !== newItem.isShowAnimation)
-    );
+    // If item not found in newItems, it's a change
+    if (!newItem) {
+      return true;
+    }
+    // Compare entire item object
+    return !isEqual(item, newItem);
   });
 };
 
