@@ -103,7 +103,7 @@ export const AnalyticsSteps = () => {
                       <TableCell className="py-[1px]">{viewRate}%</TableCell>
                       <TableCell className="py-[1px] px-0">
                         <div
-                          className="bg-success h-10 max-w-full"
+                          className="h-10 bg-gradient-to-r from-success/50 to-success max-w-full"
                           style={{
                             width: `${viewRate}%`,
                           }}
