@@ -115,23 +115,44 @@ const RulesAddDropdown = (props: RulesAddDropdownProps) => {
   const { children, onSelect, items, disabled = false } = props;
   const { dropdown: zIndex } = useRulesZIndex();
 
+  // Store pending selection, will be executed after dropdown closes
+  const pendingSelectionRef = useRef<string | null>(null);
+
+  // Handle dropdown open state change
+  // When dropdown closes and we have a pending selection, execute it
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open && pendingSelectionRef.current !== null) {
+        const type = pendingSelectionRef.current;
+        pendingSelectionRef.current = null;
+        onSelect(type);
+      }
+    },
+    [onSelect],
+  );
+
+  // Handle item selection - store selection but don't execute yet
+  const handleItemSelect = useCallback((type: string) => {
+    pendingSelectionRef.current = type;
+  }, []);
+
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild disabled={disabled}>
         {children}
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
         style={{ zIndex }}
+        // Hide immediately on close to prevent focus stealing
+        className="data-[state=closed]:hidden"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         {items?.map(({ type, text, IconElement }, index) => (
           <DropdownMenuItem
             key={index}
             className="cursor-pointer min-w-[180px]"
-            onSelect={() => {
-              onSelect(type);
-            }}
+            onSelect={() => handleItemSelect(type)}
           >
             <IconElement width={16} height={16} className="mx-1" />
             {text}
@@ -188,20 +209,13 @@ export const RulesGroup = (props: RulesGroupProps) => {
 
   const handleOnSelect = useCallback(
     (type: string) => {
-      // Delay adding new condition until DropdownMenu fully closes
-      // This prevents focus competition between DropdownMenu and Popover
-      setTimeout(() => {
-        const newId = cuid();
-        if (type === 'group') {
-          setNewConditions([...conditions, { type, data: {}, conditions: [], id: newId }]);
-        } else {
-          newlyAddedIdRef.current = newId;
-          setNewConditions([
-            ...conditions,
-            { type, data: {}, operators: conditionType, id: newId },
-          ]);
-        }
-      }, 150);
+      const newId = cuid();
+      if (type === 'group') {
+        setNewConditions([...conditions, { type, data: {}, conditions: [], id: newId }]);
+      } else {
+        newlyAddedIdRef.current = newId;
+        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: newId }]);
+      }
     },
     [conditionType, conditions],
   );
