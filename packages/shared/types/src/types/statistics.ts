@@ -29,6 +29,8 @@ export type AnalyticsViews = {
   totalViews: number;
   uniqueCompletions: number;
   totalCompletions: number;
+  uniqueClicks?: number;
+  totalClicks?: number;
   tooltipTargetMissingCount?: number;
   uniqueTooltipTargetMissingCount?: number;
 };
