@@ -62,9 +62,6 @@ const RulesPopoverContent = React.forwardRef<
           filter:
             'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
         }}
-        // Prevent focus outside from closing the popover
-        // Popover will still close on: click outside, press Escape
-        onFocusOutside={(e) => e.preventDefault()}
         {...props}
       >
         {children}
