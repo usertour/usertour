@@ -144,8 +144,6 @@ const RulesAddDropdown = (props: RulesAddDropdownProps) => {
       <DropdownMenuContent
         align="start"
         style={{ zIndex }}
-        // Hide immediately on close to prevent focus stealing
-        className="data-[state=closed]:hidden"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         {items?.map(({ type, text, IconElement }, index) => (
