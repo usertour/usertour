@@ -72,30 +72,51 @@ export const columns: ColumnDef<BizSession>[] = [
       const { environment } = useAppContext();
 
       const bizUser = row.original.bizUser;
+      const bizCompany = row.original.bizCompany;
       const email = bizUser?.data?.email || '';
       const name = bizUser?.data?.name || '';
       const externalId = bizUser?.externalId || '';
 
-      // Display email or name if available, otherwise show externalId
-      // If both primary text and externalId exist, show externalId on second line
+      // Display name or email if available, otherwise show externalId
       const primaryText = name || email || externalId;
-      const showExternalIdOnSecondLine = externalId && (email || name);
+
+      // Second line: show email only if it differs from primaryText
+      const showSecondLine = email && primaryText !== email ? email : null;
+
+      // Get company display name
+      const companyName = bizCompany?.data?.name || bizCompany?.externalId || bizCompany?.id || '';
 
       return (
-        <Link
-          to={`/env/${environment?.id}/user/${row.getValue('bizUserId')}`}
-          className="flex items-center gap-2"
-        >
-          <UserAvatar email={email} name={name} size="sm" />
-          <div className="flex flex-col">
-            <span className="text-muted-foreground hover:text-primary hover:underline underline-offset-4">
-              {primaryText}
-            </span>
-            {showExternalIdOnSecondLine && (
-              <span className="text-muted-foreground/60 text-xs">{externalId}</span>
-            )}
-          </div>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/env/${environment?.id}/user/${row.getValue('bizUserId')}`}
+            className="flex items-center gap-2"
+          >
+            <UserAvatar email={email} name={name} size="sm" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <span className="font-medium hover:text-primary hover:underline underline-offset-4">
+                  {primaryText}
+                </span>
+                {companyName && bizCompany?.id && (
+                  <span className="text-muted-foreground text-xs">
+                    from{' '}
+                    <Link
+                      to={`/env/${environment?.id}/company/${bizCompany.id}`}
+                      className="hover:text-primary hover:underline underline-offset-4"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {companyName}
+                    </Link>
+                  </span>
+                )}
+              </div>
+              {showSecondLine && (
+                <span className="text-muted-foreground text-xs">{showSecondLine}</span>
+              )}
+            </div>
+          </Link>
+        </div>
       );
     },
     enableSorting: false,

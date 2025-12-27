@@ -978,6 +978,7 @@ export class AnalyticsService {
             },
             include: {
               bizUser: true,
+              bizCompany: true,
               bizEvent: { include: { event: true } },
               version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
             },
