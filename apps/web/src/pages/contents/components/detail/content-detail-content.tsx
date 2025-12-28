@@ -140,7 +140,7 @@ const ContentDetailContentStep = ({
             </TooltipProvider>
           </div>
           <div className="font-bold flex flex-row space-x-1 items-center	">
-            {index + 1}. {currentStep.name}
+            {index + 1}. <TruncatedText text={currentStep.name ?? ''} maxLength={50} />
           </div>
           <div className="text-sm flex flex-row flex-wrap gap-1">
             <ContentBadge>{currentStep.type}</ContentBadge>
@@ -225,8 +225,8 @@ const LauncherContentPreview = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-          <div className="font-bold flex flex-row space-x-1 items-center	max-w-4/5	truncate ...">
-            <TruncatedText text={content.name ?? ''} maxLength={30} />
+          <div className="font-bold flex flex-row space-x-1 items-center">
+            <TruncatedText text={content.name ?? ''} maxLength={50} />
           </div>
           <div className="text-sm flex flex-row flex-wrap gap-1">
             <ContentBadge>{data.type}</ContentBadge>
@@ -321,11 +321,13 @@ const ChecklistContentPreview = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-          <div className="font-bold flex flex-row space-x-1 items-center	max-w-4/5	truncate ...">
-            {content.name}
+          <div className="font-bold flex flex-row space-x-1 items-center">
+            <TruncatedText text={content.name ?? ''} maxLength={50} />
           </div>
           <div className="text-sm flex flex-row flex-wrap gap-1">
-            <ContentBadge>Launcher button text: {data.buttonText}</ContentBadge>
+            <ContentBadge>
+              Launcher button text: <TruncatedText text={data.buttonText ?? ''} maxLength={30} />
+            </ContentBadge>
             <ContentBadge>
               Initial display: {data.initialDisplay === ChecklistInitialDisplay.BUTTON && 'Button'}
               {data.initialDisplay === ChecklistInitialDisplay.EXPANDED && 'Expanded'}
