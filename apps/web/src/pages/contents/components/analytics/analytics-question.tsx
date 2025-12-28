@@ -91,13 +91,15 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
               </div>
             </div>
           </div>
-          <Table>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>Answer</TableHead>
-                <TableHead className="w-32">Responses</TableHead>
-                <TableHead className="w-24">Share</TableHead>
-                <TableHead className="w-3/5" />
+                <TableHead className="w-72">Answer</TableHead>
+                <TableHead className="w-28 text-right">Responses</TableHead>
+                <TableHead className="w-6" />
+                <TableHead className="w-28 text-right">Share</TableHead>
+                <TableHead className="w-6" />
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -105,11 +107,13 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
                 allAnswers.map((item, index) => (
                   <TableRow key={index} onClick={() => {}}>
                     <TableCell className="py-[1px]">{item.answer}</TableCell>
-                    <TableCell className="py-[1px]">{item.count}</TableCell>
-                    <TableCell className="py-[1px]">{item.percentage}%</TableCell>
+                    <TableCell className="py-[1px] text-right">{item.count}</TableCell>
+                    <TableCell className="py-[1px] w-6" />
+                    <TableCell className="py-[1px] text-right">{item.percentage}%</TableCell>
+                    <TableCell className="py-[1px] w-6" />
                     <TableCell className="py-[1px] px-0">
                       <div
-                        className="bg-success h-10"
+                        className="h-9 bg-gradient-to-r from-success/50 to-success max-w-full"
                         style={{
                           width: `${item.percentage}%`,
                         }}
@@ -119,7 +123,7 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>

@@ -34,10 +34,10 @@ export const AnalyticsTasks = () => {
               <TableHead className="w-72">Task</TableHead>
               <TableHead className="text-right w-32">Unique views</TableHead>
               <TableHead className="text-right w-32">Completion rate</TableHead>
-              <TableHead className="w-8" />
+              <TableHead className="w-6" />
               <TableHead />
               <TableHead className="text-right w-32">Click rate</TableHead>
-              <TableHead className="w-8" />
+              <TableHead className="w-6" />
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -63,20 +63,20 @@ export const AnalyticsTasks = () => {
                       {task.analytics.uniqueViews}
                     </TableCell>
                     <TableCell className="py-[1px] text-right">{rate}%</TableCell>
-                    <TableCell className="py-[1px] px-0 w-8" />
+                    <TableCell className="py-[1px] px-0 w-6" />
                     <TableCell className="py-[1px] px-0">
                       <div
-                        className="h-10 bg-gradient-to-r from-success/50 to-success"
+                        className="h-9 bg-gradient-to-r from-success/50 to-success"
                         style={{
                           width: `${rate}%`,
                         }}
                       />
                     </TableCell>
                     <TableCell className="py-[1px] text-right">{clickRate}%</TableCell>
-                    <TableCell className="py-[1px] px-0 w-8" />
+                    <TableCell className="py-[1px] px-0 w-6" />
                     <TableCell className="py-[1px] px-0">
                       <div
-                        className="h-10 bg-gradient-to-r from-chart-1/50 to-chart-1"
+                        className="h-9 bg-gradient-to-r from-chart-1/50 to-chart-1"
                         style={{
                           width: `${clickRate}%`,
                         }}

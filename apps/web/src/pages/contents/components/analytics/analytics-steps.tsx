@@ -62,13 +62,13 @@ export const AnalyticsSteps = () => {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-1/4">Step</TableHead>
+                <TableHead className="w-72">Step</TableHead>
                 <TableHead className="w-28 text-right">Unique views</TableHead>
-                <TableHead className="w-8" />
-                <TableHead className="w-24 text-right">View rate</TableHead>
-                <TableHead className="w-8" />
+                <TableHead className="w-6" />
+                <TableHead className="w-28 text-right">View rate</TableHead>
+                <TableHead className="w-6" />
                 <TableHead />
-                <TableHead className="w-28 text-right pr-4">
+                <TableHead className="w-28 text-right">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -82,6 +82,7 @@ export const AnalyticsSteps = () => {
                     </Tooltip>
                   </TooltipProvider>
                 </TableHead>
+                <TableHead className="w-6" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -104,18 +105,18 @@ export const AnalyticsSteps = () => {
                       <TableCell className="py-[1px] text-right">
                         {step.analytics.uniqueViews}
                       </TableCell>
-                      <TableCell className="py-[1px] w-8" />
+                      <TableCell className="py-[1px] w-6" />
                       <TableCell className="py-[1px] text-right">{viewRate}%</TableCell>
-                      <TableCell className="py-[1px] w-8" />
+                      <TableCell className="py-[1px] w-6" />
                       <TableCell className="py-[1px] px-0">
                         <div
-                          className="h-10 bg-gradient-to-r from-success/50 to-success max-w-full"
+                          className="h-9 bg-gradient-to-r from-success/50 to-success max-w-full"
                           style={{
                             width: `${viewRate}%`,
                           }}
                         />
                       </TableCell>
-                      <TableCell className="py-[1px] text-right pr-4">
+                      <TableCell className="py-[1px] text-right">
                         {(() => {
                           const failureRate = calculateUniqueFailureRate(
                             step.analytics.uniqueTooltipTargetMissingCount ?? 0,
@@ -142,12 +143,13 @@ export const AnalyticsSteps = () => {
                           );
                         })()}
                       </TableCell>
+                      <TableCell className="py-[1px] w-6" />
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>
