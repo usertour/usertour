@@ -16,6 +16,7 @@ import { ContentRenameForm } from '../shared/content-rename-form';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { isPublishedInAllEnvironments } from '@/utils/content';
 import { ContentDetailHeaderSkeleton } from './content-detail-header-skeleton';
+import { TruncatedText } from '@/components/molecules/truncated-text';
 
 const navigations = [
   {
@@ -109,7 +110,12 @@ export const ContentDetailHeader = () => {
           >
             <ArrowLeftIcon className="h-6 w-8" />
           </Button>
-          <span className="flex-none max-w-40	truncate ...	">{content?.name}</span>
+          <TruncatedText
+            text={content?.name ?? ''}
+            maxLength={30}
+            showTooltip={false}
+            className="flex-none"
+          />
           <ContentRenameForm
             data={content}
             onSubmit={() => {

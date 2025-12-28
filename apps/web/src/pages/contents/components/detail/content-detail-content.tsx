@@ -95,13 +95,13 @@ const ContentDetailContentStep = ({
 
   if (!currentStep || !currentTheme) return null;
 
-  const isHidddenStep = currentStep.type === 'hidden';
+  const isHiddenStep = currentStep.type === 'hidden';
 
   return (
     <>
       <GoogleFontCss settings={currentTheme.settings} />
       <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8" key={index}>
-        {!isHidddenStep && (
+        {!isHiddenStep && (
           <div
             className="w-40 h-32 flex flex-none items-center [&_*]:pointer-events-none pointer-events-none"
             style={{
@@ -121,7 +121,7 @@ const ContentDetailContentStep = ({
             </ScaledPreviewContainer>
           </div>
         )}
-        {isHidddenStep && (
+        {isHiddenStep && (
           <div className="w-40 h-32 flex  flex-none items-center justify-center">
             <EyeNoneIcon className="w-8 h-8" />
           </div>
@@ -144,7 +144,7 @@ const ContentDetailContentStep = ({
           </div>
           <div className="text-sm flex flex-row flex-wrap gap-1">
             <ContentBadge>{currentStep.type}</ContentBadge>
-            {!isHidddenStep && (
+            {!isHiddenStep && (
               <>
                 <ContentBadge>Width: {currentStep.setting.width}px</ContentBadge>
                 <ContentBadge>Height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
@@ -153,7 +153,7 @@ const ContentDetailContentStep = ({
                 </ContentBadge>
               </>
             )}
-            {!isHidddenStep && (
+            {!isHiddenStep && (
               <>
                 <ContentBadge>
                   {!currentStep.setting.skippable && 'Not skippable'}

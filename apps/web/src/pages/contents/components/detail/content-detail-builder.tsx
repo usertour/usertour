@@ -31,6 +31,7 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
       searchParams.delete('step');
       setSearchParams(searchParams, { replace: true });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleOnSaved = async () => {

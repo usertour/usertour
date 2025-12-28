@@ -114,7 +114,7 @@ export const ContentDetailSettings = () => {
         <ContentDetailAutoStartRules
           defaultConditions={config.hideRules}
           defaultEnabled={config.enabledHideRules}
-          setting={config?.hideRulesSetting}
+          setting={config.hideRulesSetting}
           name={`Temporarily hide ${contentType} if...`}
           onDataChange={handleHideRulesDataChange}
           content={content}

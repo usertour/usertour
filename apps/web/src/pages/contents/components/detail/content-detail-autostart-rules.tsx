@@ -22,6 +22,7 @@ import {
   autoStartRulesSetting,
 } from '@usertour/types';
 import { useCallback, useId, useState, useEffect } from 'react';
+import { TruncatedText } from '@/components/molecules/truncated-text';
 
 export enum ContentDetailAutoStartRulesType {
   START_RULES = 'start-rules',
@@ -100,16 +101,19 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     [conditions, setting, onDataChange],
   );
 
-  if (!content.environmentId) return null;
+  const environmentId = content.environmentId ?? '';
+  const contentType = content.type;
 
+  // All hooks must be called before any conditional returns
   const id = useId();
   const { attributeList } = useAttributeListContext();
   const { segmentList } = useSegmentListContext();
   const { contents } = useContentListQuery({
-    query: { environmentId: content.environmentId },
-    options: { skip: !content.environmentId },
+    query: { environmentId },
+    options: { skip: !environmentId },
   });
-  const contentType = content.type;
+
+  if (!environmentId) return null;
 
   return (
     <div className="flex flex-col space-y-8">
@@ -123,7 +127,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
             onCheckedChange={handleEnabledChange}
           />
           <Label htmlFor={id} className="flex flex-col space-y-1">
-            <span className="font-normal">{name}</span>
+            <TruncatedText text={name} maxLength={50} className="font-normal" showTooltip={false} />
           </Label>
           <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
             {featureTooltip}
