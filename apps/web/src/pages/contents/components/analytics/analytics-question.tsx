@@ -106,7 +106,7 @@ export const AnalyticsMultipleChoice = (props: AnalyticsMultipleChoiceProps) => 
               {allAnswers.length > 0 ? (
                 allAnswers.map((item, index) => (
                   <TableRow key={index} onClick={() => {}}>
-                    <TableCell className="py-[1px]">{item.answer}</TableCell>
+                    <TableCell className="py-[1px] truncate">{item.answer}</TableCell>
                     <TableCell className="py-[1px] text-right">{item.count}</TableCell>
                     <TableCell className="py-[1px] w-6" />
                     <TableCell className="py-[1px] text-right">{item.percentage}%</TableCell>
