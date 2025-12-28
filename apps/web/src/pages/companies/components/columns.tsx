@@ -45,7 +45,7 @@ export const columns: ColumnDef<BizCompany>[] = [
       const name = row.original.data?.name || '';
 
       return (
-        <div className="px-2 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <UserAvatar email={email} name={name} size="sm" />
           <span>{row.getValue('externalId')}</span>
         </div>

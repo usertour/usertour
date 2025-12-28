@@ -48,7 +48,7 @@ export const columns: ColumnDef<BizUser>[] = [
       const companies = row.original.bizUsersOnCompany || [];
 
       return (
-        <div className="flex items-center gap-2 p-2">
+        <div className="flex items-center gap-2">
           <UserAvatar email={email} name={name} size="sm" />
           <div className="flex flex-col gap-0.5">
             <span className="leading-none">{email || row.getValue('externalId')}</span>

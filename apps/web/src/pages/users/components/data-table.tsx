@@ -118,67 +118,65 @@ export function DataTable({ segment }: TableProps) {
   return (
     <div className="space-y-2">
       <DataTableToolbar table={table} currentSegment={segment} />
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  );
-                })}
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+                return (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {loading || isRefetching ? (
+            // Show loading skeleton using Skeleton component
+            Array.from({ length: pagination.pageSize }).map((_, index) => (
+              <TableRow key={`loading-${index}`}>
+                {customColumns.map((_, colIndex) => (
+                  <TableCell key={`loading-cell-${index}-${colIndex}`} className="h-12">
+                    <Skeleton className="h-4 w-full" />
+                  </TableCell>
+                ))}
               </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {loading || isRefetching ? (
-              // Show loading skeleton using Skeleton component
-              Array.from({ length: pagination.pageSize }).map((_, index) => (
-                <TableRow key={`loading-${index}`}>
-                  {customColumns.map((_, colIndex) => (
-                    <TableCell key={`loading-cell-${index}-${colIndex}`} className="h-12">
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer"
-                  data-state={row.getIsSelected() && 'selected'}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="leading-8"
-                      onClick={() => {
-                        if (cell.column.id !== 'select') {
-                          handlerOnClick(row.getValue('environmentId'), row.getValue('id'));
-                        }
-                      }}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={customColumns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
+            ))
+          ) : table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                className="cursor-pointer"
+                data-state={row.getIsSelected() && 'selected'}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell
+                    key={cell.id}
+                    className="leading-8 py-4"
+                    onClick={() => {
+                      if (cell.column.id !== 'select') {
+                        handlerOnClick(row.getValue('environmentId'), row.getValue('id'));
+                      }
+                    }}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={customColumns.length} className="h-24 text-center">
+                No results.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
       <DataTablePagination table={table} />
     </div>
   );
