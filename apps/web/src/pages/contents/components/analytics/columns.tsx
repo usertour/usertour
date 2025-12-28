@@ -88,34 +88,32 @@ export const columns: ColumnDef<BizSession>[] = [
 
       return (
         <div className="flex items-center gap-2">
-          <Link
-            to={`/env/${environment?.id}/user/${row.getValue('bizUserId')}`}
-            className="flex items-center gap-2"
-          >
-            <UserAvatar email={email} name={name} size="sm" />
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1">
-                <span className="font-medium hover:text-primary hover:underline underline-offset-4">
-                  {primaryText}
+          <UserAvatar email={email} name={name} size="sm" />
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1">
+              <Link
+                to={`/env/${environment?.id}/user/${row.getValue('bizUserId')}`}
+                className="font-medium hover:text-primary hover:underline underline-offset-4"
+              >
+                {primaryText}
+              </Link>
+              {companyName && bizCompany?.id && (
+                <span className="text-muted-foreground text-xs">
+                  from{' '}
+                  <Link
+                    to={`/env/${environment?.id}/company/${bizCompany.id}`}
+                    className="hover:text-primary hover:underline underline-offset-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {companyName}
+                  </Link>
                 </span>
-                {companyName && bizCompany?.id && (
-                  <span className="text-muted-foreground text-xs">
-                    from{' '}
-                    <Link
-                      to={`/env/${environment?.id}/company/${bizCompany.id}`}
-                      className="hover:text-primary hover:underline underline-offset-4"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {companyName}
-                    </Link>
-                  </span>
-                )}
-              </div>
-              {showSecondLine && (
-                <span className="text-muted-foreground text-xs">{showSecondLine}</span>
               )}
             </div>
-          </Link>
+            {showSecondLine && (
+              <span className="text-muted-foreground text-xs">{showSecondLine}</span>
+            )}
+          </div>
         </div>
       );
     },
