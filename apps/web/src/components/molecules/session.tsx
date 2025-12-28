@@ -14,6 +14,31 @@ import { Event } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
 import { cn, isUndefined } from '@usertour/helpers';
 
+/**
+ * Format flow step display text from event data
+ * @param flowStepNumber - Step number (0-indexed)
+ * @param flowStepName - Step name
+ * @returns Formatted display string
+ */
+const formatFlowStepDisplay = (
+  flowStepNumber: number | undefined | null,
+  flowStepName: string | undefined | null,
+): string => {
+  const hasStepNumber = flowStepNumber !== undefined && flowStepNumber !== null;
+  const stepNumberDisplay = hasStepNumber ? `Step ${Number(flowStepNumber) + 1}` : '';
+
+  if (stepNumberDisplay && flowStepName) {
+    return `${stepNumberDisplay}. ${flowStepName}`;
+  }
+  if (stepNumberDisplay) {
+    return stepNumberDisplay;
+  }
+  if (flowStepName) {
+    return flowStepName;
+  }
+  return '';
+};
+
 const LauncherProgressColumn = ({
   original,
   eventList,
@@ -156,13 +181,13 @@ const ChecklistItemsColumn = ({
               <CheckmarkIcon className="w-5 h-5 stroke-white" />
             )}
           </span>
-          <div className={cn('grow flex flex-col')}>
-            <span className="font-bold flex items-center gap-1.5">
-              {item.name}
+          <div className={cn('grow flex flex-col min-w-0')}>
+            <span className="font-bold flex items-center gap-1.5 min-w-0 overflow-hidden">
+              <span className="truncate flex-1">{item.name}</span>
               {item.isClicked && (
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger className="cursor-default">
+                    <TooltipTrigger className="cursor-default flex-shrink-0">
                       <ClickIcon className="h-4 text-muted-foreground/70" />
                     </TooltipTrigger>
                     <TooltipContent usePortal={true}>User clicked this task</TooltipContent>
@@ -172,7 +197,7 @@ const ChecklistItemsColumn = ({
               {!isUndefined(item.isVisible) && !item.isVisible && (
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger className="cursor-default">
+                    <TooltipTrigger className="cursor-default flex-shrink-0">
                       <EyeNoneIcon className="h-4 text-muted-foreground/70" />
                     </TooltipTrigger>
                     <TooltipContent usePortal={true}>Task is hidden for user</TooltipContent>
@@ -180,7 +205,9 @@ const ChecklistItemsColumn = ({
                 </TooltipProvider>
               )}
             </span>
-            {item.description && <span className="text-xs opacity-75">{item.description}</span>}
+            {item.description && (
+              <span className="text-xs opacity-75 truncate">{item.description}</span>
+            )}
           </div>
         </div>
       ))}
@@ -230,18 +257,19 @@ const FlowProgressColumn = ({
           </Tooltip>
         </TooltipProvider>
       )}
-      <div className="flex flex-col">
+      <div className="flex flex-col min-w-0">
         {!isComplete && <span>{lastSeenBizEvent?.data?.flow_step_progress ?? 0}%</span>}
         {isComplete && (
           <div className="text-success font-bold text-left">{`Completed in ${completeDate}`}</div>
         )}
-        <div className="text-left text-muted-foreground">
-          <div className="text-muted-foreground">
-            {lastSeenBizEvent &&
-              `Step ${lastSeenBizEvent?.data?.flow_step_number + 1}.
-      ${lastSeenBizEvent?.data?.flow_step_name}`}
+        {lastSeenBizEvent && (
+          <div className="text-left text-muted-foreground truncate">
+            {formatFlowStepDisplay(
+              lastSeenBizEvent?.data?.flow_step_number,
+              lastSeenBizEvent?.data?.flow_step_name,
+            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

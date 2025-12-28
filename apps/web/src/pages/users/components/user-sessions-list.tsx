@@ -105,10 +105,13 @@ const ContentColumn = ({
   };
 
   return (
-    <div className="font-medium flex items-center space-x-2 hover:text-primary underline-offset-4 hover:underline transition-colors">
+    <div className="font-medium flex items-center space-x-2 hover:text-primary underline-offset-4 hover:underline transition-colors min-w-0">
       {getContentIcon(content.type)}
-      <div className="flex flex-col">
-        <Link to={`/env/${environmentId}/${content.type}s/${content.id}/detail`}>
+      <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+        <Link
+          to={`/env/${environmentId}/${content.type}s/${content.id}/detail`}
+          className="truncate"
+        >
           {content.name}
         </Link>
       </div>
@@ -186,31 +189,26 @@ export const UserSessionsList = () => {
           </div>
         ) : (
           <div className="flex flex-col w-full grow">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-1/3">Content</TableHead>
-                  <TableHead className="w-1/3">Progress</TableHead>
-                  <TableHead className="w-1/3">Last activity</TableHead>
+                  <TableHead className="w-2/5">Content</TableHead>
+                  <TableHead className="w-2/5">Progress</TableHead>
+                  <TableHead className="w-1/5">Last activity</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="[&_tr]:h-14">
                 {userSessions.map((session) => (
-                  <TableRow
-                    key={session.id}
-                    className={cn(
-                      'cursor-pointer h-12 group transition-colors hover:bg-muted data-[state=selected]:bg-muted',
-                    )}
-                  >
-                    <TableCell className="w-1/3">
+                  <TableRow key={session.id} className="cursor-pointer group">
+                    <TableCell className="w-2/5 overflow-hidden">
                       <ContentColumn session={session} environmentId={environment?.id || ''} />
                     </TableCell>
-                    <TableCell className="w-1/3">
+                    <TableCell className="w-2/5 overflow-hidden">
                       <Link to={`/env/${environment?.id}/session/${session.id}`}>
                         <ProgressColumn session={session} eventList={eventList || []} />
                       </Link>
                     </TableCell>
-                    <TableCell className="w-1/3">
+                    <TableCell className="w-1/5 overflow-hidden">
                       <CreateAtColumn session={session} />
                     </TableCell>
                   </TableRow>
