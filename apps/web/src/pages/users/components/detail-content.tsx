@@ -27,8 +27,7 @@ import { BizUserDeleteForm } from './bizuser-delete-form';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { useAppContext } from '@/contexts/app-context';
-import { useCopyToClipboard } from 'react-use';
-import { useToast } from '@usertour-packages/use-toast';
+import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -80,8 +79,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { isViewOnly } = useAppContext();
-  const [_, copyToClipboard] = useCopyToClipboard();
-  const { toast } = useToast();
+  const copyWithToast = useCopyWithToast();
 
   useEffect(() => {
     if (!contents) {
@@ -185,13 +183,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                     variant={'ghost'}
                     size={'icon'}
                     className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => {
-                      const valueToCopy = bizUser?.externalId || '';
-                      copyToClipboard(valueToCopy);
-                      toast({
-                        title: `"${valueToCopy}" copied to clipboard`,
-                      });
-                    }}
+                    onClick={() => copyWithToast(bizUser?.externalId || '')}
                   >
                     <CopyIcon className="w-4 h-4" />
                   </Button>
@@ -203,13 +195,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                     variant={'ghost'}
                     size={'icon'}
                     className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => {
-                      const valueToCopy = bizUser?.data?.email || '';
-                      copyToClipboard(valueToCopy);
-                      toast({
-                        title: `"${valueToCopy}" copied to clipboard`,
-                      });
-                    }}
+                    onClick={() => copyWithToast(bizUser?.data?.email || '')}
                   >
                     <CopyIcon className="w-4 h-4" />
                   </Button>
@@ -223,13 +209,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                     variant={'ghost'}
                     size={'icon'}
                     className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => {
-                      const valueToCopy = bizUser?.data?.name || '';
-                      copyToClipboard(valueToCopy);
-                      toast({
-                        title: `"${valueToCopy}" copied to clipboard`,
-                      });
-                    }}
+                    onClick={() => copyWithToast(bizUser?.data?.name || '')}
                   >
                     <CopyIcon className="w-4 h-4" />
                   </Button>
@@ -249,13 +229,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                     variant={'ghost'}
                     size={'icon'}
                     className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => {
-                      const valueToCopy = bizUser?.createdAt || '';
-                      copyToClipboard(valueToCopy);
-                      toast({
-                        title: `"${valueToCopy}" copied to clipboard`,
-                      });
-                    }}
+                    onClick={() => copyWithToast(bizUser?.createdAt || '')}
                   >
                     <CopyIcon className="w-4 h-4" />
                   </Button>
@@ -275,13 +249,6 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 const formattedValue = formatAttributeValue(value, dataType);
                 const isDateTime = dataType === AttributeDataType.DateTime;
                 const textToCopy = String(isDateTime ? value : formattedValue);
-
-                const handleCopy = () => {
-                  copyToClipboard(textToCopy);
-                  toast({
-                    title: `"${textToCopy}" copied to clipboard`,
-                  });
-                };
 
                 return (
                   <div
@@ -306,7 +273,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                       variant={'ghost'}
                       size={'icon'}
                       className="w-6 h-6 m-2 rounded invisible group-hover:visible flex-shrink-0"
-                      onClick={handleCopy}
+                      onClick={() => copyWithToast(textToCopy)}
                     >
                       <CopyIcon className="w-4 h-4" />
                     </Button>

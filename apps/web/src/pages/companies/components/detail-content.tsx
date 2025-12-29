@@ -39,8 +39,7 @@ import { PaginationState } from '@tanstack/react-table';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useCallback } from 'react';
 import { useAppContext } from '@/contexts/app-context';
-import { useCopyToClipboard } from 'react-use';
-import { useToast } from '@usertour-packages/use-toast';
+import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 
 // Company User List Context
 interface CompanyUserListContextValue {
@@ -258,8 +257,7 @@ const CompanyUserList = () => {
     useCompanyUserListContext();
   const { attributeList } = useAttributeListContext();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const [_, copyToClipboard] = useCopyToClipboard();
-  const { toast } = useToast();
+  const copyWithToast = useCopyWithToast();
 
   const handleRowClick = (id: string) => {
     setExpandedRowId(expandedRowId === id ? null : id);
@@ -389,13 +387,6 @@ const CompanyUserList = () => {
                           const isDateTime = dataType === AttributeDataType.DateTime;
                           const textToCopy = String(isDateTime ? value : formattedValue);
 
-                          const handleCopy = () => {
-                            copyToClipboard(textToCopy);
-                            toast({
-                              title: `"${textToCopy}" copied to clipboard`,
-                            });
-                          };
-
                           return (
                             <div
                               key={key}
@@ -419,7 +410,7 @@ const CompanyUserList = () => {
                                 variant={'ghost'}
                                 size={'icon'}
                                 className="w-6 h-6 m-2 rounded invisible group-hover:visible flex-shrink-0"
-                                onClick={handleCopy}
+                                onClick={() => copyWithToast(textToCopy)}
                               >
                                 <CopyIcon className="w-4 h-4" />
                               </Button>
@@ -493,8 +484,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { isViewOnly } = useAppContext();
-  const [_, copyToClipboard] = useCopyToClipboard();
-  const { toast } = useToast();
+  const copyWithToast = useCopyWithToast();
 
   useEffect(() => {
     if (!contents) {
@@ -607,13 +597,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                     variant={'ghost'}
                     size={'icon'}
                     className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => {
-                      const valueToCopy = bizCompany?.externalId || '';
-                      copyToClipboard(valueToCopy);
-                      toast({
-                        title: `"${valueToCopy}" copied to clipboard`,
-                      });
-                    }}
+                    onClick={() => copyWithToast(bizCompany?.externalId || '')}
                   >
                     <CopyIcon className="w-4 h-4" />
                   </Button>
@@ -627,13 +611,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                     variant={'ghost'}
                     size={'icon'}
                     className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => {
-                      const valueToCopy = bizCompany?.data?.name || '';
-                      copyToClipboard(valueToCopy);
-                      toast({
-                        title: `"${valueToCopy}" copied to clipboard`,
-                      });
-                    }}
+                    onClick={() => copyWithToast(bizCompany?.data?.name || '')}
                   >
                     <CopyIcon className="w-4 h-4" />
                   </Button>
@@ -653,13 +631,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                     variant={'ghost'}
                     size={'icon'}
                     className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => {
-                      const valueToCopy = bizCompany?.createdAt || '';
-                      copyToClipboard(valueToCopy);
-                      toast({
-                        title: `"${valueToCopy}" copied to clipboard`,
-                      });
-                    }}
+                    onClick={() => copyWithToast(bizCompany?.createdAt || '')}
                   >
                     <CopyIcon className="w-4 h-4" />
                   </Button>
@@ -679,13 +651,6 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                 const formattedValue = formatAttributeValue(value, dataType);
                 const isDateTime = dataType === AttributeDataType.DateTime;
                 const textToCopy = String(isDateTime ? value : formattedValue);
-
-                const handleCopy = () => {
-                  copyToClipboard(textToCopy);
-                  toast({
-                    title: `"${textToCopy}" copied to clipboard`,
-                  });
-                };
 
                 return (
                   <div
@@ -710,7 +675,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                       variant={'ghost'}
                       size={'icon'}
                       className="w-6 h-6 m-2 rounded invisible group-hover:visible flex-shrink-0"
-                      onClick={handleCopy}
+                      onClick={() => copyWithToast(textToCopy)}
                     >
                       <CopyIcon className="w-4 h-4" />
                     </Button>
