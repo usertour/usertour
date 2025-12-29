@@ -97,7 +97,7 @@ export const AdminEnvSwitcher = () => {
                         {env?.name?.slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
-                    {env.name}
+                    <span className="flex-1 truncate">{env.name}</span>
                     <CheckIcon
                       className={cn(
                         'ml-auto h-4 w-4',
