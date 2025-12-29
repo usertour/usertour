@@ -7,7 +7,6 @@ import {
 } from '@radix-ui/react-icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuerySessionDetailQuery } from '@usertour-packages/shared-hooks';
-import { Table, TableBody, TableCell, TableRow } from '@usertour-packages/table';
 import { BizEvent, BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
@@ -161,10 +160,10 @@ const SessionDetailContentInner = ({
       </div>
       <div className="flex flex-col space-y-6 w-full max-w-screen-xl mx-auto p-14 mt-12  ">
         <SessionItemContainer className="grid grid-cols-2 gap-2 gap-x-12">
-          <div className="border-b flex flex-col pb-1">
+          <div className="border-b flex flex-col pb-1 min-w-0">
             <span className="text-sm text-foreground/60">User</span>
             <Link
-              className="text-primary hover:underline underline-offset-2"
+              className="text-primary hover:underline underline-offset-2 truncate"
               to={`/env/${environmentId}/user/${session?.bizUser?.id}`}
             >
               {session?.bizUser?.data?.name ??
@@ -173,10 +172,10 @@ const SessionDetailContentInner = ({
                 'Unnamed user'}
             </Link>
           </div>
-          <div className="border-b flex flex-col pb-1">
+          <div className="border-b flex flex-col pb-1 min-w-0">
             <span className="text-sm text-foreground/60 capitalize">{content.type}</span>
             <Link
-              className="text-primary hover:underline underline-offset-2"
+              className="text-primary hover:underline underline-offset-2 truncate"
               to={`/env/${environmentId}/${routeContentTypes}/${session?.content?.id}/detail`}
             >
               {session?.content?.name}
@@ -237,69 +236,67 @@ const SessionDetailContentInner = ({
             <ActivityLogIcon width={18} height={18} className="mr-2" />
             Activity feed
           </div>
-          <div className="flex flex-col items-center w-full h-full justify-center">
-            <Table>
-              <TableBody>
-                {bizEvents ? (
-                  bizEvents.map((bizEvent: BizEvent) => {
-                    const displaySuffix = getEventDisplaySuffix(bizEvent, session);
-                    return (
-                      <Fragment key={bizEvent.id}>
-                        <TableRow
-                          className="cursor-pointer  h-10 group"
-                          onClick={() => handleRowClick(bizEvent.id)}
-                        >
-                          <TableCell className="w-1/4">
-                            {format(new Date(bizEvent.createdAt), 'yyyy-MM-dd HH:mm:ss')}
-                          </TableCell>
-                          <TableCell className="flex justify-between items-center">
-                            <span>
-                              {bizEvent.event?.displayName}
-                              {displaySuffix && (
-                                <span className="text-muted-foreground ml-2">{displaySuffix}</span>
-                              )}
-                            </span>
-                            {expandedRowId === bizEvent.id ? (
-                              <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            ) : (
-                              <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                        {expandedRowId === bizEvent.id && bizEvent.data && (
-                          <TableRow>
-                            <TableCell colSpan={2} className="bg-gray-50 p-4">
-                              <div className="text-sm">
-                                {sortEventDataEntries(bizEvent.data, attributeList || []).map(
-                                  ([key, value]) => (
-                                    <div key={key} className="py-2 border-b flex flex-row">
-                                      <span className="font-medium w-[200px] flex-none">
-                                        {attributeList?.find((attr) => attr.codeName === key)
-                                          ?.displayName || key}
-                                      </span>
-                                      {key === EventAttributes.LIST_ANSWER && (
-                                        <QuestionAnswer answerEvent={bizEvent} />
-                                      )}
-                                      {key !== EventAttributes.LIST_ANSWER && (
-                                        <span className="grow">{getFieldValue(key, value)}</span>
-                                      )}
-                                    </div>
-                                  ),
+          <div className="w-full text-sm">
+            {bizEvents ? (
+              bizEvents.map((bizEvent: BizEvent) => {
+                const displaySuffix = getEventDisplaySuffix(bizEvent, session);
+                return (
+                  <Fragment key={bizEvent.id}>
+                    <div
+                      className="flex items-center cursor-pointer group border-b hover:bg-muted leading-6"
+                      onClick={() => handleRowClick(bizEvent.id)}
+                    >
+                      <span className="w-1/4 p-2 flex-none">
+                        {format(new Date(bizEvent.createdAt), 'yyyy-MM-dd HH:mm:ss')}
+                      </span>
+                      <div className="flex-1 min-w-0 flex justify-between items-center gap-2 p-2">
+                        <span className="truncate">
+                          {bizEvent.event?.displayName}
+                          {displaySuffix && (
+                            <span className="text-muted-foreground ml-2">{displaySuffix}</span>
+                          )}
+                        </span>
+                        {expandedRowId === bizEvent.id ? (
+                          <ChevronUpIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                        ) : (
+                          <ChevronDownIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </div>
+                    {expandedRowId === bizEvent.id && bizEvent.data && (
+                      <div className="bg-muted/50 border-b text-sm">
+                        {sortEventDataEntries(bizEvent.data, attributeList || []).map(
+                          ([key, value]) => (
+                            <div key={key} className="flex border-b last:border-b-0">
+                              <span className="w-1/4 p-2 flex-none font-medium truncate">
+                                {attributeList?.find((attr) => attr.codeName === key)
+                                  ?.displayName || key}
+                              </span>
+                              <div className="flex-1 min-w-0 p-2">
+                                {key === EventAttributes.LIST_ANSWER && (
+                                  <div className="overflow-hidden">
+                                    <QuestionAnswer answerEvent={bizEvent} />
+                                  </div>
+                                )}
+                                {key !== EventAttributes.LIST_ANSWER && (
+                                  <span className="block truncate">
+                                    {getFieldValue(key, value)}
+                                  </span>
                                 )}
                               </div>
-                            </TableCell>
-                          </TableRow>
+                            </div>
+                          ),
                         )}
-                      </Fragment>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell className="h-24 text-center">No events found.</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                      </div>
+                    )}
+                  </Fragment>
+                );
+              })
+            ) : (
+              <div className="h-24 flex items-center justify-center text-muted-foreground">
+                No events found.
+              </div>
+            )}
           </div>
         </SessionItemContainer>
       </div>
