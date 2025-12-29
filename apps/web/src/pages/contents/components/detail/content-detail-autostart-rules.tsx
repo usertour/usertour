@@ -22,7 +22,6 @@ import {
   autoStartRulesSetting,
 } from '@usertour/types';
 import { useCallback, useId, useState, useEffect } from 'react';
-import { TruncatedText } from '@/components/molecules/truncated-text';
 
 export enum ContentDetailAutoStartRulesType {
   START_RULES = 'start-rules',
@@ -126,8 +125,8 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
             className="data-[state=unchecked]:bg-input"
             onCheckedChange={handleEnabledChange}
           />
-          <Label htmlFor={id} className="flex flex-col space-y-1">
-            <TruncatedText text={name} maxLength={50} className="font-normal" showTooltip={false} />
+          <Label htmlFor={id} className="max-w-40 truncate font-normal">
+            {name}
           </Label>
           <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
             {featureTooltip}

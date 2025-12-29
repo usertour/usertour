@@ -1,6 +1,6 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
-import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { ArrowLeftIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
 import {
   AttributeBizTypes,
@@ -30,14 +30,6 @@ import {
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { BizCompanyDeleteForm } from './company-delete-form';
 import { TruncatedText } from '@/components/molecules/truncated-text';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour/helpers';
 import { UserAvatar } from '@/components/molecules/user-avatar';
@@ -47,6 +39,8 @@ import { PaginationState } from '@tanstack/react-table';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useCallback } from 'react';
 import { useAppContext } from '@/contexts/app-context';
+import { useCopyToClipboard } from 'react-use';
+import { useToast } from '@usertour-packages/use-toast';
 
 // Company User List Context
 interface CompanyUserListContextValue {
@@ -264,6 +258,8 @@ const CompanyUserList = () => {
     useCompanyUserListContext();
   const { attributeList } = useAttributeListContext();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [_, copyToClipboard] = useCopyToClipboard();
+  const { toast } = useToast();
 
   const handleRowClick = (id: string) => {
     setExpandedRowId(expandedRowId === id ? null : id);
@@ -308,128 +304,134 @@ const CompanyUserList = () => {
           </div>
         ) : (
           <div className="flex flex-col w-full grow">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-1/2">User</TableHead>
-                  <TableHead className="w-1/2">Membership Attributes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {contents.map((user: BizUser) => {
-                  const membershipAttributes = getMembershipAttributes(
-                    user,
-                    companyId,
-                    attributeList,
-                  );
-                  const membershipData = getMembershipData(user, companyId);
-                  const hasMembershipData =
-                    membershipData && Object.keys(membershipData).length > 0;
+            {/* Header */}
+            <div className="flex flex-row border-b text-sm font-medium text-muted-foreground">
+              <div className="w-2/5 p-2">User</div>
+              <div className="w-3/5 p-2">Membership Attributes</div>
+              <div className="w-10" />
+            </div>
+            {/* Body */}
+            {contents.map((user: BizUser) => {
+              const membershipAttributes = getMembershipAttributes(user, companyId, attributeList);
+              const membershipData = getMembershipData(user, companyId);
+              const hasMembershipData = membershipData && Object.keys(membershipData).length > 0;
 
-                  return (
-                    <Fragment key={user.id}>
-                      <TableRow
-                        className={cn(
-                          'cursor-pointer h-12 group transition-colors hover:bg-muted data-[state=selected]:bg-muted',
-                          hasMembershipData && 'hover:bg-muted',
-                        )}
-                        onClick={() => hasMembershipData && handleRowClick(user.id)}
-                      >
-                        <TableCell className="w-1/2">
-                          <Link to={`/env/${user.environmentId}/user/${user.id}`}>
-                            <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline">
-                              <UserAvatar
-                                email={user.data?.email || ''}
-                                name={user.data?.name || ''}
-                                size="sm"
-                              />
-                              <span>{user.data?.email || user.externalId}</span>
+              return (
+                <Fragment key={user.id}>
+                  {/* Data Row */}
+                  <div
+                    className="group flex flex-row border-b cursor-pointer hover:bg-muted/50"
+                    onClick={() => hasMembershipData && handleRowClick(user.id)}
+                  >
+                    <div className="w-2/5 p-2 min-w-0 overflow-hidden flex items-center">
+                      <Link to={`/env/${user.environmentId}/user/${user.id}`}>
+                        <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline min-w-0">
+                          <UserAvatar
+                            email={user.data?.email || ''}
+                            name={user.data?.name || ''}
+                            size="sm"
+                          />
+                          <div className="flex-1 min-w-0 truncate">
+                            {user.data?.email || user.externalId}
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+                    <div className="w-3/5 p-2 min-w-0 overflow-hidden">
+                      {hasMembershipData ? (
+                        <div className="space-y-1 min-w-0">
+                          {membershipAttributes.slice(0, 2).map((attr, index) => {
+                            const formattedValue = formatAttributeValue(
+                              attr.value,
+                              attr.dataType || AttributeDataType.String,
+                            );
+                            return (
+                              <div
+                                key={index}
+                                className="text-sm flex items-center gap-1.5 min-w-0"
+                              >
+                                <div className="font-medium text-muted-foreground flex-none w-32 truncate">
+                                  {attr.name}:
+                                </div>
+                                <div className="flex-1 min-w-0 truncate">{formattedValue}</div>
+                              </div>
+                            );
+                          })}
+                          {membershipAttributes.length > 2 && (
+                            <div className="text-xs text-muted-foreground">
+                              +{membershipAttributes.length - 2} more attributes
                             </div>
-                          </Link>
-                        </TableCell>
-                        <TableCell className="w-1/2">
-                          {hasMembershipData ? (
-                            <div className="flex justify-between items-center">
-                              <div className="space-y-1">
-                                {membershipAttributes.slice(0, 2).map((attr, index) => {
-                                  const formattedValue = formatAttributeValue(
-                                    attr.value,
-                                    attr.dataType || AttributeDataType.String,
-                                  );
-                                  return (
-                                    <div key={index} className="text-sm">
-                                      <span className="font-medium text-muted-foreground">
-                                        {attr.name}:
-                                      </span>{' '}
-                                      <TruncatedText
-                                        text={formattedValue}
-                                        maxLength={30}
-                                        rawValue={
-                                          attr.dataType === AttributeDataType.DateTime
-                                            ? attr.value
-                                            : undefined
-                                        }
-                                      />
-                                    </div>
-                                  );
-                                })}
-                                {membershipAttributes.length > 2 && (
-                                  <div className="text-xs text-muted-foreground">
-                                    +{membershipAttributes.length - 2} more attributes
-                                  </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">
+                          No membership attributes
+                        </span>
+                      )}
+                    </div>
+                    <div className="w-10 flex items-center justify-center">
+                      {hasMembershipData &&
+                        (expandedRowId === user.id ? (
+                          <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        ) : (
+                          <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        ))}
+                    </div>
+                  </div>
+                  {/* Expanded Row */}
+                  {expandedRowId === user.id && membershipData && (
+                    <div className="bg-muted/50 text-sm">
+                      {sortMembershipDataEntries(membershipData, attributeList || []).map(
+                        ([key, value]) => {
+                          const attr = attributeList?.find((attr) => attr.codeName === key);
+                          const dataType = attr?.dataType || AttributeDataType.String;
+                          const formattedValue = formatAttributeValue(value, dataType);
+                          const isDateTime = dataType === AttributeDataType.DateTime;
+                          const textToCopy = String(isDateTime ? value : formattedValue);
+
+                          const handleCopy = () => {
+                            copyToClipboard(textToCopy);
+                            toast({
+                              title: `"${textToCopy}" copied to clipboard`,
+                            });
+                          };
+
+                          return (
+                            <div
+                              key={key}
+                              className="group flex flex-row border-b last:border-0 min-w-0"
+                            >
+                              <div className="font-medium w-2/5 min-w-0 p-2 leading-6">
+                                <div className="break-words">{attr?.displayName || key}</div>
+                              </div>
+                              <div className="w-3/5 min-w-0 p-2 break-words leading-6">
+                                {isDateTime ? (
+                                  <TruncatedText
+                                    text={formattedValue}
+                                    className="max-w-full"
+                                    rawValue={value}
+                                  />
+                                ) : (
+                                  formattedValue
                                 )}
                               </div>
-                              {expandedRowId === user.id ? (
-                                <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              ) : (
-                                <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              )}
+                              <Button
+                                variant={'ghost'}
+                                size={'icon'}
+                                className="w-6 h-6 m-2 rounded invisible group-hover:visible flex-shrink-0"
+                                onClick={handleCopy}
+                              >
+                                <CopyIcon className="w-4 h-4" />
+                              </Button>
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">
-                              No membership attributes
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                      {expandedRowId === user.id && membershipData && (
-                        <TableRow>
-                          <TableCell colSpan={2} className="bg-gray-50 p-4">
-                            <div className="text-sm">
-                              {sortMembershipDataEntries(membershipData, attributeList || []).map(
-                                ([key, value]) => {
-                                  const attr = attributeList?.find((attr) => attr.codeName === key);
-                                  const dataType = attr?.dataType || AttributeDataType.String;
-                                  const formattedValue = formatAttributeValue(value, dataType);
-                                  return (
-                                    <div key={key} className="py-2 border-b flex flex-row">
-                                      <span className="font-medium w-[200px] flex-none">
-                                        {attr?.displayName || key}
-                                      </span>
-                                      <span className="grow">
-                                        <TruncatedText
-                                          text={formattedValue}
-                                          maxLength={50}
-                                          rawValue={
-                                            dataType === AttributeDataType.DateTime
-                                              ? value
-                                              : undefined
-                                          }
-                                        />
-                                      </span>
-                                    </div>
-                                  );
-                                },
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                          );
+                        },
                       )}
-                    </Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                    </div>
+                  )}
+                </Fragment>
+              );
+            })}
           </div>
         )}
 
@@ -491,6 +493,8 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { isViewOnly } = useAppContext();
+  const [_, copyToClipboard] = useCopyToClipboard();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!contents) {
@@ -596,27 +600,69 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-2 gap-x-12">
-                <div className="flex items-center space-x-2">
+                <div className="group flex items-center min-w-0 gap-2">
                   <TooltipIcon icon={IdCardIcon} tooltip="Company ID" />
-                  <TruncatedText text={bizCompany?.externalId || ''} maxLength={15} />
+                  <span className="flex-1 min-w-0 truncate">{bizCompany?.externalId || ''}</span>
+                  <Button
+                    variant={'ghost'}
+                    size={'icon'}
+                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
+                    onClick={() => {
+                      const valueToCopy = bizCompany?.externalId || '';
+                      copyToClipboard(valueToCopy);
+                      toast({
+                        title: `"${valueToCopy}" copied to clipboard`,
+                      });
+                    }}
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                  </Button>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="group flex items-center min-w-0 gap-2">
                   <TooltipIcon icon={CompanyIcon} tooltip="Name" />
-                  <TruncatedText
-                    text={bizCompany?.data?.name || 'Unnamed company'}
-                    maxLength={20}
-                  />
+                  <span className="flex-1 min-w-0 truncate">
+                    {bizCompany?.data?.name || 'Unnamed company'}
+                  </span>
+                  <Button
+                    variant={'ghost'}
+                    size={'icon'}
+                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
+                    onClick={() => {
+                      const valueToCopy = bizCompany?.data?.name || '';
+                      copyToClipboard(valueToCopy);
+                      toast({
+                        title: `"${valueToCopy}" copied to clipboard`,
+                      });
+                    }}
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                  </Button>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="group flex items-center min-w-0 gap-2">
                   <TooltipIcon icon={CalendarIcon} tooltip="Created" />
                   {bizCompany?.createdAt ? (
                     <TruncatedText
                       text={formatAttributeValue(bizCompany.createdAt, AttributeDataType.DateTime)}
+                      className="flex-1 min-w-0 truncate"
                       rawValue={bizCompany.createdAt}
                     />
                   ) : (
-                    <span>-</span>
+                    <span className="flex-1 min-w-0 truncate">-</span>
                   )}
+                  <Button
+                    variant={'ghost'}
+                    size={'icon'}
+                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
+                    onClick={() => {
+                      const valueToCopy = bizCompany?.createdAt || '';
+                      copyToClipboard(valueToCopy);
+                      toast({
+                        title: `"${valueToCopy}" copied to clipboard`,
+                      });
+                    }}
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -629,24 +675,45 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-row border-b py-2 text-sm opacity-80">
-                <div className="w-1/2 ">Name</div>
-                <div className="w-1/2 ">Value</div>
-              </div>
               {bizCompanyAttributes.map(({ name, value, dataType }, key) => {
                 const formattedValue = formatAttributeValue(value, dataType);
+                const isDateTime = dataType === AttributeDataType.DateTime;
+                const textToCopy = String(isDateTime ? value : formattedValue);
+
+                const handleCopy = () => {
+                  copyToClipboard(textToCopy);
+                  toast({
+                    title: `"${textToCopy}" copied to clipboard`,
+                  });
+                };
+
                 return (
-                  <div className="flex flex-row py-2 text-sm" key={key}>
-                    <div className="w-1/2">
-                      <TruncatedText text={name} maxLength={25} />
+                  <div
+                    className="group flex flex-row text-sm min-w-0 gap-2 border-b last:border-0"
+                    key={key}
+                  >
+                    <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
+                      {name}
                     </div>
-                    <div className="w-1/2">
-                      <TruncatedText
-                        text={formattedValue}
-                        maxLength={25}
-                        rawValue={dataType === AttributeDataType.DateTime ? value : undefined}
-                      />
+                    <div className="w-3/5 min-w-0 break-words p-2 leading-6">
+                      {isDateTime ? (
+                        <TruncatedText
+                          text={formattedValue}
+                          className="max-w-full"
+                          rawValue={value}
+                        />
+                      ) : (
+                        formattedValue
+                      )}
                     </div>
+                    <Button
+                      variant={'ghost'}
+                      size={'icon'}
+                      className="w-6 h-6 m-2 rounded invisible group-hover:visible flex-shrink-0"
+                      onClick={handleCopy}
+                    >
+                      <CopyIcon className="w-4 h-4" />
+                    </Button>
                   </div>
                 );
               })}

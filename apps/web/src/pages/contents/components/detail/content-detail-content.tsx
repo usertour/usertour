@@ -9,7 +9,6 @@ import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour-packages/icons';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
-import { TruncatedText } from '@/components/molecules/truncated-text';
 import {
   ChecklistData,
   ChecklistInitialDisplay,
@@ -51,7 +50,7 @@ const ContentBadge = ({
 }) => {
   return (
     <Badge variant={'secondary'} className={className}>
-      <span className="first-letter:uppercase">{children}</span>
+      <span className="first-letter:uppercase max-w-40 truncate inline-block">{children}</span>
     </Badge>
   );
 };
@@ -127,20 +126,24 @@ const ContentDetailContentStep = ({
           </div>
         )}
         <div className="grow flex flex-col relative space-y-1 min-w-80	">
-          <div className="flex flex-row space-x-1 items-center right-0 top-0 absolute">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
-                    <EditIcon className="w-4 h-4 cursor-pointer" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Edit</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="font-bold flex flex-row space-x-1 items-center	">
-            {index + 1}. <TruncatedText text={currentStep.name ?? ''} maxLength={50} />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={'ghost'}
+                  size={'icon'}
+                  onClick={onEdit}
+                  disabled={disabled}
+                  className="right-0 top-0 absolute"
+                >
+                  <EditIcon className="w-4 h-4 cursor-pointer" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Edit</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <div className="font-bold max-w-80 truncate">
+            {index + 1}. {currentStep.name ?? ''}
           </div>
           <div className="text-sm flex flex-row flex-wrap gap-1">
             <ContentBadge>{currentStep.type}</ContentBadge>
@@ -148,9 +151,7 @@ const ContentDetailContentStep = ({
               <>
                 <ContentBadge>Width: {currentStep.setting.width}px</ContentBadge>
                 <ContentBadge>Height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
-                <ContentBadge>
-                  Theme: <TruncatedText text={currentTheme.name ?? ''} maxLength={20} />
-                </ContentBadge>
+                <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
               </>
             )}
             {!isHiddenStep && (
@@ -213,35 +214,31 @@ const LauncherContentPreview = ({
           <LauncherPreview currentTheme={currentTheme} currentVersion={currentVersion} />
         </div>
         <div className="grow flex flex-col relative space-y-1 min-w-80	">
-          <div className="flex flex-row space-x-1 items-center right-0 top-0 absolute">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
-                    <EditIcon className="w-4 h-4 cursor-pointer" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Edit</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="font-bold flex flex-row space-x-1 items-center">
-            <TruncatedText text={content.name ?? ''} maxLength={50} />
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={'ghost'}
+                  size={'icon'}
+                  onClick={onEdit}
+                  disabled={disabled}
+                  className="right-0 top-0 absolute"
+                >
+                  <EditIcon className="w-4 h-4 cursor-pointer" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Edit</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <div className="font-bold max-w-80 truncate">{content.name ?? ''}</div>
           <div className="text-sm flex flex-row flex-wrap gap-1">
             <ContentBadge>{data.type}</ContentBadge>
             <ContentBadge>
               Target element:{' '}
-              {data.target.element?.customSelector ? (
-                <TruncatedText text={data.target.element.customSelector} maxLength={20} />
-              ) : (
-                'Not set'
-              )}
+              {data.target.element?.customSelector ? data.target.element.customSelector : 'Not set'}
             </ContentBadge>
             <ContentBadge>Target alignment: {data.target.alignment.alignType}</ContentBadge>
-            <ContentBadge>
-              Theme: <TruncatedText text={currentTheme.name ?? ''} maxLength={20} />
-            </ContentBadge>
+            <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
             {data.type === LauncherDataType.ICON && data.iconType && (
               <ContentBadge>Icon type: {data.iconType}</ContentBadge>
             )}
@@ -309,25 +306,25 @@ const ChecklistContentPreview = ({
           </ScaledPreviewContainer>
         </div>
         <div className="grow flex flex-col relative space-y-1 min-w-80	">
-          <div className="flex flex-row space-x-1 items-center right-0 top-0 absolute">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant={'ghost'} size={'icon'} onClick={onEdit} disabled={disabled}>
-                    <EditIcon className="w-4 h-4 cursor-pointer" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Edit</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="font-bold flex flex-row space-x-1 items-center">
-            <TruncatedText text={content.name ?? ''} maxLength={50} />
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={'ghost'}
+                  size={'icon'}
+                  onClick={onEdit}
+                  disabled={disabled}
+                  className="right-0 top-0 absolute"
+                >
+                  <EditIcon className="w-4 h-4 cursor-pointer" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Edit</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <div className="font-bold max-w-80 truncate">{content.name ?? ''}</div>
           <div className="text-sm flex flex-row flex-wrap gap-1">
-            <ContentBadge>
-              Launcher button text: <TruncatedText text={data.buttonText ?? ''} maxLength={30} />
-            </ContentBadge>
+            <ContentBadge>Launcher button text: {data.buttonText ?? ''}</ContentBadge>
             <ContentBadge>
               Initial display: {data.initialDisplay === ChecklistInitialDisplay.BUTTON && 'Button'}
               {data.initialDisplay === ChecklistInitialDisplay.EXPANDED && 'Expanded'}
@@ -339,9 +336,7 @@ const ChecklistContentPreview = ({
             {!data.preventDismissChecklist && (
               <ContentBadge>Allow users to dismiss checklist</ContentBadge>
             )}
-            <ContentBadge>
-              Theme: <TruncatedText text={currentTheme.name ?? ''} maxLength={20} />
-            </ContentBadge>
+            <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
             <ContentBadge>Items: {data.items.length}</ContentBadge>
           </div>
           <div className="text-xs	 absolute right-0 bottom-0 text-muted-foreground">
@@ -402,7 +397,7 @@ export const ContentDetailContent = () => {
         {showAddButton && (
           <Button
             onClick={() => openBuilder(content, contentType)}
-            className="flex py-8 shadow bg-white rounded-lg justify-center cursor-pointer w-auto h-auto hover:bg-white "
+            className="py-8 shadow bg-white rounded-lg cursor-pointer w-auto h-auto hover:bg-white "
             disabled={isViewOnly}
           >
             <AddIcon width={40} height={40} className="text-primary" />

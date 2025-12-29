@@ -45,8 +45,8 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
   return (
     <div className="grow rounded-b-md py-2.5 px-5 flex flex-col  ">
       <div className="flex-none flex flex-row justify-between items-center space-x-4">
-        <span className="grow text-base font-medium text-gray-900 dark:text-white truncate ...	">
-          {content.name}{' '}
+        <span className="grow text-base font-medium text-gray-900 dark:text-white truncate min-w-0">
+          {content.name ?? ''}
         </span>
 
         <ContentEditDropdownMenu

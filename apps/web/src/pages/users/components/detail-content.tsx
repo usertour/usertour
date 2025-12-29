@@ -1,7 +1,7 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
-import { ArrowLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { ArrowLeftIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
 import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
 import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
@@ -27,6 +27,8 @@ import { BizUserDeleteForm } from './bizuser-delete-form';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { useAppContext } from '@/contexts/app-context';
+import { useCopyToClipboard } from 'react-use';
+import { useToast } from '@usertour-packages/use-toast';
 
 interface UserDetailContentProps {
   environmentId: string;
@@ -78,6 +80,8 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { isViewOnly } = useAppContext();
+  const [_, copyToClipboard] = useCopyToClipboard();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!contents) {
@@ -173,29 +177,88 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2 gap-x-12 ">
-                <div className="flex items-center space-x-2">
+              <div className="grid grid-cols-2 gap-2 gap-x-12">
+                <div className="group flex items-center min-w-0 gap-2">
                   <TooltipIcon icon={IdCardIcon} tooltip="User ID" />
-                  <TruncatedText text={bizUser?.externalId || ''} maxLength={15} />
+                  <span className="flex-1 min-w-0 truncate">{bizUser?.externalId || ''}</span>
+                  <Button
+                    variant={'ghost'}
+                    size={'icon'}
+                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
+                    onClick={() => {
+                      const valueToCopy = bizUser?.externalId || '';
+                      copyToClipboard(valueToCopy);
+                      toast({
+                        title: `"${valueToCopy}" copied to clipboard`,
+                      });
+                    }}
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                  </Button>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="group flex items-center min-w-0 gap-2">
                   <TooltipIcon icon={EnvelopeClosedIcon} tooltip="Email" />
-                  <TruncatedText text={bizUser?.data?.email || ''} maxLength={15} />
+                  <span className="flex-1 min-w-0 truncate">{bizUser?.data?.email || ''}</span>
+                  <Button
+                    variant={'ghost'}
+                    size={'icon'}
+                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
+                    onClick={() => {
+                      const valueToCopy = bizUser?.data?.email || '';
+                      copyToClipboard(valueToCopy);
+                      toast({
+                        title: `"${valueToCopy}" copied to clipboard`,
+                      });
+                    }}
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                  </Button>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="group flex items-center min-w-0 gap-2">
                   <TooltipIcon icon={PersonIcon} tooltip="Name" />
-                  <TruncatedText text={bizUser?.data?.name || 'Unnamed user'} maxLength={15} />
+                  <span className="flex-1 min-w-0 truncate">
+                    {bizUser?.data?.name || 'Unnamed user'}
+                  </span>
+                  <Button
+                    variant={'ghost'}
+                    size={'icon'}
+                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
+                    onClick={() => {
+                      const valueToCopy = bizUser?.data?.name || '';
+                      copyToClipboard(valueToCopy);
+                      toast({
+                        title: `"${valueToCopy}" copied to clipboard`,
+                      });
+                    }}
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                  </Button>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="group flex items-center min-w-0 gap-2">
                   <TooltipIcon icon={CalendarIcon} tooltip="Created" />
                   {bizUser?.createdAt ? (
                     <TruncatedText
                       text={formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}
+                      className="flex-1 min-w-0 truncate"
                       rawValue={bizUser.createdAt}
                     />
                   ) : (
-                    <span>-</span>
+                    <span className="flex-1 min-w-0 truncate">-</span>
                   )}
+                  <Button
+                    variant={'ghost'}
+                    size={'icon'}
+                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
+                    onClick={() => {
+                      const valueToCopy = bizUser?.createdAt || '';
+                      copyToClipboard(valueToCopy);
+                      toast({
+                        title: `"${valueToCopy}" copied to clipboard`,
+                      });
+                    }}
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -208,24 +271,45 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-row border-b py-2 text-sm opacity-80">
-                <div className="w-1/2 ">Name</div>
-                <div className="w-1/2 ">Value</div>
-              </div>
               {bizUserAttributes.map(({ name, value, dataType }, key) => {
                 const formattedValue = formatAttributeValue(value, dataType);
+                const isDateTime = dataType === AttributeDataType.DateTime;
+                const textToCopy = String(isDateTime ? value : formattedValue);
+
+                const handleCopy = () => {
+                  copyToClipboard(textToCopy);
+                  toast({
+                    title: `"${textToCopy}" copied to clipboard`,
+                  });
+                };
+
                 return (
-                  <div className="flex flex-row py-2 text-sm" key={key}>
-                    <div className="w-1/2">
-                      <TruncatedText text={name} maxLength={15} />
+                  <div
+                    className="group flex flex-row text-sm min-w-0 gap-2 border-b last:border-0"
+                    key={key}
+                  >
+                    <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
+                      {name}
                     </div>
-                    <div className="w-1/2">
-                      <TruncatedText
-                        text={formattedValue}
-                        maxLength={25}
-                        rawValue={dataType === AttributeDataType.DateTime ? value : undefined}
-                      />
+                    <div className="w-3/5 min-w-0 break-words p-2 leading-6">
+                      {isDateTime ? (
+                        <TruncatedText
+                          text={formattedValue}
+                          className="max-w-full"
+                          rawValue={value}
+                        />
+                      ) : (
+                        formattedValue
+                      )}
                     </div>
+                    <Button
+                      variant={'ghost'}
+                      size={'icon'}
+                      className="w-6 h-6 m-2 rounded invisible group-hover:visible flex-shrink-0"
+                      onClick={handleCopy}
+                    >
+                      <CopyIcon className="w-4 h-4" />
+                    </Button>
                   </div>
                 );
               })}

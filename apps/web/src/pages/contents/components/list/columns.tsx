@@ -44,26 +44,20 @@ export const columns: ColumnDef<Content>[] = [
   {
     accessorKey: 'name',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-    cell: ({ row }) => {
-      return (
-        <div className="flex space-x-2">
-          <span className="max-w-[500px] truncate font-medium">{row.getValue('name')}</span>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <span className="max-w-[500px] font-medium truncate inline-block">
+        {row.getValue('name') ?? ''}
+      </span>
+    ),
   },
   {
     accessorKey: 'createdAt',
     header: ({ column }) => <DataTableColumnHeader column={column} title="createdAt" />,
-    cell: ({ row }) => {
-      return (
-        <div className="flex space-x-2">
-          <span className="max-w-[500px] truncate font-medium">
-            {format(new Date(row.getValue('createdAt')), 'PPpp')}
-          </span>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <span className="max-w-[500px] truncate font-medium">
+        {format(new Date(row.getValue('createdAt')), 'PPpp')}
+      </span>
+    ),
   },
   // {
   //   id: "actions",
