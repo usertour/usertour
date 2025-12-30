@@ -1,4 +1,5 @@
 import AdminSidebarFooter from '@/components/molecules/admin-sidebar-footer';
+import { useTranslation } from 'react-i18next';
 import {
   AdminSidebarBodyItemTemplate,
   AdminSidebarBodyTemplate,
@@ -32,6 +33,7 @@ export const UserListSidebar = () => {
   const [_, setSearchParams] = useSearchParams();
   const { isViewOnly } = useAppContext();
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
   const handleCreate = () => {
     setOpen(true);
   };
@@ -68,7 +70,7 @@ export const UserListSidebar = () => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs bg-slate-700">
-                <p>Create user segment</p>
+                <p>{t('users.segments.tooltips.createSegment')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -79,7 +81,9 @@ export const UserListSidebar = () => {
           <UserSegmentListSkeleton />
         ) : (
           <AdminSidebarBodyTemplate>
-            <AdminSidebarBodyTitleTemplate>Segments</AdminSidebarBodyTitleTemplate>
+            <AdminSidebarBodyTitleTemplate>
+              {t('users.sidebar.segments')}
+            </AdminSidebarBodyTitleTemplate>
             {segmentList?.map((segment, index) => (
               <Fragment key={index}>
                 <AdminSidebarBodyItemTemplate

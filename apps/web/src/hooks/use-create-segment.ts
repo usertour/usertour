@@ -4,10 +4,12 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { CreateSegmentFormValues } from '@/pages/users/types/segment-form-schema';
+import { useTranslation } from 'react-i18next';
 
 export const useCreateSegment = () => {
   const [createMutation] = useMutation(createSegment);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const createSegmentAsync = useCallback(
     async (
@@ -26,14 +28,14 @@ export const useCreateSegment = () => {
         if (!ret.data?.createSegment?.id) {
           toast({
             variant: 'destructive',
-            title: 'Create Segment failed.',
+            title: t('users.toast.segments.createFailed'),
           });
           return false;
         }
 
         toast({
           variant: 'success',
-          title: `Segment "${formValues.name}" has been created successfully`,
+          title: t('users.toast.segments.segmentCreated', { segmentName: formValues.name }),
         });
 
         return true;

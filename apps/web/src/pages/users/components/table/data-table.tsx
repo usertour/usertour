@@ -2,6 +2,7 @@
 
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
+import { useTranslation } from 'react-i18next';
 import {
   ColumnFiltersState,
   SortingState,
@@ -151,6 +152,7 @@ export function DataTable({ segment }: TableProps) {
   const { setQuery, setPagination, pagination, pageCount, contents, loading } =
     useUserListContext();
   const { attributeList } = useAttributeListContext();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Set query when segment changes
@@ -318,9 +320,9 @@ export function DataTable({ segment }: TableProps) {
             <TableRow>
               <TableCell colSpan={tableColumns.length} className="h-24 text-center">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="text-muted-foreground">No users found</div>
+                  <div className="text-muted-foreground">{t('users.empty.noUsersFound')}</div>
                   <div className="text-sm text-muted-foreground">
-                    Try adjusting your filters or create new users.
+                    {t('users.empty.noUsersFoundDescription')}
                   </div>
                 </div>
               </TableCell>

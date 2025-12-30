@@ -4,10 +4,12 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { EditSegmentFormValues } from '@/pages/users/types/segment-form-schema';
+import { useTranslation } from 'react-i18next';
 
 export const useUpdateSegment = () => {
   const [updateMutation] = useMutation(updateSegment);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const updateSegmentAsync = useCallback(
     async (segmentId: string, formValues: EditSegmentFormValues): Promise<boolean> => {
@@ -21,14 +23,14 @@ export const useUpdateSegment = () => {
         if (!response.data?.updateSegment?.id) {
           toast({
             variant: 'destructive',
-            title: 'Update Segment failed.',
+            title: t('users.toast.segments.updateFailed'),
           });
           return false;
         }
 
         toast({
           variant: 'success',
-          title: `Segment has been updated to "${formValues.name}"`,
+          title: t('users.toast.segments.segmentUpdated', { segmentName: formValues.name }),
         });
 
         return true;

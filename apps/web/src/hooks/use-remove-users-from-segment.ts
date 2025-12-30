@@ -3,11 +3,13 @@ import { useDeleteBizUserOnSegmentMutation } from '@usertour-packages/shared-hoo
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const useRemoveUsersFromSegment = () => {
   const { invoke: deleteBizUserOnSegment, loading } = useDeleteBizUserOnSegmentMutation();
   const { refetch } = useUserListContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const removeUsers = useCallback(
     async (userIds: string[], segmentId: string): Promise<boolean> => {
@@ -25,7 +27,7 @@ export const useRemoveUsersFromSegment = () => {
         if (ret.success) {
           toast({
             variant: 'success',
-            title: `${ret.count} users has been successfully removed`,
+            title: t('users.toast.segments.usersRemoved', { count: ret.count }),
           });
           refetch();
           return true;

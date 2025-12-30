@@ -2,6 +2,7 @@
 
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour-packages/button';
 import {
   Dialog,
@@ -41,6 +42,7 @@ export const UserSegmentCreateDialog = (props: CreateDialogProps) => {
   const { onClose, isOpen, environmentId } = props;
   const { createSegmentAsync } = useCreateSegment();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { t } = useTranslation();
 
   const form = useForm<CreateSegmentFormValues>({
     resolver: zodResolver(createSegmentFormSchema),
@@ -68,7 +70,7 @@ export const UserSegmentCreateDialog = (props: CreateDialogProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Create User Segment</DialogTitle>
+              <DialogTitle>{t('users.segments.create')}</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col space-y-4 mt-4 mb-4">
               <FormField
@@ -76,9 +78,13 @@ export const UserSegmentCreateDialog = (props: CreateDialogProps) => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex flex-row">Name</FormLabel>
+                    <FormLabel className="flex flex-row">{t('users.segments.form.name')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter user segment name" className="w-full" {...field} />
+                      <Input
+                        placeholder={t('users.segments.form.namePlaceholder')}
+                        className="w-full"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -90,9 +96,9 @@ export const UserSegmentCreateDialog = (props: CreateDialogProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex flex-row items-center">
-                      Segment Type
+                      {t('users.segments.form.segmentType')}
                       <QuestionTooltip className="ml-1">
-                        Determines which kind of segment can be set.
+                        {t('users.segments.form.segmentTypeTooltip')}
                       </QuestionTooltip>
                     </FormLabel>
                     <FormControl>
@@ -105,13 +111,17 @@ export const UserSegmentCreateDialog = (props: CreateDialogProps) => {
                           <FormControl>
                             <RadioGroupItem value="CONDITION" />
                           </FormControl>
-                          <FormLabel className="font-normal">Filter</FormLabel>
+                          <FormLabel className="font-normal">
+                            {t('users.segments.form.filter')}
+                          </FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-3 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="MANUAL" />
                           </FormControl>
-                          <FormLabel className="font-normal">Manual</FormLabel>
+                          <FormLabel className="font-normal">
+                            {t('users.segments.form.manual')}
+                          </FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
@@ -121,11 +131,11 @@ export const UserSegmentCreateDialog = (props: CreateDialogProps) => {
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onClose()}>
-                Cancel
+                {t('users.actions.cancel')}
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Create Segment
+                {t('users.segments.form.createSegment')}
               </Button>
             </DialogFooter>
           </form>

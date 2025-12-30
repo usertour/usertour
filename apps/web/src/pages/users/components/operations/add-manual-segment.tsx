@@ -1,6 +1,7 @@
 import { useToast } from '@usertour-packages/use-toast';
 import { useMutation } from '@apollo/client';
 import { createBizUserOnSegment } from '@usertour-packages/gql';
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
   const [mutation] = useMutation(createBizUserOnSegment);
   const { segmentList } = useSegmentListContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleAddManualSegment = useCallback(
     async (segment: Segment) => {
@@ -47,7 +49,10 @@ export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
         if (ret.data?.createBizUserOnSegment?.success) {
           toast({
             variant: 'success',
-            title: `${ret.data?.createBizUserOnSegment.count} users added to ${segment.name}`,
+            title: t('users.toast.segments.usersAdded', {
+              count: ret.data?.createBizUserOnSegment.count,
+              segmentName: segment.name,
+            }),
           });
           return;
         }

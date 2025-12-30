@@ -1,6 +1,7 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeftIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
 import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
 import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
@@ -37,22 +38,25 @@ interface UserDetailContentProps {
 // TooltipIcon component to reduce repetitive code
 const TooltipIcon = ({
   icon: Icon,
-  tooltip,
+  tooltipKey,
   className = 'w-4 h-4 text-foreground/60 cursor-help',
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  tooltip: string;
+  tooltipKey: string;
   className?: string;
-}) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Icon className={className} />
-      </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-);
+}) => {
+  const { t } = useTranslation();
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Icon className={className} />
+        </TooltipTrigger>
+        <TooltipContent>{t(tooltipKey)}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
 
 // Loading wrapper component to handle all loading states
 const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
@@ -80,6 +84,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { isViewOnly } = useAppContext();
   const copyWithToast = useCopyWithToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!contents) {
@@ -126,7 +131,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
     return (
       <div className="flex flex-col items-center justify-center py-8">
         <img src="/images/rocket.png" alt="User not found" className="w-16 h-16 mb-4 opacity-50" />
-        <p className="text-muted-foreground text-center">User not found.</p>
+        <p className="text-muted-foreground text-center">{t('users.detail.notFound')}</p>
       </div>
     );
   }
@@ -141,7 +146,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
               navigator(`/env/${environmentId}/users`);
             }}
           />
-          <span>User Detail</span>
+          <span>{t('users.detail.title')}</span>
           <div className="ml-auto">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -157,7 +162,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                   className="text-destructive focus:text-destructive"
                 >
                   <Delete2Icon className="mr-2 h-4 w-4" />
-                  Delete User
+                  {t('users.actions.deleteUser')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -171,13 +176,13 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
             <CardHeader>
               <CardTitle className="flex items-center">
                 <UserIcon width={18} height={18} className="mr-2" />
-                User details
+                {t('users.detail.userDetails')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-2 gap-x-12">
                 <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={IdCardIcon} tooltip="User ID" />
+                  <TooltipIcon icon={IdCardIcon} tooltipKey="users.detail.tooltips.userId" />
                   <span className="flex-1 min-w-0 truncate">{bizUser?.externalId || ''}</span>
                   <Button
                     variant={'ghost'}
@@ -189,7 +194,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                   </Button>
                 </div>
                 <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={EnvelopeClosedIcon} tooltip="Email" />
+                  <TooltipIcon icon={EnvelopeClosedIcon} tooltipKey="users.detail.tooltips.email" />
                   <span className="flex-1 min-w-0 truncate">{bizUser?.data?.email || ''}</span>
                   <Button
                     variant={'ghost'}
@@ -201,9 +206,9 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                   </Button>
                 </div>
                 <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={PersonIcon} tooltip="Name" />
+                  <TooltipIcon icon={PersonIcon} tooltipKey="users.detail.tooltips.name" />
                   <span className="flex-1 min-w-0 truncate">
-                    {bizUser?.data?.name || 'Unnamed user'}
+                    {bizUser?.data?.name || t('users.detail.unnamedUser')}
                   </span>
                   <Button
                     variant={'ghost'}
@@ -215,7 +220,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                   </Button>
                 </div>
                 <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={CalendarIcon} tooltip="Created" />
+                  <TooltipIcon icon={CalendarIcon} tooltipKey="users.detail.tooltips.created" />
                   {bizUser?.createdAt ? (
                     <TruncatedText
                       text={formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}
@@ -241,7 +246,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
             <CardHeader>
               <CardTitle className="flex items-center">
                 <UserProfile width={18} height={18} className="mr-2" />
-                User attributes
+                {t('users.detail.userAttributes')}
               </CardTitle>
             </CardHeader>
             <CardContent>

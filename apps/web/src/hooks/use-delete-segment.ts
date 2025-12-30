@@ -2,10 +2,12 @@ import { useDeleteSegmentMutation } from '@usertour-packages/shared-hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const useDeleteSegment = () => {
   const { invoke: deleteSegment, loading } = useDeleteSegmentMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const deleteSegmentById = useCallback(
     async (segmentId: string, segmentName: string): Promise<boolean> => {
@@ -14,7 +16,7 @@ export const useDeleteSegment = () => {
         if (success) {
           toast({
             variant: 'success',
-            title: `The segment ${segmentName} has been successfully deleted`,
+            title: t('users.toast.segments.segmentDeleted', { segmentName }),
           });
           return true;
         }

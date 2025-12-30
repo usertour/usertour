@@ -1,5 +1,6 @@
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useUpdateSegmentMutation } from '@usertour-packages/shared-hooks';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -24,6 +25,7 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
   const [open, setOpen] = useState(false);
   const [isShowButton, setIsShowButton] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleOnClick = () => {
     setOpen(true);
@@ -48,7 +50,7 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
         setOpen(false);
         toast({
           variant: 'success',
-          title: `The segment ${currentSegment.name} filter has been successfully saved`,
+          title: t('users.toast.filters.saveSuccess', { segmentName: currentSegment.name }),
         });
         refetch();
       }
@@ -81,21 +83,21 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
           variant={'ghost'}
           onClick={handleOnClick}
         >
-          Save filter
+          {t('users.filters.saveFilter')}
         </Button>
       )}
       <AlertDialog defaultOpen={open} open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Save filter</AlertDialogTitle>
+            <AlertDialogTitle>{t('users.filters.saveFilter')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirm saving <span className="font-bold">{currentSegment?.name}</span> filter?
+              {t('users.filters.confirmSave', { segmentName: currentSegment?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={loading}>{t('users.actions.cancel')}</AlertDialogCancel>
             <LoadingButton onClick={handleSubmit} loading={loading}>
-              Yes, save
+              {t('users.filters.yesSave')}
             </LoadingButton>
           </AlertDialogFooter>
         </AlertDialogContent>

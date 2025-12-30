@@ -1,5 +1,6 @@
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { UserListProvider } from '@/contexts/user-list-context';
+import { useTranslation } from 'react-i18next';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { EditIcon } from '@usertour-packages/icons';
@@ -24,6 +25,7 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
   const { currentSegment, refetch } = useSegmentListContext();
   const navigate = useNavigate();
   const { isViewOnly } = useAppContext();
+  const { t } = useTranslation();
   const handleOnClose = () => {
     setOpen(false);
     refetch();
@@ -52,7 +54,7 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs bg-slate-700">
-                    <p>Edit user segment name</p>
+                    <p>{t('users.segments.tooltips.editName')}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

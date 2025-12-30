@@ -11,6 +11,7 @@ import { useDeleteSegment } from '@/hooks/use-delete-segment';
 import { Segment } from '@usertour/types';
 import { useCallback, memo } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
+import { useTranslation } from 'react-i18next';
 
 export const UserSegmentDeleteDialog = memo(
   (props: {
@@ -21,6 +22,7 @@ export const UserSegmentDeleteDialog = memo(
   }) => {
     const { segment, open, onOpenChange, onSubmit } = props;
     const { deleteSegmentById, loading } = useDeleteSegment();
+    const { t } = useTranslation();
 
     const handleConfirm = useCallback(async () => {
       if (!segment) {
@@ -37,13 +39,15 @@ export const UserSegmentDeleteDialog = memo(
       <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete segment</AlertDialogTitle>
-            <AlertDialogDescription>Confirm deleting {segment.name}?</AlertDialogDescription>
+            <AlertDialogTitle>{t('users.dialogs.deleteSegment.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('users.dialogs.deleteSegment.description', { segmentName: segment.name })}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={loading}>{t('users.actions.cancel')}</AlertDialogCancel>
             <LoadingButton onClick={handleConfirm} loading={loading} variant="destructive">
-              Yes, delete segment
+              {t('users.dialogs.deleteSegment.confirmButton')}
             </LoadingButton>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -2,6 +2,7 @@
 
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour-packages/button';
 import {
   Dialog,
@@ -36,6 +37,7 @@ export const UserSegmentEditDialog = (props: EditDialogProps) => {
   const { onClose, isOpen, segment } = props;
   const { updateSegmentAsync } = useUpdateSegment();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { t } = useTranslation();
 
   const form = useForm<EditSegmentFormValues>({
     resolver: zodResolver(editSegmentFormSchema),
@@ -70,7 +72,7 @@ export const UserSegmentEditDialog = (props: EditDialogProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Update User Segment</DialogTitle>
+              <DialogTitle>{t('users.segments.update')}</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col space-y-4 mt-4 mb-4">
               <FormField
@@ -78,9 +80,13 @@ export const UserSegmentEditDialog = (props: EditDialogProps) => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex flex-row">Name</FormLabel>
+                    <FormLabel className="flex flex-row">{t('users.segments.form.name')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter user segment name" className="w-full" {...field} />
+                      <Input
+                        placeholder={t('users.segments.form.namePlaceholder')}
+                        className="w-full"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -89,11 +95,11 @@ export const UserSegmentEditDialog = (props: EditDialogProps) => {
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onClose()}>
-                Cancel
+                {t('users.actions.cancel')}
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Save Segment
+                {t('users.segments.form.createSegment')}
               </Button>
             </DialogFooter>
           </form>

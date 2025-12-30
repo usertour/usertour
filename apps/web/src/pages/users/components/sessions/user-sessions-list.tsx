@@ -1,5 +1,6 @@
 import { useUserSessionsContext } from '@/contexts/user-sessions-context';
 import { BizSession, ContentDataType, Event } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -122,6 +123,7 @@ const ContentColumn = ({
 const LoadMoreButton = () => {
   const { loadMore, totalCount, userSessions, loading } = useUserSessionsContext();
   const hasMore = userSessions.length < totalCount;
+  const { t } = useTranslation();
 
   if (!hasMore) {
     return null;
@@ -140,7 +142,7 @@ const LoadMoreButton = () => {
             <span>Loading...</span>
           </div>
         ) : (
-          'Load More Sessions'
+          t('users.sessions.loadMore')
         )}
       </Button>
     </div>
@@ -151,6 +153,7 @@ export const UserSessionsList = () => {
   const { userSessions, loading, totalCount, refetch } = useUserSessionsContext();
   const { eventList } = useEventListContext();
   const { environment } = useAppContext();
+  const { t } = useTranslation();
 
   const handleRefresh = () => {
     refetch();
@@ -160,7 +163,9 @@ export const UserSessionsList = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>User sessions ({totalCount})</CardTitle>
+          <CardTitle>
+            {t('users.sessions.title')} ({totalCount})
+          </CardTitle>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -192,9 +197,9 @@ export const UserSessionsList = () => {
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-2/5">Content</TableHead>
-                  <TableHead className="w-2/5">Progress</TableHead>
-                  <TableHead className="w-1/5">Last activity</TableHead>
+                  <TableHead className="w-2/5">{t('users.sessions.table.content')}</TableHead>
+                  <TableHead className="w-2/5">{t('users.sessions.table.progress')}</TableHead>
+                  <TableHead className="w-1/5">{t('users.sessions.table.lastActivity')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="[&_tr]:h-14">

@@ -3,11 +3,13 @@ import { useDeleteBizUserMutation } from '@usertour-packages/shared-hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const useDeleteBizUser = () => {
   const { invoke: deleteBizUser, loading } = useDeleteBizUserMutation();
   const { environment } = useAppContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const deleteUsers = useCallback(
     async (userIds: string[]): Promise<boolean> => {
@@ -24,10 +26,13 @@ export const useDeleteBizUser = () => {
         const ret = await deleteBizUser(data);
         if (ret.success) {
           const count = ret.count;
-          const userText = count === 1 ? 'user' : 'users';
+          const userType =
+            count === 1
+              ? t('users.actions.deleteUser').toLowerCase()
+              : t('users.dialogs.deleteUsers.titleMultiple').toLowerCase();
           toast({
             variant: 'success',
-            title: `${count} ${userText} has been successfully deleted`,
+            title: t('users.toast.users.usersDeleted', { count, userType }),
           });
           return true;
         }
