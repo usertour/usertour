@@ -84,8 +84,8 @@ export const UserListSidebar = () => {
             <AdminSidebarBodyTitleTemplate>
               {t('users.sidebar.segments')}
             </AdminSidebarBodyTitleTemplate>
-            {segmentList?.map((segment, index) => (
-              <Fragment key={index}>
+            {segmentList?.map((segment) => (
+              <Fragment key={segment.id}>
                 <AdminSidebarBodyItemTemplate
                   variant={segment.id === currentSegment?.id ? 'secondary' : 'ghost'}
                   className={
