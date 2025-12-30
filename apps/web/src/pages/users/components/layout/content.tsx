@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataTable } from '../table';
 import { UserEditDropdownMenu } from '../ui';
-import { UserSegmentEditForm } from '../forms';
+import { UserSegmentEditForm } from '../dialogs';
 import { UserSegmentFilterSave } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 

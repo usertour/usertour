@@ -7,7 +7,7 @@ import {
 import { Delete2Icon } from '@usertour-packages/icons';
 import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
-import { UserSegmentDeleteForm } from '../forms';
+import { UserSegmentDeleteForm } from '../dialogs';
 
 type UserEditDropdownMenuProps = {
   segment: Segment;

@@ -2,7 +2,7 @@ import { Delete2Icon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizUserDeleteForm } from '../forms';
+import { BizUserDeleteDialog } from '../dialogs';
 import { useUserListContext } from '@/contexts/user-list-context';
 
 interface DeleteUserFromSegmentProps {
@@ -36,11 +36,11 @@ export const DeleteUserFromSegment = (props: DeleteUserFromSegmentProps) => {
         <Delete2Icon className="mr-1" />
         Delete user
       </Button>
-      <BizUserDeleteForm
+      <BizUserDeleteDialog
         open={openDelete}
         bizUserIds={bizUserIds}
         onOpenChange={setOpenDelete}
-        onSubmit={async () => {
+        onSuccess={async () => {
           setOpenDelete(false);
           await refetch();
         }}

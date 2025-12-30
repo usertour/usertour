@@ -13,7 +13,7 @@ import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
 import { ChangeEvent, useCallback, useState } from 'react';
 import { AddUserManualSegment } from '../operations';
-import { UserSegmentCreateForm } from '../forms';
+import { UserSegmentCreateForm } from '../dialogs';
 import { DataTableViewOptions } from './data-table-view-options';
 import { DeleteUserFromSegment } from '../operations';
 import { RemoveFromSegment } from '../operations';

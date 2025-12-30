@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { BizUserDeleteForm } from '../forms';
+import { BizUserDeleteDialog } from '../dialogs';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { useAppContext } from '@/contexts/app-context';
@@ -293,11 +293,11 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
       </div>
 
       {/* Delete Dialog */}
-      <BizUserDeleteForm
+      <BizUserDeleteDialog
         bizUserIds={bizUser ? [bizUser.id] : []}
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        onSubmit={handleDeleteSuccess}
+        onSuccess={handleDeleteSuccess}
       />
     </>
   );

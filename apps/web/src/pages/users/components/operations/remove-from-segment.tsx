@@ -2,7 +2,7 @@ import { CloseIcon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizUserRemoveForm } from '../forms';
+import { BizUserRemoveForm } from '../dialogs';
 import { Segment } from '@usertour/types';
 
 interface RemoveFromSegmentProps {
