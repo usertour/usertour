@@ -64,7 +64,7 @@ export const EnvironmentListContent = () => {
     <Table className="table-fixed">
       <TableHeader>
         <TableRow>
-          <TableHead className="w-72">Environment name</TableHead>
+          <TableHead>Environment name</TableHead>
           <TableHead>
             Usertour.js Token
             <QuestionTooltip className="inline ml-1 mb-1">
