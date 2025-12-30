@@ -90,7 +90,7 @@ export const EnvironmentListAction = (props: EnvironmentListActionProps) => {
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-72">
+        <DropdownMenuContent align="end" className="w-72">
           <DropdownMenuItem onClick={handleOpen}>
             <EditIcon className="w-6" width={12} height={12} />
             Rename environment
