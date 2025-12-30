@@ -68,6 +68,7 @@ const translations = {
         filter: 'Filter',
         manual: 'Manual',
         createSegment: 'Create Segment',
+        updateSegment: 'Update Segment',
       },
       tooltips: {
         editName: 'Edit user segment name',

@@ -67,6 +67,7 @@ const translations = {
         filter: '筛选',
         manual: '手动',
         createSegment: '创建细分',
+        updateSegment: '更新细分',
       },
       tooltips: {
         editName: '编辑用户细分名称',

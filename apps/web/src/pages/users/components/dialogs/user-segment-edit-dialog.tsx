@@ -99,7 +99,7 @@ export const UserSegmentEditDialog = (props: EditDialogProps) => {
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                {t('users.segments.form.createSegment')}
+                {t('users.segments.form.updateSegment')}
               </Button>
             </DialogFooter>
           </form>
