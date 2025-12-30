@@ -49,17 +49,19 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
             {attributes ? (
               attributes?.map((attribute: Attribute) => (
                 <TableRow className="cursor-pointer" key={attribute.id} onClick={() => {}}>
-                  <TableCell className={attribute.description ? 'flex flex-col' : ''}>
-                    <span className="truncate">{attribute.displayName}</span>
-                    {attribute.description && (
-                      <span className="text-xs text-muted-foreground truncate">
-                        {attribute.description}
-                      </span>
+                  <TableCell className="truncate">
+                    {attribute.description ? (
+                      <div className="flex flex-col">
+                        <span className="truncate">{attribute.displayName}</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {attribute.description}
+                        </span>
+                      </div>
+                    ) : (
+                      attribute.displayName
                     )}
                   </TableCell>
-                  <TableCell className="overflow-hidden">
-                    <span className="truncate block">{attribute.codeName}</span>
-                  </TableCell>
+                  <TableCell className="truncate">{attribute.codeName}</TableCell>
                   <TableCell>
                     {attribute.dataType === 1 && 'Number'}
                     {attribute.dataType === 2 && 'String'}
