@@ -1,7 +1,6 @@
 'use client';
 
 import { SpinnerIcon } from '@usertour-packages/icons';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-packages/button';
 import {
@@ -19,78 +18,50 @@ import {
   FormLabel,
   FormMessage,
 } from '@usertour-packages/form';
-import { updateSegment } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { getErrorMessage } from '@usertour/helpers';
 import { Segment } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useUpdateSegment } from '@/hooks/use-update-segment';
+import { editSegmentFormSchema, EditSegmentFormValues } from '../../types/segment-form-schema';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 
-interface EditFormProps {
+interface EditDialogProps {
   isOpen: boolean;
   onClose: () => void;
   segment: Segment | undefined;
 }
 
-const formSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Please user segment name.',
-    })
-    .max(20)
-    .min(2),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-export const UserSegmentEditForm = (props: EditFormProps) => {
+export const UserSegmentEditDialog = (props: EditDialogProps) => {
   const { onClose, isOpen, segment } = props;
-  const [mutation] = useMutation(updateSegment);
+  const { updateSegmentAsync } = useUpdateSegment();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { toast } = useToast();
 
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<EditSegmentFormValues>({
+    resolver: zodResolver(editSegmentFormSchema),
     defaultValues: { name: segment?.name },
     mode: 'onChange',
   });
 
   useEffect(() => {
     form.reset({ name: segment?.name });
-  }, [isOpen]);
+  }, [isOpen, segment?.name]);
 
   const handleOnSubmit = React.useCallback(
-    async (formValues: FormValues) => {
-      setIsLoading(true);
+    async (formValues: EditSegmentFormValues) => {
       if (!segment) {
         return;
       }
-      try {
-        const data = {
-          id: segment.id,
-          name: formValues.name,
-        };
-        const response = await mutation({ variables: { data } });
-        if (!response.data?.updateSegment?.id) {
-          showError('Update Segment failed.');
-        }
-        onClose();
-      } catch (error) {
-        showError(getErrorMessage(error));
-      }
+
+      setIsLoading(true);
+      const success = await updateSegmentAsync(segment.id, formValues);
       setIsLoading(false);
+
+      if (success) {
+        onClose();
+      }
     },
-    [segment],
+    [segment, updateSegmentAsync, onClose],
   );
 
   return (
@@ -132,4 +103,4 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
   );
 };
 
-UserSegmentEditForm.displayName = 'UserSegmentEditForm';
+UserSegmentEditDialog.displayName = 'UserSegmentEditDialog';

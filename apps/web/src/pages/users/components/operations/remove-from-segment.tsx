@@ -2,7 +2,7 @@ import { CloseIcon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizUserRemoveForm } from '../dialogs';
+import { BizUserRemoveDialog } from '../dialogs';
 import { Segment } from '@usertour/types';
 
 interface RemoveFromSegmentProps {
@@ -39,7 +39,7 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
         Remove from this segment
       </Button>
 
-      <BizUserRemoveForm
+      <BizUserRemoveDialog
         open={openDelete}
         bizUserIds={bizUserIds}
         segment={currentSegment}

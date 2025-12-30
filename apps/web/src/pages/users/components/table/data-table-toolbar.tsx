@@ -13,7 +13,7 @@ import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
 import { ChangeEvent, useCallback, useState } from 'react';
 import { AddUserManualSegment } from '../operations';
-import { UserSegmentCreateForm } from '../dialogs';
+import { UserSegmentCreateDialog } from '../dialogs';
 import { DataTableViewOptions } from './data-table-view-options';
 import { DeleteUserFromSegment } from '../operations';
 import { RemoveFromSegment } from '../operations';
@@ -88,7 +88,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
         </div>
         <DataTableViewOptions table={table} />
 
-        <UserSegmentCreateForm isOpen={open} onClose={handleOnClose} environmentId="" />
+        <UserSegmentCreateDialog isOpen={open} onClose={handleOnClose} environmentId="" />
       </div>
       <div className="flex items-center justify-between">
         <Rules

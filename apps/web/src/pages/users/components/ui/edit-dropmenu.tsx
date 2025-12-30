@@ -6,16 +6,16 @@ import {
 } from '@usertour-packages/dropdown-menu';
 import { Delete2Icon } from '@usertour-packages/icons';
 import { Segment } from '@usertour/types';
-import { ReactNode, useState } from 'react';
-import { UserSegmentDeleteForm } from '../dialogs';
+import { ReactNode, useState, memo } from 'react';
+import { UserSegmentDeleteDialog } from '../dialogs';
 
 type UserEditDropdownMenuProps = {
   segment: Segment;
   children: ReactNode;
-  onSubmit: (action: string) => void;
+  onSubmit: () => void;
   disabled?: boolean;
 };
-export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
+export const UserEditDropdownMenu = memo((props: UserEditDropdownMenuProps) => {
   const { segment, children, onSubmit, disabled = false } = props;
   const [openDelete, setOpenDelete] = useState(false);
 
@@ -36,17 +36,17 @@ export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <UserSegmentDeleteForm
+      <UserSegmentDeleteDialog
         segment={segment}
         open={openDelete}
         onOpenChange={setOpenDelete}
         onSubmit={() => {
           setOpenDelete(false);
-          onSubmit('delete');
+          onSubmit();
         }}
       />
     </>
   );
-};
+});
 
 UserEditDropdownMenu.displayName = 'UserEditDropdownMenu';

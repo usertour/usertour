@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataTable } from '../table';
 import { UserEditDropdownMenu } from '../ui';
-import { UserSegmentEditForm } from '../dialogs';
+import { UserSegmentEditDialog } from '../dialogs';
 import { UserSegmentFilterSave } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 
@@ -77,7 +77,7 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
         <Separator className="my-4" />
         {currentSegment && <DataTable segment={currentSegment} key={currentSegment.id} />}
       </div>
-      <UserSegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
+      <UserSegmentEditDialog isOpen={open} onClose={handleOnClose} segment={currentSegment} />
     </>
   );
 }

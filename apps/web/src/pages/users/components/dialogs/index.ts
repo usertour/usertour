@@ -1,6 +1,6 @@
 // Dialogs components barrel exports
-export { UserSegmentCreateForm } from './create-form';
-export { UserSegmentEditForm } from './edit-form';
-export { UserSegmentDeleteForm } from './delete-form';
+export { UserSegmentCreateDialog } from './user-segment-create-dialog';
+export { UserSegmentEditDialog } from './user-segment-edit-dialog';
+export { UserSegmentDeleteDialog } from './segment-delete-dialog';
 export { BizUserDeleteDialog } from './bizuser-delete-dialog';
-export { BizUserRemoveForm } from './bizuser-remove-form';
+export { BizUserRemoveDialog } from './bizuser-remove-dialog';

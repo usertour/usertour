@@ -23,7 +23,7 @@ import {
 import { Segment } from '@usertour/types';
 import { Fragment, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { UserSegmentCreateForm } from '../dialogs';
+import { UserSegmentCreateDialog } from '../dialogs';
 import { useAppContext } from '@/contexts/app-context';
 import { UserSegmentListSkeleton } from './sidebar-skeleton';
 
@@ -109,7 +109,11 @@ export const UserListSidebar = () => {
 
         <AdminSidebarFooter />
       </AdminSidebarContainerTemplate>
-      <UserSegmentCreateForm isOpen={open} onClose={handleOnClose} environmentId={environmentId} />
+      <UserSegmentCreateDialog
+        isOpen={open}
+        onClose={handleOnClose}
+        environmentId={environmentId}
+      />
     </>
   );
 };
