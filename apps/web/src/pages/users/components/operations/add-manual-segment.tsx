@@ -46,7 +46,7 @@ export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
           (segment) =>
             segment.dataType === 'MANUAL' && (
               <DropdownMenuItem
-                key={segment.id}
+                key={`${segment.environmentId}-${segment.id}`}
                 className="cursor-pointer min-w-[180px]"
                 onSelect={() => {
                   handleAddManualSegment(segment);
