@@ -2,7 +2,7 @@ import { CloseIcon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizUserRemoveForm } from './bizuser-remove-form';
+import { BizUserRemoveForm } from './forms';
 import { Segment } from '@usertour/types';
 
 interface RemoveFromSegmentProps {
@@ -20,13 +20,13 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
     const rows = table.getFilteredSelectedRowModel().rows;
     const ids = [];
     for (const row of rows) {
-      ids.push(row.getValue('id'));
+      ids.push(row.original.id);
     }
     if (ids.length > 0) {
       setBizUserIds(ids);
       setOpenDelete(true);
     }
-  }, [table, bizUserIds]);
+  }, [table]);
 
   return (
     <>
@@ -46,7 +46,6 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
         onOpenChange={setOpenDelete}
         onSubmit={() => {
           setOpenDelete(false);
-          // onSubmit("delete");
         }}
       />
     </>

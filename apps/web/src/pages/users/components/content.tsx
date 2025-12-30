@@ -12,9 +12,9 @@ import {
 } from '@usertour-packages/tooltip';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataTable } from './data-table';
+import { DataTable } from './table';
 import { UserEditDropdownMenu } from './edit-dropmenu';
-import { UserSegmentEditForm } from './edit-form';
+import { UserSegmentEditForm } from './forms';
 import { UserSegmentFilterSave } from './filter-save';
 import { useAppContext } from '@/contexts/app-context';
 
@@ -75,9 +75,7 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
           )}
         </div>
         <Separator className="my-4" />
-        {currentSegment && (
-          <DataTable published={false} segment={currentSegment} key={currentSegment.id} />
-        )}
+        {currentSegment && <DataTable segment={currentSegment} key={currentSegment.id} />}
       </div>
       <UserSegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
     </>

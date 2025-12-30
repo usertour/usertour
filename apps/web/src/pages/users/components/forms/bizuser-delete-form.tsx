@@ -18,7 +18,7 @@ interface BizUserDeleteFormProps {
   bizUserIds: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (success: boolean) => Promise<void>;
+  onSubmit: () => Promise<void>;
 }
 
 export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
@@ -44,11 +44,11 @@ export const BizUserDeleteForm = (props: BizUserDeleteFormProps) => {
           variant: 'success',
           title: `${count} ${userText} has been successfully deleted`,
         });
-        await onSubmit(true);
+        await onSubmit();
         return;
       }
     } catch (error) {
-      onSubmit(false);
+      onSubmit();
       toast({
         variant: 'destructive',
         title: getErrorMessage(error),

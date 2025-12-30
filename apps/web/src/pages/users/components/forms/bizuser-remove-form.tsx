@@ -20,7 +20,7 @@ interface BizUserRemoveFormProps {
   segment: Segment;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (success: boolean) => void;
+  onSubmit: () => void;
 }
 
 export const BizUserRemoveForm = (props: BizUserRemoveFormProps) => {
@@ -44,12 +44,12 @@ export const BizUserRemoveForm = (props: BizUserRemoveFormProps) => {
           variant: 'success',
           title: `${ret.count} users has been successfully removed`,
         });
-        onSubmit(true);
+        onSubmit();
         refetch();
         return;
       }
     } catch (error) {
-      onSubmit(false);
+      onSubmit();
       toast({
         variant: 'destructive',
         title: getErrorMessage(error),

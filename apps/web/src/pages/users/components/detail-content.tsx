@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { BizUserDeleteForm } from './bizuser-delete-form';
+import { BizUserDeleteForm } from './forms';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { useAppContext } from '@/contexts/app-context';

@@ -30,7 +30,7 @@ export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
       const userOnSegment = [];
       for (const row of table.getFilteredSelectedRowModel().rows) {
         userOnSegment.push({
-          bizUserId: row.getValue('id'),
+          bizUserId: row.original.id,
           segmentId: segment.id,
           data: {},
         });

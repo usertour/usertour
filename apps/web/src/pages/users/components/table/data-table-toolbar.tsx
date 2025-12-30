@@ -12,11 +12,11 @@ import { Rules } from '@usertour-packages/shared-components';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
 import { ChangeEvent, useCallback, useState } from 'react';
-import { AddUserManualSegment } from './add-manual-segment';
-import { UserSegmentCreateForm } from './create-form';
+import { AddUserManualSegment } from '../add-manual-segment';
+import { UserSegmentCreateForm } from '../forms';
 import { DataTableViewOptions } from './data-table-view-options';
-import { DeleteUserFromSegment } from './delete-user';
-import { RemoveFromSegment } from './remove-from-segment';
+import { DeleteUserFromSegment } from '../delete-user';
+import { RemoveFromSegment } from '../remove-from-segment';
 import { useAppContext } from '@/contexts/app-context';
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
