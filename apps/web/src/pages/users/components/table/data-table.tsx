@@ -245,7 +245,10 @@ export function DataTable({ segment }: TableProps) {
         <TableHeader>
           <TableRow>
             {visibleColumns.map((column, colIndex) => (
-              <TableHead key={`header-skeleton-${column.id || colIndex}`}>
+              <TableHead
+                key={`header-skeleton-${column.id || colIndex}`}
+                className={column.id === 'select' ? 'w-10' : undefined}
+              >
                 <Skeleton className="h-4 w-20" />
               </TableHead>
             ))}
@@ -269,7 +272,10 @@ export function DataTable({ segment }: TableProps) {
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    className={header.id === 'select' ? 'w-10' : undefined}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
