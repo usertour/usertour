@@ -6,7 +6,7 @@ import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
 import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserSessions } from './user-sessions';
+import { UserSessions } from '../sessions';
 import { formatAttributeValue } from '@/utils/common';
 import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
 import {
@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { BizUserDeleteForm } from './forms';
+import { BizUserDeleteForm } from '../forms';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { useAppContext } from '@/contexts/app-context';

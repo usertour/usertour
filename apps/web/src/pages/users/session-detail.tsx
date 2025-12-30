@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { SessionDetailContent } from './components/session-detail-content';
+import { SessionDetailContent } from './components/sessions';
 import { useParams } from 'react-router-dom';
 import { EventListProvider } from '@/contexts/event-list-context';
 

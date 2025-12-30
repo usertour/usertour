@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { UserListProvider } from '@/contexts/user-list-context';
 import { useParams } from 'react-router-dom';
-import { UserDetailContent } from './components/detail-content';
+import { UserDetailContent } from './components/layout';
 import { EventListProvider } from '@/contexts/event-list-context';
 
 export const UserDetail = () => {

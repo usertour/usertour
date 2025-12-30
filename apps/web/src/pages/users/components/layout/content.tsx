@@ -12,10 +12,10 @@ import {
 } from '@usertour-packages/tooltip';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataTable } from './table';
-import { UserEditDropdownMenu } from './edit-dropmenu';
-import { UserSegmentEditForm } from './forms';
-import { UserSegmentFilterSave } from './filter-save';
+import { DataTable } from '../table';
+import { UserEditDropdownMenu } from '../ui';
+import { UserSegmentEditForm } from '../forms';
+import { UserSegmentFilterSave } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 
 // Inner component that uses the context

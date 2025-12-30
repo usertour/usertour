@@ -23,7 +23,7 @@ import {
 import { Segment } from '@usertour/types';
 import { Fragment, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { UserSegmentCreateForm } from './forms';
+import { UserSegmentCreateForm } from '../forms';
 import { useAppContext } from '@/contexts/app-context';
 import { UserSegmentListSkeleton } from './sidebar-skeleton';
 

@@ -2,7 +2,7 @@ import { Delete2Icon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizUserDeleteForm } from './forms';
+import { BizUserDeleteForm } from '../forms';
 import { useUserListContext } from '@/contexts/user-list-context';
 
 interface DeleteUserFromSegmentProps {
