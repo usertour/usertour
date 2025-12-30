@@ -1,7 +1,3 @@
-import { useToast } from '@usertour-packages/use-toast';
-import { useMutation } from '@apollo/client';
-import { createBizUserOnSegment } from '@usertour-packages/gql';
-import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +10,8 @@ import { Table } from '@tanstack/react-table';
 import { useCallback } from 'react';
 import { Segment } from '@usertour/types';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { getErrorMessage } from '@usertour/helpers';
+import { useTableSelection } from '@/hooks/use-table-selection';
+import { useAddUsersToSegment } from '@/hooks/use-add-users-to-segment';
 
 interface AddUserManualSegmentProps {
   table: Table<any>;
@@ -22,48 +19,18 @@ interface AddUserManualSegmentProps {
 
 export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
   const { table } = props;
-  const [mutation] = useMutation(createBizUserOnSegment);
+  const { collectSelectedIds, hasSelection } = useTableSelection(table);
+  const { addUsers } = useAddUsersToSegment();
   const { segmentList } = useSegmentListContext();
-  const { toast } = useToast();
-  const { t } = useTranslation();
 
   const handleAddManualSegment = useCallback(
     async (segment: Segment) => {
-      const userOnSegment = [];
-      for (const row of table.getFilteredSelectedRowModel().rows) {
-        userOnSegment.push({
-          bizUserId: row.original.id,
-          segmentId: segment.id,
-          data: {},
-        });
-      }
-      if (userOnSegment.length === 0) {
-        return;
-      }
+      if (!hasSelection()) return;
 
-      const data = {
-        userOnSegment,
-      };
-      try {
-        const ret = await mutation({ variables: { data } });
-        if (ret.data?.createBizUserOnSegment?.success) {
-          toast({
-            variant: 'success',
-            title: t('users.toast.segments.usersAdded', {
-              count: ret.data?.createBizUserOnSegment.count,
-              segmentName: segment.name,
-            }),
-          });
-          return;
-        }
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-      }
+      const selectedIds = collectSelectedIds();
+      await addUsers(selectedIds, segment.id, segment.name);
     },
-    [table],
+    [collectSelectedIds, hasSelection, addUsers],
   );
 
   return (

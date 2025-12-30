@@ -1,0 +1,26 @@
+import { useCallback } from 'react';
+import { Table } from '@tanstack/react-table';
+
+/**
+ * Generic hook for table selection operations
+ * Provides utilities for working with selected rows in tables
+ */
+export const useTableSelection = <T>(table: Table<T>) => {
+  const collectSelectedIds = useCallback(() => {
+    return table.getFilteredSelectedRowModel().rows.map((row) => (row.original as any).id);
+  }, [table]);
+
+  const hasSelection = useCallback(() => {
+    return collectSelectedIds().length > 0;
+  }, [collectSelectedIds]);
+
+  const getSelectedCount = useCallback(() => {
+    return collectSelectedIds().length;
+  }, [collectSelectedIds]);
+
+  return {
+    collectSelectedIds,
+    hasSelection,
+    getSelectedCount,
+  };
+};

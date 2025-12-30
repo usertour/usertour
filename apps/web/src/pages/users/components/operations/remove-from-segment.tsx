@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { BizUserRemoveDialog } from '../dialogs';
 import { Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
+import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface RemoveFromSegmentProps {
   table: Table<any>;
@@ -13,22 +14,19 @@ interface RemoveFromSegmentProps {
 
 export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
   const { table, currentSegment } = props;
+  const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizUserIds, setBizUserIds] = useState<string[]>([]);
   const { t } = useTranslation();
 
   const handleOnClick = useCallback(() => {
-    const rows = table.getFilteredSelectedRowModel().rows;
-    const ids = [];
-    for (const row of rows) {
-      ids.push(row.original.id);
-    }
-    if (ids.length > 0) {
+    if (hasSelection()) {
+      const ids = collectSelectedIds();
       setBizUserIds(ids);
       setOpenDelete(true);
     }
-  }, [table]);
+  }, [collectSelectedIds, hasSelection]);
 
   return (
     <>

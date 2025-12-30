@@ -5,6 +5,7 @@ import { useCallback, useState, memo } from 'react';
 import { BizUserDeleteDialog } from '../dialogs';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { useTranslation } from 'react-i18next';
+import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface DeleteUserFromSegmentProps {
   table: Table<any>;
@@ -12,22 +13,21 @@ interface DeleteUserFromSegmentProps {
 
 export const DeleteUserFromSegment = memo((props: DeleteUserFromSegmentProps) => {
   const { table } = props;
+  const { collectSelectedIds, hasSelection } = useTableSelection(table);
+
   const [openDelete, setOpenDelete] = useState(false);
   const [bizUserIds, setBizUserIds] = useState<string[]>([]);
   const { refetch } = useUserListContext();
   const { t } = useTranslation();
 
   const handleOnClick = useCallback(() => {
-    const rows = table.getFilteredSelectedRowModel().rows;
-    const ids = [];
-    for (const row of rows) {
-      ids.push(row.original.id);
-    }
-    if (ids.length > 0) {
+    if (hasSelection()) {
+      const ids = collectSelectedIds();
       setBizUserIds(ids);
       setOpenDelete(true);
     }
-  }, [table]);
+  }, [collectSelectedIds, hasSelection]);
+
   return (
     <>
       <Button
@@ -44,7 +44,7 @@ export const DeleteUserFromSegment = memo((props: DeleteUserFromSegmentProps) =>
         onOpenChange={setOpenDelete}
         onSuccess={async () => {
           setOpenDelete(false);
-          await refetch();
+          await refetch(); // Additional data refresh logic
         }}
       />
     </>
