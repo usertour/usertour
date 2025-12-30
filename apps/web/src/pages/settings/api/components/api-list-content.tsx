@@ -11,6 +11,7 @@ import { AccessToken } from '@usertour-packages/shared-hooks';
 import { ApiListAction } from './api-list-action';
 import { useAppContext } from '@/contexts/app-context';
 import { ListSkeleton } from '@/components/molecules/skeleton';
+import { format } from 'date-fns';
 
 export const ApiListContent = () => {
   const { accessTokens, loading, isRefetching } = useApiContext();
@@ -21,19 +22,21 @@ export const ApiListContent = () => {
   }
 
   return (
-    <Table>
+    <Table className="table-fixed">
       <TableHeader>
         <TableRow>
-          <TableHead className="w-1/2">Name</TableHead>
-          <TableHead className="w-1/2">Key</TableHead>
-          <TableHead className="w-[80px]" />
+          <TableHead>Name</TableHead>
+          <TableHead>Key</TableHead>
+          <TableHead className="w-60">CreatedAt</TableHead>
+          <TableHead className="w-24" />
         </TableRow>
       </TableHeader>
       <TableBody>
         {accessTokens?.map((token: AccessToken) => (
           <TableRow key={token.id}>
-            <TableCell>{token.name}</TableCell>
-            <TableCell>{token.accessToken}</TableCell>
+            <TableCell className="truncate">{token.name}</TableCell>
+            <TableCell className="truncate">{token.accessToken}</TableCell>
+            <TableCell>{format(new Date(token.createdAt), 'PPpp')}</TableCell>
             <TableCell>
               <ApiListAction token={token} environmentId={environment.id} />
             </TableCell>
