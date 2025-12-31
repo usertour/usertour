@@ -9,20 +9,6 @@ import { DataTableColumnHeader } from '@/components/molecules/segment/table';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { Link } from 'react-router-dom';
 
-// Table-related style constants for consistent UI
-export enum TableStyles {
-  // Cell styles
-  CELL_CONSTRAINED = 'min-w-24 max-w-72 truncate',
-
-  // Header styles
-  HEADER_CONSTRAINED = 'min-w-24 max-w-72 truncate',
-
-  // Config values
-  SKELETON_ROWS = 5,
-}
-
-// Style constants are exported as enums above
-
 export const columns: ColumnDef<BizUser>[] = [
   {
     id: 'select',
@@ -52,12 +38,13 @@ export const columns: ColumnDef<BizUser>[] = [
       const email = row.original.data?.email || '';
       const name = row.original.data?.name || '';
       const companies = row.original.bizUsersOnCompany || [];
+      const externalId = row.original.externalId || '';
 
       return (
         <div className="flex items-center gap-2">
           <UserAvatar email={email} name={name} size="sm" />
           <div className="flex flex-col gap-0.5 w-72">
-            <span className="leading-none truncate">{email || row.original.externalId}</span>
+            <span className="leading-none truncate">{email || externalId}</span>
             {companies.length > 0 && (
               <div className="flex flex-wrap gap-0.5">
                 {companies.slice(0, 3).map((membership) => (

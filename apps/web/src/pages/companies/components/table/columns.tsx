@@ -2,8 +2,6 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@usertour-packages/checkbox';
-
-import { format } from 'date-fns';
 import { BizCompany } from '@usertour/types';
 import { DataTableColumnHeader } from '@/components/molecules/segment/table';
 import { UserAvatar } from '@/components/molecules/user-avatar';
@@ -31,50 +29,21 @@ export const columns: ColumnDef<BizCompany>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'id',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Id" />,
-    cell: ({ row }) => <div className="px-2">{row.getValue('id')}</div>,
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
     accessorKey: 'externalId',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Company" />,
     cell: ({ row }) => {
       const email = row.original.data?.email || '';
       const name = row.original.data?.name || '';
+      const externalId = row.original.externalId || '';
 
       return (
         <div className="flex items-center gap-2">
           <UserAvatar email={email} name={name} size="sm" />
-          <span>{row.getValue('externalId')}</span>
+          <span className="leading-none w-72 truncate">{externalId}</span>
         </div>
       );
     },
     enableSorting: false,
     enableHiding: false,
-  },
-];
-
-export const columnsSystem: ColumnDef<BizCompany>[] = [
-  {
-    accessorKey: 'environmentId',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="environmentId" />,
-    cell: ({ row }) => <div className="w-[80px]">{row.getValue('environmentId')}</div>,
-    enableSorting: false,
-    enableHiding: true,
-  },
-  {
-    accessorKey: 'createdAt',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="createdAt" />,
-    cell: ({ row }) => {
-      return (
-        <div className="flex space-x-2">
-          <span className="max-w-[500px] truncate font-medium">
-            {format(new Date(row.getValue('createdAt')), 'PPpp')}
-          </span>
-        </div>
-      );
-    },
   },
 ];
