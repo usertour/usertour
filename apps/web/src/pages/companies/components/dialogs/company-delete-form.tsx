@@ -54,7 +54,7 @@ export const BizCompanyDeleteForm = (props: BizCompanyDeleteFormProps) => {
       });
       onSubmit(false);
     }
-  }, [bizCompanyIds, environment?.id, mutation, toast, onSubmit, onOpenChange]);
+  }, [bizCompanyIds, environment?.id, mutation, toast, onSubmit]);
 
   const companyText = bizCompanyIds.length === 1 ? 'company' : 'companies';
 

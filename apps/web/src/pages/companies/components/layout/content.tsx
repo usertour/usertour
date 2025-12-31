@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataTable } from '../table';
 import { CompanyEditDropdownMenu } from '../ui';
@@ -85,7 +85,7 @@ function CompanyListContentInner({ environmentId }: { environmentId: string | un
   );
 }
 
-export function CompanyListContent(props: {
+export const CompanyListContent = memo(function CompanyListContent(props: {
   environmentId: string | undefined;
 }) {
   const { environmentId } = props;
@@ -99,6 +99,8 @@ export function CompanyListContent(props: {
       <CompanyListContentInner environmentId={environmentId} />
     </CompanyListProvider>
   );
-}
+});
 
 CompanyListContent.displayName = 'CompanyListContent';
+
+CompanyListContentInner.displayName = 'CompanyListContentInner';

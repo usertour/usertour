@@ -21,9 +21,9 @@ export const EmptyPlaceholder = ({
           <path d="M17 18.5a9 9 0 1 0-10 0" />
         </svg>
 
-        <h3 className="mt-4 text-lg font-semibold">No flows added</h3>
+        <h3 className="mt-4 text-lg font-semibold">No companies found</h3>
         <p className="mb-4 mt-2 text-sm text-muted-foreground">
-          You have not added any flows. Add one below.
+          You have not added any companies yet.
         </p>
         {children}
       </div>

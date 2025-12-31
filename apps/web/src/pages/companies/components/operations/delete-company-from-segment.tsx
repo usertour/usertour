@@ -27,7 +27,7 @@ export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) =
       setBizCompanyIds(ids);
       setOpenDelete(true);
     }
-  }, [table, bizCompanyIds]);
+  }, [table]);
 
   const handleSubmit = useCallback(
     async (success: boolean) => {

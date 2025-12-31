@@ -27,6 +27,7 @@ import {
 import { Skeleton } from '@usertour-packages/skeleton';
 import { BizCompany, Segment } from '@usertour/types';
 import * as React from 'react';
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { columns, columnsSystem } from './columns';
 import { DataTablePagination } from './data-table-pagination';
@@ -39,7 +40,7 @@ interface TableProps {
   segment: Segment;
 }
 
-export function DataTable({ segment }: TableProps) {
+export const DataTable = memo(function DataTable({ segment }: TableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -180,4 +181,6 @@ export function DataTable({ segment }: TableProps) {
       <DataTablePagination table={table} />
     </div>
   );
-}
+});
+
+DataTable.displayName = 'DataTable';
