@@ -4,7 +4,7 @@ import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { Separator } from '@usertour-packages/separator';
 import { useState } from 'react';
-import { EmptyPlaceholder } from '../shared/empty-placeholder';
+import { EmptyPlaceholder } from '@/components/molecules/segment/ui';
 import { LauncherCreateForm } from '../shared/launcher-create-form';
 import { DataTable } from './data-table';
 import { useAppContext } from '@/contexts/app-context';
