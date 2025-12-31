@@ -28,9 +28,9 @@ import { Skeleton } from '@usertour-packages/skeleton';
 import { BizCompany, Segment } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { columns, columnsSystem } from '../components/columns';
-import { DataTablePagination } from '../components/data-table-pagination';
-import { DataTableToolbar } from '../components/data-table-toolbar';
+import { columns, columnsSystem } from './columns';
+import { DataTablePagination } from './data-table-pagination';
+import { DataTableToolbar } from './data-table-toolbar';
 import { DataTableColumnHeader } from './data-table-column-header';
 import { formatAttributeValue } from '@/utils/common';
 

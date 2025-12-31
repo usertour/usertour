@@ -12,11 +12,11 @@ import { Rules } from '@usertour-packages/shared-components';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
 import { ChangeEvent, useCallback, useState } from 'react';
-import { AddCompanyManualSegment } from './add-manual-segment';
-import { CompanySegmentCreateForm } from './create-form';
+import { AddCompanyManualSegment } from '../operations';
+import { CompanySegmentCreateForm } from '../dialogs';
 import { DataTableViewOptions } from './data-table-view-options';
-import { DeleteCompanyFromSegment } from './delete-company';
-import { RemoveFromSegment } from './remove-from-segment';
+import { DeleteCompanyFromSegment } from '../operations';
+import { RemoveFromSegment } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 
 interface DataTableToolbarProps<TData> {

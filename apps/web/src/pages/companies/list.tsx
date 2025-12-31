@@ -1,8 +1,8 @@
 import { useAppContext } from '@/contexts/app-context';
 import { SegmentListProvider } from '@/contexts/segment-list-context';
-import { CompanyListSidebar } from '@/pages/companies/components/sidebar';
+import { CompanyListSidebar } from './components/layout';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { CompanyListContent } from './components/content';
+import { CompanyListContent } from './components/layout';
 
 export const CompanyList = () => {
   const { environment } = useAppContext();

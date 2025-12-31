@@ -47,7 +47,7 @@ export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => 
         if (ret.data?.createBizCompanyOnSegment?.success) {
           toast({
             variant: 'success',
-            title: `${ret.data?.createBizCompanyOnSegment.count} users added to ${segment.name}`,
+            title: `${ret.data?.createBizCompanyOnSegment.count} companies added to ${segment.name}`,
           });
         }
       } catch (error) {
@@ -73,6 +73,7 @@ export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => 
           (segment) =>
             segment.dataType === 'MANUAL' && (
               <DropdownMenuItem
+                key={segment.id}
                 className="cursor-pointer min-w-[180px]"
                 onSelect={() => {
                   handleAddManualSegment(segment);

@@ -17,7 +17,7 @@ import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useState } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 
-export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
+export const CompanySegmentFilterSave = (props: { currentSegment?: Segment }) => {
   const { currentSegment } = props;
   const { invoke: updateSegment, loading } = useUpdateSegmentMutation();
   const { refetch, currentConditions, isRefetching } = useSegmentListContext();
@@ -107,4 +107,4 @@ export const UserSegmentFilterSave = (props: { currentSegment?: Segment }) => {
   );
 };
 
-UserSegmentFilterSave.displayName = 'UserSegmentFilterSave';
+CompanySegmentFilterSave.displayName = 'CompanySegmentFilterSave';

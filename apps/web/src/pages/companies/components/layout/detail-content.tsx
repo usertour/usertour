@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { ContentLoading } from '@/components/molecules/content-loading';
-import { BizCompanyDeleteForm } from './company-delete-form';
+import { BizCompanyDeleteForm } from '../dialogs';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour/helpers';

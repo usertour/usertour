@@ -10,12 +10,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataTable } from './data-table';
-import { UserEditDropdownMenu } from './edit-dropmenu';
-import { UserSegmentEditForm } from './edit-form';
-import { UserSegmentFilterSave } from './filter-save';
+import { DataTable } from '../table';
+import { CompanyEditDropdownMenu } from '../ui';
+import { CompanySegmentEditForm } from '../dialogs';
+import { CompanySegmentFilterSave } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 
 // Inner component that uses the context
@@ -25,10 +25,10 @@ function CompanyListContentInner({ environmentId }: { environmentId: string | un
   const navigate = useNavigate();
   const { isViewOnly } = useAppContext();
 
-  const handleOnClose = () => {
+  const handleOnClose = useCallback(() => {
     setOpen(false);
     refetch();
-  };
+  }, [refetch]);
 
   return (
     <>
@@ -58,10 +58,10 @@ function CompanyListContentInner({ environmentId }: { environmentId: string | un
                 </Tooltip>
               </TooltipProvider>
             )}
-            {<UserSegmentFilterSave currentSegment={currentSegment} />}
+            {<CompanySegmentFilterSave currentSegment={currentSegment} />}
           </div>
           {currentSegment && currentSegment.dataType !== 'ALL' && (
-            <UserEditDropdownMenu
+            <CompanyEditDropdownMenu
               segment={currentSegment}
               disabled={isViewOnly}
               onSubmit={async () => {
@@ -72,7 +72,7 @@ function CompanyListContentInner({ environmentId }: { environmentId: string | un
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <DotsVerticalIcon className="h-4 w-4 " />
               </Button>
-            </UserEditDropdownMenu>
+            </CompanyEditDropdownMenu>
           )}
         </div>
         <Separator className="my-4" />
@@ -80,7 +80,7 @@ function CompanyListContentInner({ environmentId }: { environmentId: string | un
           <DataTable published={false} segment={currentSegment} key={currentSegment.id} />
         )}
       </div>
-      <UserSegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
+      <CompanySegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
     </>
   );
 }
@@ -89,6 +89,10 @@ export function CompanyListContent(props: {
   environmentId: string | undefined;
 }) {
   const { environmentId } = props;
+
+  if (!environmentId) {
+    return null;
+  }
 
   return (
     <CompanyListProvider environmentId={environmentId}>

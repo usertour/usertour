@@ -2,7 +2,7 @@ import { CloseIcon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizCompanyRemoveForm } from './company-remove-form';
+import { BizCompanyRemoveForm } from '../dialogs';
 import { Segment } from '@usertour/types';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 

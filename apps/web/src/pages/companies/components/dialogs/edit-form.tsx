@@ -38,7 +38,7 @@ interface EditFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: 'Please company segment name.',
+      required_error: 'Please enter company segment name.',
     })
     .max(20)
     .min(2),
@@ -46,7 +46,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const UserSegmentEditForm = (props: EditFormProps) => {
+export const CompanySegmentEditForm = (props: EditFormProps) => {
   const { onClose, isOpen, segment } = props;
   const [mutation] = useMutation(updateSegment);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -86,7 +86,7 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
         setIsLoading(false);
       }
     },
-    [segment],
+    [segment, mutation, onClose, toast],
   );
 
   return (
@@ -132,4 +132,4 @@ export const UserSegmentEditForm = (props: EditFormProps) => {
   );
 };
 
-UserSegmentEditForm.displayName = 'UserSegmentEditForm';
+CompanySegmentEditForm.displayName = 'CompanySegmentEditForm';

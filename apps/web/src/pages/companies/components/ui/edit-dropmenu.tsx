@@ -7,15 +7,15 @@ import {
 import { Delete2Icon } from '@usertour-packages/icons';
 import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
-import { CompanySegmentDeleteForm } from './delete-form';
+import { CompanySegmentDeleteForm } from '../dialogs';
 
-type UserEditDropdownMenuProps = {
+type CompanyEditDropdownMenuProps = {
   segment: Segment;
   children: ReactNode;
   onSubmit: (action: string) => void;
   disabled?: boolean;
 };
-export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
+export const CompanyEditDropdownMenu = (props: CompanyEditDropdownMenuProps) => {
   const { segment, children, onSubmit, disabled = false } = props;
   const [openDelete, setOpenDelete] = useState(false);
 
@@ -48,4 +48,4 @@ export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
   );
 };
 
-UserEditDropdownMenu.displayName = 'UserEditDropdownMenu';
+CompanyEditDropdownMenu.displayName = 'CompanyEditDropdownMenu';
