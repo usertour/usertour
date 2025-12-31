@@ -1,121 +1,36 @@
-import AdminSidebarFooter from '@/components/molecules/admin-sidebar-footer';
 import { useTranslation } from 'react-i18next';
-import {
-  AdminSidebarBodyItemTemplate,
-  AdminSidebarBodyTemplate,
-  AdminSidebarBodyTitleTemplate,
-  AdminSidebarContainerTemplate,
-  AdminSidebarHeaderTemplate,
-} from '@/components/templates/admin-sidebar-template';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { Button } from '@usertour-packages/button';
-import {
-  Archive2LineIcon,
-  Filter2LineIcon,
-  GroupLineIcon,
-  PLUSIcon,
-} from '@usertour-packages/icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
-import { Segment } from '@usertour/types';
-import { Fragment, useCallback, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { SegmentSidebar } from '@/components/molecules/segment/layout';
 import { UserSegmentCreateDialog } from '../dialogs';
 import { useAppContext } from '@/contexts/app-context';
-import { UserSegmentListSkeleton } from './sidebar-skeleton';
+import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { useState } from 'react';
 
-export const UserListSidebar = () => {
-  const { segmentList, refetch, environmentId, currentSegment, loading } = useSegmentListContext();
-  const [_, setSearchParams] = useSearchParams();
-  const { isViewOnly } = useAppContext();
-  const [open, setOpen] = useState(false);
+interface UserListSidebarProps {
+  environmentId?: string;
+}
+
+export const UserListSidebar = ({ environmentId }: UserListSidebarProps) => {
   const { t } = useTranslation();
-  const handleCreate = () => {
-    setOpen(true);
-  };
-  const handleOnClose = () => {
-    setOpen(false);
+  const { isViewOnly } = useAppContext();
+  const { refetch } = useSegmentListContext();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
     refetch();
   };
 
-  const handleOnClick = useCallback(
-    (segment: Segment) => {
-      if (currentSegment && segment.id === currentSegment.id) {
-        return;
-      }
-      setSearchParams({ segment_id: segment.id });
-    },
-    [currentSegment?.id],
-  );
-
   return (
     <>
-      <AdminSidebarContainerTemplate>
-        <AdminSidebarHeaderTemplate>
-          <h2 className="text-2xl font-semibold ">Users</h2>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={'ghost'}
-                  className="p-1 h-auto text-primary"
-                  onClick={handleCreate}
-                  disabled={isViewOnly}
-                >
-                  <PLUSIcon width={16} height={16} /> New
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs bg-slate-700">
-                <p>{t('users.segments.tooltips.createSegment')}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </AdminSidebarHeaderTemplate>
-
-        {/* Show skeleton for segment list when loading, otherwise show actual segments */}
-        {loading ? (
-          <UserSegmentListSkeleton />
-        ) : (
-          <AdminSidebarBodyTemplate>
-            <AdminSidebarBodyTitleTemplate>
-              {t('users.sidebar.segments')}
-            </AdminSidebarBodyTitleTemplate>
-            {segmentList?.map((segment) => (
-              <Fragment key={`${segment.environmentId}-${segment.id}`}>
-                <AdminSidebarBodyItemTemplate
-                  variant={segment.id === currentSegment?.id ? 'secondary' : 'ghost'}
-                  className={
-                    segment.id === currentSegment?.id ? 'bg-gray-200/40 dark:bg-secondary/60  ' : ''
-                  }
-                  onClick={() => {
-                    handleOnClick(segment);
-                  }}
-                >
-                  {segment.dataType === 'CONDITION' && (
-                    <Filter2LineIcon width={16} height={16} className="mr-1" />
-                  )}
-                  {segment.dataType === 'ALL' && (
-                    <GroupLineIcon width={16} height={16} className="mr-1" />
-                  )}
-                  {segment.dataType === 'MANUAL' && (
-                    <Archive2LineIcon width={16} height={16} className="mr-1" />
-                  )}
-                  {segment.name}
-                </AdminSidebarBodyItemTemplate>
-              </Fragment>
-            ))}
-          </AdminSidebarBodyTemplate>
-        )}
-
-        <AdminSidebarFooter />
-      </AdminSidebarContainerTemplate>
+      <SegmentSidebar
+        title="Users"
+        onCreate={() => setDialogOpen(true)}
+        createTooltip={t('users.segments.tooltips.createSegment')}
+        disabled={isViewOnly}
+      />
       <UserSegmentCreateDialog
-        isOpen={open}
-        onClose={handleOnClose}
+        isOpen={dialogOpen}
+        onClose={handleDialogClose}
         environmentId={environmentId}
       />
     </>

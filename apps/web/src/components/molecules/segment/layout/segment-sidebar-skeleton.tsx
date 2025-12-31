@@ -6,7 +6,7 @@ import {
 } from '@/components/templates/admin-sidebar-template';
 
 // Skeleton for individual segment item
-export const CompanySegmentItemSkeleton = () => {
+export const SegmentItemSkeleton = () => {
   return (
     <AdminSidebarBodyItemTemplate variant="ghost" className="cursor-default">
       <Skeleton className="h-4 w-4 mr-1" /> {/* Icon skeleton */}
@@ -16,12 +16,12 @@ export const CompanySegmentItemSkeleton = () => {
 };
 
 // Skeleton for the segment list section only
-export const CompanySegmentListSkeleton = () => {
+export const SegmentSidebarSkeleton = () => {
   return (
     <AdminSidebarBodyTemplate>
       <AdminSidebarBodyTitleTemplate>Segments</AdminSidebarBodyTitleTemplate>
       {Array.from({ length: 5 }, (_, index) => (
-        <CompanySegmentItemSkeleton key={index} />
+        <SegmentItemSkeleton key={index} />
       ))}
     </AdminSidebarBodyTemplate>
   );

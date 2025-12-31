@@ -9,7 +9,7 @@ export const CompanyList = () => {
 
   return (
     <SegmentListProvider environmentId={environment?.id} bizType={['COMPANY']}>
-      <CompanyListSidebar />
+      <CompanyListSidebar environmentId={environment?.id} />
 
       <ScrollArea className="h-full w-full ">
         <CompanyListContent environmentId={environment?.id} />

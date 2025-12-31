@@ -8,7 +8,7 @@ export const UserList = () => {
 
   return (
     <SegmentListProvider environmentId={environment?.id} bizType={['USER']}>
-      <UserListSidebar />
+      <UserListSidebar environmentId={environment?.id} />
       <ScrollArea className="h-full w-full ">
         <UserListContent environmentId={environment?.id} />
       </ScrollArea>

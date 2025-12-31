@@ -1,118 +1,36 @@
-import AdminSidebarFooter from '@/components/molecules/admin-sidebar-footer';
-import {
-  AdminSidebarBodyItemTemplate,
-  AdminSidebarBodyTemplate,
-  AdminSidebarBodyTitleTemplate,
-  AdminSidebarContainerTemplate,
-  AdminSidebarHeaderTemplate,
-} from '@/components/templates/admin-sidebar-template';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { Button } from '@usertour-packages/button';
-import {
-  Archive2LineIcon,
-  Filter2LineIcon,
-  Group2LineIcon,
-  PLUSIcon,
-} from '@usertour-packages/icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
-import { Segment } from '@usertour/types';
-import { useCallback, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Group2LineIcon } from '@usertour-packages/icons';
+import { SegmentSidebar } from '@/components/molecules/segment/layout';
 import { CompanySegmentCreateForm } from '../dialogs';
 import { useAppContext } from '@/contexts/app-context';
-import { CompanySegmentListSkeleton } from './sidebar-skeleton';
+import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { useState } from 'react';
 
-export function CompanyListSidebar() {
-  const { segmentList, refetch, environmentId, currentSegment, loading } = useSegmentListContext();
-  const [_, setSearchParams] = useSearchParams();
+interface CompanyListSidebarProps {
+  environmentId?: string;
+}
+
+export function CompanyListSidebar({ environmentId }: CompanyListSidebarProps) {
   const { isViewOnly } = useAppContext();
+  const { refetch } = useSegmentListContext();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  const [open, setOpen] = useState(false);
-  const handleCreate = () => {
-    setOpen(true);
-  };
-  const handleOnClose = () => {
-    setOpen(false);
+  const handleDialogClose = () => {
+    setDialogOpen(false);
     refetch();
   };
 
-  const handleOnClick = useCallback(
-    (segment: Segment) => {
-      if (currentSegment?.id === segment.id) {
-        return;
-      }
-      setSearchParams({ segment_id: segment.id });
-    },
-    [currentSegment?.id],
-  );
-
   return (
     <>
-      <AdminSidebarContainerTemplate>
-        <AdminSidebarHeaderTemplate>
-          <h2 className="text-2xl font-semibold ">Companies</h2>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={'ghost'}
-                  className="p-1 h-auto text-primary"
-                  onClick={handleCreate}
-                  disabled={isViewOnly}
-                >
-                  <PLUSIcon width={16} height={16} /> New
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs bg-slate-700">
-                <p>Create company segment</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </AdminSidebarHeaderTemplate>
-
-        {/* Show skeleton for segment list when loading, otherwise show actual segments */}
-        {loading ? (
-          <CompanySegmentListSkeleton />
-        ) : (
-          <AdminSidebarBodyTemplate>
-            <AdminSidebarBodyTitleTemplate>Segments</AdminSidebarBodyTitleTemplate>
-
-            {segmentList?.map((segment, index) => (
-              <AdminSidebarBodyItemTemplate
-                key={index}
-                onClick={() => {
-                  handleOnClick(segment);
-                }}
-                variant={segment.id === currentSegment?.id ? 'secondary' : 'ghost'}
-                className={
-                  segment.id === currentSegment?.id ? 'bg-gray-200/40 dark:bg-secondary/60  ' : ''
-                }
-              >
-                {segment.dataType === 'CONDITION' && (
-                  <Filter2LineIcon width={16} height={16} className="mr-1" />
-                )}
-                {segment.dataType === 'ALL' && (
-                  <Group2LineIcon width={16} height={16} className="mr-1" />
-                )}
-                {segment.dataType === 'MANUAL' && (
-                  <Archive2LineIcon width={16} height={16} className="mr-1" />
-                )}
-                {segment.name}
-              </AdminSidebarBodyItemTemplate>
-            ))}
-          </AdminSidebarBodyTemplate>
-        )}
-
-        <AdminSidebarFooter />
-      </AdminSidebarContainerTemplate>
+      <SegmentSidebar
+        title="Companies"
+        groupIcon={<Group2LineIcon width={16} height={16} className="mr-1" />}
+        onCreate={() => setDialogOpen(true)}
+        createTooltip="Create company segment"
+        disabled={isViewOnly}
+      />
       <CompanySegmentCreateForm
-        isOpen={open}
-        onClose={handleOnClose}
+        isOpen={dialogOpen}
+        onClose={handleDialogClose}
         environmentId={environmentId}
       />
     </>

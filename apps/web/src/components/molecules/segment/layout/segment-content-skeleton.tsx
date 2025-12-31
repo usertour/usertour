@@ -3,7 +3,7 @@ import { Separator } from '@usertour-packages/separator';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 
 // Skeleton for the header section
-export const UserListHeaderSkeleton = () => {
+export const SegmentHeaderSkeleton = () => {
   return (
     <div className="flex items-center justify-between">
       <div className="space-y-1 flex flex-row items-center relative">
@@ -23,12 +23,12 @@ export const UserListHeaderSkeleton = () => {
   );
 };
 
-// Main skeleton for UserListContent
-export const UserListContentSkeleton = () => {
+// Main skeleton for segment content
+export const SegmentContentSkeleton = () => {
   return (
     <div className="flex flex-col flex-shrink min-w-0 px-4 py-6 lg:px-8 grow">
       {/* Header skeleton */}
-      <UserListHeaderSkeleton />
+      <SegmentHeaderSkeleton />
 
       {/* Separator */}
       <Separator className="my-4" />
