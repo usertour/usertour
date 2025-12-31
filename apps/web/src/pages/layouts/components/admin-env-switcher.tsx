@@ -19,7 +19,7 @@ import {
 } from '@usertour-packages/dropdown-menu';
 import { cn } from '@usertour/helpers';
 import * as React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const AdminEnvSwitcher = () => {
   const [open, setOpen] = React.useState(false);
@@ -34,15 +34,15 @@ export const AdminEnvSwitcher = () => {
   const handleItemClick = React.useCallback(
     (env: Environment) => {
       if (env.id) {
-        const currentPath = location.pathname;
         // If path starts with /env/, extract and replace envId
-        if (currentPath.startsWith('/env/')) {
-          const match = currentPath.match(/^\/env\/([^/]+)/);
+        if (location.pathname.startsWith('/env/')) {
+          const match = location.pathname.match(/^\/env\/([^/]+)/);
           if (match) {
             const [, currentEnvId] = match;
             // Replace envId in path, handle both /env/:id and /env/:id/... cases
-            const newPath = currentPath.replace(`/env/${currentEnvId}`, `/env/${env.id}`);
-            navigate(newPath);
+            const newPathname = location.pathname.replace(`/env/${currentEnvId}`, `/env/${env.id}`);
+            // Navigate with both new pathname and preserved search params
+            navigate(`${newPathname}${location.search}`, { replace: false });
           }
         }
         // Always update environment context
@@ -50,7 +50,7 @@ export const AdminEnvSwitcher = () => {
       }
       setOpen(false);
     },
-    [location.pathname, navigate, selectEnvironment],
+    [location.pathname, location.search, navigate, selectEnvironment],
   );
   const handleCreate = () => {
     setShowNewEnvDialog(true);
