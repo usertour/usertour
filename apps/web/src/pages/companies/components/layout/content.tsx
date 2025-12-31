@@ -12,7 +12,7 @@ import {
 } from '@usertour-packages/tooltip';
 import { memo, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataTable } from '../table';
+import { CompanyDataTable } from '../table';
 import { CompanyEditDropdownMenu } from '../ui';
 import { CompanySegmentEditForm } from '../dialogs';
 import { CompanySegmentFilterSave } from '../operations';
@@ -76,9 +76,7 @@ function CompanyListContentInner({ environmentId }: { environmentId: string | un
           )}
         </div>
         <Separator className="my-4" />
-        {currentSegment && (
-          <DataTable published={false} segment={currentSegment} key={currentSegment.id} />
-        )}
+        {currentSegment && <CompanyDataTable segment={currentSegment} key={currentSegment.id} />}
       </div>
       <CompanySegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
     </>

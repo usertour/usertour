@@ -14,31 +14,71 @@ import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
 import { ChangeEvent, useCallback, useState } from 'react';
 import { AddCompanyManualSegment } from '../operations';
 import { CompanySegmentCreateForm } from '../dialogs';
-import { DataTableViewOptions } from './data-table-view-options';
+import { DataTableViewOptions } from '@/components/molecules/segment/table';
 import { DeleteCompanyFromSegment } from '../operations';
 import { RemoveFromSegment } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
+import { useMutation } from '@apollo/client';
+import { updateSegment } from '@usertour-packages/gql';
+import { getErrorMessage } from '@usertour/helpers';
+import { useToast } from '@usertour-packages/use-toast';
 
-interface DataTableToolbarProps<TData> {
+interface CompanyDataTableToolbarProps<TData> {
   table: Table<TData>;
   currentSegment: Segment;
 }
 
-export function DataTableToolbar<TData>({ table, currentSegment }: DataTableToolbarProps<TData>) {
-  const { attributeList } = useAttributeListContext();
-  const { setCurrentConditions } = useSegmentListContext();
+export function CompanyDataTableToolbar<TData>({
+  table,
+  currentSegment,
+}: CompanyDataTableToolbarProps<TData>) {
+  const { attributeList, loading: attributeLoading } = useAttributeListContext();
+  const { setCurrentConditions, refetch } = useSegmentListContext();
+
+  // Filtered attributes for company rules
+  const filteredAttributes = attributeLoading
+    ? []
+    : attributeList?.filter(
+        (attr) =>
+          attr.bizType === AttributeBizTypes.Company ||
+          attr.bizType === AttributeBizTypes.Membership,
+      ) || [];
+
   const { query, setQuery } = useCompanyListContext();
-  const { isViewOnly } = useAppContext();
   const [searchValue, setSearchValue] = useState('');
-  // const [mutation] = useMutation(updateSegment);
-  // const { setQuery } = useCompanyListContext();
+  const { isViewOnly } = useAppContext();
 
   const [open, setOpen] = useState(false);
-
   const handleOnClose = () => {
     setOpen(false);
-    // refetch();
   };
+
+  const [mutation] = useMutation(updateSegment);
+  const { toast } = useToast();
+
+  const updateSegmentColumn = useCallback(
+    async (name: string, value: boolean) => {
+      if (!currentSegment) {
+        return;
+      }
+      const data = {
+        id: currentSegment.id,
+        columns: { ...currentSegment.columns, [name]: value },
+      };
+      try {
+        const ret = await mutation({ variables: { data } });
+        if (ret.data?.updateSegment?.id) {
+          await refetch();
+        }
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: getErrorMessage(error),
+        });
+      }
+    },
+    [currentSegment, mutation, refetch, toast],
+  );
 
   const handleDataChange = useCallback(
     async (conditions: RulesCondition[], hasError: boolean) => {
@@ -88,7 +128,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
             </Button>
           )}
         </div>
-        <DataTableViewOptions table={table} />
+        <DataTableViewOptions table={table} onColumnVisibilityChange={updateSegmentColumn} />
 
         <CompanySegmentCreateForm isOpen={open} onClose={handleOnClose} environmentId="" />
       </div>
@@ -101,13 +141,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
           key={currentSegment.id}
           filterItems={['group', 'user-attr']}
           addButtonText={'Add filter'}
-          attributes={
-            attributeList?.filter(
-              (attr) =>
-                attr.bizType === AttributeBizTypes.Company ||
-                attr.bizType === AttributeBizTypes.Membership,
-            ) || []
-          }
+          attributes={filteredAttributes}
           disabled={isViewOnly}
           baseZIndex={WebZIndex.RULES}
         />

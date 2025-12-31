@@ -5,7 +5,7 @@ import { Checkbox } from '@usertour-packages/checkbox';
 
 import { format } from 'date-fns';
 import { BizCompany } from '@usertour/types';
-import { DataTableColumnHeader } from './data-table-column-header';
+import { DataTableColumnHeader } from '@/components/molecules/segment/table';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 
 export const columns: ColumnDef<BizCompany>[] = [
@@ -54,35 +54,6 @@ export const columns: ColumnDef<BizCompany>[] = [
     enableSorting: false,
     enableHiding: false,
   },
-  // {
-  //   accessorKey: "environmentId",
-  //   header: ({ column }) => (
-  //     <DataTableColumnHeader column={column} title="environmentId" />
-  //   ),
-  //   cell: ({ row }) => <div className="w-[80px]">{row.getValue("environmentId")}</div>,
-  //   enableSorting: false,
-  //   enableHiding: true,
-  // },
-  // {
-  //   accessorKey: "createdAt",
-  //   header: ({ column }) => (
-  //     <DataTableColumnHeader column={column} title="createdAt" />
-  //   ),
-  //   cell: ({ row }) => {
-
-  //     return (
-  //       <div className="flex space-x-2">
-  //         <span className="max-w-[500px] truncate font-medium">
-  //           {row.getValue("createdAt")}
-  //         </span>
-  //       </div>
-  //     )
-  //   },
-  // },
-  // {
-  //   id: "actions",
-  //   cell: ({ row }) => <DataTableRowActions row={row} />,
-  // },
 ];
 
 export const columnsSystem: ColumnDef<BizCompany>[] = [
