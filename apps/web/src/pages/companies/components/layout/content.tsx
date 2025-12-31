@@ -19,7 +19,7 @@ import { CompanySegmentFilterSave } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 
 // Inner component that uses the context
-function CompanyListContentInner({ environmentId }: { environmentId: string | undefined }) {
+const CompanyListContentInner = ({ environmentId }: { environmentId: string | undefined }) => {
   const [open, setOpen] = useState(false);
   const { currentSegment, refetch } = useSegmentListContext();
   const navigate = useNavigate();
@@ -81,7 +81,9 @@ function CompanyListContentInner({ environmentId }: { environmentId: string | un
       <CompanySegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
     </>
   );
-}
+};
+
+CompanyListContentInner.displayName = 'CompanyListContentInner';
 
 export const CompanyListContent = memo(function CompanyListContent(props: {
   environmentId: string | undefined;
@@ -100,5 +102,3 @@ export const CompanyListContent = memo(function CompanyListContent(props: {
 });
 
 CompanyListContent.displayName = 'CompanyListContent';
-
-CompanyListContentInner.displayName = 'CompanyListContentInner';
