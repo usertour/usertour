@@ -5,7 +5,7 @@ import { Checkbox } from '@usertour-packages/checkbox';
 import { BizUser } from '@usertour/types';
 import { CompanyIcon } from '@usertour-packages/icons';
 
-import { DataTableColumnHeader } from './data-table-column-header';
+import { DataTableColumnHeader } from '@/components/molecules/segment/table';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { Link } from 'react-router-dom';
 

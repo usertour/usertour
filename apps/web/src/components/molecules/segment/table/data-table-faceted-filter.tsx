@@ -1,6 +1,4 @@
 import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
-import { Column } from '@tanstack/react-table';
-import * as React from 'react';
 
 import { Badge } from '@usertour-packages/badge';
 import { Button } from '@usertour-packages/button';
@@ -16,22 +14,9 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { Separator } from '@usertour-packages/separator';
 import { cn } from '@usertour/helpers';
+import { DataTableFacetedFilterProps } from './types';
 
-interface DataTableFacetedFilter<TData, TValue> {
-  column?: Column<TData, TValue>;
-  title?: string;
-  options: {
-    label: string;
-    value: string;
-    icon?: React.ComponentType<{ className?: string }>;
-  }[];
-}
-
-export function DataTableFacetedFilter<TData, TValue>({
-  column,
-  title,
-  options,
-}: DataTableFacetedFilter<TData, TValue>) {
+export function DataTableFacetedFilter({ column, title, options }: DataTableFacetedFilterProps) {
   const facets = column?.getFacetedUniqueValues();
   const selectedValues = new Set(column?.getFilterValue() as string[]);
 

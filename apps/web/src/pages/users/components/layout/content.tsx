@@ -13,7 +13,7 @@ import {
 } from '@usertour-packages/tooltip';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataTable } from '../table';
+import { UserDataTable } from '../table';
 import { UserEditDropdownMenu } from '../ui';
 import { UserSegmentEditDialog } from '../dialogs';
 import { UserSegmentFilterSave } from '../operations';
@@ -77,7 +77,7 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
           )}
         </div>
         <Separator className="my-4" />
-        {currentSegment && <DataTable segment={currentSegment} key={currentSegment.id} />}
+        {currentSegment && <UserDataTable segment={currentSegment} key={currentSegment.id} />}
       </div>
       <UserSegmentEditDialog isOpen={open} onClose={handleOnClose} segment={currentSegment} />
     </>

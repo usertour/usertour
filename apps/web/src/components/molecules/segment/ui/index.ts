@@ -1,2 +1,2 @@
-// Generic UI components for segment management
+// UI components
 export { EmptyPlaceholder } from './empty-placeholder';

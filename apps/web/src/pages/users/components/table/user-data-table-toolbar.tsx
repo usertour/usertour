@@ -14,29 +14,61 @@ import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
 import { ChangeEvent, useCallback, useState } from 'react';
 import { AddUserManualSegment } from '../operations';
 import { UserSegmentCreateDialog } from '../dialogs';
-import { DataTableViewOptions } from './data-table-view-options';
+import { DataTableViewOptions } from '@/components/molecules/segment/table';
 import { DeleteUserFromSegment } from '../operations';
 import { RemoveFromSegment } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
-interface DataTableToolbarProps<TData> {
+import { useMutation } from '@apollo/client';
+import { updateSegment } from '@usertour-packages/gql';
+import { getErrorMessage } from '@usertour/helpers';
+import { useToast } from '@usertour-packages/use-toast';
+
+interface UserDataTableToolbarProps<TData> {
   table: Table<TData>;
   currentSegment: Segment;
 }
 
-export function DataTableToolbar<TData>({ table, currentSegment }: DataTableToolbarProps<TData>) {
+export function UserDataTableToolbar<TData>({
+  table,
+  currentSegment,
+}: UserDataTableToolbarProps<TData>) {
   const { attributeList } = useAttributeListContext();
-  const { setCurrentConditions } = useSegmentListContext();
+  const { setCurrentConditions, refetch } = useSegmentListContext();
   const { query, setQuery } = useUserListContext();
   const [searchValue, setSearchValue] = useState('');
   const { isViewOnly } = useAppContext();
-  // const [mutation] = useMutation(updateSegment);
-  // const { setQuery } = useUserListContext();
 
   const [open, setOpen] = useState(false);
   const handleOnClose = () => {
     setOpen(false);
-    // refetch();
   };
+
+  const [mutation] = useMutation(updateSegment);
+  const { toast } = useToast();
+
+  const updateSegmentColumn = useCallback(
+    async (name: string, value: boolean) => {
+      if (!currentSegment) {
+        return;
+      }
+      const data = {
+        id: currentSegment.id,
+        columns: { ...currentSegment.columns, [name]: value },
+      };
+      try {
+        const ret = await mutation({ variables: { data } });
+        if (ret.data?.updateSegment?.id) {
+          await refetch();
+        }
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: getErrorMessage(error),
+        });
+      }
+    },
+    [currentSegment, mutation, refetch, toast],
+  );
 
   const handleDataChange = useCallback(
     async (conditions: RulesCondition[], hasError: boolean) => {
@@ -86,7 +118,7 @@ export function DataTableToolbar<TData>({ table, currentSegment }: DataTableTool
             </Button>
           )}
         </div>
-        <DataTableViewOptions table={table} />
+        <DataTableViewOptions table={table} onColumnVisibilityChange={updateSegmentColumn} />
 
         <UserSegmentCreateDialog isOpen={open} onClose={handleOnClose} environmentId="" />
       </div>
