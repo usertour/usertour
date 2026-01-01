@@ -30,7 +30,7 @@ interface CompanyDataTableProps {
   segment: Segment;
 }
 
-export function CompanyDataTable({ segment }: CompanyDataTableProps) {
+export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
   const { setQuery, setPagination, pagination, pageCount, contents, loading } =
     useCompanyListContext();
   const { attributeList } = useAttributeListContext();
@@ -139,4 +139,4 @@ export function CompanyDataTable({ segment }: CompanyDataTableProps) {
       <DataTablePagination table={table} />
     </div>
   );
-}
+};

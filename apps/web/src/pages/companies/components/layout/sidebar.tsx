@@ -9,7 +9,7 @@ interface CompanyListSidebarProps {
   environmentId?: string;
 }
 
-export function CompanyListSidebar({ environmentId }: CompanyListSidebarProps) {
+export const CompanyListSidebar = ({ environmentId }: CompanyListSidebarProps) => {
   const { isViewOnly } = useAppContext();
   const { refetch } = useSegmentListContext();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -35,6 +35,6 @@ export function CompanyListSidebar({ environmentId }: CompanyListSidebarProps) {
       />
     </>
   );
-}
+};
 
 CompanyListSidebar.displayName = 'CompanyListSidebar';

@@ -13,9 +13,8 @@ import {
 import { memo, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CompanyDataTable } from '../table';
-import { CompanyEditDropdownMenu } from '../operations';
+import { CompanyEditDropdownMenu, CompanySegmentFilterSave } from '../operations';
 import { CompanySegmentEditDialog } from '../dialogs';
-import { CompanySegmentFilterSave } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 
 // Inner component that uses the context

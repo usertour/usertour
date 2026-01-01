@@ -705,8 +705,8 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
 };
 
 // Main export component
-export function CompanyDetailContent(props: CompanyDetailContentProps) {
+export const CompanyDetailContent = (props: CompanyDetailContentProps) => {
   return <CompanyDetailContentWithLoading {...props} />;
-}
+};
 
 CompanyDetailContent.displayName = 'CompanyDetailContent';

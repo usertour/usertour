@@ -1,8 +1,8 @@
 'use client';
 
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { useCompanyListContext } from '@/contexts/company-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { useCompanyListContext } from '@/contexts/company-list-context';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
 import { Button } from '@usertour-packages/button';
@@ -29,10 +29,10 @@ interface CompanyDataTableToolbarProps<TData> {
   currentSegment: Segment;
 }
 
-export function CompanyDataTableToolbar<TData>({
+export const CompanyDataTableToolbar = <TData extends object>({
   table,
   currentSegment,
-}: CompanyDataTableToolbarProps<TData>) {
+}: CompanyDataTableToolbarProps<TData>) => {
   const { attributeList, loading: attributeLoading } = useAttributeListContext();
   const { setCurrentConditions, refetch } = useSegmentListContext();
 
@@ -163,4 +163,4 @@ export function CompanyDataTableToolbar<TData>({
       )}
     </>
   );
-}
+};
