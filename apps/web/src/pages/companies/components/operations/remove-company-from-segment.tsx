@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { BizCompanyRemoveForm } from '../dialogs';
 import { Segment } from '@usertour/types';
 import { useCompanyListContext } from '@/contexts/company-list-context';
+import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface RemoveFromSegmentProps {
   table: Table<any>;
@@ -13,22 +14,19 @@ interface RemoveFromSegmentProps {
 
 export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
   const { table, currentSegment } = props;
+  const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizCompanyIds, setBizCompanyIds] = useState<string[]>([]);
   const { refetch } = useCompanyListContext();
 
   const handleOnClick = useCallback(() => {
-    const rows = table.getFilteredSelectedRowModel().rows;
-    const ids = [];
-    for (const row of rows) {
-      ids.push(row.getValue('id'));
-    }
-    if (ids.length > 0) {
+    if (hasSelection()) {
+      const ids = collectSelectedIds();
       setBizCompanyIds(ids);
       setOpenDelete(true);
     }
-  }, [table, bizCompanyIds]);
+  }, [collectSelectedIds, hasSelection]);
 
   const handleSubmit = useCallback(
     async (success: boolean) => {

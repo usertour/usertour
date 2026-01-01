@@ -22,6 +22,7 @@ import { useMutation } from '@apollo/client';
 import { updateSegment } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
+import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface UserDataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -37,6 +38,7 @@ export function UserDataTableToolbar<TData>({
   const { query, setQuery } = useUserListContext();
   const [searchValue, setSearchValue] = useState('');
   const { isViewOnly } = useAppContext();
+  const { hasSelection } = useTableSelection(table);
 
   const [open, setOpen] = useState(false);
   const handleOnClose = () => {
@@ -138,7 +140,7 @@ export function UserDataTableToolbar<TData>({
           baseZIndex={WebZIndex.RULES}
         />
       </div>
-      {table.getFilteredSelectedRowModel().rows.length > 0 && (
+      {hasSelection() && (
         <div className="flex flex-row space-x-2">
           <AddUserManualSegment table={table} />
           {currentSegment.dataType === 'MANUAL' && (

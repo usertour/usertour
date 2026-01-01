@@ -22,6 +22,7 @@ import { useMutation } from '@apollo/client';
 import { updateSegment } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
+import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface CompanyDataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -46,6 +47,7 @@ export function CompanyDataTableToolbar<TData>({
 
   const { query, setQuery } = useCompanyListContext();
   const [searchValue, setSearchValue] = useState('');
+  const { hasSelection } = useTableSelection(table);
   const { isViewOnly } = useAppContext();
 
   const [open, setOpen] = useState(false);
@@ -146,7 +148,7 @@ export function CompanyDataTableToolbar<TData>({
           baseZIndex={WebZIndex.RULES}
         />
       </div>
-      {table.getFilteredSelectedRowModel().rows.length > 0 && (
+      {hasSelection() && (
         <div className="flex flex-row space-x-2">
           <AddCompanyManualSegment table={table} />
           {currentSegment.dataType === 'MANUAL' && (

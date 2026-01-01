@@ -14,6 +14,7 @@ import { useCallback } from 'react';
 import { Segment } from '@usertour/types';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { getErrorMessage } from '@usertour/helpers';
+import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface AddCompanyManualSegmentProps {
   table: Table<any>;
@@ -21,23 +22,22 @@ interface AddCompanyManualSegmentProps {
 
 export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => {
   const { table } = props;
+  const { collectSelectedIds, hasSelection } = useTableSelection(table);
   const [mutation] = useMutation(createBizCompanyOnSegment);
   const { segmentList } = useSegmentListContext();
   const { toast } = useToast();
 
   const handleAddManualSegment = useCallback(
     async (segment: Segment) => {
-      const companyOnSegment = [];
-      for (const row of table.getFilteredSelectedRowModel().rows) {
-        companyOnSegment.push({
-          bizCompanyId: row.getValue('id'),
-          segmentId: segment.id,
-          data: {},
-        });
-      }
-      if (companyOnSegment.length === 0) {
+      if (!hasSelection()) {
         return;
       }
+
+      const companyOnSegment = collectSelectedIds().map((id) => ({
+        bizCompanyId: id,
+        segmentId: segment.id,
+        data: {},
+      }));
 
       const data = {
         companyOnSegment,
@@ -57,7 +57,7 @@ export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => 
         });
       }
     },
-    [table],
+    [collectSelectedIds, hasSelection, mutation, toast],
   );
 
   return (

@@ -5,6 +5,7 @@ import { BizCompanyDeleteForm } from '../dialogs';
 import { useCallback } from 'react';
 import { useState } from 'react';
 import { useCompanyListContext } from '@/contexts/company-list-context';
+import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface DeleteCompanyFromSegmentProps {
   table: Table<any>;
@@ -12,22 +13,19 @@ interface DeleteCompanyFromSegmentProps {
 
 export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) => {
   const { table } = props;
+  const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [bizCompanyIds, setBizCompanyIds] = useState<string[]>([]);
   const { refetch } = useCompanyListContext();
 
   const handleOnClick = useCallback(() => {
-    const rows = table.getFilteredSelectedRowModel().rows;
-    const ids = [];
-    for (const row of rows) {
-      ids.push(row.getValue('id'));
-    }
-    if (ids.length > 0) {
+    if (hasSelection()) {
+      const ids = collectSelectedIds();
       setBizCompanyIds(ids);
       setOpenDelete(true);
     }
-  }, [table]);
+  }, [collectSelectedIds, hasSelection]);
 
   const handleSubmit = useCallback(
     async (success: boolean) => {
