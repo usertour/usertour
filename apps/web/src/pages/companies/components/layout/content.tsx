@@ -13,7 +13,7 @@ import {
 import { memo, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CompanyDataTable } from '../table';
-import { CompanyEditDropdownMenu } from '../ui';
+import { CompanyEditDropdownMenu } from '../operations';
 import { CompanySegmentEditForm } from '../dialogs';
 import { CompanySegmentFilterSave } from '../operations';
 import { useAppContext } from '@/contexts/app-context';

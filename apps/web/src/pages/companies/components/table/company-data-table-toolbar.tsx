@@ -48,7 +48,7 @@ export function CompanyDataTableToolbar<TData>({
   const { query, setQuery } = useCompanyListContext();
   const [searchValue, setSearchValue] = useState('');
   const { hasSelection } = useTableSelection(table);
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, environment } = useAppContext();
 
   const [open, setOpen] = useState(false);
   const handleOnClose = () => {
@@ -132,7 +132,11 @@ export function CompanyDataTableToolbar<TData>({
         </div>
         <DataTableViewOptions table={table} onColumnVisibilityChange={updateSegmentColumn} />
 
-        <CompanySegmentCreateForm isOpen={open} onClose={handleOnClose} environmentId="" />
+        <CompanySegmentCreateForm
+          isOpen={open}
+          onClose={handleOnClose}
+          environmentId={environment?.id}
+        />
       </div>
       <div className="flex items-center justify-between">
         <Rules

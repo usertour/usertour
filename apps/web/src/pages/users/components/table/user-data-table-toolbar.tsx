@@ -37,7 +37,7 @@ export function UserDataTableToolbar<TData>({
   const { setCurrentConditions, refetch } = useSegmentListContext();
   const { query, setQuery } = useUserListContext();
   const [searchValue, setSearchValue] = useState('');
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, environment } = useAppContext();
   const { hasSelection } = useTableSelection(table);
 
   const [open, setOpen] = useState(false);
@@ -122,7 +122,11 @@ export function UserDataTableToolbar<TData>({
         </div>
         <DataTableViewOptions table={table} onColumnVisibilityChange={updateSegmentColumn} />
 
-        <UserSegmentCreateDialog isOpen={open} onClose={handleOnClose} environmentId="" />
+        <UserSegmentCreateDialog
+          isOpen={open}
+          onClose={handleOnClose}
+          environmentId={environment?.id}
+        />
       </div>
       <div className="flex items-center justify-between">
         <Rules
