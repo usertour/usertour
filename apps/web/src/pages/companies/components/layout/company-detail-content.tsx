@@ -447,22 +447,25 @@ interface CompanyDetailContentProps {
 // TooltipIcon component to reduce repetitive code
 const TooltipIcon = ({
   icon: Icon,
-  tooltip,
+  tooltipKey,
   className = 'w-4 h-4 text-foreground/60 cursor-help',
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  tooltip: string;
+  tooltipKey: string;
   className?: string;
-}) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Icon className={className} />
-      </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-);
+}) => {
+  const { t } = useTranslation();
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Icon className={className} />
+        </TooltipTrigger>
+        <TooltipContent>{t(tooltipKey)}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
 
 // Loading wrapper component to handle all loading states
 const CompanyDetailContentWithLoading = ({
@@ -579,7 +582,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                   className="text-destructive focus:text-destructive"
                 >
                   <Delete2Icon className="mr-2 h-4 w-4" />
-                  Delete Company
+                  {t('companies.actions.deleteCompany')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -599,7 +602,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
             <CardContent>
               <div className="grid grid-cols-2 gap-2 gap-x-12">
                 <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={IdCardIcon} tooltip="Company ID" />
+                  <TooltipIcon icon={IdCardIcon} tooltipKey="companies.detail.tooltips.companyId" />
                   <span className="flex-1 min-w-0 truncate">{bizCompany?.externalId || ''}</span>
                   <Button
                     variant={'ghost'}
@@ -611,7 +614,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                   </Button>
                 </div>
                 <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={CompanyIcon} tooltip="Name" />
+                  <TooltipIcon icon={CompanyIcon} tooltipKey="companies.detail.tooltips.name" />
                   <span className="flex-1 min-w-0 truncate">
                     {bizCompany?.data?.name || t('companies.detail.unnamedCompany')}
                   </span>
@@ -625,7 +628,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                   </Button>
                 </div>
                 <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={CalendarIcon} tooltip="Created" />
+                  <TooltipIcon icon={CalendarIcon} tooltipKey="companies.detail.tooltips.created" />
                   {bizCompany?.createdAt ? (
                     <TruncatedText
                       text={formatAttributeValue(bizCompany.createdAt, AttributeDataType.DateTime)}

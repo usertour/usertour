@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserDataTable } from '../table';
 import { UserEditDropdownMenu } from '../operations';
@@ -26,10 +26,10 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
   const navigate = useNavigate();
   const { isViewOnly } = useAppContext();
   const { t } = useTranslation();
-  const handleOnClose = () => {
+  const handleOnClose = useCallback(() => {
     setOpen(false);
     refetch();
-  };
+  }, [refetch]);
 
   return (
     <>
@@ -84,14 +84,20 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
   );
 }
 
-export function UserListContent(props: { environmentId: string | undefined }) {
+export const UserListContent = memo(function UserListContent(props: {
+  environmentId: string | undefined;
+}) {
   const { environmentId } = props;
+
+  if (!environmentId) {
+    return null;
+  }
 
   return (
     <UserListProvider environmentId={environmentId}>
       <UserListContentInner environmentId={environmentId} />
     </UserListProvider>
   );
-}
+});
 
 UserListContent.displayName = 'UserListContent';

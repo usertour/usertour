@@ -7,12 +7,16 @@ import { CompanyListContent } from './components/layout';
 export const CompanyList = () => {
   const { environment } = useAppContext();
 
+  if (!environment?.id) {
+    return null;
+  }
+
   return (
-    <SegmentListProvider environmentId={environment?.id} bizType={['COMPANY']}>
-      <CompanyListSidebar environmentId={environment?.id} />
+    <SegmentListProvider environmentId={environment.id} bizType={['COMPANY']}>
+      <CompanyListSidebar environmentId={environment.id} />
 
       <ScrollArea className="h-full w-full ">
-        <CompanyListContent environmentId={environment?.id} />
+        <CompanyListContent environmentId={environment.id} />
       </ScrollArea>
     </SegmentListProvider>
   );
