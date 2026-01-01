@@ -5,6 +5,7 @@ import { useUserListContext } from '@/contexts/user-list-context';
 import { useTranslation } from 'react-i18next';
 import {
   ColumnDef,
+  Table,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
@@ -42,7 +43,7 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
   const columns: ColumnDef<BizUser>[] = [
     {
       id: 'select',
-      header: ({ table }: { table: any }) => (
+      header: ({ table }: { table: Table<BizUser> }) => (
         <Checkbox
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
