@@ -7,6 +7,7 @@ import { Cross2Icon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
 import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
+import { useTranslation } from 'react-i18next';
 import { WebZIndex } from '@usertour-packages/constants';
 import { Rules } from '@usertour-packages/shared-components';
 import { conditionsIsSame } from '@usertour/helpers';
@@ -33,6 +34,7 @@ export const CompanyDataTableToolbar = <TData extends object>({
   table,
   currentSegment,
 }: CompanyDataTableToolbarProps<TData>) => {
+  const { t } = useTranslation();
   const { attributeList, loading: attributeLoading } = useAttributeListContext();
   const { setCurrentConditions, refetch } = useSegmentListContext();
 
@@ -118,14 +120,14 @@ export const CompanyDataTableToolbar = <TData extends object>({
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
-            placeholder="Search..."
+            placeholder={t('common.search')}
             value={searchValue}
             onChange={handleSearchChange}
             className="h-8 w-[150px] lg:w-[250px]"
           />
           {searchValue !== '' && (
             <Button variant="ghost" onClick={handleSearchReset} className="h-8 px-2 lg:px-3">
-              Reset
+              {t('common.reset')}
               <Cross2Icon className="ml-2 h-4 w-4" />
             </Button>
           )}
@@ -146,7 +148,7 @@ export const CompanyDataTableToolbar = <TData extends object>({
           isShowIf={false}
           key={currentSegment.id}
           filterItems={['group', 'user-attr']}
-          addButtonText={'Add filter'}
+          addButtonText={t('common.addFilter')}
           attributes={filteredAttributes}
           disabled={isViewOnly}
           baseZIndex={WebZIndex.RULES}

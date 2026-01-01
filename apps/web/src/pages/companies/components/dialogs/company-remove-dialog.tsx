@@ -10,6 +10,7 @@ import {
 } from '@usertour-packages/alert-dialog';
 import { deleteBizCompanyOnSegment } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour/helpers';
+import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
@@ -25,6 +26,7 @@ interface BizCompanyRemoveDialogProps {
 
 export const BizCompanyRemoveDialog = (props: BizCompanyRemoveDialogProps) => {
   const { bizCompanyIds, open, onOpenChange, onSubmit, segment } = props;
+  const { t } = useTranslation();
   const [mutation, { loading }] = useMutation(deleteBizCompanyOnSegment);
   const { toast } = useToast();
 
@@ -41,7 +43,9 @@ export const BizCompanyRemoveDialog = (props: BizCompanyRemoveDialogProps) => {
       if (ret.data?.deleteBizCompanyOnSegment?.success) {
         toast({
           variant: 'success',
-          title: `${ret.data?.deleteBizCompanyOnSegment.count} users has been successfully removed`,
+          title: t('companies.toast.segments.companiesRemoved', {
+            count: ret.data?.deleteBizCompanyOnSegment.count,
+          }),
         });
         await onSubmit(true);
       }
@@ -58,15 +62,21 @@ export const BizCompanyRemoveDialog = (props: BizCompanyRemoveDialogProps) => {
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirm removing users from segment</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t('companies.dialogs.removeCompaniesFromSegment.title')}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Confirm removing the selected users from {segment.name}?
+            {t('companies.dialogs.removeCompaniesFromSegment.description', {
+              segmentName: segment.name,
+            })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('companies.actions.cancel')}</AlertDialogCancel>
           <LoadingButton onClick={handleSubmit} loading={loading}>
-            Yes, remove {bizCompanyIds.length} users
+            {t('companies.dialogs.removeCompaniesFromSegment.confirmButton', {
+              count: bizCompanyIds.length,
+            })}
           </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>

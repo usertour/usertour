@@ -5,6 +5,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { Delete2Icon } from '@usertour-packages/icons';
+import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
 import { CompanySegmentDeleteDialog } from '../dialogs';
@@ -17,6 +18,7 @@ type CompanyEditDropdownMenuProps = {
 };
 export const CompanyEditDropdownMenu = (props: CompanyEditDropdownMenuProps) => {
   const { segment, children, onSubmit, disabled = false } = props;
+  const { t } = useTranslation();
   const [openDelete, setOpenDelete] = useState(false);
 
   const handleOnClick = () => {
@@ -32,7 +34,7 @@ export const CompanyEditDropdownMenu = (props: CompanyEditDropdownMenuProps) => 
         <DropdownMenuContent align="end" className="z-[101]">
           <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={handleOnClick}>
             <Delete2Icon className="mr-1" />
-            Delete segment
+            {t('companies.actions.deleteSegment')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

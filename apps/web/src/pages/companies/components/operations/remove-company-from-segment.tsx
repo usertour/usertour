@@ -6,6 +6,7 @@ import { BizCompanyRemoveDialog } from '../dialogs';
 import { Segment } from '@usertour/types';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
+import { useTranslation } from 'react-i18next';
 
 interface RemoveFromSegmentProps {
   table: Table<any>;
@@ -14,6 +15,7 @@ interface RemoveFromSegmentProps {
 
 export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
   const { table, currentSegment } = props;
+  const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
@@ -46,7 +48,7 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
         onClick={handleOnClick}
       >
         <CloseIcon className="mr-1" />
-        Remove from this segment
+        {t('companies.actions.removeFromSegment')}
       </Button>
 
       <BizCompanyRemoveDialog

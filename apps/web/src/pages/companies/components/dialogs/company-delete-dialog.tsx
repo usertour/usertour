@@ -1,5 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -24,6 +25,7 @@ interface BizCompanyDeleteDialogProps {
 
 export const BizCompanyDeleteDialog = (props: BizCompanyDeleteDialogProps) => {
   const { open, onOpenChange, onSubmit, bizCompanyIds = [] } = props;
+  const { t } = useTranslation();
   const [mutation, { loading }] = useMutation(deleteBizCompany);
   const { environment } = useAppContext();
   const { toast } = useToast();
@@ -40,10 +42,12 @@ export const BizCompanyDeleteDialog = (props: BizCompanyDeleteDialogProps) => {
       const ret = await mutation({ variables: { data } });
       if (ret.data?.deleteBizCompany?.success) {
         const count = ret.data?.deleteBizCompany.count;
-        const companyText = count === 1 ? 'company' : 'companies';
         toast({
           variant: 'success',
-          title: `${count} ${companyText} has been successfully deleted`,
+          title: t('companies.toast.companies.companiesDeleted', {
+            count,
+            companyType: count === 1 ? 'company' : 'companies',
+          }),
         });
         await onSubmit(true);
       }
@@ -56,24 +60,32 @@ export const BizCompanyDeleteDialog = (props: BizCompanyDeleteDialogProps) => {
     }
   }, [bizCompanyIds, environment?.id, mutation, toast, onSubmit]);
 
-  const companyText = bizCompanyIds.length === 1 ? 'company' : 'companies';
+  const isSingle = bizCompanyIds.length === 1;
+  const companyType = isSingle ? 'company' : 'companies';
 
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirm deleting the {companyText}</AlertDialogTitle>
+          <AlertDialogTitle>
+            {isSingle
+              ? t('companies.dialogs.deleteCompanies.titleSingle')
+              : t('companies.dialogs.deleteCompanies.titleMultiple')}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            This will delete all traces of the selected {companyText} from your account. Including
-            in analytics.
+            {t('companies.dialogs.deleteCompanies.description', { companyType })}
             <br />
-            Confirm deleting the {companyText}?
+            {t('companies.dialogs.deleteCompanies.descriptionConfirm', { companyType })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('companies.actions.cancel')}</AlertDialogCancel>
           <LoadingButton onClick={handleDeleteSubmit} variant="destructive" loading={loading}>
-            Yes, delete {bizCompanyIds.length} {companyText}
+            {isSingle
+              ? t('companies.dialogs.deleteCompanies.confirmButtonSingle')
+              : t('companies.dialogs.deleteCompanies.confirmButtonMultiple', {
+                  count: bizCompanyIds.length,
+                })}
           </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -3,6 +3,8 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import {
+  ColumnDef,
+  Table,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
@@ -14,10 +16,13 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from '@tanstack/react-table';
+import { Checkbox } from '@usertour-packages/checkbox';
 import { BizCompany, Segment, AttributeBizTypes } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { columns } from './columns';
+import { useTranslation } from 'react-i18next';
+import { DataTableColumnHeader } from '@/components/molecules/segment/table';
+import { UserAvatar } from '@/components/molecules/user-avatar';
 import {
   DataTable,
   DataTablePagination,
@@ -31,6 +36,53 @@ interface CompanyDataTableProps {
 }
 
 export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
+  const { t } = useTranslation();
+
+  // Define table columns
+  const columns: ColumnDef<BizCompany>[] = [
+    {
+      id: 'select',
+      header: ({ table }: { table: Table<BizCompany> }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }: { row: any }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="translate-y-[2px]"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: 'externalId',
+      header: ({ column }: { column: any }) => (
+        <DataTableColumnHeader column={column} title={t('companies.table.company')} />
+      ),
+      cell: ({ row }: { row: any }) => {
+        const email = row.original.data?.email || '';
+        const name = row.original.data?.name || '';
+        const externalId = row.original.externalId || '';
+
+        return (
+          <div className="flex items-center gap-2">
+            <UserAvatar email={email} name={name} size="sm" />
+            <span className="leading-none w-72 truncate">{externalId}</span>
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
+  ];
+
   const { setQuery, setPagination, pagination, pageCount, contents, loading } =
     useCompanyListContext();
   const { attributeList } = useAttributeListContext();
@@ -133,8 +185,8 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
         onColumnFiltersChange={setColumnFilters}
         onRowClick={handleRowClick}
         segment={segment}
-        emptyMessage="No companies found"
-        emptyDescription="Try adjusting your filters or search terms"
+        emptyMessage={t('companies.empty.noCompaniesFound')}
+        emptyDescription={t('companies.empty.noCompaniesFoundDescription')}
       />
       <DataTablePagination table={table} />
     </div>

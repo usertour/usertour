@@ -29,10 +29,10 @@ interface UserDataTableToolbarProps<TData> {
   currentSegment: Segment;
 }
 
-export function UserDataTableToolbar<TData>({
+export const UserDataTableToolbar = <TData extends object>({
   table,
   currentSegment,
-}: UserDataTableToolbarProps<TData>) {
+}: UserDataTableToolbarProps<TData>) => {
   const { attributeList } = useAttributeListContext();
   const { setCurrentConditions, refetch } = useSegmentListContext();
   const { query, setQuery } = useUserListContext();
@@ -155,4 +155,4 @@ export function UserDataTableToolbar<TData>({
       )}
     </>
   );
-}
+};

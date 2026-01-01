@@ -14,6 +14,7 @@ import { useCallback } from 'react';
 import { Segment } from '@usertour/types';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { getErrorMessage } from '@usertour/helpers';
+import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
 
 interface AddCompanyManualSegmentProps {
@@ -22,6 +23,7 @@ interface AddCompanyManualSegmentProps {
 
 export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => {
   const { table } = props;
+  const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
   const [mutation] = useMutation(createBizCompanyOnSegment);
   const { segmentList } = useSegmentListContext();
@@ -47,7 +49,10 @@ export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => 
         if (ret.data?.createBizCompanyOnSegment?.success) {
           toast({
             variant: 'success',
-            title: `${ret.data?.createBizCompanyOnSegment.count} companies added to ${segment.name}`,
+            title: t('companies.toast.segments.companiesAdded', {
+              count: ret.data?.createBizCompanyOnSegment.count,
+              segmentName: segment.name,
+            }),
           });
         }
       } catch (error) {
@@ -65,7 +70,7 @@ export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => 
       <DropdownMenuTrigger asChild>
         <Button variant={'ghost'} className="h-8 text-primary hover:text-primary px-1 ">
           <UserIcon3 width={16} height={16} className="mr-1" />
-          Add to manual segment
+          {t('companies.actions.addToManualSegment')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

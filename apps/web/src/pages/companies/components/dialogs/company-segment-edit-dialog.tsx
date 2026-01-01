@@ -3,6 +3,7 @@
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour-packages/button';
 import {
   Dialog,
@@ -37,6 +38,7 @@ interface EditDialogProps {
 
 export const CompanySegmentEditDialog = (props: EditDialogProps) => {
   const { onClose, isOpen, segment } = props;
+  const { t } = useTranslation();
   const [mutation] = useMutation(updateSegment);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
@@ -84,7 +86,7 @@ export const CompanySegmentEditDialog = (props: EditDialogProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Update company Segment</DialogTitle>
+              <DialogTitle>{t('companies.segments.update')}</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col space-y-4 mt-4 mb-4">
               <FormField
@@ -92,10 +94,12 @@ export const CompanySegmentEditDialog = (props: EditDialogProps) => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex flex-row">Name</FormLabel>
+                    <FormLabel className="flex flex-row">
+                      {t('companies.segments.form.name')}
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter company segment name"
+                        placeholder={t('companies.segments.form.namePlaceholder')}
                         className="w-full"
                         {...field}
                       />
@@ -107,11 +111,11 @@ export const CompanySegmentEditDialog = (props: EditDialogProps) => {
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onClose()}>
-                Cancel
+                {t('companies.actions.cancel')}
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Save Segment
+                {t('companies.segments.form.updateSegment')}
               </Button>
             </DialogFooter>
           </form>

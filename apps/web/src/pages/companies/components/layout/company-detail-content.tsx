@@ -2,6 +2,7 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ArrowLeftIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
+import { useTranslation } from 'react-i18next';
 import {
   AttributeBizTypes,
   AttributeDataType,
@@ -51,6 +52,7 @@ interface CompanyUserListContextValue {
   hasNextPage: boolean;
   setPagination: (pagination: PaginationState) => void;
   companyId: string;
+  reset: () => void;
 }
 
 const CompanyUserListContext = createContext<CompanyUserListContextValue | undefined>(undefined);
@@ -82,10 +84,8 @@ const CompanyUserListProvider = ({
 
   const { data, refetch, loading } = useQuery(queryBizUser, {
     variables: {
-      first:
-        pagination.pageIndex === 0
-          ? pagination.pageSize
-          : pagination.pageSize * (pagination.pageIndex + 1),
+      first: pagination.pageSize,
+      after: pagination.pageIndex === 0 ? undefined : pageInfo?.endCursor,
       query: { environmentId, companyId },
       orderBy: { field: 'createdAt', direction: 'desc' },
     },
@@ -107,20 +107,13 @@ const CompanyUserListProvider = ({
       return { ...e.node, ...e.node.data };
     });
 
-    // Replace data when it's the first page (refresh), accumulate when loading more
-    if (pagination.pageIndex === 0) {
-      setContents(newContents);
-    } else {
-      // Always accumulate data - never replace for load more
-      setContents((prev) => {
-        // Create a Set of existing content IDs to avoid duplicates
-        const existingIds = new Set(prev.map((content: any) => content.id));
-        const uniqueNewContents = newContents.filter(
-          (content: any) => !existingIds.has(content.id),
-        );
-        return [...prev, ...uniqueNewContents];
-      });
-    }
+    // Always accumulate data for proper pagination
+    setContents((prev) => {
+      // Create a Set of existing content IDs to avoid duplicates
+      const existingIds = new Set(prev.map((content: any) => content.id));
+      const uniqueNewContents = newContents.filter((content: any) => !existingIds.has(content.id));
+      return [...prev, ...uniqueNewContents];
+    });
 
     setTotalCount(totalCount);
     setIsLoadingMore(false);
@@ -136,6 +129,12 @@ const CompanyUserListProvider = ({
     }
   };
 
+  const reset = () => {
+    setContents([]);
+    setPagination({ pageIndex: 0, pageSize: 10 });
+    setPageInfo(null);
+  };
+
   const value: CompanyUserListContextValue = {
     contents,
     loading: loading || isLoadingMore,
@@ -145,6 +144,7 @@ const CompanyUserListProvider = ({
     companyId,
     hasNextPage: pageInfo?.hasNextPage || false,
     setPagination,
+    reset,
   };
 
   return (
@@ -226,6 +226,7 @@ const getMembershipData = (user: BizUser, companyId: string) => {
 
 // --- CompanyUserList components ---
 const LoadMoreButton = () => {
+  const { t } = useTranslation();
   const { loading, hasNextPage, loadMore } = useCompanyUserListContext();
 
   if (!hasNextPage) {
@@ -242,10 +243,10 @@ const LoadMoreButton = () => {
         {loading ? (
           <div className="flex items-center space-x-2">
             <SpinnerIcon className="w-4 h-4 animate-spin" />
-            <span>Loading...</span>
+            <span>{t('companies.detail.loading')}</span>
           </div>
         ) : (
-          'Load More Users'
+          t('companies.detail.loadMoreUsers')
         )}
       </Button>
     </div>
@@ -253,7 +254,9 @@ const LoadMoreButton = () => {
 };
 
 const CompanyUserList = () => {
-  const { contents, loading, refetch, totalCount, setPagination, companyId } =
+  const { t } = useTranslation();
+  // biome-ignore lint/correctness/noUnusedVariables: reset is used in handleRefresh function
+  const { contents, loading, refetch, totalCount, setPagination, companyId, reset } =
     useCompanyUserListContext();
   const { attributeList } = useAttributeListContext();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
@@ -265,7 +268,7 @@ const CompanyUserList = () => {
 
   const handleRefresh = () => {
     // Reset pagination to first page when refreshing
-    setPagination({ pageIndex: 0, pageSize: 10 });
+    reset();
     refetch();
   };
 
@@ -273,7 +276,9 @@ const CompanyUserList = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Company members ({totalCount})</CardTitle>
+          <CardTitle>
+            {t('companies.detail.companyMembers')} ({totalCount})
+          </CardTitle>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -287,7 +292,7 @@ const CompanyUserList = () => {
                   <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Reload</TooltipContent>
+              <TooltipContent>{t('companies.detail.tooltips.reload')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -298,14 +303,16 @@ const CompanyUserList = () => {
         ) : contents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
             <img src="/images/rocket.png" alt="No users" className="w-16 h-16 mb-4 opacity-50" />
-            <p className="text-muted-foreground text-center">No users found for this company.</p>
+            <p className="text-muted-foreground text-center">
+              {t('companies.detail.noUsersFound')}
+            </p>
           </div>
         ) : (
           <div className="flex flex-col w-full grow">
             {/* Header */}
             <div className="flex flex-row border-b text-sm font-medium text-muted-foreground">
-              <div className="w-2/5 p-2">User</div>
-              <div className="w-3/5 p-2">Membership Attributes</div>
+              <div className="w-2/5 p-2">{t('companies.detail.user')}</div>
+              <div className="w-3/5 p-2">{t('companies.detail.membershipAttributes')}</div>
               <div className="w-10" />
             </div>
             {/* Body */}
@@ -363,7 +370,7 @@ const CompanyUserList = () => {
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">
-                          No membership attributes
+                          {t('companies.detail.noMembershipAttributes')}
                         </span>
                       )}
                     </div>
@@ -477,6 +484,7 @@ const CompanyDetailContentWithLoading = ({
 
 // Inner component that handles the actual content rendering
 const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailContentProps) => {
+  const { t } = useTranslation();
   const navigator = useNavigate();
   const { contents } = useCompanyListContext();
   const [bizCompany, setBizCompany] = useState<BizCompany>();
@@ -540,7 +548,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
           alt="Company not found"
           className="w-16 h-16 mb-4 opacity-50"
         />
-        <p className="text-muted-foreground text-center">Company not found.</p>
+        <p className="text-muted-foreground text-center">{t('companies.detail.notFound')}</p>
       </div>
     );
   }
@@ -555,7 +563,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
               navigator(`/env/${environmentId}/companies`);
             }}
           />
-          <span>Company Detail</span>
+          <span>{t('companies.detail.title')}</span>
           <div className="ml-auto">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -585,7 +593,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
             <CardHeader>
               <CardTitle className="flex items-center">
                 <CompanyIcon width={18} height={18} className="mr-2" />
-                Company details
+                {t('companies.detail.companyDetails')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -605,7 +613,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                 <div className="group flex items-center min-w-0 gap-2">
                   <TooltipIcon icon={CompanyIcon} tooltip="Name" />
                   <span className="flex-1 min-w-0 truncate">
-                    {bizCompany?.data?.name || 'Unnamed company'}
+                    {bizCompany?.data?.name || t('companies.detail.unnamedCompany')}
                   </span>
                   <Button
                     variant={'ghost'}
@@ -643,7 +651,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
             <CardHeader>
               <CardTitle className="flex items-center">
                 <UserProfile width={18} height={18} className="mr-2" />
-                Company attributes
+                {t('companies.detail.companyAttributes')}
               </CardTitle>
             </CardHeader>
             <CardContent>

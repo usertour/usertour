@@ -16,9 +16,11 @@ import { CompanyDataTable } from '../table';
 import { CompanyEditDropdownMenu, CompanySegmentFilterSave } from '../operations';
 import { CompanySegmentEditDialog } from '../dialogs';
 import { useAppContext } from '@/contexts/app-context';
+import { useTranslation } from 'react-i18next';
 
 // Inner component that uses the context
 const CompanyListContentInner = ({ environmentId }: { environmentId: string | undefined }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const { currentSegment, refetch } = useSegmentListContext();
   const navigate = useNavigate();
@@ -52,7 +54,7 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs bg-slate-700">
-                    <p>Edit company segment name</p>
+                    <p>{t('companies.detail.tooltips.editName')}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

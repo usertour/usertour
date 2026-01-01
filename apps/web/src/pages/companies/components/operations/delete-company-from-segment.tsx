@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { useState } from 'react';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
+import { useTranslation } from 'react-i18next';
 
 interface DeleteCompanyFromSegmentProps {
   table: Table<any>;
@@ -13,6 +14,7 @@ interface DeleteCompanyFromSegmentProps {
 
 export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) => {
   const { table } = props;
+  const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
   const [openDelete, setOpenDelete] = useState(false);
@@ -46,7 +48,7 @@ export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) =
         onClick={handleOnClick}
       >
         <Delete2Icon className="mr-1" />
-        Delete company
+        {t('companies.actions.deleteCompany')}
       </Button>
       <BizCompanyDeleteDialog
         open={openDelete}

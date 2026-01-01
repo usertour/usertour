@@ -8,6 +8,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { getErrorMessage } from '@usertour/helpers';
+import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
@@ -26,6 +27,7 @@ export const CompanySegmentDeleteDialog = ({
   onOpenChange,
   onSubmit,
 }: CompanySegmentDeleteDialogProps) => {
+  const { t } = useTranslation();
   const { invoke: deleteSegment, loading } = useDeleteSegmentMutation();
   const { toast } = useToast();
 
@@ -68,17 +70,15 @@ export const CompanySegmentDeleteDialog = ({
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete segment</AlertDialogTitle>
+          <AlertDialogTitle>{t('companies.dialogs.deleteSegment.title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete the segment{' '}
-            <span className="font-bold text-foreground">{segment.name}</span>? This action cannot be
-            undone.
+            {t('companies.dialogs.deleteSegment.description', { segmentName: segment.name })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('companies.actions.cancel')}</AlertDialogCancel>
           <LoadingButton onClick={handleDeleteSubmit} variant="destructive" loading={loading}>
-            Yes, delete segment
+            {t('companies.dialogs.deleteSegment.confirmButton')}
           </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>

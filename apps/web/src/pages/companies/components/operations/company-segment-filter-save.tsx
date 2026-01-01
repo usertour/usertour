@@ -15,10 +15,12 @@ import { useUpdateSegmentMutation } from '@usertour-packages/shared-hooks';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LoadingButton } from '@/components/molecules/loading-button';
 
 export const CompanySegmentFilterSave = (props: { currentSegment?: Segment }) => {
   const { currentSegment } = props;
+  const { t } = useTranslation();
   const { invoke: updateSegment, loading } = useUpdateSegmentMutation();
   const { refetch, currentConditions, isRefetching } = useSegmentListContext();
   const { toast } = useToast();
@@ -50,7 +52,7 @@ export const CompanySegmentFilterSave = (props: { currentSegment?: Segment }) =>
         await refetch();
         toast({
           variant: 'success',
-          title: `The segment ${currentSegment.name} filter has been successfully saved`,
+          title: t('companies.toast.filters.saveSuccess', { segmentName: currentSegment.name }),
         });
         setOpen(false);
       }
@@ -84,21 +86,21 @@ export const CompanySegmentFilterSave = (props: { currentSegment?: Segment }) =>
           onClick={handleOnClick}
           disabled={isViewOnly}
         >
-          Save filter
+          {t('companies.filters.saveFilter')}
         </Button>
       )}
       <AlertDialog defaultOpen={open} open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Save filter</AlertDialogTitle>
+            <AlertDialogTitle>{t('companies.filters.saveFilter')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirm saving <span className="font-bold">{currentSegment?.name}</span> filter?
+              {t('companies.filters.confirmSave', { segmentName: currentSegment?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('companies.actions.cancel')}</AlertDialogCancel>
             <LoadingButton onClick={handleSubmit} loading={loading || isRefetching}>
-              Yes, save
+              {t('companies.filters.yesSave')}
             </LoadingButton>
           </AlertDialogFooter>
         </AlertDialogContent>
