@@ -22,7 +22,7 @@ interface BizUserRemoveDialogProps {
 }
 
 export const BizUserRemoveDialog = memo((props: BizUserRemoveDialogProps) => {
-  const { bizUserIds, open, onOpenChange, onSubmit, segment } = props;
+  const { bizUserIds = [], open, onOpenChange, onSubmit, segment } = props;
   const { removeUsers, loading } = useRemoveUsersFromSegment();
   const { t } = useTranslation();
 
