@@ -8,7 +8,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { useDeleteBizUser } from '@/hooks/use-delete-biz-user';
-import { useCallback, memo } from 'react';
+import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useTranslation } from 'react-i18next';
 
@@ -19,7 +19,7 @@ interface BizUserDeleteDialogProps {
   onSuccess: () => void;
 }
 
-export const BizUserDeleteDialog = memo((props: BizUserDeleteDialogProps) => {
+export const BizUserDeleteDialog = (props: BizUserDeleteDialogProps) => {
   const { open, onOpenChange, onSuccess, bizUserIds = [] } = props;
   const { deleteUsers, loading } = useDeleteBizUser();
   const { t } = useTranslation();
@@ -71,6 +71,6 @@ export const BizUserDeleteDialog = memo((props: BizUserDeleteDialogProps) => {
       </AlertDialogContent>
     </AlertDialog>
   );
-});
+};
 
 BizUserDeleteDialog.displayName = 'BizUserDeleteDialog';

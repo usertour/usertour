@@ -1,29 +1,27 @@
 import { useMutation } from '@apollo/client';
-import { createBizUserOnSegment } from '@usertour-packages/gql';
-import { useUserListContext } from '@/contexts/user-list-context';
+import { createBizCompanyOnSegment } from '@usertour-packages/gql';
+import { useCallback } from 'react';
+import { Segment } from '@usertour/types';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
-import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Segment } from '@usertour/types';
 
 /**
- * Hook to handle adding users to manual segments
+ * Hook to handle adding companies to manual segments
  * @returns Object containing the add function and loading state
  */
-export const useAddUsersToSegment = () => {
-  const [createMutation, { loading }] = useMutation(createBizUserOnSegment);
-  const { refetch } = useUserListContext();
+export const useAddCompaniesToManualSegment = () => {
+  const [createMutation, { loading }] = useMutation(createBizCompanyOnSegment);
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const addUsers = useCallback(
-    async (userIds: string[], segment: Segment): Promise<boolean> => {
+  const addCompaniesToSegment = useCallback(
+    async (companyIds: string[], segment: Segment): Promise<boolean> => {
       // Validate inputs
-      if (!userIds || userIds.length === 0) {
+      if (!companyIds || companyIds.length === 0) {
         toast({
           variant: 'destructive',
-          title: t('users.toast.segments.noUsersSelected'),
+          title: t('companies.toast.segments.noCompaniesSelected'),
         });
         return false;
       }
@@ -31,41 +29,40 @@ export const useAddUsersToSegment = () => {
       if (!segment?.id || !segment?.name) {
         toast({
           variant: 'destructive',
-          title: t('users.toast.segments.invalidSegment'),
+          title: t('companies.toast.segments.invalidSegment'),
         });
         return false;
       }
 
       // Transform data for GraphQL mutation
-      const userOnSegment = userIds.map((userId) => ({
-        bizUserId: userId,
+      const companyOnSegment = companyIds.map((companyId) => ({
+        bizCompanyId: companyId,
         segmentId: segment.id,
         data: {},
       }));
 
       const data = {
-        userOnSegment,
+        companyOnSegment,
       };
 
       try {
         const ret = await createMutation({ variables: { data } });
 
-        if (ret.data?.createBizUserOnSegment?.success) {
+        if (ret.data?.createBizCompanyOnSegment?.success) {
           toast({
             variant: 'success',
-            title: t('users.toast.segments.usersAdded', {
-              count: ret.data.createBizUserOnSegment.count,
+            title: t('companies.toast.segments.companiesAdded', {
+              count: ret.data.createBizCompanyOnSegment.count,
               segmentName: segment.name,
             }),
           });
-          refetch();
           return true;
         }
 
         // Handle unexpected response
         toast({
           variant: 'destructive',
-          title: t('users.toast.segments.addFailed'),
+          title: t('companies.toast.segments.addFailed'),
         });
         return false;
       } catch (error) {
@@ -76,11 +73,11 @@ export const useAddUsersToSegment = () => {
         return false;
       }
     },
-    [createMutation, refetch, toast, t],
+    [createMutation, toast, t],
   );
 
   return {
-    addUsers,
+    addCompaniesToSegment,
     isAdding: loading,
   };
 };

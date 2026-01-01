@@ -15,7 +15,7 @@ import {
   getFacetedUniqueValues,
 } from '@tanstack/react-table';
 import { BizCompany, Segment, AttributeBizTypes } from '@usertour/types';
-import * as React from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -31,7 +31,7 @@ interface CompanyDataTableProps {
   segment: Segment;
 }
 
-export const CompanyDataTable = React.memo(({ segment }: CompanyDataTableProps) => {
+export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
   const { t } = useTranslation();
   const columns = useCompanyTableColumns();
 
@@ -147,4 +147,4 @@ export const CompanyDataTable = React.memo(({ segment }: CompanyDataTableProps) 
       <DataTablePagination table={table} />
     </div>
   );
-});
+};

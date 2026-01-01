@@ -9,7 +9,7 @@ import {
 } from '@usertour-packages/alert-dialog';
 import { useDeleteSegment } from '@/hooks/use-delete-segment';
 import { Segment } from '@usertour/types';
-import { useCallback, memo } from 'react';
+import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useTranslation } from 'react-i18next';
 
@@ -20,7 +20,7 @@ interface UserSegmentDeleteDialogProps {
   onSubmit: () => void;
 }
 
-export const UserSegmentDeleteDialog = memo((props: UserSegmentDeleteDialogProps) => {
+export const UserSegmentDeleteDialog = (props: UserSegmentDeleteDialogProps) => {
   const { segment, open, onOpenChange, onSubmit } = props;
   const { deleteSegmentById, loading } = useDeleteSegment();
   const { t } = useTranslation();
@@ -54,6 +54,6 @@ export const UserSegmentDeleteDialog = memo((props: UserSegmentDeleteDialogProps
       </AlertDialogContent>
     </AlertDialog>
   );
-});
+};
 
 UserSegmentDeleteDialog.displayName = 'UserSegmentDeleteDialog';

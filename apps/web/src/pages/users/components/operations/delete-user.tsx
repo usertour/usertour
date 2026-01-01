@@ -1,7 +1,7 @@
 import { Delete2Icon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
-import { useCallback, useState, memo } from 'react';
+import { useCallback, useState } from 'react';
 import { BizUserDeleteDialog } from '../dialogs';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,7 @@ interface DeleteUserFromSegmentProps {
   table: Table<any>;
 }
 
-export const DeleteUserFromSegment = memo((props: DeleteUserFromSegmentProps) => {
+export const DeleteUserFromSegment = (props: DeleteUserFromSegmentProps) => {
   const { table } = props;
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
 
@@ -49,6 +49,6 @@ export const DeleteUserFromSegment = memo((props: DeleteUserFromSegmentProps) =>
       />
     </>
   );
-});
+};
 
 DeleteUserFromSegment.displayName = 'DeleteUserFromSegment';

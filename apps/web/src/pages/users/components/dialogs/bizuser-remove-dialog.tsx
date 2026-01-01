@@ -9,7 +9,7 @@ import {
 } from '@usertour-packages/alert-dialog';
 import { useRemoveUsersFromSegment } from '@/hooks/use-remove-users-from-segment';
 import { Segment } from '@usertour/types';
-import { useCallback, memo } from 'react';
+import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useTranslation } from 'react-i18next';
 
@@ -21,7 +21,7 @@ interface BizUserRemoveDialogProps {
   onSubmit: () => void;
 }
 
-export const BizUserRemoveDialog = memo((props: BizUserRemoveDialogProps) => {
+export const BizUserRemoveDialog = (props: BizUserRemoveDialogProps) => {
   const { bizUserIds = [], open, onOpenChange, onSubmit, segment } = props;
   const { removeUsers, loading } = useRemoveUsersFromSegment();
   const { t } = useTranslation();
@@ -56,6 +56,6 @@ export const BizUserRemoveDialog = memo((props: BizUserRemoveDialogProps) => {
       </AlertDialogContent>
     </AlertDialog>
   );
-});
+};
 
 BizUserRemoveDialog.displayName = 'BizUserRemoveDialog';

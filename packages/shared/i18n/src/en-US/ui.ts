@@ -21,6 +21,7 @@ const translations = {
       deleteSegment: 'Delete segment',
       cancel: 'Cancel',
       confirm: 'Confirm',
+      addToManualSegment: 'Add to manual segment',
     },
     dialogs: {
       removeUsersFromSegment: {
@@ -111,6 +112,9 @@ const translations = {
         segmentUpdated: 'Segment has been updated to "{{segmentName}}"',
         createFailed: 'Create Segment failed.',
         updateFailed: 'Update Segment failed.',
+        noUsersSelected: 'No users selected. Please select at least one user.',
+        invalidSegment: 'Invalid segment selected.',
+        addFailed: 'Failed to add users to segment.',
       },
       users: {
         usersDeleted: '{{count}} {{userType}} has been successfully deleted',
@@ -214,6 +218,9 @@ const translations = {
         segmentUpdated: 'Segment has been updated to "{{segmentName}}"',
         createFailed: 'Create Segment failed.',
         updateFailed: 'Update Segment failed.',
+        noCompaniesSelected: 'No companies selected. Please select at least one company.',
+        invalidSegment: 'Invalid segment selected.',
+        addFailed: 'Failed to add companies to segment.',
       },
       companies: {
         companiesDeleted: '{{count}} {{companyType}} has been successfully deleted',

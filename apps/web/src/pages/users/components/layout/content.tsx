@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { memo, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserDataTable } from '../table';
 import { UserEditDropdownMenu } from '../operations';
@@ -84,9 +84,9 @@ function UserListContentInner({ environmentId }: { environmentId: string | undef
   );
 }
 
-export const UserListContent = memo(function UserListContent(props: {
+export const UserListContent = (props: {
   environmentId: string | undefined;
-}) {
+}) => {
   const { environmentId } = props;
 
   if (!environmentId) {
@@ -98,6 +98,6 @@ export const UserListContent = memo(function UserListContent(props: {
       <UserListContentInner environmentId={environmentId} />
     </UserListProvider>
   );
-});
+};
 
 UserListContent.displayName = 'UserListContent';

@@ -21,6 +21,7 @@ const translations = {
       deleteSegment: '删除细分',
       cancel: '取消',
       confirm: '确认',
+      addToManualSegment: '添加到手动细分',
     },
     dialogs: {
       removeUsersFromSegment: {
@@ -110,6 +111,9 @@ const translations = {
         segmentUpdated: '细分已更新为 "{{segmentName}}"',
         createFailed: '创建细分失败。',
         updateFailed: '更新细分失败。',
+        noUsersSelected: '未选择用户。请至少选择一个用户。',
+        invalidSegment: '选择的细分无效。',
+        addFailed: '添加用户到细分失败。',
       },
       users: {
         usersDeleted: '{{count}} 个{{userType}}已成功删除',
@@ -212,6 +216,9 @@ const translations = {
         segmentUpdated: '细分已更新为 "{{segmentName}}"',
         createFailed: '创建细分失败。',
         updateFailed: '更新细分失败。',
+        noCompaniesSelected: '未选择公司。请至少选择一个公司。',
+        invalidSegment: '选择的细分无效。',
+        addFailed: '添加公司到细分失败。',
       },
       companies: {
         companiesDeleted: '{{count}} 个{{companyType}}已成功删除',

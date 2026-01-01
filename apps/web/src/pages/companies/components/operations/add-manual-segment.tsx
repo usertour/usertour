@@ -1,6 +1,4 @@
-import { useToast } from '@usertour-packages/use-toast';
-import { useMutation } from '@apollo/client';
-import { createBizCompanyOnSegment } from '@usertour-packages/gql';
+import { useCallback } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,84 +8,62 @@ import {
 import { UserIcon3 } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
-import { useCallback } from 'react';
 import { Segment } from '@usertour/types';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { getErrorMessage } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
+import { useManualSegments } from '@/hooks/use-manual-segments';
+import { useAddCompaniesToManualSegment } from '@/hooks/use-add-companies-to-manual-segment';
 
 interface AddCompanyManualSegmentProps {
   table: Table<any>;
 }
 
+/**
+ * Component for adding selected companies to manual segments
+ */
 export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => {
   const { table } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
-  const [mutation] = useMutation(createBizCompanyOnSegment);
-  const { segmentList } = useSegmentListContext();
-  const { toast } = useToast();
+  const { manualSegments } = useManualSegments();
+  const { addCompaniesToSegment, isAdding } = useAddCompaniesToManualSegment();
 
   const handleAddManualSegment = useCallback(
     async (segment: Segment) => {
+      // Check if any companies are selected
       if (!hasSelection()) {
         return;
       }
 
-      const companyOnSegment = collectSelectedIds().map((id) => ({
-        bizCompanyId: id,
-        segmentId: segment.id,
-        data: {},
-      }));
-
-      const data = {
-        companyOnSegment,
-      };
-      try {
-        const ret = await mutation({ variables: { data } });
-        if (ret.data?.createBizCompanyOnSegment?.success) {
-          toast({
-            variant: 'success',
-            title: t('companies.toast.segments.companiesAdded', {
-              count: ret.data?.createBizCompanyOnSegment.count,
-              segmentName: segment.name,
-            }),
-          });
-        }
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-      }
+      const selectedIds = collectSelectedIds();
+      await addCompaniesToSegment(selectedIds, segment);
     },
-    [collectSelectedIds, hasSelection, mutation, toast],
+    [collectSelectedIds, hasSelection, addCompaniesToSegment],
   );
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={'ghost'} className="h-8 text-primary hover:text-primary px-1 ">
+        <Button
+          variant="ghost"
+          className="h-8 text-primary hover:text-primary px-1"
+          disabled={isAdding}
+        >
           <UserIcon3 width={16} height={16} className="mr-1" />
           {t('companies.actions.addToManualSegment')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {segmentList?.map(
-          (segment) =>
-            segment.dataType === 'MANUAL' && (
-              <DropdownMenuItem
-                key={`${segment.id}`}
-                className="cursor-pointer min-w-[180px]"
-                onSelect={() => {
-                  handleAddManualSegment(segment);
-                }}
-              >
-                {segment.name}
-              </DropdownMenuItem>
-            ),
-        )}
+        {manualSegments?.map((segment) => (
+          <DropdownMenuItem
+            key={segment.id}
+            className="cursor-pointer min-w-[180px]"
+            disabled={isAdding}
+            onSelect={() => handleAddManualSegment(segment)}
+          >
+            {segment.name}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

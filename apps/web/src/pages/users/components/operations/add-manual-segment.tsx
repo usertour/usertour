@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,28 +8,35 @@ import {
 import { UserIcon3 } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
-import { useCallback } from 'react';
 import { Segment } from '@usertour/types';
-import { useSegmentListContext } from '@/contexts/segment-list-context';
+import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
+import { useManualSegments } from '@/hooks/use-manual-segments';
 import { useAddUsersToSegment } from '@/hooks/use-add-users-to-segment';
 
 interface AddUserManualSegmentProps {
   table: Table<any>;
 }
 
+/**
+ * Component for adding selected users to manual segments
+ */
 export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
   const { table } = props;
+  const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
-  const { addUsers } = useAddUsersToSegment();
-  const { segmentList } = useSegmentListContext();
+  const { manualSegments } = useManualSegments();
+  const { addUsers, isAdding } = useAddUsersToSegment();
 
   const handleAddManualSegment = useCallback(
     async (segment: Segment) => {
-      if (!hasSelection()) return;
+      // Check if any users are selected
+      if (!hasSelection()) {
+        return;
+      }
 
       const selectedIds = collectSelectedIds();
-      await addUsers(selectedIds, segment.id, segment.name);
+      await addUsers(selectedIds, segment);
     },
     [collectSelectedIds, hasSelection, addUsers],
   );
@@ -36,26 +44,26 @@ export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={'ghost'} className="h-8 text-primary hover:text-primary px-1 ">
+        <Button
+          variant="ghost"
+          className="h-8 text-primary hover:text-primary px-1"
+          disabled={isAdding}
+        >
           <UserIcon3 width={16} height={16} className="mr-1" />
-          Add to manual segment
+          {t('users.actions.addToManualSegment')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {segmentList?.map(
-          (segment) =>
-            segment.dataType === 'MANUAL' && (
-              <DropdownMenuItem
-                key={`${segment.environmentId}-${segment.id}`}
-                className="cursor-pointer min-w-[180px]"
-                onSelect={() => {
-                  handleAddManualSegment(segment);
-                }}
-              >
-                {segment.name}
-              </DropdownMenuItem>
-            ),
-        )}
+        {manualSegments?.map((segment) => (
+          <DropdownMenuItem
+            key={segment.id}
+            className="cursor-pointer min-w-[180px]"
+            disabled={isAdding}
+            onSelect={() => handleAddManualSegment(segment)}
+          >
+            {segment.name}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
