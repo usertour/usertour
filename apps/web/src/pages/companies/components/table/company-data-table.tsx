@@ -3,8 +3,6 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import {
-  ColumnDef,
-  Table,
   ColumnFiltersState,
   SortingState,
   VisibilityState,
@@ -16,13 +14,10 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from '@tanstack/react-table';
-import { Checkbox } from '@usertour-packages/checkbox';
 import { BizCompany, Segment, AttributeBizTypes } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { DataTableColumnHeader } from '@/components/molecules/segment/table';
-import { UserAvatar } from '@/components/molecules/user-avatar';
 import {
   DataTable,
   DataTablePagination,
@@ -30,58 +25,15 @@ import {
   buildColumnVisibility,
 } from '@/components/molecules/segment/table';
 import { CompanyDataTableToolbar } from './company-data-table-toolbar';
+import { useCompanyTableColumns } from '@/hooks/use-company-table-columns';
 
 interface CompanyDataTableProps {
   segment: Segment;
 }
 
-export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
+export const CompanyDataTable = React.memo(({ segment }: CompanyDataTableProps) => {
   const { t } = useTranslation();
-
-  // Define table columns
-  const columns: ColumnDef<BizCompany>[] = [
-    {
-      id: 'select',
-      header: ({ table }: { table: Table<BizCompany> }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-          className="translate-y-[2px]"
-        />
-      ),
-      cell: ({ row }: { row: any }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-          className="translate-y-[2px]"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: 'externalId',
-      header: ({ column }: { column: any }) => (
-        <DataTableColumnHeader column={column} title={t('companies.table.company')} />
-      ),
-      cell: ({ row }: { row: any }) => {
-        const email = row.original.data?.email || '';
-        const name = row.original.data?.name || '';
-        const externalId = row.original.externalId || '';
-
-        return (
-          <div className="flex items-center gap-2">
-            <UserAvatar email={email} name={name} size="sm" />
-            <span className="leading-none w-72 truncate">{externalId}</span>
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ];
+  const columns = useCompanyTableColumns();
 
   const { setQuery, setPagination, pagination, pageCount, contents, loading } =
     useCompanyListContext();
@@ -160,6 +112,10 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
     (row: BizCompany) => {
       const environmentId = row.environmentId;
       const companyId = row.id;
+      if (!environmentId || !companyId) {
+        console.warn('Company row missing required fields for navigation');
+        return;
+      }
       navigate(`/env/${environmentId}/company/${companyId}`);
     },
     [navigate],
@@ -191,4 +147,4 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
       <DataTablePagination table={table} />
     </div>
   );
-};
+});

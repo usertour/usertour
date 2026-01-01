@@ -24,15 +24,12 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useTableSelection } from '@/hooks/use-table-selection';
 
-interface UserDataTableToolbarProps<TData> {
-  table: Table<TData>;
+interface UserDataTableToolbarProps {
+  table: Table<any>;
   currentSegment: Segment;
 }
 
-export const UserDataTableToolbar = <TData extends object>({
-  table,
-  currentSegment,
-}: UserDataTableToolbarProps<TData>) => {
+export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToolbarProps) => {
   const { attributeList } = useAttributeListContext();
   const { setCurrentConditions, refetch } = useSegmentListContext();
   const { query, setQuery } = useUserListContext();

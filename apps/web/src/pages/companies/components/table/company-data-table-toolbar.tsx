@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
@@ -25,144 +26,143 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useTableSelection } from '@/hooks/use-table-selection';
 
-interface CompanyDataTableToolbarProps<TData> {
-  table: Table<TData>;
+interface CompanyDataTableToolbarProps {
+  table: Table<any>;
   currentSegment: Segment;
 }
 
-export const CompanyDataTableToolbar = <TData extends object>({
-  table,
-  currentSegment,
-}: CompanyDataTableToolbarProps<TData>) => {
-  const { t } = useTranslation();
-  const { attributeList, loading: attributeLoading } = useAttributeListContext();
-  const { setCurrentConditions, refetch } = useSegmentListContext();
+export const CompanyDataTableToolbar = React.memo(
+  ({ table, currentSegment }: CompanyDataTableToolbarProps) => {
+    const { t } = useTranslation();
+    const { attributeList, loading: attributeLoading } = useAttributeListContext();
+    const { setCurrentConditions, refetch } = useSegmentListContext();
 
-  // Filtered attributes for company rules
-  const filteredAttributes = attributeLoading
-    ? []
-    : attributeList?.filter(
-        (attr) =>
-          attr.bizType === AttributeBizTypes.Company ||
-          attr.bizType === AttributeBizTypes.Membership,
-      ) || [];
+    // Filtered attributes for company rules
+    const filteredAttributes = attributeLoading
+      ? []
+      : attributeList?.filter(
+          (attr) =>
+            attr.bizType === AttributeBizTypes.Company ||
+            attr.bizType === AttributeBizTypes.Membership,
+        ) || [];
 
-  const { query, setQuery } = useCompanyListContext();
-  const [searchValue, setSearchValue] = useState('');
-  const { hasSelection } = useTableSelection(table);
-  const { isViewOnly, environment } = useAppContext();
+    const { query, setQuery } = useCompanyListContext();
+    const [searchValue, setSearchValue] = useState('');
+    const { hasSelection } = useTableSelection(table);
+    const { isViewOnly, environment } = useAppContext();
 
-  const [open, setOpen] = useState(false);
-  const handleOnClose = () => {
-    setOpen(false);
-  };
+    const [open, setOpen] = useState(false);
+    const handleOnClose = () => {
+      setOpen(false);
+    };
 
-  const [mutation] = useMutation(updateSegment);
-  const { toast } = useToast();
+    const [mutation] = useMutation(updateSegment);
+    const { toast } = useToast();
 
-  const updateSegmentColumn = useCallback(
-    async (name: string, value: boolean) => {
-      if (!currentSegment) {
-        return;
-      }
-      const data = {
-        id: currentSegment.id,
-        columns: { ...currentSegment.columns, [name]: value },
-      };
-      try {
-        const ret = await mutation({ variables: { data } });
-        if (ret.data?.updateSegment?.id) {
-          await refetch();
+    const updateSegmentColumn = useCallback(
+      async (name: string, value: boolean) => {
+        if (!currentSegment) {
+          return;
         }
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-      }
-    },
-    [currentSegment, mutation, refetch, toast],
-  );
+        const data = {
+          id: currentSegment.id,
+          columns: { ...currentSegment.columns, [name]: value },
+        };
+        try {
+          const ret = await mutation({ variables: { data } });
+          if (ret.data?.updateSegment?.id) {
+            await refetch();
+          }
+        } catch (error) {
+          toast({
+            variant: 'destructive',
+            title: getErrorMessage(error),
+          });
+        }
+      },
+      [currentSegment, mutation, refetch, toast],
+    );
 
-  const handleDataChange = useCallback(
-    async (conditions: RulesCondition[], hasError: boolean) => {
-      if (!hasError) {
-        setQuery({ ...query, data: conditions });
-      }
-      if (
-        hasError ||
-        !currentSegment ||
-        conditions.length === 0 ||
-        conditionsIsSame(conditions, currentSegment.data)
-      ) {
-        return;
-      }
-      setCurrentConditions({ segmentId: currentSegment.id, data: conditions });
-    },
-    [currentSegment, query],
-  );
+    const handleDataChange = useCallback(
+      async (conditions: RulesCondition[], hasError: boolean) => {
+        if (!hasError) {
+          setQuery({ ...query, data: conditions });
+        }
+        if (
+          hasError ||
+          !currentSegment ||
+          conditions.length === 0 ||
+          conditionsIsSame(conditions, currentSegment.data)
+        ) {
+          return;
+        }
+        setCurrentConditions({ segmentId: currentSegment.id, data: conditions });
+      },
+      [currentSegment, query],
+    );
 
-  const handleSearchChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setSearchValue(event.target.value);
-      setQuery({ ...query, search: event.target.value });
-    },
-    [query],
-  );
+    const handleSearchChange = useCallback(
+      (event: ChangeEvent<HTMLInputElement>) => {
+        setSearchValue(event.target.value);
+        setQuery({ ...query, search: event.target.value });
+      },
+      [query],
+    );
 
-  const handleSearchReset = useCallback(() => {
-    setSearchValue('');
-    setQuery({ ...query, search: '' });
-  }, [query]);
+    const handleSearchReset = useCallback(() => {
+      setSearchValue('');
+      setQuery({ ...query, search: '' });
+    }, [query]);
 
-  return (
-    <>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-1 items-center space-x-2">
-          <Input
-            placeholder={t('common.search')}
-            value={searchValue}
-            onChange={handleSearchChange}
-            className="h-8 w-[150px] lg:w-[250px]"
+    return (
+      <>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-1 items-center space-x-2">
+            <Input
+              placeholder={t('common.search')}
+              value={searchValue}
+              onChange={handleSearchChange}
+              className="h-8 w-[150px] lg:w-[250px]"
+            />
+            {searchValue !== '' && (
+              <Button variant="ghost" onClick={handleSearchReset} className="h-8 px-2 lg:px-3">
+                {t('common.reset')}
+                <Cross2Icon className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <DataTableViewOptions table={table} onColumnVisibilityChange={updateSegmentColumn} />
+
+          <CompanySegmentCreateDialog
+            isOpen={open}
+            onClose={handleOnClose}
+            environmentId={environment?.id}
           />
-          {searchValue !== '' && (
-            <Button variant="ghost" onClick={handleSearchReset} className="h-8 px-2 lg:px-3">
-              {t('common.reset')}
-              <Cross2Icon className="ml-2 h-4 w-4" />
-            </Button>
-          )}
         </div>
-        <DataTableViewOptions table={table} onColumnVisibilityChange={updateSegmentColumn} />
-
-        <CompanySegmentCreateDialog
-          isOpen={open}
-          onClose={handleOnClose}
-          environmentId={environment?.id}
-        />
-      </div>
-      <div className="flex items-center justify-between">
-        <Rules
-          onDataChange={handleDataChange}
-          defaultConditions={JSON.parse(JSON.stringify(currentSegment.data || []))}
-          isHorizontal={true}
-          isShowIf={false}
-          key={currentSegment.id}
-          filterItems={['group', 'user-attr']}
-          addButtonText={t('common.addFilter')}
-          attributes={filteredAttributes}
-          disabled={isViewOnly}
-          baseZIndex={WebZIndex.RULES}
-        />
-      </div>
-      {hasSelection() && (
-        <div className="flex flex-row space-x-2">
-          <AddCompanyManualSegment table={table} />
-          {currentSegment.dataType === 'MANUAL' && (
-            <RemoveFromSegment table={table} currentSegment={currentSegment} />
-          )}
-          <DeleteCompanyFromSegment table={table} />
+        <div className="flex items-center justify-between">
+          <Rules
+            onDataChange={handleDataChange}
+            defaultConditions={JSON.parse(JSON.stringify(currentSegment.data || []))}
+            isHorizontal={true}
+            isShowIf={false}
+            key={currentSegment.id}
+            filterItems={['group', 'user-attr']}
+            addButtonText={t('common.addFilter')}
+            attributes={filteredAttributes}
+            disabled={isViewOnly}
+            baseZIndex={WebZIndex.RULES}
+          />
         </div>
-      )}
-    </>
-  );
-};
+        {hasSelection() && (
+          <div className="flex flex-row space-x-2">
+            <AddCompanyManualSegment table={table} />
+            {currentSegment.dataType === 'MANUAL' && (
+              <RemoveFromSegment table={table} currentSegment={currentSegment} />
+            )}
+            <DeleteCompanyFromSegment table={table} />
+          </div>
+        )}
+      </>
+    );
+  },
+);
