@@ -1,7 +1,7 @@
 import { Table } from '@tanstack/react-table';
 import { Button } from '@usertour-packages/button';
 import { Delete2Icon } from '@usertour-packages/icons';
-import { BizCompanyDeleteForm } from '../dialogs';
+import { BizCompanyDeleteDialog } from '../dialogs';
 import { useCallback } from 'react';
 import { useState } from 'react';
 import { useCompanyListContext } from '@/contexts/company-list-context';
@@ -48,7 +48,7 @@ export const DeleteCompanyFromSegment = (props: DeleteCompanyFromSegmentProps) =
         <Delete2Icon className="mr-1" />
         Delete company
       </Button>
-      <BizCompanyDeleteForm
+      <BizCompanyDeleteDialog
         open={openDelete}
         bizCompanyIds={bizCompanyIds}
         onOpenChange={setOpenDelete}

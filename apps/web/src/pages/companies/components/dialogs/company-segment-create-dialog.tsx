@@ -25,35 +25,22 @@ import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
 import { getErrorMessage } from '@usertour/helpers';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useToast } from '@usertour-packages/use-toast';
+import {
+  createSegmentFormSchema,
+  createSegmentDefaultValues,
+  CreateSegmentFormValues,
+} from '../../types/segment-form-schema';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 
-interface CreateFormProps {
+interface CreateDialogProps {
   isOpen: boolean;
   onClose: () => void;
   environmentId: string | undefined;
 }
 
-const formSchema = z.object({
-  dataType: z.enum(['CONDITION', 'MANUAL']),
-  name: z
-    .string({
-      required_error: 'Please company segment name.',
-    })
-    .max(20)
-    .min(2),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-const defaultValues: Partial<FormValues> = {
-  name: '',
-  dataType: 'CONDITION',
-};
-
-export const CompanySegmentCreateForm = (props: CreateFormProps) => {
+export const CompanySegmentCreateDialog = (props: CreateDialogProps) => {
   const { onClose, isOpen, environmentId } = props;
   const [createMutation] = useMutation(createSegment);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -66,9 +53,9 @@ export const CompanySegmentCreateForm = (props: CreateFormProps) => {
     });
   };
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
+  const form = useForm<CreateSegmentFormValues>({
+    resolver: zodResolver(createSegmentFormSchema),
+    defaultValues: createSegmentDefaultValues,
     mode: 'onChange',
   });
 
@@ -76,7 +63,7 @@ export const CompanySegmentCreateForm = (props: CreateFormProps) => {
     form.reset();
   }, [isOpen]);
 
-  async function handleOnSubmit(formValues: FormValues) {
+  async function handleOnSubmit(formValues: CreateSegmentFormValues) {
     setIsLoading(true);
     try {
       const data = {
@@ -172,4 +159,4 @@ export const CompanySegmentCreateForm = (props: CreateFormProps) => {
   );
 };
 
-CompanySegmentCreateForm.displayName = 'CompanySegmentCreateForm';
+CompanySegmentCreateDialog.displayName = 'CompanySegmentCreateDialog';

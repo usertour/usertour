@@ -3,7 +3,7 @@ import { z } from 'zod';
 // Shared segment name validation schema
 export const segmentNameSchema = z
   .string({
-    required_error: 'Please enter user segment name.',
+    required_error: 'Please enter company segment name.',
   })
   .max(20)
   .min(2);

@@ -13,19 +13,19 @@ import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useDeleteSegmentMutation } from '@usertour-packages/shared-hooks';
 
-interface CompanySegmentDeleteFormProps {
+interface CompanySegmentDeleteDialogProps {
   segment: Segment;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
 }
 
-export const CompanySegmentDeleteForm = ({
+export const CompanySegmentDeleteDialog = ({
   segment,
   open,
   onOpenChange,
   onSubmit,
-}: CompanySegmentDeleteFormProps) => {
+}: CompanySegmentDeleteDialogProps) => {
   const { invoke: deleteSegment, loading } = useDeleteSegmentMutation();
   const { toast } = useToast();
 
@@ -86,4 +86,4 @@ export const CompanySegmentDeleteForm = ({
   );
 };
 
-CompanySegmentDeleteForm.displayName = 'CompanySegmentDeleteForm';
+CompanySegmentDeleteDialog.displayName = 'CompanySegmentDeleteDialog';

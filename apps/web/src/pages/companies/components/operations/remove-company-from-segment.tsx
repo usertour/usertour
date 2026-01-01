@@ -2,7 +2,7 @@ import { CloseIcon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
-import { BizCompanyRemoveForm } from '../dialogs';
+import { BizCompanyRemoveDialog } from '../dialogs';
 import { Segment } from '@usertour/types';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
@@ -49,7 +49,7 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
         Remove from this segment
       </Button>
 
-      <BizCompanyRemoveForm
+      <BizCompanyRemoveDialog
         open={openDelete}
         bizCompanyIds={bizCompanyIds}
         segment={currentSegment}

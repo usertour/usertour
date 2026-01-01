@@ -24,36 +24,25 @@ import { Input } from '@usertour-packages/input';
 import { getErrorMessage } from '@usertour/helpers';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
+import { editSegmentFormSchema, EditSegmentFormValues } from '../../types/segment-form-schema';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 
-interface EditFormProps {
+interface EditDialogProps {
   isOpen: boolean;
   onClose: () => void;
   segment: Segment | undefined;
 }
 
-const formSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Please enter company segment name.',
-    })
-    .max(20)
-    .min(2),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-export const CompanySegmentEditForm = (props: EditFormProps) => {
+export const CompanySegmentEditDialog = (props: EditDialogProps) => {
   const { onClose, isOpen, segment } = props;
   const [mutation] = useMutation(updateSegment);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<EditSegmentFormValues>({
+    resolver: zodResolver(editSegmentFormSchema),
     defaultValues: { name: segment?.name },
     mode: 'onChange',
   });
@@ -63,7 +52,7 @@ export const CompanySegmentEditForm = (props: EditFormProps) => {
   }, [isOpen]);
 
   const handleOnSubmit = React.useCallback(
-    async (formValues: FormValues) => {
+    async (formValues: EditSegmentFormValues) => {
       if (!segment) {
         return;
       }
@@ -132,4 +121,4 @@ export const CompanySegmentEditForm = (props: EditFormProps) => {
   );
 };
 
-CompanySegmentEditForm.displayName = 'CompanySegmentEditForm';
+CompanySegmentEditDialog.displayName = 'CompanySegmentEditDialog';

@@ -7,7 +7,7 @@ import {
 import { Delete2Icon } from '@usertour-packages/icons';
 import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';
-import { CompanySegmentDeleteForm } from '../dialogs';
+import { CompanySegmentDeleteDialog } from '../dialogs';
 
 type CompanyEditDropdownMenuProps = {
   segment: Segment;
@@ -36,7 +36,7 @@ export const CompanyEditDropdownMenu = (props: CompanyEditDropdownMenuProps) => 
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <CompanySegmentDeleteForm
+      <CompanySegmentDeleteDialog
         segment={segment}
         open={openDelete}
         onOpenChange={setOpenDelete}

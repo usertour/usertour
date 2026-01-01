@@ -1,6 +1,6 @@
 import { Group2LineIcon } from '@usertour-packages/icons';
 import { SegmentSidebar } from '@/components/molecules/segment/layout';
-import { CompanySegmentCreateForm } from '../dialogs';
+import { CompanySegmentCreateDialog } from '../dialogs';
 import { useAppContext } from '@/contexts/app-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useState } from 'react';
@@ -28,7 +28,7 @@ export function CompanyListSidebar({ environmentId }: CompanyListSidebarProps) {
         createTooltip="Create company segment"
         disabled={isViewOnly}
       />
-      <CompanySegmentCreateForm
+      <CompanySegmentCreateDialog
         isOpen={dialogOpen}
         onClose={handleDialogClose}
         environmentId={environmentId}

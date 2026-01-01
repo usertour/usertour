@@ -14,7 +14,7 @@ import { memo, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CompanyDataTable } from '../table';
 import { CompanyEditDropdownMenu } from '../operations';
-import { CompanySegmentEditForm } from '../dialogs';
+import { CompanySegmentEditDialog } from '../dialogs';
 import { CompanySegmentFilterSave } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 
@@ -78,7 +78,7 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
         <Separator className="my-4" />
         {currentSegment && <CompanyDataTable segment={currentSegment} key={currentSegment.id} />}
       </div>
-      <CompanySegmentEditForm isOpen={open} onClose={handleOnClose} segment={currentSegment} />
+      <CompanySegmentEditDialog isOpen={open} onClose={handleOnClose} segment={currentSegment} />
     </>
   );
 };

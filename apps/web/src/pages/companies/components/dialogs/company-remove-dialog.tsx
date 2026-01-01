@@ -15,7 +15,7 @@ import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 
-interface BizCompanyRemoveFormProps {
+interface BizCompanyRemoveDialogProps {
   bizCompanyIds: string[];
   segment: Segment;
   open: boolean;
@@ -23,7 +23,7 @@ interface BizCompanyRemoveFormProps {
   onSubmit: (success: boolean) => Promise<void>;
 }
 
-export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
+export const BizCompanyRemoveDialog = (props: BizCompanyRemoveDialogProps) => {
   const { bizCompanyIds, open, onOpenChange, onSubmit, segment } = props;
   const [mutation, { loading }] = useMutation(deleteBizCompanyOnSegment);
   const { toast } = useToast();
@@ -74,4 +74,4 @@ export const BizCompanyRemoveForm = (props: BizCompanyRemoveFormProps) => {
   );
 };
 
-BizCompanyRemoveForm.displayName = 'BizCompanyRemoveForm';
+BizCompanyRemoveDialog.displayName = 'BizCompanyRemoveDialog';

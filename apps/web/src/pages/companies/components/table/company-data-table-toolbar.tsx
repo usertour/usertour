@@ -13,7 +13,7 @@ import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
 import { ChangeEvent, useCallback, useState } from 'react';
 import { AddCompanyManualSegment } from '../operations';
-import { CompanySegmentCreateForm } from '../dialogs';
+import { CompanySegmentCreateDialog } from '../dialogs';
 import { DataTableViewOptions } from '@/components/molecules/segment/table';
 import { DeleteCompanyFromSegment } from '../operations';
 import { RemoveFromSegment } from '../operations';
@@ -132,7 +132,7 @@ export function CompanyDataTableToolbar<TData>({
         </div>
         <DataTableViewOptions table={table} onColumnVisibilityChange={updateSegmentColumn} />
 
-        <CompanySegmentCreateForm
+        <CompanySegmentCreateDialog
           isOpen={open}
           onClose={handleOnClose}
           environmentId={environment?.id}

@@ -1,6 +1,6 @@
 // Dialogs components barrel exports
-export { BizCompanyDeleteForm } from './company-delete-form';
-export { BizCompanyRemoveForm } from './company-remove-form';
-export { CompanySegmentCreateForm } from './company-segment-create-form';
-export { CompanySegmentDeleteForm } from './company-segment-delete-form';
-export { CompanySegmentEditForm } from './company-segment-edit-form';
+export { BizCompanyDeleteDialog } from './company-delete-dialog';
+export { BizCompanyRemoveDialog } from './company-remove-dialog';
+export { CompanySegmentCreateDialog } from './company-segment-create-dialog';
+export { CompanySegmentDeleteDialog } from './company-segment-delete-dialog';
+export { CompanySegmentEditDialog } from './company-segment-edit-dialog';

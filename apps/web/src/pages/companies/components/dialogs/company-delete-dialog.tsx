@@ -15,14 +15,14 @@ import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 
-interface BizCompanyDeleteFormProps {
+interface BizCompanyDeleteDialogProps {
   bizCompanyIds: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => Promise<void>;
 }
 
-export const BizCompanyDeleteForm = (props: BizCompanyDeleteFormProps) => {
+export const BizCompanyDeleteDialog = (props: BizCompanyDeleteDialogProps) => {
   const { open, onOpenChange, onSubmit, bizCompanyIds = [] } = props;
   const [mutation, { loading }] = useMutation(deleteBizCompany);
   const { environment } = useAppContext();
@@ -81,4 +81,4 @@ export const BizCompanyDeleteForm = (props: BizCompanyDeleteFormProps) => {
   );
 };
 
-BizCompanyDeleteForm.displayName = 'BizCompanyDeleteForm';
+BizCompanyDeleteDialog.displayName = 'BizCompanyDeleteDialog';
