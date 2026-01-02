@@ -2,6 +2,7 @@ import { TaskClickedIcon } from '@usertour-packages/icons';
 import { RulesLogic } from './rules-logic';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionIcon, RulesConditionRightContent } from './rules-template';
+import { RulesContainerWrapper } from './rules-wrapper';
 import { useRulesContext } from './rules-context';
 
 export interface RulesTaskIsClickedProps {
@@ -15,7 +16,7 @@ export const RulesTaskIsClicked = (props: RulesTaskIsClickedProps) => {
   const { disabled } = useRulesContext();
 
   return (
-    <div className="flex flex-row space-x-3">
+    <RulesContainerWrapper>
       <RulesLogic index={index} disabled={disabled} />
       <RulesConditionRightContent className="items-center" disabled={disabled}>
         <RulesConditionIcon>
@@ -24,7 +25,7 @@ export const RulesTaskIsClicked = (props: RulesTaskIsClickedProps) => {
         <div className="grow pr-6 text-sm  ">Task is clicked</div>
         <RulesRemove index={index} />
       </RulesConditionRightContent>
-    </div>
+    </RulesContainerWrapper>
   );
 };
 

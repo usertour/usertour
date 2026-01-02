@@ -20,6 +20,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
+import { RulesContainerWrapper } from './rules-wrapper';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 interface RulesElementProps {
@@ -147,7 +148,7 @@ export const RulesElement = (props: RulesElementProps) => {
   return (
     <RulesElementContext.Provider value={value}>
       <RulesError open={openError}>
-        <div className="flex flex-row space-x-3">
+        <RulesContainerWrapper>
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
@@ -207,7 +208,7 @@ export const RulesElement = (props: RulesElementProps) => {
             </RulesConditionRightContent>
           </RulesErrorAnchor>
           <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-        </div>
+        </RulesContainerWrapper>
       </RulesError>
     </RulesElementContext.Provider>
   );

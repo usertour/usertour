@@ -30,6 +30,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
+import { RulesContainerWrapper } from './rules-wrapper';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface SelectItemType {
@@ -240,7 +241,7 @@ export const RulesSegment = (props: RulesSegmentProps) => {
   return (
     <RulesSegmentContext.Provider value={value}>
       <RulesError open={openError}>
-        <div className="flex flex-row space-x-3">
+        <RulesContainerWrapper>
           <RulesLogic index={index} disabled={disabled} />
           <RulesErrorAnchor asChild>
             <RulesConditionRightContent disabled={disabled}>
@@ -270,7 +271,7 @@ export const RulesSegment = (props: RulesSegmentProps) => {
             </RulesConditionRightContent>
           </RulesErrorAnchor>
           <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-        </div>
+        </RulesContainerWrapper>
       </RulesError>
     </RulesSegmentContext.Provider>
   );

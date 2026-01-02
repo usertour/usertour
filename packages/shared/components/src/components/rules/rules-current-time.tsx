@@ -19,6 +19,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
+import { RulesContainerWrapper } from './rules-wrapper';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
@@ -65,7 +66,11 @@ const parseInitialData = (data?: TimeConditionData) => {
       if (!dateStr) {
         return undefined;
       }
-      const [month, day, year] = dateStr.split('/');
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) {
+        return undefined;
+      }
+      const [month, day, year] = parts;
       if (!month || !day || !year) {
         return undefined;
       }
@@ -189,11 +194,19 @@ const RulesCurrentTimeTimer = (props: {
     [num],
   );
 
+  // Provide a no-op function if onValueChange is not provided
+  const handleValueChange = useCallback(
+    (value: string) => {
+      onValueChange?.(value);
+    },
+    [onValueChange],
+  );
+
   return (
     <ComboBox
       options={options}
       value={defaultValue}
-      onValueChange={onValueChange || (() => {})}
+      onValueChange={handleValueChange}
       className="w-16 px-2"
       contentStyle={{ zIndex }}
     />
@@ -260,22 +273,12 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
       // Save in new format (ISO 8601)
       updateConditionData(index, timeData);
     },
-    [
-      getTimeData,
-      index,
-      updateConditionData,
-      startDate,
-      startDateHour,
-      startDateMinute,
-      endDate,
-      endDateHour,
-      endDateMinute,
-    ],
+    [getTimeData, index, updateConditionData],
   );
 
   return (
     <RulesError open={openError}>
-      <div className="flex flex-row space-x-3">
+      <RulesContainerWrapper>
         <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
@@ -335,7 +338,7 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
           </RulesConditionRightContent>
         </RulesErrorAnchor>
         <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-      </div>
+      </RulesContainerWrapper>
     </RulesError>
   );
 };

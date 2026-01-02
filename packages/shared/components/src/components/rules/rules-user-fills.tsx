@@ -10,6 +10,7 @@ import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
+import { RulesContainerWrapper } from './rules-wrapper';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 interface RulesUserFillsProps {
@@ -80,7 +81,7 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
 
   return (
     <RulesError open={openError}>
-      <div className="flex flex-row space-x-3">
+      <RulesContainerWrapper>
         <RulesLogic index={index} disabled={disabled} />
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
@@ -142,7 +143,7 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
           </RulesConditionRightContent>
         </RulesErrorAnchor>
         <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-      </div>
+      </RulesContainerWrapper>
     </RulesError>
   );
 };
