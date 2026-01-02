@@ -33,6 +33,7 @@ import {
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
+import { Button } from '@usertour-packages/button';
 
 const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();
@@ -56,7 +57,9 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
           }}
           disabled={isViewOnly}
         >
-          <DotsHorizontalIcon className="h-4 w-4 flex-none" />
+          <Button variant="ghost" size="icon" className="flex-none">
+            <DotsHorizontalIcon className="h-4 w-4" />
+          </Button>
         </ContentEditDropdownMenu>
       </div>
       <div className="grow flex flex-row text-sm items-center space-x-1 text-xs">
