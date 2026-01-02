@@ -200,7 +200,10 @@ const ContentTableItem = ({
       className="h-72 min-w-72  flex flex-col bg-white rounded-lg border hover:border-primary dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
     >
       <div className="flex-none bg-muted rounded-t-md">
-        <div className="h-48 flex justify-center items-center overflow-hidden">
+        <div
+          className="h-48 flex justify-center items-center overflow-hidden"
+          {...({ inert: '' } as any)}
+        >
           <ContentPreview
             currentVersion={currentVersion}
             currentTheme={currentTheme}
