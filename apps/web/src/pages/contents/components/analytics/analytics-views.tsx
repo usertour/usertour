@@ -26,7 +26,7 @@ const AnalyticsCard = ({ title, tooltip, value, icon }: AnalyticsCardProps) => (
       </CardTitle>
       {icon}
     </CardHeader>
-    <CardContent className="text-4xl font-bold text-primary">{value}</CardContent>
+    <CardContent className="text-3xl font-bold">{value}</CardContent>
   </Card>
 );
 
