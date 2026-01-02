@@ -11,6 +11,7 @@ import { useDeleteBizUser } from '@/hooks/use-delete-biz-user';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@usertour-packages/use-toast';
 
 interface BizUserDeleteDialogProps {
   bizUserIds: string[];
@@ -22,15 +23,30 @@ interface BizUserDeleteDialogProps {
 export const BizUserDeleteDialog = (props: BizUserDeleteDialogProps) => {
   const { open, onOpenChange, onSuccess, bizUserIds = [] } = props;
   const { deleteUsers, loading } = useDeleteBizUser();
+  const { toast } = useToast();
   const { t } = useTranslation();
 
   const handleConfirm = useCallback(async () => {
-    const success = await deleteUsers(bizUserIds);
-    if (success) {
+    const result = await deleteUsers(bizUserIds);
+    if (result.success) {
+      const count = result.count ?? 0;
+      const userType =
+        count === 1
+          ? t('users.actions.deleteUser').toLowerCase()
+          : t('users.dialogs.deleteUsers.titleMultiple').toLowerCase();
+      toast({
+        variant: 'success',
+        title: t('users.toast.users.usersDeleted', { count, userType }),
+      });
       onSuccess();
       onOpenChange(false);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: result.error ?? 'Unknown error',
+      });
     }
-  }, [bizUserIds, deleteUsers, onSuccess, onOpenChange]);
+  }, [bizUserIds, deleteUsers, onSuccess, onOpenChange, toast, t]);
 
   const isSingleUser = bizUserIds.length === 1;
   const actionText = isSingleUser

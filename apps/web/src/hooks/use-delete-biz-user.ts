@@ -1,51 +1,41 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useDeleteBizUserMutation } from '@usertour-packages/shared-hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+
+interface DeleteBizUserResult {
+  success: boolean;
+  count?: number;
+  error?: string;
+}
 
 export const useDeleteBizUser = () => {
   const { invoke: deleteBizUser, loading } = useDeleteBizUserMutation();
   const { environment } = useAppContext();
-  const { toast } = useToast();
-  const { t } = useTranslation();
+  const environmentId = environment?.id;
 
   const deleteUsers = useCallback(
-    async (userIds: string[]): Promise<boolean> => {
-      if (userIds.length === 0 || !environment?.id) {
-        return false;
+    async (userIds: string[]): Promise<DeleteBizUserResult> => {
+      if (userIds.length === 0 || !environmentId) {
+        return { success: false, error: 'Invalid parameters' };
       }
 
       const data = {
         ids: userIds,
-        environmentId: environment.id,
+        environmentId,
       };
 
       try {
         const ret = await deleteBizUser(data);
         if (ret.success) {
-          const count = ret.count;
-          const userType =
-            count === 1
-              ? t('users.actions.deleteUser').toLowerCase()
-              : t('users.dialogs.deleteUsers.titleMultiple').toLowerCase();
-          toast({
-            variant: 'success',
-            title: t('users.toast.users.usersDeleted', { count, userType }),
-          });
-          return true;
+          return { success: true, count: ret.count };
         }
-        return false;
+        return { success: false, error: 'Delete operation failed' };
       } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-        return false;
+        return { success: false, error: getErrorMessage(error) };
       }
     },
-    [deleteBizUser, environment?.id, toast],
+    [deleteBizUser, environmentId],
   );
 
   return {
