@@ -27,10 +27,8 @@ export const BizUserDeleteDialog = memo((props: BizUserDeleteDialogProps) => {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const handleConfirm = useCallback(async () => {
-    const result = await deleteUsers(bizUserIds);
-    if (result.success) {
-      const count = result.count ?? 0;
+  const handleSuccess = useCallback(
+    (count: number) => {
       const userType =
         count === 1
           ? t('users.actions.deleteUser').toLowerCase()
@@ -41,13 +39,33 @@ export const BizUserDeleteDialog = memo((props: BizUserDeleteDialogProps) => {
       });
       onSuccess();
       onOpenChange(false);
-    } else {
+    },
+    [onSuccess, onOpenChange, toast, t],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
       toast({
         variant: 'destructive',
-        title: result.error ?? 'Unknown error',
+        title: errorMessage,
       });
+    },
+    [toast],
+  );
+
+  const handleConfirm = useCallback(async () => {
+    if (!bizUserIds || bizUserIds.length === 0) {
+      handleError('No users selected');
+      return;
     }
-  }, [bizUserIds, deleteUsers, onSuccess, onOpenChange, toast, t]);
+
+    const result = await deleteUsers(bizUserIds);
+    if (result.success) {
+      handleSuccess(result.count ?? 0);
+    } else {
+      handleError(result.error ?? 'Unknown error');
+    }
+  }, [bizUserIds, deleteUsers, handleSuccess, handleError]);
 
   const isSingleUser = bizUserIds.length === 1;
   const actionText = isSingleUser

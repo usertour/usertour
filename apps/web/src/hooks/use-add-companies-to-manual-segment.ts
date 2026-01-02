@@ -3,8 +3,12 @@ import { createBizCompanyOnSegment } from '@usertour-packages/gql';
 import { useCallback } from 'react';
 import { Segment } from '@usertour/types';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
-import { useTranslation } from 'react-i18next';
+
+interface AddCompaniesResult {
+  success: boolean;
+  count?: number;
+  error?: string;
+}
 
 /**
  * Hook to handle adding companies to manual segments
@@ -12,26 +16,16 @@ import { useTranslation } from 'react-i18next';
  */
 export const useAddCompaniesToManualSegment = () => {
   const [createMutation, { loading }] = useMutation(createBizCompanyOnSegment);
-  const { toast } = useToast();
-  const { t } = useTranslation();
 
   const addCompaniesToSegment = useCallback(
-    async (companyIds: string[], segment: Segment): Promise<boolean> => {
+    async (companyIds: string[], segment: Segment): Promise<AddCompaniesResult> => {
       // Validate inputs
-      if (!companyIds || companyIds.length === 0) {
-        toast({
-          variant: 'destructive',
-          title: t('companies.toast.segments.noCompaniesSelected'),
-        });
-        return false;
+      if (!Array.isArray(companyIds) || companyIds.length === 0) {
+        return { success: false, error: 'No companies selected' };
       }
 
-      if (!segment?.id || !segment?.name) {
-        toast({
-          variant: 'destructive',
-          title: t('companies.toast.segments.invalidSegment'),
-        });
-        return false;
+      if (!segment || !segment.id) {
+        return { success: false, error: 'Invalid segment' };
       }
 
       // Transform data for GraphQL mutation
@@ -49,31 +43,16 @@ export const useAddCompaniesToManualSegment = () => {
         const ret = await createMutation({ variables: { data } });
 
         if (ret.data?.createBizCompanyOnSegment?.success) {
-          toast({
-            variant: 'success',
-            title: t('companies.toast.segments.companiesAdded', {
-              count: ret.data.createBizCompanyOnSegment.count,
-              segmentName: segment.name,
-            }),
-          });
-          return true;
+          return { success: true, count: ret.data.createBizCompanyOnSegment.count };
         }
 
         // Handle unexpected response
-        toast({
-          variant: 'destructive',
-          title: t('companies.toast.segments.addFailed'),
-        });
-        return false;
+        return { success: false, error: 'Add operation failed' };
       } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-        return false;
+        return { success: false, error: getErrorMessage(error) };
       }
     },
-    [createMutation, toast, t],
+    [createMutation],
   );
 
   return {

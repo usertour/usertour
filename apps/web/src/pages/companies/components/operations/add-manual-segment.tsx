@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { memo } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { useManualSegments } from '@/hooks/use-manual-segments';
 import { useAddCompaniesToManualSegment } from '@/hooks/use-add-companies-to-manual-segment';
+import { useToast } from '@usertour-packages/use-toast';
 
 interface AddCompanyManualSegmentProps {
   table: Table<any>;
@@ -21,24 +23,65 @@ interface AddCompanyManualSegmentProps {
 /**
  * Component for adding selected companies to manual segments
  */
-export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => {
+export const AddCompanyManualSegment = memo((props: AddCompanyManualSegmentProps) => {
   const { table } = props;
   const { t } = useTranslation();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
   const { manualSegments } = useManualSegments();
   const { addCompaniesToSegment, isAdding } = useAddCompaniesToManualSegment();
+  const { toast } = useToast();
+
+  const handleSuccess = useCallback(
+    (count: number, segmentName: string) => {
+      toast({
+        variant: 'success',
+        title: t('companies.toast.segments.companiesAdded', {
+          count,
+          segmentName,
+        }),
+      });
+    },
+    [toast, t],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
+      toast({
+        variant: 'destructive',
+        title: errorMessage,
+      });
+    },
+    [toast],
+  );
 
   const handleAddManualSegment = useCallback(
     async (segment: Segment) => {
+      // Validate segment
+      if (!segment?.id) {
+        return;
+      }
+
       // Check if any companies are selected
       if (!hasSelection()) {
         return;
       }
 
       const selectedIds = collectSelectedIds();
-      await addCompaniesToSegment(selectedIds, segment);
+
+      // Double-check we have selected IDs after collection
+      if (!selectedIds || selectedIds.length === 0) {
+        return;
+      }
+
+      const result = await addCompaniesToSegment(selectedIds, segment);
+
+      if (result.success) {
+        handleSuccess(result.count || 0, segment.name);
+      } else {
+        handleError(result.error ?? 'Unknown error');
+      }
     },
-    [collectSelectedIds, hasSelection, addCompaniesToSegment],
+    [collectSelectedIds, hasSelection, addCompaniesToSegment, handleSuccess, handleError],
   );
 
   return (
@@ -67,6 +110,6 @@ export const AddCompanyManualSegment = (props: AddCompanyManualSegmentProps) => 
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
+});
 
 AddCompanyManualSegment.displayName = 'AddCompanyManualSegment';

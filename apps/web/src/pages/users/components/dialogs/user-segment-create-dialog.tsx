@@ -29,8 +29,7 @@ import {
   createSegmentDefaultValues,
   CreateSegmentFormValues,
 } from '../../types/segment-form-schema';
-import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { memo } from 'react';
 
@@ -42,8 +41,7 @@ interface CreateDialogProps {
 
 export const UserSegmentCreateDialog = memo((props: CreateDialogProps) => {
   const { onClose, isOpen, environmentId } = props;
-  const { createSegmentAsync } = useCreateSegment();
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { createSegmentAsync, loading } = useCreateSegment();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -57,24 +55,39 @@ export const UserSegmentCreateDialog = memo((props: CreateDialogProps) => {
     form.reset();
   }, [isOpen]);
 
-  async function handleOnSubmit(formValues: CreateSegmentFormValues) {
-    setIsLoading(true);
-    const result = await createSegmentAsync(formValues, environmentId);
-    setIsLoading(false);
-
-    if (result.success) {
+  const handleSuccess = useCallback(
+    (segmentName: string) => {
       toast({
         variant: 'success',
-        title: t('users.toast.segments.segmentCreated', { segmentName: formValues.name }),
+        title: t('users.toast.segments.segmentCreated', { segmentName }),
       });
       onClose();
-    } else {
+    },
+    [onClose, toast, t],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
       toast({
         variant: 'destructive',
-        title: result.error ?? 'Unknown error',
+        title: errorMessage,
       });
-    }
-  }
+    },
+    [toast],
+  );
+
+  const handleOnSubmit = useCallback(
+    async (formValues: CreateSegmentFormValues) => {
+      const result = await createSegmentAsync(formValues, environmentId);
+
+      if (result.success) {
+        handleSuccess(formValues.name);
+      } else {
+        handleError(result.error ?? 'Unknown error');
+      }
+    },
+    [createSegmentAsync, environmentId, handleSuccess, handleError],
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
@@ -145,8 +158,8 @@ export const UserSegmentCreateDialog = memo((props: CreateDialogProps) => {
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 {t('users.actions.cancel')}
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={loading}>
+                {loading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 {t('users.segments.form.createSegment')}
               </Button>
             </DialogFooter>

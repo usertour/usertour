@@ -1,5 +1,3 @@
-import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
@@ -10,11 +8,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
-import { deleteBizCompany } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
+import { useDeleteCompany } from '@/hooks/use-delete-company';
+import { memo } from 'react';
 
 interface BizCompanyDeleteDialogProps {
   bizCompanyIds: string[];
@@ -23,42 +21,50 @@ interface BizCompanyDeleteDialogProps {
   onSubmit: (success: boolean) => Promise<void>;
 }
 
-export const BizCompanyDeleteDialog = (props: BizCompanyDeleteDialogProps) => {
+export const BizCompanyDeleteDialog = memo((props: BizCompanyDeleteDialogProps) => {
   const { open, onOpenChange, onSubmit, bizCompanyIds = [] } = props;
   const { t } = useTranslation();
-  const [mutation, { loading }] = useMutation(deleteBizCompany);
-  const { environment } = useAppContext();
+  const { deleteCompanies, loading } = useDeleteCompany();
   const { toast } = useToast();
 
-  const handleDeleteSubmit = useCallback(async () => {
-    if (bizCompanyIds.length === 0 || !environment?.id) {
-      return;
-    }
-    const data = {
-      ids: bizCompanyIds,
-      environmentId: environment.id,
-    };
-    try {
-      const ret = await mutation({ variables: { data } });
-      if (ret.data?.deleteBizCompany?.success) {
-        const count = ret.data?.deleteBizCompany.count;
-        toast({
-          variant: 'success',
-          title: t('companies.toast.companies.companiesDeleted', {
-            count,
-            companyType: count === 1 ? 'company' : 'companies',
-          }),
-        });
-        await onSubmit(true);
-      }
-    } catch (error) {
+  const handleSuccess = useCallback(
+    async (count: number) => {
+      toast({
+        variant: 'success',
+        title: t('companies.toast.companies.companiesDeleted', {
+          count,
+          companyType: count === 1 ? 'company' : 'companies',
+        }),
+      });
+      await onSubmit(true);
+    },
+    [onSubmit, toast, t],
+  );
+
+  const handleError = useCallback(
+    async (errorMessage: string) => {
       toast({
         variant: 'destructive',
-        title: getErrorMessage(error),
+        title: errorMessage,
       });
       onSubmit(false);
+    },
+    [onSubmit, toast],
+  );
+
+  const handleDeleteSubmit = useCallback(async () => {
+    if (!bizCompanyIds || bizCompanyIds.length === 0) {
+      await handleError('No companies selected');
+      return;
     }
-  }, [bizCompanyIds, environment?.id, mutation, toast, onSubmit]);
+
+    const result = await deleteCompanies(bizCompanyIds);
+    if (result.success) {
+      await handleSuccess(result.count ?? 0);
+    } else {
+      await handleError(result.error ?? 'Unknown error');
+    }
+  }, [bizCompanyIds, deleteCompanies, handleSuccess, handleError]);
 
   const isSingle = bizCompanyIds.length === 1;
   const companyType = isSingle ? 'company' : 'companies';
@@ -91,6 +97,6 @@ export const BizCompanyDeleteDialog = (props: BizCompanyDeleteDialogProps) => {
       </AlertDialogContent>
     </AlertDialog>
   );
-};
+});
 
 BizCompanyDeleteDialog.displayName = 'BizCompanyDeleteDialog';

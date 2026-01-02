@@ -24,10 +24,8 @@ import { Input } from '@usertour-packages/input';
 import { Segment } from '@usertour/types';
 import { useUpdateSegment } from '@/hooks/use-update-segment';
 import { editSegmentFormSchema, EditSegmentFormValues } from '../../types/segment-form-schema';
-import * as React from 'react';
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { memo } from 'react';
+import { memo, useEffect, useCallback } from 'react';
 
 interface EditDialogProps {
   isOpen: boolean;
@@ -37,8 +35,7 @@ interface EditDialogProps {
 
 export const UserSegmentEditDialog = memo((props: EditDialogProps) => {
   const { onClose, isOpen, segment } = props;
-  const { updateSegmentAsync } = useUpdateSegment();
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { updateSegmentAsync, loading } = useUpdateSegment();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -52,30 +49,43 @@ export const UserSegmentEditDialog = memo((props: EditDialogProps) => {
     form.reset({ name: segment?.name });
   }, [isOpen, segment?.name]);
 
-  const handleOnSubmit = React.useCallback(
+  const handleSuccess = useCallback(
+    (segmentName: string) => {
+      toast({
+        variant: 'success',
+        title: t('users.toast.segments.segmentUpdated', { segmentName }),
+      });
+      onClose();
+    },
+    [onClose, toast, t],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
+      toast({
+        variant: 'destructive',
+        title: errorMessage,
+      });
+    },
+    [toast],
+  );
+
+  const handleOnSubmit = useCallback(
     async (formValues: EditSegmentFormValues) => {
-      if (!segment) {
+      if (!segment?.id) {
+        handleError('Invalid segment data');
         return;
       }
 
-      setIsLoading(true);
       const result = await updateSegmentAsync(segment.id, formValues);
-      setIsLoading(false);
 
       if (result.success) {
-        toast({
-          variant: 'success',
-          title: t('users.toast.segments.segmentUpdated', { segmentName: formValues.name }),
-        });
-        onClose();
+        handleSuccess(formValues.name);
       } else {
-        toast({
-          variant: 'destructive',
-          title: result.error ?? 'Unknown error',
-        });
+        handleError(result.error ?? 'Unknown error');
       }
     },
-    [segment, updateSegmentAsync, onClose, toast, t],
+    [segment?.id, updateSegmentAsync, handleSuccess, handleError],
   );
 
   return (
@@ -109,8 +119,8 @@ export const UserSegmentEditDialog = memo((props: EditDialogProps) => {
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 {t('users.actions.cancel')}
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={loading}>
+                {loading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 {t('users.segments.form.updateSegment')}
               </Button>
             </DialogFooter>

@@ -28,25 +28,41 @@ export const UserSegmentDeleteDialog = memo((props: UserSegmentDeleteDialogProps
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const handleConfirm = useCallback(async () => {
-    if (!segment) {
-      return;
-    }
-    const result = await deleteSegmentById(segment.id);
-    if (result.success) {
+  const handleSuccess = useCallback(
+    (segmentName: string) => {
       toast({
         variant: 'success',
-        title: t('users.toast.segments.segmentDeleted', { segmentName: segment.name }),
+        title: t('users.toast.segments.segmentDeleted', { segmentName }),
       });
       onSubmit();
       onOpenChange(false);
-    } else {
+    },
+    [onSubmit, onOpenChange, toast, t],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
       toast({
         variant: 'destructive',
-        title: result.error ?? 'Unknown error',
+        title: errorMessage,
       });
+    },
+    [toast],
+  );
+
+  const handleConfirm = useCallback(async () => {
+    if (!segment?.id) {
+      handleError('Invalid segment data');
+      return;
     }
-  }, [segment, deleteSegmentById, onSubmit, onOpenChange, toast, t]);
+
+    const result = await deleteSegmentById(segment.id);
+    if (result.success) {
+      handleSuccess(segment.name);
+    } else {
+      handleError(result.error ?? 'Unknown error');
+    }
+  }, [segment?.id, segment?.name, deleteSegmentById, handleSuccess, handleError]);
 
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>

@@ -1,7 +1,6 @@
 'use client';
 
 import { SpinnerIcon } from '@usertour-packages/icons';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour-packages/button';
@@ -20,15 +19,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@usertour-packages/form';
-import { updateSegment } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { getErrorMessage } from '@usertour/helpers';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { editSegmentFormSchema, EditSegmentFormValues } from '../../types/segment-form-schema';
-import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { useUpdateCompanySegment } from '@/hooks/use-update-company-segment';
+import { memo } from 'react';
 
 interface EditDialogProps {
   isOpen: boolean;
@@ -36,11 +34,10 @@ interface EditDialogProps {
   segment: Segment | undefined;
 }
 
-export const CompanySegmentEditDialog = (props: EditDialogProps) => {
+export const CompanySegmentEditDialog = memo((props: EditDialogProps) => {
   const { onClose, isOpen, segment } = props;
   const { t } = useTranslation();
-  const [mutation] = useMutation(updateSegment);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { updateSegmentAsync, loading } = useUpdateCompanySegment();
   const { toast } = useToast();
 
   const form = useForm<EditSegmentFormValues>({
@@ -51,33 +48,43 @@ export const CompanySegmentEditDialog = (props: EditDialogProps) => {
 
   useEffect(() => {
     form.reset({ name: segment?.name });
-  }, [isOpen]);
+  }, [isOpen, segment?.name]);
 
-  const handleOnSubmit = React.useCallback(
+  const handleSuccess = useCallback(
+    (segmentName: string) => {
+      toast({
+        variant: 'success',
+        title: t('companies.toast.segments.segmentUpdated', { segmentName }),
+      });
+      onClose();
+    },
+    [onClose, toast, t],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
+      toast({
+        variant: 'destructive',
+        title: errorMessage,
+      });
+    },
+    [toast],
+  );
+
+  const handleOnSubmit = useCallback(
     async (formValues: EditSegmentFormValues) => {
-      if (!segment) {
+      if (!segment?.id) {
         return;
       }
-      try {
-        const data = {
-          id: segment.id,
-          name: formValues.name,
-        };
-        setIsLoading(true);
-        const ret = await mutation({ variables: { data } });
-        setIsLoading(false);
-        if (ret.data?.updateSegment?.id) {
-          onClose();
-        }
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-        setIsLoading(false);
+
+      const result = await updateSegmentAsync(segment.id, formValues);
+      if (result.success) {
+        handleSuccess(formValues.name);
+      } else {
+        handleError(result.error ?? 'Unknown error');
       }
     },
-    [segment, mutation, onClose, toast],
+    [segment?.id, updateSegmentAsync, handleSuccess, handleError],
   );
 
   return (
@@ -113,8 +120,8 @@ export const CompanySegmentEditDialog = (props: EditDialogProps) => {
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 {t('companies.actions.cancel')}
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={loading}>
+                {loading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 {t('companies.segments.form.updateSegment')}
               </Button>
             </DialogFooter>
@@ -123,6 +130,6 @@ export const CompanySegmentEditDialog = (props: EditDialogProps) => {
       </DialogContent>
     </Dialog>
   );
-};
+});
 
 CompanySegmentEditDialog.displayName = 'CompanySegmentEditDialog';

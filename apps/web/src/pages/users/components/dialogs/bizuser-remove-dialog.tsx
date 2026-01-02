@@ -29,24 +29,46 @@ export const BizUserRemoveDialog = memo((props: BizUserRemoveDialogProps) => {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const handleConfirm = useCallback(async () => {
-    if (!segment?.id) return;
-
-    const result = await removeUsers(bizUserIds, segment.id);
-    if (result.success) {
+  const handleSuccess = useCallback(
+    (count: number) => {
       toast({
         variant: 'success',
-        title: t('users.toast.segments.usersRemoved', { count: result.count }),
+        title: t('users.toast.segments.usersRemoved', { count }),
       });
       onSubmit();
       onOpenChange(false);
-    } else {
+    },
+    [onSubmit, onOpenChange, toast, t],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
       toast({
         variant: 'destructive',
-        title: result.error ?? 'Unknown error',
+        title: errorMessage,
       });
+    },
+    [toast],
+  );
+
+  const handleConfirm = useCallback(async () => {
+    if (!segment?.id) {
+      handleError('Invalid segment data');
+      return;
     }
-  }, [bizUserIds, segment?.id, removeUsers, onSubmit, onOpenChange, toast, t]);
+
+    if (!bizUserIds || bizUserIds.length === 0) {
+      handleError('No users selected');
+      return;
+    }
+
+    const result = await removeUsers(bizUserIds, segment.id);
+    if (result.success) {
+      handleSuccess(result.count || 0);
+    } else {
+      handleError(result.error ?? 'Unknown error');
+    }
+  }, [bizUserIds, segment?.id, removeUsers, handleSuccess, handleError]);
 
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>

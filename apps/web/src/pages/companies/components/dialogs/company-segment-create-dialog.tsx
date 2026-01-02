@@ -1,7 +1,6 @@
 'use client';
 
 import { SpinnerIcon } from '@usertour-packages/icons';
-import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour-packages/button';
@@ -20,10 +19,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@usertour-packages/form';
-import { createSegment } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
-import { getErrorMessage } from '@usertour/helpers';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useToast } from '@usertour-packages/use-toast';
 import {
@@ -31,9 +28,10 @@ import {
   createSegmentDefaultValues,
   CreateSegmentFormValues,
 } from '../../types/segment-form-schema';
-import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { useCreateCompanySegment } from '@/hooks/use-create-company-segment';
+import { memo } from 'react';
 
 interface CreateDialogProps {
   isOpen: boolean;
@@ -41,19 +39,11 @@ interface CreateDialogProps {
   environmentId: string | undefined;
 }
 
-export const CompanySegmentCreateDialog = (props: CreateDialogProps) => {
+export const CompanySegmentCreateDialog = memo((props: CreateDialogProps) => {
   const { onClose, isOpen, environmentId } = props;
   const { t } = useTranslation();
-  const [createMutation] = useMutation(createSegment);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { createSegmentAsync, loading } = useCreateCompanySegment();
   const { toast } = useToast();
-
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
 
   const form = useForm<CreateSegmentFormValues>({
     resolver: zodResolver(createSegmentFormSchema),
@@ -65,24 +55,38 @@ export const CompanySegmentCreateDialog = (props: CreateDialogProps) => {
     form.reset();
   }, [isOpen]);
 
-  async function handleOnSubmit(formValues: CreateSegmentFormValues) {
-    setIsLoading(true);
-    try {
-      const data = {
-        ...formValues,
-        bizType: 'COMPANY',
-        data: [],
-        environmentId,
-      };
-      const response = await createMutation({ variables: { data } });
-      if (response.data?.createSegment?.id) {
-        onClose();
+  const handleSuccess = useCallback(
+    (segmentName: string) => {
+      toast({
+        variant: 'success',
+        title: t('companies.toast.segments.segmentCreated', { segmentName }),
+      });
+      onClose();
+    },
+    [onClose, toast, t],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
+      toast({
+        variant: 'destructive',
+        title: errorMessage,
+      });
+    },
+    [toast],
+  );
+
+  const handleOnSubmit = useCallback(
+    async (formValues: CreateSegmentFormValues) => {
+      const result = await createSegmentAsync(formValues, environmentId);
+      if (result.success) {
+        handleSuccess(formValues.name);
+      } else {
+        handleError(result.error ?? 'Unknown error');
       }
-    } catch (error) {
-      showError(getErrorMessage(error));
-    }
-    setIsLoading(false);
-  }
+    },
+    [createSegmentAsync, environmentId, handleSuccess, handleError],
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
@@ -155,8 +159,8 @@ export const CompanySegmentCreateDialog = (props: CreateDialogProps) => {
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 {t('companies.actions.cancel')}
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={loading}>
+                {loading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 {t('companies.segments.form.createSegment')}
               </Button>
             </DialogFooter>
@@ -165,6 +169,6 @@ export const CompanySegmentCreateDialog = (props: CreateDialogProps) => {
       </DialogContent>
     </Dialog>
   );
-};
+});
 
 CompanySegmentCreateDialog.displayName = 'CompanySegmentCreateDialog';

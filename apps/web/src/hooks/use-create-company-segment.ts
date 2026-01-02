@@ -2,25 +2,25 @@ import { useMutation } from '@apollo/client';
 import { createSegment } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
-import { CreateSegmentFormValues } from '@/pages/users/types/segment-form-schema';
+import { CreateSegmentFormValues } from '@/pages/companies/types/segment-form-schema';
 
-interface CreateSegmentResult {
+interface CreateCompanySegmentResult {
   success: boolean;
   error?: string;
 }
 
-export const useCreateSegment = () => {
+export const useCreateCompanySegment = () => {
   const [createMutation, { loading }] = useMutation(createSegment);
 
   const createSegmentAsync = useCallback(
     async (
       formValues: CreateSegmentFormValues,
       environmentId: string | undefined,
-    ): Promise<CreateSegmentResult> => {
+    ): Promise<CreateCompanySegmentResult> => {
       try {
         const data = {
           ...formValues,
-          bizType: 'USER',
+          bizType: 'COMPANY',
           data: [],
           environmentId,
         };

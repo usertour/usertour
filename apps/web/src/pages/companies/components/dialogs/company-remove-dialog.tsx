@@ -1,4 +1,3 @@
-import { useMutation } from '@apollo/client';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -8,13 +7,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
-import { deleteBizCompanyOnSegment } from '@usertour-packages/gql';
-import { getErrorMessage } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
+import { useRemoveCompaniesFromSegment } from '@/hooks/use-remove-companies-from-segment';
+import { memo } from 'react';
 
 interface BizCompanyRemoveDialogProps {
   bizCompanyIds: string[];
@@ -24,39 +23,47 @@ interface BizCompanyRemoveDialogProps {
   onSubmit: (success: boolean) => Promise<void>;
 }
 
-export const BizCompanyRemoveDialog = (props: BizCompanyRemoveDialogProps) => {
+export const BizCompanyRemoveDialog = memo((props: BizCompanyRemoveDialogProps) => {
   const { bizCompanyIds, open, onOpenChange, onSubmit, segment } = props;
   const { t } = useTranslation();
-  const [mutation, { loading }] = useMutation(deleteBizCompanyOnSegment);
+  const { removeCompanies, loading } = useRemoveCompaniesFromSegment();
   const { toast } = useToast();
 
-  const handleSubmit = useCallback(async () => {
-    if (bizCompanyIds.length === 0) {
-      return;
-    }
-    const data = {
-      bizCompanyIds,
-      segmentId: segment.id,
-    };
-    try {
-      const ret = await mutation({ variables: { data } });
-      if (ret.data?.deleteBizCompanyOnSegment?.success) {
-        toast({
-          variant: 'success',
-          title: t('companies.toast.segments.companiesRemoved', {
-            count: ret.data?.deleteBizCompanyOnSegment.count,
-          }),
-        });
-        await onSubmit(true);
-      }
-    } catch (error) {
-      onSubmit(false);
+  const handleSuccess = useCallback(
+    async (count: number) => {
+      toast({
+        variant: 'success',
+        title: t('companies.toast.segments.companiesRemoved', { count }),
+      });
+      await onSubmit(true);
+    },
+    [onSubmit, toast, t],
+  );
+
+  const handleError = useCallback(
+    async (errorMessage: string) => {
       toast({
         variant: 'destructive',
-        title: getErrorMessage(error),
+        title: errorMessage,
       });
+      onSubmit(false);
+    },
+    [onSubmit, toast],
+  );
+
+  const handleSubmit = useCallback(async () => {
+    if (!segment?.id) {
+      await handleError('Invalid segment data');
+      return;
     }
-  }, [bizCompanyIds, segment, mutation, toast, onSubmit]);
+
+    const result = await removeCompanies(bizCompanyIds, segment.id);
+    if (result.success) {
+      await handleSuccess(result.count || 0);
+    } else {
+      await handleError(result.error ?? 'Unknown error');
+    }
+  }, [bizCompanyIds, segment?.id, removeCompanies, handleSuccess, handleError]);
 
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
@@ -82,6 +89,6 @@ export const BizCompanyRemoveDialog = (props: BizCompanyRemoveDialogProps) => {
       </AlertDialogContent>
     </AlertDialog>
   );
-};
+});
 
 BizCompanyRemoveDialog.displayName = 'BizCompanyRemoveDialog';
