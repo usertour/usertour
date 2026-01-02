@@ -14,14 +14,14 @@ import { Socket } from 'socket.io';
 // ============================================================================
 
 /**
- * Get global unique socket ID from socket object
- * Uses globalSocketId stored in socket.data if available, otherwise falls back to socket.id
- * This ensures uniqueness across multiple server instances
+ * Get socket ID from socket object
+ * Uses socket.id directly (Socket.IO Redis adapter guarantees global uniqueness)
+ *
  * @param socket - The socket object
- * @returns The global unique socket ID
+ * @returns The socket ID
  */
-export const getGlobalSocketId = (socket: Socket): string => {
-  return (socket.data?.globalSocketId as string) ?? socket.id;
+export const getSocketId = (socket: Socket): string => {
+  return socket.id;
 };
 
 /**
@@ -41,7 +41,7 @@ export const getSocketToken = (socket: Socket): string | undefined => {
  * @returns The socket lock key
  */
 export const buildSocketLockKey = (socket: Socket): string => {
-  const socketId = getGlobalSocketId(socket);
+  const socketId = getSocketId(socket);
   return `{${socketId}}:socket_lock`;
 };
 
