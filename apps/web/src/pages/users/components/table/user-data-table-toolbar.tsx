@@ -31,8 +31,8 @@ interface UserDataTableToolbarProps {
 
 export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToolbarProps) => {
   const { attributeList } = useAttributeListContext();
-  const { setCurrentConditions, refetch } = useSegmentListContext();
-  const { query, setQuery } = useUserListContext();
+  const { setCurrentConditions } = useSegmentListContext();
+  const { query, setQuery, refetch: refetchUserList } = useUserListContext();
   const [searchValue, setSearchValue] = useState('');
   const { isViewOnly, environment } = useAppContext();
   const { hasSelection } = useTableSelection(table);
@@ -57,7 +57,7 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
       try {
         const ret = await mutation({ variables: { data } });
         if (ret.data?.updateSegment?.id) {
-          await refetch();
+          await refetchUserList();
         }
       } catch (error) {
         toast({
@@ -66,7 +66,7 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
         });
       }
     },
-    [currentSegment, mutation, refetch, toast],
+    [currentSegment, mutation, refetchUserList, toast],
   );
 
   const handleDataChange = useCallback(

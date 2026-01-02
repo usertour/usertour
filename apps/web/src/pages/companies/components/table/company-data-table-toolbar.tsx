@@ -36,7 +36,7 @@ export const CompanyDataTableToolbar = ({
 }: CompanyDataTableToolbarProps) => {
   const { t } = useTranslation();
   const { attributeList, loading: attributeLoading } = useAttributeListContext();
-  const { setCurrentConditions, refetch } = useSegmentListContext();
+  const { setCurrentConditions } = useSegmentListContext();
 
   // Filtered attributes for company rules
   const filteredAttributes = attributeLoading
@@ -47,7 +47,7 @@ export const CompanyDataTableToolbar = ({
           attr.bizType === AttributeBizTypes.Membership,
       ) || [];
 
-  const { query, setQuery } = useCompanyListContext();
+  const { query, setQuery, refetch: refetchCompanyList } = useCompanyListContext();
   const [searchValue, setSearchValue] = useState('');
   const { hasSelection } = useTableSelection(table);
   const { isViewOnly, environment } = useAppContext();
@@ -72,7 +72,7 @@ export const CompanyDataTableToolbar = ({
       try {
         const ret = await mutation({ variables: { data } });
         if (ret.data?.updateSegment?.id) {
-          await refetch();
+          await refetchCompanyList();
         }
       } catch (error) {
         toast({
@@ -81,7 +81,7 @@ export const CompanyDataTableToolbar = ({
         });
       }
     },
-    [currentSegment, mutation, refetch, toast],
+    [currentSegment, mutation, refetchCompanyList, toast],
   );
 
   const handleDataChange = useCallback(
