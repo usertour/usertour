@@ -45,7 +45,7 @@ export function SegmentSidebar({
 
   // Default to users icon if not provided
   const defaultGroupIcon = useMemo(
-    () => <GroupLineIcon width={16} height={16} className="mr-1" />,
+    () => <GroupLineIcon width={16} height={16} className="mr-1 flex-none" />,
     [],
   );
   const finalGroupIcon = groupIcon || defaultGroupIcon;
@@ -106,13 +106,13 @@ export function SegmentSidebar({
                   }}
                 >
                   {segment.dataType === 'CONDITION' && (
-                    <Filter2LineIcon width={16} height={16} className="mr-1" />
+                    <Filter2LineIcon width={16} height={16} className="mr-1 flex-none" />
                   )}
                   {segment.dataType === 'ALL' && finalGroupIcon}
                   {segment.dataType === 'MANUAL' && (
-                    <Archive2LineIcon width={16} height={16} className="mr-1" />
+                    <Archive2LineIcon width={16} height={16} className="mr-1 flex-none" />
                   )}
-                  {segment.name}
+                  <span className="flex-1 min-w-0 truncate text-left">{segment.name}</span>{' '}
                 </AdminSidebarBodyItemTemplate>
               </Fragment>
             ))}
