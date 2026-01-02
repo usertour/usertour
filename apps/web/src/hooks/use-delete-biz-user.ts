@@ -41,6 +41,6 @@ export const useDeleteBizUser = () => {
   return {
     deleteUsers,
     loading,
-    environmentId: environment?.id,
+    environmentId,
   };
 };

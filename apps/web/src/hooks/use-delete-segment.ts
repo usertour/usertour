@@ -1,35 +1,28 @@
 import { useDeleteSegmentMutation } from '@usertour-packages/shared-hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+
+interface DeleteSegmentResult {
+  success: boolean;
+  error?: string;
+}
 
 export const useDeleteSegment = () => {
   const { invoke: deleteSegment, loading } = useDeleteSegmentMutation();
-  const { toast } = useToast();
-  const { t } = useTranslation();
 
   const deleteSegmentById = useCallback(
-    async (segmentId: string, segmentName: string): Promise<boolean> => {
+    async (segmentId: string): Promise<DeleteSegmentResult> => {
       try {
         const success = await deleteSegment(segmentId);
         if (success) {
-          toast({
-            variant: 'success',
-            title: t('users.toast.segments.segmentDeleted', { segmentName }),
-          });
-          return true;
+          return { success: true };
         }
-        return false;
+        return { success: false, error: 'Delete operation failed' };
       } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-        return false;
+        return { success: false, error: getErrorMessage(error) };
       }
     },
-    [deleteSegment, toast],
+    [deleteSegment],
   );
 
   return {

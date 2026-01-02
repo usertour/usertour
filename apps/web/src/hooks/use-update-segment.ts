@@ -1,18 +1,19 @@
 import { useMutation } from '@apollo/client';
 import { updateSegment } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
 import { useCallback } from 'react';
 import { EditSegmentFormValues } from '@/pages/users/types/segment-form-schema';
-import { useTranslation } from 'react-i18next';
+
+interface UpdateSegmentResult {
+  success: boolean;
+  error?: string;
+}
 
 export const useUpdateSegment = () => {
   const [updateMutation] = useMutation(updateSegment);
-  const { toast } = useToast();
-  const { t } = useTranslation();
 
   const updateSegmentAsync = useCallback(
-    async (segmentId: string, formValues: EditSegmentFormValues): Promise<boolean> => {
+    async (segmentId: string, formValues: EditSegmentFormValues): Promise<UpdateSegmentResult> => {
       try {
         const data = {
           id: segmentId,
@@ -21,28 +22,15 @@ export const useUpdateSegment = () => {
         const response = await updateMutation({ variables: { data } });
 
         if (!response.data?.updateSegment?.id) {
-          toast({
-            variant: 'destructive',
-            title: t('users.toast.segments.updateFailed'),
-          });
-          return false;
+          return { success: false, error: 'Update operation failed' };
         }
 
-        toast({
-          variant: 'success',
-          title: t('users.toast.segments.segmentUpdated', { segmentName: formValues.name }),
-        });
-
-        return true;
+        return { success: true };
       } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: getErrorMessage(error),
-        });
-        return false;
+        return { success: false, error: getErrorMessage(error) };
       }
     },
-    [updateMutation, toast],
+    [updateMutation],
   );
 
   return {

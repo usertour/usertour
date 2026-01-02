@@ -4,6 +4,7 @@ import { SpinnerIcon } from '@usertour-packages/icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour-packages/button';
+import { useToast } from '@usertour-packages/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ import { editSegmentFormSchema, EditSegmentFormValues } from '../../types/segmen
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { memo } from 'react';
 
 interface EditDialogProps {
   isOpen: boolean;
@@ -33,10 +35,11 @@ interface EditDialogProps {
   segment: Segment | undefined;
 }
 
-export const UserSegmentEditDialog = (props: EditDialogProps) => {
+export const UserSegmentEditDialog = memo((props: EditDialogProps) => {
   const { onClose, isOpen, segment } = props;
   const { updateSegmentAsync } = useUpdateSegment();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { toast } = useToast();
   const { t } = useTranslation();
 
   const form = useForm<EditSegmentFormValues>({
@@ -56,14 +59,23 @@ export const UserSegmentEditDialog = (props: EditDialogProps) => {
       }
 
       setIsLoading(true);
-      const success = await updateSegmentAsync(segment.id, formValues);
+      const result = await updateSegmentAsync(segment.id, formValues);
       setIsLoading(false);
 
-      if (success) {
+      if (result.success) {
+        toast({
+          variant: 'success',
+          title: t('users.toast.segments.segmentUpdated', { segmentName: formValues.name }),
+        });
         onClose();
+      } else {
+        toast({
+          variant: 'destructive',
+          title: result.error ?? 'Unknown error',
+        });
       }
     },
-    [segment, updateSegmentAsync, onClose],
+    [segment, updateSegmentAsync, onClose, toast, t],
   );
 
   return (
@@ -107,6 +119,6 @@ export const UserSegmentEditDialog = (props: EditDialogProps) => {
       </DialogContent>
     </Dialog>
   );
-};
+});
 
 UserSegmentEditDialog.displayName = 'UserSegmentEditDialog';

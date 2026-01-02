@@ -10,8 +10,10 @@ import {
 import { useRemoveUsersFromSegment } from '@/hooks/use-remove-users-from-segment';
 import { Segment } from '@usertour/types';
 import { useCallback } from 'react';
+import { memo } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@usertour-packages/use-toast';
 
 interface BizUserRemoveDialogProps {
   bizUserIds: string[];
@@ -21,20 +23,30 @@ interface BizUserRemoveDialogProps {
   onSubmit: () => void;
 }
 
-export const BizUserRemoveDialog = (props: BizUserRemoveDialogProps) => {
+export const BizUserRemoveDialog = memo((props: BizUserRemoveDialogProps) => {
   const { bizUserIds = [], open, onOpenChange, onSubmit, segment } = props;
   const { removeUsers, loading } = useRemoveUsersFromSegment();
+  const { toast } = useToast();
   const { t } = useTranslation();
 
   const handleConfirm = useCallback(async () => {
     if (!segment?.id) return;
 
-    const success = await removeUsers(bizUserIds, segment.id);
-    if (success) {
+    const result = await removeUsers(bizUserIds, segment.id);
+    if (result.success) {
+      toast({
+        variant: 'success',
+        title: t('users.toast.segments.usersRemoved', { count: result.count }),
+      });
       onSubmit();
       onOpenChange(false);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: result.error ?? 'Unknown error',
+      });
     }
-  }, [bizUserIds, segment?.id, removeUsers, onSubmit, onOpenChange]);
+  }, [bizUserIds, segment?.id, removeUsers, onSubmit, onOpenChange, toast, t]);
 
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
@@ -56,6 +68,6 @@ export const BizUserRemoveDialog = (props: BizUserRemoveDialogProps) => {
       </AlertDialogContent>
     </AlertDialog>
   );
-};
+});
 
 BizUserRemoveDialog.displayName = 'BizUserRemoveDialog';

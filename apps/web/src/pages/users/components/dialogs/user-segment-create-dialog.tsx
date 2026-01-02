@@ -4,6 +4,7 @@ import { SpinnerIcon } from '@usertour-packages/icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour-packages/button';
+import { useToast } from '@usertour-packages/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ import {
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { memo } from 'react';
 
 interface CreateDialogProps {
   isOpen: boolean;
@@ -38,10 +40,11 @@ interface CreateDialogProps {
   environmentId: string | undefined;
 }
 
-export const UserSegmentCreateDialog = (props: CreateDialogProps) => {
+export const UserSegmentCreateDialog = memo((props: CreateDialogProps) => {
   const { onClose, isOpen, environmentId } = props;
   const { createSegmentAsync } = useCreateSegment();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const { toast } = useToast();
   const { t } = useTranslation();
 
   const form = useForm<CreateSegmentFormValues>({
@@ -56,11 +59,20 @@ export const UserSegmentCreateDialog = (props: CreateDialogProps) => {
 
   async function handleOnSubmit(formValues: CreateSegmentFormValues) {
     setIsLoading(true);
-    const success = await createSegmentAsync(formValues, environmentId);
+    const result = await createSegmentAsync(formValues, environmentId);
     setIsLoading(false);
 
-    if (success) {
+    if (result.success) {
+      toast({
+        variant: 'success',
+        title: t('users.toast.segments.segmentCreated', { segmentName: formValues.name }),
+      });
       onClose();
+    } else {
+      toast({
+        variant: 'destructive',
+        title: result.error ?? 'Unknown error',
+      });
     }
   }
 
@@ -143,6 +155,6 @@ export const UserSegmentCreateDialog = (props: CreateDialogProps) => {
       </DialogContent>
     </Dialog>
   );
-};
+});
 
 UserSegmentCreateDialog.displayName = 'UserSegmentCreateDialog';
