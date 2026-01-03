@@ -59,6 +59,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               defaultConditions={conditions}
               attributes={attributeList}
               contents={contents}
+              isHorizontal={true}
               currentContent={currentContent}
               token={token}
               filterItems={defaultRulesItems.filter(

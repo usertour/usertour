@@ -1,5 +1,6 @@
 import { hasError } from '@usertour/helpers';
 import { Attribute, Content, RulesCondition, Segment } from '@usertour/types';
+import { useCallback } from 'react';
 import { RulesContext } from './rules-context';
 import { RulesGroup } from './rules-group';
 
@@ -53,12 +54,15 @@ export const Rules = (props: RulesProps) => {
     baseZIndex,
   } = props;
 
-  const handleOnChange = (conds: RulesCondition[]) => {
-    const isHasError = hasError(conds, attributes);
-    if (onDataChange) {
-      onDataChange(conds, isHasError);
-    }
-  };
+  const handleOnChange = useCallback(
+    (conds: RulesCondition[]) => {
+      const isHasError = hasError(conds, attributes);
+      if (onDataChange) {
+        onDataChange(conds, isHasError);
+      }
+    },
+    [attributes, onDataChange],
+  );
 
   const value = {
     isHorizontal,

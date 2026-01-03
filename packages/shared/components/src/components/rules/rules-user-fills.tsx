@@ -6,11 +6,10 @@ import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
-import { RulesLogic } from './rules-logic';
-import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesPopover, RulesPopoverContent } from './rules-popper';
+import { RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
-import { RulesContainerWrapper } from './rules-wrapper';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 interface RulesUserFillsProps {
@@ -81,69 +80,61 @@ export const RulesUserFills = (props: RulesUserFillsProps) => {
 
   return (
     <RulesError open={openError}>
-      <RulesContainerWrapper>
-        <RulesLogic index={index} disabled={disabled} />
-        <RulesErrorAnchor asChild>
-          <RulesConditionRightContent disabled={disabled}>
-            <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTrigger
-                className="space-y-1"
-                icon={<TextFillIcon width={16} height={16} />}
-              >
-                <div className="grow pr-6 text-sm text-wrap break-all">
-                  User fills in this input{' '}
-                </div>
-                <div>
-                  {elementData && elementData.type === 'auto' && elementData.screenshot && (
-                    <img
-                      className="max-w-32	max-h-16 border rounded"
-                      src={elementData.screenshot}
-                    />
+      <RulesErrorAnchor asChild>
+        <RulesConditionRightContent disabled={disabled}>
+          <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
+            <RulesPopoverTriggerWrapper
+              className="space-y-1"
+              icon={<TextFillIcon width={16} height={16} />}
+            >
+              <div className="grow pr-6 text-sm text-wrap break-all">User fills in this input </div>
+              <div>
+                {elementData && elementData.type === 'auto' && elementData.screenshot && (
+                  <img className="max-w-32	max-h-16 border rounded" src={elementData.screenshot} />
+                )}
+                {elementData &&
+                  elementData.type === 'manual' &&
+                  (elementData.content || elementData.customSelector) && (
+                    <span className="font-bold space-x-1">
+                      {elementData.content} {elementData.customSelector}
+                    </span>
                   )}
-                  {elementData &&
-                    elementData.type === 'manual' &&
-                    (elementData.content || elementData.customSelector) && (
-                      <span className="font-bold space-x-1">
-                        {elementData.content} {elementData.customSelector}
-                      </span>
-                    )}
-                  {elementData &&
-                    elementData.type === 'manual' &&
-                    elementData.content === '' &&
-                    elementData.customSelector === '' && (
-                      <span className="font-bold text-destructive">No element selected yet</span>
-                    )}
-                </div>
-              </RulesPopoverTrigger>
-              <RulesPopoverContent side="right">
-                <div className=" flex flex-col space-y-2">
-                  <div>If user fills in this input</div>
-                  {/* <RulesUserFillsSelector /> */}
-                  <ElementSelector
-                    data={{
-                      ...elementData,
-                      type: elementData?.type || 'auto',
-                    }}
-                    onDataChange={setElementData}
-                    isInput={true}
-                    currentContent={currentContent}
-                    token={token}
-                    onElementChange={
-                      onElementChange
-                        ? () => {
-                            if (onElementChange) onElementChange(index, type);
-                          }
-                        : undefined
-                    }
-                  />
-                </div>
-              </RulesPopoverContent>
-            </RulesPopover>
-            <RulesRemove index={index} />
-          </RulesConditionRightContent>
-        </RulesErrorAnchor>
-        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-      </RulesContainerWrapper>
+                {elementData &&
+                  elementData.type === 'manual' &&
+                  elementData.content === '' &&
+                  elementData.customSelector === '' && (
+                    <span className="font-bold text-destructive">No element selected yet</span>
+                  )}
+              </div>
+            </RulesPopoverTriggerWrapper>
+            <RulesPopoverContent side="right">
+              <div className=" flex flex-col space-y-2">
+                <div>If user fills in this input</div>
+                {/* <RulesUserFillsSelector /> */}
+                <ElementSelector
+                  data={{
+                    ...elementData,
+                    type: elementData?.type || 'auto',
+                  }}
+                  onDataChange={setElementData}
+                  isInput={true}
+                  currentContent={currentContent}
+                  token={token}
+                  onElementChange={
+                    onElementChange
+                      ? () => {
+                          if (onElementChange) onElementChange(index, type);
+                        }
+                      : undefined
+                  }
+                />
+              </div>
+            </RulesPopoverContent>
+          </RulesPopover>
+          <RulesRemove index={index} />
+        </RulesConditionRightContent>
+      </RulesErrorAnchor>
+      <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
     </RulesError>
   );
 };

@@ -9,9 +9,10 @@ import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
 import { WebZIndex } from '@usertour-packages/constants';
 import { Rules } from '@usertour-packages/shared-components';
+import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
-import { ChangeEvent, useCallback, useState } from 'react';
+import { ChangeEvent, useCallback, useRef, useState } from 'react';
 import { AddUserManualSegment } from '../operations';
 import { UserSegmentCreateDialog } from '../dialogs';
 import { DataTableViewOptions } from '@/components/molecules/segment/table';
@@ -30,12 +31,20 @@ interface UserDataTableToolbarProps {
 }
 
 export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToolbarProps) => {
+  const { t } = useTranslation();
   const { attributeList } = useAttributeListContext();
   const { setCurrentConditions } = useSegmentListContext();
-  const { query, setQuery, refetch: refetchUserList } = useUserListContext();
+  const { setQuery, refetch: refetchUserList } = useUserListContext();
   const [searchValue, setSearchValue] = useState('');
   const { isViewOnly, environment } = useAppContext();
   const { hasSelection } = useTableSelection(table);
+
+  // Use ref to store currentSegment to avoid recreating handleDataChange when segment object changes
+  const currentSegmentRef = useRef(currentSegment);
+  currentSegmentRef.current = currentSegment;
+
+  // Track the last processed conditions to prevent infinite loops
+  const lastProcessedConditionsRef = useRef<RulesCondition[] | null>(null);
 
   const [open, setOpen] = useState(false);
   const handleOnClose = () => {
@@ -71,48 +80,64 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
 
   const handleDataChange = useCallback(
     async (conditions: RulesCondition[], hasError: boolean) => {
-      if (!hasError) {
-        setQuery({ ...query, data: conditions });
-      }
-      if (
-        hasError ||
-        !currentSegment ||
-        conditions.length === 0 ||
-        conditionsIsSame(conditions, currentSegment.data)
-      ) {
+      const segment = currentSegmentRef.current;
+
+      // Early return if error or no segment
+      if (hasError || !segment) {
         return;
       }
-      setCurrentConditions({ segmentId: currentSegment.id, data: conditions });
+
+      // Check if conditions are the same as the last processed ones (prevents infinite loop)
+      const isSameAsLastProcessed =
+        lastProcessedConditionsRef.current !== null &&
+        conditionsIsSame(conditions, lastProcessedConditionsRef.current);
+      // Also check against original segment data for initial state
+      const isSameAsOriginal = conditionsIsSame(conditions, segment.data);
+
+      if (isSameAsLastProcessed || isSameAsOriginal) {
+        return;
+      }
+
+      // Update the ref BEFORE calling setQuery to prevent re-processing
+      lastProcessedConditionsRef.current = conditions;
+
+      setQuery((prev) => ({ ...prev, data: conditions }));
+
+      if (conditions.length === 0) {
+        return;
+      }
+
+      setCurrentConditions({ segmentId: segment.id, data: conditions });
     },
-    [currentSegment, query],
+    [setCurrentConditions, setQuery],
   );
 
   const handleSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       setSearchValue(event.target.value);
-      setQuery({ ...query, search: event.target.value });
+      setQuery((prev) => ({ ...prev, search: event.target.value }));
     },
-    [query],
+    [setQuery],
   );
 
   const handleSearchReset = useCallback(() => {
     setSearchValue('');
-    setQuery({ ...query, search: '' });
-  }, [query]);
+    setQuery((prev) => ({ ...prev, search: '' }));
+  }, [setQuery]);
 
   return (
     <>
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
-            placeholder="Search..."
+            placeholder={t('common.search')}
             value={searchValue}
             onChange={handleSearchChange}
             className="h-8 w-[150px] lg:w-[250px]"
           />
           {searchValue !== '' && (
             <Button variant="ghost" onClick={handleSearchReset} className="h-8 px-2 lg:px-3">
-              Reset
+              {t('common.reset')}
               <Cross2Icon className="ml-2 h-4 w-4" />
             </Button>
           )}
@@ -133,7 +158,7 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
           isShowIf={false}
           key={currentSegment.id}
           filterItems={['group', 'user-attr']}
-          addButtonText={'Add filter'}
+          addButtonText={t('common.addFilter')}
           attributes={
             attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || []
           }

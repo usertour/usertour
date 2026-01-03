@@ -12,7 +12,7 @@ import { WebZIndex } from '@usertour-packages/constants';
 import { Rules } from '@usertour-packages/shared-components';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
-import { ChangeEvent, useCallback, useState } from 'react';
+import { ChangeEvent, useCallback, useRef, useState } from 'react';
 import { AddCompanyManualSegment } from '../operations';
 import { CompanySegmentCreateDialog } from '../dialogs';
 import { DataTableViewOptions } from '@/components/molecules/segment/table';
@@ -47,10 +47,17 @@ export const CompanyDataTableToolbar = ({
           attr.bizType === AttributeBizTypes.Membership,
       ) || [];
 
-  const { query, setQuery, refetch: refetchCompanyList } = useCompanyListContext();
+  const { setQuery, refetch: refetchCompanyList } = useCompanyListContext();
   const [searchValue, setSearchValue] = useState('');
   const { hasSelection } = useTableSelection(table);
   const { isViewOnly, environment } = useAppContext();
+
+  // Use ref to store currentSegment to avoid recreating handleDataChange when segment object changes
+  const currentSegmentRef = useRef(currentSegment);
+  currentSegmentRef.current = currentSegment;
+
+  // Track the last processed conditions to prevent infinite loops
+  const lastProcessedConditionsRef = useRef<RulesCondition[] | null>(null);
 
   const [open, setOpen] = useState(false);
   const handleOnClose = () => {
@@ -86,34 +93,50 @@ export const CompanyDataTableToolbar = ({
 
   const handleDataChange = useCallback(
     async (conditions: RulesCondition[], hasError: boolean) => {
-      if (!hasError) {
-        setQuery({ ...query, data: conditions });
-      }
-      if (
-        hasError ||
-        !currentSegment ||
-        conditions.length === 0 ||
-        conditionsIsSame(conditions, currentSegment.data)
-      ) {
+      const segment = currentSegmentRef.current;
+
+      // Early return if error or no segment
+      if (hasError || !segment) {
         return;
       }
-      setCurrentConditions({ segmentId: currentSegment.id, data: conditions });
+
+      // Check if conditions are the same as the last processed ones (prevents infinite loop)
+      const isSameAsLastProcessed =
+        lastProcessedConditionsRef.current !== null &&
+        conditionsIsSame(conditions, lastProcessedConditionsRef.current);
+      // Also check against original segment data for initial state
+      const isSameAsOriginal = conditionsIsSame(conditions, segment.data);
+
+      if (isSameAsLastProcessed || isSameAsOriginal) {
+        return;
+      }
+
+      // Update the ref BEFORE calling setQuery to prevent re-processing
+      lastProcessedConditionsRef.current = conditions;
+
+      setQuery((prev) => ({ ...prev, data: conditions }));
+
+      if (conditions.length === 0) {
+        return;
+      }
+
+      setCurrentConditions({ segmentId: segment.id, data: conditions });
     },
-    [currentSegment, query],
+    [setCurrentConditions, setQuery],
   );
 
   const handleSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       setSearchValue(event.target.value);
-      setQuery({ ...query, search: event.target.value });
+      setQuery((prev) => ({ ...prev, search: event.target.value }));
     },
-    [query],
+    [setQuery],
   );
 
   const handleSearchReset = useCallback(() => {
     setSearchValue('');
-    setQuery({ ...query, search: '' });
-  }, [query]);
+    setQuery((prev) => ({ ...prev, search: '' }));
+  }, [setQuery]);
 
   return (
     <>

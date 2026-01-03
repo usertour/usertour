@@ -19,7 +19,7 @@ import {
 } from '@usertour-packages/icons';
 import { RulesCondition, RulesType } from '@usertour/types';
 import { cuid, deepClone } from '@usertour/helpers';
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesGroupContext } from '../contexts/rules-group-context';
 import { RulesContent } from './rules-content';
@@ -198,9 +198,6 @@ export const RulesGroup = (props: RulesGroupProps) => {
       if (isEqual(prev, newConditions)) {
         return prev;
       }
-      if (onChange) {
-        onChange(newConditions);
-      }
       return newConditions;
     });
   };
@@ -218,18 +215,23 @@ export const RulesGroup = (props: RulesGroupProps) => {
     [conditionType, conditions],
   );
 
-  const handleOnChange = (index: number, conds: RulesCondition[]) => {
-    const newConds = conditions.map((condition, i) => {
-      if (i === index) {
-        return {
-          ...condition,
-          conditions: [...conds],
-        };
+  const handleOnChange = useCallback((index: number, conds: RulesCondition[]) => {
+    setConditions((prev) => {
+      const newConds = prev.map((condition, i) => {
+        if (i === index) {
+          return {
+            ...condition,
+            conditions: [...conds],
+          };
+        }
+        return condition;
+      });
+      if (isEqual(prev, newConds)) {
+        return prev;
       }
-      return condition;
+      return newConds;
     });
-    setNewConditions(newConds);
-  };
+  }, []);
 
   useEffect(() => {
     setNewConditions(
@@ -239,6 +241,20 @@ export const RulesGroup = (props: RulesGroupProps) => {
       })),
     );
   }, [conditionType]);
+
+  // Track if it's the initial render to skip calling onChange on mount
+  const isInitialRenderRef = useRef(true);
+
+  // Call onChange when conditions change, but skip initial render
+  useEffect(() => {
+    if (isInitialRenderRef.current) {
+      isInitialRenderRef.current = false;
+      return;
+    }
+    if (onChange) {
+      onChange(conditions);
+    }
+  }, [conditions, onChange]);
 
   const updateConditionData = useCallback(
     (index: number, data: any) => {
@@ -268,45 +284,70 @@ export const RulesGroup = (props: RulesGroupProps) => {
 
   return (
     <RulesGroupContext.Provider value={value}>
-      <div className={isHorizontal ? 'flex flex-row flex-wrap	' : 'flex flex-col space-y-2'}>
+      <div
+        className={
+          isHorizontal ? 'flex flex-wrap gap-2 items-start w-full' : 'flex flex-col space-y-2'
+        }
+      >
         {conditions.map((condition, i) => {
           const ITEM = rulesItems.find((item) => condition.type === item.type);
-          if (condition.type === 'group' && condition.conditions) {
-            return (
-              <div
-                className={
-                  isHorizontal
-                    ? 'flex flex-row space-x-1 w-full mr-1 mb-1'
-                    : 'flex flex-col space-y-2'
-                }
-                key={i}
-              >
-                <RulesLogic index={i} disabled={disabled} />
-                <div className="p-2 pr-6 border border-input border-dashed rounded-md w-fit relative">
-                  <RulesGroup
-                    isSubItems={true}
-                    defaultConditions={condition.conditions}
-                    onChange={(conditions: RulesCondition[]) => {
-                      handleOnChange(i, conditions);
-                    }}
-                  />
-                  {<RulesRemove index={i} />}
-                </div>
-              </div>
-            );
-          }
-          if (ITEM?.RulesElement) {
-            return (
-              <ITEM.RulesElement
-                key={i}
-                index={i}
-                data={condition.data}
-                type={ITEM.type}
-                conditionId={condition.id}
-              />
-            );
-          }
-          return null;
+
+          return (
+            <React.Fragment key={condition.id}>
+              {isHorizontal ? (
+                <>
+                  <RulesLogic index={i} disabled={disabled} />
+                  {condition.type === 'group' && condition.conditions ? (
+                    <div className="p-2 pr-6 border border-input border-dashed rounded-md w-fit relative">
+                      <RulesGroup
+                        isSubItems={true}
+                        defaultConditions={condition.conditions}
+                        onChange={(conditions: RulesCondition[]) => {
+                          handleOnChange(i, conditions);
+                        }}
+                      />
+                      <RulesRemove index={i} />
+                    </div>
+                  ) : ITEM?.RulesElement ? (
+                    <ITEM.RulesElement
+                      index={i}
+                      data={condition.data}
+                      type={ITEM.type}
+                      conditionId={condition.id}
+                    />
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  {condition.type === 'group' && condition.conditions ? (
+                    <div className="flex flex-col space-y-2">
+                      <RulesLogic index={i} disabled={disabled} />
+                      <div className="p-2 pr-6 border border-input border-dashed rounded-md w-fit relative">
+                        <RulesGroup
+                          isSubItems={true}
+                          defaultConditions={condition.conditions}
+                          onChange={(conditions: RulesCondition[]) => {
+                            handleOnChange(i, conditions);
+                          }}
+                        />
+                        <RulesRemove index={i} />
+                      </div>
+                    </div>
+                  ) : ITEM?.RulesElement ? (
+                    <div className="flex flex-row space-x-3">
+                      <RulesLogic index={i} disabled={disabled} />
+                      <ITEM.RulesElement
+                        index={i}
+                        data={condition.data}
+                        type={ITEM.type}
+                        conditionId={condition.id}
+                      />
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </React.Fragment>
+          );
         })}
         <div className="flex flex-row space-x-3">
           <RulesLogic index={conditions.length} disabled={conditions.length > 0 || disabled} />

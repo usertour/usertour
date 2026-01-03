@@ -16,11 +16,10 @@ import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { ElementSelector } from '../selector/element-selector';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
-import { RulesLogic } from './rules-logic';
-import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesPopover, RulesPopoverContent } from './rules-popper';
+import { RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
-import { RulesContainerWrapper } from './rules-wrapper';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 interface RulesElementProps {
@@ -148,67 +147,64 @@ export const RulesElement = (props: RulesElementProps) => {
   return (
     <RulesElementContext.Provider value={value}>
       <RulesError open={openError}>
-        <RulesContainerWrapper>
-          <RulesLogic index={index} disabled={disabled} />
-          <RulesErrorAnchor asChild>
-            <RulesConditionRightContent disabled={disabled}>
-              <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-                <RulesPopoverTrigger
-                  className="space-y-1"
-                  icon={<ElementIcon width={16} height={16} />}
-                >
-                  <div className="grow pr-6 text-sm text-wrap break-all space-y-1">
-                    If this element{' '}
-                  </div>
-                  <div>
-                    {elementData && elementData.type === 'auto' && elementData.screenshot && (
-                      <img
-                        className="max-w-32	max-h-16 border rounded"
-                        src={elementData.screenshot}
-                      />
-                    )}
-                    {elementData &&
-                      elementData.type === 'manual' &&
-                      (elementData.content || elementData.customSelector) && (
-                        <span className="font-bold space-x-1">
-                          {elementData.content} {elementData.customSelector}
-                        </span>
-                      )}
-                    {elementData &&
-                      elementData.type === 'manual' &&
-                      elementData.content === '' &&
-                      elementData.customSelector === '' && (
-                        <span className="font-bold text-destructive">No element selected yet</span>
-                      )}
-                  </div>
-                  <div>{conditions.find((c) => c.value === conditionValue)?.name} </div>
-                </RulesPopoverTrigger>
-                <RulesPopoverContent side="right">
-                  <div className=" flex flex-col space-y-2">
-                    <div>If this element...</div>
-                    {/* <RulesElementSelector /> */}
-                    <ElementSelector
-                      data={{ ...elementData }}
-                      onDataChange={setElementData}
-                      currentContent={currentContent}
-                      onElementChange={
-                        onElementChange
-                          ? () => {
-                              if (onElementChange) onElementChange(index, type);
-                            }
-                          : undefined
-                      }
-                      token={token}
+        <RulesErrorAnchor asChild>
+          <RulesConditionRightContent disabled={disabled}>
+            <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
+              <RulesPopoverTriggerWrapper
+                className="space-y-1"
+                icon={<ElementIcon width={16} height={16} />}
+              >
+                <div className="grow pr-6 text-sm text-wrap break-all space-y-1">
+                  If this element{' '}
+                </div>
+                <div>
+                  {elementData && elementData.type === 'auto' && elementData.screenshot && (
+                    <img
+                      className="max-w-32	max-h-16 border rounded"
+                      src={elementData.screenshot}
                     />
-                    <RulesElementRadios />
-                  </div>
-                </RulesPopoverContent>
-              </RulesPopover>
-              <RulesRemove index={index} />
-            </RulesConditionRightContent>
-          </RulesErrorAnchor>
-          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-        </RulesContainerWrapper>
+                  )}
+                  {elementData &&
+                    elementData.type === 'manual' &&
+                    (elementData.content || elementData.customSelector) && (
+                      <span className="font-bold space-x-1">
+                        {elementData.content} {elementData.customSelector}
+                      </span>
+                    )}
+                  {elementData &&
+                    elementData.type === 'manual' &&
+                    elementData.content === '' &&
+                    elementData.customSelector === '' && (
+                      <span className="font-bold text-destructive">No element selected yet</span>
+                    )}
+                </div>
+                <div>{conditions.find((c) => c.value === conditionValue)?.name} </div>
+              </RulesPopoverTriggerWrapper>
+              <RulesPopoverContent side="right">
+                <div className=" flex flex-col space-y-2">
+                  <div>If this element...</div>
+                  {/* <RulesElementSelector /> */}
+                  <ElementSelector
+                    data={{ ...elementData }}
+                    onDataChange={setElementData}
+                    currentContent={currentContent}
+                    onElementChange={
+                      onElementChange
+                        ? () => {
+                            if (onElementChange) onElementChange(index, type);
+                          }
+                        : undefined
+                    }
+                    token={token}
+                  />
+                  <RulesElementRadios />
+                </div>
+              </RulesPopoverContent>
+            </RulesPopover>
+            <RulesRemove index={index} />
+          </RulesConditionRightContent>
+        </RulesErrorAnchor>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </RulesError>
     </RulesElementContext.Provider>
   );

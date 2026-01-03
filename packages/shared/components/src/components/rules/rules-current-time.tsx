@@ -15,11 +15,10 @@ import {
 import type { TimeConditionData, TimeConditionDataV2 } from '@usertour/types';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
-import { RulesLogic } from './rules-logic';
-import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesPopover, RulesPopoverContent } from './rules-popper';
+import { RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
-import { RulesContainerWrapper } from './rules-wrapper';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
@@ -278,67 +277,64 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
 
   return (
     <RulesError open={openError}>
-      <RulesContainerWrapper>
-        <RulesLogic index={index} disabled={disabled} />
-        <RulesErrorAnchor asChild>
-          <RulesConditionRightContent disabled={disabled}>
-            <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTrigger icon={<TimeIcon width={16} height={16} />}>
-                <div className="grow pr-6 text-sm text-wrap break-all">
-                  Current time is {endDate ? 'between' : 'after'}{' '}
-                  {startDate && (
-                    <span className="font-bold">
-                      {`${format(startDate, 'PPP')}, ${startDateHour}:${startDateMinute}`}
-                    </span>
-                  )}
-                  {endDate && ' and '}
-                  {endDate && (
-                    <span className="font-bold">
-                      {`${format(endDate, 'PPP')}, ${endDateHour}:${endDateMinute}`}
-                    </span>
-                  )}
+      <RulesErrorAnchor asChild>
+        <RulesConditionRightContent disabled={disabled}>
+          <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
+            <RulesPopoverTriggerWrapper icon={<TimeIcon width={16} height={16} />}>
+              <div className="grow pr-6 text-sm text-wrap break-all">
+                Current time is {endDate ? 'between' : 'after'}{' '}
+                {startDate && (
+                  <span className="font-bold">
+                    {`${format(startDate, 'PPP')}, ${startDateHour}:${startDateMinute}`}
+                  </span>
+                )}
+                {endDate && ' and '}
+                {endDate && (
+                  <span className="font-bold">
+                    {`${format(endDate, 'PPP')}, ${endDateHour}:${endDateMinute}`}
+                  </span>
+                )}
+              </div>
+            </RulesPopoverTriggerWrapper>
+            <RulesPopoverContent>
+              <div className="flex flex-col space-y-1">
+                <div>Start time</div>
+                <div className="flex flex-row space-x-2 items-center">
+                  <RulesCurrentTimeDatePicker date={startDate} setDate={setStartDate} />
+                  <RulesCurrentTimeTimer
+                    num={24}
+                    defaultValue={startDateHour}
+                    onValueChange={setStartDateHour}
+                  />
+                  <span>:</span>
+                  <RulesCurrentTimeTimer
+                    num={60}
+                    defaultValue={startDateMinute}
+                    onValueChange={setStartDateMinute}
+                  />
                 </div>
-              </RulesPopoverTrigger>
-              <RulesPopoverContent>
-                <div className="flex flex-col space-y-1">
-                  <div>Start time</div>
-                  <div className="flex flex-row space-x-2 items-center">
-                    <RulesCurrentTimeDatePicker date={startDate} setDate={setStartDate} />
-                    <RulesCurrentTimeTimer
-                      num={24}
-                      defaultValue={startDateHour}
-                      onValueChange={setStartDateHour}
-                    />
-                    <span>:</span>
-                    <RulesCurrentTimeTimer
-                      num={60}
-                      defaultValue={startDateMinute}
-                      onValueChange={setStartDateMinute}
-                    />
-                  </div>
-                  <div>End time</div>
-                  <div className="flex flex-row space-x-2 items-center">
-                    <RulesCurrentTimeDatePicker date={endDate} setDate={setEndDate} />
-                    <RulesCurrentTimeTimer
-                      num={24}
-                      defaultValue={endDateHour}
-                      onValueChange={setEndDateHour}
-                    />
-                    <span>:</span>
-                    <RulesCurrentTimeTimer
-                      num={60}
-                      defaultValue={endDateMinute}
-                      onValueChange={setEndDateMinute}
-                    />
-                  </div>
+                <div>End time</div>
+                <div className="flex flex-row space-x-2 items-center">
+                  <RulesCurrentTimeDatePicker date={endDate} setDate={setEndDate} />
+                  <RulesCurrentTimeTimer
+                    num={24}
+                    defaultValue={endDateHour}
+                    onValueChange={setEndDateHour}
+                  />
+                  <span>:</span>
+                  <RulesCurrentTimeTimer
+                    num={60}
+                    defaultValue={endDateMinute}
+                    onValueChange={setEndDateMinute}
+                  />
                 </div>
-              </RulesPopoverContent>
-            </RulesPopover>
-            <RulesRemove index={index} />
-          </RulesConditionRightContent>
-        </RulesErrorAnchor>
-        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-      </RulesContainerWrapper>
+              </div>
+            </RulesPopoverContent>
+          </RulesPopover>
+          <RulesRemove index={index} />
+        </RulesConditionRightContent>
+      </RulesErrorAnchor>
+      <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
     </RulesError>
   );
 };

@@ -13,7 +13,7 @@ export const RulesLogic = (props: RulesLogicProps) => {
   const { conditionType, setConditionType } = useRulesGroupContext();
   const { isHorizontal, isShowIf } = useRulesContext();
 
-  const className1 = isHorizontal ? 'w-1/2 h-auto' : 'w-1/2 h-6';
+  const className1 = isHorizontal ? 'flex-1 h-auto' : 'w-1/2 h-6';
   if (index === 0 && isShowIf) {
     return (
       <Button
