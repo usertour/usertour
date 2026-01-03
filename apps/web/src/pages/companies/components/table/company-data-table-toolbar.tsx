@@ -104,15 +104,13 @@ export const CompanyDataTableToolbar = ({
       const isSameAsLastProcessed =
         lastProcessedConditionsRef.current !== null &&
         conditionsIsSame(conditions, lastProcessedConditionsRef.current);
-      // Also check against original segment data for initial state
-      const isSameAsOriginal = conditionsIsSame(conditions, segment.data);
 
-      if (isSameAsLastProcessed || isSameAsOriginal) {
+      // Always update the ref to track current state
+      lastProcessedConditionsRef.current = conditions;
+
+      if (isSameAsLastProcessed) {
         return;
       }
-
-      // Update the ref BEFORE calling setQuery to prevent re-processing
-      lastProcessedConditionsRef.current = conditions;
 
       setQuery((prev) => ({ ...prev, data: conditions }));
 

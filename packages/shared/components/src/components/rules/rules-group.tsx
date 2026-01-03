@@ -237,7 +237,7 @@ const RulesConditionItem = memo(
     }
 
     return ITEM?.RulesElement ? (
-      <div className="flex flex-row space-x-3">
+      <div className="flex flex-row space-x-2">
         <RulesLogic index={index} disabled={disabled} />
         {renderRulesElement()}
       </div>
@@ -399,7 +399,7 @@ export const RulesGroup = (props: RulesGroupProps) => {
             />
           </React.Fragment>
         ))}
-        <div className="flex flex-row space-x-3">
+        <div className="flex flex-row space-x-2">
           <RulesLogic index={conditions.length} disabled={conditions.length > 0 || disabled} />
           <RulesAddDropdown
             onSelect={handleOnSelect}
