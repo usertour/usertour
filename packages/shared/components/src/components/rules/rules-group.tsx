@@ -19,7 +19,7 @@ import {
 } from '@usertour-packages/icons';
 import { RulesCondition, RulesType } from '@usertour/types';
 import { cuid, deepClone } from '@usertour/helpers';
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import React, { ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesGroupContext } from '../contexts/rules-group-context';
 import { RulesContent } from './rules-content';
@@ -48,12 +48,6 @@ export const RULES_ITEMS = [
     IconElement: PagesIcon,
     RulesElement: RulesUrlPattern,
   },
-  // {
-  //   type: "event",
-  //   text: "Event",
-  //   IconElement: EventIcon,
-  //   RulesElement: null,
-  // },
   {
     type: RulesType.SEGMENT,
     text: 'Segment',
@@ -111,59 +105,147 @@ interface RulesAddDropdownProps {
   disabled?: boolean;
 }
 
-const RulesAddDropdown = (props: RulesAddDropdownProps) => {
-  const { children, onSelect, items, disabled = false } = props;
-  const { dropdown: zIndex } = useRulesZIndex();
+// Memoized dropdown component to prevent unnecessary re-renders
+const RulesAddDropdown = memo(
+  ({ children, onSelect, items, disabled = false }: RulesAddDropdownProps) => {
+    const { dropdown: zIndex } = useRulesZIndex();
 
-  // Store pending selection, will be executed after dropdown closes
-  const pendingSelectionRef = useRef<string | null>(null);
+    // Store pending selection, will be executed after dropdown closes
+    const pendingSelectionRef = useRef<string | null>(null);
 
-  // Handle dropdown open state change
-  // When dropdown closes and we have a pending selection, execute it
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open && pendingSelectionRef.current !== null) {
-        const type = pendingSelectionRef.current;
-        pendingSelectionRef.current = null;
-        onSelect(type);
-      }
-    },
-    [onSelect],
-  );
+    // Handle dropdown open state change
+    // When dropdown closes and we have a pending selection, execute it
+    const handleOpenChange = useCallback(
+      (open: boolean) => {
+        if (!open && pendingSelectionRef.current !== null) {
+          const type = pendingSelectionRef.current;
+          pendingSelectionRef.current = null;
+          onSelect(type);
+        }
+      },
+      [onSelect],
+    );
 
-  // Handle item selection - store selection but don't execute yet
-  const handleItemSelect = useCallback((type: string) => {
-    pendingSelectionRef.current = type;
-  }, []);
+    // Handle item selection - store selection but don't execute yet
+    const handleItemSelect = useCallback((type: string) => {
+      pendingSelectionRef.current = type;
+    }, []);
 
-  return (
-    <DropdownMenu onOpenChange={handleOpenChange}>
-      <DropdownMenuTrigger asChild disabled={disabled}>
-        {children}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        style={{ zIndex }}
-        onCloseAutoFocus={(e) => e.preventDefault()}
-      >
-        {items?.map(({ type, text, IconElement }, index) => (
-          <DropdownMenuItem
-            key={index}
-            className="cursor-pointer min-w-[180px]"
-            onSelect={() => handleItemSelect(type)}
-          >
-            <IconElement width={16} height={16} className="mx-1" />
-            {text}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
+    return (
+      <DropdownMenu onOpenChange={handleOpenChange}>
+        <DropdownMenuTrigger asChild disabled={disabled}>
+          {children}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          style={{ zIndex }}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          {items?.map(({ type, text, IconElement }) => (
+            <DropdownMenuItem
+              key={type}
+              className="cursor-pointer min-w-[180px]"
+              onSelect={() => handleItemSelect(type)}
+            >
+              <IconElement width={16} height={16} className="mx-1" />
+              {text}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  },
+);
+
+RulesAddDropdown.displayName = 'RulesAddDropdown';
 
 export type RulesGroupItemProps = {
   index: number;
 };
+
+// Props for the extracted RulesGroupItem component
+interface RulesConditionItemProps {
+  condition: RulesCondition;
+  index: number;
+  isHorizontal: boolean;
+  disabled?: boolean;
+  rulesItems: typeof RULES_ITEMS;
+  onSubGroupChange: (index: number, conditions: RulesCondition[]) => void;
+}
+
+// Extracted component to avoid inline functions in map loop
+const RulesConditionItem = memo(
+  ({
+    condition,
+    index,
+    isHorizontal,
+    disabled,
+    rulesItems,
+    onSubGroupChange,
+  }: RulesConditionItemProps) => {
+    const ITEM = rulesItems.find((item) => condition.type === item.type);
+    const isGroup = condition.type === RulesType.GROUP && condition.conditions;
+
+    // Memoize the onChange handler to prevent unnecessary re-renders
+    const handleSubGroupChange = useCallback(
+      (conditions: RulesCondition[]) => {
+        onSubGroupChange(index, conditions);
+      },
+      [index, onSubGroupChange],
+    );
+
+    // Render group content (shared between horizontal and vertical layouts)
+    const renderGroupContent = () => (
+      <div className="p-2 pr-6 border border-input border-dashed rounded-md w-fit relative">
+        <RulesGroup
+          isSubItems={true}
+          defaultConditions={condition.conditions ?? []}
+          onChange={handleSubGroupChange}
+        />
+        <RulesRemove index={index} />
+      </div>
+    );
+
+    // Render rules element content
+    const renderRulesElement = () =>
+      ITEM?.RulesElement ? (
+        <ITEM.RulesElement
+          index={index}
+          data={condition.data}
+          type={ITEM.type}
+          conditionId={condition.id}
+        />
+      ) : null;
+
+    if (isHorizontal) {
+      return (
+        <>
+          <RulesLogic index={index} disabled={disabled} />
+          {isGroup ? renderGroupContent() : renderRulesElement()}
+        </>
+      );
+    }
+
+    // Vertical layout
+    if (isGroup) {
+      return (
+        <div className="flex flex-col space-y-2">
+          <RulesLogic index={index} disabled={disabled} />
+          {renderGroupContent()}
+        </div>
+      );
+    }
+
+    return ITEM?.RulesElement ? (
+      <div className="flex flex-row space-x-3">
+        <RulesLogic index={index} disabled={disabled} />
+        {renderRulesElement()}
+      </div>
+    ) : null;
+  },
+);
+
+RulesConditionItem.displayName = 'RulesConditionItem';
 
 interface RulesGroupProps {
   isSubItems?: boolean;
@@ -175,13 +257,17 @@ export const RulesGroup = (props: RulesGroupProps) => {
   const { isHorizontal, filterItems, addButtonText, disabled } = useRulesContext();
 
   const [conditions, setConditions] = useState<RulesCondition[]>(deepClone(defaultConditions));
-  const [rulesItems, _] = useState<typeof RULES_ITEMS>(
-    RULES_ITEMS.filter((item) => {
-      if (filterItems.length > 0) {
-        return filterItems.includes(item.type);
-      }
-      return true;
-    }),
+
+  // Use useMemo instead of useState for derived computed value
+  const rulesItems = useMemo(
+    () =>
+      RULES_ITEMS.filter((item) => {
+        if (filterItems.length > 0) {
+          return filterItems.includes(item.type);
+        }
+        return true;
+      }),
+    [filterItems],
   );
 
   const [conditionType, setConditionType] = useState(
@@ -193,26 +279,28 @@ export const RulesGroup = (props: RulesGroupProps) => {
   // Use ref to store newlyAddedId to avoid being affected by external state updates
   const newlyAddedIdRef = useRef<string | null>(null);
 
-  const setNewConditions = (newConditions: RulesCondition[]) => {
+  // Memoize setNewConditions to maintain stable reference in context
+  const setNewConditions = useCallback((newConditions: RulesCondition[]) => {
     setConditions((prev) => {
       if (isEqual(prev, newConditions)) {
         return prev;
       }
       return newConditions;
     });
-  };
+  }, []);
 
   const handleOnSelect = useCallback(
     (type: string) => {
       const newId = cuid();
-      if (type === 'group') {
-        setNewConditions([...conditions, { type, data: {}, conditions: [], id: newId }]);
+      if (type === RulesType.GROUP) {
+        setConditions((prev) => [...prev, { type, data: {}, conditions: [], id: newId }]);
       } else {
         newlyAddedIdRef.current = newId;
-        setNewConditions([...conditions, { type, data: {}, operators: conditionType, id: newId }]);
+        // Use functional update to avoid depending on conditions
+        setConditions((prev) => [...prev, { type, data: {}, operators: conditionType, id: newId }]);
       }
     },
-    [conditionType, conditions],
+    [conditionType],
   );
 
   const handleOnChange = useCallback((index: number, conds: RulesCondition[]) => {
@@ -257,109 +345,67 @@ export const RulesGroup = (props: RulesGroupProps) => {
   }, [conditions, onChange]);
 
   const updateConditionData = useCallback(
-    (index: number, data: any) => {
-      const newConds = conditions.map((condition, i) => {
-        if (i === index) {
-          return {
-            ...condition,
-            ...(data && { data }),
-            operators: conditionType,
-          };
+    (index: number, data: Record<string, unknown>) => {
+      // Use functional update to avoid depending on conditions
+      setConditions((prev) => {
+        const newConds = prev.map((condition, i) => {
+          if (i === index) {
+            return {
+              ...condition,
+              ...(data && { data }),
+              operators: conditionType,
+            };
+          }
+          return condition;
+        });
+        if (isEqual(prev, newConds)) {
+          return prev;
         }
-        return condition;
+        return newConds;
       });
-      setNewConditions(newConds);
     },
-    [conditionType, conditions],
+    [conditionType],
   );
 
-  const value = {
-    conditionType,
-    setConditionType,
-    conditions,
-    setNewConditions,
-    updateConditionData,
-    newlyAddedIdRef,
-  };
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const contextValue = useMemo(
+    () => ({
+      conditionType,
+      setConditionType,
+      conditions,
+      setNewConditions,
+      updateConditionData,
+      newlyAddedIdRef,
+    }),
+    [conditionType, conditions, setNewConditions, updateConditionData],
+  );
 
   return (
-    <RulesGroupContext.Provider value={value}>
+    <RulesGroupContext.Provider value={contextValue}>
       <div
         className={
           isHorizontal ? 'flex flex-wrap gap-2 items-start w-full' : 'flex flex-col space-y-2'
         }
       >
-        {conditions.map((condition, i) => {
-          const ITEM = rulesItems.find((item) => condition.type === item.type);
-
-          return (
-            <React.Fragment key={condition.id}>
-              {isHorizontal ? (
-                <>
-                  <RulesLogic index={i} disabled={disabled} />
-                  {condition.type === 'group' && condition.conditions ? (
-                    <div className="p-2 pr-6 border border-input border-dashed rounded-md w-fit relative">
-                      <RulesGroup
-                        isSubItems={true}
-                        defaultConditions={condition.conditions}
-                        onChange={(conditions: RulesCondition[]) => {
-                          handleOnChange(i, conditions);
-                        }}
-                      />
-                      <RulesRemove index={i} />
-                    </div>
-                  ) : ITEM?.RulesElement ? (
-                    <ITEM.RulesElement
-                      index={i}
-                      data={condition.data}
-                      type={ITEM.type}
-                      conditionId={condition.id}
-                    />
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  {condition.type === 'group' && condition.conditions ? (
-                    <div className="flex flex-col space-y-2">
-                      <RulesLogic index={i} disabled={disabled} />
-                      <div className="p-2 pr-6 border border-input border-dashed rounded-md w-fit relative">
-                        <RulesGroup
-                          isSubItems={true}
-                          defaultConditions={condition.conditions}
-                          onChange={(conditions: RulesCondition[]) => {
-                            handleOnChange(i, conditions);
-                          }}
-                        />
-                        <RulesRemove index={i} />
-                      </div>
-                    </div>
-                  ) : ITEM?.RulesElement ? (
-                    <div className="flex flex-row space-x-3">
-                      <RulesLogic index={i} disabled={disabled} />
-                      <ITEM.RulesElement
-                        index={i}
-                        data={condition.data}
-                        type={ITEM.type}
-                        conditionId={condition.id}
-                      />
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </React.Fragment>
-          );
-        })}
+        {conditions.map((condition, i) => (
+          <React.Fragment key={condition.id}>
+            <RulesConditionItem
+              condition={condition}
+              index={i}
+              isHorizontal={isHorizontal}
+              disabled={disabled}
+              rulesItems={rulesItems}
+              onSubGroupChange={handleOnChange}
+            />
+          </React.Fragment>
+        ))}
         <div className="flex flex-row space-x-3">
           <RulesLogic index={conditions.length} disabled={conditions.length > 0 || disabled} />
           <RulesAddDropdown
             onSelect={handleOnSelect}
             disabled={disabled}
             items={
-              isSubItems
-                ? rulesItems.filter(
-                    (item) => item.type !== RulesType.GROUP && item.type !== RulesType.WAIT,
-                  )
-                : rulesItems
+              isSubItems ? rulesItems.filter((item) => item.type !== RulesType.GROUP) : rulesItems
             }
           >
             <Button variant="ghost" className="text-primary">
