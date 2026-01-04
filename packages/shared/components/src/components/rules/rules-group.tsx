@@ -19,7 +19,7 @@ import {
 } from '@usertour-packages/icons';
 import { RulesCondition, RulesType } from '@usertour/types';
 import { cuid, deepClone } from '@usertour/helpers';
-import React, { ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesGroupContext } from '../contexts/rules-group-context';
 import { RulesContent } from './rules-content';
@@ -194,9 +194,12 @@ const RulesConditionItem = memo(
       [index, onSubGroupChange],
     );
 
-    // Render group content (shared between horizontal and vertical layouts)
-    const renderGroupContent = () => (
-      <div className="p-2 pr-6 border border-input border-dashed rounded-md w-fit relative">
+    // Render group content with optional key for horizontal layout
+    const renderGroupContent = (key?: string) => (
+      <div
+        key={key}
+        className="p-2 pr-6 border border-input border-dashed rounded-md w-fit relative"
+      >
         <RulesGroup
           isSubItems={true}
           defaultConditions={condition.conditions ?? []}
@@ -206,10 +209,11 @@ const RulesConditionItem = memo(
       </div>
     );
 
-    // Render rules element content
-    const renderRulesElement = () =>
+    // Render rules element content with optional key for horizontal layout
+    const renderRulesElement = (key?: string) =>
       ITEM?.RulesElement ? (
         <ITEM.RulesElement
+          key={key}
           index={index}
           data={condition.data}
           type={ITEM.type}
@@ -220,8 +224,10 @@ const RulesConditionItem = memo(
     if (isHorizontal) {
       return (
         <>
-          <RulesLogic index={index} disabled={disabled} />
-          {isGroup ? renderGroupContent() : renderRulesElement()}
+          <RulesLogic key={`logic-${condition.id}`} index={index} disabled={disabled} />
+          {isGroup
+            ? renderGroupContent(`group-${condition.id}`)
+            : renderRulesElement(`rule-${condition.id}`)}
         </>
       );
     }
@@ -252,11 +258,29 @@ interface RulesGroupProps {
   defaultConditions: RulesCondition[];
   onChange?: (conditions: RulesCondition[]) => void;
 }
+// Ensure all conditions have unique IDs
+const ensureConditionIds = (conditions: RulesCondition[]): RulesCondition[] => {
+  return conditions.map((condition) => {
+    const result: RulesCondition = {
+      ...condition,
+      id: condition.id || cuid(),
+    };
+    // Only add conditions property if it exists in the original
+    if (condition.conditions) {
+      result.conditions = ensureConditionIds(condition.conditions);
+    }
+    return result;
+  });
+};
+
 export const RulesGroup = (props: RulesGroupProps) => {
   const { isSubItems = false, onChange, defaultConditions } = props;
   const { isHorizontal, filterItems, addButtonText, disabled } = useRulesContext();
 
-  const [conditions, setConditions] = useState<RulesCondition[]>(deepClone(defaultConditions));
+  // Ensure all conditions have IDs for proper React key handling
+  const [conditions, setConditions] = useState<RulesCondition[]>(() =>
+    ensureConditionIds(deepClone(defaultConditions)),
+  );
 
   // Use useMemo instead of useState for derived computed value
   const rulesItems = useMemo(
@@ -388,16 +412,15 @@ export const RulesGroup = (props: RulesGroupProps) => {
         }
       >
         {conditions.map((condition, i) => (
-          <React.Fragment key={condition.id}>
-            <RulesConditionItem
-              condition={condition}
-              index={i}
-              isHorizontal={isHorizontal}
-              disabled={disabled}
-              rulesItems={rulesItems}
-              onSubGroupChange={handleOnChange}
-            />
-          </React.Fragment>
+          <RulesConditionItem
+            key={condition.id}
+            condition={condition}
+            index={i}
+            isHorizontal={isHorizontal}
+            disabled={disabled}
+            rulesItems={rulesItems}
+            onSubGroupChange={handleOnChange}
+          />
         ))}
         <div className="flex flex-row space-x-2">
           <RulesLogic index={conditions.length} disabled={conditions.length > 0 || disabled} />
