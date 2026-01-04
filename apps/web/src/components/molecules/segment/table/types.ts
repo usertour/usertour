@@ -57,7 +57,7 @@ export interface DataTableToolbarProps<TData> {
 }
 
 // Pagination props interface
-export interface DataTablePaginationProps<TData> {
+export interface DataTablePaginationProps<TData extends { id: string }> {
   table: Table<TData>;
 }
 

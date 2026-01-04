@@ -16,7 +16,9 @@ import {
 import { DataTablePaginationProps } from './types';
 import { useTableSelection } from '@/hooks/use-table-selection';
 
-export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
+export function DataTablePagination<TData extends { id: string }>({
+  table,
+}: DataTablePaginationProps<TData>) {
   const { getSelectedCount } = useTableSelection(table);
 
   return (
