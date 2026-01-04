@@ -1,0 +1,174 @@
+'use client';
+
+import { SpinnerIcon } from '@usertour-packages/icons';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@usertour-packages/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@usertour-packages/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@usertour-packages/form';
+import { Input } from '@usertour-packages/input';
+import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { useToast } from '@usertour-packages/use-toast';
+import {
+  createSegmentFormSchema,
+  createSegmentDefaultValues,
+  CreateSegmentFormValues,
+} from '../../types/segment-form-schema';
+import { useEffect, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
+import { useCreateCompanySegment } from '@/hooks/use-create-company-segment';
+import { memo } from 'react';
+
+interface CreateDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  environmentId: string | undefined;
+}
+
+export const CompanySegmentCreateDialog = memo((props: CreateDialogProps) => {
+  const { onClose, isOpen, environmentId } = props;
+  const { t } = useTranslation();
+  const { createSegmentAsync, loading } = useCreateCompanySegment();
+  const { toast } = useToast();
+
+  const form = useForm<CreateSegmentFormValues>({
+    resolver: zodResolver(createSegmentFormSchema),
+    defaultValues: createSegmentDefaultValues,
+    mode: 'onChange',
+  });
+
+  useEffect(() => {
+    form.reset();
+  }, [isOpen]);
+
+  const handleSuccess = useCallback(
+    (segmentName: string) => {
+      toast({
+        variant: 'success',
+        title: t('companies.toast.segments.segmentCreated', { segmentName }),
+      });
+      onClose();
+    },
+    [onClose, toast, t],
+  );
+
+  const handleError = useCallback(
+    (errorMessage: string) => {
+      toast({
+        variant: 'destructive',
+        title: errorMessage,
+      });
+    },
+    [toast],
+  );
+
+  const handleOnSubmit = useCallback(
+    async (formValues: CreateSegmentFormValues) => {
+      const result = await createSegmentAsync(formValues, environmentId);
+      if (result.success) {
+        handleSuccess(formValues.name);
+      } else {
+        handleError(result.error ?? 'Unknown error');
+      }
+    },
+    [createSegmentAsync, environmentId, handleSuccess, handleError],
+  );
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleOnSubmit)}>
+            <DialogHeader>
+              <DialogTitle>{t('companies.segments.create')}</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col space-y-4 mt-4 mb-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex flex-row">
+                      {t('companies.segments.form.name')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('companies.segments.form.namePlaceholder')}
+                        className="w-full"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dataType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex flex-row items-center">
+                      {t('companies.segments.form.segmentType')}
+                      <QuestionTooltip className="ml-1">
+                        {t('companies.segments.form.segmentTypeTooltip')}
+                      </QuestionTooltip>
+                    </FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-row space-x-1"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="CONDITION" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {t('companies.segments.form.filter')}
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="MANUAL" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {t('companies.segments.form.manual')}
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => onClose()}>
+                {t('companies.actions.cancel')}
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+                {t('companies.segments.form.createSegment')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+});
+
+CompanySegmentCreateDialog.displayName = 'CompanySegmentCreateDialog';

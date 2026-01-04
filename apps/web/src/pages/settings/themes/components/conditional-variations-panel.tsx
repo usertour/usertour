@@ -58,7 +58,9 @@ const SortableVariationItem = ({
         onClick={onClick}
       >
         <DragHandleDots2Icon className="h-4 w-4 cursor-move" {...attributes} {...listeners} />
-        <span className="text-sm font-medium">{variation.name || `Variation ${index + 1}`}</span>
+        <span className="text-sm font-medium max-w-40 truncate">
+          {variation.name || `Variation ${index + 1}`}
+        </span>
       </Button>
     </div>
   );

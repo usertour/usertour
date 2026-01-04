@@ -22,26 +22,32 @@ export const EventListContent = () => {
   return (
     <>
       <div className="rounded-md border-none">
-        <Table>
+        <Table className="table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead>Display name</TableHead>
               <TableHead>Code name</TableHead>
-              <TableHead>CreatedAt</TableHead>
-              <TableHead />
+              <TableHead className="w-60">CreatedAt</TableHead>
+              <TableHead className="w-24" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {eventList ? (
               eventList?.map((event: Event) => (
                 <TableRow className="cursor-pointer" key={event.id} onClick={() => {}}>
-                  <TableCell className={event.description ? 'flex flex-col' : ''}>
-                    {event.displayName}
-                    {event.description && (
-                      <span className="text-xs text-gray-500">{event.description}</span>
+                  <TableCell className="truncate">
+                    {event.description ? (
+                      <div className="flex flex-col">
+                        <span className="truncate">{event.displayName}</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {event.description}
+                        </span>
+                      </div>
+                    ) : (
+                      event.displayName
                     )}
                   </TableCell>
-                  <TableCell>{event.codeName}</TableCell>
+                  <TableCell className="truncate">{event.codeName}</TableCell>
                   <TableCell>{format(new Date(event.createdAt), 'PPpp')}</TableCell>
                   <TableCell>
                     <EventListAction event={event} />

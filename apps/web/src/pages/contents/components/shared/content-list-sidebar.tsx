@@ -11,17 +11,17 @@ import { FileEditLineIcon, BaseStationLineIcon } from '@usertour-packages/icons'
 import { useParams, useSearchParams } from 'react-router-dom';
 
 export function ContentListSidebar() {
-  const { query, setQuery } = useContentListContext();
+  const { query } = useContentListContext();
   const { contentType } = useParams();
-  const [_, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
 
   // Extract common styles and logic
   const getItemClassName = (isActive: boolean) =>
     isActive ? 'bg-gray-200/40 dark:bg-secondary/60' : '';
 
   const handleStatusChange = (published: boolean) => () => {
-    setQuery({ published });
-    setSearchParams({});
+    // Update URL as the single source of truth, creating a history entry
+    setSearchParams({ published: published ? '1' : '0' }, { replace: false });
   };
 
   return (
@@ -38,8 +38,8 @@ export function ContentListSidebar() {
         <AdminSidebarBodyTitleTemplate>Status</AdminSidebarBodyTitleTemplate>
         <AdminSidebarBodyItemTemplate
           onClick={handleStatusChange(false)}
-          variant={query.published === false ? 'secondary' : 'ghost'}
-          className={getItemClassName(query.published === false)}
+          variant={query.published !== true ? 'secondary' : 'ghost'}
+          className={getItemClassName(query.published !== true)}
         >
           <FileEditLineIcon className="w-4 h-4 mr-1" />
           Draft

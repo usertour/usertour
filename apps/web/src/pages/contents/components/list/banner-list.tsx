@@ -7,7 +7,7 @@ import { Separator } from '@usertour-packages/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { useState } from 'react';
 import { BannerCreateForm } from '../shared/banner-create-form';
-import { EmptyPlaceholder } from '../shared/empty-placeholder';
+import { EmptyPlaceholder } from '@/components/molecules/segment/ui';
 import { ExtensionInstallDialog } from '../shared/extension-install-dialog';
 import { DataTable } from './data-table';
 import { useAppContext } from '@/contexts/app-context';

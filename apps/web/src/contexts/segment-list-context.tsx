@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { listSegment } from '@usertour-packages/gql';
 import { RulesCondition, Segment } from '@usertour/types';
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { filterSegmentsByTypeOrder } from '../utils/segment';
 
@@ -38,13 +38,13 @@ export function SegmentListProvider(props: SegmentListProviderProps): JSX.Elemen
   const [searchParams, _] = useSearchParams();
   const [currentSegment, setCurrentSegment] = useState<Segment>();
   const [currentConditions, setCurrentConditions] = useState<CurrentConditions | undefined>();
-  const [segmentList, setSegmentList] = useState<Segment[] | undefined>();
   const isRefetching = networkStatus === 4;
 
-  useEffect(() => {
+  const segmentList = useMemo(() => {
     if (data?.listSegment && data.listSegment.length > 0) {
-      setSegmentList(filterSegmentsByTypeOrder(data.listSegment as Segment[], bizType));
+      return filterSegmentsByTypeOrder(data.listSegment as Segment[], bizType);
     }
+    return undefined;
   }, [data?.listSegment, bizType]);
 
   useEffect(() => {

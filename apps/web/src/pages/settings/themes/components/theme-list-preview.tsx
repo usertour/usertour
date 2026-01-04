@@ -7,14 +7,15 @@ import * as SharedPopper from '@usertour-packages/sdk';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { ContentEditorSerialize, createValue5 } from '@usertour-packages/shared-editor';
 import { Theme } from '@usertour/types';
-import { useRef, useState } from 'react';
+import { memo, MouseEvent, useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
+import { Button } from '@usertour-packages/button';
 
 type ThemeListPreviewProps = {
   theme: Theme;
 };
-export const ThemeListPreview = (props: ThemeListPreviewProps) => {
+export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
   const { theme } = props;
   const containerRef = useRef(null);
 
@@ -22,16 +23,19 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
   const { project, isViewOnly } = useAppContext();
   const [settings] = useState<ThemeTypesSetting>(theme.settings);
   const navigate = useNavigate();
-  const handleOnClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = containerRef.current as any;
-    if (el.contains(e.target) && project) {
-      navigate(`/project/${project.id}/settings/theme/${theme.id}`);
-    }
-  };
+  const handleOnClick = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      const el = containerRef.current as any;
+      if (el.contains(e.target) && project) {
+        navigate(`/project/${project.id}/settings/theme/${theme.id}`);
+      }
+    },
+    [project, navigate, theme.id],
+  );
 
-  const handleOnSuccess = () => {
+  const handleOnSuccess = useCallback(() => {
     refetch();
-  };
+  }, [refetch]);
 
   return (
     <>
@@ -53,10 +57,15 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
             )}
           </div>
           <ThemeEditDropdownMenu theme={theme} onSubmit={handleOnSuccess} disabled={isViewOnly}>
-            <DotsHorizontalIcon className="h-4 w-4" />
+            <Button variant={'ghost'} size={'icon'}>
+              <DotsHorizontalIcon className="h-4 w-4" />
+            </Button>
           </ThemeEditDropdownMenu>
         </div>
-        <div className="flex justify-center items-center h-40 flex-col ">
+        <div
+          className="flex justify-center items-center h-40 flex-col "
+          {...({ inert: '' } as any)}
+        >
           <SharedPopper.Popper
             open={true}
             zIndex={1}
@@ -81,6 +90,6 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
       </div>
     </>
   );
-};
+});
 
 ThemeListPreview.displayName = 'ThemeListPreview';

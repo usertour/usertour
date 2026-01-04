@@ -18,7 +18,6 @@ import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
-import { cuid } from '@usertour/helpers';
 import { WebSocketMessageValidationPipe } from './web-socket-message-validation.pipe';
 
 @WsGateway({ namespace: '/v2' })
@@ -42,11 +41,6 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
 
     server.use(async (socket: Socket, next) => {
       try {
-        // Generate global unique socket ID to ensure uniqueness across multiple server instances
-        if (!socket?.data?.globalSocketId) {
-          socket.data.globalSocketId = cuid();
-        }
-
         const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
 
         // Store token in socket.data for logging purposes
@@ -62,7 +56,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           return next(new SDKAuthenticationError());
         }
 
-        // Store client data in Redis using global socket ID
+        // Store client data in Redis using socket ID
         const success = await this.socketDataService.set(socket, socketData);
         if (!success) {
           return next(new SDKAuthenticationError());

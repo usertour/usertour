@@ -33,6 +33,7 @@ import {
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
+import { Button } from '@usertour-packages/button';
 
 const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();
@@ -45,8 +46,8 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
   return (
     <div className="grow rounded-b-md py-2.5 px-5 flex flex-col  ">
       <div className="flex-none flex flex-row justify-between items-center space-x-4">
-        <span className="grow text-base font-medium text-gray-900 dark:text-white truncate ...	">
-          {content.name}{' '}
+        <span className="grow text-base font-medium text-gray-900 dark:text-white truncate min-w-0">
+          {content.name ?? ''}
         </span>
 
         <ContentEditDropdownMenu
@@ -56,7 +57,9 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
           }}
           disabled={isViewOnly}
         >
-          <DotsHorizontalIcon className="h-4 w-4 flex-none" />
+          <Button variant="ghost" size="icon" className="flex-none">
+            <DotsHorizontalIcon className="h-4 w-4" />
+          </Button>
         </ContentEditDropdownMenu>
       </div>
       <div className="grow flex flex-row text-sm items-center space-x-1 text-xs">
@@ -200,7 +203,10 @@ const ContentTableItem = ({
       className="h-72 min-w-72  flex flex-col bg-white rounded-lg border hover:border-primary dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
     >
       <div className="flex-none bg-muted rounded-t-md">
-        <div className="h-48 flex justify-center items-center overflow-hidden">
+        <div
+          className="h-48 flex justify-center items-center overflow-hidden"
+          {...({ inert: '' } as any)}
+        >
           <ContentPreview
             currentVersion={currentVersion}
             currentTheme={currentTheme}

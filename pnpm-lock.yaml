@@ -91,8 +91,8 @@ importers:
         specifier: ^0.0.53
         version: 0.0.53(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -347,8 +347,8 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -747,8 +747,8 @@ importers:
         specifier: ^0.0.53
         version: 0.0.53(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       apollo3-cache-persist:
         specifier: ^0.14.1
         version: 0.14.1(@apollo/client@3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))
@@ -1498,8 +1498,8 @@ importers:
         specifier: workspace:*
         version: link:../popover
       '@usertour/helpers':
-        specifier: workspace:*
-        version: link:../../shared/helpers
+        specifier: ^0.0.53
+        version: 0.0.53(typescript@5.3.3)
     devDependencies:
       '@types/react':
         specifier: ^18.0.37
@@ -3245,8 +3245,8 @@ importers:
         specifier: ^0.0.53
         version: 0.0.53(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       animejs:
         specifier: ^3.2.1
         version: 3.2.2
@@ -3492,8 +3492,8 @@ importers:
         specifier: ^0.0.53
         version: 0.0.53(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -3571,8 +3571,8 @@ importers:
         specifier: workspace:^
         version: link:../gql
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -3753,8 +3753,8 @@ importers:
         specifier: ^0.0.53
         version: 0.0.53(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -3933,8 +3933,8 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       chroma-js:
         specifier: ^3.1.2
         version: 3.1.2
@@ -4006,8 +4006,8 @@ importers:
         specifier: ^0.0.53
         version: 0.0.53(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -4136,8 +4136,8 @@ importers:
         specifier: ^0.0.53
         version: 0.0.53(typescript@5.1.6)
       '@usertour/types':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.42
+        version: 0.0.42
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -8825,6 +8825,9 @@ packages:
 
   '@usertour/types@0.0.40':
     resolution: {integrity: sha512-9OnCn1e31IRAWMXMhTvHEg0FyMAmaPRufNfMkDrEOj1P60VsD2WD4FeIjRhnDvn8BfrugWlyc1qKEaBJXeQaqg==}
+
+  '@usertour/types@0.0.42':
+    resolution: {integrity: sha512-TwEq0FI0ZsKw7sJHM27Ef6V60jU5df1KHa8mZhKQ7LpNiEahfzuEAgaChj0cEeyOEBXQ3si6AXzBCQS/q6BYAg==}
 
   '@vitejs/plugin-basic-ssl@1.1.0':
     resolution: {integrity: sha512-wO4Dk/rm8u7RNhOf95ZzcEmC9rYOncYgvq4z3duaJrCgjN8BxAnDVyndanfcJZ0O6XZzHz6Q0hTimxTg8Y9g/A==}
@@ -20938,11 +20941,28 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
+  '@usertour/helpers@0.0.53(typescript@5.3.3)':
+    dependencies:
+      '@paralleldrive/cuid2': 2.2.2
+      '@usertour/types': 0.0.40
+      chroma-js: 3.1.2
+      class-variance-authority: 0.4.0(typescript@5.3.3)
+      clsx: 1.2.1
+      date-fns: 2.30.0
+      deepmerge-ts: 7.1.3
+      fast-deep-equal: 3.1.3
+      tailwind-merge: 1.14.0
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - typescript
+
   '@usertour/license@0.0.2':
     dependencies:
       jsonwebtoken: 9.0.2
 
   '@usertour/types@0.0.40': {}
+
+  '@usertour/types@0.0.42': {}
 
   '@vitejs/plugin-basic-ssl@1.1.0(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))':
     dependencies:

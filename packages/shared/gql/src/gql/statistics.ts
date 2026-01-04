@@ -58,6 +58,11 @@ export const queryBizSession = gql`
             externalId
             data
           }
+          bizCompany {
+            id
+            externalId
+            data
+          }
           bizEvent {
             data
             createdAt

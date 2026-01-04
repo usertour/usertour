@@ -1,5 +1,6 @@
 import { cn } from '@usertour/helpers';
 import { ReactNode, forwardRef } from 'react';
+import { useRulesContext } from './rules-context';
 
 type TemplateSharedProps = {
   children: ReactNode;
@@ -23,10 +24,13 @@ RulesConditionIcon.displayName = 'RulesConditionIcon';
 export const RulesConditionRightContent = forwardRef<HTMLDivElement, TemplateSharedProps>(
   (props, ref) => {
     const { children, disabled = false } = props;
+    const { isHorizontal } = useRulesContext();
+
     return (
       <div
         className={cn(
-          'grow bg-muted rounded cursor-pointer flex flex-row relative hover:bg-secondary-hover',
+          'bg-muted rounded cursor-pointer flex flex-row relative hover:bg-secondary-hover min-w-0',
+          isHorizontal ? 'self-start' : 'grow',
           disabled && 'cursor-default pointer-events-none opacity-50',
           props.className,
         )}

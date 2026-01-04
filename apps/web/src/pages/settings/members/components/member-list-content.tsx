@@ -24,11 +24,11 @@ const MemberListContentTableRow = (props: MemberListContentTableRowProps) => {
       <TableCell>
         <div className="flex flex-row items-center gap-2">
           <UserAvatar email={data.email} name={data.name} />
-          <span>{data.name}</span>
+          <span className="truncate max-w-64">{data.name}</span>
           {data.isInvite && <Badge variant="success">Invite pending</Badge>}
         </div>
       </TableCell>
-      <TableCell>{data.email}</TableCell>
+      <TableCell className="truncate">{data.email}</TableCell>
       <TableCell>{data.role}</TableCell>
       {/* <TableCell>{format(new Date(data.createdAt), 'PPpp')}</TableCell> */}
       <TableCell>
@@ -49,14 +49,14 @@ export const MemberListContent = () => {
   return (
     <>
       <div className="rounded-md border-none">
-        <Table>
+        <Table className="table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
+              <TableHead className="w-32">Role</TableHead>
               {/* <TableHead>CreatedAt</TableHead> */}
-              <TableHead />
+              <TableHead className="w-24" />
             </TableRow>
           </TableHeader>
           <TableBody>

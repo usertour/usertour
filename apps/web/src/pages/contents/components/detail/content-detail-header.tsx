@@ -109,7 +109,7 @@ export const ContentDetailHeader = () => {
           >
             <ArrowLeftIcon className="h-6 w-8" />
           </Button>
-          <span className="flex-none max-w-40	truncate ...	">{content?.name}</span>
+          <span className="flex-none max-w-40 truncate">{content?.name ?? ''}</span>
           <ContentRenameForm
             data={content}
             onSubmit={() => {

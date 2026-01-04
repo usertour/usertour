@@ -37,8 +37,8 @@ import { getContentError } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
-import { RulesLogic } from './rules-logic';
-import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesPopover, RulesPopoverContent } from './rules-popper';
+import { RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
 import { useAutoOpenPopover } from './use-auto-open-popover';
@@ -305,28 +305,25 @@ export const RulesContent = (props: RulesContentProps) => {
   return (
     <RulesContentContext.Provider value={value}>
       <RulesError open={openError}>
-        <div className="flex flex-row space-x-3">
-          <RulesLogic index={index} disabled={disabled} />
-          <RulesErrorAnchor asChild>
-            <RulesConditionRightContent disabled={disabled}>
-              <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-                <RulesPopoverTrigger icon={conditionIcon}>
-                  {contentTypeLabel} <span className="font-bold">{selectedPreset?.name} </span>
-                  {conditionsMapping.find((c) => c.value === conditionValue)?.name}{' '}
-                </RulesPopoverTrigger>
-                <RulesPopoverContent>
-                  <div className="flex flex-col space-y-2">
-                    <div>{contentTypeLabel}</div>
-                    <RulesContentName />
-                    <RulesContentRadios />
-                  </div>
-                </RulesPopoverContent>
-              </RulesPopover>
-              <RulesRemove index={index} />
-            </RulesConditionRightContent>
-          </RulesErrorAnchor>
-          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-        </div>
+        <RulesErrorAnchor asChild>
+          <RulesConditionRightContent disabled={disabled}>
+            <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
+              <RulesPopoverTriggerWrapper icon={conditionIcon}>
+                {contentTypeLabel} <span className="font-bold">{selectedPreset?.name} </span>
+                {conditionsMapping.find((c) => c.value === conditionValue)?.name}{' '}
+              </RulesPopoverTriggerWrapper>
+              <RulesPopoverContent>
+                <div className="flex flex-col space-y-2">
+                  <div>{contentTypeLabel}</div>
+                  <RulesContentName />
+                  <RulesContentRadios />
+                </div>
+              </RulesPopoverContent>
+            </RulesPopover>
+            <RulesRemove index={index} />
+          </RulesConditionRightContent>
+        </RulesErrorAnchor>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </RulesError>
     </RulesContentContext.Provider>
   );

@@ -77,9 +77,11 @@ export function ContentListProvider(props: ContentListProviderProps): JSX.Elemen
   const [requestPagination, setRequestPagination] = useState<Pagination>({
     first: defaultPagination.pageSize,
   });
-  const [searchParams, _] = useSearchParams();
-  const published = searchParams.get('published') === '1';
-  const [query, setQuery] = useState<any>({ published, ...defaultQuery });
+  const [searchParams] = useSearchParams();
+  // Parse published status from URL, default to false (Draft) if not present
+  const publishedParam = searchParams.get('published');
+  const publishedFromUrl = publishedParam === '1';
+  const [query, setQuery] = useState<any>({ published: publishedFromUrl, ...defaultQuery });
   const [pagination, setPagination] = useState<PaginationState>({
     ...defaultPagination,
   });
@@ -100,6 +102,20 @@ export function ContentListProvider(props: ContentListProviderProps): JSX.Elemen
   });
 
   const pageCount = Math.ceil(totalCount / currentPagination.pageSize);
+
+  // Sync query state from URL parameters (handles browser back/forward)
+  useEffect(() => {
+    const publishedParam = searchParams.get('published');
+    // Default to false (Draft) if not present
+    const published = publishedParam === '1';
+    setQuery((prev: any) => {
+      // Only update if the published status actually changed
+      if (prev.published !== published) {
+        return { ...prev, published };
+      }
+      return prev;
+    });
+  }, [searchParams]);
 
   useEffect(() => {
     const { pageIndex, pageSize } = pagination;
