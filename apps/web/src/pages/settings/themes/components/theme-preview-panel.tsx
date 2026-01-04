@@ -10,7 +10,11 @@ import { ThemePreviewLauncher } from './preview/theme-preview-launcher';
 import { ThemePreviewModal } from './preview/theme-preview-modal';
 import { ThemePreviewPopper } from './preview/theme-preview-popper';
 import { ThemePreviewSelector } from './preview/theme-preview-selector';
-import { ContentEditorRoot, createValue6, surveysValue } from '@usertour-packages/shared-editor';
+import {
+  MODAL_PREVIEW_CONTENT,
+  NPS_PREVIEW_CONTENT,
+  TOOLTIP_PREVIEW_CONTENT,
+} from '../constants/preview-contents';
 import { ThemeTypesSetting } from '@usertour/types';
 import { Rect } from './theme-editor';
 
@@ -74,6 +78,7 @@ export const ThemePreviewPanel = ({
       <div className="bg-blue-50 flex-1 overflow-hidden" ref={containerRef}>
         {selectedType?.type === ThemeDetailPreviewType.TOOLTIP && (
           <ThemePreviewPopper
+            contents={TOOLTIP_PREVIEW_CONTENT}
             settings={settings}
             customStyle={customStyle}
             viewRect={debouncedRect}
@@ -81,14 +86,14 @@ export const ThemePreviewPanel = ({
         )}
         {selectedType?.type === ThemeDetailPreviewType.MODAL && (
           <ThemePreviewModal
-            contents={createValue6 as ContentEditorRoot[]}
+            contents={MODAL_PREVIEW_CONTENT}
             settings={settings}
             customStyle={customStyle}
           />
         )}
         {selectedType?.type === ThemeDetailPreviewType.NPS && (
           <ThemePreviewModal
-            contents={surveysValue as ContentEditorRoot[]}
+            contents={NPS_PREVIEW_CONTENT}
             settings={settings}
             customStyle={customStyle}
           />

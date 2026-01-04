@@ -5,7 +5,8 @@ import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour-packages/sdk';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
-import { ContentEditorSerialize, createValue5 } from '@usertour-packages/shared-editor';
+import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
+import { LIST_PREVIEW_CONTENT } from '../constants/preview-contents';
 import { Theme } from '@usertour/types';
 import { memo, MouseEvent, useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -83,7 +84,7 @@ export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
               height={'auto'}
             >
               <SharedPopper.PopperClose />
-              <ContentEditorSerialize contents={createValue5 as any} />
+              <ContentEditorSerialize contents={LIST_PREVIEW_CONTENT} />
             </SharedPopper.PopperStaticContent>
           </SharedPopper.Popper>
         </div>

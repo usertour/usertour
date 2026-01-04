@@ -8,18 +8,20 @@ import {
   PopperClose,
   PopperOverlay,
 } from '@usertour-packages/sdk';
-import { ContentEditorSerialize, createValue5 } from '@usertour-packages/shared-editor';
+import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
 import { useRef } from 'react';
 import { Rect } from '../theme-editor';
 
 interface ThemePreviewPopperProps {
+  contents: ContentEditorRoot[];
   settings?: ThemeTypesSetting;
   customStyle?: string;
   viewRect?: Rect;
 }
 
 export const ThemePreviewPopper = ({
+  contents,
   settings,
   customStyle,
   viewRect,
@@ -70,7 +72,7 @@ export const ThemePreviewPopper = ({
                 totalSteps={4}
               />
             )}
-            <ContentEditorSerialize contents={createValue5 as any} />
+            <ContentEditorSerialize contents={contents} />
             <PopperMadeWith />
             {showBottomProgress && (
               <PopperProgress
