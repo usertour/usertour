@@ -4,7 +4,7 @@ import { deepmerge } from 'deepmerge-ts';
 import { isUndefined } from './type-utils';
 
 const defaultFontFamily =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"';
+  '-apple-system, "system-ui", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"';
 
 export const mergeThemeDefaultSettings = (settings: ThemeTypesSetting) => {
   return deepmerge(defaultSettings, settings) as ThemeTypesSetting;
