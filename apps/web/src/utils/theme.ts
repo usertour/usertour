@@ -5,6 +5,46 @@ import {
   ThemeDetailPreviewType,
   ThemeDetailSelectorType,
 } from '@usertour/types';
+import { hexToRgb } from '@usertour/helpers';
+
+// ============================================================================
+// Color Utility Functions
+// ============================================================================
+
+/**
+ * Check if a color needs dark text for readability.
+ * Uses standard luminance formula: 0.299*R + 0.587*G + 0.114*B
+ * @param hex - Hex color string
+ * @returns true if background is light and needs dark text
+ */
+export const needsDarkText = (hex: string): boolean => {
+  const rgb = hexToRgb(hex);
+  if (!rgb) {
+    return false; // Invalid color defaults to dark background (white text)
+  }
+  const { r, g, b } = rgb;
+  // Standard threshold 186: ensures text readability
+  return r * 0.299 + g * 0.587 + b * 0.114 > 186;
+};
+
+/**
+ * Check if a color is very close to white (needs gray border).
+ * @param hex - Hex color string
+ * @returns true only for colors very close to white
+ */
+export const isNearWhite = (hex: string): boolean => {
+  const rgb = hexToRgb(hex);
+  if (!rgb) {
+    return false; // Invalid color defaults to no special border
+  }
+  const { r, g, b } = rgb;
+  // Threshold 245: includes slate-50 (#F8FAFC) and similar very light colors
+  return r * 0.299 + g * 0.587 + b * 0.114 > 245;
+};
+
+// ============================================================================
+// Theme Configuration
+// ============================================================================
 
 export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
   {

@@ -16,7 +16,7 @@
     "@usertour-packages/button": "workspace:*",
     "@usertour-packages/command": "workspace:*",
     "@usertour-packages/popover": "workspace:*",
-    "@usertour/helpers": "^0.0.53"
+    "@usertour/helpers": "^0.0.56"
   },
   "peerDependencies": {
     "react": "^18.2.0"

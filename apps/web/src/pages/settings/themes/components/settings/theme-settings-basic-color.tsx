@@ -1,31 +1,42 @@
 import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
 import { ThemeTypesSettingsColor } from '@usertour/types';
 import { Separator } from '@usertour-packages/separator';
-import { generateAutoStateColors } from '@usertour/helpers';
+import { generateStateColors } from '@usertour/helpers';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBasicColor = () => {
   const { settings, setSettings, finalSettings } = useThemeSettingsContext();
 
   const updateBrandColor = (data: Partial<ThemeTypesSettingsColor>) => {
-    const { brandColor } = settings;
-    if (data.background) {
-      const { hover, active } = generateAutoStateColors(
-        data.background,
-        data.background, // For brand, base and brand are the same
-      );
+    const { brandColor, mainColor } = settings;
+    const newBrandBg = data.background ?? brandColor.background;
+    const newBrandFg = data.color ?? brandColor.color;
+
+    // Recalculate brand hover/active when background or text color changes
+    if (data.background || data.color) {
+      const { hover, active } = generateStateColors(newBrandBg, newBrandFg);
       data.autoHover = hover;
       data.autoActive = active;
     }
-    setSettings((pre) => ({ ...pre, brandColor: { ...brandColor, ...data } }));
+
+    // When brand background changes, also recalculate main hover/active
+    if (data.background) {
+      const mainStates = generateStateColors(mainColor.background, newBrandBg);
+      setSettings((pre) => ({
+        ...pre,
+        brandColor: { ...brandColor, ...data },
+        mainColor: { ...mainColor, autoHover: mainStates.hover, autoActive: mainStates.active },
+      }));
+    } else {
+      setSettings((pre) => ({ ...pre, brandColor: { ...brandColor, ...data } }));
+    }
   };
+
   const updateMainColor = (data: Partial<ThemeTypesSettingsColor>) => {
     const { mainColor, brandColor } = settings;
     if (data.background) {
-      const { hover, active } = generateAutoStateColors(
-        data.background,
-        brandColor.background, // Always use the current brand color
-      );
+      // Main hover/active: mix background with brand background color
+      const { hover, active } = generateStateColors(data.background, brandColor.background);
       data.autoHover = hover;
       data.autoActive = active;
     }

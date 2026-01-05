@@ -8,6 +8,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Capitalize the first letter of a word
+ * @param word - The word to capitalize
+ * @returns The word with the first letter capitalized
+ */
+export const firstLetterToUpperCase = (word: string): string => {
+  if (!word) return word;
+  return word.charAt(0).toUpperCase() + word.slice(1);
+};
+
 // Threshold for showing compact format (numbers >= 10000 will be compacted)
 const COMPACT_THRESHOLD = 10000;
 

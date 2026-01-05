@@ -10,18 +10,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { cn, isDark } from '@usertour/helpers';
+import { cn } from '@usertour/helpers';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
-
-const firstLetterToUpperCase = (word: string) => {
-  const firstLetter = word.charAt(0);
-
-  const firstLetterCap = firstLetter.toUpperCase();
-
-  const remainingLetters = word.slice(1);
-
-  return firstLetterCap + remainingLetters;
-};
+import { firstLetterToUpperCase } from '@/utils/common';
+import { isNearWhite, needsDarkText } from '@/utils/theme';
 
 type PickerProps = {
   color?: string;
@@ -189,16 +181,17 @@ export const ThemeColorPicker = (props: ThemeColorPickerProps) => {
       <PopoverTrigger asChild>
         <Button
           className={cn(
-            'w-full border border-slate-300',
-            isDark(color) ? 'text-slate-400' : 'text-white',
-            isDark(color) ? '' : 'border-none',
+            'w-full border text-opacity-60 hover:text-opacity-100',
+            needsDarkText(color) ? 'text-black' : 'text-white',
+            isNearWhite(color) ? 'border-slate-300' : '',
             className,
           )}
           style={{
             background: color,
+            borderColor: isNearWhite(color) ? undefined : color,
           }}
         >
-          {isAuto ? 'Auto' : color.toUpperCase()}
+          {isAuto ? 'Auto' : color.toLowerCase()}
         </Button>
       </PopoverTrigger>
       <PopoverContent

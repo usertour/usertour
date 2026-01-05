@@ -39,18 +39,6 @@ export function hexToRgb(hex: string) {
     : null;
 }
 
-export const isDark = (hex: string) => {
-  const rgb = hexToRgb(hex);
-  if (!rgb) {
-    return null;
-  }
-  const { r, g, b } = rgb;
-  if (r * 0.299 + g * 0.587 + b * 0.114 > 186) {
-    return true;
-  }
-  return false;
-};
-
 export const evalCode = (code: string) => {
   try {
     // biome-ignore lint/security/noGlobalEval: <explanation>
