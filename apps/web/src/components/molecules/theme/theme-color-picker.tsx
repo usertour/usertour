@@ -1,4 +1,10 @@
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverArrow,
+  PopoverContent,
+  PopoverTrigger,
+} from '@usertour-packages/popover';
 import { Button } from '@usertour-packages/button';
 import { TAILWINDCSS_COLORS } from '@usertour-packages/constants';
 import { CheckboxIcon, RemoveColorIcon, Delete2Icon, EditIcon } from '@usertour-packages/icons';
@@ -152,6 +158,28 @@ const getTailwindColorInfo = (hex: string): TailwindColorData | undefined => {
   return tailwindColorMap.get(hex.toLowerCase());
 };
 
+// Validate HEX color format: #rgb, #rrggbb, or #rrggbbaa
+const isValidHexColor = (color: string): boolean => {
+  if (!color) return true;
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/i.test(color);
+};
+
+// Normalize HEX color: convert #rgb to #rrggbb, #rgba to #rrggbbaa
+const normalizeHexColor = (color: string): string => {
+  if (!color.startsWith('#')) return color;
+  const hex = color.slice(1);
+  // #rgb -> #rrggbb or #rgba -> #rrggbbaa
+  if (hex.length === 3 || hex.length === 4) {
+    return `#${hex
+      .split('')
+      .map((c) => `${c}${c}`)
+      .join('')}`;
+  }
+  return color;
+};
+
+const HEX_ERROR_MESSAGE = 'Must be a HEX value using the format #rgb, #rrggbb, or #rrggbbaa.';
+
 const formatColorTooltip = (hex: string): string => {
   const tailwindInfo = getTailwindColorInfo(hex);
   if (tailwindInfo) {
@@ -164,22 +192,50 @@ const formatColorTooltip = (hex: string): string => {
 // Sub Components
 // ============================================================================
 
+// Simple tooltip wrapper for icons
+const IconTooltip = React.memo(
+  ({ tooltip, children }: { tooltip: string; children: React.ReactNode }) => (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent className="max-w-xs bg-foreground">{tooltip}</TooltipContent>
+    </Tooltip>
+  ),
+);
+IconTooltip.displayName = 'IconTooltip';
+
+// Error popover wrapper for form inputs
+const ErrorPopover = React.memo(
+  ({ error, children }: { error?: string; children: React.ReactNode }) => (
+    <Popover open={!!error}>
+      <PopoverAnchor asChild>{children}</PopoverAnchor>
+      <PopoverContent
+        side="bottom"
+        align="start"
+        sideOffset={5}
+        className="max-w-xs border-0 bg-destructive p-2 text-sm text-destructive-foreground"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        {error}
+        <PopoverArrow className="fill-destructive" width={10} height={5} />
+      </PopoverContent>
+    </Popover>
+  ),
+);
+ErrorPopover.displayName = 'ErrorPopover';
+
 // Color button used in both Tailwind palette and recent colors
 const ColorButton = React.memo(({ color, tooltip, onClick, children }: ColorButtonProps) => (
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={onClick}
-        className="w-full aspect-square h-auto rounded-none transition-transform hover:scale-125 hover:bg-transparent"
-        style={{ backgroundColor: color, borderColor: color }}
-      >
-        {children}
-      </Button>
-    </TooltipTrigger>
-    <TooltipContent className="max-w-xs bg-slate-700">{tooltip}</TooltipContent>
-  </Tooltip>
+  <IconTooltip tooltip={tooltip}>
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={onClick}
+      className="w-full aspect-square h-auto rounded-none transition-transform hover:scale-125 hover:bg-transparent"
+      style={{ backgroundColor: color, borderColor: color }}
+    >
+      {children}
+    </Button>
+  </IconTooltip>
 ));
 ColorButton.displayName = 'ColorButton';
 
@@ -190,6 +246,7 @@ const ColorInput = React.memo(
     displayColor,
     isAuto,
     showAutoButton,
+    error,
     onInputChange,
     onSubmit,
     onRemove,
@@ -198,43 +255,32 @@ const ColorInput = React.memo(
     displayColor: string;
     isAuto: boolean;
     showAutoButton: boolean;
+    error?: string;
     onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
     onSubmit: () => void;
     onRemove: () => void;
   }) => (
     <div className="flex flex-row items-center gap-2">
       <div className="w-6 h-6 shrink-0 rounded border" style={{ backgroundColor: displayColor }} />
-      <Input
-        value={!isAuto ? inputColor : ''}
-        className="h-8 grow"
-        placeholder={isAuto ? displayColor : ''}
-        onChange={onInputChange}
-      />
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <CheckboxIcon
-            width={28}
-            height={28}
-            onClick={onSubmit}
-            className="text-primary cursor-pointer"
-          />
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs bg-slate-700">Use this color</TooltipContent>
-      </Tooltip>
+      <ErrorPopover error={error}>
+        <Input
+          value={!isAuto ? inputColor : ''}
+          className={cn('h-8 grow', error && 'border-destructive focus-visible:ring-destructive')}
+          placeholder={isAuto ? displayColor : ''}
+          onChange={onInputChange}
+        />
+      </ErrorPopover>
+      <IconTooltip tooltip="Use this color">
+        <Button variant="ghost" size="icon" onClick={onSubmit} className="h-7 w-7 text-primary">
+          <CheckboxIcon width={20} height={20} />
+        </Button>
+      </IconTooltip>
       {showAutoButton && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <RemoveColorIcon
-              width={20}
-              height={20}
-              onClick={onRemove}
-              className="cursor-pointer shrink-0"
-            />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs bg-slate-700">
-            Remove color(use default)
-          </TooltipContent>
-        </Tooltip>
+        <IconTooltip tooltip="Remove color(use default)">
+          <Button variant="ghost" size="icon" onClick={onRemove} className="h-7 w-7 shrink-0">
+            <RemoveColorIcon width={16} height={16} />
+          </Button>
+        </IconTooltip>
       )}
     </div>
   ),
@@ -349,6 +395,7 @@ const Picker = (props: PickerProps) => {
   const [inputColor, setInputColor] = useState(!isAuto ? color : '');
   const [recentColors, setRecentColors] = useState<string[]>([]);
   const [isEditingRecent, setIsEditingRecent] = useState(false);
+  const [inputError, setInputError] = useState<string | undefined>(undefined);
 
   // Load recent colors on mount
   useEffect(() => {
@@ -358,18 +405,33 @@ const Picker = (props: PickerProps) => {
   const displayColor = useMemo(() => inputColor || color, [inputColor, color]);
 
   const handleSubmit = useCallback(() => {
+    // Validate on submit
+    if (inputColor && !isValidHexColor(inputColor)) {
+      setInputError(HEX_ERROR_MESSAGE);
+      return;
+    }
+    setInputError(undefined);
     if (inputColor) {
-      const updated = saveRecentColor(inputColor);
+      // Normalize #rgb to #rrggbb format
+      const normalizedColor = normalizeHexColor(inputColor);
+      const updated = saveRecentColor(normalizedColor);
       setRecentColors(updated);
-      onChange(false, inputColor);
+      onChange(false, normalizedColor);
     } else {
       onChange(true, '');
     }
   }, [inputColor, onChange]);
 
-  const handleInputChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setInputColor(e.target.value);
-  }, []);
+  const handleInputChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setInputColor(e.target.value);
+      // Clear error when user starts typing
+      if (inputError) {
+        setInputError(undefined);
+      }
+    },
+    [inputError],
+  );
 
   const handleRemoveColor = useCallback(() => {
     onChange(true);
@@ -415,6 +477,7 @@ const Picker = (props: PickerProps) => {
           displayColor={displayColor}
           isAuto={isAuto}
           showAutoButton={showAutoButton}
+          error={inputError}
           onInputChange={handleInputChange}
           onSubmit={handleSubmit}
           onRemove={handleRemoveColor}
