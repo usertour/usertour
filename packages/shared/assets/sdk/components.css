@@ -1,67 +1,23 @@
 @layer components {
-  .usertour-btn {
-    @apply inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
-    font-family: var(--usertour-font-family);
-    font-size: var(--usertour-font-size);
-    border-radius: var(--usertour-button-border-radius);
-    height: auto;
-    min-width: var(--usertour-button-min-width);
-    padding-left: var(--usertour-button-px);
-    padding-right: var(--usertour-button-px);
-  }
+  /* Only keep calc() padding styles that cannot be expressed in Tailwind */
   .usertour-btn--primary {
-    background-color: var(--usertour-primary);
-    color: var(--usertour-primary-foreground);
-    font-weight: var(--usertour-primary-font-weight);
-    border: var(--usertour-primary-border-width) solid var(--usertour-primary-border-color);
     padding-top: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) /
-      2 -
-      var(--usertour-primary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
+        var(--usertour-primary-border-width)
     );
     padding-bottom: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) /
-      2 -
-      var(--usertour-primary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
+        var(--usertour-primary-border-width)
     );
-  }
-  .usertour-btn--primary:hover {
-    background-color: var(--usertour-primary-hover);
-    color: var(--usertour-primary-foreground-hover);
-    border-color: var(--usertour-primary-border-hover);
-  }
-  .usertour-btn--primary:active {
-    background-color: var(--usertour-primary-active);
-    color: var(--usertour-primary-foreground-active);
-    border-color: var(--usertour-primary-border-active);
   }
   .usertour-btn--secondary {
-    background-color: var(--usertour-secondary);
-    color: var(--usertour-secondary-foreground);
-    font-weight: var(--usertour-secondary-font-weight);
-    border-color: var(--usertour-secondary-border-color);
-    border-width: var(--usertour-secondary-border-width);
-    border-style: solid;
-    /* border: var(--usertour-secondary-border-width) solid var(--usertour-secondary-border-color); */
     padding-top: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) /
-      2 -
-      var(--usertour-secondary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
+        var(--usertour-secondary-border-width)
     );
     padding-bottom: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) /
-      2 -
-      var(--usertour-secondary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
+        var(--usertour-secondary-border-width)
     );
-  }
-  .usertour-btn--secondary:hover {
-    background-color: var(--usertour-secondary-hover);
-    color: var(--usertour-secondary-foreground-hover);
-    border-color: var(--usertour-secondary-border-hover);
-  }
-  .usertour-btn--secondary:active {
-    background-color: var(--usertour-secondary-active);
-    color: var(--usertour-secondary-foreground-active);
-    border-color: var(--usertour-secondary-border-active);
   }
 }

@@ -30,11 +30,32 @@ const buttonVariants = cva(
   },
 );
 
-const buttonVariantsForSdk = cva('usertour-btn', {
+// Base styles for SDK button
+// Note: Don't use cn() here as tailwind-merge incorrectly merges custom border classes
+const sdkButtonBase = [
+  'inline-flex items-center justify-center transition-colors',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+  'disabled:pointer-events-none disabled:opacity-50',
+  'font-sdk text-sdk-base rounded-sdk-button h-auto min-w-sdk-button px-sdk-button-x',
+].join(' ');
+
+const buttonVariantsForSdk = cva(sdkButtonBase, {
   variants: {
     variant: {
-      default: 'usertour-btn--primary',
-      secondary: 'usertour-btn--secondary',
+      default: [
+        'bg-sdk-btn-primary text-sdk-btn-primary-foreground font-sdk-primary',
+        'border-solid border-sdk-btn-primary', // Sets both border-width and border-color
+        'hover:bg-sdk-btn-primary-hover hover:text-sdk-btn-primary-foreground-hover hover:border-sdk-btn-primary-hover',
+        'active:bg-sdk-btn-primary-active active:text-sdk-btn-primary-foreground-active active:border-sdk-btn-primary-active',
+        'usertour-btn--primary', // For calc() padding in CSS
+      ].join(' '),
+      secondary: [
+        'bg-sdk-btn-secondary text-sdk-btn-secondary-foreground font-sdk-secondary',
+        'border-solid border-sdk-btn-secondary', // Sets both border-width and border-color
+        'hover:bg-sdk-btn-secondary-hover hover:text-sdk-btn-secondary-foreground-hover hover:border-sdk-btn-secondary-hover',
+        'active:bg-sdk-btn-secondary-active active:text-sdk-btn-secondary-foreground-active active:border-sdk-btn-secondary-active',
+        'usertour-btn--secondary', // For calc() padding in CSS
+      ].join(' '),
     },
     size: {
       default: '',
@@ -59,14 +80,16 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, forSdk = false, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
+    // For SDK: Don't use cn() as tailwind-merge incorrectly merges custom border classes
+    // For non-SDK: Use cn() to properly merge className with variants
     const variantClassName = forSdk
       ? buttonVariantsForSdk({
           variant: variant as 'default' | 'secondary',
           size,
           className,
         })
-      : buttonVariants({ variant, size, className });
-    return <Comp className={cn(variantClassName)} ref={ref} {...props} />;
+      : cn(buttonVariants({ variant, size }), className);
+    return <Comp className={variantClassName} ref={ref} {...props} />;
   },
 );
 Button.displayName = 'Button';

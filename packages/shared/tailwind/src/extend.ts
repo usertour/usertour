@@ -36,6 +36,25 @@ export const extendSdk = {
         'trigger-hover-background': 'var(--usertour-checklist-trigger-hover-background-color)',
         checkmark: 'var(--usertour-checkmark-background-color)',
       },
+      // Button colors (border colors are in borderColor extension)
+      btn: {
+        primary: {
+          DEFAULT: 'var(--usertour-primary)',
+          hover: 'var(--usertour-primary-hover)',
+          active: 'var(--usertour-primary-active)',
+          foreground: 'var(--usertour-primary-foreground)',
+          'foreground-hover': 'var(--usertour-primary-foreground-hover)',
+          'foreground-active': 'var(--usertour-primary-foreground-active)',
+        },
+        secondary: {
+          DEFAULT: 'var(--usertour-secondary)',
+          hover: 'var(--usertour-secondary-hover)',
+          active: 'var(--usertour-secondary-active)',
+          foreground: 'var(--usertour-secondary-foreground)',
+          'foreground-hover': 'var(--usertour-secondary-foreground-hover)',
+          'foreground-active': 'var(--usertour-secondary-foreground-active)',
+        },
+      },
     },
   },
   fontFamily: {
@@ -52,6 +71,24 @@ export const extendSdk = {
   borderWidth: {
     'sdk-primary-button': 'var(--usertour-border-primary-button)',
     'sdk-secondary-button': 'var(--usertour-border-secondary-button)',
+    'sdk-btn-primary': 'var(--usertour-primary-border-width)',
+    'sdk-btn-secondary': 'var(--usertour-secondary-border-width)',
+  },
+  // Use same key as borderWidth so single class sets both width and color
+  borderColor: {
+    'sdk-btn-primary': {
+      DEFAULT: 'var(--usertour-primary-border-color)',
+      hover: 'var(--usertour-primary-border-hover)',
+      active: 'var(--usertour-primary-border-active)',
+    },
+    'sdk-btn-secondary': {
+      DEFAULT: 'var(--usertour-secondary-border-color)',
+      hover: 'var(--usertour-secondary-border-hover)',
+      active: 'var(--usertour-secondary-border-active)',
+    },
+  },
+  padding: {
+    'sdk-button-x': 'var(--usertour-button-px)',
   },
   height: {
     'sdk-line-height': 'var(--usertour-line-height)',
