@@ -66,7 +66,7 @@ const UnderlineTabsList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
-    className={cn('flex gap-4 border-b border-border', className)}
+    className={cn('flex justify-center gap-4 border-b border-border', className)}
     {...props}
   />
 ));

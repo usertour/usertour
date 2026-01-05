@@ -244,7 +244,7 @@ ColorInput.displayName = 'ColorInput';
 // Tailwind color palette grid
 const TailwindPalette = React.memo(
   ({ onColorClick }: { onColorClick: (color: string) => void }) => (
-    <div className="h-[270px] flex flex-col">
+    <div className="flex flex-col">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm">Tailwind CSS colors</span>
         <Button
@@ -299,7 +299,7 @@ const RecentColors = React.memo(
     return (
       <div className="mt-3 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Recently used</span>
+          <span className="text-sm">Recently used</span>
           <div className="w-10 flex justify-end">
             {isEditing ? (
               <Button
@@ -425,7 +425,7 @@ const Picker = (props: PickerProps) => {
             <UnderlineTabsTrigger value="palette">Color palette</UnderlineTabsTrigger>
           </UnderlineTabsList>
           <UnderlineTabsContent value="picker">
-            <div className="h-[270px] theme-color-picker">
+            <div className="h-72 theme-color-picker">
               <HexColorPicker
                 color={displayColor}
                 onChange={handleColorfulChange}
