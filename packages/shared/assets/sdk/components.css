@@ -1,6 +1,6 @@
 @layer components {
   .usertour-btn {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
     font-family: var(--usertour-font-family);
     font-size: var(--usertour-font-size);
     border-radius: var(--usertour-button-border-radius);

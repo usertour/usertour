@@ -33,14 +33,8 @@ const buttonVariants = cva(
 const buttonVariantsForSdk = cva('usertour-btn', {
   variants: {
     variant: {
-      default: 'usertour-btn--primary ',
-      secondary: 'usertour-btn--secondary ',
-      destructive:
-        'bg-sdk-destructive text-sdk-destructive-foreground hover:bg-sdk-destructive-hover',
-      outline:
-        'border-sdk border-sdk-input bg-sdk-background hover:bg-sdk-accent hover:text-sdk-accent-foreground',
-      ghost: 'hover:bg-sdk-accent hover:text-sdk-accent-foreground',
-      link: 'text-sdk-primary underline-offset-4 hover:underline',
+      default: 'usertour-btn--primary',
+      secondary: 'usertour-btn--secondary',
     },
     size: {
       default: '',
@@ -65,10 +59,14 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, forSdk = false, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
-    const _buttonVariants = forSdk ? buttonVariantsForSdk : buttonVariants;
-    return (
-      <Comp className={cn(_buttonVariants({ variant, size, className }))} ref={ref} {...props} />
-    );
+    const variantClassName = forSdk
+      ? buttonVariantsForSdk({
+          variant: variant as 'default' | 'secondary',
+          size,
+          className,
+        })
+      : buttonVariants({ variant, size, className });
+    return <Comp className={cn(variantClassName)} ref={ref} {...props} />;
   },
 );
 Button.displayName = 'Button';

@@ -1,3 +1,7 @@
+/**
+ * @deprecated This component is deprecated. Use ContentEditorButton from
+ * '@usertour-packages/editor/src/editor/components/button.tsx' instead.
+ */
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
