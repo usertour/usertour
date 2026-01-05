@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "class-variance-authority": "^0.4.0",
-    "@usertour/helpers": "^0.0.56"
+    "@usertour/helpers": "^0.0.57"
   },
   "peerDependencies": {
     "react": "^18.2.0"
