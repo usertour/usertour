@@ -15,7 +15,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "class-variance-authority": "^0.4.0",
     "clsx": "^1.2.1",
-    "tailwind-merge": "^1.13.2"
+    "tailwind-merge": "^2.5.2"
   },
   "peerDependencies": {
     "react": "^18.2.0"

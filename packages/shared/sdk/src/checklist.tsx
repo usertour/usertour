@@ -36,7 +36,7 @@ import {
   checklistUnCompletedItemsCount,
 } from './utils/content';
 import { useSettingsStyles } from './hooks/use-settings-styles';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 interface ChecklistRootContextValue {
   globalStyle: string;
@@ -172,15 +172,16 @@ const ChecklistProgress = memo(
     const finalProgress = width ?? progress ?? 0;
 
     const progressClassName = cn(
-      'font-medium p-1 px-2 leading-none rounded-l-full text-left',
+      'font-medium px-2 rounded-l-full text-left',
       'transition-all duration-200 ease-out',
+      'text-sdk-xs',
       finalProgress > 0 ? 'bg-sdk-progress text-sdk-background' : 'text-sdk-progress',
       finalProgress >= 100 && 'rounded-r-full',
     );
 
     return (
       <div className="w-full border border-sdk-progress rounded-full my-3" ref={ref}>
-        <div className={`${progressClassName} text-sdk-xs`} style={{ width: `${finalProgress}%` }}>
+        <div className={progressClassName} style={{ width: `${finalProgress}%` }}>
           {finalProgress}%
         </div>
       </div>

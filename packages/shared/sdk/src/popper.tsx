@@ -8,7 +8,7 @@ import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import type { SideObject, Rect } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
 import { computePositionStyle } from './utils/position';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { Align, ProgressBarType, Side } from '@usertour/types';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';

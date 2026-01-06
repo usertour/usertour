@@ -109,7 +109,7 @@
     "react-router-dom": "^6.14.2",
     "react-use": "^17.4.0",
     "recharts": "^2.7.2",
-    "tailwind-merge": "^1.14.0",
+    "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.6",
     "use-debounce": "^10.0.5",
     "usertour.js": "^0.0.10",

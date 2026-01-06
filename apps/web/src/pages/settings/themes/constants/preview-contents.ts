@@ -429,24 +429,16 @@ export const NPS_PREVIEW_CONTENT = [
               data: [
                 {
                   type: 'paragraph',
-                  children: [
-                    {
-                      text: '',
-                    },
-                  ],
-                },
-                {
-                  type: 'h1',
                   align: 'center',
                   children: [
                     {
-                      bold: true,
-                      text: 'How easy-to-use is our product?',
+                      text: 'How likely are you to recommend us to a friend?',
                     },
                   ],
                 },
                 {
                   type: 'paragraph',
+                  align: 'center',
                   children: [
                     {
                       text: '',
@@ -456,6 +448,7 @@ export const NPS_PREVIEW_CONTENT = [
               ],
               type: 'text',
             },
+            children: null,
           },
         ],
       },
@@ -479,19 +472,11 @@ export const NPS_PREVIEW_CONTENT = [
           {
             element: {
               data: {
-                cvid: 'oatboqldqf7qcxtl1kdrvsvk',
-                name: 'sss',
-                actions: [
-                  {
-                    data: {},
-                    type: 'flow-dismis',
-                    operators: 'and',
-                  },
-                ],
+                cvid: 'riwt4wrn1xqhdsv1edzd6sej',
+                name: 'Nps',
+                actions: [],
                 lowLabel: '',
                 highLabel: '',
-                bindToAttribute: true,
-                selectedAttribute: 'nn5',
               },
               type: 'nps',
             },

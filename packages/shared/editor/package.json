@@ -68,7 +68,7 @@
     "slate": "^0.103.0",
     "slate-history": "^0.100.0",
     "slate-react": "^0.107.1",
-    "tailwind-merge": "^1.14.0",
+    "tailwind-merge": "^2.5.2",
     "zustand": "^4.4.1"
   },
   "peerDependencies": {
