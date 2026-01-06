@@ -18,9 +18,23 @@ export function useChecklistPreviewAnimation(expanded: boolean) {
   }, [expanded]);
 
   const handleItemClick = useCallback((item: ChecklistItemType) => {
-    if (item.isCompleted) return;
-    setCompletedItemIds((prev) => new Set(prev).add(item.id));
-    setAnimatedItemIds((prev) => new Set(prev).add(item.id));
+    if (item.isCompleted) {
+      // Toggle off: remove from completed and clear animation
+      setCompletedItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+      setAnimatedItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+    } else {
+      // Toggle on: add to completed and trigger animation
+      setCompletedItemIds((prev) => new Set(prev).add(item.id));
+      setAnimatedItemIds((prev) => new Set(prev).add(item.id));
+    }
   }, []);
 
   return { completedItemIds, animatedItemIds, handleItemClick };
