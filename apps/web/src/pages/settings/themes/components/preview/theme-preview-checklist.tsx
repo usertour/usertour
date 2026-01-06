@@ -1,3 +1,4 @@
+import { useChecklistPreviewAnimation } from '@usertour-packages/shared-hooks';
 import {
   ChecklistContainer,
   ChecklistDismiss,
@@ -10,7 +11,7 @@ import {
 } from '@usertour-packages/sdk/src/checklist';
 import { PopperMadeWith } from '@usertour-packages/sdk/src/popper';
 import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@usertour/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';
 
 interface ThemePreviewChecklistProps {
@@ -21,18 +22,30 @@ interface ThemePreviewChecklistProps {
 export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   const { expanded = true, settings } = props;
 
-  const [data] = useState<ChecklistData>({
-    ...defaultChecklistData,
-    initialDisplay: expanded ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
-  });
-
-  if (!settings) return null;
-
   const [expandedState, setExpandedState] = useState(expanded);
+
+  // Use shared hook for animation and completion state management
+  const { completedItemIds, animatedItemIds, handleItemClick } =
+    useChecklistPreviewAnimation(expandedState);
+
+  // Compute data with dynamic isCompleted and isShowAnimation
+  const data = useMemo<ChecklistData>(() => {
+    return {
+      ...defaultChecklistData,
+      initialDisplay: expanded ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
+      items: defaultChecklistData.items.map((item) => ({
+        ...item,
+        isCompleted: completedItemIds.has(item.id),
+        isShowAnimation: animatedItemIds.has(item.id),
+      })),
+    };
+  }, [expanded, completedItemIds, animatedItemIds]);
 
   useEffect(() => {
     setExpandedState(expanded);
   }, [expanded]);
+
+  if (!settings) return null;
 
   return (
     <div className="w-full h-full scale-100">
@@ -50,7 +63,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
             <ChecklistPopperContent>
               <ChecklistDropdown />
               <ChecklistProgress />
-              <ChecklistItems />
+              <ChecklistItems onClick={handleItemClick} disabledUpdate />
               <ChecklistDismiss />
               <PopperMadeWith />
             </ChecklistPopperContent>
