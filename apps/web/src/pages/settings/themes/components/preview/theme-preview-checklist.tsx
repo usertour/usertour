@@ -13,6 +13,7 @@ import { PopperMadeWith } from '@usertour-packages/sdk/src/popper';
 import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useMemo, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';
+import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 
 interface ThemePreviewChecklistProps {
   expanded?: boolean;
@@ -61,6 +62,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
         <ChecklistContainer>
           <ChecklistPopper zIndex={10000}>
             <ChecklistPopperContent>
+              <ContentEditorSerialize contents={data.content} />
               <ChecklistDropdown />
               <ChecklistProgress />
               <ChecklistItems onClick={handleItemClick} disabledUpdate />

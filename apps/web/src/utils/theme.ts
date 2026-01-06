@@ -77,17 +77,56 @@ export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
   },
 ];
 
+const defaultChecklistContent = [
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          style: {},
+          width: {
+            type: 'fill',
+          },
+          justifyContent: 'justify-start',
+        },
+        children: [
+          {
+            element: {
+              data: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      bold: true,
+                      text: 'Content Pipeline Activated 🚀',
+                    },
+                  ],
+                },
+              ],
+              type: 'text',
+            },
+          },
+        ],
+      },
+    ],
+  },
+];
+
 export const defaultChecklistData: ChecklistData = {
   buttonText: 'Get Started',
   initialDisplay: ChecklistInitialDisplay.EXPANDED,
   completionOrder: ChecklistCompletionOrder.ANY,
   preventDismissChecklist: false,
   autoDismissChecklist: false,
+  content: defaultChecklistContent,
   items: [
     {
       id: '1',
-      name: 'First item',
-      description: 'Checklist',
+      name: 'Set up your content calendar',
+      description: 'Plan out posts & deadlines in one place',
       clickedActions: [],
       completeConditions: [],
       onlyShowTask: false,
@@ -97,8 +136,8 @@ export const defaultChecklistData: ChecklistData = {
     },
     {
       id: '2',
-      name: 'Second item',
-      description: 'Checklist',
+      name: 'Draft your first piece',
+      description: 'Use templates to speed up writing',
       clickedActions: [],
       completeConditions: [],
       onlyShowTask: false,
@@ -108,8 +147,30 @@ export const defaultChecklistData: ChecklistData = {
     },
     {
       id: '3',
-      name: 'Third item',
-      description: 'Checklist',
+      name: 'Add visual assets',
+      description: 'Pick from stock photos or upload your own',
+      clickedActions: [],
+      completeConditions: [],
+      onlyShowTask: false,
+      isCompleted: false,
+      onlyShowTaskConditions: [],
+      isVisible: true,
+    },
+    {
+      id: '4',
+      name: 'Schedule a publish',
+      description: 'Auto-post to your social/website at the best time',
+      clickedActions: [],
+      completeConditions: [],
+      onlyShowTask: false,
+      isCompleted: false,
+      onlyShowTaskConditions: [],
+      isVisible: true,
+    },
+    {
+      id: '5',
+      name: 'Analyze performance',
+      description: 'See which content gets the most engagement',
       clickedActions: [],
       completeConditions: [],
       onlyShowTask: false,
@@ -118,5 +179,4 @@ export const defaultChecklistData: ChecklistData = {
       isVisible: true,
     },
   ],
-  content: [],
 };
