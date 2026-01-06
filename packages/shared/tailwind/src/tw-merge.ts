@@ -139,11 +139,13 @@ const customTwMerge = extendTailwindMerge({
       px: ['px-sdk-button-x'],
 
       // borderWidth group - matches border-* classes for width
+      // Note: sdk-btn-primary and sdk-btn-secondary are also in sdkColors,
+      // so they are treated as border colors, not border widths.
+      // This is intentional as they serve dual purpose (color + width).
       'border-w': [
-        'border-sdk-primary-button',
-        'border-sdk-secondary-button',
-        'border-sdk-btn-primary',
-        'border-sdk-btn-secondary',
+        {
+          border: ['sdk-btn-primary', 'sdk-btn-secondary'],
+        },
       ],
     },
   },

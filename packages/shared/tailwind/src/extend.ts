@@ -69,8 +69,6 @@ export const extendSdk = {
     'sdk-button': 'var(--usertour-button-border-radius)',
   },
   borderWidth: {
-    'sdk-primary-button': 'var(--usertour-border-primary-button)',
-    'sdk-secondary-button': 'var(--usertour-border-secondary-button)',
     'sdk-btn-primary': 'var(--usertour-primary-border-width)',
     'sdk-btn-secondary': 'var(--usertour-secondary-border-width)',
   },
