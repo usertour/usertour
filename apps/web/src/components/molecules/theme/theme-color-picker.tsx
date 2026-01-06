@@ -93,6 +93,7 @@ type ThemeColorPickerProps = {
   showAutoButton?: boolean;
   onChange?: (color: string) => void;
   className?: string;
+  disabled?: boolean;
 };
 
 // ============================================================================
@@ -520,6 +521,7 @@ export const ThemeColorPicker = (props: ThemeColorPickerProps) => {
     className = '',
     autoColor = '',
     showAutoButton = false,
+    disabled = false,
   } = props;
   const [color, setColor] = useState<string>(isAutoColor ? autoColor : defaultColor);
   const [isAuto, setIsAuto] = useState(isAutoColor);
@@ -546,7 +548,7 @@ export const ThemeColorPicker = (props: ThemeColorPickerProps) => {
   const buttonClassName = useMemo(
     () =>
       cn(
-        'w-full border text-opacity-50 hover:text-opacity-100',
+        'w-full border text-opacity-50 hover:text-opacity-100 disabled:opacity-100',
         needsDarkText(color) ? 'text-black' : 'text-white',
         isNearWhite(color) ? 'border-slate-300' : '',
         className,
@@ -563,9 +565,9 @@ export const ThemeColorPicker = (props: ThemeColorPickerProps) => {
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
       <PopoverTrigger asChild>
-        <Button className={buttonClassName} style={buttonStyle}>
+        <Button className={buttonClassName} style={buttonStyle} disabled={disabled}>
           {isAuto ? 'Auto' : color.toLowerCase()}
         </Button>
       </PopoverTrigger>

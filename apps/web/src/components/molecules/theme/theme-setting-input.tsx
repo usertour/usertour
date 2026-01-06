@@ -11,6 +11,7 @@ type ThemeSettingInputProps = {
   onChange?: (value: string) => void;
   disableUnit?: boolean;
   tooltip?: string;
+  disabled?: boolean;
 };
 export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
   const {
@@ -21,6 +22,7 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
     defaultValue,
     disableUnit = false,
     tooltip,
+    disabled = false,
   } = props;
   const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (onChange) {
@@ -43,8 +45,9 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
           name={name}
           value={defaultValue}
           onChange={handleOnChange}
+          disabled={disabled}
           className={cn(
-            'py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm ',
+            'py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm disabled:opacity-100',
             disableUnit ? 'pe-4' : 'pe-8',
           )}
           placeholder={placeholder}

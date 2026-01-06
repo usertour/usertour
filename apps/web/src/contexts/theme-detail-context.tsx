@@ -1,4 +1,4 @@
-import { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
+import { ThemeTypesSetting, ThemeVariation, defaultSettings } from '@usertour/types';
 import { useQuery } from '@apollo/client';
 import { getTheme } from '@usertour-packages/gql';
 import { Theme, ThemeDetailSelectorType } from '@usertour/types';
@@ -12,6 +12,7 @@ import {
   useEffect,
 } from 'react';
 import { themeDetailSelectorTypes } from '@/utils/theme';
+import { deepmerge } from 'deepmerge-ts';
 
 export interface ThemeDetailProviderProps {
   children: ReactNode;
@@ -59,9 +60,9 @@ export function ThemeDetailProvider(props: ThemeDetailProviderProps): JSX.Elemen
     // Update variations (reset to empty array if undefined)
     setVariations(theme.variations ?? []);
 
-    // Update settings (should always exist per type definition)
+    // Update settings - merge with defaults to ensure all properties exist
     if (theme.settings) {
-      setSettings(theme.settings);
+      setSettings(deepmerge(defaultSettings, theme.settings));
     }
   }, [theme]);
 

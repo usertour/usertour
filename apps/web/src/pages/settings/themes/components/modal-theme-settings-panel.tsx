@@ -113,6 +113,7 @@ export const ModalThemeSettingsPanel = ({
         defaultSettings={defaultSettings}
         onSettingsChange={onSettingsChange}
         className="shadow-none h-full"
+        isViewOnly={isViewOnly}
       >
         {/* Modal-specific content */}
         <div className="border-b border-blue-100">
@@ -154,7 +155,7 @@ export const ModalThemeSettingsPanel = ({
               </Button>
             )}
             {onSave && (
-              <Button size="sm" onClick={onSave} disabled={isSaveDisabled}>
+              <Button size="sm" onClick={onSave} disabled={isSaveDisabled || isViewOnly}>
                 Apply changes
               </Button>
             )}

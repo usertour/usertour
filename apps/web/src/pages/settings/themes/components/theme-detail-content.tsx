@@ -26,6 +26,7 @@ export const ThemeDetailContent = () => {
   }
 
   const showConditionalVariations = !theme.isSystem;
+  const effectiveViewOnly = isViewOnly || !!theme.isSystem;
 
   return (
     <div className="flex flex-row pt-24 px-8">
@@ -44,7 +45,7 @@ export const ThemeDetailContent = () => {
         attributeList={attributeList}
         variations={variations}
         onVariationsChange={setVariations}
-        isViewOnly={isViewOnly}
+        isViewOnly={effectiveViewOnly}
       />
     </div>
   );

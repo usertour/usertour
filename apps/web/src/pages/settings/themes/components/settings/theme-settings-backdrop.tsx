@@ -5,7 +5,7 @@ import { ThemeSettingSlider } from '@/components/molecules/theme/theme-setting-s
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBackdrop = () => {
-  const { settings, setSettings } = useThemeSettingsContext();
+  const { settings, setSettings, isViewOnly } = useThemeSettingsContext();
 
   const updateBackdrop = (data: Partial<typeof settings.backdrop>) => {
     const { backdrop } = settings;
@@ -31,6 +31,7 @@ export const ThemeSettingsBackdrop = () => {
               updateBackdrop({ color: value });
             }}
             text="Backdrop color"
+            disabled={isViewOnly}
           />
           <ThemeSettingSlider
             text="Backdrop opacity"
@@ -39,6 +40,7 @@ export const ThemeSettingsBackdrop = () => {
             onValueChange={(value: number[]) => {
               updateBackdrop({ opacity: value[0] });
             }}
+            disabled={isViewOnly}
           />
           <ThemeSettingSelect
             text="Highlight type"
@@ -51,6 +53,7 @@ export const ThemeSettingsBackdrop = () => {
               { name: 'OutSide', value: 'outside' },
               { name: 'InSide', value: 'inside' },
             ]}
+            disabled={isViewOnly}
           />
 
           <ThemeSettingInput
@@ -60,6 +63,7 @@ export const ThemeSettingsBackdrop = () => {
               updateBackdropHighlight({ radius: Number(value) });
             }}
             name="backdrop-highlight-radius"
+            disabled={isViewOnly}
           />
 
           <ThemeSettingInput
@@ -69,6 +73,7 @@ export const ThemeSettingsBackdrop = () => {
             onChange={(value: string) => {
               updateBackdropHighlight({ spread: Number(value) });
             }}
+            disabled={isViewOnly}
           />
           <ThemeSelectColor
             text="Highlight color"
@@ -77,6 +82,7 @@ export const ThemeSettingsBackdrop = () => {
               updateBackdropHighlight({ color: value });
             }}
             name="backdrop-highlight-color"
+            disabled={isViewOnly}
           />
           <ThemeSettingSlider
             text="Highlight opacity"
@@ -85,6 +91,7 @@ export const ThemeSettingsBackdrop = () => {
             onValueChange={(value: number[]) => {
               updateBackdropHighlight({ opacity: value[0] });
             }}
+            disabled={isViewOnly}
           />
         </div>
       </div>

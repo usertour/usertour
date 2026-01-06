@@ -34,6 +34,7 @@ type ThemeSelectProps = {
   onValueChange?: (value: string) => void;
   tooltip?: string;
   vertical?: boolean;
+  disabled?: boolean;
 };
 
 export const ThemeSettingSelect = (props: ThemeSelectProps) => {
@@ -46,6 +47,7 @@ export const ThemeSettingSelect = (props: ThemeSelectProps) => {
     items = fontWeightItems,
     tooltip,
     vertical = false,
+    disabled = false,
   } = props;
   return (
     <div className={cn('flex', vertical ? 'flex-col' : 'flex-row')}>
@@ -56,8 +58,12 @@ export const ThemeSettingSelect = (props: ThemeSelectProps) => {
         {tooltip && <QuestionTooltip>{tooltip}</QuestionTooltip>}
       </div>
       <div className={cn('relative', vertical ? 'w-full' : 'flex-none w-36')}>
-        <Select defaultValue={defaultValue} onValueChange={onValueChange}>
-          <SelectTrigger className="justify-start flex h-8" id={name}>
+        <Select defaultValue={defaultValue} onValueChange={onValueChange} disabled={disabled}>
+          <SelectTrigger
+            className="justify-start flex h-8 disabled:opacity-100"
+            id={name}
+            disabled={disabled}
+          >
             <div className="grow text-left">
               <SelectValue placeholder={placeholder} />
             </div>

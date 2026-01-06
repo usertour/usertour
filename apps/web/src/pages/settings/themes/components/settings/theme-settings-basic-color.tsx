@@ -5,7 +5,7 @@ import { generateStateColors } from '@usertour/helpers';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBasicColor = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
 
   const updateBrandColor = (data: Partial<ThemeTypesSettingsColor>) => {
     const { brandColor, mainColor } = settings;
@@ -54,6 +54,7 @@ export const ThemeSettingsBasicColor = () => {
               onChange={(color: string) => {
                 updateBrandColor({ color });
               }}
+              disabled={isViewOnly}
             />
           </div>
         </div>
@@ -66,6 +67,7 @@ export const ThemeSettingsBasicColor = () => {
               onChange={(color: string) => {
                 updateBrandColor({ background: color });
               }}
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -79,6 +81,7 @@ export const ThemeSettingsBasicColor = () => {
               onChange={(color: string) => {
                 updateBrandColor({ hover: color });
               }}
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -92,6 +95,7 @@ export const ThemeSettingsBasicColor = () => {
               onChange={(color: string) => {
                 updateBrandColor({ active: color });
               }}
+              disabled={isViewOnly}
             />
           </div>
         </div>
@@ -107,6 +111,7 @@ export const ThemeSettingsBasicColor = () => {
               onChange={(color: string) => {
                 updateMainColor({ color });
               }}
+              disabled={isViewOnly}
             />
           </div>
         </div>
@@ -119,6 +124,7 @@ export const ThemeSettingsBasicColor = () => {
                 updateMainColor({ background: color });
               }}
               className="rounded-r-none"
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -132,6 +138,7 @@ export const ThemeSettingsBasicColor = () => {
                 updateMainColor({ hover: color });
               }}
               className="rounded-none border-x-0"
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -145,6 +152,7 @@ export const ThemeSettingsBasicColor = () => {
                 updateMainColor({ active: color });
               }}
               className="rounded-l-none"
+              disabled={isViewOnly}
             />
           </div>
         </div>

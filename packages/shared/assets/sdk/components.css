@@ -2,22 +2,26 @@
   /* Only keep calc() padding styles that cannot be expressed in Tailwind */
   .usertour-btn--primary {
     padding-top: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
-        var(--usertour-primary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) /
+      2 -
+      var(--usertour-primary-border-width)
     );
     padding-bottom: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
-        var(--usertour-primary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) /
+      2 -
+      var(--usertour-primary-border-width)
     );
   }
   .usertour-btn--secondary {
     padding-top: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
-        var(--usertour-secondary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) /
+      2 -
+      var(--usertour-secondary-border-width)
     );
     padding-bottom: calc(
-      (var(--usertour-button-height) - var(--usertour-line-height)) / 2 -
-        var(--usertour-secondary-border-width)
+      (var(--usertour-button-height) - var(--usertour-line-height)) /
+      2 -
+      var(--usertour-secondary-border-width)
     );
   }
 }

@@ -13,7 +13,7 @@ const placementItems = [
 ];
 
 export const ThemeSettingsChecklistLauncher = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
 
   // Update launcher settings
   const update = (data: Partial<typeof settings.checklistLauncher>) => {
@@ -35,6 +35,7 @@ export const ThemeSettingsChecklistLauncher = () => {
           onChange={(value: string) => {
             update({ height: Number(value) });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Border radius"
@@ -45,6 +46,7 @@ export const ThemeSettingsChecklistLauncher = () => {
               borderRadius: Number(value),
             });
           }}
+          disabled={isViewOnly}
         />{' '}
         <ThemeSettingSelect
           text="Font weight"
@@ -53,6 +55,7 @@ export const ThemeSettingsChecklistLauncher = () => {
           onValueChange={(value: string) => {
             update({ fontWeight: Number(value) });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingSelect
           text="Placement"
@@ -68,6 +71,7 @@ export const ThemeSettingsChecklistLauncher = () => {
               },
             });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Offset right"
@@ -82,6 +86,7 @@ export const ThemeSettingsChecklistLauncher = () => {
               },
             });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Offset bottom"
@@ -96,6 +101,7 @@ export const ThemeSettingsChecklistLauncher = () => {
               },
             });
           }}
+          disabled={isViewOnly}
         />{' '}
         <div className="space-y-1">
           <div className="text-sm">Font color</div>
@@ -110,6 +116,7 @@ export const ThemeSettingsChecklistLauncher = () => {
                   color: { ...settings.checklistLauncher.color, color },
                 });
               }}
+              disabled={isViewOnly}
             />
           </div>
         </div>
@@ -130,6 +137,7 @@ export const ThemeSettingsChecklistLauncher = () => {
                   },
                 });
               }}
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -148,6 +156,7 @@ export const ThemeSettingsChecklistLauncher = () => {
                   },
                 });
               }}
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -166,6 +175,7 @@ export const ThemeSettingsChecklistLauncher = () => {
                   },
                 });
               }}
+              disabled={isViewOnly}
             />
           </div>
         </div>{' '}
@@ -182,6 +192,7 @@ export const ThemeSettingsChecklistLauncher = () => {
                   counter: { ...settings.checklistLauncher.counter, color },
                 });
               }}
+              disabled={isViewOnly}
             />
           </div>
         </div>
@@ -201,6 +212,7 @@ export const ThemeSettingsChecklistLauncher = () => {
                   },
                 });
               }}
+              disabled={isViewOnly}
             />
           </div>
         </div>

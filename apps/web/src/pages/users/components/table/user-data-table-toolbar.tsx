@@ -140,7 +140,11 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
             </Button>
           )}
         </div>
-        <DataTableViewOptions table={table} onColumnVisibilityChange={updateSegmentColumn} />
+        <DataTableViewOptions
+          table={table}
+          onColumnVisibilityChange={updateSegmentColumn}
+          disabled={isViewOnly}
+        />
 
         <UserSegmentCreateDialog
           isOpen={open}
