@@ -206,17 +206,36 @@ export const MODAL_PREVIEW_CONTENT = [
       {
         element: {
           type: 'column',
-          justifyContent: 'justify-center',
+          style: {},
           width: {
             type: 'fill',
           },
-          style: {},
+          justifyContent: 'justify-start',
         },
         children: [
           {
             element: {
-              type: 'image',
-              url: 'https://assets.usertour.io/5d9975de-f095-40ee-a6f9-8da3c3c38515/stick-figures-holding-word-welcome-vector-banner-text-welcome-welcome-together-people-big-colorful-letters-114865217.webp',
+              data: [
+                {
+                  type: 'h1',
+                  align: 'left',
+                  children: [
+                    {
+                      text: 'Header1',
+                    },
+                  ],
+                },
+                {
+                  type: 'h1',
+                  align: 'left',
+                  children: [
+                    {
+                      text: '',
+                    },
+                  ],
+                },
+              ],
+              type: 'text',
             },
             children: null,
           },
@@ -232,17 +251,67 @@ export const MODAL_PREVIEW_CONTENT = [
       {
         element: {
           type: 'column',
+          style: {},
           width: {
             type: 'fill',
           },
-          justifyContent: 'justify-start',
-          style: {},
+          justifyContent: 'justify-center',
         },
         children: [
           {
             element: {
-              type: 'text',
               data: [
+                {
+                  type: 'h2',
+                  children: [
+                    {
+                      text: 'Header 2',
+                    },
+                  ],
+                },
+                {
+                  type: 'h2',
+                  children: [
+                    {
+                      text: '',
+                    },
+                  ],
+                },
+              ],
+              type: 'text',
+            },
+            children: null,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          style: {},
+          width: {
+            type: 'fill',
+          },
+          justifyContent: 'justify-center',
+        },
+        children: [
+          {
+            element: {
+              data: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      text: 'Welcome to the modal preview! Unlike tooltips, modals appear in the center of the screen with a dimmed overlay, providing a focused experience for important messages.',
+                    },
+                  ],
+                },
                 {
                   type: 'paragraph',
                   children: [
@@ -255,46 +324,12 @@ export const MODAL_PREVIEW_CONTENT = [
                   type: 'paragraph',
                   children: [
                     {
-                      text: 'Title',
+                      text: '',
                     },
                   ],
                 },
               ],
-            },
-            children: null,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    element: {
-      type: 'group',
-    },
-    children: [
-      {
-        element: {
-          type: 'column',
-          width: {
-            type: 'fill',
-          },
-          justifyContent: 'justify-start',
-          style: {},
-        },
-        children: [
-          {
-            element: {
               type: 'text',
-              data: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      text: 'Write text here',
-                    },
-                  ],
-                },
-              ],
             },
             children: null,
           },
@@ -310,39 +345,57 @@ export const MODAL_PREVIEW_CONTENT = [
       {
         element: {
           type: 'column',
-          justifyContent: 'justify-end',
+          style: {},
           width: {
             type: 'fill',
           },
-          style: {},
+          justifyContent: 'justify-center',
         },
         children: [
           {
             element: {
-              type: 'button',
               data: {
-                text: 'Prev',
-                type: 'secondary',
-                action: 'next',
+                text: 'Primary',
+                type: 'default',
+                action: 'goto',
+                actions: [
+                  {
+                    id: 'sczxx6ebvt6e40ct8uvlsjnq',
+                    data: {},
+                    type: 'flow-dismis',
+                    operators: 'and',
+                  },
+                ],
               },
-            },
-            children: null,
-          },
-          {
-            element: {
               type: 'button',
-              data: {
-                text: 'Next',
-                type: '',
-                action: 'next',
-              },
               margin: {
-                top: '0',
-                left: '10',
+                top: 0,
+                left: 0,
+                right: '8',
                 bottom: 0,
-                right: 0,
                 enabled: true,
               },
+            },
+            children: null,
+          },
+          {
+            element: {
+              data: {
+                text: 'Secondary',
+                type: 'secondary',
+                action: 'goto',
+                actions: [
+                  {
+                    id: 'w3jymweencwafs6bqgp78tqu',
+                    data: {
+                      stepCvid: 'cmjzmjqmn00emxhxnoie4h6fw',
+                    },
+                    type: 'step-goto',
+                    operators: 'and',
+                  },
+                ],
+              },
+              type: 'button',
             },
             children: null,
           },
