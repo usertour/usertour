@@ -546,7 +546,7 @@ export const ThemeColorPicker = (props: ThemeColorPickerProps) => {
   const buttonClassName = useMemo(
     () =>
       cn(
-        'w-full border text-opacity-60 hover:text-opacity-100',
+        'w-full border text-opacity-50 hover:text-opacity-100',
         needsDarkText(color) ? 'text-black' : 'text-white',
         isNearWhite(color) ? 'border-slate-300' : '',
         className,
