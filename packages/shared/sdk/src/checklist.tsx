@@ -27,7 +27,6 @@ import { TaskArrowIcon, CheckmarkIcon, DropDownIcon } from '@usertour-packages/i
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { computePositionStyle } from './utils/position';
 import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
-import { cn } from '@usertour/helpers';
 import { Button } from '@usertour-packages/button';
 import { useSize } from '@usertour-packages/react-use-size';
 import {
@@ -37,6 +36,7 @@ import {
   checklistUnCompletedItemsCount,
 } from './utils/content';
 import { useSettingsStyles } from './hooks/use-settings-styles';
+import { cn } from '@usertour/helpers';
 
 interface ChecklistRootContextValue {
   globalStyle: string;
@@ -171,15 +171,16 @@ const ChecklistProgress = memo(
 
     const finalProgress = width ?? progress ?? 0;
 
+    const progressClassName = cn(
+      'font-medium p-1 px-2 leading-none rounded-l-full text-left',
+      'transition-all duration-200 ease-out',
+      finalProgress > 0 ? 'bg-sdk-progress text-sdk-background' : 'text-sdk-progress',
+      finalProgress >= 100 && 'rounded-r-full',
+    );
+
     return (
-      <div className="w-full bg-sdk-foreground rounded-full my-3" ref={ref}>
-        <div
-          className={cn(
-            'text-sdk-background font-medium p-1 px-2 leading-none rounded-full text-left',
-            finalProgress > 0 && 'bg-sdk-progress',
-          )}
-          style={{ width: `${finalProgress}%` }}
-        >
+      <div className="w-full border border-sdk-progress rounded-full my-3" ref={ref}>
+        <div className={`${progressClassName} text-sdk-xs`} style={{ width: `${finalProgress}%` }}>
           {finalProgress}%
         </div>
       </div>

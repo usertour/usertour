@@ -137,7 +137,9 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       })),
     };
 
-    if (!isEqual(checklistData.items, newChecklistData.items)) {
+    // Compare with store data instead of session data to avoid unnecessary updates
+    const storeChecklistData = this.getStoreData()?.checklistData;
+    if (!isEqual(storeChecklistData?.items, newChecklistData.items)) {
       this.updateStore({ checklistData: newChecklistData });
     }
     this.clearUnackedTasks();
