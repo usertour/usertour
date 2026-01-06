@@ -172,9 +172,9 @@ const ChecklistProgress = memo(
     const finalProgress = width ?? progress ?? 0;
 
     const progressClassName = cn(
-      'font-medium px-2 rounded-l-full text-left',
+      'font-medium px-[calc(0.75rem-1px)] rounded-l-full text-left',
       'transition-all duration-200 ease-out',
-      'text-sdk-xs',
+      'text-xs leading-[calc(1.5rem-2px)]',
       finalProgress > 0 ? 'bg-sdk-progress text-sdk-background' : 'text-sdk-progress',
       finalProgress >= 100 && 'rounded-r-full',
     );
@@ -234,7 +234,7 @@ const ChecklistLauncherContent = forwardRef<HTMLDivElement, ChecklistLauncherCon
           <div className="overflow-hidden	text-sdk-checklist-trigger-font h-6 font-sdk-checklist-trigger text-sdk-base flex items-center justify-center">
             {buttonText}
           </div>
-          <div className="rounded-full w-6 h-6 text-sdk-base bg-sdk-checklist-trigger-counter-background text-sdk-checklist-trigger-counter-font ml-1 flex items-center justify-center">
+          <div className="rounded-full w-6 h-6 text-sm bg-sdk-checklist-trigger-counter-background text-sdk-checklist-trigger-counter-font ml-1 flex items-center justify-center">
             {isCompleted ? (
               <CheckmarkIcon className="w-5 h-5 stroke-sdk-checklist-trigger-counter-font" />
             ) : (
