@@ -12,6 +12,7 @@ import { memo, MouseEvent, useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
 import { Button } from '@usertour-packages/button';
+import { ScaledPreviewContainer } from '@/pages/contents/components/shared/content-preview';
 
 type ThemeListPreviewProps = {
   theme: Theme;
@@ -64,29 +65,31 @@ export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
           </ThemeEditDropdownMenu>
         </div>
         <div
-          className="flex justify-center items-center h-40 flex-col "
+          className="flex justify-center items-center h-40 flex-col overflow-hidden"
           {...({ inert: '' } as any)}
         >
-          <SharedPopper.Popper
-            open={true}
-            zIndex={1}
-            globalStyle={convertToCssVars(convertSettings(settings))}
-          >
-            <SharedPopper.PopperStaticContent
-              arrowSize={{
-                width: 20,
-                height: 10,
-              }}
-              side={'top'}
-              align={'center'}
-              showArrow={false}
-              width={'280px'}
-              height={'auto'}
+          <ScaledPreviewContainer className="origin-[center_center]" maxWidth={260} maxHeight={140}>
+            <SharedPopper.Popper
+              open={true}
+              zIndex={1}
+              globalStyle={convertToCssVars(convertSettings(settings))}
             >
-              <SharedPopper.PopperClose />
-              <ContentEditorSerialize contents={LIST_PREVIEW_CONTENT} />
-            </SharedPopper.PopperStaticContent>
-          </SharedPopper.Popper>
+              <SharedPopper.PopperStaticContent
+                arrowSize={{
+                  width: 20,
+                  height: 10,
+                }}
+                side={'top'}
+                align={'center'}
+                showArrow={false}
+                width={'280px'}
+                height={'auto'}
+              >
+                <SharedPopper.PopperClose />
+                <ContentEditorSerialize contents={LIST_PREVIEW_CONTENT} />
+              </SharedPopper.PopperStaticContent>
+            </SharedPopper.Popper>
+          </ScaledPreviewContainer>
         </div>
       </div>
     </>
