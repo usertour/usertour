@@ -213,7 +213,7 @@ interface ChecklistLauncherContentProps {
   isCompleted?: boolean;
   onSizeChange?: (rect: { width: number; height: number }) => void;
 }
-const ChecklistLauncherContent = forwardRef<HTMLDivElement, ChecklistLauncherContentProps>(
+const ChecklistLauncherContent = forwardRef<HTMLButtonElement, ChecklistLauncherContentProps>(
   (props, ref) => {
     const { buttonText, height, onClick, number = 1, isCompleted, onSizeChange } = props;
     const paddingLeft = height ? `${Number(height) / 2}px` : undefined;
@@ -229,13 +229,16 @@ const ChecklistLauncherContent = forwardRef<HTMLDivElement, ChecklistLauncherCon
     }, [rect]);
 
     return (
-      <div
+      <Button
+        forSdk
+        variant="custom"
         ref={ref}
         style={{
           height,
         }}
         className="rounded-sdk-checklist-trigger h-full w-full flex bg-sdk-checklist-trigger-background cursor-pointer items-center justify-center hover:bg-sdk-checklist-trigger-hover-background"
         onClick={onClick}
+        aria-label={`Open checklist${number > 0 ? ` (${number} items)` : ''}`}
       >
         <div
           ref={setContentRef}
@@ -256,7 +259,7 @@ const ChecklistLauncherContent = forwardRef<HTMLDivElement, ChecklistLauncherCon
             )}
           </div>
         </div>
-      </div>
+      </Button>
     );
   },
 );
@@ -649,7 +652,7 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
   }, [data.autoDismissChecklist, isAllCompleted, onAutoDismiss]);
 
   const textClassName = cn(
-    'text-right cursor-pointer text-sm leading-none font-normal',
+    'text-right text-sm leading-none font-normal',
     isAllCompleted
       ? 'text-sdk-link hover:text-sdk-link/80 font-sdk-bold'
       : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
@@ -670,9 +673,15 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
       )}
       {!data.preventDismissChecklist && (
         <div className="w-full flex justify-end h-6 items-center">
-          <span className={textClassName} onClick={handleDismiss}>
+          <Button
+            forSdk
+            variant="custom"
+            className={textClassName}
+            onClick={handleDismiss}
+            aria-label="Dismiss checklist"
+          >
             Dismiss checklist
-          </span>
+          </Button>
         </div>
       )}
       {data.autoDismissChecklist && isAllCompleted && (
@@ -744,7 +753,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
   // Calculate cursor and interaction styles
   const cursorStyle = useMemo(() => {
     if (!isClickable) {
-      return 'cursor-not-allowed opacity-50';
+      return 'cursor-not-allowed';
     }
     if (item.isCompleted && !item?.clickedActions?.length) {
       return 'cursor-default';
@@ -753,12 +762,16 @@ const ChecklistItem = (props: ChecklistItemProps) => {
   }, [isClickable, item.isCompleted, item?.clickedActions?.length]);
 
   return (
-    <div
+    <Button
+      forSdk
+      variant="custom"
+      disabled={!isClickable}
       className={cn(
         'group flex items-center px-[24px] py-2 hover:bg-sdk-foreground/5 transition-colors',
         cursorStyle,
       )}
-      onClick={() => (isClickable ? onClick(item, index) : undefined)}
+      onClick={() => onClick(item, index)}
+      aria-label={`${item.isCompleted ? 'Uncomplete' : 'Complete'} task: ${item.name}`}
     >
       <ChecklistChecked isChecked={isCompleted} isShowAnimation={shouldShowAnimation} />
       <div
@@ -781,7 +794,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
           !isCompleted && isClickable && 'group-hover:opacity-100 group-hover:translate-x-0',
         )}
       />
-    </div>
+    </Button>
   );
 };
 

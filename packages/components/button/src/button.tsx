@@ -55,6 +55,11 @@ const buttonVariantsForSdk = cva(sdkButtonBase, {
         'active:bg-sdk-btn-secondary-active active:text-sdk-btn-secondary-foreground-active active:border-sdk-btn-secondary-active',
         'usertour-btn--secondary', // For calc() padding in CSS
       ),
+      custom: cn(
+        // Only accessibility styles, no layout/appearance
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+        'disabled:pointer-events-none disabled:opacity-50',
+      ),
     },
     size: {
       default: '',
@@ -69,9 +74,41 @@ const buttonVariantsForSdk = cva(sdkButtonBase, {
   },
 });
 
+type ButtonVariant = VariantProps<typeof buttonVariants>['variant'];
+type SdkButtonVariant = VariantProps<typeof buttonVariantsForSdk>['variant'];
+type ButtonSize = VariantProps<typeof buttonVariants>['size'];
+
+// Valid SDK button variants
+const SDK_VARIANTS: readonly SdkButtonVariant[] = ['default', 'secondary', 'custom'] as const;
+
+// Valid regular button variants
+const REGULAR_VARIANTS: readonly ButtonVariant[] = [
+  'default',
+  'destructive',
+  'outline',
+  'secondary',
+  'ghost',
+  'link',
+] as const;
+
+// Type guard to check if variant is valid for SDK buttons
+const isSdkVariant = (
+  variant: ButtonVariant | SdkButtonVariant | undefined,
+): variant is SdkButtonVariant => {
+  return !variant || SDK_VARIANTS.includes(variant as SdkButtonVariant);
+};
+
+// Type guard to check if variant is valid for regular buttons
+const isRegularVariant = (
+  variant: ButtonVariant | SdkButtonVariant | undefined,
+): variant is ButtonVariant => {
+  return !variant || REGULAR_VARIANTS.includes(variant as ButtonVariant);
+};
+
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'variant'> {
+  variant?: ButtonVariant | SdkButtonVariant;
+  size?: ButtonSize;
   asChild?: boolean;
   forSdk?: boolean;
 }
@@ -79,16 +116,31 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, forSdk = false, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
-    const variantClassName = forSdk
-      ? cn(
-          buttonVariantsForSdk({
-            variant: variant as 'default' | 'secondary',
-            size,
-          }),
-          className,
-        )
-      : cn(buttonVariants({ variant, size }), className);
-    return <Comp className={variantClassName} ref={ref} {...props} />;
+
+    // Determine variant class names based on forSdk flag
+    const variantClassName = React.useMemo(() => {
+      if (forSdk) {
+        // Validate variant for SDK buttons
+        if (variant && !isSdkVariant(variant)) {
+          console.warn(
+            `Invalid variant "${variant}" for SDK button. Using default variant. Valid variants: ${SDK_VARIANTS.join(', ')}`,
+          );
+          return buttonVariantsForSdk({ variant: 'default', size });
+        }
+        return buttonVariantsForSdk({ variant: variant as SdkButtonVariant, size });
+      }
+
+      // Validate variant for regular buttons
+      if (variant && !isRegularVariant(variant)) {
+        console.warn(
+          `Invalid variant "${variant}" for regular button. Using default variant. Valid variants: ${REGULAR_VARIANTS.join(', ')}`,
+        );
+        return buttonVariants({ variant: 'default', size });
+      }
+      return buttonVariants({ variant: variant as ButtonVariant, size });
+    }, [variant, size, forSdk]);
+
+    return <Comp className={cn(variantClassName, className)} ref={ref} {...props} />;
   },
 );
 Button.displayName = 'Button';
