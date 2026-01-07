@@ -52,6 +52,7 @@ interface ChecklistRootContextValue {
   onDismiss?: () => Promise<void>;
   handleExpandedChange?: (expanded: boolean) => Promise<void>;
   zIndex: number;
+  clearItemAnimations: () => void;
 }
 
 const ChecklistRootContext = createContext<ChecklistRootContextValue | null>(null);
@@ -92,9 +93,9 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
 
   // Use expanded from store if provided, otherwise use local state
   const isOpen = expanded !== undefined ? expanded : defaultOpen;
-  const isAllCompleted = checklistIsCompleted(data.items);
-  const unCompletedItemsCount = checklistUnCompletedItemsCount(data.items);
-  const progress = checklistProgress(data.items);
+  const isAllCompleted = checklistIsCompleted(data.items ?? []);
+  const unCompletedItemsCount = checklistUnCompletedItemsCount(data.items ?? []);
+  const progress = checklistProgress(data.items ?? []);
 
   useEffect(() => {
     setData(initialData);
@@ -111,9 +112,21 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
   const updateItemStatus = (itemId: string, isCompleted: boolean) => {
     setData((prevData) => ({
       ...prevData,
-      items: prevData.items.map((item) => (item.id === itemId ? { ...item, isCompleted } : item)),
+      items:
+        prevData.items?.map((item) => (item.id === itemId ? { ...item, isCompleted } : item)) ?? [],
     }));
   };
+
+  const clearItemAnimations = useCallback(() => {
+    setData((prevData) => ({
+      ...prevData,
+      items:
+        prevData.items?.map((item) => ({
+          ...item,
+          isShowAnimation: false,
+        })) ?? [],
+    }));
+  }, []);
 
   return (
     <ChecklistRootContext.Provider
@@ -131,6 +144,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         onDismiss,
         handleExpandedChange,
         zIndex,
+        clearItemAnimations,
       }}
     >
       {children}
@@ -563,7 +577,7 @@ const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
     return (
       <div ref={ref} className="flex flex-col -mx-[24px]">
         {data.items
-          .filter((item) => item.isVisible !== false)
+          ?.filter((item) => item.isVisible !== false)
           .map((item, index) => (
             <ChecklistItem
               key={item.id}
@@ -582,7 +596,12 @@ ChecklistItems.displayName = 'ChecklistItems';
 
 const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
-    const { setShowDismissConfirm, onDismiss } = useChecklistRootContext();
+    const { setShowDismissConfirm, onDismiss, clearItemAnimations } = useChecklistRootContext();
+
+    const handleCancel = useCallback(() => {
+      clearItemAnimations();
+      setShowDismissConfirm(false);
+    }, [clearItemAnimations, setShowDismissConfirm]);
 
     return (
       <div ref={ref} {...props} className="flex flex-col">
@@ -591,7 +610,7 @@ const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<
           <Button forSdk onClick={onDismiss}>
             Yes, dismiss
           </Button>
-          <Button forSdk variant="secondary" onClick={() => setShowDismissConfirm(false)}>
+          <Button forSdk variant="secondary" onClick={handleCancel}>
             Cancel
           </Button>
         </div>
@@ -719,7 +738,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
 
   // Check if this item can be clicked based on completion order
   const isClickable = useMemo(() => {
-    return canCompleteChecklistItem(data.completionOrder, data.items, item);
+    return canCompleteChecklistItem(data.completionOrder, data.items ?? [], item);
   }, [data.completionOrder, data.items, item]);
 
   // Calculate cursor and interaction styles
