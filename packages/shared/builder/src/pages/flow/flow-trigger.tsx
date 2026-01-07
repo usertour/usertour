@@ -18,7 +18,8 @@ import {
   RulesCondition,
   Step,
 } from '@usertour/types';
-import { cn, cuid } from '@usertour/helpers';
+import { cuid } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';

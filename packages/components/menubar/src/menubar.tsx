@@ -4,7 +4,7 @@ import { CheckIcon, ChevronRightIcon, DotFilledIcon } from '@radix-ui/react-icon
 import * as MenubarPrimitive from '@radix-ui/react-menubar';
 import * as React from 'react';
 
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 const MenubarMenu = MenubarPrimitive.Menu;
 

@@ -1,6 +1,6 @@
 import { Button } from '@usertour-packages/button';
 import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { memo, useCallback } from 'react';
 import { useRulesContext } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';

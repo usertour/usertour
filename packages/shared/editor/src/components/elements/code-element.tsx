@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/button/src/utils';
+import { cn } from '@usertour-packages/tailwind';
 import { RenderElementProps } from 'slate-react';
 
 export const CodeElement = (props: RenderElementProps & { className?: string }) => {

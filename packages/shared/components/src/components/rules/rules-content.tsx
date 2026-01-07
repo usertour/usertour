@@ -11,7 +11,7 @@ import {
   StopCircleFillIcon,
 } from '@usertour-packages/icons';
 import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import {
   Dispatch,
   SetStateAction,

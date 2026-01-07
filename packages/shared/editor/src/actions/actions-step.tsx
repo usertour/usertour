@@ -31,7 +31,7 @@ import {
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface ContentActionsStepProps {

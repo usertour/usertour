@@ -11,7 +11,8 @@ import {
 import { CloseIcon, UserIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn, isUndefined } from '@usertour/helpers';
+import { isUndefined } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { format } from 'date-fns';
 import { ComboBox } from '@usertour-packages/combo-box';
 import {

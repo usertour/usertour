@@ -12,7 +12,7 @@ import {
 } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
 import * as Toolbar from '@radix-ui/react-toolbar';
-import { cn } from '@usertour-packages/button/src/utils';
+import { cn } from '@usertour-packages/tailwind';
 import { EDITOR_RICH_TOOLBAR, EDITOR_RICH_TOOLBAR_MORE } from '@usertour-packages/constants';
 import {
   H1Icon,

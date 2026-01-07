@@ -9,7 +9,7 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { SegmentIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { ComboBox } from '@usertour-packages/combo-box';
 import {
   Dispatch,

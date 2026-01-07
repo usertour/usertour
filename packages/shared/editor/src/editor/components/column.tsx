@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { DragHandleDots2Icon, GearIcon } from '@radix-ui/react-icons';
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
-import { cn } from '@usertour-packages/button/src/utils';
+import { cn } from '@usertour-packages/tailwind';
 import { ComboBox, ComboBoxOption } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';

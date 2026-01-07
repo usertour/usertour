@@ -20,7 +20,7 @@ import { EditorErrorAnchor } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
 import { isEmptyString } from '@usertour/helpers';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { BindAttribute } from './bind-attribute';
 import { BizAttributeTypes } from '@usertour/types';
 

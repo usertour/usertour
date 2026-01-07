@@ -4,7 +4,7 @@ import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import * as React from 'react';
 
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 const TooltipProvider = TooltipPrimitive.Provider;
 
