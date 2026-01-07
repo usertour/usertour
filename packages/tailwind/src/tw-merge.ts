@@ -65,7 +65,7 @@ const sdkColors = [
  * SDK custom font size values (without text- prefix)
  * These extend the font-size class group
  */
-const sdkFontSizes = ['sdk-base', 'sdk-h1', 'sdk-h2', 'sdk-xs', 'sdk-numbered-progress'];
+const sdkFontSizes = ['sdk-base', 'sdk-h1', 'sdk-h2', 'sdk-xs', 'sdk-sm', 'sdk-numbered-progress'];
 
 const customTwMerge = extendTailwindMerge({
   extend: {

@@ -126,7 +126,7 @@ export const defaultChecklistData: ChecklistData = {
     {
       id: '1',
       name: 'Set up your content calendar',
-      description: 'Plan out posts & deadlines in one place',
+      description: 'Plan posts & deadlines',
       clickedActions: [],
       completeConditions: [],
       onlyShowTask: false,
@@ -148,7 +148,7 @@ export const defaultChecklistData: ChecklistData = {
     {
       id: '3',
       name: 'Add visual assets',
-      description: 'Pick from stock photos or upload your own',
+      description: 'Pick photos or upload your own',
       clickedActions: [],
       completeConditions: [],
       onlyShowTask: false,
@@ -159,7 +159,7 @@ export const defaultChecklistData: ChecklistData = {
     {
       id: '4',
       name: 'Schedule a publish',
-      description: 'Auto-post to your social/website at the best time',
+      description: 'Auto-post at the best time',
       clickedActions: [],
       completeConditions: [],
       onlyShowTask: false,
@@ -170,7 +170,7 @@ export const defaultChecklistData: ChecklistData = {
     {
       id: '5',
       name: 'Analyze performance',
-      description: 'See which content gets the most engagement',
+      description: 'See top performing content',
       clickedActions: [],
       completeConditions: [],
       onlyShowTask: false,

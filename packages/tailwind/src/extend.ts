@@ -113,6 +113,7 @@ export const extendSdk = {
     'sdk-h1': 'var(--usertour-font-size-h1)',
     'sdk-h2': 'var(--usertour-font-size-h2)',
     'sdk-xs': 'calc(var(--usertour-font-size) * 0.75)',
+    'sdk-sm': 'calc(var(--usertour-font-size) * 0.875)',
     'sdk-numbered-progress': 'var(--usertour-numbered-progress-bar-height)',
   },
   fontWeight: {

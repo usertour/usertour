@@ -457,11 +457,11 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
   const { document } = useFrame();
 
   useEffect(() => {
-    if (globalStyle) {
+    if (globalStyle && document?.body) {
       document.body.style.cssText = globalStyle;
       document.body.className = 'usertour-widget-root';
     }
-  }, [globalStyle]);
+  }, [globalStyle, document]);
 
   return (
     <ChecklistLauncherContent
@@ -585,9 +585,9 @@ const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<
     const { setShowDismissConfirm, onDismiss } = useChecklistRootContext();
 
     return (
-      <div ref={ref} {...props} className="flex flex-col space-y-2">
-        <div className="text-sdk-base">Dismiss checklist?</div>
-        <div className="flex flex-row space-x-2 items-center justify-center pb-2">
+      <div ref={ref} {...props} className="flex flex-col">
+        <div className="text-sdk-base font-sdk-bold">Dismiss checklist?</div>
+        <div className="flex flex-row space-x-2 items-center justify-center my-4">
           <Button forSdk onClick={onDismiss}>
             Yes, dismiss
           </Button>
@@ -630,7 +630,7 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
   }, [data.autoDismissChecklist, isAllCompleted, onAutoDismiss]);
 
   const textClassName = cn(
-    'text-right cursor-pointer',
+    'text-right cursor-pointer text-sm leading-none font-normal',
     isAllCompleted
       ? 'text-sdk-link hover:text-sdk-link/80 font-sdk-bold'
       : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
@@ -650,7 +650,7 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
         <div className="h-4" />
       )}
       {!data.preventDismissChecklist && (
-        <div className="w-full flex justify-end">
+        <div className="w-full flex justify-end h-6 items-center">
           <span className={textClassName} onClick={handleDismiss}>
             Dismiss checklist
           </span>
@@ -736,7 +736,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
   return (
     <div
       className={cn(
-        'group flex items-center px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
+        'group flex items-center px-[24px] py-2 hover:bg-sdk-foreground/5 transition-colors',
         cursorStyle,
       )}
       onClick={() => (isClickable ? onClick(item, index) : undefined)}
@@ -750,7 +750,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
       >
         <span className="text-sdk-base font-sdk-bold">{item.name}</span>
         {item.description && (
-          <span className="text-sdk-xs opacity-75 leading-3">{item.description}</span>
+          <span className="text-sdk-sm opacity-75 leading-4">{item.description}</span>
         )}
       </div>
       <TaskArrowIcon
