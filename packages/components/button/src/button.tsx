@@ -38,6 +38,12 @@ const sdkButtonBase = cn(
   'font-sdk text-sdk-base rounded-sdk-button h-auto min-w-sdk-button px-sdk-button-x',
 );
 
+// Custom variant base styles (only accessibility, no layout/appearance)
+const customVariantBase = cn(
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+  'disabled:pointer-events-none disabled:opacity-50',
+);
+
 const buttonVariantsForSdk = cva(sdkButtonBase, {
   variants: {
     variant: {
@@ -55,11 +61,7 @@ const buttonVariantsForSdk = cva(sdkButtonBase, {
         'active:bg-sdk-btn-secondary-active active:text-sdk-btn-secondary-foreground-active active:border-sdk-btn-secondary-active',
         'usertour-btn--secondary', // For calc() padding in CSS
       ),
-      custom: cn(
-        // Only accessibility styles, no layout/appearance
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-        'disabled:pointer-events-none disabled:opacity-50',
-      ),
+      // Note: custom variant is handled separately in Button component to avoid inheriting sdkButtonBase
     },
     size: {
       default: '',
@@ -74,41 +76,12 @@ const buttonVariantsForSdk = cva(sdkButtonBase, {
   },
 });
 
-type ButtonVariant = VariantProps<typeof buttonVariants>['variant'];
-type SdkButtonVariant = VariantProps<typeof buttonVariantsForSdk>['variant'];
-type ButtonSize = VariantProps<typeof buttonVariants>['size'];
-
-// Valid SDK button variants
-const SDK_VARIANTS: readonly SdkButtonVariant[] = ['default', 'secondary', 'custom'] as const;
-
-// Valid regular button variants
-const REGULAR_VARIANTS: readonly ButtonVariant[] = [
-  'default',
-  'destructive',
-  'outline',
-  'secondary',
-  'ghost',
-  'link',
-] as const;
-
-// Type guard to check if variant is valid for SDK buttons
-const isSdkVariant = (
-  variant: ButtonVariant | SdkButtonVariant | undefined,
-): variant is SdkButtonVariant => {
-  return !variant || SDK_VARIANTS.includes(variant as SdkButtonVariant);
-};
-
-// Type guard to check if variant is valid for regular buttons
-const isRegularVariant = (
-  variant: ButtonVariant | SdkButtonVariant | undefined,
-): variant is ButtonVariant => {
-  return !variant || REGULAR_VARIANTS.includes(variant as ButtonVariant);
-};
+type ButtonVariant = VariantProps<typeof buttonVariants>['variant'] | 'custom';
 
 export interface ButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'variant'> {
-  variant?: ButtonVariant | SdkButtonVariant;
-  size?: ButtonSize;
+  variant?: ButtonVariant;
+  size?: VariantProps<typeof buttonVariants>['size'];
   asChild?: boolean;
   forSdk?: boolean;
 }
@@ -119,25 +92,22 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Determine variant class names based on forSdk flag
     const variantClassName = React.useMemo(() => {
-      if (forSdk) {
-        // Validate variant for SDK buttons
-        if (variant && !isSdkVariant(variant)) {
-          console.warn(
-            `Invalid variant "${variant}" for SDK button. Using default variant. Valid variants: ${SDK_VARIANTS.join(', ')}`,
-          );
-          return buttonVariantsForSdk({ variant: 'default', size });
-        }
-        return buttonVariantsForSdk({ variant: variant as SdkButtonVariant, size });
+      // Universal custom variant - works for both regular and SDK buttons
+      if (variant === 'custom') {
+        return customVariantBase;
       }
 
-      // Validate variant for regular buttons
-      if (variant && !isRegularVariant(variant)) {
-        console.warn(
-          `Invalid variant "${variant}" for regular button. Using default variant. Valid variants: ${REGULAR_VARIANTS.join(', ')}`,
-        );
-        return buttonVariants({ variant: 'default', size });
+      if (forSdk) {
+        // Only allow 'default' and 'secondary' for SDK buttons, undefined will use defaultVariants
+        const sdkVariant = variant === 'default' || variant === 'secondary' ? variant : undefined;
+        return buttonVariantsForSdk({
+          variant: sdkVariant,
+          size,
+        });
       }
-      return buttonVariants({ variant: variant as ButtonVariant, size });
+
+      // For regular buttons, exclude 'custom' and let cva handle invalid values with defaultVariants
+      return buttonVariants({ variant: variant as Exclude<ButtonVariant, 'custom'>, size });
     }, [variant, size, forSdk]);
 
     return <Comp className={cn(variantClassName, className)} ref={ref} {...props} />;

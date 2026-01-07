@@ -652,7 +652,7 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
   }, [data.autoDismissChecklist, isAllCompleted, onAutoDismiss]);
 
   const textClassName = cn(
-    'text-right text-sm leading-none font-normal',
+    'text-right !text-sm !leading-none font-normal',
     isAllCompleted
       ? 'text-sdk-link hover:text-sdk-link/80 font-sdk-bold'
       : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
