@@ -30,7 +30,6 @@ This package provides various utility functions for the UserTour project:
 - **ID Generation**: Unique ID generation with cuid2
 - **Object Utilities**: Deep merging, equality checking
 - **Color Utilities**: Color formatting and manipulation with chroma-js
-- **Class Utilities**: Class name merging with clsx and tailwind-merge
 - **Type Utilities**: Type-safe utility functions
 - **Validation**: Input validation helpers
 - **Formatting**: Data formatting utilities
@@ -44,8 +43,6 @@ This package depends on:
 - `deepmerge-ts` - Type-safe deep merging
 - `@paralleldrive/cuid2` - Unique ID generation
 - `class-variance-authority` - Class name variants
-- `clsx` - Conditional class names
-- `tailwind-merge` - Tailwind class merging
 - `uuid` - UUID generation
 
 ## Development
