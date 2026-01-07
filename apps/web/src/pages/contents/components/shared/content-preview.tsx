@@ -15,6 +15,7 @@ import { ChecklistData, ContentVersion, LauncherData, Step, Theme } from '@usert
 import { cn } from '@usertour-packages/tailwind';
 import { forwardRef, useEffect, useState } from 'react';
 import { useMeasure } from 'react-use';
+import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 const EmptyContentPreview = () => {
   return <img src="/images/empty.png" className="h-[160px]" />;
@@ -142,6 +143,7 @@ const ChecklistPreview = (props: {
   const { currentTheme, currentVersion } = props;
   const data = currentVersion.data as ChecklistData;
   const themeSettings = currentTheme.settings;
+  const { shouldShowMadeWith } = useSubscriptionContext();
 
   return (
     <ChecklistRoot data={data} themeSettings={themeSettings} zIndex={10000}>
@@ -151,7 +153,7 @@ const ChecklistPreview = (props: {
           <ChecklistProgress width={45} />
           <ChecklistItems />
           <ChecklistDismiss />
-          <PopperMadeWith />
+          {shouldShowMadeWith && <PopperMadeWith />}
         </ChecklistStaticPopper>
       </ChecklistContainer>
     </ChecklistRoot>

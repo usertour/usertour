@@ -12,6 +12,7 @@ import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/sh
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
 import { useRef } from 'react';
 import { Rect } from '../theme-editor';
+import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface ThemePreviewPopperProps {
   contents: ContentEditorRoot[];
@@ -30,6 +31,7 @@ export const ThemePreviewPopper = ({
   const progressType = settings?.progress.type;
   const progressPosition = settings?.progress.position;
   const progressEnabled = settings?.progress.enabled;
+  const { shouldShowMadeWith } = useSubscriptionContext();
 
   // Optimized progress display logic
   const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;
@@ -81,7 +83,7 @@ export const ThemePreviewPopper = ({
                 totalSteps={4}
               />
             )}
-            <PopperMadeWith />
+            {shouldShowMadeWith && <PopperMadeWith />}
           </PopperContent>
         </PopperContentPotal>
       </Popper>

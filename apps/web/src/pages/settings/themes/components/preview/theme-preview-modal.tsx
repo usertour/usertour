@@ -1,6 +1,7 @@
 import * as SharedPopper from '@usertour-packages/sdk';
 import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
+import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface ThemePreviewModalProps {
   contents: ContentEditorRoot[];
@@ -10,6 +11,7 @@ interface ThemePreviewModalProps {
 
 export const ThemePreviewModal = (props: ThemePreviewModalProps) => {
   const { contents, settings, customStyle } = props;
+  const { shouldShowMadeWith } = useSubscriptionContext();
 
   const progressType = settings?.progress.type;
   const progressPosition = settings?.progress.position;
@@ -40,7 +42,7 @@ export const ThemePreviewModal = (props: ThemePreviewModalProps) => {
               />
             )}
             <ContentEditorSerialize contents={contents} />
-            <SharedPopper.PopperMadeWith />
+            {shouldShowMadeWith && <SharedPopper.PopperMadeWith />}
             {showBottomProgress && (
               <SharedPopper.PopperProgress
                 type={progressType}

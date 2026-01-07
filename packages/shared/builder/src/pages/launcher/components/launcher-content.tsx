@@ -32,7 +32,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
   (props: LauncherContentProps, ref) => {
     const { zIndex, triggerRef, theme, data, onValueChange, onCustomUploadRequest } = props;
     const launcherRef = useRef<HTMLDivElement>(null);
-    const { projectId } = useBuilderContext();
+    const { projectId, shouldShowMadeWith = true } = useBuilderContext();
 
     const { attributeList } = useAttributeListContext();
     const triggerReference = useMemo(
@@ -66,7 +66,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
                   }
                   onValueChange={onValueChange}
                 />
-                <PopperMadeWith />
+                {shouldShowMadeWith && <PopperMadeWith />}
               </LauncherPopperContent>
             </LauncherPopperContentPotal>
           </LauncherPopper>

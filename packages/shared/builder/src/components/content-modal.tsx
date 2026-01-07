@@ -28,6 +28,7 @@ import {
 } from '@usertour/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
+import { useBuilderContext } from '../contexts/builder-context';
 
 export interface ContentModalProps {
   currentStep: Step;
@@ -66,6 +67,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
     const { globalStyle, themeSetting } = useThemeStyles(theme as Theme, 'modal');
+    const { shouldShowMadeWith = true } = useBuilderContext();
 
     const handleEditorValueChange = (value: any) => {
       setData(value);
@@ -150,7 +152,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
                   totalSteps={totalSteps}
                 />
               )}
-              <PopperMadeWith />
+              {shouldShowMadeWith && <PopperMadeWith />}
             </PopperContent>
           </PopperModalContentPotal>
         </Popper>

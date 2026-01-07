@@ -14,6 +14,7 @@ import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@user
 import { useEffect, useMemo, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
+import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface ThemePreviewChecklistProps {
   expanded?: boolean;
@@ -22,6 +23,7 @@ interface ThemePreviewChecklistProps {
 
 export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   const { expanded = true, settings } = props;
+  const { shouldShowMadeWith } = useSubscriptionContext();
 
   const [expandedState, setExpandedState] = useState(expanded);
 
@@ -67,7 +69,7 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
               <ChecklistProgress />
               <ChecklistItems onClick={handleItemClick} disabledUpdate />
               <ChecklistDismiss />
-              <PopperMadeWith />
+              {shouldShowMadeWith && <PopperMadeWith />}
             </ChecklistPopperContent>
           </ChecklistPopper>
         </ChecklistContainer>

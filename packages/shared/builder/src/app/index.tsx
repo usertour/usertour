@@ -63,6 +63,7 @@ export interface WebBuilderProps {
   onSaved: () => Promise<void>;
   isLoading?: boolean;
   initialStepIndex?: number;
+  shouldShowMadeWith?: boolean;
 }
 
 // Inner component that uses the provider context
@@ -96,9 +97,10 @@ function WebBuilderContent(props: WebBuilderProps) {
 }
 
 export const WebBuilder = (props: WebBuilderProps) => {
+  const { shouldShowMadeWith, ...restProps } = props;
   return (
-    <WebBuilderProvider {...props}>
-      <WebBuilderContent {...props} />
+    <WebBuilderProvider {...restProps} shouldShowMadeWith={shouldShowMadeWith}>
+      <WebBuilderContent {...restProps} />
     </WebBuilderProvider>
   );
 };

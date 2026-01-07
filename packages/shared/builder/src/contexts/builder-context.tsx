@@ -115,6 +115,7 @@ interface BuilderContextProps {
     stepType?: string,
     duplicateStep?: Step,
   ) => Promise<Step | undefined>;
+  shouldShowMadeWith?: boolean;
 }
 
 export const BuilderContext = createContext<BuilderContextProps | null>(null);
@@ -125,10 +126,18 @@ export interface BuilderProviderProps {
   webHost?: string;
   usertourjsUrl?: string;
   onSaved: () => Promise<void>;
+  shouldShowMadeWith?: boolean;
 }
 
 export const BuilderProvider = (props: BuilderProviderProps) => {
-  const { children, webHost = '', usertourjsUrl = '', isWebBuilder = false, onSaved } = props;
+  const {
+    children,
+    webHost = '',
+    usertourjsUrl = '',
+    isWebBuilder = false,
+    onSaved,
+    shouldShowMadeWith = true,
+  } = props;
   const [currentStep, setCurrentStep] = useState<Step | null>(null);
   const [environmentId, setEnvironmentId] = useState<string>('');
   const [envToken, setEnvToken] = useState<string>('');
@@ -399,6 +408,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     createStep,
     createNewStep,
     envToken,
+    shouldShowMadeWith,
   };
   return <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>;
 };

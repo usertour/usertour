@@ -25,7 +25,7 @@ export const ChecklistEmbed = () => {
   const { upload } = useAws();
   const [theme, setTheme] = useState<Theme | undefined>();
   const { themeList } = useThemeListContext();
-  const { currentVersion, projectId } = useBuilderContext();
+  const { currentVersion, projectId, shouldShowMadeWith = true } = useBuilderContext();
   const [expanded, setExpanded] = useState(
     localData?.initialDisplay === ChecklistInitialDisplay.EXPANDED,
   );
@@ -123,7 +123,7 @@ export const ChecklistEmbed = () => {
                 <ChecklistItems onClick={handleItemClick} disabledUpdate />
                 <ChecklistDismiss />
               </ChecklistPopperContentBody>
-              <PopperMadeWith />
+              {shouldShowMadeWith && <PopperMadeWith />}
             </ChecklistPopperContent>
           </ChecklistPopper>
         </ChecklistContainer>
