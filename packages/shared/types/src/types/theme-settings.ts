@@ -125,204 +125,39 @@ export type ThemeTypesSetting = {
   };
 };
 
-// export const defaultSettings_old: ThemeTypesSetting = {
-//   brandColor: {
-//     color: '#f8fafc',
-//     background: '#1d4ed8',
-//     hover: 'Auto',
-//     autoHover: '#3162ec',
-//     autoActive: '#4576ff',
-//     active: 'Auto',
-//   },
-//   mainColor: {
-//     color: '#020617',
-//     background: '#FFFFFF',
-//     autoHover: '#ffffff',
-//     autoActive: '#ffffff',
-//     hover: 'Auto',
-//     active: 'Auto',
-//   },
-//   font: {
-//     fontFamily: 'System font',
-//     fontSize: 14,
-//     lineHeight: 20,
-//     fontWeightNormal: 300,
-//     fontWeightBold: 500,
-//     h1FontSize: 18,
-//     h2FontSize: 24,
-//     linkColor: '#7ed321',
-//   },
-//   border: {
-//     borderRadius: '8',
-//     borderWidthEnabled: false,
-//     borderWidth: 1,
-//     borderColor: '#50e3c2',
-//   },
-//   xbutton: {
-//     color: '#f5a623',
-//   },
-//   progress: {
-//     enabled: true,
-//     color: '#f5a623',
-//     height: 2,
-//     type: ProgressBarType.FULL_WIDTH,
-//     position: ProgressBarPosition.TOP,
-//     narrowHeight: 5,
-//     chainSquaredHeight: 4,
-//     chainRoundedHeight: 6,
-//     dotsHeight: 10,
-//     numberedHeight: 12,
-//   },
-//   survey: {
-//     color: '#1d4ed8',
-//   },
-//   launcherBeacon: {
-//     color: '#1d4ed8',
-//     size: 10,
-//   },
-//   launcherIcon: {
-//     color: {
-//       color: '#1d4ed8',
-//       background: '#1d4ed8',
-//       hover: '#1d4ed8',
-//       active: '#1d4ed8',
-//     },
-//     opacity: 100,
-//     size: 10,
-//   },
-//   checklist: {
-//     checkmarkColor: '#1d4ed8',
-//     width: 360,
-//     placement: {
-//       position: 'rightBottom' as ModalPosition,
-//       positionOffsetX: 100,
-//       positionOffsetY: 20,
-//     },
-//   },
-//   checklistLauncher: {
-//     borderRadius: 24,
-//     height: 48,
-//     fontWeight: 400,
-//     placement: {
-//       position: 'rightBottom' as ModalPosition,
-//       positionOffsetX: 100,
-//       positionOffsetY: 20,
-//     },
-//     counter: {
-//       color: 'Auto',
-//       background: 'Auto',
-//     },
-//     color: {
-//       color: 'Auto',
-//       background: 'Auto',
-//       hover: 'Auto',
-//       active: 'Auto',
-//     },
-//   },
-//   buttons: {
-//     height: 24,
-//     minWidth: 80,
-//     borderRadius: 3,
-//     px: 4,
-//     primary: {
-//       fontWeight: 400,
-//       textColor: {
-//         color: 'Auto',
-//         background: '#FFFFFF',
-//         hover: 'Auto',
-//         active: 'Auto',
-//       },
-//       backgroundColor: {
-//         color: '#FFFFFF',
-//         background: 'Auto',
-//         hover: 'Auto',
-//         active: 'Auto',
-//       },
-//       border: {
-//         enabled: false,
-//         borderWidth: 1,
-//         color: {
-//           color: '#417505',
-//           background: '#FFFFFF',
-//           hover: '#7ed321',
-//           active: '#9013fe',
-//         },
-//       },
-//     },
-//     secondary: {
-//       fontWeight: 400,
-//       textColor: {
-//         color: 'Auto',
-//         background: '#FFFFFF',
-//         hover: 'Auto',
-//         active: 'Auto',
-//       },
-//       backgroundColor: {
-//         color: '#FFFFFF',
-//         background: 'Auto',
-//         hover: 'Auto',
-//         active: 'Auto',
-//       },
-//       border: {
-//         enabled: true,
-//         borderWidth: 1,
-//         color: {
-//           color: 'Auto',
-//           background: '#FFFFFF',
-//           hover: 'Auto',
-//           active: 'Auto',
-//         },
-//       },
-//     },
-//   },
-//   tooltip: {
-//     width: 300,
-//     notchSize: 20,
-//   },
-//   modal: {
-//     width: 500,
-//     padding: 10,
-//   },
-//   backdrop: {
-//     color: '#020617',
-//     opacity: 18,
-//     highlight: {
-//       type: 'outside',
-//       radius: 3,
-//       spread: 3,
-//       color: '#8b572a',
-//       opacity: 10,
-//     },
-//   },
-// };
-
 export const defaultSettings: ThemeTypesSetting = {
   font: {
-    fontSize: 14,
-    linkColor: '#7ed321',
+    fontSize: 16,
+    linkColor: 'Auto',
     fontFamily: 'System font',
-    h1FontSize: 18,
-    h2FontSize: 24,
-    lineHeight: 20,
-    fontWeightBold: 500,
-    fontWeightNormal: 300,
+    h1FontSize: 24,
+    h2FontSize: 20,
+    lineHeight: 24,
+    fontWeightBold: 600,
+    fontWeightNormal: 400,
   },
-  modal: { width: 500, padding: 10 },
+  modal: {
+    width: 600,
+    padding: 40,
+  },
   border: {
-    borderColor: '#50e3c2',
+    borderColor: 'Auto',
     borderWidth: 1,
-    borderRadius: '8',
+    borderRadius: '10',
     borderWidthEnabled: false,
   },
+  survey: {
+    color: 'Auto',
+  },
   buttons: {
-    height: 24,
-    px: 4,
+    px: 16,
+    height: 32,
     primary: {
       border: {
         color: {
-          color: '#417505',
-          hover: '#7ed321',
-          active: '#9013fe',
+          color: 'Auto',
+          hover: 'Auto',
+          active: 'Auto',
           background: '#FFFFFF',
         },
         enabled: false,
@@ -334,7 +169,7 @@ export const defaultSettings: ThemeTypesSetting = {
         active: 'Auto',
         background: '#FFFFFF',
       },
-      fontWeight: 400,
+      fontWeight: 600,
       backgroundColor: {
         color: '#FFFFFF',
         hover: 'Auto',
@@ -342,7 +177,7 @@ export const defaultSettings: ThemeTypesSetting = {
         background: 'Auto',
       },
     },
-    minWidth: 80,
+    minWidth: 0,
     secondary: {
       border: {
         color: {
@@ -360,7 +195,7 @@ export const defaultSettings: ThemeTypesSetting = {
         active: 'Auto',
         background: '#FFFFFF',
       },
-      fontWeight: 400,
+      fontWeight: 600,
       backgroundColor: {
         color: '#FFFFFF',
         hover: 'Auto',
@@ -368,48 +203,77 @@ export const defaultSettings: ThemeTypesSetting = {
         background: 'Auto',
       },
     },
-    borderRadius: 3,
+    borderRadius: 8,
   },
-  tooltip: { width: 300, notchSize: 20 },
-  xbutton: { color: 'Auto' },
-  progress: {
-    enabled: true,
+  tooltip: {
+    width: 300,
+    notchSize: 20,
+  },
+  xbutton: {
     color: 'Auto',
-    type: ProgressBarType.FULL_WIDTH,
-    position: ProgressBarPosition.TOP,
-    height: 2,
-    narrowHeight: 5,
-    chainSquaredHeight: 4,
-    chainRoundedHeight: 6,
-    dotsHeight: 10,
-    numberedHeight: 12,
   },
-  survey: {
-    color: '#1d4ed8',
-  },
-  launcherBeacon: {
-    color: '#1d4ed8',
-    size: 16,
-  },
-  launcherIcon: {
-    color: {
-      color: '#1d4ed8',
-      background: '#1d4ed8',
-      hover: '#1d4ed8',
-      active: '#1d4ed8',
+  backdrop: {
+    color: '#000000',
+    opacity: 40,
+    highlight: {
+      type: 'outside',
+      color: '#ffffff',
+      radius: 4,
+      spread: 0,
+      opacity: 50,
     },
-    opacity: 100,
-    size: 16,
+  },
+  progress: {
+    type: ProgressBarType.FULL_WIDTH,
+    color: 'Auto',
+    height: 2,
+    enabled: true,
+    position: ProgressBarPosition.TOP,
+    dotsHeight: 6,
+    narrowHeight: 5,
+    numberedHeight: 12,
+    chainRoundedHeight: 6,
+    chainSquaredHeight: 4,
   },
   checklist: {
     width: 360,
     placement: {
       position: 'rightBottom' as ModalPosition,
-      positionOffsetX: 100,
+      positionOffsetX: 20,
       positionOffsetY: 20,
     },
     checkmarkColor: '#4ade80',
     completedTaskTextDecoration: 'line-through',
+  },
+  mainColor: {
+    color: '#0f172a',
+    hover: 'Auto',
+    active: 'Auto',
+    autoHover: '#e7eefd',
+    autoActive: '#cedcfb',
+    background: '#FFFFFF',
+  },
+  brandColor: {
+    color: '#ffffff',
+    hover: 'Auto',
+    active: 'Auto',
+    autoHover: '#4b7eee',
+    autoActive: '#2055c9',
+    background: '#2563eb',
+  },
+  launcherIcon: {
+    size: 16,
+    color: {
+      color: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+      background: '#1d4ed8',
+    },
+    opacity: 100,
+  },
+  launcherBeacon: {
+    size: 16,
+    color: '#facc15',
   },
   checklistLauncher: {
     color: {
@@ -418,7 +282,7 @@ export const defaultSettings: ThemeTypesSetting = {
       active: 'Auto',
       background: 'Auto',
     },
-    height: 48,
+    height: 60,
     counter: {
       color: 'Auto',
       background: 'Auto',
@@ -428,65 +292,44 @@ export const defaultSettings: ThemeTypesSetting = {
       positionOffsetX: 100,
       positionOffsetY: 20,
     },
-    fontWeight: 400,
-    borderRadius: 24,
-  },
-  backdrop: {
-    color: '#020617',
-    opacity: 18,
-    highlight: {
-      type: 'inside',
-      color: '#8b572a',
-      radius: 3,
-      spread: 3,
-      opacity: 10,
-    },
-  },
-  mainColor: {
-    color: '#020617',
-    hover: 'Auto',
-    active: 'Auto',
-    autoHover: '#ffffff',
-    autoActive: '#ffffff',
-    background: '#FFFFFF',
-  },
-  brandColor: {
-    color: '#f8fafc',
-    hover: 'Auto',
-    active: 'Auto',
-    autoHover: '#3162ec',
-    autoActive: '#4576ff',
-    background: '#1d4ed8',
+    fontWeight: 600,
+    borderRadius: 30,
   },
 };
 
 export const standardDarkSettings: ThemeTypesSetting = {
   font: {
-    fontSize: 14,
-    linkColor: '#7ed321',
+    fontSize: 16,
+    linkColor: 'Auto',
     fontFamily: 'System font',
-    h1FontSize: 18,
-    h2FontSize: 24,
-    lineHeight: 20,
-    fontWeightBold: 500,
-    fontWeightNormal: 300,
+    h1FontSize: 24,
+    h2FontSize: 20,
+    lineHeight: 24,
+    fontWeightBold: 600,
+    fontWeightNormal: 400,
   },
-  modal: { width: 500, padding: 10 },
+  modal: {
+    width: 600,
+    padding: 40,
+  },
   border: {
-    borderColor: '#50e3c2',
+    borderColor: 'Auto',
     borderWidth: 1,
-    borderRadius: '8',
+    borderRadius: '10',
     borderWidthEnabled: false,
   },
+  survey: {
+    color: 'Auto',
+  },
   buttons: {
-    height: 24,
-    px: 4,
+    px: 16,
+    height: 32,
     primary: {
       border: {
         color: {
-          color: '#417505',
-          hover: '#7ed321',
-          active: '#9013fe',
+          color: 'Auto',
+          hover: 'Auto',
+          active: 'Auto',
           background: '#FFFFFF',
         },
         enabled: false,
@@ -498,7 +341,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
         active: 'Auto',
         background: '#FFFFFF',
       },
-      fontWeight: 400,
+      fontWeight: 600,
       backgroundColor: {
         color: '#FFFFFF',
         hover: 'Auto',
@@ -506,7 +349,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
         background: 'Auto',
       },
     },
-    minWidth: 80,
+    minWidth: 0,
     secondary: {
       border: {
         color: {
@@ -524,7 +367,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
         active: 'Auto',
         background: '#FFFFFF',
       },
-      fontWeight: 400,
+      fontWeight: 600,
       backgroundColor: {
         color: '#FFFFFF',
         hover: 'Auto',
@@ -532,48 +375,77 @@ export const standardDarkSettings: ThemeTypesSetting = {
         background: 'Auto',
       },
     },
-    borderRadius: 3,
+    borderRadius: 8,
   },
-  tooltip: { width: 300, notchSize: 20 },
-  xbutton: { color: 'Auto' },
-  progress: {
-    enabled: true,
+  tooltip: {
+    width: 300,
+    notchSize: 20,
+  },
+  xbutton: {
     color: 'Auto',
-    type: ProgressBarType.FULL_WIDTH,
-    position: ProgressBarPosition.TOP,
-    height: 2,
-    narrowHeight: 5,
-    chainSquaredHeight: 4,
-    chainRoundedHeight: 6,
-    dotsHeight: 10,
-    numberedHeight: 12,
   },
-  survey: {
-    color: '#1d4ed8',
-  },
-  launcherBeacon: {
-    color: '#1d4ed8',
-    size: 16,
-  },
-  launcherIcon: {
-    color: {
-      color: '#1d4ed8',
-      background: '#1d4ed8',
-      hover: '#1d4ed8',
-      active: '#1d4ed8',
+  backdrop: {
+    color: '#000000',
+    opacity: 40,
+    highlight: {
+      type: 'outside',
+      color: '#ffffff',
+      radius: 4,
+      spread: 0,
+      opacity: 50,
     },
-    opacity: 100,
-    size: 16,
+  },
+  progress: {
+    type: ProgressBarType.FULL_WIDTH,
+    color: 'Auto',
+    height: 2,
+    enabled: true,
+    position: ProgressBarPosition.TOP,
+    dotsHeight: 6,
+    narrowHeight: 5,
+    numberedHeight: 12,
+    chainRoundedHeight: 6,
+    chainSquaredHeight: 4,
   },
   checklist: {
     width: 360,
     placement: {
       position: 'rightBottom' as ModalPosition,
-      positionOffsetX: 100,
+      positionOffsetX: 20,
       positionOffsetY: 20,
     },
     checkmarkColor: '#4ade80',
     completedTaskTextDecoration: 'line-through',
+  },
+  mainColor: {
+    color: '#ffffff',
+    hover: 'Auto',
+    active: 'Auto',
+    autoHover: '#142854',
+    autoActive: '#19387f',
+    background: '#0f172a',
+  },
+  brandColor: {
+    color: '#ffffff',
+    hover: 'Auto',
+    active: 'Auto',
+    autoHover: '#4b7eee',
+    autoActive: '#2055c9',
+    background: '#2563eb',
+  },
+  launcherIcon: {
+    size: 16,
+    color: {
+      color: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+      background: '#1d4ed8',
+    },
+    opacity: 100,
+  },
+  launcherBeacon: {
+    size: 16,
+    color: '#facc15',
   },
   checklistLauncher: {
     color: {
@@ -582,7 +454,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
       active: 'Auto',
       background: 'Auto',
     },
-    height: 48,
+    height: 60,
     counter: {
       color: 'Auto',
       background: 'Auto',
@@ -592,34 +464,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
       positionOffsetX: 100,
       positionOffsetY: 20,
     },
-    fontWeight: 400,
-    borderRadius: 24,
-  },
-  backdrop: {
-    color: '#020617',
-    opacity: 18,
-    highlight: {
-      type: 'inside',
-      color: '#8b572a',
-      radius: 3,
-      spread: 3,
-      opacity: 10,
-    },
-  },
-  mainColor: {
-    color: '#f8fafc',
-    hover: 'Auto',
-    active: 'Auto',
-    autoHover: '#161a2b',
-    autoActive: '#2a2e3f',
-    background: '#020617',
-  },
-  brandColor: {
-    color: '#f8fafc',
-    hover: 'Auto',
-    active: 'Auto',
-    autoHover: '#3162ec',
-    autoActive: '#4576ff',
-    background: '#1d4ed8',
+    fontWeight: 600,
+    borderRadius: 30,
   },
 };
