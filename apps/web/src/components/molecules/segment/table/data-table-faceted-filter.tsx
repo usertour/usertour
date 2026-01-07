@@ -13,7 +13,7 @@ import {
 } from '@usertour-packages/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { Separator } from '@usertour-packages/separator';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { DataTableFacetedFilterProps } from './types';
 
 export function DataTableFacetedFilter({ column, title, options }: DataTableFacetedFilterProps) {

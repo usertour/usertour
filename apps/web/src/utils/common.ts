@@ -1,12 +1,6 @@
 import { isUndefined } from '@usertour/helpers';
 import { AttributeDataType } from '@usertour/types';
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { formatDistanceToNow } from 'date-fns';
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 /**
  * Capitalize the first letter of a word

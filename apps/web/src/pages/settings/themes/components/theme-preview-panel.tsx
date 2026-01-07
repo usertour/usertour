@@ -1,6 +1,6 @@
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
 import { Separator } from '@usertour-packages/separator';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { LauncherDataType, ThemeDetailSelectorType, ThemeDetailPreviewType } from '@usertour/types';
 import { useEffect, useRef, useState } from 'react';
 import { useRect } from '@usertour-packages/react-use-rect';

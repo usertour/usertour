@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 

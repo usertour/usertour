@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@usertour-packages/dropdown-menu';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { DataTableViewOptionsProps } from './types';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 

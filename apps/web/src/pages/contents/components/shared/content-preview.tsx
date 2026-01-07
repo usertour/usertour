@@ -12,7 +12,7 @@ import { LauncherRoot } from '@usertour-packages/sdk/src/launcher';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { convertSettings, convertToCssVars } from '@usertour/helpers';
 import { ChecklistData, ContentVersion, LauncherData, Step, Theme } from '@usertour/types';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { forwardRef, useEffect, useState } from 'react';
 import { useMeasure } from 'react-use';
 

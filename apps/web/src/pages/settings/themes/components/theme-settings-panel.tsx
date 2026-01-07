@@ -3,7 +3,7 @@ import { convertSettings } from '@/utils/convert-settings';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { createContext, forwardRef, useContext, useMemo, useCallback, ReactNode } from 'react';
 import { ThemeSettingsBackdrop } from './settings/theme-settings-backdrop';
 import { ThemeSettingsBasicColor } from './settings/theme-settings-basic-color';

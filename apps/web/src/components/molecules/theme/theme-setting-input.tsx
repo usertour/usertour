@@ -1,6 +1,6 @@
 import { Input } from '@usertour-packages/input';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { ChangeEvent } from 'react';
 
 type ThemeSettingInputProps = {

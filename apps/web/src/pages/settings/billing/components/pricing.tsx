@@ -17,7 +17,7 @@ import { ChatIcon, BoxIcon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Switch } from '@usertour-packages/switch';
 import { Fragment, useState, useEffect } from 'react';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import {
   useCreateCheckoutSessionMutation,
   useCreatePortalSessionMutation,

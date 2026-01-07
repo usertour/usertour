@@ -32,7 +32,7 @@ import { ContentLoading } from '@/components/molecules/content-loading';
 import { BizCompanyDeleteDialog } from '../dialogs';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { useQuery } from '@apollo/client';
 import { queryBizUser } from '@usertour-packages/gql';
