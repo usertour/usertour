@@ -73,7 +73,6 @@ export const ThemePreviewPopper = ({
               />
             )}
             <ContentEditorSerialize contents={contents} />
-            <PopperMadeWith />
             {showBottomProgress && (
               <PopperProgress
                 type={progressType}
@@ -82,6 +81,7 @@ export const ThemePreviewPopper = ({
                 totalSteps={4}
               />
             )}
+            <PopperMadeWith />
           </PopperContent>
         </PopperContentPotal>
       </Popper>

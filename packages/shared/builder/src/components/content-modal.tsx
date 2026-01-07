@@ -141,7 +141,6 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
                 getOembedInfo={getOembedInfo}
                 createStep={createStep}
               />
-              <PopperMadeWith />
               {showBottomProgress && (
                 <PopperProgress
                   width={60}
@@ -151,6 +150,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
                   totalSteps={totalSteps}
                 />
               )}
+              <PopperMadeWith />
             </PopperContent>
           </PopperModalContentPotal>
         </Popper>

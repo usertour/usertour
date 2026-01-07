@@ -124,69 +124,13 @@ export const TOOLTIP_PREVIEW_CONTENT = [
                   type: 'paragraph',
                   children: [
                     {
-                      text: 'Welcome to Usertour!',
+                      text: 'Tooltips attach to their specific target elements.',
                     },
                   ],
                   align: 'left',
                 },
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      text: '',
-                    },
-                  ],
-                },
               ],
             },
-          },
-        ],
-      },
-    ],
-  },
-  {
-    element: {
-      type: 'group',
-    },
-    children: [
-      {
-        element: {
-          type: 'column',
-          width: {
-            type: 'fill',
-          },
-          justifyContent: 'justify-end',
-          style: {},
-        },
-        children: [
-          {
-            element: {
-              type: 'button',
-              data: {
-                action: 'goto',
-                text: 'Prev',
-                type: 'secondary',
-              },
-            },
-            children: null,
-          },
-          {
-            element: {
-              type: 'button',
-              data: {
-                action: 'goto',
-                text: 'Next',
-                type: 'default',
-              },
-              margin: {
-                top: 0,
-                left: '10',
-                bottom: 0,
-                right: 0,
-                enabled: true,
-              },
-            },
-            children: null,
           },
         ],
       },
