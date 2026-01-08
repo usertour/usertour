@@ -11,7 +11,7 @@ import {
 } from 'react-hook-form';
 
 import { Label } from '@usertour-packages/label';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 const Form = FormProvider;
 

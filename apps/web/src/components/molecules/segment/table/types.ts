@@ -72,6 +72,7 @@ export interface DataTableColumnHeaderProps {
 export interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
   onColumnVisibilityChange?: (columnId: string, visible: boolean) => Promise<void>;
+  disabled?: boolean;
 }
 
 // Faceted filter props interface

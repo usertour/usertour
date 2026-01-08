@@ -1,6 +1,7 @@
 'use client';
 
-import { cn, uuidV4 } from '@usertour/helpers';
+import { uuidV4 } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import isHotkey from 'is-hotkey';
 import React, { CSSProperties, useCallback, useMemo, useState } from 'react';
 import { Descendant, Text, createEditor } from 'slate';

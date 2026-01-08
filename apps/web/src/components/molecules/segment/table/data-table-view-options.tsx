@@ -11,13 +11,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@usertour-packages/dropdown-menu';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { DataTableViewOptionsProps } from './types';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 
 export function DataTableViewOptions<TData>({
   table,
   onColumnVisibilityChange,
+  disabled = false,
 }: DataTableViewOptionsProps<TData>) {
   const columns = table
     .getAllColumns()
@@ -26,7 +27,12 @@ export function DataTableViewOptions<TData>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="ml-auto hidden h-8 lg:flex">
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto hidden h-8 lg:flex"
+          disabled={disabled}
+        >
           <MixerHorizontalIcon className="mr-2 h-4 w-4" />
           View
         </Button>
@@ -41,7 +47,9 @@ export function DataTableViewOptions<TData>({
                 key={column.id}
                 className="capitalize cursor-pointer"
                 checked={column.getIsVisible()}
+                disabled={disabled}
                 onCheckedChange={async (value) => {
+                  if (disabled) return;
                   column.toggleVisibility(!!value);
                   if (onColumnVisibilityChange) {
                     await onColumnVisibilityChange(column.id, !!value);

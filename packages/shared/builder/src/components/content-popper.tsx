@@ -31,6 +31,7 @@ import {
 } from '@usertour/types';
 import { forwardRef, useEffect, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
+import { useBuilderContext } from '../contexts/builder-context';
 
 export interface ContentPopperProps {
   currentStep: Step;
@@ -65,6 +66,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     const [data, setData] = useState<any>(currentStep.data);
     const [queryOembed] = useLazyQuery(queryOembedInfo);
     const { globalStyle, themeSetting } = useThemeStyles(theme as Theme);
+    const { shouldShowMadeWith = true } = useBuilderContext();
 
     const { upload } = useAws();
 
@@ -171,7 +173,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                   totalSteps={totalSteps}
                 />
               )}
-              <PopperMadeWith />
+              {shouldShowMadeWith && <PopperMadeWith />}
             </PopperContent>
           </PopperContentPotal>
         </Popper>

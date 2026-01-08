@@ -3,7 +3,7 @@ import { Label } from '@usertour-packages/label';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { ModalPosition } from '@usertour/types';
 import { ContentModalPlacementData } from '@usertour/types';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { useState } from 'react';
 import { InputNumber } from './shared/input';
 

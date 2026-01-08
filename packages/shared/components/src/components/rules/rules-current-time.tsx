@@ -3,7 +3,7 @@ import { Button } from '@usertour-packages/button';
 import { Calendar } from '@usertour-packages/calendar';
 import { TimeIcon } from '@usertour-packages/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { format, parseISO } from 'date-fns';
 import { ComboBox } from '@usertour-packages/combo-box';
 import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';

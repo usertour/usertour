@@ -1,5 +1,3 @@
-import { useQuery } from '@apollo/client';
-import { getSubscriptionByProjectId, getSubscriptionUsage } from '@usertour-packages/gql';
 import { PlanType, type Subscription } from '@usertour/types';
 import {
   HobbySessionLimit,
@@ -7,7 +5,11 @@ import {
   GrowthSessionLimit,
   BusinessSessionLimit,
 } from '@usertour-packages/constants';
-import { ReactNode, createContext, useContext } from 'react';
+import {
+  useGetSubscriptionByProjectIdQuery,
+  useGetSubscriptionUsageQuery,
+} from '@usertour-packages/shared-hooks';
+import { ReactNode, createContext, useContext, useMemo } from 'react';
 
 export interface SubscriptionProviderProps {
   children?: ReactNode;
@@ -22,47 +24,68 @@ export interface SubscriptionContextValue {
   planType: PlanType;
   loading: boolean;
   refetch: () => void;
+  shouldShowMadeWith: boolean;
 }
 
 export const SubscriptionContext = createContext<SubscriptionContextValue | undefined>(undefined);
 
+// Move constants outside component to avoid recreation
+const PLAN_LIMITS: Record<PlanType, number> = {
+  [PlanType.HOBBY]: HobbySessionLimit,
+  [PlanType.STARTER]: ProSessionLimit,
+  [PlanType.GROWTH]: GrowthSessionLimit,
+  [PlanType.BUSINESS]: BusinessSessionLimit,
+};
+
 export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Element {
   const { children, projectId, subscriptionId } = props;
 
+  // Use encapsulated hooks with custom skip logic
+  // Skip query if projectId is missing OR subscriptionId is missing
+  // This ensures we don't query when we know there's no subscription
   const {
-    data: subscriptionData,
-    refetch: refetchSubscription,
-    loading: subscriptionLoading,
-  } = useQuery(getSubscriptionByProjectId, {
-    variables: { projectId },
-    skip: !subscriptionId,
-  });
-
-  const { data: usageData, loading: usageLoading } = useQuery(getSubscriptionUsage, {
-    variables: { projectId },
-  });
-
-  const subscription = subscriptionData?.getSubscriptionByProjectId;
-  const currentUsage = usageData?.getSubscriptionUsage ?? 0;
-  const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
-
-  const planLimits: Record<PlanType, number> = {
-    [PlanType.HOBBY]: HobbySessionLimit,
-    [PlanType.STARTER]: ProSessionLimit,
-    [PlanType.GROWTH]: GrowthSessionLimit,
-    [PlanType.BUSINESS]: BusinessSessionLimit,
-  };
-
-  const totalLimit = planLimits[planType] ?? HobbySessionLimit;
-
-  const value: SubscriptionContextValue = {
     subscription,
-    currentUsage,
-    totalLimit,
-    planType,
-    loading: subscriptionLoading || usageLoading,
+    loading: subscriptionLoading,
     refetch: refetchSubscription,
-  };
+  } = useGetSubscriptionByProjectIdQuery(projectId, {
+    skip: !projectId || !subscriptionId, // Skip if either is missing
+  });
+
+  const { usage: currentUsage, loading: usageLoading } = useGetSubscriptionUsageQuery(projectId);
+
+  // Calculate derived values
+  const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
+  const totalLimit = PLAN_LIMITS[planType] ?? HobbySessionLimit;
+  // Default to false during loading to avoid flickering when transitioning from true to false
+  // If no subscriptionId, default to HOBBY (show made with)
+  // If loading, don't show to avoid flicker
+  // If loaded, show only when planType is HOBBY
+  const shouldShowMadeWith = !subscriptionId
+    ? true // No subscriptionId means HOBBY plan, show by default
+    : !subscriptionLoading && subscription?.planType === PlanType.HOBBY;
+
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<SubscriptionContextValue>(
+    () => ({
+      subscription,
+      currentUsage,
+      totalLimit,
+      planType,
+      loading: subscriptionLoading || usageLoading,
+      refetch: refetchSubscription,
+      shouldShowMadeWith,
+    }),
+    [
+      subscription,
+      currentUsage,
+      totalLimit,
+      planType,
+      subscriptionLoading,
+      usageLoading,
+      refetchSubscription,
+      shouldShowMadeWith,
+    ],
+  );
 
   return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;
 }

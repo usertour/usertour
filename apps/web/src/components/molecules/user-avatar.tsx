@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@usertour-packages/avatar';
 import { getGravatarUrl } from '@/utils/avatar';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 interface UserAvatarProps {
   email: string;

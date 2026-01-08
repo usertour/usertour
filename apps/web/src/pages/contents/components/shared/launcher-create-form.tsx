@@ -70,6 +70,9 @@ export const LauncherCreateForm = ({ onClose, isOpen }: LauncherCreateFormProps)
     mode: 'onChange',
   });
 
+  const nameValue = form.watch('name');
+  const isNameEmpty = !nameValue?.trim();
+
   const gotoBuilder = (content: Content) => {
     navigate(
       `/env/${content?.environmentId}/launchers/${content?.id}/builder/${content?.editedVersionId}`,
@@ -88,13 +91,15 @@ export const LauncherCreateForm = ({ onClose, isOpen }: LauncherCreateFormProps)
       const ret = await createContentMutation({ variables: data });
       if (!ret.data?.createContent?.id) {
         showError('Create launcher failed.');
+        return;
       }
       const content = ret.data?.createContent as Content;
       gotoBuilder(content);
     } catch (error) {
       showError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   return (
@@ -103,17 +108,17 @@ export const LauncherCreateForm = ({ onClose, isOpen }: LauncherCreateFormProps)
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Create New Launcher</DialogTitle>
+              <DialogTitle>Create launcher</DialogTitle>
             </DialogHeader>
-            <div className="space-y-2 py-4 ">
+            <div className="space-y-2 py-4 pt-6">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                    <FormLabel className="w-32 flex-none">Launcher name:</FormLabel>
+                  <FormItem className="flex flex-col items-start space-y-1">
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <div className="flex flex-col space-x-1 w-full grow">
+                      <div className="w-full">
                         <Input placeholder="Enter launcher name" {...field} />
                         <FormMessage />
                       </div>
@@ -126,7 +131,7 @@ export const LauncherCreateForm = ({ onClose, isOpen }: LauncherCreateFormProps)
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || isNameEmpty}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>

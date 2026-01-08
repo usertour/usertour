@@ -6,7 +6,7 @@ import type { Middleware, Placement } from '@floating-ui/dom';
 import { UserIcon } from '@usertour-packages/icons';
 import { InfoCircledIcon, RocketIcon } from '@radix-ui/react-icons';
 import { Align, LauncherData, LauncherDataType, Side, ThemeTypesSetting } from '@usertour/types';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import {
   Popper,
   PopperContent,
@@ -107,36 +107,29 @@ LauncherContainer.displayName = 'LauncherContainer';
 interface LauncherIconProps {
   type: LauncherDataType;
   iconType?: string;
-  ref?: React.Ref<HTMLDivElement>;
   width?: number;
   height?: number;
 }
 
 // UI Components
-const LauncherIcon = forwardRef<HTMLDivElement, LauncherIconProps>(
-  ({ type, iconType, width, height }, ref) => {
-    const ActiveIcon = IconsList.find((item) => item.name === iconType)?.ICON;
+const LauncherIcon = ({ type, iconType, width, height }: LauncherIconProps) => {
+  const ActiveIcon = IconsList.find((item) => item.name === iconType)?.ICON;
 
-    if (type === LauncherDataType.BEACON) {
-      return (
-        <div ref={ref}>
-          <div className="usertour-widget-beacon__ping" />
-          <div className="usertour-widget-beacon__pong" />
-        </div>
-      );
-    }
+  if (type === LauncherDataType.BEACON) {
+    return (
+      <>
+        <div className="usertour-widget-beacon__ping" />
+        <div className="usertour-widget-beacon__pong" />
+      </>
+    );
+  }
 
-    if (type === LauncherDataType.ICON && ActiveIcon) {
-      return (
-        <div ref={ref}>
-          <ActiveIcon width={width} height={height} />
-        </div>
-      );
-    }
+  if (type === LauncherDataType.ICON && ActiveIcon) {
+    return <ActiveIcon width={width} height={height} />;
+  }
 
-    return null;
-  },
-);
+  return null;
+};
 
 LauncherIcon.displayName = 'LauncherIcon';
 

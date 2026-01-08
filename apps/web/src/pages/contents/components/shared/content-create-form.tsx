@@ -89,6 +89,9 @@ export const ContentCreateForm = ({ onClose, isOpen }: ContentCreateFormProps) =
     mode: 'onChange',
   });
 
+  const nameValue = form.watch('name');
+  const isNameEmpty = !nameValue?.trim();
+
   async function handleOnSubmit(formValues: FormValues) {
     const { buildUrl, type, name } = formValues;
     setIsLoading(true);
@@ -102,6 +105,7 @@ export const ContentCreateForm = ({ onClose, isOpen }: ContentCreateFormProps) =
       const ret = await createContentMutation({ variables: data });
       if (!ret.data?.createContent?.id) {
         showError('Create flow failed.');
+        return;
       }
       const content = ret.data?.createContent as Content;
       setCurrentContent(content);
@@ -128,27 +132,28 @@ export const ContentCreateForm = ({ onClose, isOpen }: ContentCreateFormProps) =
       // navigate(`/env/${content?.environmentId}/flows/${content?.id}/detail`);
     } catch (error) {
       showError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-2xl	">
+      <DialogContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Create New Flow</DialogTitle>
+              <DialogTitle>Create flow</DialogTitle>
             </DialogHeader>
-            <div className="space-y-2 py-4 ">
+            <div className="space-y-2 py-4 pt-6">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                    <FormLabel className="w-32 flex-none">Flow name:</FormLabel>
+                  <FormItem className="flex flex-col items-start space-y-1">
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <div className="flex flex-col space-x-1 w-full grow">
+                      <div className="w-full">
                         <Input placeholder="Enter flow  name" {...field} id="flow-name-input" />
                         <FormMessage />
                       </div>
@@ -156,12 +161,6 @@ export const ContentCreateForm = ({ onClose, isOpen }: ContentCreateFormProps) =
                   </FormItem>
                 )}
               />
-              <span className="text-xs text-muted-foreground">
-                {form.getValues('type') === BuilderType.EXTENSION &&
-                  'Open the builder in new tab for WYSIWYG editing experience'}
-                {form.getValues('type') === BuilderType.WEB &&
-                  'Open the builder in the current tab for convenient editing experience'}
-              </span>
               {form.getValues('type') === BuilderType.EXTENSION && (
                 <FormField
                   control={form.control}
@@ -187,7 +186,7 @@ export const ContentCreateForm = ({ onClose, isOpen }: ContentCreateFormProps) =
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading} id="create-flow-submit">
+              <Button type="submit" disabled={isLoading || isNameEmpty} id="create-flow-submit">
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>

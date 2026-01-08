@@ -13,7 +13,7 @@ import {
 import { Button } from '@usertour-packages/button';
 import { Calendar } from '@usertour-packages/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 /**
  * Controlled DateRangePicker component (stateless)

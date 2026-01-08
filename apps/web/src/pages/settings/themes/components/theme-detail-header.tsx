@@ -35,7 +35,7 @@ export const ThemeDetailHeader = () => {
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = () => {
-    if (!theme) {
+    if (!theme || theme?.isSystem) {
       return false;
     }
     return !isEqual(theme.settings, settings) || !isEqual(theme.variations ?? [], variations);

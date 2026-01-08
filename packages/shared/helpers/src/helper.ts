@@ -1,11 +1,5 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { v4 } from 'uuid';
 import { createId } from '@paralleldrive/cuid2';
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export const cuid = () => {
   return createId();
@@ -38,18 +32,6 @@ export function hexToRgb(hex: string) {
       }
     : null;
 }
-
-export const isDark = (hex: string) => {
-  const rgb = hexToRgb(hex);
-  if (!rgb) {
-    return null;
-  }
-  const { r, g, b } = rgb;
-  if (r * 0.299 + g * 0.587 + b * 0.114 > 186) {
-    return true;
-  }
-  return false;
-};
 
 export const evalCode = (code: string) => {
   try {

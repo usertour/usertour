@@ -4,7 +4,7 @@ import { useThemeSettingsContext } from '../theme-settings-panel';
 import { ThemeSettingsButton } from './theme-settings-button';
 
 export const ThemeSettingsButtons = () => {
-  const { settings, setSettings } = useThemeSettingsContext();
+  const { settings, setSettings, isViewOnly } = useThemeSettingsContext();
   const update = (data: Partial<typeof settings.buttons>) => {
     const { buttons } = settings;
     setSettings((pre) => ({
@@ -22,6 +22,7 @@ export const ThemeSettingsButtons = () => {
           onChange={(value: string) => {
             update({ height: Number(value) });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Min width"
@@ -30,6 +31,7 @@ export const ThemeSettingsButtons = () => {
           onChange={(value: string) => {
             update({ minWidth: Number(value) });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Border radius"
@@ -38,6 +40,7 @@ export const ThemeSettingsButtons = () => {
           onChange={(value: string) => {
             update({ borderRadius: Number(value) });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Horizontal padding"
@@ -46,6 +49,7 @@ export const ThemeSettingsButtons = () => {
           onChange={(value: string) => {
             update({ px: Number(value) });
           }}
+          disabled={isViewOnly}
         />
       </div>
       <Separator />

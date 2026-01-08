@@ -15,7 +15,7 @@ import { ChecklistItemsColumn, LauncherProgressColumn } from '@/components/molec
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { Button } from '@usertour-packages/button';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
 import { QuestionAnswer, SessionResponse } from '@/components/molecules/session-detail';

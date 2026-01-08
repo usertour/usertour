@@ -2,7 +2,7 @@ import { SidebarMini } from './sidebar-mini';
 
 import { Card } from '@usertour-packages/card';
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour-packages/constants';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { useRef } from 'react';
 import { useBuilderContext } from '../../contexts';
 

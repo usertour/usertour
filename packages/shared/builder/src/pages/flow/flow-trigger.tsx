@@ -9,7 +9,7 @@ import { useContentListContext } from '@usertour-packages/contexts';
 import { updateContentStep } from '@usertour-packages/gql';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { createValue1 } from '@usertour-packages/shared-editor';
+import { getDefaultDataForType } from '../../utils/default-data';
 import { defaultStep, getErrorMessage, hasActionError, hasError } from '@usertour/helpers';
 import {
   AttributeBizTypes,
@@ -18,7 +18,8 @@ import {
   RulesCondition,
   Step,
 } from '@usertour/types';
-import { cn, cuid } from '@usertour/helpers';
+import { cuid } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ContentTrigger } from '../../components/content-trigger';
@@ -82,7 +83,7 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
       ...defaultStep,
       type: 'tooltip',
       name: 'Untitled',
-      data: createValue1,
+      data: getDefaultDataForType('tooltip'),
       sequence,
     };
     return createStep(currentVersion, step);

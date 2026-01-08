@@ -12,7 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverProps, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Separator } from '@usertour-packages/separator';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 export interface ThemeSelectFontType {
   id: string;
@@ -23,6 +23,7 @@ interface ThemeSelectFontProps extends PopoverProps {
   items: ThemeSelectFontType[];
   defaultValue: string;
   onSelect?: (item: ThemeSelectFontType) => void;
+  disabled?: boolean;
 }
 
 const systemItems = [
@@ -33,6 +34,7 @@ export const ThemeSelectFont = ({
   items,
   defaultValue,
   onSelect,
+  disabled = false,
   ...props
 }: ThemeSelectFontProps) => {
   const [open, setOpen] = useState(false);
@@ -59,13 +61,14 @@ export const ThemeSelectFont = ({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen} {...props}>
+    <Popover open={open} onOpenChange={disabled ? undefined : setOpen} {...props}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           aria-label="Load a font family..."
           aria-expanded={open}
-          className="flex-1 justify-between"
+          className="flex-1 justify-between disabled:opacity-100"
+          disabled={disabled}
         >
           {selectedPreset ? selectedPreset.name : 'Load a font family...'}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />

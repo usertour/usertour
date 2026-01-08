@@ -18,7 +18,7 @@ const textDecorationItems = [
 ];
 
 export const ThemeSettingsChecklist = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
 
   // Update checklist settings
   const update = (data: Partial<typeof settings.checklist>) => {
@@ -40,6 +40,7 @@ export const ThemeSettingsChecklist = () => {
           onChange={(value: string) => {
             update({ width: Number(value) });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingSelect
           text="Placement"
@@ -55,6 +56,7 @@ export const ThemeSettingsChecklist = () => {
               },
             });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Offset right"
@@ -69,6 +71,7 @@ export const ThemeSettingsChecklist = () => {
               },
             });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Offset bottom"
@@ -83,6 +86,7 @@ export const ThemeSettingsChecklist = () => {
               },
             });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Z-index"
@@ -95,6 +99,7 @@ export const ThemeSettingsChecklist = () => {
             const numValue = value === '' ? undefined : Number(value);
             update({ zIndex: numValue });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSelectColor
           text="Checkmark color"
@@ -106,6 +111,7 @@ export const ThemeSettingsChecklist = () => {
           onChange={(value: string) => {
             update({ checkmarkColor: value });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingSelect
           text="Completed task text decoration"
@@ -119,6 +125,7 @@ export const ThemeSettingsChecklist = () => {
               completedTaskTextDecoration: value,
             });
           }}
+          disabled={isViewOnly}
         />
       </div>
     </div>

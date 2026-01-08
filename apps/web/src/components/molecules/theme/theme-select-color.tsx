@@ -9,10 +9,12 @@ type ThemeSelectColorProps = {
   autoColor?: string;
   isAutoColor?: boolean;
   showAutoButton?: boolean;
+  disabled?: boolean;
 };
 
 export const ThemeSelectColor = (props: ThemeSelectColorProps) => {
-  const { text, name, defaultColor, onChange, autoColor, isAutoColor, showAutoButton } = props;
+  const { text, name, defaultColor, onChange, autoColor, isAutoColor, showAutoButton, disabled } =
+    props;
 
   return (
     <div className="flex flex-row">
@@ -28,6 +30,7 @@ export const ThemeSelectColor = (props: ThemeSelectColorProps) => {
           autoColor={autoColor}
           isAutoColor={isAutoColor}
           showAutoButton={showAutoButton}
+          disabled={disabled}
         />
       </div>
     </div>

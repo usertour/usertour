@@ -12,7 +12,8 @@ import {
 } from '@usertour/types';
 import { Event } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
-import { cn, isUndefined } from '@usertour/helpers';
+import { isUndefined } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 /**
  * Format flow step display text from event data

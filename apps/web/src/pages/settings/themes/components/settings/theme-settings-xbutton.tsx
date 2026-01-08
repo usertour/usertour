@@ -2,7 +2,7 @@ import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-colo
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsXbutton = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
   const update = (data: Partial<typeof settings.xbutton>) => {
     const { xbutton } = settings;
     setSettings((pre) => ({
@@ -23,6 +23,7 @@ export const ThemeSettingsXbutton = () => {
             update({ color: value });
           }}
           text="Color"
+          disabled={isViewOnly}
         />
       </div>
     </div>

@@ -4,7 +4,7 @@ import { ThemeSettingSlider } from '@/components/molecules/theme/theme-setting-s
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsLauncherIcons = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
   const update = (data: Partial<typeof settings.launcherIcon>) => {
     const { launcherIcon } = settings;
     setSettings((pre) => ({
@@ -22,6 +22,7 @@ export const ThemeSettingsLauncherIcons = () => {
           onChange={(value: string) => {
             update({ size: Number(value) });
           }}
+          disabled={isViewOnly}
         />
         <div className="flex flex-row w-full">
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -37,6 +38,7 @@ export const ThemeSettingsLauncherIcons = () => {
                 });
               }}
               className="rounded-r-none"
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -52,6 +54,7 @@ export const ThemeSettingsLauncherIcons = () => {
                 });
               }}
               className="rounded-none border-x-0"
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -67,6 +70,7 @@ export const ThemeSettingsLauncherIcons = () => {
                 });
               }}
               className="rounded-l-none"
+              disabled={isViewOnly}
             />
           </div>
         </div>
@@ -77,6 +81,7 @@ export const ThemeSettingsLauncherIcons = () => {
           onValueChange={(value: number[]) => {
             update({ opacity: value[0] });
           }}
+          disabled={isViewOnly}
         />
       </div>
     </div>

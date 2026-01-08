@@ -93,16 +93,17 @@ export const NpsCreateForm = ({ onClose, isOpen }: NpsCreateFormProps) => {
       const ret = await createContentMutation({ variables: data });
       if (!ret.data?.createContent?.id) {
         showError('Create NPS Survey failed.');
+        return;
       }
       const content = ret.data?.createContent as Content;
       navigate(
         `/env/${content?.environmentId}/nps/${content?.id}/builder/${content.editedVersionId}`,
       );
-      return;
     } catch (error) {
       showError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   return (

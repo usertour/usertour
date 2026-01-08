@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 const groups = [
   {

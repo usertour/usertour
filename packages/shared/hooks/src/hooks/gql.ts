@@ -499,19 +499,29 @@ export const useGetSubscriptionPlansQuery = () => {
   return { plans, loading, error, refetch };
 };
 
-export const useGetSubscriptionByProjectIdQuery = (projectId: string) => {
+export const useGetSubscriptionByProjectIdQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, loading, error, refetch } = useQuery(getSubscriptionByProjectId, {
     variables: { projectId },
+    skip: !projectId,
+    ...options,
   });
   const subscription = data?.getSubscriptionByProjectId as Subscription | null;
   return { subscription, loading, error, refetch };
 };
 
-export const useGetSubscriptionUsageQuery = (projectId: string) => {
+export const useGetSubscriptionUsageQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
   const { data, loading, error, refetch } = useQuery(getSubscriptionUsage, {
     variables: { projectId },
+    skip: !projectId,
+    ...options,
   });
-  const usage = data?.getSubscriptionUsage;
+  const usage = data?.getSubscriptionUsage ?? 0;
   return { usage, loading, error, refetch };
 };
 

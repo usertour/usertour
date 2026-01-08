@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 

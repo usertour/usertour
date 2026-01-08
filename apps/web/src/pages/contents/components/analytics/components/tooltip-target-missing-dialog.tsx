@@ -28,7 +28,8 @@ import { BizEvents, EventAttributes } from '@usertour/types';
 import { useInView } from 'react-intersection-observer';
 import { calculateUniqueFailureRate, calculateTotalFailureRate } from '@/utils/analytics';
 import { DateRangePicker } from '@/components/molecules/date-range-picker';
-import { cn, formatCompactNumber, shouldShowFullNumberTooltip } from '@/utils/common';
+import { formatCompactNumber, shouldShowFullNumberTooltip } from '@/utils/common';
+import { cn } from '@usertour-packages/tailwind';
 import {
   Tooltip,
   TooltipContent,

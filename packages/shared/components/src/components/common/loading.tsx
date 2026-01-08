@@ -1,4 +1,4 @@
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { ReactNode } from 'react';
 
 interface LoadingContainerProps {

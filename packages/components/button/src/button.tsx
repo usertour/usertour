@@ -2,7 +2,7 @@ import { Slot } from '@radix-ui/react-slot';
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
-import { cn } from './utils';
+import { cn } from '@usertour-packages/tailwind';
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
@@ -30,17 +30,38 @@ const buttonVariants = cva(
   },
 );
 
-const buttonVariantsForSdk = cva('usertour-btn', {
+// Base styles for SDK button
+const sdkButtonBase = cn(
+  'inline-flex items-center justify-center transition-colors',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+  'disabled:pointer-events-none disabled:opacity-50',
+  'font-sdk text-sdk-base rounded-sdk-button h-auto min-w-sdk-button px-sdk-button-x',
+);
+
+// Custom variant base styles (only accessibility, no layout/appearance)
+const customVariantBase = cn(
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+  'disabled:pointer-events-none disabled:opacity-50',
+);
+
+const buttonVariantsForSdk = cva(sdkButtonBase, {
   variants: {
     variant: {
-      default: 'usertour-btn--primary ',
-      secondary: 'usertour-btn--secondary ',
-      destructive:
-        'bg-sdk-destructive text-sdk-destructive-foreground hover:bg-sdk-destructive-hover',
-      outline:
-        'border-sdk border-sdk-input bg-sdk-background hover:bg-sdk-accent hover:text-sdk-accent-foreground',
-      ghost: 'hover:bg-sdk-accent hover:text-sdk-accent-foreground',
-      link: 'text-sdk-primary underline-offset-4 hover:underline',
+      default: cn(
+        'bg-sdk-btn-primary text-sdk-btn-primary-foreground font-sdk-primary',
+        'border-solid border-sdk-btn-primary', // Sets both border-width and border-color
+        'hover:bg-sdk-btn-primary-hover hover:text-sdk-btn-primary-foreground-hover hover:border-sdk-btn-primary-hover',
+        'active:bg-sdk-btn-primary-active active:text-sdk-btn-primary-foreground-active active:border-sdk-btn-primary-active',
+        'usertour-btn--primary', // For calc() padding in CSS
+      ),
+      secondary: cn(
+        'bg-sdk-btn-secondary text-sdk-btn-secondary-foreground font-sdk-secondary',
+        'border-solid border-sdk-btn-secondary', // Sets both border-width and border-color
+        'hover:bg-sdk-btn-secondary-hover hover:text-sdk-btn-secondary-foreground-hover hover:border-sdk-btn-secondary-hover',
+        'active:bg-sdk-btn-secondary-active active:text-sdk-btn-secondary-foreground-active active:border-sdk-btn-secondary-active',
+        'usertour-btn--secondary', // For calc() padding in CSS
+      ),
+      // Note: custom variant is handled separately in Button component to avoid inheriting sdkButtonBase
     },
     size: {
       default: '',
@@ -55,9 +76,12 @@ const buttonVariantsForSdk = cva('usertour-btn', {
   },
 });
 
+type ButtonVariant = VariantProps<typeof buttonVariants>['variant'] | 'custom';
+
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'variant'> {
+  variant?: ButtonVariant;
+  size?: VariantProps<typeof buttonVariants>['size'];
   asChild?: boolean;
   forSdk?: boolean;
 }
@@ -65,10 +89,28 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, forSdk = false, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
-    const _buttonVariants = forSdk ? buttonVariantsForSdk : buttonVariants;
-    return (
-      <Comp className={cn(_buttonVariants({ variant, size, className }))} ref={ref} {...props} />
-    );
+
+    // Determine variant class names based on forSdk flag
+    const variantClassName = React.useMemo(() => {
+      // Universal custom variant - works for both regular and SDK buttons
+      if (variant === 'custom') {
+        return customVariantBase;
+      }
+
+      if (forSdk) {
+        // Only allow 'default' and 'secondary' for SDK buttons, undefined will use defaultVariants
+        const sdkVariant = variant === 'default' || variant === 'secondary' ? variant : undefined;
+        return buttonVariantsForSdk({
+          variant: sdkVariant,
+          size,
+        });
+      }
+
+      // For regular buttons, exclude 'custom' and let cva handle invalid values with defaultVariants
+      return buttonVariants({ variant: variant as Exclude<ButtonVariant, 'custom'>, size });
+    }, [variant, size, forSdk]);
+
+    return <Comp className={cn(variantClassName, className)} ref={ref} {...props} />;
   },
 );
 Button.displayName = 'Button';

@@ -71,6 +71,9 @@ export const ChecklistCreateForm = ({ onClose, isOpen }: ChecklistCreateFormProp
     mode: 'onChange',
   });
 
+  const nameValue = form.watch('name');
+  const isNameEmpty = !nameValue?.trim();
+
   const openBuilder = (content: Content) => {
     navigate(
       `/env/${environment?.id}/checklists/${content?.id}/builder/${content?.editedVersionId}`,
@@ -89,6 +92,7 @@ export const ChecklistCreateForm = ({ onClose, isOpen }: ChecklistCreateFormProp
       const ret = await createContentMutation({ variables: data });
       if (!ret.data?.createContent?.id) {
         showError('Create checklist failed.');
+        return;
       }
       const content = ret.data?.createContent as Content;
       const initVersion = await updateContentVersionMutation({
@@ -99,12 +103,14 @@ export const ChecklistCreateForm = ({ onClose, isOpen }: ChecklistCreateFormProp
       });
       if (!initVersion.data.updateContentVersion) {
         showError('Create checklist failed.');
+        return;
       }
       openBuilder(content);
     } catch (error) {
       showError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   return (
@@ -113,17 +119,17 @@ export const ChecklistCreateForm = ({ onClose, isOpen }: ChecklistCreateFormProp
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Create New Checklist</DialogTitle>
+              <DialogTitle>Create checklist</DialogTitle>
             </DialogHeader>
-            <div className="space-y-2 py-4 ">
+            <div className="space-y-2 py-4 pt-6">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                    <FormLabel className="w-32 flex-none">Checklist name:</FormLabel>
+                  <FormItem className="flex flex-col items-start space-y-1">
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <div className="flex flex-col space-x-1 w-full grow">
+                      <div className="w-full">
                         <Input placeholder="Enter checklist name" {...field} />
                         <FormMessage />
                       </div>
@@ -136,7 +142,7 @@ export const ChecklistCreateForm = ({ onClose, isOpen }: ChecklistCreateFormProp
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || isNameEmpty}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>

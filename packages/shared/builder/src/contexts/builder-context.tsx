@@ -14,7 +14,7 @@ import { useEvent } from 'react-use';
 import { useToast } from '@usertour-packages/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
-import { getDefaultDataForType } from '@usertour-packages/shared-editor';
+import { getDefaultDataForType } from '../utils/default-data';
 import { duplicateStep, generateUniqueCopyName } from '@usertour/helpers';
 import {
   useGetContentLazyQuery,
@@ -115,6 +115,7 @@ interface BuilderContextProps {
     stepType?: string,
     duplicateStep?: Step,
   ) => Promise<Step | undefined>;
+  shouldShowMadeWith?: boolean;
 }
 
 export const BuilderContext = createContext<BuilderContextProps | null>(null);
@@ -125,10 +126,18 @@ export interface BuilderProviderProps {
   webHost?: string;
   usertourjsUrl?: string;
   onSaved: () => Promise<void>;
+  shouldShowMadeWith?: boolean;
 }
 
 export const BuilderProvider = (props: BuilderProviderProps) => {
-  const { children, webHost = '', usertourjsUrl = '', isWebBuilder = false, onSaved } = props;
+  const {
+    children,
+    webHost = '',
+    usertourjsUrl = '',
+    isWebBuilder = false,
+    onSaved,
+    shouldShowMadeWith = true,
+  } = props;
   const [currentStep, setCurrentStep] = useState<Step | null>(null);
   const [environmentId, setEnvironmentId] = useState<string>('');
   const [envToken, setEnvToken] = useState<string>('');
@@ -293,7 +302,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       });
     }
     setIsLoading(false);
-  }, [currentVersion]);
+  }, [currentVersion, backupVersion, addContentSteps, fetchContentAndVersion, toast, setIsLoading]);
 
   const createStep = async (currentVersion: ContentVersion, step: Step) => {
     try {
@@ -350,7 +359,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     if (currentVersion && backupVersion && !isEqual(currentVersion, backupVersion)) {
       saveContent();
     }
-  }, [currentVersion, backupVersion]);
+  }, [currentVersion, backupVersion, saveContent]);
 
   // Warn user when closing page while saving
   useEvent('beforeunload', (e: BeforeUnloadEvent) => {
@@ -399,6 +408,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     createStep,
     createNewStep,
     envToken,
+    shouldShowMadeWith,
   };
   return <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>;
 };

@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { DataTableColumnHeaderProps } from './types';
 
 export function DataTableColumnHeader({ column, title, className }: DataTableColumnHeaderProps) {

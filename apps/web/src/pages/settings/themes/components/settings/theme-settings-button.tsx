@@ -13,7 +13,7 @@ type ThemeSettingsButtonProps = {
 };
 export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
   const { text, name } = props;
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
   const [data, setData] = useState<ThemeTypesSettingsButton>(settings.buttons[name]);
 
   const update = (data: Partial<ThemeTypesSettingsButton>) => {
@@ -56,6 +56,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
           update({ fontWeight: Number(value) });
         }}
         name="fong-weight"
+        disabled={isViewOnly}
       />
       <div className="flex flex-row w-full">
         <div className="flex flex-col space-y-1 basis-1/3">
@@ -69,6 +70,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
               update({ textColor: { ...data.textColor, color: value } });
             }}
             className="rounded-r-none"
+            disabled={isViewOnly}
           />
         </div>
         <div className="flex flex-col space-y-1 basis-1/3">
@@ -82,6 +84,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
               update({ textColor: { ...data.textColor, hover: value } });
             }}
             className="rounded-none border-x-0"
+            disabled={isViewOnly}
           />
         </div>
         <div className="flex flex-col space-y-1 basis-1/3">
@@ -97,6 +100,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
               update({ textColor: { ...data.textColor, active: value } });
             }}
             className="rounded-l-none"
+            disabled={isViewOnly}
           />
         </div>
       </div>
@@ -114,6 +118,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
               });
             }}
             className="rounded-r-none"
+            disabled={isViewOnly}
           />
         </div>
         <div className="flex flex-col space-y-1 basis-1/3">
@@ -129,6 +134,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
               });
             }}
             className="rounded-none border-x-0"
+            disabled={isViewOnly}
           />
         </div>
         <div className="flex flex-col space-y-1 basis-1/3">
@@ -144,6 +150,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
               });
             }}
             className="rounded-l-none"
+            disabled={isViewOnly}
           />
         </div>
       </div>
@@ -155,12 +162,13 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
         <Switch
           id="border-switch"
           checked={data.border.enabled}
-          className="data-[state=unchecked]:bg-input"
+          className="data-[state=unchecked]:bg-input disabled:opacity-100"
           onCheckedChange={(checked: boolean) => {
             update({
               border: { ...data.border, enabled: checked },
             });
           }}
+          disabled={isViewOnly}
         />
         {data.border.enabled && (
           <div className="grow">
@@ -171,8 +179,9 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
                 name={'Border width'}
                 value={data.border.borderWidth}
                 onChange={handleOnChange}
-                className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm "
+                className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm disabled:opacity-100"
                 placeholder={''}
+                disabled={isViewOnly}
               />
               <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none z-20 pe-4">
                 <span className="text-gray-500">px</span>
@@ -199,6 +208,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
                 });
               }}
               className="rounded-r-none"
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -217,6 +227,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
                 });
               }}
               className="rounded-none border-x-0"
+              disabled={isViewOnly}
             />
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
@@ -235,6 +246,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
                 });
               }}
               className="rounded-l-none"
+              disabled={isViewOnly}
             />
           </div>
         </div>

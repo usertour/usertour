@@ -4,7 +4,7 @@ import {
   Attribute,
   ThemeVariation,
 } from '@usertour/types';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { ThemeSettingsDefaultPanel } from './theme-settings-panel';
 import { ThemePreviewPanel } from './theme-preview-panel';
 

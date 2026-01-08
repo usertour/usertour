@@ -68,7 +68,7 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
           {children}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-[101]">
-          <DropdownMenuItem onClick={handleSetAsDefault}>
+          <DropdownMenuItem onClick={handleSetAsDefault} disabled={theme.isDefault}>
             <StarFilledIcon className="mr-1" width={15} height={15} />
             Set as company default
           </DropdownMenuItem>

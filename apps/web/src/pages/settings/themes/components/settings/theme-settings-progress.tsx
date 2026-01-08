@@ -9,7 +9,7 @@ import { useThemeSettingsContext } from '../theme-settings-panel';
 import { WarningIcon } from '@usertour-packages/icons';
 
 export const ThemeSettingsProgress = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
   const update = (data: Partial<typeof settings.progress>) => {
     const { progress } = settings;
     setSettings((pre) => ({
@@ -113,10 +113,11 @@ export const ThemeSettingsProgress = () => {
           <Switch
             id="progress-switch"
             checked={settings.progress.enabled}
-            className="data-[state=unchecked]:bg-input"
+            className="data-[state=unchecked]:bg-input disabled:opacity-100"
             onCheckedChange={(checked: boolean) => {
               update({ enabled: checked });
             }}
+            disabled={isViewOnly}
           />
         </div>
 
@@ -132,6 +133,7 @@ export const ThemeSettingsProgress = () => {
                 const progressType = value as ProgressBarType;
                 update({ type: progressType });
               }}
+              disabled={isViewOnly}
             />
 
             {showPositionSelector && (
@@ -143,6 +145,7 @@ export const ThemeSettingsProgress = () => {
                 onValueChange={(value: string) => {
                   update({ position: value as ProgressBarPosition });
                 }}
+                disabled={isViewOnly}
               />
             )}
 
@@ -156,6 +159,7 @@ export const ThemeSettingsProgress = () => {
               onChange={(value: string) => {
                 update({ color: value });
               }}
+              disabled={isViewOnly}
             />
             <ThemeSettingInput
               text={heightInputProps.text}
@@ -164,6 +168,7 @@ export const ThemeSettingsProgress = () => {
               onChange={(value: string) => {
                 updateHeight(Number(value));
               }}
+              disabled={isViewOnly}
             />
             {settings.progress.type !== ProgressBarType.FULL_WIDTH &&
               settings.progress.type !== ProgressBarType.NARROW && (

@@ -4,7 +4,7 @@ import {
   SlideLeftIcon,
   SlideRightIcon,
 } from '@usertour-packages/icons';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import anime from 'animejs/lib/anime.es.js';
 import { useEffect, useState } from 'react';
 

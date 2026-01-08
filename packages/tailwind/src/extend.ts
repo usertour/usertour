@@ -32,9 +32,28 @@ export const extendSdk = {
         'trigger-active-background': 'var(--usertour-checklist-trigger-active-background-color)',
         'trigger-counter-background': 'var(--usertour-checklist-trigger-counter-background-color)',
         'trigger-counter-font': 'var(--usertour-checklist-trigger-counter-font-color)',
-        'trigger-font': 'var(--usertour-checklist-trigger-font-color)',
+        'trigger-font': 'hsl(var(--usertour-checklist-trigger-font-color))',
         'trigger-hover-background': 'var(--usertour-checklist-trigger-hover-background-color)',
         checkmark: 'var(--usertour-checkmark-background-color)',
+      },
+      // Button colors (border colors are in borderColor extension)
+      btn: {
+        primary: {
+          DEFAULT: 'var(--usertour-primary)',
+          hover: 'var(--usertour-primary-hover)',
+          active: 'var(--usertour-primary-active)',
+          foreground: 'var(--usertour-primary-foreground)',
+          'foreground-hover': 'var(--usertour-primary-foreground-hover)',
+          'foreground-active': 'var(--usertour-primary-foreground-active)',
+        },
+        secondary: {
+          DEFAULT: 'var(--usertour-secondary)',
+          hover: 'var(--usertour-secondary-hover)',
+          active: 'var(--usertour-secondary-active)',
+          foreground: 'var(--usertour-secondary-foreground)',
+          'foreground-hover': 'var(--usertour-secondary-foreground-hover)',
+          'foreground-active': 'var(--usertour-secondary-foreground-active)',
+        },
       },
     },
   },
@@ -47,11 +66,27 @@ export const extendSdk = {
     'sdk-md': 'calc(var(--usertour-radius) - 2px)',
     'sdk-sm': 'calc(var(--usertour-radius) - 4px)',
     'sdk-popper': 'var(--usertour-popper-radius)',
-    'sdk-button': 'var(--usertour-button-radius)',
+    'sdk-button': 'var(--usertour-button-border-radius)',
   },
   borderWidth: {
-    'sdk-primary-button': 'var(--usertour-border-primary-button)',
-    'sdk-secondary-button': 'var(--usertour-border-secondary-button)',
+    'sdk-btn-primary': 'var(--usertour-primary-border-width)',
+    'sdk-btn-secondary': 'var(--usertour-secondary-border-width)',
+  },
+  // Use same key as borderWidth so single class sets both width and color
+  borderColor: {
+    'sdk-btn-primary': {
+      DEFAULT: 'var(--usertour-primary-border-color)',
+      hover: 'var(--usertour-primary-border-hover)',
+      active: 'var(--usertour-primary-border-active)',
+    },
+    'sdk-btn-secondary': {
+      DEFAULT: 'var(--usertour-secondary-border-color)',
+      hover: 'var(--usertour-secondary-border-hover)',
+      active: 'var(--usertour-secondary-border-active)',
+    },
+  },
+  padding: {
+    'sdk-button-x': 'var(--usertour-button-px)',
   },
   height: {
     'sdk-line-height': 'var(--usertour-line-height)',
@@ -78,6 +113,7 @@ export const extendSdk = {
     'sdk-h1': 'var(--usertour-font-size-h1)',
     'sdk-h2': 'var(--usertour-font-size-h2)',
     'sdk-xs': 'calc(var(--usertour-font-size) * 0.75)',
+    'sdk-sm': 'calc(var(--usertour-font-size) * 0.875)',
     'sdk-numbered-progress': 'var(--usertour-numbered-progress-bar-height)',
   },
   fontWeight: {

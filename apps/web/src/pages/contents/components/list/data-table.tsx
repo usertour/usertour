@@ -20,7 +20,7 @@ import { getContentVersion } from '@usertour-packages/gql';
 import { CircleIcon } from '@usertour-packages/icons';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
@@ -34,6 +34,7 @@ import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
+import { Skeleton } from '@usertour-packages/skeleton';
 
 const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();
@@ -88,17 +89,30 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
   );
 };
 
+const ContentPreviewSkeleton = () => {
+  return <Skeleton className="w-[300px] h-[160px]" />;
+};
+
+interface ContentPreviewProps {
+  currentVersion: ContentVersion | undefined;
+  currentTheme: Theme | undefined;
+  currentStep: Step | undefined;
+  type: ContentDataType;
+  isLoading?: boolean;
+}
+
 const ContentPreview = ({
   currentVersion,
   currentTheme,
   currentStep,
   type,
-}: {
-  currentVersion: ContentVersion | undefined;
-  currentTheme: Theme | undefined;
-  currentStep: Step | undefined;
-  type: ContentDataType;
-}) => {
+  isLoading,
+}: ContentPreviewProps) => {
+  // Show skeleton while loading data
+  if (isLoading) {
+    return <ContentPreviewSkeleton />;
+  }
+
   if (
     (type === ContentDataType.FLOW ||
       type === ContentDataType.NPS ||
@@ -134,6 +148,7 @@ const ContentPreview = ({
     );
   }
 
+  // Only show empty state when not loading and truly no data
   return <EmptyContentPreview />;
 };
 
@@ -144,47 +159,37 @@ const ContentTableItem = ({
   content: Content;
   contentType: string;
 }) => {
-  const { data } = useQuery(getContentVersion, {
+  const { data, loading } = useQuery(getContentVersion, {
     variables: { versionId: content?.editedVersionId },
     skip: !content?.editedVersionId,
   });
   const navigate = useNavigate();
-  const [currentVersion, setCurrentVersion] = useState<ContentVersion | undefined>();
   const containerRef = useRef(null);
-  const [currentStep, setCurrentStep] = useState<Step | undefined>();
-  const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
   const { environment } = useAppContext();
-
   const { themeList } = useThemeListContext();
 
-  useEffect(() => {
-    if (data?.getContentVersion) {
-      setCurrentVersion(data.getContentVersion);
-    }
-  }, [data]);
+  // Derive all preview data in one pass to avoid chained useEffects and multiple re-renders
+  const { currentVersion, currentStep, currentTheme } = useMemo(() => {
+    const version = data?.getContentVersion;
+    const step = version?.steps?.[0];
 
-  useEffect(() => {
-    if (currentVersion?.steps && currentVersion.steps?.length > 0) {
-      setCurrentStep(currentVersion.steps[0]);
-    }
-  }, [currentVersion]);
-
-  useEffect(() => {
-    if (!themeList) {
-      return;
-    }
-    if (themeList.length > 0) {
-      let theme: Theme | undefined;
-      if (currentStep?.themeId) {
-        theme = themeList.find((item) => item.id === currentStep.themeId);
-      } else if (currentVersion?.themeId) {
-        theme = themeList.find((item) => item.id === currentVersion.themeId);
-      }
-      if (theme) {
-        setCurrentTheme(theme);
+    let theme: Theme | undefined;
+    if (themeList && themeList.length > 0) {
+      const themeId = step?.themeId ?? version?.themeId;
+      if (themeId) {
+        theme = themeList.find((item) => item.id === themeId);
       }
     }
-  }, [currentStep, themeList, currentVersion]);
+
+    return {
+      currentVersion: version,
+      currentStep: step,
+      currentTheme: theme,
+    };
+  }, [data, themeList]);
+
+  // Consider loading if query is loading or themeList is not ready yet
+  const isLoading = loading || !themeList;
 
   const handleOnClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -193,7 +198,7 @@ const ContentTableItem = ({
         navigate(`/env/${environment?.id}/${contentType}/${content.id}/detail`);
       }
     },
-    [content],
+    [content, environment?.id, contentType, navigate],
   );
 
   return (
@@ -212,6 +217,7 @@ const ContentTableItem = ({
             currentTheme={currentTheme}
             currentStep={currentStep}
             type={content.type}
+            isLoading={isLoading}
           />
         </div>
       </div>

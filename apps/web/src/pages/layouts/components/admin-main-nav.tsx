@@ -12,7 +12,7 @@ import { TooltipContent } from '@usertour-packages/tooltip';
 import { TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import { Tooltip } from '@usertour-packages/tooltip';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { Link, useMatches, useParams } from 'react-router-dom';
 import { AdminEnvSwitcher } from './admin-env-switcher';
 import { AdminUserNav } from './admin-user-nav';

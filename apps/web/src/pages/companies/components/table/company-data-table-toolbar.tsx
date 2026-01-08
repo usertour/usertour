@@ -153,7 +153,11 @@ export const CompanyDataTableToolbar = ({
             </Button>
           )}
         </div>
-        <DataTableViewOptions table={table} onColumnVisibilityChange={updateSegmentColumn} />
+        <DataTableViewOptions
+          table={table}
+          onColumnVisibilityChange={updateSegmentColumn}
+          disabled={isViewOnly}
+        />
 
         <CompanySegmentCreateDialog
           isOpen={open}
