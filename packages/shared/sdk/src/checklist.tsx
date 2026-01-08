@@ -801,7 +801,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
       <ChecklistChecked isChecked={isCompleted} isShowAnimation={shouldShowAnimation} />
       <div
         className={cn(
-          'grow flex flex-col items-start',
+          'grow flex flex-col items-start text-left',
           isCompleted && `${textDecoration} text-sdk-foreground/60`,
         )}
       >
