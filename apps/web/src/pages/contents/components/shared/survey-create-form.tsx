@@ -90,6 +90,12 @@ export const SurveyCreateForm = ({ onClose, isOpen }: SurveyCreateFormProps) => 
     mode: 'onChange',
   });
 
+  const nameValue = form.watch('name');
+  const buildUrlValue = form.watch('buildUrl');
+  const typeValue = form.watch('type');
+  const isNameEmpty = !nameValue?.trim();
+  const isBuildUrlRequiredButEmpty = typeValue === BuilderType.EXTENSION && !buildUrlValue?.trim();
+
   async function handleOnSubmit(formValues: FormValues) {
     const { buildUrl, type, name } = formValues;
     setIsLoading(true);
@@ -215,7 +221,10 @@ export const SurveyCreateForm = ({ onClose, isOpen }: SurveyCreateFormProps) => 
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                disabled={isLoading || isNameEmpty || isBuildUrlRequiredButEmpty}
+              >
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>

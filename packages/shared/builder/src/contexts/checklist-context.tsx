@@ -1,4 +1,5 @@
-import { ContentEditorRoot, createValue1 } from '@usertour-packages/shared-editor';
+import { ContentEditorRoot } from '@usertour/types';
+import { createValue1 } from '../utils/default-data';
 import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { deepmerge } from 'deepmerge-ts';

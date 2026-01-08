@@ -14,7 +14,7 @@ import { useEvent } from 'react-use';
 import { useToast } from '@usertour-packages/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
-import { getDefaultDataForType } from '@usertour-packages/shared-editor';
+import { getDefaultDataForType } from '../utils/default-data';
 import { duplicateStep, generateUniqueCopyName } from '@usertour/helpers';
 import {
   useGetContentLazyQuery,
@@ -302,7 +302,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
       });
     }
     setIsLoading(false);
-  }, [currentVersion]);
+  }, [currentVersion, backupVersion, addContentSteps, fetchContentAndVersion, toast, setIsLoading]);
 
   const createStep = async (currentVersion: ContentVersion, step: Step) => {
     try {
@@ -359,7 +359,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
     if (currentVersion && backupVersion && !isEqual(currentVersion, backupVersion)) {
       saveContent();
     }
-  }, [currentVersion, backupVersion]);
+  }, [currentVersion, backupVersion, saveContent]);
 
   // Warn user when closing page while saving
   useEvent('beforeunload', (e: BeforeUnloadEvent) => {
