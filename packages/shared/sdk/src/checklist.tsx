@@ -692,7 +692,7 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
   }, [isAllCompleted, onDismiss, setShowDismissConfirm]);
 
   return (
-    <div className="flex flex-col" ref={ref} {...restProps}>
+    <div className="flex flex-col -mb-2 mt-2" ref={ref} {...restProps}>
       {data.preventDismissChecklist && !(data.autoDismissChecklist && isAllCompleted) && (
         <div className="h-4" />
       )}
