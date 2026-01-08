@@ -103,6 +103,7 @@ export const SurveyCreateForm = ({ onClose, isOpen }: SurveyCreateFormProps) => 
       const ret = await createContentMutation({ variables: data });
       if (!ret.data?.createContent?.id) {
         showError('Create survey failed.');
+        return;
       }
       const content = ret.data?.createContent as Content;
       setCurrentContent(content);
@@ -129,8 +130,9 @@ export const SurveyCreateForm = ({ onClose, isOpen }: SurveyCreateFormProps) => 
       // navigate(`/env/${content?.environmentId}/surveys/${content?.id}/detail`);
     } catch (error) {
       showError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   return (
@@ -188,12 +190,6 @@ export const SurveyCreateForm = ({ onClose, isOpen }: SurveyCreateFormProps) => 
                   </FormItem>
                 )}
               />
-              <span className="text-xs text-muted-foreground">
-                {form.getValues('type') === BuilderType.EXTENSION &&
-                  'Open the builder in new tab for WYSIWYG editing experience'}
-                {form.getValues('type') === BuilderType.WEB &&
-                  'Open the builder in the current tab for convenient editing experience'}
-              </span>
               {form.getValues('type') === BuilderType.EXTENSION && (
                 <FormField
                   control={form.control}

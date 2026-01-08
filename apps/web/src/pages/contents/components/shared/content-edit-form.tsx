@@ -152,7 +152,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl	">
+        <DialogContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleOnSubmit)}>
               <DialogHeader>
@@ -161,47 +161,39 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
 
               <div className="space-y-2 py-4 ">
                 {showBuilderType && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row space-y-0 space-x-2 space-y-0 pt-1">
-                          <FormLabel className="w-32">Builder Type</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="flex flex-row"
-                            >
-                              <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value={BuilderType.EXTENSION} />
-                                </FormControl>
-                                <FormLabel className="font-normal cursor-pointer">
-                                  Extension Builder
-                                </FormLabel>
-                              </FormItem>
-                              <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value={BuilderType.WEB} />
-                                </FormControl>
-                                <FormLabel className="font-normal  cursor-pointer">
-                                  Web Builder
-                                </FormLabel>
-                              </FormItem>
-                            </RadioGroup>
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      {form.getValues('type') === BuilderType.EXTENSION &&
-                        'Open the builder in new tab for WYSIWYG editing experience'}
-                      {form.getValues('type') === BuilderType.WEB &&
-                        'Open the builder in the current tab for convenient editing experience'}
-                    </span>
-                  </>
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row space-y-0 space-x-2 space-y-0 pt-1">
+                        <FormLabel className="w-32">Builder Type</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-row"
+                          >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value={BuilderType.EXTENSION} />
+                              </FormControl>
+                              <FormLabel className="font-normal cursor-pointer">
+                                Extension Builder
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value={BuilderType.WEB} />
+                              </FormControl>
+                              <FormLabel className="font-normal  cursor-pointer">
+                                Web Builder
+                              </FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 )}
                 {form.getValues('type') === BuilderType.EXTENSION && (
                   <>
