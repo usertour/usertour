@@ -80,7 +80,7 @@
     "@socket.io/postgres-adapter": "^0.4.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "@types/mjml": "^4.7.1",
-    "@usertour/helpers": "^0.0.57",
+    "@usertour/helpers": "^0.0.58",
     "@usertour/types": "^0.0.43",
     "@usertour/license": "^0.0.2",
     "deepmerge-ts": "^7.1.3",

@@ -233,7 +233,9 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
       settings.checklistLauncher.counter.background,
     '--usertour-checklist-trigger-counter-font-color': settings.checklistLauncher.counter.color,
     '--usertour-checklist-trigger-font-color-rgb': settings.checklistLauncher.color.color,
-    '--usertour-checklist-trigger-font-color': settings.checklistLauncher.color.color,
+    '--usertour-checklist-trigger-font-color': hexToHSLString(
+      settings.checklistLauncher.color.color,
+    ),
     '--usertour-checklist-trigger-font-weight': settings.checklistLauncher.fontWeight,
     '--usertour-checkmark-background-color': settings.checklist.checkmarkColor,
     '--usertour-checklist-trigger-height': `${settings.checklistLauncher.height}px`,

@@ -63,7 +63,7 @@
     "@usertour-packages/shared-components": "workspace:^",
     "@usertour-packages/shared-editor": "workspace:^",
     "@usertour-packages/shared-hooks": "workspace:^",
-    "@usertour/helpers": "^0.0.57",
+    "@usertour/helpers": "^0.0.58",
     "@usertour-packages/slider": "workspace:^",
     "@usertour-packages/switch": "workspace:^",
     "@usertour-packages/table": "workspace:^",

@@ -32,7 +32,7 @@ export const extendSdk = {
         'trigger-active-background': 'var(--usertour-checklist-trigger-active-background-color)',
         'trigger-counter-background': 'var(--usertour-checklist-trigger-counter-background-color)',
         'trigger-counter-font': 'var(--usertour-checklist-trigger-counter-font-color)',
-        'trigger-font': 'var(--usertour-checklist-trigger-font-color)',
+        'trigger-font': 'hsl(var(--usertour-checklist-trigger-font-color))',
         'trigger-hover-background': 'var(--usertour-checklist-trigger-hover-background-color)',
         checkmark: 'var(--usertour-checkmark-background-color)',
       },

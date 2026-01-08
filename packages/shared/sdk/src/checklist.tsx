@@ -183,7 +183,8 @@ const ChecklistProgress = memo(
   forwardRef<HTMLDivElement, { width?: number }>(({ width }, ref) => {
     const { progress } = useChecklistRootContext();
 
-    const finalProgress = width ?? progress ?? 0;
+    // Use width if explicitly provided (including 0), otherwise use progress
+    const finalProgress = width !== undefined ? width : (progress ?? 0);
 
     const progressClassName = cn(
       'font-medium px-[calc(0.75rem-1px)] rounded-l-full text-left',
@@ -216,8 +217,7 @@ interface ChecklistLauncherContentProps {
 const ChecklistLauncherContent = forwardRef<HTMLButtonElement, ChecklistLauncherContentProps>(
   (props, ref) => {
     const { buttonText, height, onClick, number = 1, isCompleted, onSizeChange } = props;
-    const paddingLeft = height ? `${Number(height) / 2}px` : undefined;
-    const paddingRight = height ? `${Number(height) / 2}px` : undefined;
+    const paddingHorizontal = height ? `${Number(height) / 2}px` : undefined;
 
     const [contentRef, setContentRef] = useState<HTMLDivElement | null>(null);
     const rect = useSize(contentRef);
@@ -226,7 +226,18 @@ const ChecklistLauncherContent = forwardRef<HTMLButtonElement, ChecklistLauncher
       if (rect) {
         onSizeChange?.(rect);
       }
-    }, [rect]);
+    }, [rect, onSizeChange]);
+
+    const buttonClassName = cn(
+      'rounded-sdk-checklist-trigger h-full w-full flex bg-sdk-checklist-trigger-background',
+      'cursor-pointer items-center justify-center',
+      'hover:bg-sdk-checklist-trigger-hover-background',
+      'active:bg-sdk-checklist-trigger-active-background',
+      'focus-visible:bg-sdk-checklist-trigger-hover-background',
+      'focus-visible:outline-none',
+      'focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-transparent',
+      'focus-visible:ring-offset-[3px] focus-visible:ring-offset-sdk-checklist-trigger-font/30',
+    );
 
     return (
       <Button
@@ -236,7 +247,7 @@ const ChecklistLauncherContent = forwardRef<HTMLButtonElement, ChecklistLauncher
         style={{
           height,
         }}
-        className="rounded-sdk-checklist-trigger h-full w-full flex bg-sdk-checklist-trigger-background cursor-pointer items-center justify-center hover:bg-sdk-checklist-trigger-hover-background"
+        className={buttonClassName}
         onClick={onClick}
         aria-label={`Open checklist${number > 0 ? ` (${number} items)` : ''}`}
       >
@@ -244,8 +255,8 @@ const ChecklistLauncherContent = forwardRef<HTMLButtonElement, ChecklistLauncher
           ref={setContentRef}
           className="flex whitespace-nowrap	"
           style={{
-            paddingLeft,
-            paddingRight,
+            paddingLeft: paddingHorizontal,
+            paddingRight: paddingHorizontal,
           }}
         >
           <div className="overflow-hidden	text-sdk-checklist-trigger-font h-6 font-sdk-checklist-trigger text-sdk-base flex items-center justify-center">
@@ -416,9 +427,7 @@ const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'g
     return (
       <Popper ref={ref} {...optimizedPopperProps} isIframeMode={true}>
         <PopperModalContentPotal {...modalContentProps}>
-          <PopperContentFrame ref={ref} {...props}>
-            {children}
-          </PopperContentFrame>
+          <PopperContentFrame {...props}>{children}</PopperContentFrame>
         </PopperModalContentPotal>
       </Popper>
     );
