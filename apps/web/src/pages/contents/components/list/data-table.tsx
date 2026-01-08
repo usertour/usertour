@@ -34,6 +34,7 @@ import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
+import { Skeleton } from '@usertour-packages/skeleton';
 
 const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();
@@ -89,7 +90,7 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
 };
 
 const ContentPreviewSkeleton = () => {
-  return <div className="w-[300px] h-[160px] animate-pulse bg-background rounded" />;
+  return <Skeleton className="w-[300px] h-[160px]" />;
 };
 
 interface ContentPreviewProps {
