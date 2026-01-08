@@ -46,7 +46,7 @@ export const ThemePreviewPopper = ({
 
   return (
     <div className="h-full w-full scale-100">
-      <Button className="ml-8 mt-16 w-40 rounded-xl	" ref={ref}>
+      <Button className="ml-8 mt-16 w-36 rounded-xl h-10" ref={ref}>
         Tooltip target
       </Button>
       <Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={customStyle}>
