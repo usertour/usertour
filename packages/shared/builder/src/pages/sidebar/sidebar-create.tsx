@@ -23,8 +23,8 @@ const contentList: any[] = [
     data: getDefaultDataForType('modal'),
     type: 'modal',
     text: 'Modal',
-    width: '240px',
-    height: '240px',
+    width: '300px',
+    height: '300px',
     scale: 0.5,
   },
   {

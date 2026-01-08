@@ -1,6 +1,6 @@
 import { ContentEditorRoot } from '@usertour/types';
 
-export const createValue1 = [
+const defaultTooltipContent = [
   {
     element: {
       type: 'group',
@@ -45,7 +45,7 @@ export const createValue1 = [
   },
 ] as ContentEditorRoot[];
 
-export const createValue2 = [
+const defaultHiddenContent = [
   {
     element: {
       type: 'group',
@@ -139,7 +139,7 @@ export const createValue2 = [
   },
 ] as ContentEditorRoot[];
 
-export const createValue3 = [
+const defaultModalContent = [
   {
     element: {
       type: 'group',
@@ -261,16 +261,14 @@ export const createValue3 = [
   },
 ] as ContentEditorRoot[];
 
-export const createValue4 = createValue3;
-
 // Create base step data based on type
 export const getDefaultDataForType = (type: string) => {
   switch (type) {
     case 'modal':
-      return createValue4; // Use createValue4 for modal (has image and buttons)
+      return defaultModalContent; // Use defaultModalContent for modal (has image and buttons)
     case 'hidden':
-      return createValue2; // Use createValue2 for hidden (has buttons)
+      return defaultHiddenContent; // Use defaultHiddenContent for hidden (has buttons)
     default:
-      return createValue1; // Use createValue1 for tooltip (simple text)
+      return defaultTooltipContent; // Use defaultTooltipContent for tooltip (simple text)
   }
 };

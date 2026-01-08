@@ -1,7 +1,7 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
 import { useThemeListContext } from '@usertour-packages/contexts';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
-import { createValue1 } from '../../../utils/default-data';
+import { getDefaultDataForType } from '../../../utils/default-data';
 import { convertSettings, convertToCssVars } from '@usertour/helpers';
 import { Theme, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useRef, useState } from 'react';
@@ -67,7 +67,7 @@ export const BannerEmbed = () => {
               projectId={projectId}
               zIndex={11111 + EXTENSION_CONTENT_POPPER}
               customUploadRequest={handleCustomUploadRequest}
-              initialValue={createValue1 as ContentEditorRoot[]}
+              initialValue={getDefaultDataForType('tooltip') as ContentEditorRoot[]}
               onValueChange={() => {}}
             />
           </div>

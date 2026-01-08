@@ -9,7 +9,7 @@ import { useContentListContext } from '@usertour-packages/contexts';
 import { updateContentStep } from '@usertour-packages/gql';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { createValue1 } from '../../utils/default-data';
+import { getDefaultDataForType } from '../../utils/default-data';
 import { defaultStep, getErrorMessage, hasActionError, hasError } from '@usertour/helpers';
 import {
   AttributeBizTypes,
@@ -83,7 +83,7 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
       ...defaultStep,
       type: 'tooltip',
       name: 'Untitled',
-      data: createValue1,
+      data: getDefaultDataForType('tooltip'),
       sequence,
     };
     return createStep(currentVersion, step);

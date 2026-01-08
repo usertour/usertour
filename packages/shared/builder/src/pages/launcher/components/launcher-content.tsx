@@ -9,7 +9,7 @@ import {
   LauncherRoot,
 } from '@usertour-packages/sdk/src/launcher';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
-import { createValue1 } from '../../../utils/default-data';
+import { getDefaultDataForType } from '../../../utils/default-data';
 import {
   ContentActionsItemType,
   LauncherActionType,
@@ -63,7 +63,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
                   initialValue={
                     data.tooltip.content.length > 0
                       ? (data.tooltip.content as ContentEditorRoot[])
-                      : (createValue1 as ContentEditorRoot[])
+                      : (getDefaultDataForType('tooltip') as ContentEditorRoot[])
                   }
                   onValueChange={onValueChange}
                 />

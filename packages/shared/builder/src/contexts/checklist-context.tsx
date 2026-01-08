@@ -1,5 +1,5 @@
 import { ContentEditorRoot } from '@usertour/types';
-import { createValue1 } from '../utils/default-data';
+import { getDefaultDataForType } from '../utils/default-data';
 import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { deepmerge } from 'deepmerge-ts';
@@ -62,7 +62,7 @@ export function ChecklistProvider(props: ChecklistProviderProps): JSX.Element {
       (currentVersion?.data?.content && currentVersion?.data?.content.length === 0) ||
       isUndefined(currentVersion?.data?.content)
     ) {
-      mergedData.content = createValue1 as ContentEditorRoot[];
+      mergedData.content = getDefaultDataForType('tooltip') as ContentEditorRoot[];
     }
     return mergedData;
   }, [currentVersion]);
