@@ -88,8 +88,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/tailwind
       '@usertour/helpers':
-        specifier: ^0.0.59
-        version: 0.0.59(typescript@5.1.6)
+        specifier: ^0.0.60
+        version: 0.0.60(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.43
         version: 0.0.43
@@ -341,8 +341,8 @@ importers:
         specifier: ^4.7.1
         version: 4.7.4
       '@usertour/helpers':
-        specifier: ^0.0.59
-        version: 0.0.59(typescript@4.9.5)
+        specifier: ^0.0.60
+        version: 0.0.60(typescript@4.9.5)
       '@usertour/license':
         specifier: ^0.0.2
         version: 0.0.2
@@ -744,8 +744,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.59
-        version: 0.0.59(typescript@5.1.6)
+        specifier: ^0.0.60
+        version: 0.0.60(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.43
         version: 0.0.43
@@ -3242,8 +3242,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.59
-        version: 0.0.59(typescript@5.1.6)
+        specifier: ^0.0.60
+        version: 0.0.60(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.43
         version: 0.0.43
@@ -3486,8 +3486,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.59
-        version: 0.0.59(typescript@5.1.6)
+        specifier: ^0.0.60
+        version: 0.0.60(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.43
         version: 0.0.43
@@ -3750,8 +3750,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.59
-        version: 0.0.59(typescript@5.1.6)
+        specifier: ^0.0.60
+        version: 0.0.60(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.43
         version: 0.0.43
@@ -3994,8 +3994,8 @@ importers:
         specifier: workspace:^
         version: link:../gql
       '@usertour/helpers':
-        specifier: ^0.0.59
-        version: 0.0.59(typescript@5.1.6)
+        specifier: ^0.0.60
+        version: 0.0.60(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.43
         version: 0.0.43
@@ -4127,8 +4127,8 @@ importers:
         specifier: workspace:^
         version: link:../../tailwind
       '@usertour/helpers':
-        specifier: ^0.0.59
-        version: 0.0.59(typescript@5.1.6)
+        specifier: ^0.0.60
+        version: 0.0.60(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.43
         version: 0.0.43
@@ -8832,8 +8832,8 @@ packages:
   '@ungap/structured-clone@1.2.0':
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  '@usertour/helpers@0.0.59':
-    resolution: {integrity: sha512-bd8XU1dlODR9b5+2IAgcEyy2YR1bf0v3vugCWSNVhumayh6T6lS/gOl+aiZ8/6BuoQCMIsw59/6K9qi4kpGMzw==}
+  '@usertour/helpers@0.0.60':
+    resolution: {integrity: sha512-hI1xaTzVMc1GTWmFs2pXXQ7J0NpdN46H6zGfeuWOjcCLVe1XpTuVZkYNuJi4SkNAMYjW8OKEFYZChV6f048uKw==}
 
   '@usertour/license@0.0.2':
     resolution: {integrity: sha512-9TbX5kfupLmJ04vwDr6vOrfSNQ8lW5lArvx/9V62uDDuOnAqV4T7/lhk/ijJXrKf4KfgmeCVMG7YR1+3lKCQJw==}
@@ -21014,7 +21014,7 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@usertour/helpers@0.0.59(typescript@4.9.5)':
+  '@usertour/helpers@0.0.60(typescript@4.9.5)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@usertour/types': 0.0.43
@@ -21027,7 +21027,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.59(typescript@5.1.6)':
+  '@usertour/helpers@0.0.60(typescript@5.1.6)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@usertour/types': 0.0.43
