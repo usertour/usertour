@@ -434,14 +434,21 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
         onClick();
       }
     };
+    const buttonClassName = cn(
+      'size-6 rounded',
+      'inline-flex items-center justify-center',
+      'text-sdk-xbutton',
+      'fixed top-2 right-2',
+      'hover:bg-sdk-hover',
+      'outline-none cursor-pointer z-50',
+      className,
+    );
+
     return (
       <Button
         type="button"
         variant="custom"
-        className={cn(
-          'size-6 rounded inline-flex items-center justify-center text-sdk-xbutton fixed top-2 right-2 hover:bg-sdk-hover outline-none cursor-pointer z-50',
-          className,
-        )}
+        className={buttonClassName}
         aria-label="Close"
         onClick={handleOnClick}
         ref={forwardedRef}

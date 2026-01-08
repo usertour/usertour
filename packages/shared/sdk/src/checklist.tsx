@@ -541,21 +541,37 @@ const ChecklistStaticPopper = forwardRef<
 
 ChecklistStaticPopper.displayName = 'ChecklistStaticPopper';
 
-const ChecklistDropdown = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+const ChecklistDropdown = forwardRef<HTMLButtonElement, React.HTMLAttributes<HTMLButtonElement>>(
   (props, ref) => {
     const { handleExpandedChange } = useChecklistRootContext();
+    const { className, ...restProps } = props;
+
+    const buttonClassName = cn(
+      'size-6 rounded',
+      'inline-flex items-center justify-center',
+      'text-sdk-xbutton',
+      'fixed top-2 right-2',
+      'hover:bg-sdk-hover',
+      'outline-none cursor-pointer z-50',
+      className,
+    );
+
+    const handleClick = useCallback(async () => {
+      await handleExpandedChange?.(false);
+    }, [handleExpandedChange]);
+
     return (
-      <div
-        className="rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-sdk-xbutton absolute top-[5px] right-[5px] hover:bg-sdk-primary/40 outline-none cursor-pointer"
+      <Button
+        forSdk
+        variant="custom"
         ref={ref}
-        {...props}
+        className={buttonClassName}
+        onClick={handleClick}
+        aria-label="Close checklist"
+        {...restProps}
       >
-        <DropDownIcon
-          height={24}
-          width={24}
-          onClick={async () => await handleExpandedChange?.(false)}
-        />
-      </div>
+        <DropDownIcon height={24} width={24} />
+      </Button>
     );
   },
 );
