@@ -59,7 +59,10 @@ export const FlowListContent = () => {
       <Separator className="my-6" />
       {isLoading && <ContentListSkeleton count={9} />}
       {!isLoading && contents && contents.length === 0 && (
-        <EmptyPlaceholder>
+        <EmptyPlaceholder
+          name="No flows added"
+          description="You have not added any flows. Add one below."
+        >
           <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
             <PlusCircledIcon className="mr-2 h-4 w-4" />
             Create Flow
