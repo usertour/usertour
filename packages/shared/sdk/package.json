@@ -24,7 +24,7 @@
     "@usertour-packages/react-context": "workspace:^",
     "@usertour-packages/react-use-size": "workspace:^",
     "@usertour-packages/tailwind": "workspace:^",
-    "@usertour/helpers": "^0.0.58",
+    "@usertour/helpers": "^0.0.59",
     "@radix-ui/react-icons": "^1.3.0",
     "@usertour/types": "^0.0.43",
     "react": "^18.2.0",

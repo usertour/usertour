@@ -5,6 +5,7 @@ import { createContext } from '@usertour-packages/react-context';
 import { useSize } from '@usertour-packages/react-use-size';
 import { CloseIcon, UsertourIcon } from '@usertour-packages/icons';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { Button } from '@usertour-packages/button';
 import type { SideObject, Rect } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
 import { computePositionStyle } from './utils/position';
@@ -434,10 +435,11 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
       }
     };
     return (
-      <button
+      <Button
         type="button"
+        variant="custom"
         className={cn(
-          'rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-sdk-xbutton absolute top-[5px] right-[5px] hover:bg-sdk-primary/40 outline-none cursor-default z-50',
+          'size-6 rounded inline-flex items-center justify-center text-sdk-xbutton fixed top-2 right-2 hover:bg-sdk-hover outline-none cursor-pointer z-50',
           className,
         )}
         aria-label="Close"
@@ -445,7 +447,7 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
         ref={forwardedRef}
       >
         <CloseIcon />
-      </button>
+      </Button>
     );
   },
 );

@@ -86,7 +86,7 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.font.linkColor = settings.brandColor.background;
   }
   if (settings.xbutton.color === 'Auto') {
-    data.xbutton.color = settings.brandColor.background;
+    data.xbutton.color = settings.mainColor.color;
   }
 
   if (settings?.progress?.color === 'Auto') {
