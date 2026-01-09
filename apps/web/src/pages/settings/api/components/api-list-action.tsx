@@ -127,7 +127,7 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[200px]">
+        <DropdownMenuContent align="start" className="w-[200px]">
           <DropdownMenuItem onClick={handleReveal}>
             <EyeOpenIcon className="w-4 h-4 mr-2" />
             Reveal API key

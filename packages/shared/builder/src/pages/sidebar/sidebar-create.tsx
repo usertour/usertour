@@ -3,7 +3,7 @@ import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import { EXTENSION_SIDEBAR_POPPER } from '@usertour-packages/constants';
 import { PopperPreview } from '@usertour-packages/shared-components';
-import { getDefaultDataForType } from '@usertour-packages/shared-editor';
+import { getDefaultDataForType } from '../../utils/default-data';
 import { defaultStep } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
@@ -23,8 +23,8 @@ const contentList: any[] = [
     data: getDefaultDataForType('modal'),
     type: 'modal',
     text: 'Modal',
-    width: '240px',
-    height: '240px',
+    width: '300px',
+    height: '300px',
     scale: 0.5,
   },
   {

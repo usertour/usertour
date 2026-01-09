@@ -62,15 +62,17 @@ export const AnalyticsSteps = () => {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-1/4">Step</TableHead>
-                <TableHead className="w-28">Unique views</TableHead>
-                <TableHead className="w-24">View rate</TableHead>
+                <TableHead className="w-72">Step</TableHead>
+                <TableHead className="w-28 text-right">Unique views</TableHead>
+                <TableHead className="w-6" />
+                <TableHead className="w-28 text-right">View rate</TableHead>
+                <TableHead className="w-6" />
                 <TableHead />
-                <TableHead className="w-28 text-center">
+                <TableHead className="w-28 text-right">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="flex items-center justify-center cursor-help">
+                        <div className="flex items-center justify-end cursor-help">
                           <AlertTriangleIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </TooltipTrigger>
@@ -80,6 +82,7 @@ export const AnalyticsSteps = () => {
                     </Tooltip>
                   </TooltipProvider>
                 </TableHead>
+                <TableHead className="w-6" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -99,17 +102,21 @@ export const AnalyticsSteps = () => {
                           {isGoalStep(step, index) && <GoalStepBadge />}
                         </div>
                       </TableCell>
-                      <TableCell className="py-[1px]">{step.analytics.uniqueViews}</TableCell>
-                      <TableCell className="py-[1px]">{viewRate}%</TableCell>
+                      <TableCell className="py-[1px] text-right">
+                        {step.analytics.uniqueViews}
+                      </TableCell>
+                      <TableCell className="py-[1px] w-6" />
+                      <TableCell className="py-[1px] text-right">{viewRate}%</TableCell>
+                      <TableCell className="py-[1px] w-6" />
                       <TableCell className="py-[1px] px-0">
                         <div
-                          className="bg-success h-10 max-w-full"
+                          className="h-9 bg-gradient-to-r from-success/50 to-success max-w-full"
                           style={{
                             width: `${viewRate}%`,
                           }}
                         />
                       </TableCell>
-                      <TableCell className="py-[1px] text-center">
+                      <TableCell className="py-[1px] text-right">
                         {(() => {
                           const failureRate = calculateUniqueFailureRate(
                             step.analytics.uniqueTooltipTargetMissingCount ?? 0,
@@ -136,12 +143,13 @@ export const AnalyticsSteps = () => {
                           );
                         })()}
                       </TableCell>
+                      <TableCell className="py-[1px] w-6" />
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>

@@ -2,7 +2,7 @@ import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-colo
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsSurvey = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
 
   // Update survey settings helper function
   const update = (data: Partial<typeof settings.survey>) => {
@@ -26,6 +26,7 @@ export const ThemeSettingsSurvey = () => {
           onChange={(value: string) => {
             update({ color: value });
           }}
+          disabled={isViewOnly}
         />
       </div>
     </div>

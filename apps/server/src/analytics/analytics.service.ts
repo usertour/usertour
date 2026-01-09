@@ -571,12 +571,17 @@ export class AnalyticsService {
       where: {
         projectId,
         codeName: {
-          in: [BizEvents.CHECKLIST_SEEN, BizEvents.CHECKLIST_TASK_COMPLETED],
+          in: [
+            BizEvents.CHECKLIST_SEEN,
+            BizEvents.CHECKLIST_TASK_COMPLETED,
+            BizEvents.CHECKLIST_TASK_CLICKED,
+          ],
         },
       },
     });
     const startEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_SEEN);
     const completeEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_TASK_COMPLETED);
+    const clickEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_TASK_CLICKED);
     if (!startEvent || !completeEvent) {
       return false;
     }
@@ -615,6 +620,24 @@ export class AnalyticsService {
         value: item.id,
         isDistinct: false,
       });
+      const uniqueClicks = clickEvent
+        ? await this.aggregationByItem({
+            ...taskCondition,
+            eventId: clickEvent.id,
+            key: 'checklist_task_id',
+            value: item.id,
+            isDistinct: true,
+          })
+        : 0;
+      const totalClicks = clickEvent
+        ? await this.aggregationByItem({
+            ...taskCondition,
+            eventId: clickEvent.id,
+            key: 'checklist_task_id',
+            value: item.id,
+            isDistinct: false,
+          })
+        : 0;
       ret.push({
         name: item.name,
         taskId: item.id,
@@ -623,6 +646,8 @@ export class AnalyticsService {
           totalViews,
           uniqueCompletions,
           totalCompletions,
+          uniqueClicks,
+          totalClicks,
         },
       });
     }
@@ -953,6 +978,7 @@ export class AnalyticsService {
             },
             include: {
               bizUser: true,
+              bizCompany: true,
               bizEvent: { include: { event: true } },
               version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
             },

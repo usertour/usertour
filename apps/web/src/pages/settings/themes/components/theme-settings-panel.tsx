@@ -3,7 +3,7 @@ import { convertSettings } from '@/utils/convert-settings';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { createContext, forwardRef, useContext, useMemo, useCallback, ReactNode } from 'react';
 import { ThemeSettingsBackdrop } from './settings/theme-settings-backdrop';
 import { ThemeSettingsBasicColor } from './settings/theme-settings-basic-color';
@@ -70,6 +70,7 @@ interface ThemeSettingsContextProps {
   setSettings: React.Dispatch<React.SetStateAction<ThemeTypesSetting>>;
   settings: ThemeTypesSetting;
   finalSettings: ThemeTypesSetting | null;
+  isViewOnly: boolean;
 }
 
 const ThemeSettingsContext = createContext<ThemeSettingsContextProps | null>(null);
@@ -88,6 +89,7 @@ interface ThemeSettingsPanelProps {
   onSettingsChange: (settings: ThemeTypesSetting) => void;
   className?: string;
   children?: ReactNode;
+  isViewOnly?: boolean;
 }
 
 // The main container component that provides context and structure
@@ -96,6 +98,7 @@ export const ThemeSettingsPanel = ({
   onSettingsChange,
   className,
   children,
+  isViewOnly = false,
 }: ThemeSettingsPanelProps) => {
   // Calculate finalSettings using useMemo
   const finalSettings = useMemo(() => {
@@ -116,7 +119,7 @@ export const ThemeSettingsPanel = ({
     [settings, onSettingsChange],
   );
 
-  const value = { settings, setSettings, finalSettings };
+  const value = { settings, setSettings, finalSettings, isViewOnly };
 
   return (
     <ThemeSettingsContext.Provider value={value}>
@@ -247,6 +250,7 @@ export const ThemeSettingsDefaultPanel = ({
     defaultSettings={defaultSettings}
     onSettingsChange={onSettingsChange}
     className={className}
+    isViewOnly={isViewOnly}
   >
     {showConditionalVariations && (
       <div className="p-10 border-b border-blue-100">

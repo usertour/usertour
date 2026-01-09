@@ -9,7 +9,7 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { SegmentIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { ComboBox } from '@usertour-packages/combo-box';
 import {
   Dispatch,
@@ -26,8 +26,8 @@ import { Segment } from '@usertour/types';
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
-import { RulesLogic } from './rules-logic';
-import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesPopover, RulesPopoverContent } from './rules-popper';
+import { RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
 import { useAutoOpenPopover } from './use-auto-open-popover';
@@ -240,37 +240,34 @@ export const RulesSegment = (props: RulesSegmentProps) => {
   return (
     <RulesSegmentContext.Provider value={value}>
       <RulesError open={openError}>
-        <div className="flex flex-row space-x-3">
-          <RulesLogic index={index} disabled={disabled} />
-          <RulesErrorAnchor asChild>
-            <RulesConditionRightContent disabled={disabled}>
-              <RulesPopover onOpenChange={handleOnOpenChange} open={open} defaultOpen={false}>
-                <RulesPopoverTrigger icon={<SegmentIcon width={16} height={16} />}>
-                  {selectedPreset === undefined && 'User'}
-                  {selectedPreset?.bizType === 'USER' && 'User'}
-                  {selectedPreset?.bizType === 'COMPANY' && 'Company'}{' '}
-                  {conditions.find((c) => c.value === conditionValue)?.name}{' '}
-                  <span className="font-bold">{selectedPreset?.name} </span>
-                </RulesPopoverTrigger>
-                <RulesPopoverContent>
-                  <div className=" flex flex-col space-y-2">
-                    <div className=" flex flex-col space-y-1">
-                      <div>
-                        {selectedPreset === undefined && 'User'}
-                        {selectedPreset?.bizType === 'USER' && 'User'}
-                        {selectedPreset?.bizType === 'COMPANY' && 'Company'}
-                      </div>
-                      <RulesSegmentCondition />
-                      <RulesSegmentName />
+        <RulesErrorAnchor asChild>
+          <RulesConditionRightContent disabled={disabled}>
+            <RulesPopover onOpenChange={handleOnOpenChange} open={open} defaultOpen={false}>
+              <RulesPopoverTriggerWrapper icon={<SegmentIcon width={16} height={16} />}>
+                {selectedPreset === undefined && 'User'}
+                {selectedPreset?.bizType === 'USER' && 'User'}
+                {selectedPreset?.bizType === 'COMPANY' && 'Company'}{' '}
+                {conditions.find((c) => c.value === conditionValue)?.name}{' '}
+                <span className="font-bold">{selectedPreset?.name} </span>
+              </RulesPopoverTriggerWrapper>
+              <RulesPopoverContent>
+                <div className=" flex flex-col space-y-2">
+                  <div className=" flex flex-col space-y-1">
+                    <div>
+                      {selectedPreset === undefined && 'User'}
+                      {selectedPreset?.bizType === 'USER' && 'User'}
+                      {selectedPreset?.bizType === 'COMPANY' && 'Company'}
                     </div>
+                    <RulesSegmentCondition />
+                    <RulesSegmentName />
                   </div>
-                </RulesPopoverContent>
-              </RulesPopover>
-              <RulesRemove index={index} />
-            </RulesConditionRightContent>
-          </RulesErrorAnchor>
-          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-        </div>
+                </div>
+              </RulesPopoverContent>
+            </RulesPopover>
+            <RulesRemove index={index} />
+          </RulesConditionRightContent>
+        </RulesErrorAnchor>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </RulesError>
     </RulesSegmentContext.Provider>
   );

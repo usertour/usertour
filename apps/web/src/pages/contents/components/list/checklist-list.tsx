@@ -5,7 +5,7 @@ import { Button } from '@usertour-packages/button';
 import { Separator } from '@usertour-packages/separator';
 import { useState } from 'react';
 import { ChecklistCreateForm } from '../shared/checklist-create-form';
-import { EmptyPlaceholder } from '../shared/empty-placeholder';
+import { EmptyPlaceholder } from '@/components/molecules/segment/ui';
 import { DataTable } from './data-table';
 import { useAppContext } from '@/contexts/app-context';
 

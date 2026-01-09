@@ -1,3 +1,4 @@
+import { useChecklistPreviewAnimation } from '@usertour-packages/shared-hooks';
 import {
   ChecklistContainer,
   ChecklistDismiss,
@@ -10,8 +11,10 @@ import {
 } from '@usertour-packages/sdk/src/checklist';
 import { PopperMadeWith } from '@usertour-packages/sdk/src/popper';
 import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@usertour/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';
+import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
+import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface ThemePreviewChecklistProps {
   expanded?: boolean;
@@ -20,19 +23,32 @@ interface ThemePreviewChecklistProps {
 
 export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
   const { expanded = true, settings } = props;
-
-  const [data] = useState<ChecklistData>({
-    ...defaultChecklistData,
-    initialDisplay: expanded ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
-  });
-
-  if (!settings) return null;
+  const { shouldShowMadeWith } = useSubscriptionContext();
 
   const [expandedState, setExpandedState] = useState(expanded);
+
+  // Use shared hook for animation and completion state management
+  const { completedItemIds, animatedItemIds, handleItemClick } =
+    useChecklistPreviewAnimation(expandedState);
+
+  // Compute data with dynamic isCompleted and isShowAnimation
+  const data = useMemo<ChecklistData>(() => {
+    return {
+      ...defaultChecklistData,
+      initialDisplay: expanded ? ChecklistInitialDisplay.EXPANDED : ChecklistInitialDisplay.BUTTON,
+      items: defaultChecklistData.items.map((item) => ({
+        ...item,
+        isCompleted: completedItemIds.has(item.id),
+        isShowAnimation: animatedItemIds.has(item.id),
+      })),
+    };
+  }, [expanded, completedItemIds, animatedItemIds]);
 
   useEffect(() => {
     setExpandedState(expanded);
   }, [expanded]);
+
+  if (!settings) return null;
 
   return (
     <div className="w-full h-full scale-100">
@@ -48,11 +64,12 @@ export const ThemePreviewChecklist = (props: ThemePreviewChecklistProps) => {
         <ChecklistContainer>
           <ChecklistPopper zIndex={10000}>
             <ChecklistPopperContent>
+              <ContentEditorSerialize contents={data.content} />
               <ChecklistDropdown />
               <ChecklistProgress />
-              <ChecklistItems />
+              <ChecklistItems onClick={handleItemClick} disabledUpdate />
               <ChecklistDismiss />
-              <PopperMadeWith />
+              {shouldShowMadeWith && <PopperMadeWith />}
             </ChecklistPopperContent>
           </ChecklistPopper>
         </ChecklistContainer>

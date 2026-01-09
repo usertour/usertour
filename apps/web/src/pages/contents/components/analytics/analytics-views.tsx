@@ -20,15 +20,13 @@ interface AnalyticsCardProps {
 const AnalyticsCard = ({ title, tooltip, value, icon }: AnalyticsCardProps) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium flex flex-row items-center gap-1">
+      <CardTitle className="text-sm font-medium flex flex-row items-center gap-1 text-muted-foreground">
         {title}
         <QuestionTooltip>{tooltip}</QuestionTooltip>
       </CardTitle>
       {icon}
     </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
-    </CardContent>
+    <CardContent className="text-3xl font-bold">{value}</CardContent>
   </Card>
 );
 

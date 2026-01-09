@@ -3,7 +3,7 @@ import { Button } from '@usertour-packages/button';
 import { Calendar } from '@usertour-packages/calendar';
 import { TimeIcon } from '@usertour-packages/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { format, parseISO } from 'date-fns';
 import { ComboBox } from '@usertour-packages/combo-box';
 import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
@@ -15,8 +15,8 @@ import {
 import type { TimeConditionData, TimeConditionDataV2 } from '@usertour/types';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
-import { RulesLogic } from './rules-logic';
-import { RulesPopover, RulesPopoverContent, RulesPopoverTrigger } from './rules-popper';
+import { RulesPopover, RulesPopoverContent } from './rules-popper';
+import { RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
 import { useRulesContext, useRulesZIndex } from './rules-context';
@@ -65,7 +65,11 @@ const parseInitialData = (data?: TimeConditionData) => {
       if (!dateStr) {
         return undefined;
       }
-      const [month, day, year] = dateStr.split('/');
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) {
+        return undefined;
+      }
+      const [month, day, year] = parts;
       if (!month || !day || !year) {
         return undefined;
       }
@@ -189,11 +193,19 @@ const RulesCurrentTimeTimer = (props: {
     [num],
   );
 
+  // Provide a no-op function if onValueChange is not provided
+  const handleValueChange = useCallback(
+    (value: string) => {
+      onValueChange?.(value);
+    },
+    [onValueChange],
+  );
+
   return (
     <ComboBox
       options={options}
       value={defaultValue}
-      onValueChange={onValueChange || (() => {})}
+      onValueChange={handleValueChange}
       className="w-16 px-2"
       contentStyle={{ zIndex }}
     />
@@ -260,82 +272,69 @@ export const RulesCurrentTime = (props: RulesCurrentTimeProps) => {
       // Save in new format (ISO 8601)
       updateConditionData(index, timeData);
     },
-    [
-      getTimeData,
-      index,
-      updateConditionData,
-      startDate,
-      startDateHour,
-      startDateMinute,
-      endDate,
-      endDateHour,
-      endDateMinute,
-    ],
+    [getTimeData, index, updateConditionData],
   );
 
   return (
     <RulesError open={openError}>
-      <div className="flex flex-row space-x-3">
-        <RulesLogic index={index} disabled={disabled} />
-        <RulesErrorAnchor asChild>
-          <RulesConditionRightContent disabled={disabled}>
-            <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
-              <RulesPopoverTrigger icon={<TimeIcon width={16} height={16} />}>
-                <div className="grow pr-6 text-sm text-wrap break-all">
-                  Current time is {endDate ? 'between' : 'after'}{' '}
-                  {startDate && (
-                    <span className="font-bold">
-                      {`${format(startDate, 'PPP')}, ${startDateHour}:${startDateMinute}`}
-                    </span>
-                  )}
-                  {endDate && ' and '}
-                  {endDate && (
-                    <span className="font-bold">
-                      {`${format(endDate, 'PPP')}, ${endDateHour}:${endDateMinute}`}
-                    </span>
-                  )}
+      <RulesErrorAnchor asChild>
+        <RulesConditionRightContent disabled={disabled}>
+          <RulesPopover onOpenChange={handleOnOpenChange} open={open}>
+            <RulesPopoverTriggerWrapper icon={<TimeIcon width={16} height={16} />}>
+              <div className="grow pr-6 text-sm text-wrap break-all">
+                Current time is {endDate ? 'between' : 'after'}{' '}
+                {startDate && (
+                  <span className="font-bold">
+                    {`${format(startDate, 'PPP')}, ${startDateHour}:${startDateMinute}`}
+                  </span>
+                )}
+                {endDate && ' and '}
+                {endDate && (
+                  <span className="font-bold">
+                    {`${format(endDate, 'PPP')}, ${endDateHour}:${endDateMinute}`}
+                  </span>
+                )}
+              </div>
+            </RulesPopoverTriggerWrapper>
+            <RulesPopoverContent>
+              <div className="flex flex-col space-y-1">
+                <div>Start time</div>
+                <div className="flex flex-row space-x-2 items-center">
+                  <RulesCurrentTimeDatePicker date={startDate} setDate={setStartDate} />
+                  <RulesCurrentTimeTimer
+                    num={24}
+                    defaultValue={startDateHour}
+                    onValueChange={setStartDateHour}
+                  />
+                  <span>:</span>
+                  <RulesCurrentTimeTimer
+                    num={60}
+                    defaultValue={startDateMinute}
+                    onValueChange={setStartDateMinute}
+                  />
                 </div>
-              </RulesPopoverTrigger>
-              <RulesPopoverContent>
-                <div className="flex flex-col space-y-1">
-                  <div>Start time</div>
-                  <div className="flex flex-row space-x-2 items-center">
-                    <RulesCurrentTimeDatePicker date={startDate} setDate={setStartDate} />
-                    <RulesCurrentTimeTimer
-                      num={24}
-                      defaultValue={startDateHour}
-                      onValueChange={setStartDateHour}
-                    />
-                    <span>:</span>
-                    <RulesCurrentTimeTimer
-                      num={60}
-                      defaultValue={startDateMinute}
-                      onValueChange={setStartDateMinute}
-                    />
-                  </div>
-                  <div>End time</div>
-                  <div className="flex flex-row space-x-2 items-center">
-                    <RulesCurrentTimeDatePicker date={endDate} setDate={setEndDate} />
-                    <RulesCurrentTimeTimer
-                      num={24}
-                      defaultValue={endDateHour}
-                      onValueChange={setEndDateHour}
-                    />
-                    <span>:</span>
-                    <RulesCurrentTimeTimer
-                      num={60}
-                      defaultValue={endDateMinute}
-                      onValueChange={setEndDateMinute}
-                    />
-                  </div>
+                <div>End time</div>
+                <div className="flex flex-row space-x-2 items-center">
+                  <RulesCurrentTimeDatePicker date={endDate} setDate={setEndDate} />
+                  <RulesCurrentTimeTimer
+                    num={24}
+                    defaultValue={endDateHour}
+                    onValueChange={setEndDateHour}
+                  />
+                  <span>:</span>
+                  <RulesCurrentTimeTimer
+                    num={60}
+                    defaultValue={endDateMinute}
+                    onValueChange={setEndDateMinute}
+                  />
                 </div>
-              </RulesPopoverContent>
-            </RulesPopover>
-            <RulesRemove index={index} />
-          </RulesConditionRightContent>
-        </RulesErrorAnchor>
-        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-      </div>
+              </div>
+            </RulesPopoverContent>
+          </RulesPopover>
+          <RulesRemove index={index} />
+        </RulesConditionRightContent>
+      </RulesErrorAnchor>
+      <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
     </RulesError>
   );
 };

@@ -39,10 +39,11 @@
     "@usertour-packages/react-compose-refs": "workspace:^",
     "@usertour-packages/scroll-area": "workspace:^",
     "@usertour-packages/select": "workspace:^",
-    "@usertour/helpers": "^0.0.53",
+    "@usertour/helpers": "^0.0.60",
+    "@usertour-packages/tailwind": "workspace:*",
     "@usertour-packages/tabs": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
-    "@usertour/types": "^0.0.40",
+    "@usertour/types": "^0.0.43",
     "@usertour-packages/switch": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
     "@usertour-packages/textarea": "workspace:^",
@@ -68,7 +69,6 @@
     "slate": "^0.103.0",
     "slate-history": "^0.100.0",
     "slate-react": "^0.107.1",
-    "tailwind-merge": "^1.14.0",
     "zustand": "^4.4.1"
   },
   "peerDependencies": {

@@ -9,7 +9,7 @@ import { fontItems } from '@/utils/webfonts';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsFont = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
   const update = (data: Partial<typeof settings.font>) => {
     const { font } = settings;
     setSettings((pre) => ({
@@ -28,6 +28,7 @@ export const ThemeSettingsFont = () => {
             onSelect={(item: ThemeSelectFontType) => {
               update({ fontFamily: item.name });
             }}
+            disabled={isViewOnly}
           />
           <ThemeSettingInput
             text="Font size"
@@ -36,6 +37,7 @@ export const ThemeSettingsFont = () => {
             onChange={(value: string) => {
               update({ fontSize: Number(value) });
             }}
+            disabled={isViewOnly}
           />
           <ThemeSettingInput
             text="Line height"
@@ -44,6 +46,7 @@ export const ThemeSettingsFont = () => {
             onChange={(value: string) => {
               update({ lineHeight: Number(value) });
             }}
+            disabled={isViewOnly}
           />
           <ThemeSettingSelect
             text="Font weight (normal)"
@@ -52,6 +55,7 @@ export const ThemeSettingsFont = () => {
             onValueChange={(value: string) => {
               update({ fontWeightNormal: Number(value) });
             }}
+            disabled={isViewOnly}
           />
           <ThemeSettingSelect
             text="Font weight (bold)"
@@ -60,6 +64,7 @@ export const ThemeSettingsFont = () => {
               update({ fontWeightBold: Number(value) });
             }}
             name="font-weight-bold"
+            disabled={isViewOnly}
           />
           <ThemeSettingInput
             text="Header 1 font size"
@@ -68,6 +73,7 @@ export const ThemeSettingsFont = () => {
             onChange={(value: string) => {
               update({ h1FontSize: Number(value) });
             }}
+            disabled={isViewOnly}
           />
           <ThemeSettingInput
             text="Header 2 font size"
@@ -76,6 +82,7 @@ export const ThemeSettingsFont = () => {
             onChange={(value: string) => {
               update({ h2FontSize: Number(value) });
             }}
+            disabled={isViewOnly}
           />
           <ThemeSelectColor
             name="link-color"
@@ -87,6 +94,7 @@ export const ThemeSettingsFont = () => {
               update({ linkColor: value });
             }}
             text="Link color"
+            disabled={isViewOnly}
           />
         </div>
       </div>

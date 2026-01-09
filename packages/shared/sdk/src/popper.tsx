@@ -5,10 +5,11 @@ import { createContext } from '@usertour-packages/react-context';
 import { useSize } from '@usertour-packages/react-use-size';
 import { CloseIcon, UsertourIcon } from '@usertour-packages/icons';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { Button } from '@usertour-packages/button';
 import type { SideObject, Rect } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
 import { computePositionStyle } from './utils/position';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { Align, ProgressBarType, Side } from '@usertour/types';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';
@@ -433,19 +434,27 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
         onClick();
       }
     };
+    const buttonClassName = cn(
+      'size-6 rounded',
+      'inline-flex items-center justify-center',
+      'text-sdk-xbutton',
+      'fixed top-2 right-2',
+      'hover:bg-sdk-hover',
+      'outline-none cursor-pointer z-50',
+      className,
+    );
+
     return (
-      <button
+      <Button
         type="button"
-        className={cn(
-          'rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-sdk-xbutton absolute top-[5px] right-[5px] hover:bg-sdk-primary/40 outline-none cursor-default z-50',
-          className,
-        )}
+        variant="custom"
+        className={buttonClassName}
         aria-label="Close"
         onClick={handleOnClick}
         ref={forwardedRef}
       >
         <CloseIcon />
-      </button>
+      </Button>
     );
   },
 );
@@ -535,16 +544,21 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
 const PopperMadeWith = forwardRef<HTMLDivElement>((_, ref) => {
   return (
     <>
-      <div ref={ref} className="absolute bottom-2 left-3 text-xs	opacity-50	hover:opacity-75		">
-        <a
-          href="https://www.usertour.io?utm_source=made-with-usertour&utm_medium=link&utm_campaign=made-with-usertour-widget"
-          className="!text-sdk-foreground !no-underline	 flex flex-row space-x-0.5 items-center !font-sans "
-          target="_blank"
-          rel="noopener noreferrer"
+      <div className="h-4">
+        <div
+          ref={ref}
+          className="absolute bottom-2 left-3 text-xs	opacity-50	hover:opacity-75		"
         >
-          <UsertourIcon width={14} height={14} />
-          <span>Made with Usertour</span>
-        </a>
+          <a
+            href="https://www.usertour.io?utm_source=made-with-usertour&utm_medium=link&utm_campaign=made-with-usertour-widget"
+            className="!text-sdk-foreground !no-underline	 flex flex-row space-x-0.5 items-center !font-sans "
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <UsertourIcon width={14} height={14} />
+            <span>Made with Usertour</span>
+          </a>
+        </div>
       </div>
     </>
   );
@@ -590,22 +604,26 @@ const PopperProgressContainer = forwardRef<
   const progressHeight = getProgressHeightVariable(type);
   const multiplier = type === ProgressBarType.NUMBERED ? 0.5 : 1;
 
-  // Calculate margin values based on position and multiplier
-  const marginValue = `calc(${progressHeight} * ${multiplier})`;
-  const marginTop = position === 'bottom' ? marginValue : '0';
-  const marginBottom = position === 'top' ? marginValue : '0';
+  // Calculate transform values based on position and multiplier
+  // Use transform for positioning (better performance, GPU-accelerated)
+  const transform =
+    position === 'top'
+      ? `translateY(calc(${progressHeight} * ${multiplier} * -1))`
+      : `translateY(calc(${progressHeight} * ${multiplier}))`;
 
   return (
-    <div
-      className={cn('w-full flex items-center justify-center overflow-hidden', className)}
-      ref={ref}
-      style={{
-        marginTop,
-        marginBottom,
-      }}
-    >
-      {children}
-    </div>
+    <>
+      <div
+        className={cn('w-full flex items-center justify-center overflow-hidden', className)}
+        ref={ref}
+        style={{
+          transform,
+        }}
+      >
+        {children}
+      </div>
+      {position === 'top' && type !== ProgressBarType.NUMBERED && <div className="h-[10px]" />}
+    </>
   );
 });
 PopperProgressContainer.displayName = 'PopperProgressContainer';
@@ -626,94 +644,81 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
 
   if (type === ProgressBarType.NARROW) {
     return (
-      <>
-        <PopperProgressContainer ref={ref} type={type} position={position}>
-          <div className="w-[80px] h-sdk-narrow-progress border border-sdk-progress rounded-lg">
-            <div
-              className="h-full bg-sdk-progress transition-[width] duration-300"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-        </PopperProgressContainer>
-      </>
+      <PopperProgressContainer ref={ref} type={type} position={position}>
+        <div className="w-[80px] h-sdk-narrow-progress border border-sdk-progress rounded-lg">
+          <div
+            className="h-full bg-sdk-progress transition-[width] duration-300"
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
+      </PopperProgressContainer>
     );
   }
   if (type === ProgressBarType.CHAIN_ROUNDED) {
     return (
-      <>
-        <PopperProgressContainer ref={ref} type={type} position={position}>
-          {Array.from({ length: maxItems }, (_, index) => (
-            <div
-              key={index}
-              className={`h-sdk-rounded-progress w-sdk-rounded-progress rounded-lg border border-sdk-progress transition-colors duration-300 mx-1 ${
-                index < displayStep ? 'bg-sdk-progress' : ''
-              }`}
-            />
-          ))}
-        </PopperProgressContainer>
-      </>
+      <PopperProgressContainer ref={ref} type={type} position={position}>
+        {Array.from({ length: maxItems }, (_, index) => (
+          <div
+            key={index}
+            className={`h-sdk-rounded-progress w-sdk-rounded-progress rounded-lg border border-sdk-progress transition-colors duration-300 mx-1 ${
+              index < displayStep ? 'bg-sdk-progress' : ''
+            }`}
+          />
+        ))}
+      </PopperProgressContainer>
     );
   }
   if (type === ProgressBarType.CHAIN_SQUARED) {
     return (
-      <>
-        <PopperProgressContainer ref={ref} type={type} position={position}>
-          {Array.from({ length: maxItems }, (_, index) => (
-            <div
-              key={index}
-              className={`h-sdk-squared-progress w-sdk-squared-progress border border-sdk-progress transition-colors duration-300 mx-1 ${
-                index < displayStep ? 'bg-sdk-progress' : ''
-              }`}
-            />
-          ))}
-        </PopperProgressContainer>
-      </>
+      <PopperProgressContainer ref={ref} type={type} position={position}>
+        {Array.from({ length: maxItems }, (_, index) => (
+          <div
+            key={index}
+            className={`h-sdk-squared-progress w-sdk-squared-progress border border-sdk-progress transition-colors duration-300 mx-1 ${
+              index < displayStep ? 'bg-sdk-progress' : ''
+            }`}
+          />
+        ))}
+      </PopperProgressContainer>
     );
   }
 
   if (type === ProgressBarType.DOTS) {
     return (
-      <>
-        <PopperProgressContainer ref={ref} type={type} position={position}>
-          {Array.from({ length: maxItems }, (_, index) => (
-            <div
-              key={index}
-              className={`h-sdk-dotted-progress w-sdk-dotted-progress border border-sdk-progress rounded-full transition-colors duration-300 mx-0.5 ${
-                index < displayStep ? 'bg-sdk-progress' : ''
-              }`}
-            />
-          ))}
-        </PopperProgressContainer>
-      </>
+      <PopperProgressContainer ref={ref} type={type} position={position}>
+        {Array.from({ length: maxItems }, (_, index) => (
+          <div
+            key={index}
+            className={`h-sdk-dotted-progress w-sdk-dotted-progress border border-sdk-progress rounded-full transition-colors duration-300 mx-0.5 ${
+              index < displayStep ? 'bg-sdk-progress' : ''
+            }`}
+          />
+        ))}
+      </PopperProgressContainer>
     );
   }
 
   if (type === ProgressBarType.NUMBERED) {
     return (
-      <>
-        <PopperProgressContainer ref={ref} type={type} position={position}>
-          <span className="text-sdk-numbered-progress text-sdk-progress font-bold">
-            {displayStep} of {totalSteps}
-          </span>
-        </PopperProgressContainer>
-      </>
+      <PopperProgressContainer ref={ref} type={type} position={position}>
+        <span className="text-sdk-numbered-progress text-sdk-progress font-bold leading-none">
+          {displayStep} of {totalSteps}
+        </span>
+      </PopperProgressContainer>
     );
   }
 
   return (
-    <>
-      <div className="h-2.5" />
+    <div
+      ref={ref}
+      className="absolute top-0 left-0 right-0 overflow-hidden "
+      style={{ height: 'var(--usertour-progress-bar-height)' }}
+    >
       <div
-        ref={ref}
-        className="absolute top-0 left-0 right-0 overflow-hidden "
-        style={{ height: 'var(--usertour-progress-bar-height)' }}
-      >
-        <div
-          className="h-full bg-sdk-progress transition-[width] duration-200"
-          style={{ width: `${progressPercentage}%` }}
-        />
-      </div>
-    </>
+        className="h-full bg-sdk-progress transition-[width] duration-200"
+        style={{ width: `${progressPercentage}%` }}
+      />
+    </div>
   );
 });
 

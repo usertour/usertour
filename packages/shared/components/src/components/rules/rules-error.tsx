@@ -1,6 +1,6 @@
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import React from 'react';
 
 const RulesError = PopoverPrimitive.Root;
@@ -36,11 +36,14 @@ const RulesErrorContent = React.forwardRef<
           side={side}
           sideOffset={sideOffset}
           style={{ zIndex }}
-          className={cn('bg-red-500 text-white rounded-lg p-2 w-48 text-sm', className)}
+          className={cn(
+            'bg-destructive text-destructive-foreground rounded-lg p-2 w-48 text-sm',
+            className,
+          )}
           {...props}
         >
           {children}
-          <PopoverPrimitive.Arrow className="fill-red-500" width={10} height={5} />
+          <PopoverPrimitive.Arrow className="fill-destructive" width={10} height={5} />
         </PopoverPrimitive.Content>
       </PopoverPrimitive.Portal>
     );

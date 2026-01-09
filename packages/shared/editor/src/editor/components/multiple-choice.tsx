@@ -20,7 +20,7 @@ import { EditorErrorAnchor } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorError } from '../../components/editor-error';
 import { isEmptyString } from '@usertour/helpers';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { BindAttribute } from './bind-attribute';
 import { BizAttributeTypes } from '@usertour/types';
 
@@ -578,13 +578,17 @@ export const ContentEditorMultipleChoiceSerialize = memo(
       <div className="flex flex-col gap-2 w-full">
         <div className="space-y-2">
           <div className="flex flex-col gap-2">
-            <RadioGroup>
+            <RadioGroup
+              onValueChange={(value) => {
+                // Only trigger onClick for regular options, not "other"
+                // "other" option has its own submit logic in OtherOptionSerialize
+                if (value !== 'other') {
+                  onClick?.(element, value);
+                }
+              }}
+            >
               {options.map((option, index) => (
-                <div
-                  className={itemBaseClass}
-                  key={index}
-                  onClick={() => onClick?.(element, option.value)}
-                >
+                <div className={itemBaseClass} key={index}>
                   <RadioGroupItem
                     value={option.value}
                     id={`r1${index}`}

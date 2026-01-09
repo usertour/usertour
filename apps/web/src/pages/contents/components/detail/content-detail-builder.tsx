@@ -22,7 +22,7 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { loading: environmentLoading } = useEnvironmentListContext();
   const { loading: attributeLoading } = useAttributeListContext();
-  const { loading: subscriptionLoading } = useSubscriptionContext();
+  const { loading: subscriptionLoading, shouldShowMadeWith } = useSubscriptionContext();
   const { loading: appLoading } = useAppContext();
 
   // Clear step query parameter after it's been captured
@@ -31,6 +31,7 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
       searchParams.delete('step');
       setSearchParams(searchParams, { replace: true });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleOnSaved = async () => {
@@ -50,6 +51,7 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
       initialStepIndex={initialStepIndex}
       onSaved={handleOnSaved}
       usertourjsUrl={`${import.meta.env.VITE_USERTOUR_JSURL}`}
+      shouldShowMadeWith={shouldShowMadeWith}
     />
   );
 };

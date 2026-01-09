@@ -146,7 +146,6 @@ const PopperContent = (props: PopperContentProps) => {
         onClick={handleOnClick}
         userAttributes={userAttributes}
       />
-      {!removeBranding && <PopperMadeWith />}
       {showBottomProgress && (
         <PopperProgress
           type={progressType}
@@ -155,6 +154,7 @@ const PopperContent = (props: PopperContentProps) => {
           position={progressPosition}
         />
       )}
+      {!removeBranding && <PopperMadeWith />}
     </PopperContentFrame>
   );
 };

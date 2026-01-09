@@ -19,7 +19,7 @@ import { Checkbox } from '@usertour-packages/checkbox';
 import { Input } from '@usertour-packages/input';
 import { Link, useParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { useSignupMutation } from '@usertour-packages/shared-hooks';
 
 // Form validation schema

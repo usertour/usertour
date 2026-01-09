@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { CompanyListProvider } from '@/contexts/company-list-context';
 import { useParams } from 'react-router-dom';
-import { CompanyDetailContent } from './components/detail-content';
+import { CompanyDetailContent } from './components/layout';
 
 export const CompanyDetail = () => {
   const { companyId } = useParams();

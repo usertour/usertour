@@ -4,11 +4,13 @@ import * as PopoverPrimitive from '@radix-ui/react-popover';
 import type { PopoverProps } from '@radix-ui/react-popover';
 import * as React from 'react';
 
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 const Popover = PopoverPrimitive.Root;
 
 const PopoverTrigger = PopoverPrimitive.Trigger;
+
+const PopoverAnchor = PopoverPrimitive.Anchor;
 
 const PopoverArrow = PopoverPrimitive.Arrow;
 
@@ -37,5 +39,5 @@ const PopoverContent = React.forwardRef<
 });
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverArrow };
+export { Popover, PopoverTrigger, PopoverAnchor, PopoverContent, PopoverArrow };
 export type { PopoverProps };

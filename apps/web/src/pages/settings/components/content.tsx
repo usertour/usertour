@@ -1,4 +1,4 @@
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 export const SettingsContent = (props: {
   children: React.ReactNode;

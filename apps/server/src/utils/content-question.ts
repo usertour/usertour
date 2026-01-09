@@ -33,6 +33,7 @@ export const extractStepQuestion = (
   step: Step,
   types: ContentEditorElementType[] = aggregationQuestionTypes,
 ) => {
+  if (!step.data) return null;
   const questionData = extractQuestionData(step.data as unknown as ContentEditorRoot[]);
   if (questionData.length === 0) return null;
 
@@ -46,6 +47,7 @@ export const extractStepQuestion = (
  * Extract bindToAttribute from step if it's a valid question for analytics
  */
 export const extractBindToAttribute = (step: Step): string | null => {
+  if (!step.data) return null;
   const questionData = extractQuestionData(step.data as unknown as ContentEditorRoot[]);
   if (questionData.length === 0) return null;
 
@@ -67,6 +69,7 @@ export const extractBindToAttribute = (step: Step): string | null => {
  */
 export const extractStepBindToAttribute = (steps: Step[], questionCvid: string): string | null => {
   for (const step of steps) {
+    if (!step.data) continue;
     const questions = extractQuestionData(step.data as unknown as ContentEditorRoot[]);
     const question = questions.find((question) => question.data?.cvid === questionCvid);
     if (question?.data?.bindToAttribute === true) {
@@ -89,6 +92,9 @@ export const isQuestionElement = (element: ContentEditorElement) => {
  * Extract question data from step
  */
 export const extractQuestionData = (data: ContentEditorRoot[]): ContentEditorQuestionElement[] => {
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
   const result: ContentEditorQuestionElement[] = [];
   // Helper function to recursively search through the data
   function traverse(item: ContentEditorRoot) {

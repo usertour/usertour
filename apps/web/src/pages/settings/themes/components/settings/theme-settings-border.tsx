@@ -7,7 +7,7 @@ import { ChangeEvent } from 'react';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBorder = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
 
   const updateBorder = (data: Partial<typeof settings.border>) => {
     const { border } = settings;
@@ -29,6 +29,7 @@ export const ThemeSettingsBorder = () => {
           onChange={(value: string) => {
             updateBorder({ borderRadius: value });
           }}
+          disabled={isViewOnly}
         />
         <div className="flex flex-row items-center space-x-2 h-9">
           <Label htmlFor="border-switch" className="flex flex-col space-y-1">
@@ -37,10 +38,11 @@ export const ThemeSettingsBorder = () => {
           <Switch
             id="border-switch"
             checked={settings.border.borderWidthEnabled}
-            className="data-[state=unchecked]:bg-input"
+            className="data-[state=unchecked]:bg-input disabled:opacity-100"
             onCheckedChange={(checked: boolean) => {
               updateBorder({ borderWidthEnabled: checked });
             }}
+            disabled={isViewOnly}
           />
 
           {settings.border.borderWidthEnabled && (
@@ -52,8 +54,9 @@ export const ThemeSettingsBorder = () => {
                   name={'Border width'}
                   onChange={handleOnChange}
                   value={settings.border.borderWidth}
-                  className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm "
+                  className="py-3 px-4 ps-4 pe-8 block w-full  shadow-sm rounded-lg text-sm disabled:opacity-100"
                   placeholder={''}
+                  disabled={isViewOnly}
                 />
                 <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none z-20 pe-4">
                   <span className="text-gray-500">px</span>
@@ -73,6 +76,7 @@ export const ThemeSettingsBorder = () => {
               updateBorder({ borderColor: value });
             }}
             text="Border color"
+            disabled={isViewOnly}
           />
         )}
       </div>

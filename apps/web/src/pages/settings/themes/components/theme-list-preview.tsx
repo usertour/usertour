@@ -5,16 +5,19 @@ import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour-packages/sdk';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
-import { ContentEditorSerialize, createValue5 } from '@usertour-packages/shared-editor';
+import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
+import { LIST_PREVIEW_CONTENT } from '../constants/preview-contents';
 import { Theme } from '@usertour/types';
-import { useRef, useState } from 'react';
+import { memo, MouseEvent, useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
+import { Button } from '@usertour-packages/button';
+import { ScaledPreviewContainer } from '@/pages/contents/components/shared/content-preview';
 
 type ThemeListPreviewProps = {
   theme: Theme;
 };
-export const ThemeListPreview = (props: ThemeListPreviewProps) => {
+export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
   const { theme } = props;
   const containerRef = useRef(null);
 
@@ -22,16 +25,19 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
   const { project, isViewOnly } = useAppContext();
   const [settings] = useState<ThemeTypesSetting>(theme.settings);
   const navigate = useNavigate();
-  const handleOnClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = containerRef.current as any;
-    if (el.contains(e.target) && project) {
-      navigate(`/project/${project.id}/settings/theme/${theme.id}`);
-    }
-  };
+  const handleOnClick = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      const el = containerRef.current as any;
+      if (el.contains(e.target) && project) {
+        navigate(`/project/${project.id}/settings/theme/${theme.id}`);
+      }
+    },
+    [project, navigate, theme.id],
+  );
 
-  const handleOnSuccess = () => {
+  const handleOnSuccess = useCallback(() => {
     refetch();
-  };
+  }, [refetch]);
 
   return (
     <>
@@ -53,34 +59,41 @@ export const ThemeListPreview = (props: ThemeListPreviewProps) => {
             )}
           </div>
           <ThemeEditDropdownMenu theme={theme} onSubmit={handleOnSuccess} disabled={isViewOnly}>
-            <DotsHorizontalIcon className="h-4 w-4" />
+            <Button variant={'ghost'} size={'icon'}>
+              <DotsHorizontalIcon className="h-4 w-4" />
+            </Button>
           </ThemeEditDropdownMenu>
         </div>
-        <div className="flex justify-center items-center h-40 flex-col ">
-          <SharedPopper.Popper
-            open={true}
-            zIndex={1}
-            globalStyle={convertToCssVars(convertSettings(settings))}
-          >
-            <SharedPopper.PopperStaticContent
-              arrowSize={{
-                width: 20,
-                height: 10,
-              }}
-              side={'top'}
-              align={'center'}
-              showArrow={false}
-              width={'280px'}
-              height={'auto'}
+        <div
+          className="flex justify-center items-center h-40 flex-col overflow-hidden"
+          {...({ inert: '' } as any)}
+        >
+          <ScaledPreviewContainer className="origin-[center_center]" maxWidth={260} maxHeight={140}>
+            <SharedPopper.Popper
+              open={true}
+              zIndex={1}
+              globalStyle={convertToCssVars(convertSettings(settings))}
             >
-              <SharedPopper.PopperClose />
-              <ContentEditorSerialize contents={createValue5 as any} />
-            </SharedPopper.PopperStaticContent>
-          </SharedPopper.Popper>
+              <SharedPopper.PopperStaticContent
+                arrowSize={{
+                  width: 20,
+                  height: 10,
+                }}
+                side={'top'}
+                align={'center'}
+                showArrow={false}
+                width={'280px'}
+                height={'auto'}
+              >
+                <SharedPopper.PopperClose />
+                <ContentEditorSerialize contents={LIST_PREVIEW_CONTENT} />
+              </SharedPopper.PopperStaticContent>
+            </SharedPopper.Popper>
+          </ScaledPreviewContainer>
         </div>
       </div>
     </>
   );
-};
+});
 
 ThemeListPreview.displayName = 'ThemeListPreview';

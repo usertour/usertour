@@ -13,11 +13,8 @@ import {
 } from '@usertour-packages/table';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Badge } from '@usertour-packages/badge';
-import { cn } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
 import { format } from 'date-fns';
-import { useCallback, useState } from 'react';
-import { useCopyToClipboard } from 'react-use';
+import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { EnvironmentListAction } from './environment-list-action';
 
 interface EnvironmentListContentTableRowProps {
@@ -26,33 +23,24 @@ interface EnvironmentListContentTableRowProps {
 }
 const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowProps) => {
   const { environment, environmentCount } = props;
-  const [_, copyToClipboard] = useCopyToClipboard();
-  const [isShowCopy, setIsShowCopy] = useState<boolean>(false);
-  const { toast } = useToast();
-
-  const handleCopy = useCallback(() => {
-    copyToClipboard(environment.token);
-    toast({
-      title: `"${environment.token}" copied to clipboard`,
-    });
-  }, [environment.token]);
+  const copyWithToast = useCopyWithToast();
 
   return (
-    <TableRow className="cursor-pointer">
+    <TableRow className="cursor-pointer hover:bg-muted/50">
       <TableCell>
-        <div className="flex items-center gap-2">
-          {environment.name}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="truncate">{environment.name}</span>
           {environment.isPrimary === true && <Badge variant={'success'}>Primary</Badge>}
         </div>
       </TableCell>
-      <TableCell onMouseEnter={() => setIsShowCopy(true)} onMouseLeave={() => setIsShowCopy(false)}>
+      <TableCell className="group">
         <div className="flex flex-row items-center space-x-1">
           <span>{environment.token} </span>
           <Button
             variant={'ghost'}
             size={'icon'}
-            className={cn('w-6 h-6 rounded', isShowCopy ? 'visible' : 'invisible')}
-            onClick={handleCopy}
+            className="w-6 h-6 rounded invisible group-hover:visible"
+            onClick={() => copyWithToast(environment.token)}
           >
             <CopyIcon className="w-4 h-4" />
           </Button>
@@ -73,41 +61,39 @@ export const EnvironmentListContent = () => {
     return <ListSkeleton />;
   }
   return (
-    <>
-      <div className="rounded-md border-none">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Environment name</TableHead>
-              <TableHead>
-                Usertour.js Token
-                <QuestionTooltip className="inline ml-1">
-                  You need this when installing Usertour.js in your web app. See
-                  https://docs.usertour.io for more details.
-                </QuestionTooltip>
-              </TableHead>
-              <TableHead>CreatedAt</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {environmentList ? (
-              environmentList?.map((environment: Environment) => (
-                <EnvironmentListContentTableRow
-                  environment={environment}
-                  environmentCount={environmentList.length}
-                  key={environment.id}
-                />
-              ))
-            ) : (
-              <TableRow>
-                <TableCell className="h-24 text-center">No results.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </>
+    <Table className="table-fixed">
+      <TableHeader>
+        <TableRow>
+          <TableHead>Environment name</TableHead>
+          <TableHead>
+            Usertour.js Token
+            <QuestionTooltip className="inline ml-1 mb-1">
+              You need this when installing Usertour.js in your web app. See
+              https://docs.usertour.io for more details.
+            </QuestionTooltip>
+          </TableHead>
+          <TableHead className="w-60">CreatedAt</TableHead>
+          <TableHead className="w-24" />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {environmentList ? (
+          environmentList?.map((environment: Environment) => (
+            <EnvironmentListContentTableRow
+              environment={environment}
+              environmentCount={environmentList.length}
+              key={environment.id}
+            />
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={4} className="h-24 text-center">
+              No results.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
   );
 };
 

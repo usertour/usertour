@@ -90,6 +90,12 @@ export const BannerCreateForm = ({ onClose, isOpen }: BannerCreateFormProps) => 
     mode: 'onChange',
   });
 
+  const nameValue = form.watch('name');
+  const buildUrlValue = form.watch('buildUrl');
+  const typeValue = form.watch('type');
+  const isNameEmpty = !nameValue?.trim();
+  const isBuildUrlRequiredButEmpty = typeValue === BuilderType.EXTENSION && !buildUrlValue?.trim();
+
   async function handleOnSubmit(formValues: FormValues) {
     const { buildUrl, type, name } = formValues;
     setIsLoading(true);
@@ -103,6 +109,7 @@ export const BannerCreateForm = ({ onClose, isOpen }: BannerCreateFormProps) => 
       const ret = await createContentMutation({ variables: data });
       if (!ret.data?.createContent?.id) {
         showError('Create flow failed.');
+        return;
       }
       const content = ret.data?.createContent as Content;
       setCurrentContent(content);
@@ -129,8 +136,9 @@ export const BannerCreateForm = ({ onClose, isOpen }: BannerCreateFormProps) => 
       // navigate(`/env/${content?.environmentId}/flows/${content?.id}/detail`);
     } catch (error) {
       showError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   return (
@@ -188,12 +196,6 @@ export const BannerCreateForm = ({ onClose, isOpen }: BannerCreateFormProps) => 
                   </FormItem>
                 )}
               />
-              <span className="text-xs text-muted-foreground">
-                {form.getValues('type') === BuilderType.EXTENSION &&
-                  'Open the builder in new tab for WYSIWYG editing experience'}
-                {form.getValues('type') === BuilderType.WEB &&
-                  'Open the builder in the current tab for convenient editing experience'}
-              </span>
               {form.getValues('type') === BuilderType.EXTENSION && (
                 <FormField
                   control={form.control}
@@ -219,7 +221,10 @@ export const BannerCreateForm = ({ onClose, isOpen }: BannerCreateFormProps) => 
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                disabled={isLoading || isNameEmpty || isBuildUrlRequiredButEmpty}
+              >
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>

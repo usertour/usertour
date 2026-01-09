@@ -161,6 +161,7 @@ input BizQuery {
 }
 
 type BizSession {
+  bizCompany: BizModel
   bizEvent: [BizEvent!]
   bizUser: BizUser!
   bizUserId: String!

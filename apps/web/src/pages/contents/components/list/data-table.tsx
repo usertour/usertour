@@ -20,7 +20,7 @@ import { getContentVersion } from '@usertour-packages/gql';
 import { CircleIcon } from '@usertour-packages/icons';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
@@ -33,6 +33,8 @@ import {
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
+import { Button } from '@usertour-packages/button';
+import { Skeleton } from '@usertour-packages/skeleton';
 
 const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();
@@ -45,8 +47,8 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
   return (
     <div className="grow rounded-b-md py-2.5 px-5 flex flex-col  ">
       <div className="flex-none flex flex-row justify-between items-center space-x-4">
-        <span className="grow text-base font-medium text-gray-900 dark:text-white truncate ...	">
-          {content.name}{' '}
+        <span className="grow text-base font-medium text-gray-900 dark:text-white truncate min-w-0">
+          {content.name ?? ''}
         </span>
 
         <ContentEditDropdownMenu
@@ -56,7 +58,9 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
           }}
           disabled={isViewOnly}
         >
-          <DotsHorizontalIcon className="h-4 w-4 flex-none" />
+          <Button variant="ghost" size="icon" className="flex-none">
+            <DotsHorizontalIcon className="h-4 w-4" />
+          </Button>
         </ContentEditDropdownMenu>
       </div>
       <div className="grow flex flex-row text-sm items-center space-x-1 text-xs">
@@ -85,17 +89,30 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
   );
 };
 
+const ContentPreviewSkeleton = () => {
+  return <Skeleton className="w-[300px] h-[160px]" />;
+};
+
+interface ContentPreviewProps {
+  currentVersion: ContentVersion | undefined;
+  currentTheme: Theme | undefined;
+  currentStep: Step | undefined;
+  type: ContentDataType;
+  isLoading?: boolean;
+}
+
 const ContentPreview = ({
   currentVersion,
   currentTheme,
   currentStep,
   type,
-}: {
-  currentVersion: ContentVersion | undefined;
-  currentTheme: Theme | undefined;
-  currentStep: Step | undefined;
-  type: ContentDataType;
-}) => {
+  isLoading,
+}: ContentPreviewProps) => {
+  // Show skeleton while loading data
+  if (isLoading) {
+    return <ContentPreviewSkeleton />;
+  }
+
   if (
     (type === ContentDataType.FLOW ||
       type === ContentDataType.NPS ||
@@ -131,6 +148,7 @@ const ContentPreview = ({
     );
   }
 
+  // Only show empty state when not loading and truly no data
   return <EmptyContentPreview />;
 };
 
@@ -141,47 +159,37 @@ const ContentTableItem = ({
   content: Content;
   contentType: string;
 }) => {
-  const { data } = useQuery(getContentVersion, {
+  const { data, loading } = useQuery(getContentVersion, {
     variables: { versionId: content?.editedVersionId },
     skip: !content?.editedVersionId,
   });
   const navigate = useNavigate();
-  const [currentVersion, setCurrentVersion] = useState<ContentVersion | undefined>();
   const containerRef = useRef(null);
-  const [currentStep, setCurrentStep] = useState<Step | undefined>();
-  const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
   const { environment } = useAppContext();
-
   const { themeList } = useThemeListContext();
 
-  useEffect(() => {
-    if (data?.getContentVersion) {
-      setCurrentVersion(data.getContentVersion);
-    }
-  }, [data]);
+  // Derive all preview data in one pass to avoid chained useEffects and multiple re-renders
+  const { currentVersion, currentStep, currentTheme } = useMemo(() => {
+    const version = data?.getContentVersion;
+    const step = version?.steps?.[0];
 
-  useEffect(() => {
-    if (currentVersion?.steps && currentVersion.steps?.length > 0) {
-      setCurrentStep(currentVersion.steps[0]);
-    }
-  }, [currentVersion]);
-
-  useEffect(() => {
-    if (!themeList) {
-      return;
-    }
-    if (themeList.length > 0) {
-      let theme: Theme | undefined;
-      if (currentStep?.themeId) {
-        theme = themeList.find((item) => item.id === currentStep.themeId);
-      } else if (currentVersion?.themeId) {
-        theme = themeList.find((item) => item.id === currentVersion.themeId);
-      }
-      if (theme) {
-        setCurrentTheme(theme);
+    let theme: Theme | undefined;
+    if (themeList && themeList.length > 0) {
+      const themeId = step?.themeId ?? version?.themeId;
+      if (themeId) {
+        theme = themeList.find((item) => item.id === themeId);
       }
     }
-  }, [currentStep, themeList, currentVersion]);
+
+    return {
+      currentVersion: version,
+      currentStep: step,
+      currentTheme: theme,
+    };
+  }, [data, themeList]);
+
+  // Consider loading if query is loading or themeList is not ready yet
+  const isLoading = loading || !themeList;
 
   const handleOnClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -190,7 +198,7 @@ const ContentTableItem = ({
         navigate(`/env/${environment?.id}/${contentType}/${content.id}/detail`);
       }
     },
-    [content],
+    [content, environment?.id, contentType, navigate],
   );
 
   return (
@@ -200,12 +208,16 @@ const ContentTableItem = ({
       className="h-72 min-w-72  flex flex-col bg-white rounded-lg border hover:border-primary dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
     >
       <div className="flex-none bg-muted rounded-t-md">
-        <div className="h-48 flex justify-center items-center overflow-hidden">
+        <div
+          className="h-48 flex justify-center items-center overflow-hidden"
+          {...({ inert: '' } as any)}
+        >
           <ContentPreview
             currentVersion={currentVersion}
             currentTheme={currentTheme}
             currentStep={currentStep}
             type={content.type}
+            isLoading={isLoading}
           />
         </div>
       </div>

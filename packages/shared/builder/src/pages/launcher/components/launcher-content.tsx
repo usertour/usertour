@@ -8,7 +8,8 @@ import {
   LauncherPopperContentPotal,
   LauncherRoot,
 } from '@usertour-packages/sdk/src/launcher';
-import { ContentEditor, ContentEditorRoot, createValue1 } from '@usertour-packages/shared-editor';
+import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
+import { getDefaultDataForType } from '../../../utils/default-data';
 import {
   ContentActionsItemType,
   LauncherActionType,
@@ -32,7 +33,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
   (props: LauncherContentProps, ref) => {
     const { zIndex, triggerRef, theme, data, onValueChange, onCustomUploadRequest } = props;
     const launcherRef = useRef<HTMLDivElement>(null);
-    const { projectId } = useBuilderContext();
+    const { projectId, shouldShowMadeWith = true } = useBuilderContext();
 
     const { attributeList } = useAttributeListContext();
     const triggerReference = useMemo(
@@ -62,11 +63,11 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
                   initialValue={
                     data.tooltip.content.length > 0
                       ? (data.tooltip.content as ContentEditorRoot[])
-                      : (createValue1 as ContentEditorRoot[])
+                      : (getDefaultDataForType('tooltip') as ContentEditorRoot[])
                   }
                   onValueChange={onValueChange}
                 />
-                <PopperMadeWith />
+                {shouldShowMadeWith && <PopperMadeWith />}
               </LauncherPopperContent>
             </LauncherPopperContentPotal>
           </LauncherPopper>

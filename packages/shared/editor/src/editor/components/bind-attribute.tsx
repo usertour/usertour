@@ -16,7 +16,7 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 
 interface BindAttributeProps {
   bindToAttribute: boolean;

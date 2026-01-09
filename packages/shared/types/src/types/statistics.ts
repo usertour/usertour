@@ -1,4 +1,4 @@
-import { BizEvent, BizUser } from './biz';
+import { BizCompany, BizEvent, BizUser } from './biz';
 import { Content, ContentVersion, ElementSelectorPropsData } from './contents';
 
 export type ContentAnalytics = {
@@ -29,6 +29,8 @@ export type AnalyticsViews = {
   totalViews: number;
   uniqueCompletions: number;
   totalCompletions: number;
+  uniqueClicks?: number;
+  totalClicks?: number;
   tooltipTargetMissingCount?: number;
   uniqueTooltipTargetMissingCount?: number;
 };
@@ -70,6 +72,7 @@ export type BizSession = {
   bizUserId?: string;
   contentId?: string;
   bizUser?: BizUser;
+  bizCompany?: BizCompany;
   bizEvent?: BizEvent[];
   content?: Content;
   version?: ContentVersion;

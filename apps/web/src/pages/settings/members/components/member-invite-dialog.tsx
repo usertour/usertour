@@ -34,7 +34,7 @@ import {
   useInviteTeamMemberMutation,
 } from '@usertour-packages/shared-hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { PlanType, Subscription, TeamMemberRole } from '@usertour/types';
+import { PlanType, TeamMemberRole } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { AlertCircle } from 'lucide-react';
 import * as React from 'react';
@@ -82,9 +82,7 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
   const { globalConfig } = useAppContext();
   const navigate = useNavigate();
 
-  const { subscription } = useGetSubscriptionByProjectIdQuery(project?.id as string) as {
-    subscription: Subscription | null;
-  };
+  const { subscription } = useGetSubscriptionByProjectIdQuery(project?.id);
 
   const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
 

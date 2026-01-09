@@ -5,7 +5,7 @@ import { useContentBuilder } from '@/hooks/useContentBuilder';
 import { ArrowLeftIcon, DotsHorizontalIcon, EnterIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { EditIcon, PlaneIcon, SpinnerIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 import { useEvent } from 'react-use';
@@ -109,7 +109,7 @@ export const ContentDetailHeader = () => {
           >
             <ArrowLeftIcon className="h-6 w-8" />
           </Button>
-          <span className="flex-none max-w-40	truncate ...	">{content?.name}</span>
+          <span className="flex-none max-w-40 truncate">{content?.name ?? ''}</span>
           <ContentRenameForm
             data={content}
             onSubmit={() => {

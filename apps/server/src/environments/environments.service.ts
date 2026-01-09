@@ -1,4 +1,3 @@
-import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
@@ -31,22 +30,6 @@ export class EnvironmentsService {
         data: {
           ...newData,
           isPrimary,
-          segments: {
-            create: [
-              {
-                name: 'All Users',
-                bizType: SegmentBizType.USER,
-                dataType: SegmentDataType.ALL,
-                data: [],
-              },
-              {
-                name: 'All Companies',
-                bizType: SegmentBizType.COMPANY,
-                dataType: SegmentDataType.ALL,
-                data: [],
-              },
-            ],
-          },
         },
       });
     });

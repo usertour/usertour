@@ -1,17 +1,20 @@
 import { useAppContext } from '@/contexts/app-context';
 import { SegmentListProvider } from '@/contexts/segment-list-context';
-import { UserListSidebar } from '@/pages/users/components/sidebar';
+import { UserListSidebar, UserListContent } from './components/layout';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { UserListContent } from './components/content';
 
 export const UserList = () => {
   const { environment } = useAppContext();
 
+  if (!environment?.id) {
+    return null;
+  }
+
   return (
-    <SegmentListProvider environmentId={environment?.id} bizType={['USER']}>
-      <UserListSidebar />
+    <SegmentListProvider environmentId={environment.id} bizType={['USER']}>
+      <UserListSidebar environmentId={environment.id} />
       <ScrollArea className="h-full w-full ">
-        <UserListContent environmentId={environment?.id} />
+        <UserListContent environmentId={environment.id} />
       </ScrollArea>
     </SegmentListProvider>
   );

@@ -35,27 +35,33 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
   return (
     <>
       <div className="rounded-md border-none">
-        <Table>
+        <Table className="table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead>Display name</TableHead>
               <TableHead>Code name</TableHead>
-              <TableHead>Data type</TableHead>
-              <TableHead>CreatedAt</TableHead>
-              <TableHead />
+              <TableHead className="w-32">Data type</TableHead>
+              <TableHead className="w-60">CreatedAt</TableHead>
+              <TableHead className="w-24" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {attributes ? (
               attributes?.map((attribute: Attribute) => (
                 <TableRow className="cursor-pointer" key={attribute.id} onClick={() => {}}>
-                  <TableCell className={attribute.description ? 'flex flex-col' : ''}>
-                    {attribute.displayName}
-                    {attribute.description && (
-                      <span className="text-xs text-gray-500">{attribute.description}</span>
+                  <TableCell className="truncate">
+                    {attribute.description ? (
+                      <div className="flex flex-col">
+                        <span className="truncate">{attribute.displayName}</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {attribute.description}
+                        </span>
+                      </div>
+                    ) : (
+                      attribute.displayName
                     )}
                   </TableCell>
-                  <TableCell>{attribute.codeName}</TableCell>
+                  <TableCell className="truncate">{attribute.codeName}</TableCell>
                   <TableCell>
                     {attribute.dataType === 1 && 'Number'}
                     {attribute.dataType === 2 && 'String'}

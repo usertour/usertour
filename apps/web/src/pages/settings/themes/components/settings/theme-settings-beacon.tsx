@@ -3,7 +3,7 @@ import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-in
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBeacon = () => {
-  const { settings, setSettings, finalSettings } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
   const update = (data: Partial<typeof settings.launcherBeacon>) => {
     const { launcherBeacon } = settings;
     setSettings((pre) => ({
@@ -24,6 +24,7 @@ export const ThemeSettingsBeacon = () => {
           onChange={(value: string) => {
             update({ color: value });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Beacon size"
@@ -32,6 +33,7 @@ export const ThemeSettingsBeacon = () => {
           onChange={(value: string) => {
             update({ size: Number(value) });
           }}
+          disabled={isViewOnly}
         />
       </div>
     </div>

@@ -17,7 +17,7 @@ import {
   Side,
   Theme,
 } from '@usertour/types';
-import { cn } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { ContentAlignment } from '../../components/content-alignment';

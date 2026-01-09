@@ -27,7 +27,6 @@ import { TaskArrowIcon, CheckmarkIcon, DropDownIcon } from '@usertour-packages/i
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { computePositionStyle } from './utils/position';
 import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
-import { cn } from '@usertour/helpers';
 import { Button } from '@usertour-packages/button';
 import { useSize } from '@usertour-packages/react-use-size';
 import {
@@ -37,6 +36,7 @@ import {
   checklistUnCompletedItemsCount,
 } from './utils/content';
 import { useSettingsStyles } from './hooks/use-settings-styles';
+import { cn } from '@usertour-packages/tailwind';
 
 interface ChecklistRootContextValue {
   globalStyle: string;
@@ -52,6 +52,7 @@ interface ChecklistRootContextValue {
   onDismiss?: () => Promise<void>;
   handleExpandedChange?: (expanded: boolean) => Promise<void>;
   zIndex: number;
+  clearItemAnimations: () => void;
 }
 
 const ChecklistRootContext = createContext<ChecklistRootContextValue | null>(null);
@@ -92,9 +93,9 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
 
   // Use expanded from store if provided, otherwise use local state
   const isOpen = expanded !== undefined ? expanded : defaultOpen;
-  const isAllCompleted = checklistIsCompleted(data.items);
-  const unCompletedItemsCount = checklistUnCompletedItemsCount(data.items);
-  const progress = checklistProgress(data.items);
+  const isAllCompleted = checklistIsCompleted(data.items ?? []);
+  const unCompletedItemsCount = checklistUnCompletedItemsCount(data.items ?? []);
+  const progress = checklistProgress(data.items ?? []);
 
   useEffect(() => {
     setData(initialData);
@@ -111,9 +112,21 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
   const updateItemStatus = (itemId: string, isCompleted: boolean) => {
     setData((prevData) => ({
       ...prevData,
-      items: prevData.items.map((item) => (item.id === itemId ? { ...item, isCompleted } : item)),
+      items:
+        prevData.items?.map((item) => (item.id === itemId ? { ...item, isCompleted } : item)) ?? [],
     }));
   };
+
+  const clearItemAnimations = useCallback(() => {
+    setData((prevData) => ({
+      ...prevData,
+      items:
+        prevData.items?.map((item) => ({
+          ...item,
+          isShowAnimation: false,
+        })) ?? [],
+    }));
+  }, []);
 
   return (
     <ChecklistRootContext.Provider
@@ -131,6 +144,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         onDismiss,
         handleExpandedChange,
         zIndex,
+        clearItemAnimations,
       }}
     >
       {children}
@@ -169,17 +183,20 @@ const ChecklistProgress = memo(
   forwardRef<HTMLDivElement, { width?: number }>(({ width }, ref) => {
     const { progress } = useChecklistRootContext();
 
-    const finalProgress = width ?? progress ?? 0;
+    // Use width if explicitly provided (including 0), otherwise use progress
+    const finalProgress = width !== undefined ? width : (progress ?? 0);
+
+    const progressClassName = cn(
+      'font-medium px-[calc(0.75rem-1px)] rounded-l-full text-left',
+      'transition-all duration-200 ease-out',
+      'text-xs leading-[calc(1.5rem-2px)]',
+      finalProgress > 0 ? 'bg-sdk-progress text-sdk-background' : 'text-sdk-progress',
+      finalProgress >= 100 && 'rounded-r-full',
+    );
 
     return (
-      <div className="w-full bg-sdk-foreground rounded-full my-3" ref={ref}>
-        <div
-          className={cn(
-            'text-sdk-background font-medium p-1 px-2 leading-none rounded-full text-left',
-            finalProgress > 0 && 'bg-sdk-progress',
-          )}
-          style={{ width: `${finalProgress}%` }}
-        >
+      <div className="w-full border border-sdk-progress rounded-full my-3" ref={ref}>
+        <div className={progressClassName} style={{ width: `${finalProgress}%` }}>
           {finalProgress}%
         </div>
       </div>
@@ -197,11 +214,10 @@ interface ChecklistLauncherContentProps {
   isCompleted?: boolean;
   onSizeChange?: (rect: { width: number; height: number }) => void;
 }
-const ChecklistLauncherContent = forwardRef<HTMLDivElement, ChecklistLauncherContentProps>(
+const ChecklistLauncherContent = forwardRef<HTMLButtonElement, ChecklistLauncherContentProps>(
   (props, ref) => {
     const { buttonText, height, onClick, number = 1, isCompleted, onSizeChange } = props;
-    const paddingLeft = height ? `${Number(height) / 2}px` : undefined;
-    const paddingRight = height ? `${Number(height) / 2}px` : undefined;
+    const paddingHorizontal = height ? `${Number(height) / 2}px` : undefined;
 
     const [contentRef, setContentRef] = useState<HTMLDivElement | null>(null);
     const rect = useSize(contentRef);
@@ -210,29 +226,43 @@ const ChecklistLauncherContent = forwardRef<HTMLDivElement, ChecklistLauncherCon
       if (rect) {
         onSizeChange?.(rect);
       }
-    }, [rect]);
+    }, [rect, onSizeChange]);
+
+    const buttonClassName = cn(
+      'rounded-sdk-checklist-trigger h-full w-full flex bg-sdk-checklist-trigger-background',
+      'cursor-pointer items-center justify-center',
+      'hover:bg-sdk-checklist-trigger-hover-background',
+      'active:bg-sdk-checklist-trigger-active-background',
+      'focus-visible:bg-sdk-checklist-trigger-hover-background',
+      'focus-visible:outline-none',
+      'focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-transparent',
+      'focus-visible:ring-offset-[3px] focus-visible:ring-offset-sdk-checklist-trigger-font/30',
+    );
 
     return (
-      <div
+      <Button
+        forSdk
+        variant="custom"
         ref={ref}
         style={{
           height,
         }}
-        className="rounded-sdk-checklist-trigger h-full w-full flex bg-sdk-checklist-trigger-background cursor-pointer items-center justify-center hover:bg-sdk-checklist-trigger-hover-background"
+        className={buttonClassName}
         onClick={onClick}
+        aria-label={`Open checklist${number > 0 ? ` (${number} items)` : ''}`}
       >
         <div
           ref={setContentRef}
           className="flex whitespace-nowrap	"
           style={{
-            paddingLeft,
-            paddingRight,
+            paddingLeft: paddingHorizontal,
+            paddingRight: paddingHorizontal,
           }}
         >
           <div className="overflow-hidden	text-sdk-checklist-trigger-font h-6 font-sdk-checklist-trigger text-sdk-base flex items-center justify-center">
             {buttonText}
           </div>
-          <div className="rounded-full w-6 h-6 text-sdk-base bg-sdk-checklist-trigger-counter-background text-sdk-checklist-trigger-counter-font ml-1 flex items-center justify-center">
+          <div className="rounded-full w-6 h-6 text-sm bg-sdk-checklist-trigger-counter-background text-sdk-checklist-trigger-counter-font ml-1 flex items-center justify-center">
             {isCompleted ? (
               <CheckmarkIcon className="w-5 h-5 stroke-sdk-checklist-trigger-counter-font" />
             ) : (
@@ -240,7 +270,7 @@ const ChecklistLauncherContent = forwardRef<HTMLDivElement, ChecklistLauncherCon
             )}
           </div>
         </div>
-      </div>
+      </Button>
     );
   },
 );
@@ -397,9 +427,7 @@ const ChecklistPopperUseIframe = forwardRef<HTMLDivElement, Omit<PopperProps, 'g
     return (
       <Popper ref={ref} {...optimizedPopperProps} isIframeMode={true}>
         <PopperModalContentPotal {...modalContentProps}>
-          <PopperContentFrame ref={ref} {...props}>
-            {children}
-          </PopperContentFrame>
+          <PopperContentFrame {...props}>{children}</PopperContentFrame>
         </PopperModalContentPotal>
       </Popper>
     );
@@ -455,11 +483,11 @@ const ChecklistLauncherInFrame = forwardRef<HTMLDivElement, PopperContentProps>(
   const { document } = useFrame();
 
   useEffect(() => {
-    if (globalStyle) {
+    if (globalStyle && document?.body) {
       document.body.style.cssText = globalStyle;
       document.body.className = 'usertour-widget-root';
     }
-  }, [globalStyle]);
+  }, [globalStyle, document]);
 
   return (
     <ChecklistLauncherContent
@@ -513,21 +541,37 @@ const ChecklistStaticPopper = forwardRef<
 
 ChecklistStaticPopper.displayName = 'ChecklistStaticPopper';
 
-const ChecklistDropdown = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+const ChecklistDropdown = forwardRef<HTMLButtonElement, React.HTMLAttributes<HTMLButtonElement>>(
   (props, ref) => {
     const { handleExpandedChange } = useChecklistRootContext();
+    const { className, ...restProps } = props;
+
+    const buttonClassName = cn(
+      'size-6 rounded',
+      'inline-flex items-center justify-center',
+      'text-sdk-xbutton',
+      'fixed top-2 right-2',
+      'hover:bg-sdk-hover',
+      'outline-none cursor-pointer z-50',
+      className,
+    );
+
+    const handleClick = useCallback(async () => {
+      await handleExpandedChange?.(false);
+    }, [handleExpandedChange]);
+
     return (
-      <div
-        className="rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-sdk-xbutton absolute top-[5px] right-[5px] hover:bg-sdk-primary/40 outline-none cursor-pointer"
+      <Button
+        forSdk
+        variant="custom"
         ref={ref}
-        {...props}
+        className={buttonClassName}
+        onClick={handleClick}
+        aria-label="Close checklist"
+        {...restProps}
       >
-        <DropDownIcon
-          height={24}
-          width={24}
-          onClick={async () => await handleExpandedChange?.(false)}
-        />
-      </div>
+        <DropDownIcon height={24} width={24} />
+      </Button>
     );
   },
 );
@@ -561,7 +605,7 @@ const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
     return (
       <div ref={ref} className="flex flex-col -mx-[24px]">
         {data.items
-          .filter((item) => item.isVisible !== false)
+          ?.filter((item) => item.isVisible !== false)
           .map((item, index) => (
             <ChecklistItem
               key={item.id}
@@ -580,16 +624,21 @@ ChecklistItems.displayName = 'ChecklistItems';
 
 const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
-    const { setShowDismissConfirm, onDismiss } = useChecklistRootContext();
+    const { setShowDismissConfirm, onDismiss, clearItemAnimations } = useChecklistRootContext();
+
+    const handleCancel = useCallback(() => {
+      clearItemAnimations();
+      setShowDismissConfirm(false);
+    }, [clearItemAnimations, setShowDismissConfirm]);
 
     return (
-      <div ref={ref} {...props} className="flex flex-col space-y-2">
-        <div className="text-sdk-base">Dismiss checklist?</div>
-        <div className="flex flex-row space-x-2 items-center justify-center pb-2">
+      <div ref={ref} {...props} className="flex flex-col">
+        <div className="text-sdk-base font-sdk-bold">Dismiss checklist?</div>
+        <div className="flex flex-row space-x-2 items-center justify-center my-4">
           <Button forSdk onClick={onDismiss}>
             Yes, dismiss
           </Button>
-          <Button forSdk variant="secondary" onClick={() => setShowDismissConfirm(false)}>
+          <Button forSdk variant="secondary" onClick={handleCancel}>
             Cancel
           </Button>
         </div>
@@ -628,7 +677,7 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
   }, [data.autoDismissChecklist, isAllCompleted, onAutoDismiss]);
 
   const textClassName = cn(
-    'text-right cursor-pointer',
+    'text-right !text-sm !leading-none font-normal',
     isAllCompleted
       ? 'text-sdk-link hover:text-sdk-link/80 font-sdk-bold'
       : 'text-sdk-foreground/50 hover:text-sdk-foreground/80',
@@ -643,15 +692,21 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
   }, [isAllCompleted, onDismiss, setShowDismissConfirm]);
 
   return (
-    <div className="flex flex-col" ref={ref} {...restProps}>
+    <div className="flex flex-col -mb-2 mt-2" ref={ref} {...restProps}>
       {data.preventDismissChecklist && !(data.autoDismissChecklist && isAllCompleted) && (
         <div className="h-4" />
       )}
       {!data.preventDismissChecklist && (
-        <div className="w-full flex justify-end">
-          <span className={textClassName} onClick={handleDismiss}>
+        <div className="w-full flex justify-end h-6 items-center">
+          <Button
+            forSdk
+            variant="custom"
+            className={textClassName}
+            onClick={handleDismiss}
+            aria-label="Dismiss checklist"
+          >
             Dismiss checklist
-          </span>
+          </Button>
         </div>
       )}
       {data.autoDismissChecklist && isAllCompleted && (
@@ -717,13 +772,13 @@ const ChecklistItem = (props: ChecklistItemProps) => {
 
   // Check if this item can be clicked based on completion order
   const isClickable = useMemo(() => {
-    return canCompleteChecklistItem(data.completionOrder, data.items, item);
+    return canCompleteChecklistItem(data.completionOrder, data.items ?? [], item);
   }, [data.completionOrder, data.items, item]);
 
   // Calculate cursor and interaction styles
   const cursorStyle = useMemo(() => {
     if (!isClickable) {
-      return 'cursor-not-allowed opacity-50';
+      return 'cursor-not-allowed';
     }
     if (item.isCompleted && !item?.clickedActions?.length) {
       return 'cursor-default';
@@ -732,37 +787,39 @@ const ChecklistItem = (props: ChecklistItemProps) => {
   }, [isClickable, item.isCompleted, item?.clickedActions?.length]);
 
   return (
-    <div
+    <Button
+      forSdk
+      variant="custom"
+      disabled={!isClickable}
       className={cn(
-        'group flex items-center px-[24px] py-3 hover:bg-sdk-foreground/5 transition-colors',
+        'group flex items-center px-[24px] py-2 hover:bg-sdk-foreground/5 transition-colors',
         cursorStyle,
       )}
-      onClick={() => (isClickable ? onClick(item, index) : undefined)}
+      onClick={() => onClick(item, index)}
+      aria-label={`${item.isCompleted ? 'Uncomplete' : 'Complete'} task: ${item.name}`}
     >
       <ChecklistChecked isChecked={isCompleted} isShowAnimation={shouldShowAnimation} />
       <div
         className={cn(
-          'grow flex flex-col items-start',
+          'grow flex flex-col items-start text-left',
           isCompleted && `${textDecoration} text-sdk-foreground/60`,
         )}
       >
         <span className="text-sdk-base font-sdk-bold">{item.name}</span>
         {item.description && (
-          <span className="text-sdk-xs opacity-75 leading-3">{item.description}</span>
+          <span className="text-sdk-sm opacity-75 leading-4">{item.description}</span>
         )}
       </div>
-      {!isCompleted && isClickable && (
-        <TaskArrowIcon
-          className={cn(
-            'w-4 h-4 ml-4 flex-shrink-0',
-            'opacity-0 -translate-x-4',
-            'group-hover:opacity-100 group-hover:translate-x-0',
-            'transition-all duration-200 ease-out',
-            'text-sdk-checklist-checkmark',
-          )}
-        />
-      )}
-    </div>
+      <TaskArrowIcon
+        className={cn(
+          'w-4 h-4 ml-4 flex-shrink-0',
+          'opacity-0 -translate-x-4',
+          'transition-all duration-200 ease-out',
+          'text-sdk-checklist-checkmark',
+          !isCompleted && isClickable && 'group-hover:opacity-100 group-hover:translate-x-0',
+        )}
+      />
+    </Button>
   );
 };
 

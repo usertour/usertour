@@ -1,4 +1,5 @@
 import { AttributeBizType, AttributeDataType } from '@/attributes/models/attribute.model';
+import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { InitThemeInput } from '@/themes/dto/theme.input';
 import { Attribute, Prisma } from '@prisma/client';
 import {
@@ -778,3 +779,53 @@ export const initialization = async (tx: Prisma.TransactionClient, projectId: st
   await initializationEvents(tx, projectId);
   await initializationAttributeOnEvent(tx, projectId);
 };
+
+export interface DefaultSegmentInput {
+  name: string;
+  bizType: SegmentBizType;
+  dataType: SegmentDataType;
+  data: any[];
+  columns?: Record<string, boolean>;
+}
+
+/**
+ * Generate default columns configuration based on segment bizType
+ */
+export function getDefaultColumns(bizType: SegmentBizType): Record<string, boolean> {
+  if (bizType === SegmentBizType.USER) {
+    return {
+      [UserAttributes.EMAIL]: true,
+      [UserAttributes.LAST_SEEN_AT]: true,
+      [UserAttributes.SIGNED_UP_AT]: true,
+    };
+  }
+  if (bizType === SegmentBizType.COMPANY) {
+    return {
+      [CompanyAttributes.LAST_SEEN_AT]: true,
+      [CompanyAttributes.SIGNED_UP_AT]: true,
+    };
+  }
+  return {};
+}
+
+/**
+ * Get default segments configuration for project initialization
+ */
+export function getDefaultSegments(): DefaultSegmentInput[] {
+  return [
+    {
+      name: 'All Users',
+      bizType: SegmentBizType.USER,
+      dataType: SegmentDataType.ALL,
+      data: [],
+      columns: getDefaultColumns(SegmentBizType.USER),
+    },
+    {
+      name: 'All Companies',
+      bizType: SegmentBizType.COMPANY,
+      dataType: SegmentDataType.ALL,
+      data: [],
+      columns: getDefaultColumns(SegmentBizType.COMPANY),
+    },
+  ];
+}

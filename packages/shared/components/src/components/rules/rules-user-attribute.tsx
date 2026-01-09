@@ -11,7 +11,8 @@ import {
 import { CloseIcon, UserIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn, isUndefined } from '@usertour/helpers';
+import { isUndefined } from '@usertour/helpers';
+import { cn } from '@usertour-packages/tailwind';
 import { format } from 'date-fns';
 import { ComboBox } from '@usertour-packages/combo-box';
 import {
@@ -36,11 +37,10 @@ import {
 import { useRulesContext, useRulesZIndex } from './rules-context';
 import { useRulesGroupContext } from '../contexts/rules-group-context';
 import { RulesError, RulesErrorAnchor, RulesErrorContent } from './rules-error';
-import { RulesLogic } from './rules-logic';
 import { RulesPopover, RulesPopoverContent } from './rules-popper';
 import { RulesRemove } from './rules-remove';
 import { RulesConditionRightContent } from './rules-template';
-import { RulesContainerWrapper, RulesPopoverTriggerWrapper } from './rules-wrapper';
+import { RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export const conditionsTypeMapping = {
@@ -609,43 +609,39 @@ export const RulesUserAttribute = (props: RulesUserAttributeProps & { conditionI
   return (
     <RulesUserAttributeContext.Provider value={value}>
       <RulesError open={openError}>
-        <RulesContainerWrapper>
-          <RulesLogic index={index} disabled={disabled} />
-          <RulesErrorAnchor asChild>
-            <RulesConditionRightContent disabled={disabled}>
-              <RulesPopover onOpenChange={handleOpenChange} open={open}>
-                <RulesPopoverTriggerWrapper icon={<UserIcon width={16} height={16} />}>
-                  <span className="font-bold">{selectedPreset?.displayName} </span>
-                  {displayCondition} <span className="font-bold ">{displayValue}</span>
-                  {localData?.logic === 'between' && (
-                    <>
-                      <span className="mx-1">and</span>
-                      <span className="font-bold ">{localData?.value2}</span>
-                    </>
-                  )}
-                </RulesPopoverTriggerWrapper>
-                <RulesPopoverContent>
-                  <div className=" flex flex-col space-y-2">
-                    <div className=" flex flex-col space-y-1">
-                      <div>
-                        {selectedPreset?.bizType === AttributeBizTypes.User && 'User attribute'}
-                        {selectedPreset?.bizType === AttributeBizTypes.Company &&
-                          'Company attribute'}
-                        {selectedPreset?.bizType === AttributeBizTypes.Membership &&
-                          'Membership attribute'}
-                      </div>
-                      <RulesUserAttributeName />
-                      <RulesUserAttributeCondition />
-                      <RulesUserAttributeInput />
+        <RulesErrorAnchor asChild>
+          <RulesConditionRightContent disabled={disabled}>
+            <RulesPopover onOpenChange={handleOpenChange} open={open}>
+              <RulesPopoverTriggerWrapper icon={<UserIcon width={16} height={16} />}>
+                <span className="font-bold">{selectedPreset?.displayName} </span>
+                {displayCondition} <span className="font-bold ">{displayValue}</span>
+                {localData?.logic === 'between' && (
+                  <>
+                    <span className="mx-1">and</span>
+                    <span className="font-bold ">{localData?.value2}</span>
+                  </>
+                )}
+              </RulesPopoverTriggerWrapper>
+              <RulesPopoverContent>
+                <div className=" flex flex-col space-y-2">
+                  <div className=" flex flex-col space-y-1">
+                    <div>
+                      {selectedPreset?.bizType === AttributeBizTypes.User && 'User attribute'}
+                      {selectedPreset?.bizType === AttributeBizTypes.Company && 'Company attribute'}
+                      {selectedPreset?.bizType === AttributeBizTypes.Membership &&
+                        'Membership attribute'}
                     </div>
+                    <RulesUserAttributeName />
+                    <RulesUserAttributeCondition />
+                    <RulesUserAttributeInput />
                   </div>
-                </RulesPopoverContent>
-              </RulesPopover>
-              <RulesRemove index={index} />
-            </RulesConditionRightContent>
-          </RulesErrorAnchor>
-          <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
-        </RulesContainerWrapper>
+                </div>
+              </RulesPopoverContent>
+            </RulesPopover>
+            <RulesRemove index={index} />
+          </RulesConditionRightContent>
+        </RulesErrorAnchor>
+        <RulesErrorContent zIndex={errorZIndex}>{errorInfo}</RulesErrorContent>
       </RulesError>
     </RulesUserAttributeContext.Provider>
   );

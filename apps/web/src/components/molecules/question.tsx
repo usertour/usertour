@@ -1,4 +1,4 @@
-import { cn } from '@/utils/common';
+import { cn } from '@usertour-packages/tailwind';
 import { StarButton } from '@usertour-packages/shared-editor';
 
 interface QuestionStarRatingProps {

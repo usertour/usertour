@@ -1,6 +1,9 @@
-import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import compileEmailTemplate from '@/common/email/compile-email-template';
-import { initialization, initializationThemes } from '@/common/initialization/initialization';
+import {
+  getDefaultSegments,
+  initialization,
+  initializationThemes,
+} from '@/common/initialization/initialization';
 import { Injectable, Logger } from '@nestjs/common';
 import { randomBytes, createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
@@ -713,20 +716,7 @@ export class AuthService {
           create: [{ userId, role: RolesScopeEnum.OWNER, actived: true }],
         },
         segments: {
-          create: [
-            {
-              name: 'All Users',
-              bizType: SegmentBizType.USER,
-              dataType: SegmentDataType.ALL,
-              data: [],
-            },
-            {
-              name: 'All Companies',
-              bizType: SegmentBizType.COMPANY,
-              dataType: SegmentDataType.ALL,
-              data: [],
-            },
-          ],
+          create: getDefaultSegments(),
         },
         environments: {
           create: [

@@ -9,16 +9,17 @@ import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import { Avatar, AvatarFallback } from '@usertour-packages/avatar';
 import { Button } from '@usertour-packages/button';
 import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '@usertour-packages/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour/helpers';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@usertour-packages/dropdown-menu';
+import { cn } from '@usertour-packages/tailwind';
 import * as React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const AdminEnvSwitcher = () => {
   const [open, setOpen] = React.useState(false);
@@ -33,15 +34,15 @@ export const AdminEnvSwitcher = () => {
   const handleItemClick = React.useCallback(
     (env: Environment) => {
       if (env.id) {
-        const currentPath = location.pathname;
         // If path starts with /env/, extract and replace envId
-        if (currentPath.startsWith('/env/')) {
-          const match = currentPath.match(/^\/env\/([^/]+)/);
+        if (location.pathname.startsWith('/env/')) {
+          const match = location.pathname.match(/^\/env\/([^/]+)/);
           if (match) {
             const [, currentEnvId] = match;
             // Replace envId in path, handle both /env/:id and /env/:id/... cases
-            const newPath = currentPath.replace(`/env/${currentEnvId}`, `/env/${env.id}`);
-            navigate(newPath);
+            const newPathname = location.pathname.replace(`/env/${currentEnvId}`, `/env/${env.id}`);
+            // Navigate with both new pathname and preserved search params
+            navigate(`${newPathname}${location.search}`, { replace: false });
           }
         }
         // Always update environment context
@@ -49,7 +50,7 @@ export const AdminEnvSwitcher = () => {
       }
       setOpen(false);
     },
-    [location.pathname, navigate, selectEnvironment],
+    [location.pathname, location.search, navigate, selectEnvironment],
   );
   const handleCreate = () => {
     setShowNewEnvDialog(true);
@@ -61,8 +62,8 @@ export const AdminEnvSwitcher = () => {
 
   return (
     <>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             className="flex p-0 text-sm rounded-full shadow-none dark:bg-transparent ring-transparent hover:bg-transparent focus:ring-0"
@@ -78,48 +79,43 @@ export const AdminEnvSwitcher = () => {
             {/* {environment?.name} */}
             {/* <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" /> */}
           </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0" side="right">
-          <Command>
-            <CommandList>
-              <CommandGroup key={'aaaa'} heading="Environments">
-                {environmentList?.map((env) => (
-                  <CommandItem
-                    key={env.id}
-                    value={env.id}
-                    onSelect={() => {
-                      handleItemClick(env);
-                    }}
-                    className="text-sm"
-                  >
-                    <Avatar className="mr-2 h-5 w-5">
-                      <AvatarFallback className="bg-blue-800 text-white text-xs">
-                        {env?.name?.slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    {env.name}
-                    <CheckIcon
-                      className={cn(
-                        'ml-auto h-4 w-4',
-                        env.id === environment?.id ? 'opacity-100' : 'opacity-0',
-                      )}
-                    />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-            <CommandSeparator />
-            <CommandList>
-              <CommandGroup>
-                <CommandItem onSelect={handleCreate} disabled={isViewOnly}>
-                  <PlusCircledIcon className="mr-2 h-5 w-5" />
-                  Create Environment
-                </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[200px]" align="end" forceMount side="right">
+          <DropdownMenuLabel className="font-normal">Environments</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            {environmentList?.map((env) => (
+              <DropdownMenuItem
+                key={env.id}
+                onClick={() => {
+                  handleItemClick(env);
+                }}
+                className="text-sm cursor-pointer"
+              >
+                <Avatar className="mr-2 h-5 w-5">
+                  <AvatarFallback className="bg-blue-800 text-white text-xs">
+                    {env?.name?.slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="flex-1 truncate">{env.name}</span>
+                <CheckIcon
+                  className={cn(
+                    'ml-auto h-4 w-4',
+                    env.id === environment?.id ? 'opacity-100' : 'opacity-0',
+                  )}
+                />
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={handleCreate} disabled={isViewOnly}>
+              <PlusCircledIcon className="mr-2 h-5 w-5" />
+              Create Environment
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <EnvironmentCreateForm isOpen={showNewEnvDialog} onClose={handleOnClose} />
     </>

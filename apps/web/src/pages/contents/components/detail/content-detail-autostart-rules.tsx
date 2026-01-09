@@ -100,16 +100,19 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     [conditions, setting, onDataChange],
   );
 
-  if (!content.environmentId) return null;
+  const environmentId = content.environmentId ?? '';
+  const contentType = content.type;
 
+  // All hooks must be called before any conditional returns
   const id = useId();
   const { attributeList } = useAttributeListContext();
   const { segmentList } = useSegmentListContext();
   const { contents } = useContentListQuery({
-    query: { environmentId: content.environmentId },
-    options: { skip: !content.environmentId },
+    query: { environmentId },
+    options: { skip: !environmentId },
   });
-  const contentType = content.type;
+
+  if (!environmentId) return null;
 
   return (
     <div className="flex flex-col space-y-8">
@@ -122,8 +125,8 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
             className="data-[state=unchecked]:bg-input"
             onCheckedChange={handleEnabledChange}
           />
-          <Label htmlFor={id} className="flex flex-col space-y-1">
-            <span className="font-normal">{name}</span>
+          <Label htmlFor={id} className="max-w-40 truncate font-normal">
+            {name}
           </Label>
           <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
             {featureTooltip}

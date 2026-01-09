@@ -2,7 +2,7 @@ import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-in
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsTooltip = () => {
-  const { settings, setSettings } = useThemeSettingsContext();
+  const { settings, setSettings, isViewOnly } = useThemeSettingsContext();
   const update = (data: Partial<typeof settings.tooltip>) => {
     const { tooltip } = settings;
     setSettings((pre) => ({
@@ -20,6 +20,7 @@ export const ThemeSettingsTooltip = () => {
           onChange={(value: string) => {
             update({ width: Number(value) });
           }}
+          disabled={isViewOnly}
         />
         <ThemeSettingInput
           text="Notch size"
@@ -28,6 +29,7 @@ export const ThemeSettingsTooltip = () => {
           onChange={(value: string) => {
             update({ notchSize: Number(value) });
           }}
+          disabled={isViewOnly}
         />
       </div>
     </div>
