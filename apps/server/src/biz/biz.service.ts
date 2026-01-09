@@ -23,6 +23,7 @@ import {
 } from './dto/segment.input';
 import { Segment, SegmentBizType, SegmentDataType } from './models/segment.model';
 import { ParamsError, UnknownError } from '@/common/errors';
+import { getDefaultColumns } from '@/common/initialization/initialization';
 import { BizAttributeTypes } from '@usertour/types';
 import { IntegrationSource } from '@/common/types/integration';
 import isEqual from 'fast-deep-equal';
@@ -60,8 +61,14 @@ export class BizService {
       throw new ParamsError('Environment not found');
     }
 
+    // Set default columns if not provided
+    const segmentData = { ...data, projectId: environment.projectId };
+    if (!segmentData.columns && segmentData.bizType) {
+      segmentData.columns = getDefaultColumns(segmentData.bizType as SegmentBizType);
+    }
+
     return await this.prisma.segment.create({
-      data: { ...data, projectId: environment.projectId },
+      data: segmentData,
     });
   }
 
@@ -85,6 +92,7 @@ export class BizService {
         dataType: SegmentDataType.MANUAL,
         source,
         sourceId,
+        columns: getDefaultColumns(SegmentBizType.USER),
       },
     });
   }
