@@ -368,8 +368,9 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-checklist-trigger-hover-background-color': settings.checklistLauncher.color.hover,
     '--usertour-question-color': hexToHSLString(settings.survey.color),
     '--usertour-launcher-button-height': `${settings.launcherButtons.height}px`,
-    '--usertour-launcher-button-width':
-      settings.launcherButtons.width === 0 ? 'auto' : `${settings.launcherButtons.width}px`,
+    '--usertour-launcher-button-width': !settings.launcherButtons.width
+      ? 'auto'
+      : `${settings.launcherButtons.width}px`,
     '--usertour-launcher-button-horizontal-padding': `${settings.launcherButtons.px}px`,
     '--usertour-launcher-button-border-radius': `${settings.launcherButtons.borderRadius}px`,
     '--usertour-launcher-button-background-color':

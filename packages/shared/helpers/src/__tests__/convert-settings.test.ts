@@ -166,7 +166,6 @@ describe('convert-settings', () => {
     },
     launcherButtons: {
       height: 32,
-      width: 0,
       px: 16,
       borderRadius: 8,
       primary: {
@@ -589,7 +588,7 @@ describe('convert-settings', () => {
 
       expect(result.launcherButtons).toBeDefined();
       expect(result.launcherButtons.height).toBe(defaultSettings.launcherButtons.height);
-      expect(result.launcherButtons.width).toBe(defaultSettings.launcherButtons.width);
+      expect(result.launcherButtons.width).toBeUndefined();
       expect(result.launcherButtons.px).toBe(defaultSettings.launcherButtons.px);
       expect(result.launcherButtons.borderRadius).toBe(
         defaultSettings.launcherButtons.borderRadius,
@@ -760,11 +759,39 @@ describe('convert-settings', () => {
       expect(css).toContain('--usertour-launcher-button-active-border-color:');
     });
 
-    it('should set launcher button width to auto when width is 0', () => {
+    it('should set launcher button width to auto when width is undefined', () => {
       const convertedSettings = convertSettings(completeSettings);
       const css = convertToCssVars(convertedSettings);
 
       expect(css).toContain('--usertour-launcher-button-width:auto');
+    });
+
+    it('should set launcher button width to auto when width is 0', () => {
+      const settingsWithZeroWidth = {
+        ...completeSettings,
+        launcherButtons: {
+          ...completeSettings.launcherButtons,
+          width: 0,
+        },
+      };
+      const convertedSettings = convertSettings(settingsWithZeroWidth);
+      const css = convertToCssVars(convertedSettings);
+
+      expect(css).toContain('--usertour-launcher-button-width:auto');
+    });
+
+    it('should set launcher button width to specific value when width is provided', () => {
+      const settingsWithWidth = {
+        ...completeSettings,
+        launcherButtons: {
+          ...completeSettings.launcherButtons,
+          width: 120,
+        },
+      };
+      const convertedSettings = convertSettings(settingsWithWidth);
+      const css = convertToCssVars(convertedSettings);
+
+      expect(css).toContain('--usertour-launcher-button-width:120px');
     });
 
     it('should set launcher button border width to 0px when border is disabled', () => {

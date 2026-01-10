@@ -80,7 +80,7 @@ export type ThemeTypesSetting = {
   };
   launcherButtons: {
     height: number;
-    width: number;
+    width?: number;
     px: number;
     borderRadius: number;
     primary: ThemeTypesSettingsButton;
@@ -281,7 +281,6 @@ export const defaultSettings: ThemeTypesSetting = {
   launcherButtons: {
     px: 16,
     height: 32,
-    width: 0,
     borderRadius: 8,
     primary: {
       border: {
@@ -484,7 +483,6 @@ export const standardDarkSettings: ThemeTypesSetting = {
   launcherButtons: {
     px: 16,
     height: 32,
-    width: 0,
     borderRadius: 8,
     primary: {
       border: {

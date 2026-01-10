@@ -1,6 +1,7 @@
 import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
+import { isNullish } from '@usertour/helpers';
 import { ThemeTypesSettingsButton } from '@usertour/types';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
@@ -69,11 +70,18 @@ export const ThemeSettingsLauncherButtons = () => {
         <ThemeSettingInput
           text="Width"
           name="launcher-button-width"
-          defaultValue={String(settings.launcherButtons.width)}
+          disableUnit={isNullish(settings.launcherButtons.width)}
+          placeholder="Auto"
+          tooltip="By default, the button width adapts to its content. Set a value here for a fixed width."
+          defaultValue={
+            !isNullish(settings.launcherButtons.width) ? String(settings.launcherButtons.width) : ''
+          }
           onChange={(value: string) => {
-            updateBase({ width: Number(value) });
+            const numValue = value === '' ? undefined : Number(value);
+            updateBase({ width: numValue });
           }}
           disabled={isViewOnly}
+          error={settings.launcherButtons.width === 0 ? 'Width cannot be 0' : undefined}
         />
         <ThemeSettingInput
           text="Border radius"

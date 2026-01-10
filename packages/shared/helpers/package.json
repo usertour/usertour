@@ -1,6 +1,6 @@
 {
   "name": "@usertour/helpers",
-  "version": "0.0.61",
+  "version": "0.0.62",
   "type": "module",
   "description": "Utility functions and helpers shared across the UserTour project",
   "homepage": "https://www.usertour.io",
@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
-    "@usertour/types": "^0.0.45",
+    "@usertour/types": "^0.0.46",
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.4.0",
     "date-fns": "^2.30.0",
