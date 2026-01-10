@@ -217,6 +217,7 @@ const LauncherPreview = ({
           iconType={data.iconType}
           iconSource={data.iconSource}
           iconUrl={data.iconUrl}
+          buttonText={data.buttonText}
           style={{
             zIndex: 1,
           }}

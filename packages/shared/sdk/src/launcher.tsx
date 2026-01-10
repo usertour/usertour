@@ -88,6 +88,7 @@ interface LauncherContentProps {
   iconType?: string;
   iconSource?: LauncherIconSource;
   iconUrl?: string;
+  buttonText?: string;
   zIndex: number;
 }
 
@@ -222,30 +223,42 @@ interface LauncherViewProps {
   iconType?: string;
   iconSource?: LauncherIconSource;
   iconUrl?: string;
+  buttonText?: string;
 }
 
 const LauncherView = forwardRef<HTMLDivElement, LauncherViewProps>(
-  ({ className, style, dir, type, iconType, iconSource, iconUrl }, ref) => {
+  ({ className, style, dir, type, iconType, iconSource, iconUrl, buttonText }, ref) => {
     const { themeSetting } = useLauncherContext();
-    let iconClass = 'usertour-widget-launcher--icon';
-    if (type === LauncherDataType.BEACON) {
-      iconClass = 'usertour-widget-beacon ';
-    }
     const isClick = true;
-    const classes = `usertour-widget-launcher ${iconClass} ${
-      isClick ? 'usertour-widget-launcher--activate-on-click' : ''
-    }`;
+
+    let classes = 'usertour-widget-launcher';
+
+    if (type === LauncherDataType.BUTTON) {
+      classes = `${classes} usertour-widget-launcher--button`;
+    } else if (type === LauncherDataType.BEACON) {
+      classes = `${classes} usertour-widget-beacon`;
+    } else {
+      classes = `${classes} usertour-widget-launcher--icon`;
+    }
+
+    if (isClick) {
+      classes = `${classes} usertour-widget-launcher--activate-on-click`;
+    }
 
     return (
       <div className={cn(classes, className)} ref={ref} style={style} dir={dir}>
-        <LauncherIcon
-          type={type}
-          iconType={iconType}
-          iconSource={iconSource}
-          iconUrl={iconUrl}
-          width={themeSetting?.launcherIcon.size}
-          height={themeSetting?.launcherIcon.size}
-        />
+        {type === LauncherDataType.BUTTON ? (
+          buttonText
+        ) : (
+          <LauncherIcon
+            type={type}
+            iconType={iconType}
+            iconSource={iconSource}
+            iconUrl={iconUrl}
+            width={themeSetting?.launcherIcon.size}
+            height={themeSetting?.launcherIcon.size}
+          />
+        )}
       </div>
     );
   },
@@ -272,6 +285,7 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
     iconType,
     iconSource,
     iconUrl,
+    buttonText,
   } = props;
 
   const referenceEl = referenceRef?.current as ReferenceElement;
@@ -404,6 +418,7 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
       iconType={iconType}
       iconSource={iconSource}
       iconUrl={iconUrl}
+      buttonText={buttonText}
     />
   );
 });
@@ -471,6 +486,7 @@ const LauncherContentWrapper = forwardRef<HTMLDivElement, LauncherContentProps>(
         iconType={data.iconType}
         iconSource={data.iconSource}
         iconUrl={data.iconUrl}
+        buttonText={data.buttonText}
         ref={ref}
         {...props}
       />

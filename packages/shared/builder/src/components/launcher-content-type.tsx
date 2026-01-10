@@ -1,5 +1,4 @@
-import { EyeNoneIcon, InfoCircledIcon } from '@radix-ui/react-icons';
-import { LauncherIcon } from '@usertour-packages/icons';
+import { LauncherIcon, RiEyeOffFill, RiSquareFill } from '@usertour-packages/icons';
 import {
   Select,
   SelectContent,
@@ -22,9 +21,11 @@ export const LauncherContentType = ({ zIndex, type, onChange }: LauncherTypeProp
       case LauncherDataType.BEACON:
         return <LauncherIcon {...iconProps} />;
       case LauncherDataType.ICON:
-        return <InfoCircledIcon {...iconProps} />;
+        return <RiSquareFill size={16} className="text-current" />;
+      case LauncherDataType.BUTTON:
+        return <RiSquareFill size={16} className="text-current" />;
       case LauncherDataType.HIDDEN:
-        return <EyeNoneIcon {...iconProps} />;
+        return <RiEyeOffFill size={16} className="text-current" />;
     }
   };
 
@@ -34,6 +35,8 @@ export const LauncherContentType = ({ zIndex, type, onChange }: LauncherTypeProp
         return 'Shows a pulsing beacon. Great for drawing attention to new features.';
       case LauncherDataType.ICON:
         return 'Shows a simple icon. Great for explanation tooltips.';
+      case LauncherDataType.BUTTON:
+        return 'Shows a button with custom text. Great for call-to-action prompts.';
       case LauncherDataType.HIDDEN:
         return 'Hides the launcher. Only shows when triggered.';
       default:
