@@ -62,6 +62,7 @@ export interface UploadIconTabProps {
   iconUrl?: string;
   iconSource: LauncherIconSource;
   onUploadSuccess: (url: string) => void;
+  onRemove?: () => void;
 }
 
 // URL icon tab props

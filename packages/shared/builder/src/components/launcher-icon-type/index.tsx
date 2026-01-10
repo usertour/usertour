@@ -67,6 +67,14 @@ export const LauncherIconType = ({
     [onChange, type],
   );
 
+  const handleRemoveUploadedIcon = useCallback(() => {
+    onChange({
+      iconType: type,
+      iconSource: LauncherIconSource.BUILTIN,
+      iconUrl: undefined,
+    });
+  }, [onChange, type]);
+
   return (
     <TooltipProvider>
       <Popover open={open} onOpenChange={setOpen}>
@@ -103,6 +111,7 @@ export const LauncherIconType = ({
                   iconUrl={iconUrl}
                   iconSource={iconSource}
                   onUploadSuccess={handleUploadSuccess}
+                  onRemove={handleRemoveUploadedIcon}
                 />
               </UnderlineTabsContent>
               <UnderlineTabsContent value="url">

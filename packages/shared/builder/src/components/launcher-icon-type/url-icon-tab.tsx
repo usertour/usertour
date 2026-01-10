@@ -2,8 +2,6 @@ import React from 'react';
 import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
 import { ArrowRightIcon } from '@usertour-packages/icons';
-import { LauncherIconSource } from '@usertour/types';
-import { IconPreview } from './icon-preview';
 import { useIconUrl } from './hooks/use-icon-url';
 import type { UrlIconTabProps } from './types';
 
@@ -14,8 +12,6 @@ export const UrlIconTab = React.memo<UrlIconTabProps>(
       iconSource,
       onUrlSubmit,
     });
-
-    const showPreview = iconSource === LauncherIconSource.URL && iconUrl;
 
     return (
       <div className="py-4 flex flex-col gap-2">
@@ -34,7 +30,7 @@ export const UrlIconTab = React.memo<UrlIconTabProps>(
             }}
           />
           <Button
-            className="flex-none w-20"
+            className="flex-none w-20 h-9"
             variant="ghost"
             size="default"
             onClick={handleUrlSubmit}
@@ -44,11 +40,6 @@ export const UrlIconTab = React.memo<UrlIconTabProps>(
             Load
           </Button>
         </div>
-        {showPreview && (
-          <div className="w-full pt-2">
-            <IconPreview iconUrl={iconUrl} alt="URL icon" size="medium" />
-          </div>
-        )}
       </div>
     );
   },
