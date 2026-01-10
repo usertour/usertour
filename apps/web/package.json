@@ -77,7 +77,7 @@
     "@usertour-packages/tooltip": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
     "@usertour/helpers": "^0.0.60",
-    "@usertour/types": "^0.0.43",
+    "@usertour/types": "^0.0.44",
     "apollo3-cache-persist": "^0.14.1",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",

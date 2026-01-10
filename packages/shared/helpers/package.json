@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
-    "@usertour/types": "^0.0.43",
+    "@usertour/types": "^0.0.44",
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.4.0",
     "date-fns": "^2.30.0",

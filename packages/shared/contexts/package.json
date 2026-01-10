@@ -15,7 +15,7 @@
     "@apollo/client": "^3.7.17",
     "@tanstack/react-table": "^8.9.3",
     "@usertour-packages/gql": "workspace:^",
-    "@usertour/types": "^0.0.43",
+    "@usertour/types": "^0.0.44",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

@@ -26,7 +26,7 @@
     "@usertour-packages/tailwind": "workspace:^",
     "@usertour/helpers": "^0.0.60",
     "@radix-ui/react-icons": "^1.3.0",
-    "@usertour/types": "^0.0.43",
+    "@usertour/types": "^0.0.44",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
