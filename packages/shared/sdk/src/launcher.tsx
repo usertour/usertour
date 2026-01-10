@@ -4,7 +4,14 @@ import { autoUpdate, ReferenceElement } from '@floating-ui/dom';
 import { useFloating, offset, shift, limitShift, hide, flip, size } from '@floating-ui/react-dom';
 import type { Middleware, Placement } from '@floating-ui/dom';
 import { getRegisteredIconNames, getIcon } from '@usertour-packages/icons';
-import { Align, LauncherData, LauncherDataType, Side, ThemeTypesSetting } from '@usertour/types';
+import {
+  Align,
+  LauncherData,
+  LauncherDataType,
+  LauncherIconSource,
+  Side,
+  ThemeTypesSetting,
+} from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
 import {
   Popper,
@@ -79,6 +86,8 @@ interface LauncherContentProps {
   updatePositionStrategy?: 'optimized' | 'always';
   referenceRef?: React.RefObject<any>;
   iconType?: string;
+  iconSource?: LauncherIconSource;
+  iconUrl?: string;
   zIndex: number;
 }
 
@@ -139,13 +148,39 @@ LauncherContainer.displayName = 'LauncherContainer';
 interface LauncherIconProps {
   type: LauncherDataType;
   iconType?: string;
+  iconSource?: LauncherIconSource;
+  iconUrl?: string;
   width?: number;
   height?: number;
 }
 
+// Simple icon preview component for uploaded/URL icons
+const IconPreview = ({
+  iconUrl,
+  size,
+}: {
+  iconUrl: string;
+  size: number;
+}) => {
+  return (
+    <img
+      src={iconUrl}
+      alt="Custom icon"
+      style={{ width: size, height: size, objectFit: 'contain' }}
+    />
+  );
+};
+
 // UI Components
-const LauncherIcon = ({ type, iconType, width, height }: LauncherIconProps) => {
-  const ActiveIcon = IconsList.find((item) => item.name === iconType)?.ICON;
+const LauncherIcon = ({
+  type,
+  iconType,
+  iconSource,
+  iconUrl,
+  width,
+  height,
+}: LauncherIconProps) => {
+  const iconSize = width ?? height ?? 24;
 
   if (type === LauncherDataType.BEACON) {
     return (
@@ -156,8 +191,20 @@ const LauncherIcon = ({ type, iconType, width, height }: LauncherIconProps) => {
     );
   }
 
-  if (type === LauncherDataType.ICON && ActiveIcon) {
-    return <ActiveIcon size={width ?? height ?? 24} />;
+  if (type === LauncherDataType.ICON) {
+    // Handle uploaded or URL icons
+    if (
+      (iconSource === LauncherIconSource.UPLOAD || iconSource === LauncherIconSource.URL) &&
+      iconUrl
+    ) {
+      return <IconPreview iconUrl={iconUrl} size={iconSize} />;
+    }
+
+    // Handle built-in icons
+    const ActiveIcon = IconsList.find((item) => item.name === iconType)?.ICON;
+    if (ActiveIcon) {
+      return <ActiveIcon size={iconSize} />;
+    }
   }
 
   return null;
@@ -171,10 +218,12 @@ interface LauncherViewProps {
   dir?: string;
   type: LauncherDataType;
   iconType?: string;
+  iconSource?: LauncherIconSource;
+  iconUrl?: string;
 }
 
 const LauncherView = forwardRef<HTMLDivElement, LauncherViewProps>(
-  ({ className, style, dir, type, iconType }, ref) => {
+  ({ className, style, dir, type, iconType, iconSource, iconUrl }, ref) => {
     const { themeSetting } = useLauncherContext();
     let iconClass = 'usertour-widget-launcher--icon';
     if (type === LauncherDataType.BEACON) {
@@ -190,6 +239,8 @@ const LauncherView = forwardRef<HTMLDivElement, LauncherViewProps>(
         <LauncherIcon
           type={type}
           iconType={iconType}
+          iconSource={iconSource}
+          iconUrl={iconUrl}
           width={themeSetting?.launcherIcon.size}
           height={themeSetting?.launcherIcon.size}
         />
@@ -217,6 +268,8 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
     zIndex,
     type = LauncherDataType.ICON,
     iconType,
+    iconSource,
+    iconUrl,
   } = props;
 
   const referenceEl = referenceRef?.current as ReferenceElement;
@@ -347,6 +400,8 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
       dir={dir}
       type={type}
       iconType={iconType}
+      iconSource={iconSource}
+      iconUrl={iconUrl}
     />
   );
 });
@@ -412,6 +467,8 @@ const LauncherContentWrapper = forwardRef<HTMLDivElement, LauncherContentProps>(
         avoidCollisions={alignType === 'auto'}
         type={data.type}
         iconType={data.iconType}
+        iconSource={data.iconSource}
+        iconUrl={data.iconUrl}
         ref={ref}
         {...props}
       />

@@ -215,6 +215,8 @@ const LauncherPreview = ({
         <LauncherView
           type={data.type}
           iconType={data.iconType}
+          iconSource={data.iconSource}
+          iconUrl={data.iconUrl}
           style={{
             zIndex: 1,
           }}
