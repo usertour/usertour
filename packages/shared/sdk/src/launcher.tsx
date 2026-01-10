@@ -163,7 +163,13 @@ const IconPreview = ({
   size: number;
 }) => {
   return (
-    <img src={iconUrl} alt="Custom icon" width={size} height={size} className="object-contain" />
+    <img
+      src={iconUrl}
+      alt="Custom icon"
+      width={size}
+      height={size}
+      style={{ objectFit: 'contain' }}
+    />
   );
 };
 
