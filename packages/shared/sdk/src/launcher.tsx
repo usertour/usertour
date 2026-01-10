@@ -3,8 +3,7 @@ import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { autoUpdate, ReferenceElement } from '@floating-ui/dom';
 import { useFloating, offset, shift, limitShift, hide, flip, size } from '@floating-ui/react-dom';
 import type { Middleware, Placement } from '@floating-ui/dom';
-import { UserIcon, getRegisteredIconNames, getIcon } from '@usertour-packages/icons';
-import { InfoCircledIcon, RocketIcon } from '@radix-ui/react-icons';
+import { getRegisteredIconNames, getIcon } from '@usertour-packages/icons';
 import { Align, LauncherData, LauncherDataType, Side, ThemeTypesSetting } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
 import {
@@ -36,17 +35,11 @@ const formatIconName = (name: string): string => {
 
 /**
  * Generate IconsList from registered RemixIcon icons
- * Includes both the original icons and all registered RemixIcon icons
+ * Includes all registered RemixIcon icons
  */
 const generateIconsList = () => {
-  const baseIcons = [
-    { ICON: InfoCircledIcon, text: 'Info Circled', name: 'info-circled' },
-    { ICON: RocketIcon, text: 'Rocket', name: 'rocket' },
-    { ICON: UserIcon, text: 'User', name: 'user' },
-  ];
-
   const registeredNames = getRegisteredIconNames();
-  const remixIcons = registeredNames
+  const icons = registeredNames
     .map((name) => {
       const icon = getIcon(name);
       if (!icon) {
@@ -60,10 +53,10 @@ const generateIconsList = () => {
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
-  // Sort RemixIcon icons by name for better UX
-  remixIcons.sort((a, b) => a.name.localeCompare(b.name));
+  // Sort icons by name for better UX
+  icons.sort((a, b) => a.name.localeCompare(b.name));
 
-  return [...baseIcons, ...remixIcons];
+  return icons;
 };
 
 export const IconsList = generateIconsList();
@@ -164,7 +157,7 @@ const LauncherIcon = ({ type, iconType, width, height }: LauncherIconProps) => {
   }
 
   if (type === LauncherDataType.ICON && ActiveIcon) {
-    return <ActiveIcon width={width} height={height} />;
+    return <ActiveIcon size={width ?? height ?? 24} />;
   }
 
   return null;

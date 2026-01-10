@@ -43,13 +43,11 @@ const IconButton = React.memo(
           size="icon"
           onClick={onClick}
           className={cn(
-            'w-full aspect-square h-auto rounded-none transition-transform hover:scale-125',
+            'w-full aspect-square h-auto transition-transform hover:scale-125',
             isSelected && 'bg-accent',
           )}
         >
-          <div className="flex items-center justify-center w-full h-full relative">
-            <Icon width={16} height={16} />
-          </div>
+          <Icon size={16} />
         </Button>
       </TooltipTrigger>
       <TooltipContent className="max-w-xs bg-foreground">{text}</TooltipContent>
@@ -68,7 +66,7 @@ const IconGrid = React.memo(
     onIconSelect: (name: string) => void;
   }) => (
     <div className="flex flex-col">
-      <div className="grid grid-cols-10 gap-px flex-1 content-start max-h-64 overflow-y-auto">
+      <div className="grid grid-cols-10 gap-px flex-1 content-start max-h-72 overflow-y-auto p-1">
         {IconsList.map(({ ICON, name, text }) => (
           <IconButton
             key={name}
@@ -99,7 +97,7 @@ export const LauncherIconType = ({ type, zIndex, onChange }: LauncherIconTypePro
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" className="justify-start flex h-8 w-full" style={{ zIndex }}>
-            {ActiveIcon && <ActiveIcon width={16} height={16} />}
+            {ActiveIcon && <ActiveIcon size={16} />}
             <div className="grow text-left ml-2">
               <span className="capitalize">{activeText}</span>
             </div>

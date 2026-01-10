@@ -36,6 +36,7 @@ import {
   RiErrorWarningLine,
   RiInformationLine,
   RiQuestionLine,
+  RiRocketLine,
   RiLockLine,
   RiLockUnlockLine,
   RiEyeLine,
@@ -153,13 +154,18 @@ import { registerIcons } from './remix-icon';
 // Register common icons for easy access
 // Users can register more icons as needed using registerIcon() or registerIcons()
 registerIcons({
+  // Base icons for backward compatibility with historical data
+  // These icons must be permanently retained and cannot be changed or removed
+  // to ensure compatibility with existing user data
+  'info-circled': RiInformationLine,
+  rocket: RiRocketLine,
+  user: RiUserFill,
   // Basic UI
   'home-line': RiHomeLine,
   'home-fill': RiHomeFill,
   'settings-line': RiSettingsLine,
   'settings-fill': RiSettingsFill,
   'user-line': RiUserLine,
-  'user-fill': RiUserFill,
   'notification-line': RiNotificationLine,
   'notification-fill': RiNotificationFill,
   'search-line': RiSearchLine,
@@ -191,7 +197,6 @@ registerIcons({
   'check-circle-line': RiCheckboxCircleLine,
   'checkbox-circle-line': RiCheckboxCircleLine,
   'error-warning-line': RiErrorWarningLine,
-  'information-line': RiInformationLine,
   'question-line': RiQuestionLine,
   // Security
   'lock-line': RiLockLine,
