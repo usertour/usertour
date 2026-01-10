@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Popover, PopoverContent, PopoverTrigger, PopoverArrow } from '@usertour-packages/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import {
   Tabs,
   UnderlineTabsList,
@@ -92,11 +92,9 @@ export const LauncherIconType = ({
           className="z-50 w-full p-0"
           style={{
             zIndex: zIndex + 1,
-            filter:
-              'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
           }}
         >
-          <div className="bg-background p-4 rounded space-y-3 w-80">
+          <div className="bg-background p-4 rounded space-y-3 w-72">
             <Tabs value={activeTab} onValueChange={handleTabChange}>
               <UnderlineTabsList>
                 <UnderlineTabsTrigger value="builtin">Built-in icon</UnderlineTabsTrigger>
@@ -124,7 +122,6 @@ export const LauncherIconType = ({
               </UnderlineTabsContent>
             </Tabs>
           </div>
-          <PopoverArrow className="fill-background" width={20} height={10} />
         </PopoverContent>
       </Popover>
     </TooltipProvider>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { CaretSortIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { LauncherIconSource } from '@usertour/types';
 import { getActiveIcon } from './utils';
@@ -23,7 +24,7 @@ export const IconTriggerButton = React.forwardRef<HTMLButtonElement, IconTrigger
       <Button
         ref={ref}
         variant="outline"
-        className="justify-start flex h-8 w-full"
+        className="justify-start flex h-8 w-full px-3 py-2"
         type="button"
         {...props}
       >
@@ -31,6 +32,7 @@ export const IconTriggerButton = React.forwardRef<HTMLButtonElement, IconTrigger
         <div className="grow text-left ml-2">
           <span className="capitalize">{activeText}</span>
         </div>
+        <CaretSortIcon className="h-4 w-4 opacity-50 ml-auto shrink-0" />
       </Button>
     );
   },
