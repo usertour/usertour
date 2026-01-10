@@ -28,9 +28,11 @@ export const LauncherType = () => {
       {localData.type === LauncherDataType.ICON && (
         <LauncherIconType
           type={localData.iconType}
+          iconSource={localData.iconSource}
+          iconUrl={localData.iconUrl}
           zIndex={sidebarZIndex}
-          onChange={(value) => {
-            updateLocalData({ iconType: value });
+          onChange={(updates) => {
+            updateLocalData(updates);
           }}
         />
       )}
