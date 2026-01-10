@@ -61,6 +61,7 @@ export type LauncherData = {
   iconType: string;
   iconSource?: LauncherIconSource;
   iconUrl?: string;
+  buttonText?: string;
   zIndex?: number;
   target: {
     element: ElementSelectorPropsData | undefined;

@@ -47,6 +47,7 @@ export enum LauncherDataType {
   BEACON = 'beacon',
   ICON = 'icon',
   HIDDEN = 'hidden',
+  BUTTON = 'button',
 }
 
 export enum ModalPosition {
