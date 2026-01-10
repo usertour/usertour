@@ -56,19 +56,23 @@ export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
     type: ThemeDetailPreviewType.MODAL,
   },
   {
-    name: 'Launcher Icon',
+    name: 'Launcher icon',
     type: ThemeDetailPreviewType.LAUNCHER_ICON,
   },
   {
-    name: 'Launcher Beacon',
+    name: 'Launcher beacon',
     type: ThemeDetailPreviewType.LAUNCHER_BEACON,
+  },
+  {
+    name: 'Launcher button',
+    type: ThemeDetailPreviewType.LAUNCHER_BUTTON,
   },
   {
     name: 'Checklist',
     type: ThemeDetailPreviewType.CHECKLIST,
   },
   {
-    name: 'Checklist Launcher',
+    name: 'Checklist launcher',
     type: ThemeDetailPreviewType.CHECKLIST_LAUNCHER,
   },
   {

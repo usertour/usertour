@@ -104,6 +104,9 @@ export const ThemePreviewPanel = ({
         {selectedType?.type === ThemeDetailPreviewType.LAUNCHER_BEACON && (
           <ThemePreviewLauncher type={LauncherDataType.BEACON} settings={settings} />
         )}
+        {selectedType?.type === ThemeDetailPreviewType.LAUNCHER_BUTTON && (
+          <ThemePreviewLauncher type={LauncherDataType.BUTTON} settings={settings} />
+        )}
         {(selectedType?.type === ThemeDetailPreviewType.CHECKLIST ||
           selectedType?.type === ThemeDetailPreviewType.CHECKLIST_LAUNCHER) && (
           <ThemePreviewChecklist

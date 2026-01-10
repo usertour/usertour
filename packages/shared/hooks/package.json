@@ -14,7 +14,7 @@
   "dependencies": {
     "@apollo/client": "^3.7.17",
     "@usertour-packages/gql": "workspace:^",
-    "@usertour/types": "^0.0.47",
+    "@usertour/types": "^0.0.48",
     "@usertour/helpers": "^0.0.62",
     "@usertour-packages/constants": "workspace:^",
     "react": "^18.2.0",

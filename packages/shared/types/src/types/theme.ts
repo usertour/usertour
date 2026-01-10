@@ -25,6 +25,7 @@ export enum ThemeDetailPreviewType {
   MODAL = 'modal',
   LAUNCHER_ICON = 'launcher-icon',
   LAUNCHER_BEACON = 'launcher-beacon',
+  LAUNCHER_BUTTON = 'launcher-button',
   CHECKLIST = 'checklist',
   CHECKLIST_LAUNCHER = 'checklist-launcher',
   NPS = 'nps',
