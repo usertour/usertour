@@ -1,4 +1,9 @@
-import { LauncherIcon, RiEyeOffFill, RiSquareFill } from '@usertour-packages/icons';
+import {
+  LauncherIcon,
+  RiEyeOffFill,
+  RiInformationFill,
+  RiSquareFill,
+} from '@usertour-packages/icons';
 import {
   Select,
   SelectContent,
@@ -21,7 +26,7 @@ export const LauncherContentType = ({ zIndex, type, onChange }: LauncherTypeProp
       case LauncherDataType.BEACON:
         return <LauncherIcon {...iconProps} />;
       case LauncherDataType.ICON:
-        return <RiSquareFill size={16} className="text-current" />;
+        return <RiInformationFill size={16} className="text-current" />;
       case LauncherDataType.BUTTON:
         return <RiSquareFill size={16} className="text-current" />;
       case LauncherDataType.HIDDEN:
