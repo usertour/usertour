@@ -78,6 +78,13 @@ export type ThemeTypesSetting = {
     opacity: number;
     size: number;
   };
+  launcherButtons: {
+    height: number;
+    width: number;
+    px: number;
+    borderRadius: number;
+    primary: ThemeTypesSettingsButton;
+  };
   checklist: {
     checkmarkColor: string;
     width: number;
@@ -271,6 +278,37 @@ export const defaultSettings: ThemeTypesSetting = {
     },
     opacity: 100,
   },
+  launcherButtons: {
+    px: 16,
+    height: 32,
+    width: 0,
+    borderRadius: 8,
+    primary: {
+      border: {
+        color: {
+          color: 'Auto',
+          hover: 'Auto',
+          active: 'Auto',
+          background: '#FFFFFF',
+        },
+        enabled: false,
+        borderWidth: 1,
+      },
+      textColor: {
+        color: 'Auto',
+        hover: 'Auto',
+        active: 'Auto',
+        background: '#FFFFFF',
+      },
+      fontWeight: 600,
+      backgroundColor: {
+        color: '#FFFFFF',
+        hover: 'Auto',
+        active: 'Auto',
+        background: 'Auto',
+      },
+    },
+  },
   launcherBeacon: {
     size: 16,
     color: '#facc15',
@@ -442,6 +480,37 @@ export const standardDarkSettings: ThemeTypesSetting = {
       background: '#1d4ed8',
     },
     opacity: 100,
+  },
+  launcherButtons: {
+    px: 16,
+    height: 32,
+    width: 0,
+    borderRadius: 8,
+    primary: {
+      border: {
+        color: {
+          color: 'Auto',
+          hover: 'Auto',
+          active: 'Auto',
+          background: '#FFFFFF',
+        },
+        enabled: false,
+        borderWidth: 1,
+      },
+      textColor: {
+        color: 'Auto',
+        hover: 'Auto',
+        active: 'Auto',
+        background: '#FFFFFF',
+      },
+      fontWeight: 600,
+      backgroundColor: {
+        color: '#FFFFFF',
+        hover: 'Auto',
+        active: 'Auto',
+        background: 'Auto',
+      },
+    },
   },
   launcherBeacon: {
     size: 16,

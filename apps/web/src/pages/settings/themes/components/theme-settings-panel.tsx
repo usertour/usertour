@@ -14,6 +14,7 @@ import { ThemeSettingsChecklist } from './settings/theme-settings-checklist';
 import { ThemeSettingsChecklistLauncher } from './settings/theme-settings-checklist-launcher';
 import { ThemeSettingsFont } from './settings/theme-settings-font';
 import { ThemeSettingsLauncherIcons } from './settings/theme-settings-launcher-icons';
+import { ThemeSettingsLauncherButtons } from './settings/theme-settings-launcher-buttons';
 import { ThemeSettingsModal } from './settings/theme-settings-modal';
 import { ThemeSettingsProgress } from './settings/theme-settings-progress';
 import { ThemeSettingsSurvey } from './settings/theme-settings-survey';
@@ -212,6 +213,12 @@ export const ThemeSettingsAccordionContent = () => (
       <AccordionTrigger>Launcher icons</AccordionTrigger>
       <AccordionContent>
         <ThemeSettingsLauncherIcons />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="launcher-buttons">
+      <AccordionTrigger>Launcher buttons</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsLauncherButtons />
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="backdrop">

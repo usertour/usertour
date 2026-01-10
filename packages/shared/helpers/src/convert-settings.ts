@@ -213,6 +213,48 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   // Survey auto values
   data.survey.color = resolveAutoValue(data.survey.color, data.brandColor.background);
 
+  // Launcher button primary text color auto values
+  data.launcherButtons.primary.textColor.color = resolveAutoValue(
+    data.launcherButtons.primary.textColor.color,
+    data.brandColor.color,
+  );
+  data.launcherButtons.primary.textColor.hover = resolveAutoValue(
+    data.launcherButtons.primary.textColor.hover,
+    data.brandColor.color,
+  );
+  data.launcherButtons.primary.textColor.active = resolveAutoValue(
+    data.launcherButtons.primary.textColor.active,
+    data.brandColor.color,
+  );
+
+  // Launcher button primary background color auto values
+  data.launcherButtons.primary.backgroundColor.background = resolveAutoValue(
+    data.launcherButtons.primary.backgroundColor.background,
+    data.brandColor.background,
+  );
+  data.launcherButtons.primary.backgroundColor.hover = resolveAutoValue(
+    data.launcherButtons.primary.backgroundColor.hover,
+    data.brandColor.autoHover as string,
+  );
+  data.launcherButtons.primary.backgroundColor.active = resolveAutoValue(
+    data.launcherButtons.primary.backgroundColor.active,
+    data.brandColor.autoActive as string,
+  );
+
+  // Launcher button primary border color auto values
+  data.launcherButtons.primary.border.color.color = resolveAutoValue(
+    data.launcherButtons.primary.border.color.color,
+    data.brandColor.background,
+  );
+  data.launcherButtons.primary.border.color.hover = resolveAutoValue(
+    data.launcherButtons.primary.border.color.hover,
+    data.brandColor.autoHover as string,
+  );
+  data.launcherButtons.primary.border.color.active = resolveAutoValue(
+    data.launcherButtons.primary.border.color.active,
+    data.brandColor.autoActive as string,
+  );
+
   // Font family handling
   if (data.font.fontFamily === 'System font') {
     data.font.fontFamily = defaultFontFamily;
@@ -325,6 +367,30 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-checklist-trigger-height': `${settings.checklistLauncher.height}px`,
     '--usertour-checklist-trigger-hover-background-color': settings.checklistLauncher.color.hover,
     '--usertour-question-color': hexToHSLString(settings.survey.color),
+    '--usertour-launcher-button-height': `${settings.launcherButtons.height}px`,
+    '--usertour-launcher-button-width':
+      settings.launcherButtons.width === 0 ? 'auto' : `${settings.launcherButtons.width}px`,
+    '--usertour-launcher-button-horizontal-padding': `${settings.launcherButtons.px}px`,
+    '--usertour-launcher-button-border-radius': `${settings.launcherButtons.borderRadius}px`,
+    '--usertour-launcher-button-background-color':
+      settings.launcherButtons.primary.backgroundColor.background,
+    '--usertour-launcher-button-hover-background-color':
+      settings.launcherButtons.primary.backgroundColor.hover,
+    '--usertour-launcher-button-active-background-color':
+      settings.launcherButtons.primary.backgroundColor.active,
+    '--usertour-launcher-button-font-color': settings.launcherButtons.primary.textColor.color,
+    '--usertour-launcher-button-hover-font-color': settings.launcherButtons.primary.textColor.hover,
+    '--usertour-launcher-button-active-font-color':
+      settings.launcherButtons.primary.textColor.active,
+    '--usertour-launcher-button-font-weight': settings.launcherButtons.primary.fontWeight,
+    '--usertour-launcher-button-border-width': settings.launcherButtons.primary.border.enabled
+      ? `${settings.launcherButtons.primary.border.borderWidth}px`
+      : '0px',
+    '--usertour-launcher-button-border-color': settings.launcherButtons.primary.border.color.color,
+    '--usertour-launcher-button-hover-border-color':
+      settings.launcherButtons.primary.border.color.hover,
+    '--usertour-launcher-button-active-border-color':
+      settings.launcherButtons.primary.border.color.active,
   };
 
   if (settings.backdrop.highlight.type === 'inside') {

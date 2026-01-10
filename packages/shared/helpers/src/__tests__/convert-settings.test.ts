@@ -164,6 +164,37 @@ describe('convert-settings', () => {
         },
       },
     },
+    launcherButtons: {
+      height: 32,
+      width: 0,
+      px: 16,
+      borderRadius: 8,
+      primary: {
+        fontWeight: 600,
+        textColor: {
+          color: 'Auto',
+          hover: 'Auto',
+          active: 'Auto',
+          background: '#FFFFFF',
+        },
+        backgroundColor: {
+          color: '#FFFFFF',
+          hover: 'Auto',
+          active: 'Auto',
+          background: 'Auto',
+        },
+        border: {
+          enabled: false,
+          borderWidth: 1,
+          color: {
+            color: 'Auto',
+            hover: 'Auto',
+            active: 'Auto',
+            background: '#FFFFFF',
+          },
+        },
+      },
+    },
     tooltip: {
       width: 300,
       notchSize: 20,
@@ -402,6 +433,47 @@ describe('convert-settings', () => {
       });
     });
 
+    describe('launcherButtons Auto values', () => {
+      it('should resolve launcherButtons primary textColor from brandColor.color when set to Auto', () => {
+        const result = convertSettings(completeSettings);
+        expect(result.launcherButtons.primary.textColor.color).toBe(
+          completeSettings.brandColor.color,
+        );
+        expect(result.launcherButtons.primary.textColor.hover).toBe(
+          completeSettings.brandColor.color,
+        );
+        expect(result.launcherButtons.primary.textColor.active).toBe(
+          completeSettings.brandColor.color,
+        );
+      });
+
+      it('should resolve launcherButtons primary backgroundColor from brandColor when set to Auto', () => {
+        const result = convertSettings(completeSettings);
+        expect(result.launcherButtons.primary.backgroundColor.background).toBe(
+          completeSettings.brandColor.background,
+        );
+        expect(result.launcherButtons.primary.backgroundColor.hover).toBe(
+          completeSettings.brandColor.autoHover,
+        );
+        expect(result.launcherButtons.primary.backgroundColor.active).toBe(
+          completeSettings.brandColor.autoActive,
+        );
+      });
+
+      it('should resolve launcherButtons primary border.color from brandColor when set to Auto', () => {
+        const result = convertSettings(completeSettings);
+        expect(result.launcherButtons.primary.border.color.color).toBe(
+          completeSettings.brandColor.background,
+        );
+        expect(result.launcherButtons.primary.border.color.hover).toBe(
+          completeSettings.brandColor.autoHover,
+        );
+        expect(result.launcherButtons.primary.border.color.active).toBe(
+          completeSettings.brandColor.autoActive,
+        );
+      });
+    });
+
     describe('font family handling', () => {
       it('should convert System font to full font family string', () => {
         const result = convertSettings(completeSettings);
@@ -507,6 +579,23 @@ describe('convert-settings', () => {
       expect(result.launcherIcon).toBeDefined();
       expect(result.launcherIcon.size).toBe(defaultSettings.launcherIcon.size);
     });
+
+    it('should handle missing launcherButtons with defaultSettings fallback', () => {
+      const settings = {
+        mainColor: completeSettings.mainColor,
+        brandColor: completeSettings.brandColor,
+      } as ThemeTypesSetting;
+      const result = convertSettings(settings);
+
+      expect(result.launcherButtons).toBeDefined();
+      expect(result.launcherButtons.height).toBe(defaultSettings.launcherButtons.height);
+      expect(result.launcherButtons.width).toBe(defaultSettings.launcherButtons.width);
+      expect(result.launcherButtons.px).toBe(defaultSettings.launcherButtons.px);
+      expect(result.launcherButtons.borderRadius).toBe(
+        defaultSettings.launcherButtons.borderRadius,
+      );
+      expect(result.launcherButtons.primary).toBeDefined();
+    });
   });
 
   describe('convertSettings - Combined fallback (missing data + Auto resolution)', () => {
@@ -549,6 +638,15 @@ describe('convert-settings', () => {
       expect(result.buttons.secondary.textColor.color).toBe(defaultSettings.brandColor.background);
       expect(result.buttons.secondary.backgroundColor.background).toBe(
         defaultSettings.mainColor.background,
+      );
+
+      // Launcher button Auto resolution
+      expect(result.launcherButtons.primary.textColor.color).toBe(defaultSettings.brandColor.color);
+      expect(result.launcherButtons.primary.backgroundColor.background).toBe(
+        defaultSettings.brandColor.background,
+      );
+      expect(result.launcherButtons.primary.backgroundColor.hover).toBe(
+        defaultSettings.brandColor.autoHover,
       );
     });
 
@@ -639,6 +737,41 @@ describe('convert-settings', () => {
       expect(css).toContain('--usertour-widget-launcher-icon-color:');
       expect(css).toContain('--usertour-widget-launcher-icon-hover-color:');
       expect(css).toContain('--usertour-widget-beacon-color:');
+    });
+
+    it('should include launcher button CSS variables', () => {
+      const convertedSettings = convertSettings(completeSettings);
+      const css = convertToCssVars(convertedSettings);
+
+      expect(css).toContain('--usertour-launcher-button-height:');
+      expect(css).toContain('--usertour-launcher-button-width:');
+      expect(css).toContain('--usertour-launcher-button-horizontal-padding:');
+      expect(css).toContain('--usertour-launcher-button-border-radius:');
+      expect(css).toContain('--usertour-launcher-button-background-color:');
+      expect(css).toContain('--usertour-launcher-button-hover-background-color:');
+      expect(css).toContain('--usertour-launcher-button-active-background-color:');
+      expect(css).toContain('--usertour-launcher-button-font-color:');
+      expect(css).toContain('--usertour-launcher-button-hover-font-color:');
+      expect(css).toContain('--usertour-launcher-button-active-font-color:');
+      expect(css).toContain('--usertour-launcher-button-font-weight:');
+      expect(css).toContain('--usertour-launcher-button-border-width:');
+      expect(css).toContain('--usertour-launcher-button-border-color:');
+      expect(css).toContain('--usertour-launcher-button-hover-border-color:');
+      expect(css).toContain('--usertour-launcher-button-active-border-color:');
+    });
+
+    it('should set launcher button width to auto when width is 0', () => {
+      const convertedSettings = convertSettings(completeSettings);
+      const css = convertToCssVars(convertedSettings);
+
+      expect(css).toContain('--usertour-launcher-button-width:auto');
+    });
+
+    it('should set launcher button border width to 0px when border is disabled', () => {
+      const convertedSettings = convertSettings(completeSettings);
+      const css = convertToCssVars(convertedSettings);
+
+      expect(css).toContain('--usertour-launcher-button-border-width:0px');
     });
 
     it('should add modal padding for modal type', () => {
