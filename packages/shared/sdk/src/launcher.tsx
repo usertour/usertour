@@ -3,7 +3,7 @@ import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { autoUpdate, ReferenceElement } from '@floating-ui/dom';
 import { useFloating, offset, shift, limitShift, hide, flip, size } from '@floating-ui/react-dom';
 import type { Middleware, Placement } from '@floating-ui/dom';
-import { UserIcon } from '@usertour-packages/icons';
+import { UserIcon, getRegisteredIconNames, getIcon } from '@usertour-packages/icons';
 import { InfoCircledIcon, RocketIcon } from '@radix-ui/react-icons';
 import { Align, LauncherData, LauncherDataType, Side, ThemeTypesSetting } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
@@ -23,11 +23,50 @@ function isNotNull<T>(value: T | null): value is T {
 
 type Boundary = Element | null;
 
-export const IconsList = [
-  { ICON: InfoCircledIcon, text: 'Info Circled', name: 'info-circled' },
-  { ICON: RocketIcon, text: 'Rocket', name: 'rocket' },
-  { ICON: UserIcon, text: 'User', name: 'user' },
-];
+/**
+ * Convert icon name to display text
+ * e.g., 'home-line' -> 'Home Line', 'chat1-fill' -> 'Chat1 Fill'
+ */
+const formatIconName = (name: string): string => {
+  return name
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+/**
+ * Generate IconsList from registered RemixIcon icons
+ * Includes both the original icons and all registered RemixIcon icons
+ */
+const generateIconsList = () => {
+  const baseIcons = [
+    { ICON: InfoCircledIcon, text: 'Info Circled', name: 'info-circled' },
+    { ICON: RocketIcon, text: 'Rocket', name: 'rocket' },
+    { ICON: UserIcon, text: 'User', name: 'user' },
+  ];
+
+  const registeredNames = getRegisteredIconNames();
+  const remixIcons = registeredNames
+    .map((name) => {
+      const icon = getIcon(name);
+      if (!icon) {
+        return null;
+      }
+      return {
+        ICON: icon,
+        text: formatIconName(name),
+        name,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  // Sort RemixIcon icons by name for better UX
+  remixIcons.sort((a, b) => a.name.localeCompare(b.name));
+
+  return [...baseIcons, ...remixIcons];
+};
+
+export const IconsList = generateIconsList();
 
 interface LauncherContentProps {
   type?: LauncherDataType;
