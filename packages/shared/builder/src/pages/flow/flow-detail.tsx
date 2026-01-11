@@ -16,6 +16,7 @@ import {
   ContentModalPlacementData,
   Side,
   Theme,
+  StepContentType,
 } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
 import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
@@ -158,7 +159,7 @@ const FlowBuilderDetailBody = () => {
               zIndex={zIndex}
               onChange={handleContentTypeChange}
             />
-            {currentStep.type !== 'hidden' && (
+            {currentStep.type !== StepContentType.HIDDEN && (
               <>
                 <ContentTheme
                   themeList={themeList}
@@ -169,14 +170,14 @@ const FlowBuilderDetailBody = () => {
                 />
                 <Separator />
                 <ContentWidth
-                  type={currentStep.type as 'tooltip' | 'modal'}
+                  type={currentStep.type as StepContentType.TOOLTIP | StepContentType.MODAL}
                   width={currentStep.setting.width}
                   onChange={handleWidthChange}
                 />
               </>
             )}
-            {currentStep.type === 'tooltip' && <FlowPlacement />}
-            {currentStep.type === 'tooltip' && (
+            {currentStep.type === StepContentType.TOOLTIP && <FlowPlacement />}
+            {currentStep.type === StepContentType.TOOLTIP && (
               <ContentAlignment
                 initialValue={{
                   side: currentStep.setting.side as Side,
@@ -188,7 +189,7 @@ const FlowBuilderDetailBody = () => {
                 onChange={handleAlignmentChange}
               />
             )}
-            {currentStep.type === 'modal' && (
+            {currentStep.type === StepContentType.MODAL && (
               <ContentModalPlacement
                 data={
                   {
@@ -200,7 +201,7 @@ const FlowBuilderDetailBody = () => {
                 onChange={handlePositionChange}
               />
             )}
-            {currentStep.type !== 'hidden' && (
+            {currentStep.type !== StepContentType.HIDDEN && (
               <>
                 <Separator />
                 <ContentSettings
@@ -242,11 +243,11 @@ const FlowBuilderDetailFooter = () => {
     if (!currentStep || !backupStepData) {
       return;
     }
-    if (currentStep.type !== 'hidden' && hasMissingRequiredData(currentStep.data)) {
+    if (currentStep.type !== StepContentType.HIDDEN && hasMissingRequiredData(currentStep.data)) {
       return;
     }
     if (
-      currentStep.type === 'tooltip' &&
+      currentStep.type === StepContentType.TOOLTIP &&
       ((currentStep.target?.type === 'auto' && !currentStep.target?.selectors) ||
         (currentStep.target?.type === 'manual' && !currentStep.target?.customSelector))
     ) {
@@ -386,7 +387,7 @@ const FlowBuilderDetailEmbed = () => {
     return <></>;
   }
 
-  if (currentStep.type === 'tooltip') {
+  if (currentStep.type === StepContentType.TOOLTIP) {
     return (
       <>
         <PlusIcon width={24} height={24} ref={triggerRef} className={cn('fixed', centerClasses)} />
@@ -409,7 +410,7 @@ const FlowBuilderDetailEmbed = () => {
     );
   }
 
-  if (currentStep.type === 'modal') {
+  if (currentStep.type === StepContentType.MODAL) {
     return (
       <>
         <ContentModal
