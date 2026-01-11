@@ -1,7 +1,7 @@
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { EXTENSION_SELECT } from '@usertour-packages/constants';
 import { Alert, AlertDescription, AlertTitle } from '@usertour-packages/alert';
-import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-packages/icons';
+import { EyeNoneIcon, ModelIcon, RiMessageFill, TooltipIcon } from '@usertour-packages/icons';
 import {
   Select,
   SelectContent,
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
+import { StepContentType } from '@usertour/types';
 
 interface ContentTypeProps {
   type: string;
@@ -25,19 +26,38 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
 
       <Select value={type} onValueChange={onChange}>
         <SelectTrigger className="h-8 justify-start">
-          {type === 'tooltip' && <TooltipIcon className="w-4 h-4 mr-2 mt-0.5 flex-none" />}
-          {type === 'modal' && <ModelIcon className="w-4 h-4 mr-2 mt-0.5 flex-none" />}
-          {type === 'hidden' && <EyeNoneIcon className="w-4 h-4 mr-2 flex-none" />}
+          {type === StepContentType.TOOLTIP && (
+            <TooltipIcon className="w-4 h-4 mr-2 mt-0.5 flex-none" />
+          )}
+          {type === StepContentType.MODAL && (
+            <ModelIcon className="w-4 h-4 mr-2 mt-0.5 flex-none" />
+          )}
+          {type === StepContentType.BUBBLE && <RiMessageFill className="w-4 h-4 mr-2 flex-none" />}
+          {type === StepContentType.HIDDEN && <EyeNoneIcon className="w-4 h-4 mr-2 flex-none" />}
 
           <div className="grow text-left">
             <SelectValue asChild>
-              <div className="capitalize">{type}</div>
+              <div className="capitalize">
+                {type === StepContentType.BUBBLE ? 'Speech Bubble' : type}
+              </div>
             </SelectValue>
           </div>
         </SelectTrigger>
 
         <SelectContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-          <SelectItem value="tooltip">
+          <SelectItem value={StepContentType.BUBBLE}>
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-1">
+                <RiMessageFill size={16} />
+                <span className="text-xs">Speech Bubble</span>
+              </div>
+              <p className="text-xs max-w-60">
+                A non-intrusive message positioned at the corner of your app. Perfect for subtle
+                guidance that doesn't interrupt the user experience. Works great with beacons.
+              </p>
+            </div>
+          </SelectItem>
+          <SelectItem value={StepContentType.TOOLTIP}>
             <div className="flex flex-col">
               <div className="flex items-center space-x-1">
                 <TooltipIcon width={16} height={16} className="mt-0.5" />
@@ -49,8 +69,7 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
               </p>
             </div>
           </SelectItem>
-
-          <SelectItem value="modal">
+          <SelectItem value={StepContentType.MODAL}>
             <div className="flex flex-col">
               <div className="flex items-center space-x-1">
                 <ModelIcon width={16} height={16} className="mt-0.5" />
@@ -62,7 +81,7 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
               </p>
             </div>
           </SelectItem>
-          <SelectItem value="hidden">
+          <SelectItem value={StepContentType.HIDDEN}>
             <div className="flex flex-col">
               <div className="flex items-center space-x-1">
                 <EyeNoneIcon width={16} height={16} />
@@ -76,7 +95,7 @@ export const ContentType = ({ onChange, zIndex, type }: ContentTypeProps) => {
           </SelectItem>
         </SelectContent>
 
-        {type === 'hidden' && (
+        {type === StepContentType.HIDDEN && (
           <Alert variant="warning">
             <ExclamationTriangleIcon className="h-4 w-4" />
             <AlertTitle>Take caution with hidden steps</AlertTitle>
