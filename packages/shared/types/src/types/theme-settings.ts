@@ -14,6 +14,13 @@ export enum ProgressBarPosition {
   BOTTOM = 'bottom',
 }
 
+export enum AvatarType {
+  CARTOON = 'cartoon',
+  UPLOAD = 'upload',
+  URL = 'url',
+  NONE = 'none',
+}
+
 export type ThemeTypesSettingsColor = {
   background: string;
   color: string;
@@ -129,6 +136,16 @@ export type ThemeTypesSetting = {
       color: string;
       opacity: number;
     };
+  };
+  speechBubble: {
+    placement: ContentModalPlacementData;
+    width: number;
+  };
+  avatar: {
+    type: AvatarType;
+    size: number;
+    url?: string;
+    name?: string;
   };
 };
 
@@ -332,6 +349,20 @@ export const defaultSettings: ThemeTypesSetting = {
     fontWeight: 600,
     borderRadius: 30,
   },
+  speechBubble: {
+    width: 300,
+    placement: {
+      position: 'leftBottom' as ModalPosition,
+      positionOffsetX: 20,
+      positionOffsetY: 20,
+    },
+  },
+  avatar: {
+    type: AvatarType.CARTOON,
+    size: 60,
+    url: '',
+    name: '',
+  },
 };
 
 export const standardDarkSettings: ThemeTypesSetting = {
@@ -533,5 +564,19 @@ export const standardDarkSettings: ThemeTypesSetting = {
     },
     fontWeight: 600,
     borderRadius: 30,
+  },
+  speechBubble: {
+    width: 300,
+    placement: {
+      position: 'leftBottom' as ModalPosition,
+      positionOffsetX: 20,
+      positionOffsetY: 20,
+    },
+  },
+  avatar: {
+    type: AvatarType.CARTOON,
+    size: 60,
+    url: '',
+    name: '',
   },
 };

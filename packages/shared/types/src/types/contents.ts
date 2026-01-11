@@ -64,6 +64,7 @@ export enum StepContentType {
   TOOLTIP = 'tooltip',
   MODAL = 'modal',
   HIDDEN = 'hidden',
+  BUBBLE = 'bubble',
 }
 
 // ============================================================================

@@ -723,6 +723,240 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
   );
 });
 
+/* -------------------------------------------------------------------------------------------------
+ * PopperSpeechBubble
+ * -----------------------------------------------------------------------------------------------*/
+
+type NotchVerticalPosition = 'top' | 'bottom';
+type NotchHorizontalPosition = 'left' | 'right';
+
+interface PopperSpeechBubbleProps {
+  children?: React.ReactNode;
+  /** Bubble width */
+  width?: string;
+  /** Bubble position on screen */
+  position?: string;
+  /** Text direction */
+  dir?: string;
+  /** Horizontal position offset */
+  positionOffsetX?: number;
+  /** Vertical position offset */
+  positionOffsetY?: number;
+  /** Whether to show the notch */
+  showNotch?: boolean;
+  /** Notch vertical position: 'top' or 'bottom' */
+  notchVertical?: NotchVerticalPosition;
+  /** Notch horizontal position: 'left' or 'right' */
+  notchHorizontal?: NotchHorizontalPosition;
+  /** Notch color */
+  notchColor?: string;
+  /** Notch size in pixels */
+  notchSize?: number;
+  /** Notch horizontal offset */
+  notchOffsetX?: number;
+  /** Additional className */
+  className?: string;
+}
+
+/**
+ * Speech Bubble component with optional avatar notch
+ * Similar to PopperModalContentPotal but without backdrop
+ */
+const PopperSpeechBubble = forwardRef<HTMLDivElement, PopperSpeechBubbleProps>(
+  (props, forwardedRef) => {
+    const {
+      children,
+      dir = 'ltr',
+      width = 'auto',
+      position = 'center',
+      positionOffsetX = 0,
+      positionOffsetY = 0,
+      showNotch = true,
+      notchVertical = 'bottom',
+      notchHorizontal = 'left',
+      notchColor = 'white',
+      notchSize = 20,
+      notchOffsetX = 60,
+      className,
+    } = props;
+
+    const context = usePopperContext(POPPER_NAME);
+    const containerRef = useRef(null);
+    const composedRefs = useComposedRefs(forwardedRef, containerRef);
+
+    const style = computePositionStyle(position, positionOffsetX, positionOffsetY);
+
+    return (
+      <div
+        className={cn('usertour-widget-popper usertour-centered usertour-enabled', className)}
+        ref={composedRefs}
+        data-usertour-popper-content-wrapper=""
+        style={{
+          ...style,
+          width: width,
+          zIndex: context.zIndex + 1,
+        }}
+        dir={dir}
+      >
+        <div className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative">
+          <div className="usertour-widget-popper__frame-wrapper">{children}</div>
+          {showNotch && (
+            <PopperAvatarNotch
+              vertical={notchVertical}
+              horizontal={notchHorizontal}
+              color={notchColor}
+              size={notchSize}
+              offsetX={notchOffsetX}
+            />
+          )}
+        </div>
+      </div>
+    );
+  },
+);
+
+PopperSpeechBubble.displayName = 'PopperSpeechBubble';
+
+/* -------------------------------------------------------------------------------------------------
+ * PopperAvatarNotch
+ * -----------------------------------------------------------------------------------------------*/
+
+interface PopperAvatarNotchProps {
+  /** Vertical position of the notch: 'top' or 'bottom' */
+  vertical?: NotchVerticalPosition;
+  /** Horizontal position of the notch: 'left' or 'right' */
+  horizontal?: NotchHorizontalPosition;
+  /** Notch color, supports CSS color values or CSS variables */
+  color?: string;
+  /** Notch size in pixels (border width) */
+  size?: number;
+  /** Horizontal offset position in pixels */
+  offsetX?: number;
+  /** Additional className */
+  className?: string;
+}
+
+/**
+ * Avatar notch component for speech bubbles
+ * Creates a triangular notch that points toward the avatar position
+ *
+ * Visual examples:
+ * - Bottom + Left: Sharp angle points to bottom-left (avatar below-left)
+ * - Bottom + Right: Sharp angle points to bottom-right (avatar below-right)
+ * - Top + Left: Sharp angle points to top-left (avatar above-left)
+ * - Top + Right: Sharp angle points to top-right (avatar above-right)
+ */
+const PopperAvatarNotch = forwardRef<HTMLDivElement, PopperAvatarNotchProps>((props, ref) => {
+  const {
+    vertical = 'bottom',
+    horizontal = 'left',
+    color = 'white',
+    size = 20,
+    offsetX = 60,
+    className,
+  } = props;
+
+  // Calculate position styles
+  const positionStyle: CSSProperties = {
+    position: 'absolute',
+    width: 0,
+    height: 0,
+    // Horizontal position
+    ...(horizontal === 'left' ? { left: offsetX } : { right: offsetX }),
+    // Vertical position: place outside the bubble
+    ...(vertical === 'bottom' ? { bottom: -size * 2 } : { top: -size * 2 }),
+  };
+
+  // Build border styles based on position
+  // The sharp angle always points toward the avatar
+  const borderStyle: CSSProperties = {
+    borderStyle: 'solid',
+    borderWidth: size,
+    borderColor: 'transparent',
+    // Color the opposite side to create triangle pointing toward avatar
+    ...(vertical === 'bottom' ? { borderTopColor: color } : { borderBottomColor: color }),
+    // Remove border on the horizontal side to create right-angle triangle
+    ...(horizontal === 'left' ? { borderLeftWidth: 0 } : { borderRightWidth: 0 }),
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={cn('pointer-events-none', className)}
+      style={{
+        ...positionStyle,
+        ...borderStyle,
+      }}
+      aria-hidden="true"
+    />
+  );
+});
+
+PopperAvatarNotch.displayName = 'PopperAvatarNotch';
+
+/* -------------------------------------------------------------------------------------------------
+ * PopperSpeechBubbleAvatar
+ * -----------------------------------------------------------------------------------------------*/
+
+interface PopperSpeechBubbleAvatarProps {
+  /** Avatar image source URL */
+  src: string;
+  /** Image alt text */
+  alt?: string;
+  /** Avatar size in pixels */
+  size?: number;
+  /** Whether the avatar is clickable (minimizable) */
+  minimizable?: boolean;
+  /** Click handler for minimizable avatar */
+  onClick?: () => void;
+  /** Additional className */
+  className?: string;
+}
+
+/**
+ * Avatar component for Speech Bubble
+ * Displays a circular avatar image with optional click functionality
+ */
+const PopperSpeechBubbleAvatar = forwardRef<HTMLDivElement, PopperSpeechBubbleAvatarProps>(
+  (props, ref) => {
+    const { src, alt = '', size = 48, minimizable = false, onClick, className } = props;
+
+    const handleClick = useCallback(() => {
+      if (minimizable && onClick) {
+        onClick();
+      }
+    }, [minimizable, onClick]);
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          'overflow-hidden rounded-full bg-sdk-background',
+          minimizable && 'cursor-pointer',
+          className,
+        )}
+        style={{ width: size, height: size }}
+        onClick={handleClick}
+        role={minimizable ? 'button' : undefined}
+        tabIndex={minimizable ? 0 : undefined}
+        onKeyDown={
+          minimizable
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  handleClick();
+                }
+              }
+            : undefined
+        }
+      >
+        <img src={src} alt={alt} className="h-full w-full object-cover" />
+      </div>
+    );
+  },
+);
+
+PopperSpeechBubbleAvatar.displayName = 'PopperSpeechBubbleAvatar';
+
 export {
   Popper,
   PopperOverlay,
@@ -734,6 +968,18 @@ export {
   PopperModalContentPotal,
   PopperContentPotal,
   PopperStaticContent,
+  PopperSpeechBubble,
+  PopperSpeechBubbleAvatar,
+  PopperAvatarNotch,
 };
 
-export type { PopperProps, PopperContentProps, ModalContentProps };
+export type {
+  PopperProps,
+  PopperContentProps,
+  ModalContentProps,
+  PopperSpeechBubbleProps,
+  PopperSpeechBubbleAvatarProps,
+  PopperAvatarNotchProps,
+  NotchVerticalPosition,
+  NotchHorizontalPosition,
+};
