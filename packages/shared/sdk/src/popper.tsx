@@ -724,13 +724,13 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
 });
 
 /* -------------------------------------------------------------------------------------------------
- * PopperSpeechBubble
+ * PopperBubblePortal
  * -----------------------------------------------------------------------------------------------*/
 
 type NotchVerticalPosition = 'top' | 'bottom';
 type NotchHorizontalPosition = 'left' | 'right';
 
-interface PopperSpeechBubbleProps {
+interface PopperBubblePortalProps {
   children?: React.ReactNode;
   /** Bubble width */
   width?: string;
@@ -759,10 +759,10 @@ interface PopperSpeechBubbleProps {
 }
 
 /**
- * Speech Bubble component with optional avatar notch
+ * Bubble Portal component with optional avatar notch
  * Similar to PopperModalContentPotal but without backdrop
  */
-const PopperSpeechBubble = forwardRef<HTMLDivElement, PopperSpeechBubbleProps>(
+const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
   (props, forwardedRef) => {
     const {
       children,
@@ -815,7 +815,7 @@ const PopperSpeechBubble = forwardRef<HTMLDivElement, PopperSpeechBubbleProps>(
   },
 );
 
-PopperSpeechBubble.displayName = 'PopperSpeechBubble';
+PopperBubblePortal.displayName = 'PopperBubblePortal';
 
 /* -------------------------------------------------------------------------------------------------
  * PopperAvatarNotch
@@ -837,7 +837,7 @@ interface PopperAvatarNotchProps {
 }
 
 /**
- * Avatar notch component for speech bubbles
+ * Avatar notch component for bubbles
  * Creates a triangular notch that points toward the avatar position
  *
  * Visual examples:
@@ -895,10 +895,10 @@ const PopperAvatarNotch = forwardRef<HTMLDivElement, PopperAvatarNotchProps>((pr
 PopperAvatarNotch.displayName = 'PopperAvatarNotch';
 
 /* -------------------------------------------------------------------------------------------------
- * PopperSpeechBubbleAvatar
+ * PopperBubbleAvatar
  * -----------------------------------------------------------------------------------------------*/
 
-interface PopperSpeechBubbleAvatarProps {
+interface PopperBubbleAvatarProps {
   /** Avatar image source URL */
   src: string;
   /** Image alt text */
@@ -914,48 +914,46 @@ interface PopperSpeechBubbleAvatarProps {
 }
 
 /**
- * Avatar component for Speech Bubble
+ * Avatar component for Bubble Portal
  * Displays a circular avatar image with optional click functionality
  */
-const PopperSpeechBubbleAvatar = forwardRef<HTMLDivElement, PopperSpeechBubbleAvatarProps>(
-  (props, ref) => {
-    const { src, alt = '', size = 48, minimizable = false, onClick, className } = props;
+const PopperBubbleAvatar = forwardRef<HTMLDivElement, PopperBubbleAvatarProps>((props, ref) => {
+  const { src, alt = '', size = 48, minimizable = false, onClick, className } = props;
 
-    const handleClick = useCallback(() => {
-      if (minimizable && onClick) {
-        onClick();
-      }
-    }, [minimizable, onClick]);
+  const handleClick = useCallback(() => {
+    if (minimizable && onClick) {
+      onClick();
+    }
+  }, [minimizable, onClick]);
 
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          'overflow-hidden rounded-full bg-sdk-background',
-          minimizable && 'cursor-pointer',
-          className,
-        )}
-        style={{ width: size, height: size }}
-        onClick={handleClick}
-        role={minimizable ? 'button' : undefined}
-        tabIndex={minimizable ? 0 : undefined}
-        onKeyDown={
-          minimizable
-            ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  handleClick();
-                }
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'overflow-hidden rounded-full bg-sdk-background',
+        minimizable && 'cursor-pointer',
+        className,
+      )}
+      style={{ width: size, height: size }}
+      onClick={handleClick}
+      role={minimizable ? 'button' : undefined}
+      tabIndex={minimizable ? 0 : undefined}
+      onKeyDown={
+        minimizable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleClick();
               }
-            : undefined
-        }
-      >
-        <img src={src} alt={alt} className="h-full w-full object-cover" />
-      </div>
-    );
-  },
-);
+            }
+          : undefined
+      }
+    >
+      <img src={src} alt={alt} className="h-full w-full object-cover" />
+    </div>
+  );
+});
 
-PopperSpeechBubbleAvatar.displayName = 'PopperSpeechBubbleAvatar';
+PopperBubbleAvatar.displayName = 'PopperBubbleAvatar';
 
 export {
   Popper,
@@ -968,8 +966,8 @@ export {
   PopperModalContentPotal,
   PopperContentPotal,
   PopperStaticContent,
-  PopperSpeechBubble,
-  PopperSpeechBubbleAvatar,
+  PopperBubblePortal,
+  PopperBubbleAvatar,
   PopperAvatarNotch,
 };
 
@@ -977,8 +975,8 @@ export type {
   PopperProps,
   PopperContentProps,
   ModalContentProps,
-  PopperSpeechBubbleProps,
-  PopperSpeechBubbleAvatarProps,
+  PopperBubblePortalProps,
+  PopperBubbleAvatarProps,
   PopperAvatarNotchProps,
   NotchVerticalPosition,
   NotchHorizontalPosition,

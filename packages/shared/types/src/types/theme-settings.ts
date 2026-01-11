@@ -126,6 +126,10 @@ export type ThemeTypesSetting = {
     width: number;
     padding: number;
   };
+  bubble: {
+    placement: ContentModalPlacementData;
+    width: number;
+  };
   backdrop: {
     color: string;
     opacity: number;
@@ -136,10 +140,6 @@ export type ThemeTypesSetting = {
       color: string;
       opacity: number;
     };
-  };
-  speechBubble: {
-    placement: ContentModalPlacementData;
-    width: number;
   };
   avatar: {
     type: AvatarType;
@@ -349,7 +349,7 @@ export const defaultSettings: ThemeTypesSetting = {
     fontWeight: 600,
     borderRadius: 30,
   },
-  speechBubble: {
+  bubble: {
     width: 300,
     placement: {
       position: 'leftBottom' as ModalPosition,
@@ -565,7 +565,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
     fontWeight: 600,
     borderRadius: 30,
   },
-  speechBubble: {
+  bubble: {
     width: 300,
     placement: {
       position: 'leftBottom' as ModalPosition,

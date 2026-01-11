@@ -1,6 +1,6 @@
 {
   "name": "@usertour/types",
-  "version": "0.0.49",
+  "version": "0.0.50",
   "type": "module",
   "description": "TypeScript type definitions and enums shared across the UserTour project",
   "homepage": "https://www.usertour.io",

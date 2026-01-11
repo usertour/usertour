@@ -43,7 +43,7 @@
     "@usertour-packages/tailwind": "workspace:*",
     "@usertour-packages/tabs": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
-    "@usertour/types": "^0.0.49",
+    "@usertour/types": "^0.0.50",
     "@usertour-packages/switch": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
     "@usertour-packages/textarea": "workspace:^",
