@@ -184,14 +184,16 @@ const ContentActionsContentsName = () => {
   }, [contents]);
 
   const trigger = (
-    <Button variant="outline" className="flex-1 justify-between">
-      {selectedPreset?.name || 'Select content...'}
+    <Button variant="outline" className="flex-1 justify-between min-w-0 overflow-hidden">
+      <span className="truncate min-w-0" title={selectedPreset?.name}>
+        {selectedPreset?.name || 'Select content...'}
+      </span>
       <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
     </Button>
   );
 
   return (
-    <div className="flex flex-row">
+    <div className="flex flex-row w-full">
       <PopoverWrapper open={open} onOpenChange={setOpen} trigger={trigger} zIndex={zIndex}>
         <Command filter={handleFilter}>
           <CommandInput placeholder="Search flow/checklist..." />
@@ -211,7 +213,9 @@ const ContentActionsContentsName = () => {
                     }
                     isSelected={selectedPreset?.id === item.id}
                   >
-                    {item.name}
+                    <span className="truncate" title={item.name}>
+                      {item.name}
+                    </span>
                   </CommandItemWithCheck>
                 ))}
               </CommandGroup>
@@ -230,7 +234,9 @@ const ContentActionsContentsName = () => {
                     }
                     isSelected={selectedPreset?.id === item.id}
                   >
-                    {item.name}
+                    <span className="truncate" title={item.name}>
+                      {item.name}
+                    </span>
                   </CommandItemWithCheck>
                 ))}
               </CommandGroup>
@@ -272,10 +278,10 @@ const ContentActionsStep = ({ content }: { content: Content }) => {
   const displayText = useMemo(() => getDisplayText(steps, stepCvid), [steps, stepCvid]);
 
   const trigger = (
-    <Button variant="outline" className="flex-1 justify-between">
-      <div className="max-w-[240px] truncate flex items-center">
-        <span className="truncate">{displayText || 'Select step...'}</span>
-      </div>
+    <Button variant="outline" className="flex-1 justify-between min-w-0 overflow-hidden">
+      <span className="truncate min-w-0" title={displayText}>
+        {displayText || 'Select step...'}
+      </span>
       <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
     </Button>
   );
@@ -430,11 +436,13 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
           <ContentActionsErrorAnchor>
             <ActionsConditionRightContent>
               <ContentActionsPopover onOpenChange={handleOnOpenChange} open={open}>
-                <ContentActionsPopoverTrigger className="flex flex-row w-fit">
+                <ContentActionsPopoverTrigger className="flex flex-row items-center min-w-0 overflow-hidden">
                   <ContentActionsConditionIcon>
                     <OpenInNewWindowIcon width={16} height={16} />
                   </ContentActionsConditionIcon>
-                  {displayText}
+                  <span className="truncate" title={displayText}>
+                    {displayText}
+                  </span>
                 </ContentActionsPopoverTrigger>
                 <ContentActionsPopoverContent
                   style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}

@@ -45,6 +45,7 @@ import {
   useAddContentStepMutation,
   useUpdateContentStepMutation,
 } from '@usertour-packages/shared-hooks';
+import { ContentBubble } from '../../components/content-bubble';
 
 const FlowBuilderDetailHeader = () => {
   const { setCurrentMode, currentStep, currentContent, updateCurrentStep } = useBuilderContext();
@@ -412,22 +413,39 @@ const FlowBuilderDetailEmbed = () => {
 
   if (currentStep.type === StepContentType.MODAL) {
     return (
-      <>
-        <ContentModal
-          theme={theme}
-          ref={contentRef as Ref<HTMLDivElement> | undefined}
-          attributeList={attributeList}
-          projectId={projectId}
-          contents={contents}
-          zIndex={zIndex}
-          currentIndex={currentIndex}
-          currentStep={currentStep}
-          currentVersion={currentVersion}
-          onChange={handleContentChange}
-          createStep={createNewStep}
-          currentContent={currentContent}
-        />
-      </>
+      <ContentModal
+        theme={theme}
+        ref={contentRef as Ref<HTMLDivElement> | undefined}
+        attributeList={attributeList}
+        projectId={projectId}
+        contents={contents}
+        zIndex={zIndex}
+        currentIndex={currentIndex}
+        currentStep={currentStep}
+        currentVersion={currentVersion}
+        onChange={handleContentChange}
+        createStep={createNewStep}
+        currentContent={currentContent}
+      />
+    );
+  }
+
+  if (currentStep.type === StepContentType.BUBBLE) {
+    return (
+      <ContentBubble
+        theme={theme}
+        ref={contentRef as Ref<HTMLDivElement> | undefined}
+        attributeList={attributeList}
+        projectId={projectId}
+        contents={contents}
+        zIndex={zIndex}
+        currentIndex={currentIndex}
+        currentStep={currentStep}
+        currentVersion={currentVersion}
+        onChange={handleContentChange}
+        createStep={createNewStep}
+        currentContent={currentContent}
+      />
     );
   }
 

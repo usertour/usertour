@@ -3,10 +3,10 @@ import { EXTENSION_CONTENT_MODAL } from '@usertour-packages/constants';
 import { queryOembedInfo } from '@usertour-packages/gql';
 import {
   Popper,
+  PopperBubblePortal,
   PopperClose,
   PopperContent,
   PopperMadeWith,
-  PopperModalContentPotal,
   PopperProgress,
   useThemeStyles,
 } from '@usertour-packages/sdk';
@@ -110,11 +110,10 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
     return (
       <>
         <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
-          <PopperModalContentPotal
+          <PopperBubblePortal
             position={currentStep.setting.position}
             positionOffsetX={currentStep.setting.positionOffsetX}
             positionOffsetY={currentStep.setting.positionOffsetY}
-            enabledBackdrop={currentStep.setting.enabledBackdrop}
             width={`${currentStep.setting.width}px`}
             ref={ref}
           >
@@ -154,7 +153,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
               )}
               {shouldShowMadeWith && <PopperMadeWith />}
             </PopperContent>
-          </PopperModalContentPotal>
+          </PopperBubblePortal>
         </Popper>
       </>
     );
