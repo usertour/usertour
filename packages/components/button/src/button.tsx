@@ -5,7 +5,7 @@ import * as React from 'react';
 import { cn } from '@usertour-packages/tailwind';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -33,14 +33,14 @@ const buttonVariants = cva(
 // Base styles for SDK button
 const sdkButtonBase = cn(
   'inline-flex items-center justify-center transition-colors',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+  'outline-none focus-visible:ring-sdk-ring focus-visible:ring-[3px]',
   'disabled:pointer-events-none disabled:opacity-50',
   'font-sdk text-sdk-base rounded-sdk-button h-auto min-w-sdk-button px-sdk-button-x',
 );
 
 // Custom variant base styles (only accessibility, no layout/appearance)
 const customVariantBase = cn(
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+  'outline-none focus-visible:ring-sdk-ring focus-visible:ring-[3px]',
   'disabled:pointer-events-none disabled:opacity-50',
 );
 
@@ -92,12 +92,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Determine variant class names based on forSdk flag
     const variantClassName = React.useMemo(() => {
-      // Universal custom variant - works for both regular and SDK buttons
-      if (variant === 'custom') {
-        return customVariantBase;
-      }
-
       if (forSdk) {
+        if (variant === 'custom') {
+          return customVariantBase;
+        }
         // Only allow 'default' and 'secondary' for SDK buttons, undefined will use defaultVariants
         const sdkVariant = variant === 'default' || variant === 'secondary' ? variant : undefined;
         return buttonVariantsForSdk({

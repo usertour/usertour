@@ -269,22 +269,15 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
   const cssMapping: any = {
     '--usertour-background': hexToHSLString(settings.mainColor.background),
     '--usertour-foreground': hexToHSLString(settings.mainColor.color),
-    '--usertour-brand-active-background-color': hexToHSLString(
-      settings.brandColor.autoActive as string,
-    ),
-    '--usertour-brand-hover-background-color': hexToHSLString(
-      settings.brandColor.autoHover as string,
-    ),
+    '--usertour-brand-active-background-color': hexToHSLString(settings.brandColor.active),
+    '--usertour-brand-hover-background-color': hexToHSLString(settings.brandColor.hover),
     '--usertour-font-family': settings.font.fontFamily,
     '--usertour-font-size': `${settings.font.fontSize}px`,
     '--usertour-main-background-color': settings.mainColor.background,
     '--usertour-main-foreground-color': settings.mainColor.color,
-    '--usertour-main-hover-background-color': hexToHSLString(
-      settings.mainColor.autoHover as string,
-    ),
-    '--usertour-main-active-background-color': hexToHSLString(
-      settings.mainColor.autoActive as string,
-    ),
+    '--usertour-main-hover-background-color': hexToHSLString(settings.mainColor.hover),
+    '--usertour-main-active-background-color': hexToHSLString(settings.mainColor.active),
+    '--usertour-ring': hexToHSLString(settings.mainColor.active),
     '--usertour-line-height': `${settings.font.lineHeight}px`,
     '--usertour-widget-popper-border-radius': `${settings.border.borderRadius}px`,
     '--usertour-font-weight-normal': settings.font.fontWeightNormal,

@@ -450,6 +450,7 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
         variant="custom"
         className={buttonClassName}
         aria-label="Close"
+        forSdk
         onClick={handleOnClick}
         ref={forwardedRef}
       >

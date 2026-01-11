@@ -39,7 +39,7 @@
     "@usertour-packages/react-compose-refs": "workspace:^",
     "@usertour-packages/scroll-area": "workspace:^",
     "@usertour-packages/select": "workspace:^",
-    "@usertour/helpers": "^0.0.62",
+    "@usertour/helpers": "^0.0.64",
     "@usertour-packages/tailwind": "workspace:*",
     "@usertour-packages/tabs": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
