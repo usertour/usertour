@@ -811,6 +811,13 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
     const { vertical: notchVertical, horizontal: notchHorizontal } =
       getNotchPositionFromPlacement(position);
 
+    // Calculate padding for avatar and notch space
+    const avatarSpacePadding = avatarSize + notchSize;
+    const outlineStyle =
+      notchVertical === 'bottom'
+        ? { paddingBottom: avatarSpacePadding }
+        : { paddingTop: avatarSpacePadding };
+
     return (
       <div
         className={cn('usertour-widget-popper usertour-centered usertour-enabled', className)}
@@ -825,7 +832,7 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
       >
         <div
           className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative"
-          style={{ paddingBottom: '80px' }}
+          style={outlineStyle}
         >
           <div className="usertour-widget-popper__frame-wrapper">{children}</div>
           <PopperAvatarNotch
@@ -834,10 +841,13 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
             color={notchColor}
             size={notchSize}
             offsetX={avatarSize}
+            offsetY={avatarSize}
           />
           <PopperBubbleAvatar
             src={avatarSrc}
             size={avatarSize}
+            vertical={notchVertical}
+            horizontal={notchHorizontal}
             minimizable={false}
             onClick={() => {}}
           />
@@ -864,6 +874,8 @@ interface PopperAvatarNotchProps {
   size?: number;
   /** Horizontal offset position in pixels */
   offsetX?: number;
+  /** Vertical offset position in pixels */
+  offsetY?: number;
   /** Additional className */
   className?: string;
 }
@@ -885,6 +897,7 @@ const PopperAvatarNotch = forwardRef<HTMLDivElement, PopperAvatarNotchProps>((pr
     color = 'white',
     size = 20,
     offsetX = 60,
+    offsetY = 60,
     className,
   } = props;
 
@@ -895,18 +908,22 @@ const PopperAvatarNotch = forwardRef<HTMLDivElement, PopperAvatarNotchProps>((pr
     height: 0,
     // Horizontal position
     ...(horizontal === 'left' ? { left: offsetX } : { right: offsetX }),
-    // Vertical position: positive value to extend outside the bubble
-    ...(vertical === 'bottom' ? { bottom: size * 2 } : { top: size * 2 }),
+    // Vertical position: offset from edge to align with avatar
+    ...(vertical === 'bottom' ? { bottom: offsetY } : { top: offsetY }),
   };
 
   // Build border styles based on position
   // The sharp angle always points toward the avatar
+  // CSS triangle: colored border creates the visible edge, transparent border creates the angle
   const borderStyle: CSSProperties = {
     borderStyle: 'solid',
     borderWidth: size,
     borderColor: 'transparent',
     // Color the opposite side to create triangle pointing toward avatar
-    ...(vertical === 'bottom' ? { borderTopColor: color } : { borderBottomColor: color }),
+    // Also remove the border on the same side as the avatar (vertical)
+    ...(vertical === 'bottom'
+      ? { borderTopColor: color, borderBottomWidth: 0 }
+      : { borderBottomColor: color, borderTopWidth: 0 }),
     // Remove border on the horizontal side to create right-angle triangle
     ...(horizontal === 'left' ? { borderLeftWidth: 0 } : { borderRightWidth: 0 }),
   };
@@ -937,6 +954,10 @@ interface PopperBubbleAvatarProps {
   alt?: string;
   /** Avatar size in pixels */
   size?: number;
+  /** Vertical position of the avatar: 'top' or 'bottom' */
+  vertical?: NotchVerticalPosition;
+  /** Horizontal position of the avatar: 'left' or 'right' */
+  horizontal?: NotchHorizontalPosition;
   /** Whether the avatar is clickable (minimizable) */
   minimizable?: boolean;
   /** Click handler for minimizable avatar */
@@ -950,13 +971,33 @@ interface PopperBubbleAvatarProps {
  * Displays a circular avatar image with optional click functionality
  */
 const PopperBubbleAvatar = forwardRef<HTMLDivElement, PopperBubbleAvatarProps>((props, ref) => {
-  const { src, alt = '', size = 48, minimizable = false, onClick, className } = props;
+  const {
+    src,
+    alt = '',
+    size = 48,
+    vertical = 'bottom',
+    horizontal = 'left',
+    minimizable = false,
+    onClick,
+    className,
+  } = props;
 
   const handleClick = useCallback(() => {
     if (minimizable && onClick) {
       onClick();
     }
   }, [minimizable, onClick]);
+
+  // Calculate position styles based on vertical and horizontal props
+  const positionStyle: CSSProperties = {
+    width: size,
+    height: size,
+    position: 'absolute',
+    // Horizontal position
+    ...(horizontal === 'left' ? { left: 0 } : { right: 0 }),
+    // Vertical position
+    ...(vertical === 'bottom' ? { bottom: 0 } : { top: 0 }),
+  };
 
   return (
     <div
@@ -966,7 +1007,7 @@ const PopperBubbleAvatar = forwardRef<HTMLDivElement, PopperBubbleAvatarProps>((
         minimizable && 'cursor-pointer',
         className,
       )}
-      style={{ width: size, height: size, bottom: 0, left: 0, position: 'absolute' }}
+      style={positionStyle}
       onClick={handleClick}
       role={minimizable ? 'button' : undefined}
       tabIndex={minimizable ? 0 : undefined}

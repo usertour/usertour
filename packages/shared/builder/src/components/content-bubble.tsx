@@ -111,7 +111,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
       <>
         <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
           <PopperBubblePortal
-            position={themeSetting?.bubble?.placement?.position}
+            position={'rightBottom'}
             positionOffsetX={themeSetting?.bubble?.placement?.positionOffsetX}
             positionOffsetY={themeSetting?.bubble?.placement?.positionOffsetY}
             width={`${themeSetting?.bubble?.width}px`}
