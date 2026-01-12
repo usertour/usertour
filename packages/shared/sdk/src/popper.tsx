@@ -1,4 +1,12 @@
-import { CSSProperties, forwardRef, useEffect, useRef, useState, useCallback } from 'react';
+import {
+  CSSProperties,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import * as ArrowPrimitive from '@usertour-packages/react-arrow';
 import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
 import { createContext } from '@usertour-packages/react-context';
@@ -731,30 +739,29 @@ type NotchVerticalPosition = 'top' | 'bottom';
 type NotchHorizontalPosition = 'left' | 'right';
 
 /**
- * Derive notch vertical and horizontal position from bubble position
- * @param position - Bubble position on screen
- * @returns { vertical, horizontal } notch positions
+ * Hook to derive anchor position for bubble internal elements (notch, avatar)
+ * based on bubble placement on screen
+ * @param placement - Bubble placement position
+ * @returns Memoized anchor position { vertical, horizontal }
  */
-const getNotchPositionFromPlacement = (
-  position: string,
-): { vertical: NotchVerticalPosition; horizontal: NotchHorizontalPosition } => {
-  switch (position) {
-    case 'leftTop':
-      return { vertical: 'top', horizontal: 'left' };
-    case 'leftBottom':
-      return { vertical: 'bottom', horizontal: 'left' };
-    case 'rightTop':
-      return { vertical: 'top', horizontal: 'right' };
-    case 'rightBottom':
-      return { vertical: 'bottom', horizontal: 'right' };
-    case 'centerTop':
-      return { vertical: 'top', horizontal: 'left' };
-    case 'centerBottom':
-      return { vertical: 'bottom', horizontal: 'left' };
-    default:
-      // Handles 'center' and other unknown positions
-      return { vertical: 'bottom', horizontal: 'left' };
-  }
+const useAnchorPosition = (placement: string) => {
+  return useMemo<{ vertical: NotchVerticalPosition; horizontal: NotchHorizontalPosition }>(() => {
+    switch (placement) {
+      case 'leftTop':
+      case 'centerTop':
+        return { vertical: 'top', horizontal: 'left' };
+      case 'leftBottom':
+      case 'centerBottom':
+        return { vertical: 'bottom', horizontal: 'left' };
+      case 'rightTop':
+        return { vertical: 'top', horizontal: 'right' };
+      case 'rightBottom':
+        return { vertical: 'bottom', horizontal: 'right' };
+      default:
+        // Handles 'center' and other unknown positions
+        return { vertical: 'bottom', horizontal: 'left' };
+    }
+  }, [placement]);
 };
 
 interface PopperBubblePortalProps {
@@ -807,14 +814,13 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
 
     const style = computePositionStyle(position, positionOffsetX, positionOffsetY);
 
-    // Derive notch position from bubble position
-    const { vertical: notchVertical, horizontal: notchHorizontal } =
-      getNotchPositionFromPlacement(position);
+    // Derive anchor position for internal elements (notch, avatar) from bubble placement
+    const { vertical, horizontal } = useAnchorPosition(position);
 
     // Calculate padding for avatar and notch space
     const avatarSpacePadding = avatarSize + notchSize;
     const outlineStyle =
-      notchVertical === 'bottom'
+      vertical === 'bottom'
         ? { paddingBottom: avatarSpacePadding }
         : { paddingTop: avatarSpacePadding };
 
@@ -836,8 +842,8 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
         >
           <div className="usertour-widget-popper__frame-wrapper">{children}</div>
           <PopperAvatarNotch
-            vertical={notchVertical}
-            horizontal={notchHorizontal}
+            vertical={vertical}
+            horizontal={horizontal}
             color={notchColor}
             size={notchSize}
             offsetX={avatarSize}
@@ -846,8 +852,8 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
           <PopperBubbleAvatar
             src={avatarSrc}
             size={avatarSize}
-            vertical={notchVertical}
-            horizontal={notchHorizontal}
+            vertical={vertical}
+            horizontal={horizontal}
             minimizable={false}
             onClick={() => {}}
           />
