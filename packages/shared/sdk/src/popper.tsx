@@ -730,6 +730,33 @@ const PopperProgress = forwardRef<HTMLDivElement, PopperProgresshProps>((props, 
 type NotchVerticalPosition = 'top' | 'bottom';
 type NotchHorizontalPosition = 'left' | 'right';
 
+/**
+ * Derive notch vertical and horizontal position from bubble position
+ * @param position - Bubble position on screen
+ * @returns { vertical, horizontal } notch positions
+ */
+const getNotchPositionFromPlacement = (
+  position: string,
+): { vertical: NotchVerticalPosition; horizontal: NotchHorizontalPosition } => {
+  switch (position) {
+    case 'leftTop':
+      return { vertical: 'top', horizontal: 'left' };
+    case 'leftBottom':
+      return { vertical: 'bottom', horizontal: 'left' };
+    case 'rightTop':
+      return { vertical: 'top', horizontal: 'right' };
+    case 'rightBottom':
+      return { vertical: 'bottom', horizontal: 'right' };
+    case 'centerTop':
+      return { vertical: 'top', horizontal: 'left' };
+    case 'centerBottom':
+      return { vertical: 'bottom', horizontal: 'left' };
+    default:
+      // Handles 'center' and other unknown positions
+      return { vertical: 'bottom', horizontal: 'left' };
+  }
+};
+
 interface PopperBubblePortalProps {
   children?: React.ReactNode;
   /** Bubble width */
@@ -742,18 +769,14 @@ interface PopperBubblePortalProps {
   positionOffsetX?: number;
   /** Vertical position offset */
   positionOffsetY?: number;
-  /** Whether to show the notch */
-  showNotch?: boolean;
-  /** Notch vertical position: 'top' or 'bottom' */
-  notchVertical?: NotchVerticalPosition;
-  /** Notch horizontal position: 'left' or 'right' */
-  notchHorizontal?: NotchHorizontalPosition;
   /** Notch color */
   notchColor?: string;
   /** Notch size in pixels */
   notchSize?: number;
-  /** Notch horizontal offset */
-  notchOffsetX?: number;
+  /** Avatar size in pixels, also determines notch horizontal offset */
+  avatarSize?: number;
+  /** Avatar image source URL */
+  avatarSrc?: string;
   /** Additional className */
   className?: string;
 }
@@ -771,12 +794,10 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
       position = 'center',
       positionOffsetX = 0,
       positionOffsetY = 0,
-      showNotch = true,
-      notchVertical = 'bottom',
-      notchHorizontal = 'left',
       notchColor = 'white',
       notchSize = 20,
-      notchOffsetX = 60,
+      avatarSize = 60,
+      avatarSrc = '',
       className,
     } = props;
 
@@ -785,6 +806,10 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
     const composedRefs = useComposedRefs(forwardedRef, containerRef);
 
     const style = computePositionStyle(position, positionOffsetX, positionOffsetY);
+
+    // Derive notch position from bubble position
+    const { vertical: notchVertical, horizontal: notchHorizontal } =
+      getNotchPositionFromPlacement(position);
 
     return (
       <div
@@ -798,17 +823,24 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
         }}
         dir={dir}
       >
-        <div className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative">
+        <div
+          className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative"
+          style={{ paddingBottom: '80px' }}
+        >
           <div className="usertour-widget-popper__frame-wrapper">{children}</div>
-          {showNotch && (
-            <PopperAvatarNotch
-              vertical={notchVertical}
-              horizontal={notchHorizontal}
-              color={notchColor}
-              size={notchSize}
-              offsetX={notchOffsetX}
-            />
-          )}
+          <PopperAvatarNotch
+            vertical={notchVertical}
+            horizontal={notchHorizontal}
+            color={notchColor}
+            size={notchSize}
+            offsetX={avatarSize}
+          />
+          <PopperBubbleAvatar
+            src={avatarSrc}
+            size={avatarSize}
+            minimizable={false}
+            onClick={() => {}}
+          />
         </div>
       </div>
     );
@@ -863,8 +895,8 @@ const PopperAvatarNotch = forwardRef<HTMLDivElement, PopperAvatarNotchProps>((pr
     height: 0,
     // Horizontal position
     ...(horizontal === 'left' ? { left: offsetX } : { right: offsetX }),
-    // Vertical position: place outside the bubble
-    ...(vertical === 'bottom' ? { bottom: -size * 2 } : { top: -size * 2 }),
+    // Vertical position: positive value to extend outside the bubble
+    ...(vertical === 'bottom' ? { bottom: size * 2 } : { top: size * 2 }),
   };
 
   // Build border styles based on position
@@ -934,7 +966,7 @@ const PopperBubbleAvatar = forwardRef<HTMLDivElement, PopperBubbleAvatarProps>((
         minimizable && 'cursor-pointer',
         className,
       )}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, bottom: 0, left: 0, position: 'absolute' }}
       onClick={handleClick}
       role={minimizable ? 'button' : undefined}
       tabIndex={minimizable ? 0 : undefined}

@@ -111,10 +111,12 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
       <>
         <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
           <PopperBubblePortal
-            position={currentStep.setting.position}
-            positionOffsetX={currentStep.setting.positionOffsetX}
-            positionOffsetY={currentStep.setting.positionOffsetY}
-            width={`${currentStep.setting.width}px`}
+            position={themeSetting?.bubble?.placement?.position}
+            positionOffsetX={themeSetting?.bubble?.placement?.positionOffsetX}
+            positionOffsetY={themeSetting?.bubble?.placement?.positionOffsetY}
+            width={`${themeSetting?.bubble?.width}px`}
+            avatarSize={themeSetting?.avatar?.size}
+            avatarSrc="https://r3.usertour.io/avatar/alex.svg"
             ref={ref}
           >
             <PopperContent>
