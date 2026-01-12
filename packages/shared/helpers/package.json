@@ -1,18 +1,17 @@
 {
   "name": "@usertour/helpers",
   "version": "0.0.65",
-  "type": "module",
   "description": "Utility functions and helpers shared across the UserTour project",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc. <support@usertour.io>",
   "license": "AGPL-3.0",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
@@ -29,7 +28,7 @@
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
-    "@usertour/types": "^0.0.50",
+    "@usertour/types": "workspace:^",
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.4.0",
     "date-fns": "^2.30.0",

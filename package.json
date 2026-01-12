@@ -7,7 +7,7 @@
   "scripts": {
     "dev:web": "pnpm --filter ./apps/web dev",
     "dev:sdk": "pnpm --filter ./apps/sdk dev",
-    "dev:server": "pnpm --filter ./apps/server start:dev",
+    "dev:server": "turbo dev --filter=@usertour/server...",
     "build:web": "pnpm --filter ./apps/web build",
     "build:sdk": "pnpm --filter ./apps/sdk build",
     "build:sdk:iife": "pnpm --filter ./apps/sdk build:iife",

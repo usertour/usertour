@@ -183,16 +183,16 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
     }
   }
   if (attr.dataType === BizAttributeTypes.DateTime) {
-    const iosNow = new Date().toISOString();
-    let iosValue: string | undefined;
+    const now = new Date();
+    let dateValue: Date | undefined;
     if (value && !Number.isNaN(new Date(value).getTime())) {
-      iosValue = new Date(value).toISOString();
+      dateValue = new Date(value);
     }
     switch (logic) {
       case 'lessThan':
-        return { data: { path: [attr.codeName], gte: subDays(iosNow, value) } };
+        return { data: { path: [attr.codeName], gte: subDays(now, value) } };
       case 'exactly': {
-        const preDate = subDays(iosNow, value);
+        const preDate = subDays(now, value);
         return {
           data: {
             path: [attr.codeName],
@@ -202,22 +202,22 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
         };
       }
       case 'moreThan':
-        return { data: { path: [attr.codeName], lte: subDays(iosNow, value) } };
+        return { data: { path: [attr.codeName], lte: subDays(now, value) } };
       case 'before':
-        if (!iosValue) return false;
-        return { data: { path: [attr.codeName], lte: iosValue } };
+        if (!dateValue) return false;
+        return { data: { path: [attr.codeName], lte: dateValue.toISOString() } };
       case 'on':
-        if (!iosValue) return false;
+        if (!dateValue) return false;
         return {
           data: {
             path: [attr.codeName],
-            gte: startOfDay(iosValue),
-            lte: endOfDay(iosValue),
+            gte: startOfDay(dateValue),
+            lte: endOfDay(dateValue),
           },
         };
       case 'after':
-        if (!iosValue) return false;
-        return { data: { path: [attr.codeName], gte: iosValue } };
+        if (!dateValue) return false;
+        return { data: { path: [attr.codeName], gte: dateValue.toISOString() } };
       case 'empty':
         return {
           OR: [
