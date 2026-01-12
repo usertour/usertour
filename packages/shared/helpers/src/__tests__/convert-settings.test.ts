@@ -213,6 +213,20 @@ describe('convert-settings', () => {
         opacity: 50,
       },
     },
+    bubble: {
+      width: 300,
+      placement: {
+        position: 'leftBottom' as any,
+        positionOffsetX: 20,
+        positionOffsetY: 20,
+      },
+    },
+    avatar: {
+      type: 'cartoon' as any,
+      size: 60,
+      url: '',
+      name: '',
+    },
   };
 
   describe('mergeThemeDefaultSettings', () => {

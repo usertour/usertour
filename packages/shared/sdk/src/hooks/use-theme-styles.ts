@@ -9,7 +9,7 @@ export const useThemeStyles = (theme: Theme, type = 'tooltip') => {
 
   useEffect(() => {
     if (theme) {
-      setThemeSetting(mergeThemeDefaultSettings(theme.settings));
+      setThemeSetting(mergeThemeDefaultSettings(theme.settings) as ThemeTypesSetting);
     }
   }, [theme]);
 

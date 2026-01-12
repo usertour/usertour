@@ -88,8 +88,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/tailwind
       '@usertour/helpers':
-        specifier: ^0.0.64
-        version: 0.0.64(typescript@5.1.6)
+        specifier: ^0.0.65
+        version: 0.0.65(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.50
         version: 0.0.50
@@ -341,8 +341,8 @@ importers:
         specifier: ^4.7.1
         version: 4.7.4
       '@usertour/helpers':
-        specifier: ^0.0.64
-        version: 0.0.64(typescript@4.9.5)
+        specifier: ^0.0.65
+        version: 0.0.65(typescript@4.9.5)
       '@usertour/license':
         specifier: ^0.0.2
         version: 0.0.2
@@ -744,8 +744,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.64
-        version: 0.0.64(typescript@5.1.6)
+        specifier: ^0.0.65
+        version: 0.0.65(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.50
         version: 0.0.50
@@ -3242,8 +3242,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.64
-        version: 0.0.64(typescript@5.1.6)
+        specifier: ^0.0.65
+        version: 0.0.65(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.50
         version: 0.0.50
@@ -3489,8 +3489,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.64
-        version: 0.0.64(typescript@5.1.6)
+        specifier: ^0.0.65
+        version: 0.0.65(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.50
         version: 0.0.50
@@ -3753,8 +3753,8 @@ importers:
         specifier: workspace:^
         version: link:../../components/use-toast
       '@usertour/helpers':
-        specifier: ^0.0.64
-        version: 0.0.64(typescript@5.1.6)
+        specifier: ^0.0.65
+        version: 0.0.65(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.50
         version: 0.0.50
@@ -3997,8 +3997,8 @@ importers:
         specifier: workspace:^
         version: link:../gql
       '@usertour/helpers':
-        specifier: ^0.0.64
-        version: 0.0.64(typescript@5.1.6)
+        specifier: ^0.0.65
+        version: 0.0.65(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.50
         version: 0.0.50
@@ -4133,8 +4133,8 @@ importers:
         specifier: workspace:^
         version: link:../../tailwind
       '@usertour/helpers':
-        specifier: ^0.0.64
-        version: 0.0.64(typescript@5.1.6)
+        specifier: ^0.0.65
+        version: 0.0.65(typescript@5.1.6)
       '@usertour/types':
         specifier: ^0.0.50
         version: 0.0.50
@@ -8843,14 +8843,11 @@ packages:
   '@ungap/structured-clone@1.2.0':
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  '@usertour/helpers@0.0.64':
-    resolution: {integrity: sha512-MEFGbE6n5ChkwEErHyZ8MdPRFUbbE4qMhwby3j+WK8yZZ1hCZtd3EG69F6m+GKPRJWJ182R0pXkS1Trj0y3qeQ==}
+  '@usertour/helpers@0.0.65':
+    resolution: {integrity: sha512-J5K10EojJK7rlacH6jaUQmyr4aVSF5rg7qPDjVxQRvnISLaxUEMxqN7IMzMClNUPhIaWCBiVUVi3FfmZlB6tNg==}
 
   '@usertour/license@0.0.2':
     resolution: {integrity: sha512-9TbX5kfupLmJ04vwDr6vOrfSNQ8lW5lArvx/9V62uDDuOnAqV4T7/lhk/ijJXrKf4KfgmeCVMG7YR1+3lKCQJw==}
-
-  '@usertour/types@0.0.48':
-    resolution: {integrity: sha512-5As62ctNgpynAvpLjNqouQbnfSEvSUmES8pd84ygJPjEEiwVITqROh7ReZuKiGlhHYnFM3/FNcDjtEoNFoRMVQ==}
 
   '@usertour/types@0.0.50':
     resolution: {integrity: sha512-TD48t6IMSQVnP+iuqp6/olHxugk0tsJSEeyzmTWnEgQU3AAQxy4R3J/UePpz6h8vrfLlWeEfP4njLpykrkJ5Ww==}
@@ -21032,10 +21029,10 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@usertour/helpers@0.0.64(typescript@4.9.5)':
+  '@usertour/helpers@0.0.65(typescript@4.9.5)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
-      '@usertour/types': 0.0.48
+      '@usertour/types': 0.0.50
       chroma-js: 3.1.2
       class-variance-authority: 0.4.0(typescript@4.9.5)
       date-fns: 2.30.0
@@ -21045,10 +21042,10 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@usertour/helpers@0.0.64(typescript@5.1.6)':
+  '@usertour/helpers@0.0.65(typescript@5.1.6)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
-      '@usertour/types': 0.0.48
+      '@usertour/types': 0.0.50
       chroma-js: 3.1.2
       class-variance-authority: 0.4.0(typescript@5.1.6)
       date-fns: 2.30.0
@@ -21061,8 +21058,6 @@ snapshots:
   '@usertour/license@0.0.2':
     dependencies:
       jsonwebtoken: 9.0.2
-
-  '@usertour/types@0.0.48': {}
 
   '@usertour/types@0.0.50': {}
 
