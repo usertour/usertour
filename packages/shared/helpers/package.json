@@ -16,7 +16,7 @@
   },
   "scripts": {
     "build": "tsup src --dts",
-    "dev": "tsup src --dts --watch",
+    "dev": "tsup src --watch",
     "clean": "rimraf dist .turbo",
     "typecheck": "tsc --noEmit",
     "build:fast": "tsup src",
