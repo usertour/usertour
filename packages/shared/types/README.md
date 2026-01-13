@@ -2,13 +2,19 @@
 
 TypeScript type definitions and enums shared across the UserTour project.
 
-## Installation
-
-```bash
-npm install @usertour/types
-```
+> **Note**: This is an internal workspace package and is not published to npm.
 
 ## Usage
+
+This package is available to other packages in the monorepo via workspace dependencies:
+
+```json
+{
+  "dependencies": {
+    "@usertour/types": "workspace:^"
+  }
+}
+```
 
 ```typescript
 import { UserTourTypes } from '@usertour/types';
@@ -36,12 +42,7 @@ This package exports various TypeScript types for the UserTour project:
 
 ## Development
 
-This package is part of the UserTour monorepo. For development:
-
 ```bash
-# Install dependencies
-pnpm install
-
 # Build the package
 pnpm build
 
@@ -51,4 +52,4 @@ pnpm dev
 
 ## License
 
-AGPL-3.0 
+AGPL-3.0

@@ -2,13 +2,19 @@
 
 Utility functions and helpers shared across the UserTour project.
 
-## Installation
-
-```bash
-npm install @usertour/helpers
-```
+> **Note**: This is an internal workspace package and is not published to npm.
 
 ## Usage
+
+This package is available to other packages in the monorepo via workspace dependencies:
+
+```json
+{
+  "dependencies": {
+    "@usertour/helpers": "workspace:^"
+  }
+}
+```
 
 ```typescript
 import { generateId, mergeDeep, formatColor } from '@usertour/helpers';
@@ -37,7 +43,7 @@ This package provides various utility functions for the UserTour project:
 ## Dependencies
 
 This package depends on:
-- `@usertour-packages/types` - TypeScript type definitions
+- `@usertour/types` - TypeScript type definitions
 - `fast-deep-equal` - Deep equality checking
 - `chroma-js` - Color manipulation
 - `deepmerge-ts` - Type-safe deep merging
@@ -47,19 +53,17 @@ This package depends on:
 
 ## Development
 
-This package is part of the UserTour monorepo. For development:
-
 ```bash
-# Install dependencies
-pnpm install
-
 # Build the package
 pnpm build
 
 # Watch for changes
 pnpm dev
+
+# Run tests
+pnpm test
 ```
 
 ## License
 
-AGPL-3.0 
+AGPL-3.0
