@@ -5,6 +5,7 @@
   "license": "AGPL-3.0",
   "private": true,
   "scripts": {
+    "dev": "turbo dev --filter={@usertour/types,@usertour/helpers,@usertour/web,@usertour/sdk,@usertour/server}",
     "dev:web": "turbo dev --filter={@usertour/types,@usertour/helpers,@usertour/web}",
     "dev:sdk": "turbo dev --filter={@usertour/types,@usertour/helpers,@usertour/sdk}",
     "dev:server": "turbo dev --filter={@usertour/types,@usertour/helpers,@usertour/server}",
