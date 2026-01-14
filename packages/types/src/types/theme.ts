@@ -23,6 +23,7 @@ export type Theme = {
 export enum ThemeDetailPreviewType {
   TOOLTIP = 'tooltip',
   MODAL = 'modal',
+  BUBBLE = 'bubble',
   LAUNCHER_ICON = 'launcher-icon',
   LAUNCHER_BEACON = 'launcher-beacon',
   LAUNCHER_BUTTON = 'launcher-button',

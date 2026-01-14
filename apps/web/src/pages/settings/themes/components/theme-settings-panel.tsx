@@ -20,6 +20,7 @@ import { ThemeSettingsProgress } from './settings/theme-settings-progress';
 import { ThemeSettingsSurvey } from './settings/theme-settings-survey';
 import { ThemeSettingsTooltip } from './settings/theme-settings-tooltip';
 import { ThemeSettingsXbutton } from './settings/theme-settings-xbutton';
+import { ThemeSettingsBubble } from './settings/theme-settings-bubble';
 import { ConditionalVariationsPanel } from './conditional-variations-panel';
 
 const AccordionItem = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
@@ -171,6 +172,12 @@ export const ThemeSettingsAccordionContent = () => (
       <AccordionTrigger>Buttons</AccordionTrigger>
       <AccordionContent>
         <ThemeSettingsButtons />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="bubble">
+      <AccordionTrigger>Bubble</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsBubble />
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="tooptip">

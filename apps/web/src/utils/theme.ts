@@ -56,6 +56,10 @@ export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
     type: ThemeDetailPreviewType.MODAL,
   },
   {
+    name: 'Bubble',
+    type: ThemeDetailPreviewType.BUBBLE,
+  },
+  {
     name: 'Launcher icon',
     type: ThemeDetailPreviewType.LAUNCHER_ICON,
   },
