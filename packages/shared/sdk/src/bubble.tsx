@@ -222,17 +222,20 @@ const PopperAvatarNotch = forwardRef<HTMLDivElement, PopperAvatarNotchProps>((pr
   // Build border styles based on position
   // The sharp angle always points toward the avatar
   // CSS triangle: colored border creates the visible edge, transparent border creates the angle
+  // Note: Set all four border properties explicitly to avoid mixing shorthand (borderColor)
+  // with specific properties (borderTopColor, etc.) which causes React rerender warnings
   const borderStyle: CSSProperties = {
     borderStyle: 'solid',
-    borderWidth: size,
-    borderColor: 'transparent',
-    // Color the opposite side to create triangle pointing toward avatar
-    // Also remove the border on the same side as the avatar (vertical)
-    ...(vertical === 'bottom'
-      ? { borderTopColor: color, borderBottomWidth: 0 }
-      : { borderBottomColor: color, borderTopWidth: 0 }),
-    // Remove border on the horizontal side to create right-angle triangle
-    ...(horizontal === 'left' ? { borderLeftWidth: 0 } : { borderRightWidth: 0 }),
+    // Set all four border widths explicitly
+    borderTopWidth: vertical === 'bottom' ? size : 0,
+    borderBottomWidth: vertical === 'top' ? size : 0,
+    borderLeftWidth: horizontal === 'right' ? size : 0,
+    borderRightWidth: horizontal === 'left' ? size : 0,
+    // Set all four border colors explicitly to avoid shorthand/specific property conflicts
+    borderTopColor: vertical === 'bottom' ? color : 'transparent',
+    borderBottomColor: vertical === 'top' ? color : 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
   };
 
   return (
