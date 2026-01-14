@@ -56,7 +56,7 @@ export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
     type: ThemeDetailPreviewType.MODAL,
   },
   {
-    name: 'Bubble',
+    name: 'Speech bubble',
     type: ThemeDetailPreviewType.BUBBLE,
   },
   {
