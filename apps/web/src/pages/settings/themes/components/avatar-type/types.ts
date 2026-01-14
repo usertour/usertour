@@ -26,6 +26,7 @@ export interface AvatarTypeProps {
 export interface CartoonAvatarTabProps {
   selectedName?: string;
   onAvatarSelect: (name: string) => void;
+  disabled?: boolean;
 }
 
 /**
@@ -36,6 +37,7 @@ export interface UploadAvatarTabProps {
   isCurrentUpload: boolean;
   onUploadSuccess: (url: string) => void;
   onRemove?: () => void;
+  disabled?: boolean;
 }
 
 /**
@@ -45,4 +47,5 @@ export interface UrlAvatarTabProps {
   avatarUrl?: string;
   isCurrentUrl: boolean;
   onUrlSubmit: (url: string) => void;
+  disabled?: boolean;
 }

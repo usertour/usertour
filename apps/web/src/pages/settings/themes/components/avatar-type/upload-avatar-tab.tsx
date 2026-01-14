@@ -15,11 +15,12 @@ import { useAvatarUpload } from './hooks/use-avatar-upload';
 import type { UploadAvatarTabProps } from './types';
 
 export const UploadAvatarTab = memo<UploadAvatarTabProps>(
-  ({ avatarUrl, isCurrentUpload, onUploadSuccess, onRemove }) => {
+  ({ avatarUrl, isCurrentUpload, onUploadSuccess, onRemove, disabled }) => {
     const { handleUpload, isUploading } = useAvatarUpload({
       onUploadSuccess,
     });
     const showPreview = isCurrentUpload && avatarUrl;
+    const isDisabledOrUploading = disabled || isUploading;
 
     return (
       <div className="w-full min-w-0 bg-background rounded-lg p-4">
@@ -31,22 +32,26 @@ export const UploadAvatarTab = memo<UploadAvatarTabProps>(
         <Upload
           accept={ACCEPT_FILE_TYPES}
           customRequest={handleUpload}
-          disabled={isUploading}
+          disabled={isDisabledOrUploading}
           className="block min-w-0"
         >
           <div
             className={`w-full min-w-0 rounded-md border-2 ${
-              isUploading
-                ? 'border-muted/50 bg-muted/30'
-                : 'border-dashed border-muted bg-transparent'
-            } p-4 flex flex-col items-center gap-3 cursor-pointer transition-colors`}
+              isDisabledOrUploading
+                ? 'border-muted/50 bg-muted/30 cursor-not-allowed'
+                : 'border-dashed border-muted bg-transparent cursor-pointer'
+            } p-4 flex flex-col items-center gap-3 transition-colors`}
             aria-hidden={isUploading}
           >
             <div className="w-14 h-14 flex items-center justify-center rounded-md bg-muted">
               <RiUpload2Fill className="text-muted-foreground/70" size={20} />
             </div>
 
-            <Button variant="outline" className="whitespace-nowrap" disabled={isUploading}>
+            <Button
+              variant="outline"
+              className="whitespace-nowrap"
+              disabled={isDisabledOrUploading}
+            >
               {isUploading ? (
                 <span className="inline-flex items-center">
                   <SpinnerIcon className="mr-2 animate-spin" />
@@ -81,6 +86,7 @@ export const UploadAvatarTab = memo<UploadAvatarTabProps>(
                     variant="ghost"
                     size="icon"
                     onClick={() => onRemove?.()}
+                    disabled={disabled}
                   >
                     <RiDeleteBinFill className="text-destructive w-4 h-4" />
                   </Button>

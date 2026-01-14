@@ -69,20 +69,28 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
       });
     }, [onChange]);
 
-    if (disabled) {
-      return null;
-    }
-
     return (
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
+      <Tabs value={activeTab} onValueChange={disabled ? undefined : handleTabChange}>
         <UnderlineTabsList>
-          <UnderlineTabsTrigger value={AvatarType.CARTOON}>Cartoon</UnderlineTabsTrigger>
-          <UnderlineTabsTrigger value={AvatarType.UPLOAD}>Upload</UnderlineTabsTrigger>
-          <UnderlineTabsTrigger value={AvatarType.URL}>URL</UnderlineTabsTrigger>
-          <UnderlineTabsTrigger value={AvatarType.NONE}>None</UnderlineTabsTrigger>
+          <UnderlineTabsTrigger value={AvatarType.CARTOON} disabled={disabled}>
+            Cartoon
+          </UnderlineTabsTrigger>
+          <UnderlineTabsTrigger value={AvatarType.UPLOAD} disabled={disabled}>
+            Upload
+          </UnderlineTabsTrigger>
+          <UnderlineTabsTrigger value={AvatarType.URL} disabled={disabled}>
+            URL
+          </UnderlineTabsTrigger>
+          <UnderlineTabsTrigger value={AvatarType.NONE} disabled={disabled}>
+            None
+          </UnderlineTabsTrigger>
         </UnderlineTabsList>
         <UnderlineTabsContent value={AvatarType.CARTOON}>
-          <CartoonAvatarTab selectedName={name} onAvatarSelect={handleCartoonSelect} />
+          <CartoonAvatarTab
+            selectedName={name}
+            onAvatarSelect={handleCartoonSelect}
+            disabled={disabled}
+          />
         </UnderlineTabsContent>
         <UnderlineTabsContent value={AvatarType.UPLOAD}>
           <UploadAvatarTab
@@ -90,6 +98,7 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
             isCurrentUpload={type === AvatarType.UPLOAD}
             onUploadSuccess={handleUploadSuccess}
             onRemove={handleRemoveUploadedAvatar}
+            disabled={disabled}
           />
         </UnderlineTabsContent>
         <UnderlineTabsContent value={AvatarType.URL}>
@@ -97,6 +106,7 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
             avatarUrl={url}
             isCurrentUrl={type === AvatarType.URL}
             onUrlSubmit={handleUrlSubmit}
+            disabled={disabled}
           />
         </UnderlineTabsContent>
         <UnderlineTabsContent value={AvatarType.NONE}>
@@ -105,7 +115,8 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
             <button
               type="button"
               onClick={handleNoneSelect}
-              className="text-sm text-primary hover:underline"
+              disabled={disabled}
+              className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {type === AvatarType.NONE ? 'Currently selected' : 'Select this option'}
             </button>
