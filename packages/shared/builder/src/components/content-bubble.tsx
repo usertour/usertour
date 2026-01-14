@@ -1,6 +1,7 @@
 import { useLazyQuery } from '@apollo/client';
 import { EXTENSION_CONTENT_MODAL } from '@usertour-packages/constants';
 import { queryOembedInfo } from '@usertour-packages/gql';
+import { getAvatarCdnUrl } from '@usertour-packages/icons';
 import {
   Popper,
   PopperBubblePortal,
@@ -26,7 +27,7 @@ import {
   Step,
   Theme,
 } from '@usertour/types';
-import { forwardRef, useEffect, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useState } from 'react';
 import { useAws } from '../hooks/use-aws';
 import { useBuilderContext } from '../contexts/builder-context';
 
@@ -107,6 +108,24 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
     const showBottomProgress =
       progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
+    // Build avatar URL based on theme settings
+    const avatarUrl = useMemo(() => {
+      const avatarSettings = themeSetting?.avatar;
+      if (!avatarSettings) {
+        return getAvatarCdnUrl('alex');
+      }
+      if (avatarSettings.type === 'url' && avatarSettings.url) {
+        return avatarSettings.url;
+      }
+      if (avatarSettings.type === 'upload' && avatarSettings.url) {
+        return avatarSettings.url;
+      }
+      if (avatarSettings.type === 'cartoon' && avatarSettings.name) {
+        return getAvatarCdnUrl(avatarSettings.name);
+      }
+      return getAvatarCdnUrl('alex');
+    }, [themeSetting?.avatar]);
+
     return (
       <>
         <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
@@ -116,7 +135,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
             positionOffsetY={themeSetting?.bubble?.placement?.positionOffsetY}
             width={`${themeSetting?.bubble?.width}px`}
             avatarSize={themeSetting?.avatar?.size}
-            avatarSrc="https://r3.usertour.io/avatar/alex.svg"
+            avatarSrc={avatarUrl}
             ref={ref}
           >
             <PopperContent>

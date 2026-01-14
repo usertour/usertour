@@ -3,7 +3,12 @@ import { memo } from 'react';
 import Upload from 'rc-upload';
 import { Button } from '@usertour-packages/button';
 import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour-packages/icons';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 
 import { ACCEPT_FILE_TYPES } from './constants';
 import { useAvatarUpload } from './hooks/use-avatar-upload';
@@ -68,19 +73,21 @@ export const UploadAvatarTab = memo<UploadAvatarTabProps>(
               </div>
             </div>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className="flex-none hover:bg-destructive/10"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onRemove?.()}
-                >
-                  <RiDeleteBinFill className="text-destructive w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">Remove avatar</TooltipContent>
-            </Tooltip>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    className="flex-none hover:bg-destructive/10"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onRemove?.()}
+                  >
+                    <RiDeleteBinFill className="text-destructive w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">Remove avatar</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
       </div>

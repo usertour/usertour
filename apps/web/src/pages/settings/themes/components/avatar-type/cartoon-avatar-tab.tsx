@@ -1,7 +1,5 @@
 import { memo, useCallback } from 'react';
-import type { FC } from 'react';
 
-import { AvatarsList } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { cn } from '@usertour-packages/tailwind';
 import {
@@ -11,16 +9,17 @@ import {
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
 
+import { getLocalAvatarUrl, LOCAL_AVATARS } from './constants';
 import type { CartoonAvatarTabProps } from './types';
 
 interface AvatarButtonProps {
+  name: string;
   text: string;
-  Avatar: FC<{ size?: number; className?: string }>;
   isSelected: boolean;
   onClick: () => void;
 }
 
-const AvatarButton = memo<AvatarButtonProps>(({ text, Avatar, isSelected, onClick }) => (
+const AvatarButton = memo<AvatarButtonProps>(({ name, text, isSelected, onClick }) => (
   <Tooltip>
     <TooltipTrigger asChild>
       <Button
@@ -32,7 +31,13 @@ const AvatarButton = memo<AvatarButtonProps>(({ text, Avatar, isSelected, onClic
           isSelected && 'ring-2 ring-primary ring-offset-2',
         )}
       >
-        <Avatar size={40} className="rounded-full" />
+        <img
+          src={getLocalAvatarUrl(name)}
+          alt={text}
+          width={40}
+          height={40}
+          className="rounded-full object-cover"
+        />
       </Button>
     </TooltipTrigger>
     <TooltipContent className="max-w-xs bg-foreground">{text}</TooltipContent>
@@ -52,11 +57,11 @@ export const CartoonAvatarTab = memo<CartoonAvatarTabProps>(({ selectedName, onA
     <TooltipProvider>
       <div className="flex flex-col">
         <div className="grid grid-cols-4 gap-2 p-2 max-h-48 overflow-y-auto">
-          {AvatarsList.map(({ name, text, Avatar }) => (
+          {LOCAL_AVATARS.map(({ name, text }) => (
             <AvatarButton
               key={name}
+              name={name}
               text={text}
-              Avatar={Avatar}
               isSelected={name === selectedName}
               onClick={() => handleSelect(name)}
             />

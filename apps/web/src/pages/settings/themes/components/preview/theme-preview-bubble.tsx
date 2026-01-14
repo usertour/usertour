@@ -7,7 +7,7 @@ import {
   PopperProgress,
 } from '@usertour-packages/sdk';
 import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { getAvatarDataUri } from '@usertour-packages/icons';
+import { getAvatarLocalPath } from '@usertour-packages/icons';
 import {
   AvatarType,
   ProgressBarPosition,
@@ -26,7 +26,7 @@ interface ThemePreviewBubbleProps {
 
 /**
  * Get avatar URL based on avatar type
- * Uses local bundled SVG data for cartoon avatars
+ * Uses local static files for cartoon avatars in web admin
  */
 const getAvatarUrl = (settings?: ThemeTypesSetting): string => {
   const avatar = settings?.avatar;
@@ -37,7 +37,7 @@ const getAvatarUrl = (settings?: ThemeTypesSetting): string => {
   switch (avatar.type) {
     case AvatarType.CARTOON: {
       const avatarName = avatar.name ?? 'alex';
-      return getAvatarDataUri(avatarName) ?? '';
+      return getAvatarLocalPath(avatarName);
     }
     case AvatarType.URL:
     case AvatarType.UPLOAD:
