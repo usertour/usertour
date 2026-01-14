@@ -4,10 +4,12 @@ import { ModalPosition } from '@usertour/types';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 const placementItems = [
-  { name: 'Top Left', value: ModalPosition.LeftTop },
-  { name: 'Top Right', value: ModalPosition.RightTop },
-  { name: 'Bottom Left', value: ModalPosition.LeftBottom },
-  { name: 'Bottom Right', value: ModalPosition.RightBottom },
+  { name: 'Top left', value: ModalPosition.LeftTop },
+  { name: 'Top center', value: ModalPosition.CenterTop },
+  { name: 'Top right', value: ModalPosition.RightTop },
+  { name: 'Bottom left', value: ModalPosition.LeftBottom },
+  { name: 'Bottom center', value: ModalPosition.CenterBottom },
+  { name: 'Bottom right', value: ModalPosition.RightBottom },
   { name: 'Center', value: ModalPosition.Center },
 ];
 
