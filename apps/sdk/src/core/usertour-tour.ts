@@ -255,6 +255,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     if (step.type === StepContentType.MODAL) {
       await this.showModal(step);
     }
+    if (step.type === StepContentType.BUBBLE) {
+      await this.showBubble(step);
+    }
   }
 
   /**
@@ -331,6 +334,28 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
     const stepInfo = this.getStepInfo(step);
     // Set up modal state
+    this.setStoreData({
+      ...storeData,
+      ...stepInfo,
+      openState: true,
+    });
+  }
+
+  /**
+   * Display a bubble step in the tour
+   * @param step - The step to be displayed as a bubble
+   * @private
+   */
+  private async showBubble(step: SessionStep): Promise<void> {
+    // Build store data and get step information
+    const storeData = await this.buildStoreData();
+    if (!storeData) {
+      logger.error('Store not found', { step });
+      await this.close(contentEndReason.SYSTEM_CLOSED);
+      return;
+    }
+    const stepInfo = this.getStepInfo(step);
+    // Set up bubble state
     this.setStoreData({
       ...storeData,
       ...stepInfo,

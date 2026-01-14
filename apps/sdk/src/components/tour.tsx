@@ -7,6 +7,7 @@ import {
   PopperModalContentPotal,
   PopperOverlay,
   PopperContentPotal,
+  PopperBubblePortal,
 } from '@usertour-packages/sdk';
 import {
   ContentEditorClickableElement,
@@ -305,6 +306,75 @@ const TourModal = (props: TourModalProps) => {
   );
 };
 
+const TourBubble = (props: TourModalProps) => {
+  const {
+    openState,
+    zIndex,
+    globalStyle,
+    currentStep,
+    assets,
+    userAttributes,
+    currentStepIndex,
+    totalSteps,
+    themeSettings,
+    removeBranding,
+    handleDismiss,
+    handleOnClick,
+  } = props;
+  const { themeSetting } = useSettingsStyles(themeSettings);
+
+  // Get bubble settings from theme
+  const bubblePlacement = themeSetting?.bubble?.placement;
+  const avatarSettings = themeSetting?.avatar;
+
+  // Build avatar URL based on avatar type
+  const getAvatarUrl = () => {
+    if (!avatarSettings) {
+      return 'https://r3.usertour.io/avatar/alex.svg';
+    }
+    if (avatarSettings.type === 'url' && avatarSettings.url) {
+      return avatarSettings.url;
+    }
+    if (avatarSettings.type === 'cartoon' && avatarSettings.name) {
+      return `https://r3.usertour.io/avatar/${avatarSettings.name}.svg`;
+    }
+    // Default avatar
+    return 'https://r3.usertour.io/avatar/alex.svg';
+  };
+
+  return (
+    <Popper
+      isIframeMode={true}
+      open={openState}
+      zIndex={zIndex}
+      globalStyle={globalStyle}
+      assets={assets}
+    >
+      <PopperBubblePortal
+        position={bubblePlacement?.position ?? 'leftBottom'}
+        positionOffsetX={bubblePlacement?.positionOffsetX ?? 20}
+        positionOffsetY={bubblePlacement?.positionOffsetY ?? 20}
+        width={`${currentStep.setting.width}px`}
+        avatarSize={avatarSettings?.size ?? 60}
+        avatarSrc={getAvatarUrl()}
+        notchColor={themeSetting?.mainColor?.background}
+        zIndex={zIndex}
+      >
+        <PopperContent
+          currentStep={currentStep}
+          userAttributes={userAttributes}
+          currentStepIndex={currentStepIndex}
+          totalSteps={totalSteps}
+          themeSettings={themeSettings}
+          removeBranding={removeBranding}
+          handleDismiss={handleDismiss}
+          handleOnClick={handleOnClick}
+        />
+      </PopperBubblePortal>
+    </Popper>
+  );
+};
+
 export const TourWidget = (props: { tour: UsertourTour }) => {
   const { tour } = props;
   const storeData = useTourStore(tour);
@@ -331,6 +401,10 @@ export const TourWidget = (props: { tour: UsertourTour }) => {
 
   if (stepType === StepContentType.MODAL) {
     return <TourModal {...commonProps} />;
+  }
+
+  if (stepType === StepContentType.BUBBLE) {
+    return <TourBubble {...commonProps} />;
   }
 
   return null;
