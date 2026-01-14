@@ -7,3 +7,5 @@ packages:
   - "packages/shared/*"
   - "packages/tailwind"
   - "packages/license"
+  - "packages/helpers"
+  - "packages/types"
