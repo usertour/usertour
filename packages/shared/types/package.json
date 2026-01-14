@@ -15,11 +15,11 @@
     }
   },
   "scripts": {
-    "build": "tsup src --dts",
-    "dev": "tsup src --dts --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "clean": "rimraf dist .turbo",
     "typecheck": "tsc --noEmit",
-    "build:fast": "tsup src"
+    "build:fast": "tsup --no-dts"
   },
   "devDependencies": {
     "typescript": "^5.0.2"

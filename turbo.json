@@ -12,7 +12,8 @@
     "lint": {},
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "dependsOn": ["@usertour/types#build", "@usertour/helpers#build"]
     },
     "clean": {
       "cache": false

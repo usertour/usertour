@@ -5,9 +5,9 @@
   "license": "AGPL-3.0",
   "private": true,
   "scripts": {
-    "dev:web": "pnpm --filter @usertour/web dev",
-    "dev:sdk": "pnpm --filter @usertour/sdk dev",
-    "dev:server": "pnpm build:deps && turbo dev --filter=@usertour/server...",
+    "dev:web": "turbo dev --filter={@usertour/types,@usertour/helpers,@usertour/web}",
+    "dev:sdk": "turbo dev --filter={@usertour/types,@usertour/helpers,@usertour/sdk}",
+    "dev:server": "turbo dev --filter={@usertour/types,@usertour/helpers,@usertour/server}",
     "build:deps": "pnpm --filter @usertour/types build && pnpm --filter @usertour/helpers build",
     "build:web": "pnpm build:deps && pnpm --filter @usertour/web build",
     "build:sdk": "pnpm build:deps && pnpm --filter @usertour/sdk build",
