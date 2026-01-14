@@ -75,6 +75,9 @@ importers:
       '@usertour-packages/frame':
         specifier: workspace:*
         version: link:../../packages/components/frame
+      '@usertour-packages/icons':
+        specifier: workspace:^
+        version: link:../../packages/shared/icons
       '@usertour-packages/react-context':
         specifier: workspace:^
         version: link:../../packages/radix/context

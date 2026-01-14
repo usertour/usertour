@@ -13,6 +13,7 @@ import {
   ContentEditorClickableElement,
   ContentEditorSerialize,
 } from '@usertour-packages/shared-editor';
+import { getAvatarDataUri } from '@usertour-packages/icons';
 import {
   Align,
   ProgressBarPosition,
@@ -328,18 +329,22 @@ const TourBubble = (props: TourModalProps) => {
   const avatarSettings = themeSetting?.avatar;
 
   // Build avatar URL based on avatar type
+  // Uses local bundled SVG data for cartoon avatars
   const getAvatarUrl = () => {
     if (!avatarSettings) {
-      return 'https://r3.usertour.io/avatar/alex.svg';
+      return getAvatarDataUri('alex') ?? '';
     }
     if (avatarSettings.type === 'url' && avatarSettings.url) {
       return avatarSettings.url;
     }
+    if (avatarSettings.type === 'upload' && avatarSettings.url) {
+      return avatarSettings.url;
+    }
     if (avatarSettings.type === 'cartoon' && avatarSettings.name) {
-      return `https://r3.usertour.io/avatar/${avatarSettings.name}.svg`;
+      return getAvatarDataUri(avatarSettings.name) ?? getAvatarDataUri('alex') ?? '';
     }
     // Default avatar
-    return 'https://r3.usertour.io/avatar/alex.svg';
+    return getAvatarDataUri('alex') ?? '';
   };
 
   return (

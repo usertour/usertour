@@ -21,6 +21,7 @@ import { ThemeSettingsSurvey } from './settings/theme-settings-survey';
 import { ThemeSettingsTooltip } from './settings/theme-settings-tooltip';
 import { ThemeSettingsXbutton } from './settings/theme-settings-xbutton';
 import { ThemeSettingsBubble } from './settings/theme-settings-bubble';
+import { ThemeSettingsAvatar } from './settings/theme-settings-avatar';
 import { ConditionalVariationsPanel } from './conditional-variations-panel';
 
 const AccordionItem = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
@@ -140,6 +141,13 @@ export const ThemeSettingsAccordionContent = () => (
       <AccordionTrigger>Base colors</AccordionTrigger>
       <AccordionContent>
         <ThemeSettingsBasicColor />
+      </AccordionContent>
+    </AccordionItem>
+
+    <AccordionItem value="avatar">
+      <AccordionTrigger>Avatar</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsAvatar />
       </AccordionContent>
     </AccordionItem>
 

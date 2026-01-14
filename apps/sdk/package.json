@@ -24,6 +24,7 @@
     "@usertour-packages/dom": "workspace:^",
     "@usertour-packages/finder": "workspace:^",
     "@usertour-packages/frame": "workspace:*",
+    "@usertour-packages/icons": "workspace:^",
     "@usertour-packages/react-context": "workspace:^",
     "@usertour-packages/sdk": "workspace:^",
     "@usertour-packages/shared-editor": "workspace:^",
