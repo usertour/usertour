@@ -1,13 +1,21 @@
-import * as SharedPopper from '@usertour-packages/sdk';
+import {
+  Popper,
+  PopperBubblePortal,
+  PopperClose,
+  PopperContent,
+  PopperMadeWith,
+  PopperProgress,
+} from '@usertour-packages/sdk';
 import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import {
+  AvatarType,
   ProgressBarPosition,
   ProgressBarType,
   ThemeTypesSetting,
-  AvatarType,
 } from '@usertour/types';
-import { useSubscriptionContext } from '@/contexts/subscription-context';
 import { useMemo } from 'react';
+
+import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface ThemePreviewBubbleProps {
   contents: ContentEditorRoot[];
@@ -59,8 +67,8 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
 
   return (
     <div className="h-full w-full scale-100">
-      <SharedPopper.Popper open={true} zIndex={1111} globalStyle={customStyle}>
-        <SharedPopper.PopperBubblePortal
+      <Popper open={true} zIndex={1111} globalStyle={customStyle}>
+        <PopperBubblePortal
           position={bubbleSettings?.placement?.position ?? 'leftBottom'}
           positionOffsetX={bubbleSettings?.placement?.positionOffsetX ?? 20}
           positionOffsetY={bubbleSettings?.placement?.positionOffsetY ?? 20}
@@ -70,10 +78,10 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
           notchSize={settings?.tooltip?.notchSize ?? 20}
           notchColor={settings?.mainColor.background}
         >
-          <SharedPopper.PopperContent>
-            <SharedPopper.PopperClose />
+          <PopperContent>
+            <PopperClose />
             {showTopProgress && (
-              <SharedPopper.PopperProgress
+              <PopperProgress
                 type={progressType}
                 currentStepIndex={2}
                 position={progressPosition}
@@ -81,18 +89,18 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
               />
             )}
             <ContentEditorSerialize contents={contents} />
-            {shouldShowMadeWith && <SharedPopper.PopperMadeWith />}
+            {shouldShowMadeWith && <PopperMadeWith />}
             {showBottomProgress && (
-              <SharedPopper.PopperProgress
+              <PopperProgress
                 type={progressType}
                 currentStepIndex={2}
                 totalSteps={4}
                 position={progressPosition}
               />
             )}
-          </SharedPopper.PopperContent>
-        </SharedPopper.PopperBubblePortal>
-      </SharedPopper.Popper>
+          </PopperContent>
+        </PopperBubblePortal>
+      </Popper>
     </div>
   );
 };
