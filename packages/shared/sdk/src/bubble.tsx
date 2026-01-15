@@ -1,4 +1,12 @@
-import { CSSProperties, forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  CSSProperties,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { cn } from '@usertour-packages/tailwind';
 import { Frame, useFrame } from '@usertour-packages/frame';
@@ -132,6 +140,14 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
       className,
     } = props;
 
+    // State to control content visibility (toggled by clicking avatar)
+    const [isContentVisible, setIsContentVisible] = useState(true);
+
+    // Toggle content visibility handler
+    const handleAvatarClick = useCallback(() => {
+      setIsContentVisible((prev) => !prev);
+    }, []);
+
     // Get zIndex from Popper context
     const { zIndex } = usePopperContext(BUBBLE_NAME);
 
@@ -145,10 +161,18 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
 
     // Calculate padding for avatar and notch space
     const avatarSpacePadding = avatarSize + notchSize;
-    const outlineStyle =
-      vertical === 'bottom'
-        ? { paddingBottom: avatarSpacePadding }
-        : { paddingTop: avatarSpacePadding };
+    const outlineStyle: CSSProperties = useMemo(
+      () => ({
+        ...(vertical === 'bottom'
+          ? { paddingBottom: avatarSpacePadding }
+          : { paddingTop: avatarSpacePadding }),
+        // Control visibility with opacity and pointer-events
+        opacity: isContentVisible ? 1 : 0,
+        pointerEvents: isContentVisible ? 'auto' : 'none',
+        transition: 'opacity 0.3s ease-in-out',
+      }),
+      [vertical, avatarSpacePadding, isContentVisible],
+    );
 
     return (
       <div
@@ -181,8 +205,8 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
           size={avatarSize}
           vertical={vertical}
           horizontal={horizontal}
-          minimizable={false}
-          onClick={() => {}}
+          minimizable={true}
+          onClick={handleAvatarClick}
         />
       </div>
     );
@@ -416,6 +440,8 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
     );
   }
 
+  // In non-iframe mode, add usertour-widget-bubble__avatar class for pointer-events: all
+  // since parent .usertour-widget-popper has pointer-events: none
   return (
     <PopperBubbleAvatar
       src={src}
@@ -425,7 +451,7 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
       horizontal={horizontal}
       minimizable={minimizable}
       onClick={onClick}
-      className={className}
+      className={cn('usertour-widget-bubble__avatar', className)}
       applyPosition={true}
     />
   );
