@@ -1,6 +1,7 @@
-import { CSSProperties, forwardRef, useCallback, useMemo, useRef } from 'react';
+import { CSSProperties, forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { cn } from '@usertour-packages/tailwind';
+import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
 import { computePositionStyle } from './utils/position';
 
 /* -------------------------------------------------------------------------------------------------
@@ -34,6 +35,12 @@ interface PopperBubblePortalProps {
   className?: string;
   /** Z-index for the bubble */
   zIndex?: number;
+  /** Whether to use iframe mode for loading external resources */
+  isIframeMode?: boolean;
+  /** Asset attributes for iframe mode */
+  assets?: AssetAttributes[];
+  /** Global style to apply inside iframe */
+  globalStyle?: string;
 }
 
 interface PopperAvatarNotchProps {
@@ -70,6 +77,17 @@ interface PopperBubbleAvatarProps {
   onClick?: () => void;
   /** Additional className */
   className?: string;
+  /** Whether to apply absolute positioning (default: true) */
+  applyPosition?: boolean;
+}
+
+interface PopperBubbleAvatarWrapperProps extends PopperBubbleAvatarProps {
+  /** Whether to use iframe mode */
+  isIframeMode?: boolean;
+  /** Asset attributes for iframe mode */
+  assets?: AssetAttributes[];
+  /** Global style to apply inside iframe */
+  globalStyle?: string;
 }
 
 /* -------------------------------------------------------------------------------------------------
@@ -125,6 +143,9 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
       avatarSrc = '',
       className,
       zIndex = 1,
+      isIframeMode = false,
+      assets,
+      globalStyle,
     } = props;
 
     const containerRef = useRef(null);
@@ -168,13 +189,16 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
             offsetY={avatarSize}
           />
         </div>
-        <PopperBubbleAvatar
+        <PopperBubbleAvatarWrapper
           src={avatarSrc}
           size={avatarSize}
           vertical={vertical}
           horizontal={horizontal}
           minimizable={false}
           onClick={() => {}}
+          isIframeMode={isIframeMode}
+          assets={assets}
+          globalStyle={globalStyle}
         />
       </div>
     );
@@ -271,6 +295,7 @@ const PopperBubbleAvatar = forwardRef<HTMLDivElement, PopperBubbleAvatarProps>((
     minimizable = false,
     onClick,
     className,
+    applyPosition = true,
   } = props;
 
   const handleClick = useCallback(() => {
@@ -280,15 +305,21 @@ const PopperBubbleAvatar = forwardRef<HTMLDivElement, PopperBubbleAvatarProps>((
   }, [minimizable, onClick]);
 
   // Calculate position styles based on vertical and horizontal props
-  const positionStyle: CSSProperties = {
-    width: size,
-    height: size,
-    position: 'absolute',
-    // Horizontal position
-    ...(horizontal === 'left' ? { left: 0 } : { right: 0 }),
-    // Vertical position
-    ...(vertical === 'bottom' ? { bottom: 0 } : { top: 0 }),
-  };
+  // When applyPosition is false, only apply size (used inside iframe)
+  const positionStyle: CSSProperties = applyPosition
+    ? {
+        width: size,
+        height: size,
+        position: 'absolute',
+        // Horizontal position
+        ...(horizontal === 'left' ? { left: 0 } : { right: 0 }),
+        // Vertical position
+        ...(vertical === 'bottom' ? { bottom: 0 } : { top: 0 }),
+      }
+    : {
+        width: size,
+        height: size,
+      };
 
   return (
     <div
@@ -319,11 +350,115 @@ const PopperBubbleAvatar = forwardRef<HTMLDivElement, PopperBubbleAvatarProps>((
 
 PopperBubbleAvatar.displayName = 'PopperBubbleAvatar';
 
-export { PopperBubblePortal, PopperBubbleAvatar, PopperAvatarNotch, useAnchorPosition };
+/* -------------------------------------------------------------------------------------------------
+ * PopperBubbleAvatarInFrame
+ * -----------------------------------------------------------------------------------------------*/
+
+interface PopperBubbleAvatarInFrameProps extends Omit<PopperBubbleAvatarProps, 'applyPosition'> {
+  globalStyle?: string;
+}
+
+/**
+ * Avatar component rendered inside an iframe
+ * Applies global styles to the iframe document body
+ */
+const PopperBubbleAvatarInFrame = (props: PopperBubbleAvatarInFrameProps) => {
+  const { globalStyle, ...avatarProps } = props;
+  const { document } = useFrame();
+
+  useEffect(() => {
+    if (globalStyle) {
+      document.body.style.cssText = globalStyle;
+      document.body.className = 'usertour-widget-root';
+    }
+  }, [globalStyle, document]);
+
+  return <PopperBubbleAvatar {...avatarProps} applyPosition={false} />;
+};
+
+/* -------------------------------------------------------------------------------------------------
+ * PopperBubbleAvatarWrapper
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Wrapper component for PopperBubbleAvatar that handles iframe mode
+ * When isIframeMode is true, wraps the avatar in a Frame component with positioning on the Frame
+ * When isIframeMode is false, renders PopperBubbleAvatar directly with its own positioning
+ */
+const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
+  const {
+    isIframeMode = false,
+    assets,
+    globalStyle,
+    size = 48,
+    vertical = 'bottom',
+    horizontal = 'left',
+    src,
+    alt,
+    minimizable,
+    onClick,
+    className,
+  } = props;
+
+  // Position style for the Frame container (used in iframe mode)
+  const framePositionStyle: CSSProperties = {
+    width: size,
+    height: size,
+    position: 'absolute',
+    ...(horizontal === 'left' ? { left: 0 } : { right: 0 }),
+    ...(vertical === 'bottom' ? { bottom: 0 } : { top: 0 }),
+    border: 'none',
+  };
+
+  if (isIframeMode) {
+    return (
+      <Frame
+        assets={assets}
+        className="usertour-widget-bubble__avatar"
+        defaultStyle={framePositionStyle}
+      >
+        <PopperBubbleAvatarInFrame
+          src={src}
+          alt={alt}
+          size={size}
+          vertical={vertical}
+          horizontal={horizontal}
+          minimizable={minimizable}
+          onClick={onClick}
+          className={className}
+          globalStyle={globalStyle}
+        />
+      </Frame>
+    );
+  }
+
+  return (
+    <PopperBubbleAvatar
+      src={src}
+      alt={alt}
+      size={size}
+      vertical={vertical}
+      horizontal={horizontal}
+      minimizable={minimizable}
+      onClick={onClick}
+      className={className}
+      applyPosition={true}
+    />
+  );
+};
+
+export {
+  PopperBubblePortal,
+  PopperBubbleAvatar,
+  PopperBubbleAvatarWrapper,
+  PopperAvatarNotch,
+  useAnchorPosition,
+};
 
 export type {
   PopperBubblePortalProps,
   PopperBubbleAvatarProps,
+  PopperBubbleAvatarWrapperProps,
   PopperAvatarNotchProps,
   NotchVerticalPosition,
   NotchHorizontalPosition,

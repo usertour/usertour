@@ -364,6 +364,9 @@ const TourBubble = (props: TourModalProps) => {
         avatarSrc={getAvatarUrl()}
         notchColor={themeSetting?.mainColor?.background}
         zIndex={zIndex}
+        isIframeMode={true}
+        assets={assets}
+        globalStyle={globalStyle}
       >
         <PopperContent
           currentStep={currentStep}
