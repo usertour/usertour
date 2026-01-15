@@ -361,7 +361,7 @@ export const defaultSettings: ThemeTypesSetting = {
     type: AvatarType.CARTOON,
     size: 60,
     url: '',
-    name: '',
+    name: 'alex',
   },
 };
 
@@ -577,6 +577,6 @@ export const standardDarkSettings: ThemeTypesSetting = {
     type: AvatarType.CARTOON,
     size: 60,
     url: '',
-    name: '',
+    name: 'alex',
   },
 };
