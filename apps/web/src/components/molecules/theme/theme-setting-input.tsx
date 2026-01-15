@@ -16,6 +16,7 @@ type ThemeSettingInputProps = {
   tooltip?: string;
   disabled?: boolean;
   error?: string;
+  vertical?: boolean;
 };
 
 export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
@@ -29,6 +30,7 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
     tooltip,
     disabled = false,
     error,
+    vertical = false,
   } = props;
 
   const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -55,14 +57,14 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
   );
 
   return (
-    <div className="flex flex-row">
+    <div className={cn('flex', vertical ? 'flex-col' : 'flex-row')}>
       <div className="text-sm grow flex items-center space-x-1">
         <label htmlFor={name} className="block text-sm leading-9">
           {text}
         </label>
         {tooltip && <QuestionTooltip>{tooltip}</QuestionTooltip>}
       </div>
-      <div className="flex-none w-36 relative">
+      <div className={cn('relative', vertical ? 'w-full' : 'flex-none w-36')}>
         <ThemeSettingErrorPopover error={error}>{inputElement}</ThemeSettingErrorPopover>
         {!disableUnit && (
           <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none z-1 pe-4">

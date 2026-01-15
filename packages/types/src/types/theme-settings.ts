@@ -21,6 +21,16 @@ export enum AvatarType {
   NONE = 'none',
 }
 
+export enum MissingTooltipTargetBehavior {
+  AUTO_DISMISS = 'auto-dismiss',
+  USE_BUBBLE = 'use-bubble',
+}
+
+export enum ModalBackdropClickBehavior {
+  DO_NOTHING = 'do-nothing',
+  DISMISS_FLOW = 'dismiss-flow',
+}
+
 export type ThemeTypesSettingsColor = {
   background: string;
   color: string;
@@ -121,10 +131,13 @@ export type ThemeTypesSetting = {
   tooltip: {
     width: number;
     notchSize: number;
+    missingTargetTolerance: number;
+    missingTargetBehavior: MissingTooltipTargetBehavior;
   };
   modal: {
     width: number;
     padding: number;
+    backdropClickBehavior: ModalBackdropClickBehavior;
   };
   bubble: {
     placement: ContentModalPlacementData;
@@ -163,6 +176,7 @@ export const defaultSettings: ThemeTypesSetting = {
   modal: {
     width: 600,
     padding: 40,
+    backdropClickBehavior: ModalBackdropClickBehavior.DO_NOTHING,
   },
   border: {
     borderColor: 'Auto',
@@ -232,6 +246,8 @@ export const defaultSettings: ThemeTypesSetting = {
   tooltip: {
     width: 300,
     notchSize: 20,
+    missingTargetTolerance: 3,
+    missingTargetBehavior: MissingTooltipTargetBehavior.AUTO_DISMISS,
   },
   xbutton: {
     color: 'Auto',
@@ -379,6 +395,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
   modal: {
     width: 600,
     padding: 40,
+    backdropClickBehavior: ModalBackdropClickBehavior.DO_NOTHING,
   },
   border: {
     borderColor: 'Auto',
@@ -448,6 +465,8 @@ export const standardDarkSettings: ThemeTypesSetting = {
   tooltip: {
     width: 300,
     notchSize: 20,
+    missingTargetTolerance: 3,
+    missingTargetBehavior: MissingTooltipTargetBehavior.AUTO_DISMISS,
   },
   xbutton: {
     color: 'Auto',
