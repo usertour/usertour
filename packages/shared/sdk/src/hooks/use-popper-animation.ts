@@ -59,7 +59,7 @@ export const usePopperAnimation = (
   // Animation state management
   const [animationPhase, setAnimationPhase] = useState<'offset' | 'animating'>('offset');
   const [lastTransform, setLastTransform] = useState('');
-  const stableTimerRef = useRef<NodeJS.Timeout>();
+  const stableTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Reset animation phase when placement changes
   useEffect(() => {

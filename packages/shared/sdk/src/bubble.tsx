@@ -184,7 +184,10 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
         dir={dir}
       >
         <div
-          className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative"
+          className={cn(
+            'usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative',
+            !isContentVisible && 'usertour-widget-popper-outline--minimized',
+          )}
           style={outlineStyle}
         >
           <div className="usertour-widget-popper__frame-wrapper">{children}</div>

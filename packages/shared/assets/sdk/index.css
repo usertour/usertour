@@ -78,6 +78,10 @@ _:future,
 .usertour-widget-popper-outline {
   position: relative;
 }
+.usertour-widget-popper-outline--minimized,
+.usertour-widget-popper-outline--minimized * {
+  pointer-events: none !important;
+}
 .usertour-widget-popper__frame-wrapper {
   pointer-events: all;
   position: relative;

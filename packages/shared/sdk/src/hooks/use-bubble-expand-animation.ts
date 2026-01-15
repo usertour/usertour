@@ -91,7 +91,6 @@ export const useBubbleExpandAnimation = (
       transformOrigin,
       transform,
       opacity: isVisible ? 1 : 0,
-      pointerEvents: isVisible ? 'auto' : 'none',
       transition,
     };
   }, [
