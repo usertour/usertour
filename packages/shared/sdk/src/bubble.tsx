@@ -419,7 +419,7 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
     return (
       <Frame
         assets={assets}
-        className="usertour-widget-bubble__avatar"
+        className="usertour-widget-bubble__avatar usertour-widget-bubble__avatar--minimizable"
         defaultStyle={framePositionStyle}
       >
         <PopperBubbleAvatarInFrame
@@ -448,7 +448,10 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
       horizontal={horizontal}
       minimizable={minimizable}
       onClick={onClick}
-      className={cn('usertour-widget-bubble__avatar', className)}
+      className={cn(
+        'usertour-widget-bubble__avatar usertour-widget-bubble__avatar--minimizable',
+        className,
+      )}
       applyPosition={true}
     />
   );
