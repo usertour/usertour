@@ -1,17 +1,34 @@
+import { useCallback, useMemo } from 'react';
+
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
 import { MissingTooltipTargetBehavior } from '@usertour/types';
+
 import { useThemeSettingsContext } from '../theme-settings-panel';
+
+const MAX_TOLERANCE = 10;
 
 export const ThemeSettingsTooltip = () => {
   const { settings, setSettings, isViewOnly } = useThemeSettingsContext();
-  const update = (data: Partial<typeof settings.tooltip>) => {
-    const { tooltip } = settings;
-    setSettings((pre) => ({
-      ...pre,
-      tooltip: { ...tooltip, ...data },
-    }));
-  };
+
+  const update = useCallback(
+    (data: Partial<typeof settings.tooltip>) => {
+      const { tooltip } = settings;
+      setSettings((pre) => ({
+        ...pre,
+        tooltip: { ...tooltip, ...data },
+      }));
+    },
+    [settings, setSettings],
+  );
+
+  const toleranceError = useMemo(() => {
+    const value = settings.tooltip?.missingTargetTolerance ?? 3;
+    if (value > MAX_TOLERANCE) {
+      return `Maximum value is ${MAX_TOLERANCE}`;
+    }
+    return undefined;
+  }, [settings.tooltip?.missingTargetTolerance]);
   return (
     <div className="flex flex-col space-y-4">
       <div className="py-[15px] px-5 space-y-3">
@@ -41,9 +58,10 @@ export const ThemeSettingsTooltip = () => {
             update({ missingTargetTolerance: Number(value) });
           }}
           disabled={isViewOnly}
-          disableUnit
+          unit="seconds"
           vertical
-          tooltip="Specifies how long (in seconds) to wait for the target element to appear. If the element doesn't show up within this time, the 'Missing tooltip target behavior' setting below will be applied."
+          tooltip="Specifies how long to wait for the target element to appear. If the element doesn't show up within this time, the 'Missing tooltip target behavior' setting below will be applied."
+          error={toleranceError}
         />
         <ThemeSettingSelect
           text="Missing tooltip target behavior"

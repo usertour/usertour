@@ -20,16 +20,18 @@ export const ThemeSettingErrorPopover = memo<ThemeSettingErrorPopoverProps>(
     return (
       <Popover open={!!error}>
         <PopoverAnchor asChild>{children}</PopoverAnchor>
-        <PopoverContent
-          side={side}
-          align={align}
-          sideOffset={5}
-          className="bg-destructive text-destructive-foreground rounded-lg p-2 w-auto max-w-xs text-sm border-0"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-        >
-          {error}
-          <PopoverArrow className="fill-destructive" width={10} height={5} />
-        </PopoverContent>
+        {error && (
+          <PopoverContent
+            side={side}
+            align={align}
+            sideOffset={5}
+            className="bg-destructive text-destructive-foreground rounded-lg p-2 w-auto max-w-xs text-sm border-0"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            {error}
+            <PopoverArrow className="fill-destructive" width={10} height={5} />
+          </PopoverContent>
+        )}
       </Popover>
     );
   },

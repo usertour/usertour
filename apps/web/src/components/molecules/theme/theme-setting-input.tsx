@@ -13,6 +13,7 @@ type ThemeSettingInputProps = {
   defaultValue?: string;
   onChange?: (value: string) => void;
   disableUnit?: boolean;
+  unit?: string;
   tooltip?: string;
   disabled?: boolean;
   error?: string;
@@ -27,6 +28,7 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
     onChange,
     defaultValue,
     disableUnit = false,
+    unit = 'px',
     tooltip,
     disabled = false,
     error,
@@ -50,7 +52,6 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
       className={cn(
         'py-3 px-4 ps-4 block w-full shadow-sm rounded-lg text-sm disabled:opacity-100',
         disableUnit ? 'pe-4' : 'pe-8',
-        error && 'border-destructive focus-visible:ring-destructive',
       )}
       placeholder={placeholder}
     />
@@ -68,7 +69,7 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
         <ThemeSettingErrorPopover error={error}>{inputElement}</ThemeSettingErrorPopover>
         {!disableUnit && (
           <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none z-1 pe-4">
-            <span className="text-gray-500">px</span>
+            <span className="text-muted-foreground">{unit}</span>
           </div>
         )}
       </div>
