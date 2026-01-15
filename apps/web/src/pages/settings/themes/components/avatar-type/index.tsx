@@ -20,6 +20,22 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
       type,
     });
 
+    // Handle tab change with automatic NONE selection
+    const handleTabChangeWithNone = useCallback(
+      (value: string) => {
+        handleTabChange(value);
+        // Automatically select NONE when switching to the None tab
+        if (value === AvatarType.NONE) {
+          onChange({
+            type: AvatarType.NONE,
+            name: undefined,
+            url: undefined,
+          });
+        }
+      },
+      [handleTabChange, onChange],
+    );
+
     const handleCartoonSelect = useCallback(
       (selectedName: string) => {
         onChange({
@@ -61,16 +77,8 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
       });
     }, [onChange]);
 
-    const handleNoneSelect = useCallback(() => {
-      onChange({
-        type: AvatarType.NONE,
-        name: undefined,
-        url: undefined,
-      });
-    }, [onChange]);
-
     return (
-      <Tabs value={activeTab} onValueChange={disabled ? undefined : handleTabChange}>
+      <Tabs value={activeTab} onValueChange={disabled ? undefined : handleTabChangeWithNone}>
         <UnderlineTabsList>
           <UnderlineTabsTrigger value={AvatarType.CARTOON} disabled={disabled}>
             Cartoon
@@ -109,19 +117,7 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
             disabled={disabled}
           />
         </UnderlineTabsContent>
-        <UnderlineTabsContent value={AvatarType.NONE}>
-          <div className="py-4 text-center">
-            <p className="text-sm text-muted-foreground mb-3">No avatar will be displayed</p>
-            <button
-              type="button"
-              onClick={handleNoneSelect}
-              disabled={disabled}
-              className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {type === AvatarType.NONE ? 'Currently selected' : 'Select this option'}
-            </button>
-          </div>
-        </UnderlineTabsContent>
+        <UnderlineTabsContent value={AvatarType.NONE} />
       </Tabs>
     );
   },
