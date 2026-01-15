@@ -6,6 +6,7 @@ import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { cn } from '@usertour-packages/tailwind';
 import { createContext, forwardRef, useContext, useMemo, useCallback, ReactNode } from 'react';
 import { ThemeSettingsBackdrop } from './settings/theme-settings-backdrop';
+import { ThemeSettingsFocusHighlight } from './settings/theme-settings-focus-highlight';
 import { ThemeSettingsBasicColor } from './settings/theme-settings-basic-color';
 import { ThemeSettingsBeacon } from './settings/theme-settings-beacon';
 import { ThemeSettingsBorder } from './settings/theme-settings-border';
@@ -240,6 +241,12 @@ export const ThemeSettingsAccordionContent = () => (
       <AccordionTrigger>Backdrop</AccordionTrigger>
       <AccordionContent>
         <ThemeSettingsBackdrop />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="focus-highlight">
+      <AccordionTrigger>Focus highlight</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsFocusHighlight />
       </AccordionContent>
     </AccordionItem>
   </>

@@ -213,6 +213,12 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   // Survey auto values
   data.survey.color = resolveAutoValue(data.survey.color, data.brandColor.background);
 
+  // Focus highlight auto values
+  data.focusHighlight.color = resolveAutoValue(
+    data.focusHighlight.color,
+    data.mainColor.autoActive as string,
+  );
+
   // Launcher button primary text color auto values
   data.launcherButtons.primary.textColor.color = resolveAutoValue(
     data.launcherButtons.primary.textColor.color,
@@ -325,6 +331,8 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-backdrop-highlight-radius': `${settings.backdrop.highlight.radius}px`,
     '--usertour-backdrop-highlight-spread': `${settings.backdrop.highlight.spread}px`,
     '--usertour-backdrop-opacity': settings.backdrop.opacity / 100,
+    '--usertour-focus-color': settings.focusHighlight.color,
+    '--usertour-focus-opacity': settings.focusHighlight.opacity / 100,
     '--usertour-progress-bar-color': settings.progress.color,
     '--usertour-progress-bar-height': `${settings.progress.height}px`,
     '--usertour-narrow-progress-bar-height': `${settings.progress.narrowHeight}px`,

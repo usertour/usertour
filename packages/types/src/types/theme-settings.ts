@@ -154,6 +154,10 @@ export type ThemeTypesSetting = {
       opacity: number;
     };
   };
+  focusHighlight: {
+    color: string;
+    opacity: number;
+  };
   avatar: {
     type: AvatarType;
     size: number;
@@ -262,6 +266,10 @@ export const defaultSettings: ThemeTypesSetting = {
       spread: 0,
       opacity: 50,
     },
+  },
+  focusHighlight: {
+    color: 'Auto',
+    opacity: 100,
   },
   progress: {
     type: ProgressBarType.FULL_WIDTH,
@@ -481,6 +489,10 @@ export const standardDarkSettings: ThemeTypesSetting = {
       spread: 0,
       opacity: 50,
     },
+  },
+  focusHighlight: {
+    color: 'Auto',
+    opacity: 100,
   },
   progress: {
     type: ProgressBarType.FULL_WIDTH,
