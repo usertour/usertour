@@ -1,10 +1,4 @@
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverArrow,
-  PopoverContent,
-  PopoverTrigger,
-} from '@usertour-packages/popover';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { Button } from '@usertour-packages/button';
 import { TAILWINDCSS_COLORS } from '@usertour-packages/constants';
 import { CheckboxIcon, RemoveColorIcon, Delete2Icon, EditIcon } from '@usertour-packages/icons';
@@ -27,6 +21,7 @@ import React, { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'r
 import { HexColorPicker } from 'react-colorful';
 import { firstLetterToUpperCase } from '@/utils/common';
 import { isNearWhite, needsDarkText } from '@/utils/theme';
+import { ThemeSettingErrorPopover } from './theme-setting-error-popover';
 
 // ============================================================================
 // Constants
@@ -204,26 +199,6 @@ const IconTooltip = React.memo(
 );
 IconTooltip.displayName = 'IconTooltip';
 
-// Error popover wrapper for form inputs
-const ErrorPopover = React.memo(
-  ({ error, children }: { error?: string; children: React.ReactNode }) => (
-    <Popover open={!!error}>
-      <PopoverAnchor asChild>{children}</PopoverAnchor>
-      <PopoverContent
-        side="bottom"
-        align="start"
-        sideOffset={5}
-        className="max-w-xs border-0 bg-destructive p-2 text-sm text-destructive-foreground"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        {error}
-        <PopoverArrow className="fill-destructive" width={10} height={5} />
-      </PopoverContent>
-    </Popover>
-  ),
-);
-ErrorPopover.displayName = 'ErrorPopover';
-
 // Color button used in both Tailwind palette and recent colors
 const ColorButton = React.memo(({ color, tooltip, onClick, children }: ColorButtonProps) => (
   <IconTooltip tooltip={tooltip}>
@@ -263,14 +238,14 @@ const ColorInput = React.memo(
   }) => (
     <div className="flex flex-row items-center gap-2">
       <div className="w-6 h-6 shrink-0 rounded border" style={{ backgroundColor: displayColor }} />
-      <ErrorPopover error={error}>
+      <ThemeSettingErrorPopover error={error} side="bottom" align="start">
         <Input
           value={!isAuto ? inputColor : ''}
           className={cn('h-8 grow', error && 'border-destructive focus-visible:ring-destructive')}
           placeholder={isAuto ? displayColor : ''}
           onChange={onInputChange}
         />
-      </ErrorPopover>
+      </ThemeSettingErrorPopover>
       <IconTooltip tooltip="Use this color">
         <Button variant="ghost" size="icon" onClick={onSubmit} className="h-7 w-7 text-primary">
           <CheckboxIcon width={20} height={20} />

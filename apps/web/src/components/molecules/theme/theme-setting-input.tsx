@@ -1,8 +1,10 @@
+import { ChangeEvent } from 'react';
+
 import { Input } from '@usertour-packages/input';
-import { Popover, PopoverAnchor, PopoverArrow, PopoverContent } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { ChangeEvent } from 'react';
+
+import { ThemeSettingErrorPopover } from './theme-setting-error-popover';
 
 type ThemeSettingInputProps = {
   text: string;
@@ -61,21 +63,7 @@ export const ThemeSettingInput = (props: ThemeSettingInputProps) => {
         {tooltip && <QuestionTooltip>{tooltip}</QuestionTooltip>}
       </div>
       <div className="flex-none w-36 relative">
-        {error ? (
-          <Popover open={!!error}>
-            <PopoverAnchor asChild>{inputElement}</PopoverAnchor>
-            <PopoverContent
-              side="right"
-              sideOffset={5}
-              className="bg-destructive text-destructive-foreground rounded-lg p-2 w-auto text-sm border-0"
-            >
-              {error}
-              <PopoverArrow className="fill-destructive" width={10} height={5} />
-            </PopoverContent>
-          </Popover>
-        ) : (
-          inputElement
-        )}
+        <ThemeSettingErrorPopover error={error}>{inputElement}</ThemeSettingErrorPopover>
         {!disableUnit && (
           <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none z-1 pe-4">
             <span className="text-gray-500">px</span>

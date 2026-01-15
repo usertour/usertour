@@ -1,6 +1,4 @@
-import { useCallback, useState, useEffect } from 'react';
-
-import { useToast } from '@usertour-packages/use-toast';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface UseAvatarUrlProps {
   avatarUrl?: string;
@@ -25,7 +23,7 @@ const validateUrl = (url: string): boolean => {
  */
 export const useAvatarUrl = ({ avatarUrl, isCurrentUrl, onUrlSubmit }: UseAvatarUrlProps) => {
   const [urlInput, setUrlInput] = useState<string>('');
-  const { toast } = useToast();
+  const [showError, setShowError] = useState(false);
 
   // Initialize URL input when source is URL
   useEffect(() => {
@@ -34,27 +32,46 @@ export const useAvatarUrl = ({ avatarUrl, isCurrentUrl, onUrlSubmit }: UseAvatar
     } else {
       setUrlInput('');
     }
+    // Reset error state when switching source
+    setShowError(false);
   }, [isCurrentUrl, avatarUrl]);
 
-  const handleUrlSubmit = useCallback(() => {
+  // Compute validation error
+  const validationError = useMemo(() => {
     const trimmedUrl = urlInput.trim();
     if (!trimmedUrl) {
-      toast({ variant: 'destructive', title: 'Please enter a valid URL' });
-      return;
+      return undefined;
     }
-
     if (!validateUrl(trimmedUrl)) {
-      toast({ variant: 'destructive', title: 'Please enter a valid URL' });
-      return;
+      return 'Please enter a valid URL';
     }
+    return undefined;
+  }, [urlInput]);
 
-    onUrlSubmit(trimmedUrl);
-  }, [urlInput, onUrlSubmit, toast]);
+  // Hide error when user focuses to edit
+  const handleFocus = useCallback(() => {
+    setShowError(false);
+  }, []);
+
+  // Show error when user leaves the field
+  const handleBlur = useCallback(() => {
+    setShowError(true);
+  }, []);
+
+  // Auto-submit when URL is valid
+  useEffect(() => {
+    const trimmedUrl = urlInput.trim();
+    if (trimmedUrl && validateUrl(trimmedUrl)) {
+      onUrlSubmit(trimmedUrl);
+    }
+  }, [urlInput, onUrlSubmit]);
 
   return {
     urlInput,
     setUrlInput,
-    handleUrlSubmit,
-    isValid: urlInput.trim().length > 0 && validateUrl(urlInput.trim()),
+    handleFocus,
+    handleBlur,
+    // Only show error when field is not focused
+    error: showError ? validationError : undefined,
   };
 };

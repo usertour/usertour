@@ -1,15 +1,16 @@
 import { memo } from 'react';
 
-import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
-import { ArrowRightIcon } from '@usertour-packages/icons';
+import { cn } from '@usertour-packages/tailwind';
+
+import { ThemeSettingErrorPopover } from '@/components/molecules/theme/theme-setting-error-popover';
 
 import { useAvatarUrl } from './hooks/use-avatar-url';
 import type { UrlAvatarTabProps } from './types';
 
 export const UrlAvatarTab = memo<UrlAvatarTabProps>(
   ({ avatarUrl, isCurrentUrl, onUrlSubmit, disabled }) => {
-    const { urlInput, setUrlInput, handleUrlSubmit, isValid } = useAvatarUrl({
+    const { urlInput, setUrlInput, handleFocus, handleBlur, error } = useAvatarUrl({
       avatarUrl,
       isCurrentUrl,
       onUrlSubmit,
@@ -17,31 +18,21 @@ export const UrlAvatarTab = memo<UrlAvatarTabProps>(
 
     return (
       <div className="py-4 flex flex-col gap-2">
-        <div className="flex gap-x-2">
+        <ThemeSettingErrorPopover error={error}>
           <Input
             id="avatar-url"
             placeholder="Enter avatar URL"
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
-            className="bg-background flex-1"
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            className={cn(
+              'bg-background',
+              error && 'border-destructive focus-visible:ring-destructive',
+            )}
             disabled={disabled}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !disabled) {
-                handleUrlSubmit();
-              }
-            }}
           />
-          <Button
-            className="flex-none w-20 h-9"
-            variant="ghost"
-            size="default"
-            onClick={handleUrlSubmit}
-            disabled={disabled || !isValid}
-          >
-            <ArrowRightIcon className="mr-1" />
-            Load
-          </Button>
-        </div>
+        </ThemeSettingErrorPopover>
       </div>
     );
   },
