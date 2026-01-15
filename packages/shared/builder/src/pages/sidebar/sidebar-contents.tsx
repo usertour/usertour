@@ -34,6 +34,7 @@ import {
   EventIcon2,
   EyeNoneIcon,
   ModelIcon,
+  RiMessageFill,
   TooltipIcon,
 } from '@usertour-packages/icons';
 import {
@@ -42,7 +43,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { Step } from '@usertour/types';
+import { Step, StepContentType } from '@usertour/types';
 import { forwardRef, useCallback, useState } from 'react';
 
 import { defaultStep } from '@usertour/helpers';
@@ -75,9 +76,12 @@ const SidebarContent = forwardRef<HTMLDivElement, any>(
         <div className="flex items-center justify-between ">
           <div className="grow inline-flex items-center text-sm ">
             <DragHandleDots2Icon {...listeners} />
-            {step.type === 'tooltip' && <TooltipIcon className="w-4 h-4 mt-0.5 mx-0.5" />}
-            {step.type === 'modal' && <ModelIcon className="w-4 h-4 mt-0.5 mx-0.5" />}
-            {step.type === 'hidden' && <EyeNoneIcon className="w-4 h-4 mx-0.5" />}
+            {step.type === StepContentType.TOOLTIP && (
+              <TooltipIcon className="w-4 h-4 mt-0.5 mx-0.5" />
+            )}
+            {step.type === StepContentType.MODAL && <ModelIcon className="w-4 h-4 mt-0.5 mx-0.5" />}
+            {step.type === StepContentType.HIDDEN && <EyeNoneIcon className="w-4 h-4 mx-0.5" />}
+            {step.type === StepContentType.BUBBLE && <RiMessageFill className="w-4 h-4 mx-0.5" />}
             <span className="w-36 truncate ...">
               {index + 1}. {step.name}
             </span>
