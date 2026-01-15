@@ -161,18 +161,35 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
 
     // Calculate padding for avatar and notch space
     const avatarSpacePadding = avatarSize + notchSize;
-    const outlineStyle: CSSProperties = useMemo(
-      () => ({
+    const outlineStyle: CSSProperties = useMemo(() => {
+      // Transform origin: animation expands from avatar corner
+      const transformOrigin = `${vertical} ${horizontal}`;
+
+      // Calculate slight offset for collapsed state to enhance the animation
+      const translateX = horizontal === 'left' ? '-8px' : '8px';
+      const translateY = vertical === 'bottom' ? '8px' : '-8px';
+
+      // Scale and translate transform for expand/collapse animation
+      const transform = isContentVisible
+        ? 'scale(1) translate(0, 0)'
+        : `scale(0.85) translate(${translateX}, ${translateY})`;
+
+      // Different easing for expand vs collapse - expand has bounce, collapse is quick
+      const transition = isContentVisible
+        ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-out'
+        : 'transform 0.2s ease-in, opacity 0.15s ease-in';
+
+      return {
         ...(vertical === 'bottom'
           ? { paddingBottom: avatarSpacePadding }
           : { paddingTop: avatarSpacePadding }),
-        // Control visibility with opacity and pointer-events
+        transformOrigin,
+        transform,
         opacity: isContentVisible ? 1 : 0,
         pointerEvents: isContentVisible ? 'auto' : 'none',
-        transition: 'opacity 0.3s ease-in-out',
-      }),
-      [vertical, avatarSpacePadding, isContentVisible],
-    );
+        transition,
+      };
+    }, [vertical, horizontal, avatarSpacePadding, isContentVisible]);
 
     return (
       <div
