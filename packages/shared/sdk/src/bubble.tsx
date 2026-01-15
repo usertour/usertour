@@ -1,8 +1,9 @@
 import { CSSProperties, forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { cn } from '@usertour-packages/tailwind';
-import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
+import { Frame, useFrame } from '@usertour-packages/frame';
 import { computePositionStyle } from './utils/position';
+import { usePopperContext } from './popper-context';
 
 /* -------------------------------------------------------------------------------------------------
  * Type Definitions
@@ -33,14 +34,6 @@ interface PopperBubblePortalProps {
   avatarSrc?: string;
   /** Additional className */
   className?: string;
-  /** Z-index for the bubble */
-  zIndex?: number;
-  /** Whether to use iframe mode for loading external resources */
-  isIframeMode?: boolean;
-  /** Asset attributes for iframe mode */
-  assets?: AssetAttributes[];
-  /** Global style to apply inside iframe */
-  globalStyle?: string;
 }
 
 interface PopperAvatarNotchProps {
@@ -81,14 +74,7 @@ interface PopperBubbleAvatarProps {
   applyPosition?: boolean;
 }
 
-interface PopperBubbleAvatarWrapperProps extends PopperBubbleAvatarProps {
-  /** Whether to use iframe mode */
-  isIframeMode?: boolean;
-  /** Asset attributes for iframe mode */
-  assets?: AssetAttributes[];
-  /** Global style to apply inside iframe */
-  globalStyle?: string;
-}
+type PopperBubbleAvatarWrapperProps = PopperBubbleAvatarProps;
 
 /* -------------------------------------------------------------------------------------------------
  * useAnchorPosition Hook
@@ -128,6 +114,8 @@ const useAnchorPosition = (placement: string) => {
  * Bubble Portal component with optional avatar notch
  * Similar to PopperModalContentPotal but without backdrop
  */
+const BUBBLE_NAME = 'PopperBubblePortal';
+
 const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
   (props, forwardedRef) => {
     const {
@@ -142,11 +130,10 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
       avatarSize = 60,
       avatarSrc = '',
       className,
-      zIndex = 1,
-      isIframeMode = false,
-      assets,
-      globalStyle,
     } = props;
+
+    // Get zIndex from Popper context
+    const { zIndex } = usePopperContext(BUBBLE_NAME);
 
     const containerRef = useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, containerRef);
@@ -196,9 +183,6 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
           horizontal={horizontal}
           minimizable={false}
           onClick={() => {}}
-          isIframeMode={isIframeMode}
-          assets={assets}
-          globalStyle={globalStyle}
         />
       </div>
     );
@@ -387,9 +371,6 @@ const PopperBubbleAvatarInFrame = (props: PopperBubbleAvatarInFrameProps) => {
  */
 const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
   const {
-    isIframeMode = false,
-    assets,
-    globalStyle,
     size = 48,
     vertical = 'bottom',
     horizontal = 'left',
@@ -399,6 +380,9 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
     onClick,
     className,
   } = props;
+
+  // Get shared data from Popper context
+  const { isIframeMode, assets, globalStyle } = usePopperContext(BUBBLE_NAME);
 
   // Position style for the Frame container (used in iframe mode)
   const framePositionStyle: CSSProperties = {

@@ -1,20 +1,18 @@
 import { CSSProperties, forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import * as ArrowPrimitive from '@usertour-packages/react-arrow';
 import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
-import { createContext } from '@usertour-packages/react-context';
 import { useSize } from '@usertour-packages/react-use-size';
 import { CloseIcon, UsertourIcon } from '@usertour-packages/icons';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { Button } from '@usertour-packages/button';
-import type { SideObject, Rect } from '@floating-ui/dom';
+import type { Rect, SideObject } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
 import { computePositionStyle } from './utils/position';
 import { cn } from '@usertour-packages/tailwind';
 import { Align, ProgressBarType, Side } from '@usertour/types';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';
-
-const POPPER_NAME = 'Popover';
+import { POPPER_NAME, PopperProvider, usePopperContext } from './popper-context';
 
 const OPPOSITE_SIDE: Record<Side, Side> = {
   top: 'bottom',
@@ -70,29 +68,6 @@ type PopperProps = {
   // Whether to use iframe mode, default false
   isIframeMode?: boolean;
 };
-
-type PopperContextProps = {
-  onOpenChange?: (open: boolean) => void;
-  open?: boolean;
-  zIndex: number;
-  assets?: AssetAttributes[];
-  globalStyle?: string;
-  triggerRef?: React.RefObject<any>;
-  viewportRef?: React.RefObject<any>;
-  referenceHidden?: boolean;
-  setReferenceHidden?: (hidden: boolean) => void;
-  rect?: Rect;
-  setRect?: (rect: Rect | undefined) => void;
-  overflow?: SideObject;
-  setOverflow?: (overflow: SideObject | undefined) => void;
-  // Iframe related states
-  isIframeMode?: boolean;
-  isIframeLoaded?: boolean;
-  setIsIframeLoaded?: (loaded: boolean) => void;
-  shouldShow?: boolean;
-};
-
-const [PopperProvider, usePopperContext] = createContext<PopperContextProps>(POPPER_NAME);
 
 const Popper = forwardRef<HTMLDivElement, PopperProps>((props, _) => {
   const {
