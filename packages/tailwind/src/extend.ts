@@ -3,7 +3,7 @@ export const extendSdk = {
     sdk: {
       border: 'var(--usertour-border)',
       input: 'var(--usertour-input)',
-      ring: 'hsl(var(--usertour-ring))',
+      ring: 'hsl(var(--usertour-focus-color))', // Format: "h s% l% / opacity"
       link: 'hsl(var(--usertour-link-color))',
       xbutton: 'var(--usertour-xbutton)',
       background: 'hsl(var(--usertour-background))',

@@ -1,5 +1,5 @@
 import { ThemeTypesSetting, defaultSettings } from '@usertour/types';
-import { hexToHSLString, hexToRGBStr } from './color';
+import { hexToHSLAString, hexToHSLString, hexToRGBStr } from './color';
 import { deepmergeCustom } from 'deepmerge-ts';
 import { isUndefined } from './type-utils';
 import { deepClone } from './utils';
@@ -283,7 +283,6 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-main-foreground-color': settings.mainColor.color,
     '--usertour-main-hover-background-color': hexToHSLString(settings.mainColor.hover),
     '--usertour-main-active-background-color': hexToHSLString(settings.mainColor.active),
-    '--usertour-ring': hexToHSLString(settings.mainColor.active),
     '--usertour-line-height': `${settings.font.lineHeight}px`,
     '--usertour-widget-popper-border-radius': `${settings.border.borderRadius}px`,
     '--usertour-font-weight-normal': settings.font.fontWeightNormal,
@@ -331,8 +330,10 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-backdrop-highlight-radius': `${settings.backdrop.highlight.radius}px`,
     '--usertour-backdrop-highlight-spread': `${settings.backdrop.highlight.spread}px`,
     '--usertour-backdrop-opacity': settings.backdrop.opacity / 100,
-    '--usertour-focus-color': settings.focusHighlight.color,
-    '--usertour-focus-opacity': settings.focusHighlight.opacity / 100,
+    '--usertour-focus-color': hexToHSLAString(
+      settings.focusHighlight.color,
+      settings.focusHighlight.opacity / 100,
+    ),
     '--usertour-progress-bar-color': settings.progress.color,
     '--usertour-progress-bar-height': `${settings.progress.height}px`,
     '--usertour-narrow-progress-bar-height': `${settings.progress.narrowHeight}px`,
@@ -409,26 +410,3 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
 
   return css;
 };
-/*
-let css = `--usertour-background: ${
-  settings.mainColor.background
-}; --usertour-foreground: ${
-  settings.mainColor.color
-}; --usertour-muted: #f4f4f5; --usertour-muted-foreground: #71717a; --usertour-popover: #ffffff; --usertour-popover-foreground: #09090b; --usertour-card: #ffffff; --usertour-card-foreground: #09090b; --usertour-border: #e4e4e7; --usertour-input: #e4e4e7; --usertour-primary: ${
-  settings.buttons.primary.backgroundColor.background
-};--usertour-primary-hover:${
-  settings.buttons.primary.backgroundColor.hover
-};--usertour-primary-active:${
-  settings.buttons.primary.backgroundColor.active
-}; --usertour-primary-foreground: ${
-  settings.buttons.primary.textColor.color
-}; --usertour-secondary: ${
-  settings.buttons.secondary.backgroundColor.background
-}; --usertour-secondary-foreground: ${
-  settings.buttons.secondary.textColor.color
-}; --usertour-accent: #f4f4f5; --usertour-accent-foreground: #18181b; --usertour-destructive: #ef4444; --usertour-destructive-foreground: #fafafa; --usertour-ring: #a1a1aa; --usertour-radius: 0.5rem; --usertour-popper-radius: 0.5rem; --usertour-backdrop-color-rgb: 0, 0, 0; --usertour-backdrop-highlight-color-rgb: 255, 255, 255; --usertour-backdrop-highlight-opacity: 0.5; --usertour-backdrop-highlight-radius: 4px; --usertour-backdrop-highlight-spread: 0px; --usertour-backdrop-opacity: 0.4; --usertour-tooltip-notch-size: 20px; --usertour-notch-color: white; --usertour-widget-popper-border-radius: ${
-  settings.border.borderRadius
-}px; --usertour-widget-popper-border-width: ${
-  settings.border.borderWidthEnabled ? settings.border.borderWidth : 0
-}px; --usertour-widget-popper-border-color: ${settings.border.borderColor};`;
-*/

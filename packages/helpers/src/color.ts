@@ -23,6 +23,17 @@ export function hexToHSLString(hexColor: string): string {
 }
 
 /**
+ * Convert hex color to HSL string format with opacity for Tailwind CSS
+ * @param hexColor - Hex color string (e.g., "#FFFFFF")
+ * @param opacity - Opacity value (0-1)
+ * @returns HSL string format with opacity (e.g., "0 0% 100% / 0.5")
+ */
+export function hexToHSLAString(hexColor: string, opacity: number): string {
+  const hsl = hexToHSLString(hexColor);
+  return `${hsl} / ${opacity}`;
+}
+
+/**
  * Convert hex color to RGB string format (e.g., "255, 255, 255")
  * @param hex - Hex color string (e.g., "#FFFFFF")
  * @returns RGB string format without alpha
