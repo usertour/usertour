@@ -34,7 +34,7 @@ export class ActionManager {
   /**
    * Handle a list of actions
    * @param actions - The actions to handle
-   * @param context - The context object with component methods
+   * @param context - The context object with component methods and source
    */
   async handleActions(actions: RulesCondition[], context: ActionHandlerContext): Promise<void> {
     // Separate actions by type
@@ -53,7 +53,7 @@ export class ActionManager {
   /**
    * Execute a list of actions in sequence
    * @param actions - The actions to execute
-   * @param context - The context object with component methods
+   * @param context - The context object with component methods and source
    */
   private async executeActions(
     actions: RulesCondition[],
@@ -68,7 +68,7 @@ export class ActionManager {
    * Execute a single action
    * Wrapped in try-catch to prevent one failing action from stopping subsequent actions
    * @param action - The action to execute
-   * @param context - The context object with component methods
+   * @param context - The context object with component methods and source
    */
   private async executeAction(
     action: RulesCondition,

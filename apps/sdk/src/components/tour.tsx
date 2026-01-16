@@ -18,6 +18,7 @@ import {
 import {
   Align,
   AvatarType,
+  contentEndReason,
   ModalBackdropClickBehavior,
   ProgressBarPosition,
   ProgressBarType,
@@ -45,7 +46,7 @@ type TourBaseProps = {
   totalSteps: number;
   removeBranding: boolean;
   themeSettings: ThemeTypesSetting;
-  handleDismiss: () => void;
+  handleDismiss: (reason?: contentEndReason) => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
@@ -63,7 +64,7 @@ type PopperContentProps = {
   totalSteps: number;
   themeSettings: ThemeTypesSetting;
   removeBranding: boolean;
-  handleDismiss: () => void;
+  handleDismiss: (reason?: contentEndReason) => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
@@ -290,7 +291,7 @@ const TourModal = (props: TourModalProps) => {
   const handleBackdropClick = useCallback(() => {
     const behavior = themeSettings?.modal?.backdropClickBehavior;
     if (behavior === ModalBackdropClickBehavior.DISMISS_FLOW) {
-      handleDismiss();
+      handleDismiss(contentEndReason.BACKDROP_DISMISS);
     }
   }, [themeSettings, handleDismiss]);
 

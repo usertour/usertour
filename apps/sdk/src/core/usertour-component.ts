@@ -23,7 +23,12 @@ import {
   SessionTheme,
 } from '@usertour/types';
 import { uuidV4, isEqual, extractLinkUrl } from '@usertour/helpers';
-import { ActionManager, ActionHandler, ActionHandlerContext } from '@/core/action-handlers';
+import {
+  ActionManager,
+  ActionHandler,
+  ActionHandlerContext,
+  ActionSource,
+} from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
 import { SDKClientEvents } from '@usertour-packages/constants';
 import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
@@ -225,19 +230,25 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   /**
    * Handles actions using the strategy pattern
    * @param actions - The actions to handle
+   * @param source - Action source (button or trigger), defaults to BUTTON
    */
-  async handleActions(actions: RulesCondition[]): Promise<void> {
-    const context = this.createActionHandlerContext();
+  async handleActions(
+    actions: RulesCondition[],
+    source: ActionSource = ActionSource.BUTTON,
+  ): Promise<void> {
+    const context = this.createActionHandlerContext(source);
     await this.actionManager.handleActions(actions, context);
   }
 
   /**
    * Creates an action handler context with component methods
+   * @param source - The source of the action (button or trigger)
    * @returns ActionHandlerContext object with mapped methods
    * @protected
    */
-  protected createActionHandlerContext(): ActionHandlerContext {
+  protected createActionHandlerContext(source: ActionSource): ActionHandlerContext {
     return {
+      source,
       startTour: (contentId: string, opts?: UserTourTypes.StartOptions) =>
         this.startTour(contentId, opts),
       handleNavigate: (data: any) => this.handleNavigate(data),

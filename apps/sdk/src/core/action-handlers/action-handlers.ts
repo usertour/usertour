@@ -1,7 +1,7 @@
 import { ContentActionsItemType, RulesCondition, contentEndReason } from '@usertour/types';
 import { evalCode } from '@usertour/helpers';
 import { ErrorMessages } from '@/types/error-messages';
-import { BaseActionHandler, ActionHandlerContext } from './action-handler.interface';
+import { BaseActionHandler, ActionHandlerContext, ActionSource } from './action-handler.interface';
 
 /**
  * Handler for common actions that all components support
@@ -37,7 +37,7 @@ export class LauncherActionHandler extends BaseActionHandler {
   async handle(action: RulesCondition, context: ActionHandlerContext): Promise<void> {
     switch (action.type) {
       case ContentActionsItemType.LAUNCHER_DISMIS:
-        await context.close(contentEndReason.USER_CLOSED);
+        await context.close(contentEndReason.ACTION_DISMISS);
         break;
     }
   }
@@ -52,7 +52,7 @@ export class ChecklistActionHandler extends BaseActionHandler {
   async handle(action: RulesCondition, context: ActionHandlerContext): Promise<void> {
     switch (action.type) {
       case ContentActionsItemType.CHECKLIST_DISMIS:
-        await context.close(contentEndReason.USER_CLOSED);
+        await context.close(contentEndReason.ACTION_DISMISS);
         break;
     }
   }
@@ -75,12 +75,15 @@ export class TourActionHandler extends BaseActionHandler {
         }
         await context.showStepByCvid(action.data.stepCvid);
         break;
-      case ContentActionsItemType.FLOW_DISMIS:
-        if (!context.handleDismiss) {
-          throw new Error(ErrorMessages.HANDLE_DISMISS_NOT_AVAILABLE);
-        }
-        await context.handleDismiss(contentEndReason.USER_CLOSED);
+      case ContentActionsItemType.FLOW_DISMIS: {
+        // Determine reason based on context.source
+        const reason =
+          context.source === ActionSource.TRIGGER
+            ? contentEndReason.TRIGGER_DISMISS
+            : contentEndReason.ACTION_DISMISS;
+        await context.close(reason);
         break;
+      }
     }
   }
 }

@@ -94,13 +94,6 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     }
   }
 
-  /**
-   * Handles the dismiss event of the launcher
-   */
-  async handleDismiss() {
-    await this.close(contentEndReason.USER_CLOSED);
-  }
-
   // === Store Management ===
   /**
    * Gets the z-index for the launcher component

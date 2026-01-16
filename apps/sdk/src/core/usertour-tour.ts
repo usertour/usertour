@@ -24,7 +24,7 @@ import { UsertourTrigger } from '@/core/usertour-trigger';
 import { logger } from '@/utils';
 import { createQuestionAnswerEventData } from '@/core/usertour-helper';
 import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
-import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
+import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
 
 /**
@@ -50,15 +50,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
   /**
    * Creates an action handler context with tour-specific methods
+   * @param source - The source of the action (button or trigger)
    * @returns ActionHandlerContext object with mapped methods including tour-specific ones
    */
-  protected createActionHandlerContext() {
-    const baseContext = super.createActionHandlerContext();
+  protected createActionHandlerContext(source: ActionSource) {
+    const baseContext = super.createActionHandlerContext(source);
     return {
       ...baseContext,
       showStepByCvid: (stepCvid: string) => this.showStepByCvid(stepCvid),
-      handleDismiss: (reason?: contentEndReason) =>
-        this.handleDismiss(reason ?? contentEndReason.ACTION),
     };
   }
 
@@ -124,10 +123,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Handles the dismiss event
-   * @param reason - The reason for dismissing the tour, defaults to USER_CLOSED
+   * Handles the dismiss event from UI (X button, backdrop click)
+   * @param reason - The reason for dismissing the tour, defaults to CLOSE_BUTTON_DISMISS
    */
-  async handleDismiss(reason?: contentEndReason) {
+  async handleDismiss(reason: contentEndReason = contentEndReason.CLOSE_BUTTON_DISMISS) {
     await this.close(reason);
   }
 
@@ -152,6 +151,15 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     if (element?.data?.actions) {
       await this.handleActions(element.data.actions as RulesCondition[]);
     }
+  }
+
+  /**
+   * Handles actions triggered by StepTrigger
+   * Uses TRIGGER_DISMISS reason for dismiss actions instead of ACTION_DISMISS
+   * @param actions - The actions to handle
+   */
+  private async handleTriggerActions(actions: RulesCondition[]): Promise<void> {
+    await this.handleActions(actions, ActionSource.TRIGGER);
   }
 
   // === Store Management ===
@@ -238,7 +246,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
         this.getContentId(),
         step.trigger,
         () => this.getSessionAttributes(), // Simple function that gets fresh attributes
-        (actions) => this.handleActions(actions),
+        (actions) => this.handleTriggerActions(actions),
       );
       await this.stepTrigger.process();
     }
@@ -322,7 +330,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const storeData = await this.buildStoreData();
     if (!storeData) {
       logger.error('Store not found', { step });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
     this.setupElementWatcher(step, { ...storeData, triggerRef: null });
@@ -344,7 +352,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const storeData = await this.buildStoreData();
     if (!storeData) {
       logger.error('Store not found', { step });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
     const stepInfo = this.getStepInfo(step);
@@ -368,7 +376,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const storeData = await this.buildStoreData(options);
     if (!storeData) {
       logger.error('Store not found', { step });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
     const stepInfo = this.getStepInfo(step);

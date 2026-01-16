@@ -21,6 +21,7 @@ export type SDKContent = ContentVersion &
   };
 
 export enum contentEndReason {
+  // === Existing values (kept for backward compatibility) ===
   USER_CLOSED = 'user_closed',
   ACTION = 'action',
   REPLACED = 'replaced',
@@ -36,6 +37,18 @@ export enum contentEndReason {
   UNPUBLISHED_CONTENT = 'unpublished_content',
   END_FROM_PROGRAM = 'end_from_program',
   LAUNCHER_DEACTIVATED = 'launcher_deactivated',
+
+  // === New action-type specific values ===
+  // Close button dismiss (user clicks X/close button in content)
+  CLOSE_BUTTON_DISMISS = 'close_button_dismiss',
+  // Backdrop click dismiss (user clicks modal backdrop to dismiss)
+  BACKDROP_DISMISS = 'backdrop_dismiss',
+  // StepTrigger-based dismiss (automated trigger from StepTrigger conditions)
+  TRIGGER_DISMISS = 'trigger_dismiss',
+  // Action-triggered dismiss (from configured button actions)
+  ACTION_DISMISS = 'action_dismiss',
+  // System/error specific
+  STORE_NOT_FOUND = 'store_not_found',
 }
 
 export enum contentStartReason {
@@ -49,6 +62,7 @@ export enum contentStartReason {
 }
 
 export const flowReasonTitleMap = {
+  // Start reasons
   [contentStartReason.START_FROM_CONDITION]: 'Matched auto-start condition',
   [contentStartReason.START_FROM_URL]: 'Started from URL',
   [contentStartReason.START_FROM_SESSION]: 'Started from session',
@@ -56,6 +70,7 @@ export const flowReasonTitleMap = {
   [contentStartReason.START_FROM_CONTENT_ID]: 'Started from content id',
   [contentStartReason.START_FROM_MANUAL]: 'Manually started',
   [contentStartReason.START_FROM_ACTION]: 'Button clicked',
+  // End reasons (existing)
   [contentEndReason.USER_CLOSED]: 'User dismissed flow',
   [contentEndReason.ACTION]: 'Ended by action in this flow',
   [contentEndReason.REPLACED]: 'Replaced by another flow',
@@ -63,7 +78,7 @@ export const flowReasonTitleMap = {
   [contentEndReason.CONTENT_NOT_FOUND]: 'Content not found',
   [contentEndReason.SESSION_TIMEOUT]: 'Session timeout',
   [contentEndReason.SYSTEM_CLOSED]: 'System closed',
-  [contentEndReason.URL_START_CLOSED]: 'Closed due to URL start',
+  [contentEndReason.URL_START_CLOSED]: 'Dismissed due to URL start',
   [contentEndReason.USER_STARTED_OTHER_CONTENT]: 'User started other content',
   [contentEndReason.PROGRAM_STARTED_OTHER_CONTENT]: 'Program started other content',
   [contentEndReason.STEP_NOT_FOUND]: 'Step not found',
@@ -71,6 +86,12 @@ export const flowReasonTitleMap = {
   [contentEndReason.UNPUBLISHED_CONTENT]: 'Unpublished content',
   [contentEndReason.END_FROM_PROGRAM]: 'Ended from program',
   [contentEndReason.LAUNCHER_DEACTIVATED]: 'Launcher deactivated',
+  // End reasons (new - specific action types)
+  [contentEndReason.CLOSE_BUTTON_DISMISS]: 'Dismissed by close button',
+  [contentEndReason.BACKDROP_DISMISS]: 'Dismissed by backdrop click',
+  [contentEndReason.TRIGGER_DISMISS]: 'Dismissed by trigger condition',
+  [contentEndReason.ACTION_DISMISS]: 'Dismissed by action',
+  [contentEndReason.STORE_NOT_FOUND]: 'Store not found',
 };
 
 export interface SDKConfig {
