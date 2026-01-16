@@ -17,6 +17,7 @@ import {
 } from '@usertour-packages/shared-editor';
 import {
   Attribute,
+  AvatarType,
   Content,
   ContentOmbedInfo,
   ContentVersion,
@@ -113,6 +114,9 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
     const showBottomProgress =
       progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
+    // Determine whether to show avatar based on avatar type
+    const showAvatar = themeSetting?.avatar?.type !== AvatarType.NONE;
+
     return (
       <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
         <PopperBubblePortal
@@ -122,6 +126,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
           width={`${themeSetting?.bubble?.width}px`}
           avatarSize={themeSetting?.avatar?.size}
           avatarSrc={avatarUrl}
+          showAvatar={showAvatar}
           ref={ref}
         >
           <PopperContent>

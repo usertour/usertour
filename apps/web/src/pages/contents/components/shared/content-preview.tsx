@@ -19,6 +19,7 @@ import { LauncherRoot } from '@usertour-packages/sdk/src/launcher';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import {
+  AvatarType,
   ChecklistData,
   ContentVersion,
   LauncherData,
@@ -56,6 +57,7 @@ const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
   if (currentStep.type === StepContentType.BUBBLE) {
     const bubbleSettings = themeSetting?.bubble;
     const avatarSettings = themeSetting?.avatar;
+    const showAvatar = avatarSettings?.type !== AvatarType.NONE;
 
     return (
       <Popper open={true} zIndex={1} globalStyle={globalStyle}>
@@ -66,6 +68,7 @@ const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
           avatarSrc={avatarUrl}
           notchSize={themeSetting?.tooltip?.notchSize}
           notchColor={themeSetting?.mainColor?.background}
+          showAvatar={showAvatar}
         >
           {currentStep.setting.skippable && <PopperClose />}
           <ContentEditorSerialize contents={currentStep.data} />

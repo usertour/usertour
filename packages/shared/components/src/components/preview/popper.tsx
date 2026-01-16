@@ -7,7 +7,7 @@ import {
   useSettingsStyles,
 } from '@usertour-packages/sdk';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { defaultSettings } from '@usertour/types';
+import { AvatarType, defaultSettings } from '@usertour/types';
 import { memo, useCallback, useMemo, useRef } from 'react';
 import { ScaledPreviewContainer } from './scaled-preview-container';
 
@@ -40,6 +40,7 @@ export const PopperPreview = memo((props: CreatePopperContentProps) => {
   const bubblePreview = useMemo(() => {
     const bubbleSettings = themeSetting?.bubble;
     const avatarSettings = themeSetting?.avatar;
+    const showAvatar = avatarSettings?.type !== AvatarType.NONE;
 
     return (
       <Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={globalStyle}>
@@ -50,6 +51,7 @@ export const PopperPreview = memo((props: CreatePopperContentProps) => {
           avatarSrc={avatarUrl}
           notchSize={themeSetting?.tooltip?.notchSize ?? 20}
           notchColor={themeSetting?.mainColor?.background}
+          showAvatar={showAvatar}
         >
           <PopperClose />
           <ContentEditorSerialize contents={data} />

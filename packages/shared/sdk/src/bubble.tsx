@@ -43,6 +43,8 @@ interface PopperBubblePortalProps {
   avatarSrc?: string;
   /** Additional className */
   className?: string;
+  /** Whether to show avatar and notch (default: true) */
+  showAvatar?: boolean;
 }
 
 interface PopperAvatarNotchProps {
@@ -139,6 +141,7 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
       avatarSize = 60,
       avatarSrc = '',
       className,
+      showAvatar = true,
     } = props;
 
     // State to control content visibility (toggled by clicking avatar)
@@ -160,8 +163,8 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
     // Derive anchor position for internal elements (notch, avatar) from bubble placement
     const { vertical, horizontal } = useAnchorPosition(position);
 
-    // Calculate padding for avatar and notch space
-    const avatarSpacePadding = avatarSize + notchSize;
+    // Calculate padding for avatar and notch space (0 when avatar is hidden)
+    const avatarSpacePadding = showAvatar ? avatarSize + notchSize : 0;
 
     // Use hook for expand/collapse animation styles
     const { outlineStyle } = useBubbleExpandAnimation({
@@ -191,23 +194,27 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
           style={outlineStyle}
         >
           <div className="usertour-widget-popper__frame-wrapper">{children}</div>
-          <PopperAvatarNotch
+          {showAvatar && (
+            <PopperAvatarNotch
+              vertical={vertical}
+              horizontal={horizontal}
+              color={notchColor}
+              size={notchSize}
+              offsetX={avatarSize}
+              offsetY={avatarSize}
+            />
+          )}
+        </div>
+        {showAvatar && (
+          <PopperBubbleAvatarWrapper
+            src={avatarSrc}
+            size={avatarSize}
             vertical={vertical}
             horizontal={horizontal}
-            color={notchColor}
-            size={notchSize}
-            offsetX={avatarSize}
-            offsetY={avatarSize}
+            minimizable={true}
+            onClick={handleAvatarClick}
           />
-        </div>
-        <PopperBubbleAvatarWrapper
-          src={avatarSrc}
-          size={avatarSize}
-          vertical={vertical}
-          horizontal={horizontal}
-          minimizable={true}
-          onClick={handleAvatarClick}
-        />
+        )}
       </div>
     );
   },
@@ -242,20 +249,23 @@ const PopperStaticBubble = forwardRef<HTMLDivElement, PopperStaticBubbleProps>(
       avatarSize = 60,
       avatarSrc = '',
       className,
+      showAvatar = true,
     } = props;
 
     // Derive anchor position for internal elements (notch, avatar) from bubble placement
     const { vertical, horizontal } = useAnchorPosition(position);
 
-    // Calculate padding for avatar and notch space
-    const avatarSpacePadding = avatarSize + notchSize;
+    // Calculate padding for avatar and notch space (0 when avatar is hidden)
+    const avatarSpacePadding = showAvatar ? avatarSize + notchSize : 0;
 
     // Calculate outline style with padding based on vertical position (same as useBubbleExpandAnimation but without animation)
-    const outlineStyle: CSSProperties = {
-      ...(vertical === 'bottom'
-        ? { paddingBottom: avatarSpacePadding }
-        : { paddingTop: avatarSpacePadding }),
-    };
+    const outlineStyle: CSSProperties = showAvatar
+      ? {
+          ...(vertical === 'bottom'
+            ? { paddingBottom: avatarSpacePadding }
+            : { paddingTop: avatarSpacePadding }),
+        }
+      : {};
 
     return (
       <div
@@ -273,23 +283,27 @@ const PopperStaticBubble = forwardRef<HTMLDivElement, PopperStaticBubbleProps>(
               {children}
             </div>
           </div>
-          <PopperAvatarNotch
+          {showAvatar && (
+            <PopperAvatarNotch
+              vertical={vertical}
+              horizontal={horizontal}
+              color={notchColor}
+              size={notchSize}
+              offsetX={avatarSize}
+              offsetY={avatarSize}
+            />
+          )}
+        </div>
+        {showAvatar && (
+          <PopperBubbleAvatar
+            src={avatarSrc}
+            size={avatarSize}
             vertical={vertical}
             horizontal={horizontal}
-            color={notchColor}
-            size={notchSize}
-            offsetX={avatarSize}
-            offsetY={avatarSize}
+            minimizable={false}
+            applyPosition={true}
           />
-        </div>
-        <PopperBubbleAvatar
-          src={avatarSrc}
-          size={avatarSize}
-          vertical={vertical}
-          horizontal={horizontal}
-          minimizable={false}
-          applyPosition={true}
-        />
+        )}
       </div>
     );
   },

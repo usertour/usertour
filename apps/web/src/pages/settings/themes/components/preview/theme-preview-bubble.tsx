@@ -8,7 +8,12 @@ import {
   useSettingsStyles,
 } from '@usertour-packages/sdk';
 import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
+import {
+  AvatarType,
+  ProgressBarPosition,
+  ProgressBarType,
+  ThemeTypesSetting,
+} from '@usertour/types';
 
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
@@ -44,6 +49,9 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
   const bubbleSettings = themeSetting?.bubble;
   const avatarSettings = themeSetting?.avatar;
 
+  // Determine whether to show avatar based on avatar type
+  const showAvatar = avatarSettings?.type !== AvatarType.NONE;
+
   return (
     <div className="h-full w-full scale-100">
       <Popper open={true} zIndex={1111} globalStyle={globalStyle}>
@@ -56,6 +64,7 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
           avatarSrc={avatarUrl}
           notchSize={themeSetting?.tooltip?.notchSize ?? 20}
           notchColor={themeSetting?.mainColor.background}
+          showAvatar={showAvatar}
         >
           <PopperContent>
             <PopperClose />

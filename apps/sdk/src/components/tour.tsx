@@ -16,6 +16,7 @@ import {
 } from '@usertour-packages/shared-editor';
 import {
   Align,
+  AvatarType,
   ProgressBarPosition,
   ProgressBarType,
   RulesCondition,
@@ -328,6 +329,9 @@ const TourBubble = (props: TourModalProps) => {
   const bubblePlacement = themeSetting?.bubble?.placement;
   const avatarSettings = themeSetting?.avatar;
 
+  // Determine whether to show avatar based on avatar type
+  const showAvatar = avatarSettings?.type !== AvatarType.NONE;
+
   return (
     <Popper
       isIframeMode={true}
@@ -344,6 +348,7 @@ const TourBubble = (props: TourModalProps) => {
         avatarSize={avatarSettings?.size ?? 60}
         avatarSrc={avatarUrl}
         notchColor={themeSetting?.mainColor?.background}
+        showAvatar={showAvatar}
       >
         <PopperContent
           currentStep={currentStep}
