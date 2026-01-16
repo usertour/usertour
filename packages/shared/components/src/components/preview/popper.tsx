@@ -1,9 +1,13 @@
 import { EyeNoneIcon } from '@usertour-packages/icons';
-import * as SharedPopper from '@usertour-packages/sdk';
-import { useSettingsStyles } from '@usertour-packages/sdk';
+import {
+  Popper,
+  PopperStaticContent,
+  PopperClose,
+  useSettingsStyles,
+} from '@usertour-packages/sdk';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { ThemeTypesSetting, defaultSettings } from '@usertour/types';
-import { useCallback, useRef } from 'react';
+import { memo, useCallback, useRef } from 'react';
 
 type CreatePopperContentProps = {
   text: string;
@@ -17,7 +21,7 @@ type CreatePopperContentProps = {
   scale: number;
 };
 
-export const PopperPreview = (props: CreatePopperContentProps) => {
+export const PopperPreview = memo((props: CreatePopperContentProps) => {
   const { width, height, text, data, type, onClick, scale = 1 } = props;
   const ref = useRef(null);
 
@@ -35,8 +39,8 @@ export const PopperPreview = (props: CreatePopperContentProps) => {
     >
       <div className="flex-none justify-center flex flex-col items-center h-44">
         {type !== 'hidden' && (
-          <SharedPopper.Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={globalStyle}>
-            <SharedPopper.PopperStaticContent
+          <Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={globalStyle}>
+            <PopperStaticContent
               arrowSize={{
                 width: 20,
                 height: 10,
@@ -48,10 +52,10 @@ export const PopperPreview = (props: CreatePopperContentProps) => {
               height={height}
               arrowColor={themeSetting?.mainColor?.background}
             >
-              <SharedPopper.PopperClose />
+              <PopperClose />
               <ContentEditorSerialize contents={data} />
-            </SharedPopper.PopperStaticContent>
-          </SharedPopper.Popper>
+            </PopperStaticContent>
+          </Popper>
         )}
         {type === 'hidden' && <EyeNoneIcon className="w-6 h-6" />}
       </div>
@@ -60,6 +64,6 @@ export const PopperPreview = (props: CreatePopperContentProps) => {
       </div>
     </div>
   );
-};
+});
 
 PopperPreview.displayName = 'PopperPreview';
