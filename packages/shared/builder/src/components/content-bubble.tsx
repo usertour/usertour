@@ -114,56 +114,54 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
       progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
     return (
-      <>
-        <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
-          <PopperBubblePortal
-            position={'rightBottom'}
-            positionOffsetX={themeSetting?.bubble?.placement?.positionOffsetX}
-            positionOffsetY={themeSetting?.bubble?.placement?.positionOffsetY}
-            width={`${themeSetting?.bubble?.width}px`}
-            avatarSize={themeSetting?.avatar?.size}
-            avatarSrc={avatarUrl}
-            ref={ref}
-          >
-            <PopperContent>
-              {currentStep.setting.skippable && <PopperClose />}
-              {showTopProgress && (
-                <PopperProgress
-                  width={60}
-                  type={progressType}
-                  currentStepIndex={currentIndex}
-                  position={progressPosition}
-                  totalSteps={totalSteps}
-                />
-              )}
-              <ContentEditor
-                zIndex={zIndex + EXTENSION_CONTENT_MODAL}
-                enabledElementTypes={enabledElementTypes}
-                customUploadRequest={handleCustomUploadRequest}
-                initialValue={data}
-                projectId={projectId}
-                attributes={attributeList}
-                contentList={contents}
-                currentVersion={currentVersion}
-                currentStep={currentStep}
-                onValueChange={handleEditorValueChange}
-                getOembedInfo={getOembedInfo}
-                createStep={createStep}
+      <Popper triggerRef={undefined} open={true} zIndex={zIndex} globalStyle={globalStyle}>
+        <PopperBubblePortal
+          position={themeSetting?.bubble?.placement?.position ?? 'rightBottom'}
+          positionOffsetX={themeSetting?.bubble?.placement?.positionOffsetX}
+          positionOffsetY={themeSetting?.bubble?.placement?.positionOffsetY}
+          width={`${themeSetting?.bubble?.width}px`}
+          avatarSize={themeSetting?.avatar?.size}
+          avatarSrc={avatarUrl}
+          ref={ref}
+        >
+          <PopperContent>
+            {currentStep.setting.skippable && <PopperClose />}
+            {showTopProgress && (
+              <PopperProgress
+                width={60}
+                type={progressType}
+                currentStepIndex={currentIndex}
+                position={progressPosition}
+                totalSteps={totalSteps}
               />
-              {showBottomProgress && (
-                <PopperProgress
-                  width={60}
-                  type={progressType}
-                  currentStepIndex={currentIndex}
-                  position={progressPosition}
-                  totalSteps={totalSteps}
-                />
-              )}
-              {shouldShowMadeWith && <PopperMadeWith />}
-            </PopperContent>
-          </PopperBubblePortal>
-        </Popper>
-      </>
+            )}
+            <ContentEditor
+              zIndex={zIndex + EXTENSION_CONTENT_MODAL}
+              enabledElementTypes={enabledElementTypes}
+              customUploadRequest={handleCustomUploadRequest}
+              initialValue={data}
+              projectId={projectId}
+              attributes={attributeList}
+              contentList={contents}
+              currentVersion={currentVersion}
+              currentStep={currentStep}
+              onValueChange={handleEditorValueChange}
+              getOembedInfo={getOembedInfo}
+              createStep={createStep}
+            />
+            {showBottomProgress && (
+              <PopperProgress
+                width={60}
+                type={progressType}
+                currentStepIndex={currentIndex}
+                position={progressPosition}
+                totalSteps={totalSteps}
+              />
+            )}
+            {shouldShowMadeWith && <PopperMadeWith />}
+          </PopperContent>
+        </PopperBubblePortal>
+      </Popper>
     );
   },
 );
