@@ -22,13 +22,13 @@ import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
   ChecklistPreview,
   EmptyContentPreview,
   FlowPreview,
   LauncherPreview,
-  ScaledPreviewContainer,
 } from '../shared/content-preview';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';

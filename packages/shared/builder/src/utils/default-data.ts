@@ -318,6 +318,8 @@ export const getDefaultDataForType = (type: string) => {
       return defaultModalContent; // Use defaultModalContent for modal (has image and buttons)
     case 'hidden':
       return defaultHiddenContent; // Use defaultHiddenContent for hidden (has buttons)
+    case 'bubble':
+      return defaultTooltipContent; // Use defaultTooltipContent for bubble (simple text like tooltip)
     default:
       return defaultTooltipContent; // Use defaultTooltipContent for tooltip (simple text)
   }

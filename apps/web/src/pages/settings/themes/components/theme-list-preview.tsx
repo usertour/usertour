@@ -3,13 +3,11 @@ import { useThemeListContext } from '@/contexts/theme-list-context';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour-packages/sdk';
 import { useSettingsStyles } from '@usertour-packages/sdk';
-import { GoogleFontCss } from '@usertour-packages/shared-components';
+import { GoogleFontCss, ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { Theme } from '@usertour/types';
 import { memo, MouseEvent, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-import { ScaledPreviewContainer } from '@/pages/contents/components/shared/content-preview';
 
 import { Button } from '@usertour-packages/button';
 

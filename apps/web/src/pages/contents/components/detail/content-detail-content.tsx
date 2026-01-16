@@ -23,13 +23,9 @@ import {
 } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
+import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditForm } from '../shared/content-edit-form';
-import {
-  ChecklistPreview,
-  FlowPreview,
-  LauncherPreview,
-  ScaledPreviewContainer,
-} from '../shared/content-preview';
+import { ChecklistPreview, FlowPreview, LauncherPreview } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
 

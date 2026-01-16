@@ -11,3 +11,13 @@ export { LoadingContainer } from './components/common/loading';
 export { LocateSelect } from './components/common/locate-select';
 export type { LocateItem } from './components/common/locate-select';
 export { defaultRulesItems } from './components/rules';
+export {
+  ScaledPreviewContainer,
+  useScaledPreview,
+  calculateScale,
+} from './components/preview/scaled-preview-container';
+export type {
+  ScaledPreviewContainerProps,
+  UseScaledPreviewOptions,
+  UseScaledPreviewResult,
+} from './components/preview/scaled-preview-container';

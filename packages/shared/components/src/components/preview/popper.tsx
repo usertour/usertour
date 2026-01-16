@@ -2,35 +2,84 @@ import { EyeNoneIcon } from '@usertour-packages/icons';
 import {
   Popper,
   PopperStaticContent,
+  PopperStaticBubble,
   PopperClose,
   useSettingsStyles,
 } from '@usertour-packages/sdk';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { ThemeTypesSetting, defaultSettings } from '@usertour/types';
-import { memo, useCallback, useRef } from 'react';
+import { defaultSettings } from '@usertour/types';
+import { memo, useCallback, useMemo, useRef } from 'react';
+import { ScaledPreviewContainer } from './scaled-preview-container';
 
 type CreatePopperContentProps = {
   text: string;
   data: any;
   type: string;
   key: number;
-  settings: ThemeTypesSetting;
   onClick: (type: string, data: string) => void;
   width: string;
   height: string;
-  scale: number;
+  /** Max width for auto-scaling (default: 180) */
+  maxWidth?: number;
+  /** Max height for auto-scaling (default: 160) */
+  maxHeight?: number;
 };
 
 export const PopperPreview = memo((props: CreatePopperContentProps) => {
-  const { width, height, text, data, type, onClick, scale = 1 } = props;
+  const { width, height, text, data, type, onClick, maxWidth = 180, maxHeight = 160 } = props;
   const ref = useRef(null);
 
   // Use unified settings hook for CSS vars generation
-  const { globalStyle, themeSetting } = useSettingsStyles(defaultSettings);
+  const { globalStyle, themeSetting, avatarUrl } = useSettingsStyles(defaultSettings);
 
   const handleOnClick = useCallback(() => {
     onClick(type, data);
   }, [onClick, type, data]);
+
+  // Memoized bubble type preview
+  const bubblePreview = useMemo(() => {
+    const bubbleSettings = themeSetting?.bubble;
+    const avatarSettings = themeSetting?.avatar;
+
+    return (
+      <Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={globalStyle}>
+        <PopperStaticBubble
+          position={bubbleSettings?.placement?.position ?? 'leftBottom'}
+          width={width}
+          avatarSize={avatarSettings?.size ?? 60}
+          avatarSrc={avatarUrl}
+          notchSize={themeSetting?.tooltip?.notchSize ?? 20}
+          notchColor={themeSetting?.mainColor?.background}
+        >
+          <PopperClose />
+          <ContentEditorSerialize contents={data} />
+        </PopperStaticBubble>
+      </Popper>
+    );
+  }, [themeSetting, globalStyle, avatarUrl, width, data]);
+
+  // Memoized tooltip/modal type preview
+  const popperPreview = useMemo(
+    () => (
+      <Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={globalStyle}>
+        <PopperStaticContent
+          arrowSize={{
+            width: 20,
+            height: 10,
+          }}
+          side="bottom"
+          showArrow={type === 'tooltip'}
+          width={width}
+          height={height}
+          arrowColor={themeSetting?.mainColor?.background}
+        >
+          <PopperClose />
+          <ContentEditorSerialize contents={data} />
+        </PopperStaticContent>
+      </Popper>
+    ),
+    [globalStyle, type, width, height, themeSetting?.mainColor?.background, data],
+  );
 
   return (
     <div
@@ -39,23 +88,13 @@ export const PopperPreview = memo((props: CreatePopperContentProps) => {
     >
       <div className="flex-none justify-center flex flex-col items-center h-44">
         {type !== 'hidden' && (
-          <Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={globalStyle}>
-            <PopperStaticContent
-              arrowSize={{
-                width: 20,
-                height: 10,
-              }}
-              customStyle={{ zoom: scale }}
-              side="bottom"
-              showArrow={type === 'tooltip'}
-              width={width}
-              height={height}
-              arrowColor={themeSetting?.mainColor?.background}
-            >
-              <PopperClose />
-              <ContentEditorSerialize contents={data} />
-            </PopperStaticContent>
-          </Popper>
+          <ScaledPreviewContainer
+            maxWidth={maxWidth}
+            maxHeight={maxHeight}
+            className="origin-[center_center]"
+          >
+            {type === 'bubble' ? bubblePreview : popperPreview}
+          </ScaledPreviewContainer>
         )}
         {type === 'hidden' && <EyeNoneIcon className="w-6 h-6" />}
       </div>

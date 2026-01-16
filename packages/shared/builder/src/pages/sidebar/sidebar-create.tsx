@@ -11,12 +11,18 @@ import { BuilderMode, useBuilderContext } from '../../contexts';
 
 const contentList: any[] = [
   {
+    data: getDefaultDataForType(StepContentType.BUBBLE),
+    type: StepContentType.BUBBLE,
+    text: 'Bubble',
+    width: '240px',
+    height: '98px',
+  },
+  {
     data: getDefaultDataForType(StepContentType.TOOLTIP),
     type: StepContentType.TOOLTIP,
     text: 'Tooltip',
     width: '240px',
     height: '98px',
-    scale: 0.7,
   },
   {
     data: getDefaultDataForType(StepContentType.MODAL),
@@ -24,7 +30,6 @@ const contentList: any[] = [
     text: 'Modal',
     width: '300px',
     height: '300px',
-    scale: 0.5,
   },
   {
     data: getDefaultDataForType(StepContentType.HIDDEN),
@@ -32,7 +37,6 @@ const contentList: any[] = [
     text: 'Hidden',
     width: '240px',
     height: '240px',
-    scale: 0.5,
   },
 ];
 
@@ -106,8 +110,6 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
               contentList.map((content, index) => {
                 return (
                   <PopperPreview
-                    settings={currentTheme?.settings}
-                    scale={content.scale}
                     type={content.type}
                     width={content.width}
                     height={content.height}
