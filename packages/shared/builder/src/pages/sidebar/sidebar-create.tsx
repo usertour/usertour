@@ -13,7 +13,7 @@ const contentList: any[] = [
   {
     data: getDefaultDataForType(StepContentType.BUBBLE),
     type: StepContentType.BUBBLE,
-    text: 'Bubble',
+    text: 'Speech bubble',
     width: '240px',
     height: '98px',
   },
@@ -104,7 +104,7 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
           alignOffset={40}
           sideOffset={2}
         >
-          <h1 className="text-lg mb-3">Step Type</h1>
+          <h1 className="text-lg mb-3">Step type</h1>
           <div className="grid grid-cols-2 gap-4">
             {currentTheme?.settings &&
               contentList.map((content, index) => {

@@ -184,7 +184,7 @@ export const ThemeSettingsAccordionContent = () => (
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="bubble">
-      <AccordionTrigger>Bubble</AccordionTrigger>
+      <AccordionTrigger>Speech bubble</AccordionTrigger>
       <AccordionContent>
         <ThemeSettingsBubble />
       </AccordionContent>
