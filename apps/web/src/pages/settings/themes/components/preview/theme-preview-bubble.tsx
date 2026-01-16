@@ -20,6 +20,7 @@ import { useSubscriptionContext } from '@/contexts/subscription-context';
 interface ThemePreviewBubbleProps {
   contents: ContentEditorRoot[];
   settings?: ThemeTypesSetting;
+  customStyle?: string;
 }
 
 export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
