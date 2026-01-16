@@ -161,6 +161,7 @@ import {
   RiNavigationFill,
   RiCompassLine,
   RiCompassFill,
+  RiInformation2Fill,
 } from '@remixicon/react';
 import { registerIcons } from './remix-icon';
 
@@ -176,6 +177,7 @@ registerIcons({
   // Basic UI
   'home-line': RiHomeLine,
   'home-fill': RiHomeFill,
+  'information-fill': RiInformation2Fill,
   'settings-line': RiSettingsLine,
   'settings-fill': RiSettingsFill,
   'user-line': RiUserLine,

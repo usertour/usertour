@@ -17,7 +17,7 @@ interface ThemePreviewLauncherProps {
 
 export const previewLauncherData: LauncherData = {
   type: LauncherDataType.ICON,
-  iconType: 'user',
+  iconType: 'information-fill',
   iconSource: LauncherIconSource.BUILTIN,
   buttonText: 'Click me',
   target: {
