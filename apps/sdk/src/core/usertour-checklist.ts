@@ -274,7 +274,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * Handles the dismiss event of the checklist
    */
   async handleDismiss() {
-    await this.close(contentEndReason.CLOSE_BUTTON_DISMISS);
+    await this.close(contentEndReason.DISMISS_BUTTON);
   }
 
   /**

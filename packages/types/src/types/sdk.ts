@@ -43,6 +43,8 @@ export enum contentEndReason {
   CLOSE_BUTTON_DISMISS = 'close_button_dismiss',
   // Backdrop click dismiss (user clicks modal backdrop to dismiss)
   BACKDROP_DISMISS = 'backdrop_dismiss',
+  // Dismiss button click (user clicks "Dismiss checklist" or "Yes, dismiss" text button)
+  DISMISS_BUTTON = 'dismiss_button',
   // StepTrigger-based dismiss (automated trigger from StepTrigger conditions)
   TRIGGER_DISMISS = 'trigger_dismiss',
   // Action-triggered dismiss (from configured button actions)
@@ -89,6 +91,7 @@ export const flowReasonTitleMap = {
   // End reasons (new - specific action types)
   [contentEndReason.CLOSE_BUTTON_DISMISS]: 'Dismissed by close button',
   [contentEndReason.BACKDROP_DISMISS]: 'Dismissed by backdrop click',
+  [contentEndReason.DISMISS_BUTTON]: 'Dismissed by dismiss button',
   [contentEndReason.TRIGGER_DISMISS]: 'Dismissed by trigger condition',
   [contentEndReason.ACTION_DISMISS]: 'Dismissed by action',
   [contentEndReason.STORE_NOT_FOUND]: 'Store not found',
