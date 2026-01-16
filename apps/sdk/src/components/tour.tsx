@@ -17,6 +17,7 @@ import {
 import {
   Align,
   AvatarType,
+  ModalBackdropClickBehavior,
   ProgressBarPosition,
   ProgressBarType,
   RulesCondition,
@@ -26,7 +27,7 @@ import {
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 
 import { UsertourTour } from '@/core/usertour-tour';
 import { off, on } from '@/utils';
@@ -278,6 +279,13 @@ const TourModal = (props: TourModalProps) => {
     handleOnClick,
   } = props;
 
+  const handleBackdropClick = useCallback(() => {
+    const behavior = themeSettings?.modal?.backdropClickBehavior;
+    if (behavior === ModalBackdropClickBehavior.DISMISS_FLOW) {
+      handleDismiss();
+    }
+  }, [themeSettings, handleDismiss]);
+
   return (
     <Popper
       isIframeMode={true}
@@ -292,6 +300,7 @@ const TourModal = (props: TourModalProps) => {
         positionOffsetX={currentStep.setting.positionOffsetX}
         positionOffsetY={currentStep.setting.positionOffsetY}
         width={`${currentStep.setting.width}px`}
+        onBackdropClick={handleBackdropClick}
       >
         <PopperContent
           currentStep={currentStep}

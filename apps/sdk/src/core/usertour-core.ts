@@ -81,7 +81,7 @@ export class UsertourCore extends Evented {
 
   // === Private Properties ===
   private baseZIndex = WidgetZIndex.BASE;
-  private targetMissingSeconds = 6;
+  private targetMissingSeconds: number | undefined = undefined;
   private customNavigate: ((url: string) => void) | null = null;
   private readonly id: string;
   private attributeManager: UsertourAttributeManager;

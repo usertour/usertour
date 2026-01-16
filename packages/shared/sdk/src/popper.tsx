@@ -302,6 +302,7 @@ interface ModalContentProps {
   dir?: string;
   positionOffsetX?: number;
   positionOffsetY?: number;
+  onBackdropClick?: () => void;
 }
 const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
   (props, forwardedRef) => {
@@ -313,6 +314,7 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
       enabledBackdrop = true,
       positionOffsetX = 0,
       positionOffsetY = 0,
+      onBackdropClick,
     } = props;
     const context = usePopperContext(POPPER_NAME);
     const containerRef = useRef(null);
@@ -326,6 +328,7 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
           <div
             className="usertour-widget-backdrop"
             style={{ position: 'fixed', visibility: 'visible', zIndex: context.zIndex }}
+            onClick={onBackdropClick}
           />
         )}
         <div

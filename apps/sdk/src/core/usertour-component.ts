@@ -40,6 +40,21 @@ interface ComponentOptions {
 }
 
 /**
+ * Generic options type for buildStoreData
+ * Subclasses can define their own specific options types
+ */
+export type BuildStoreOptions = Record<string, unknown>;
+
+/**
+ * Context object passed to getCustomStoreData
+ * Contains base data and optional configuration options
+ */
+export type CustomStoreDataContext<TOptions = BuildStoreOptions> = {
+  baseData: Partial<BaseStore>;
+  options?: TOptions;
+};
+
+/**
  * Abstract base class for all Usertour components (Tour, Launcher, Checklist)
  * Provides common functionality and enforces a consistent interface
  */
@@ -163,15 +178,16 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   /**
    * Builds the complete store data for the component
    * This method combines base store data with component-specific data
+   * @param options - Optional configuration options for building store data
    * @returns {TStore | null} The complete store data object
    */
-  async buildStoreData(): Promise<TStore | null> {
+  async buildStoreData(options?: BuildStoreOptions): Promise<TStore | null> {
     const baseData = await this.buildBaseStoreData();
     if (!baseData) {
       return null;
     }
 
-    const customData = this.getCustomStoreData(baseData);
+    const customData = this.getCustomStoreData({ baseData, options });
 
     return {
       ...baseData,
@@ -197,7 +213,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       globalStyle,
       themeSettings,
     };
-    const customData = this.getCustomStoreData(baseData);
+    const customData = this.getCustomStoreData({ baseData });
 
     // Update store with common and specific data
     this.updateStore({
@@ -295,13 +311,11 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
-   * Gets custom store data - can be overridden by subclasses
-   * @param baseData - The base store data that can be used for custom logic
+   * Gets custom store data - must be implemented by subclasses
+   * @param context - Context object containing baseData and optional options
    * @protected
    */
-  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<TStore> {
-    return {};
-  }
+  protected abstract getCustomStoreData(context: CustomStoreDataContext): Partial<TStore>;
 
   /**
    * Builds the base store data common to all components
