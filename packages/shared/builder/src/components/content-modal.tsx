@@ -8,7 +8,7 @@ import {
   PopperMadeWith,
   PopperModalContentPotal,
   PopperProgress,
-  useThemeStyles,
+  useSettingsStyles,
 } from '@usertour-packages/sdk';
 import {
   ContentEditor,
@@ -66,7 +66,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme, 'modal');
+    const { globalStyle, themeSetting } = useSettingsStyles(theme?.settings, { type: 'modal' });
     const { shouldShowMadeWith = true } = useBuilderContext();
 
     const handleEditorValueChange = (value: any) => {

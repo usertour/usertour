@@ -1,7 +1,6 @@
 import { useLazyQuery } from '@apollo/client';
 import { EXTENSION_CONTENT_MODAL } from '@usertour-packages/constants';
 import { queryOembedInfo } from '@usertour-packages/gql';
-import { getAvatarCdnUrl } from '@usertour-packages/icons';
 import {
   Popper,
   PopperBubblePortal,
@@ -9,14 +8,13 @@ import {
   PopperContent,
   PopperMadeWith,
   PopperProgress,
-  useThemeStyles,
+  useSettingsStyles,
 } from '@usertour-packages/sdk';
 import {
   ContentEditor,
   ContentEditorElementType,
   ContentEditorRoot,
 } from '@usertour-packages/shared-editor';
-import { loadGoogleFontCss } from '../utils/loader';
 import {
   Attribute,
   Content,
@@ -26,10 +24,13 @@ import {
   ProgressBarType,
   Step,
   Theme,
+  StepContentType,
 } from '@usertour/types';
-import { forwardRef, useEffect, useMemo, useState } from 'react';
-import { useAws } from '../hooks/use-aws';
+import { forwardRef, useEffect, useState } from 'react';
+
 import { useBuilderContext } from '../contexts/builder-context';
+import { useAws } from '../hooks/use-aws';
+import { loadGoogleFontCss } from '../utils/loader';
 
 export interface ContentBubbleProps {
   currentStep: Step;
@@ -67,7 +68,11 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme, 'modal');
+    const { globalStyle, themeSetting, avatarUrl } = useSettingsStyles(theme?.settings, {
+      type: StepContentType.BUBBLE,
+      useLocalAvatarPath: true,
+    });
+
     const { shouldShowMadeWith = true } = useBuilderContext();
 
     const handleEditorValueChange = (value: any) => {
@@ -107,24 +112,6 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
       progressEnabled && (isFullWidthProgress || progressPosition === ProgressBarPosition.TOP);
     const showBottomProgress =
       progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
-
-    // Build avatar URL based on theme settings
-    const avatarUrl = useMemo(() => {
-      const avatarSettings = themeSetting?.avatar;
-      if (!avatarSettings) {
-        return getAvatarCdnUrl('alex');
-      }
-      if (avatarSettings.type === 'url' && avatarSettings.url) {
-        return avatarSettings.url;
-      }
-      if (avatarSettings.type === 'upload' && avatarSettings.url) {
-        return avatarSettings.url;
-      }
-      if (avatarSettings.type === 'cartoon' && avatarSettings.name) {
-        return getAvatarCdnUrl(avatarSettings.name);
-      }
-      return getAvatarCdnUrl('alex');
-    }, [themeSetting?.avatar]);
 
     return (
       <>

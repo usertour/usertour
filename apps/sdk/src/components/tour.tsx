@@ -1,34 +1,34 @@
 import {
   Popper,
-  PopperContentFrame,
+  PopperBubblePortal,
   PopperClose,
-  PopperProgress,
+  PopperContentFrame,
+  PopperContentPotal,
   PopperMadeWith,
   PopperModalContentPotal,
   PopperOverlay,
-  PopperContentPotal,
-  PopperBubblePortal,
+  PopperProgress,
+  useSettingsStyles,
 } from '@usertour-packages/sdk';
 import {
   ContentEditorClickableElement,
   ContentEditorSerialize,
 } from '@usertour-packages/shared-editor';
-import { getAvatarCdnUrl } from '@usertour-packages/icons';
 import {
   Align,
   ProgressBarPosition,
   ProgressBarType,
   RulesCondition,
+  SessionStep,
   Side,
   StepContentType,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
-import { useEffect, useSyncExternalStore, useMemo } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
+
 import { UsertourTour } from '@/core/usertour-tour';
 import { off, on } from '@/utils';
-import { useSettingsStyles } from '@usertour-packages/sdk';
-import { SessionStep } from '@usertour/types';
 
 // Base props that are shared between TourPopper and TourModal
 type TourBaseProps = {
@@ -322,30 +322,11 @@ const TourBubble = (props: TourModalProps) => {
     handleDismiss,
     handleOnClick,
   } = props;
-  const { themeSetting } = useSettingsStyles(themeSettings);
+  const { themeSetting, avatarUrl } = useSettingsStyles(themeSettings);
 
   // Get bubble settings from theme
   const bubblePlacement = themeSetting?.bubble?.placement;
   const avatarSettings = themeSetting?.avatar;
-
-  // Build avatar URL based on avatar type
-  // Uses CDN URL for cartoon avatars
-  const getAvatarUrl = () => {
-    if (!avatarSettings) {
-      return getAvatarCdnUrl('alex');
-    }
-    if (avatarSettings.type === 'url' && avatarSettings.url) {
-      return avatarSettings.url;
-    }
-    if (avatarSettings.type === 'upload' && avatarSettings.url) {
-      return avatarSettings.url;
-    }
-    if (avatarSettings.type === 'cartoon' && avatarSettings.name) {
-      return getAvatarCdnUrl(avatarSettings.name);
-    }
-    // Default avatar
-    return getAvatarCdnUrl('alex');
-  };
 
   return (
     <Popper
@@ -361,7 +342,7 @@ const TourBubble = (props: TourModalProps) => {
         positionOffsetY={bubblePlacement?.positionOffsetY ?? 20}
         width={`${currentStep.setting.width}px`}
         avatarSize={avatarSettings?.size ?? 60}
-        avatarSrc={getAvatarUrl()}
+        avatarSrc={avatarUrl}
         notchColor={themeSetting?.mainColor?.background}
       >
         <PopperContent

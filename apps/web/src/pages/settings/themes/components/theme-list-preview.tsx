@@ -1,18 +1,20 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
-import { ThemeTypesSetting } from '@usertour/types';
-import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour-packages/sdk';
+import { useSettingsStyles } from '@usertour-packages/sdk';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { LIST_PREVIEW_CONTENT } from '../constants/preview-contents';
 import { Theme } from '@usertour/types';
-import { memo, MouseEvent, useCallback, useRef, useState } from 'react';
+import { memo, MouseEvent, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
-import { Button } from '@usertour-packages/button';
+
 import { ScaledPreviewContainer } from '@/pages/contents/components/shared/content-preview';
+
+import { Button } from '@usertour-packages/button';
+
+import { LIST_PREVIEW_CONTENT } from '../constants/preview-contents';
+import { ThemeEditDropdownMenu } from './theme-edit-dropmenu';
 
 type ThemeListPreviewProps = {
   theme: Theme;
@@ -23,7 +25,7 @@ export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
 
   const { refetch } = useThemeListContext();
   const { project, isViewOnly } = useAppContext();
-  const [settings] = useState<ThemeTypesSetting>(theme.settings);
+  const { globalStyle, themeSetting } = useSettingsStyles(theme.settings);
   const navigate = useNavigate();
   const handleOnClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
@@ -41,7 +43,7 @@ export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
 
   return (
     <>
-      <GoogleFontCss settings={settings} />
+      <GoogleFontCss settings={themeSetting} />
       <div
         className="h-52 w-80 bg-white rounded-lg border border-gray-100 hover:border-white dark:border-gray-800 dark:hover:border-gray-700 hover:shadow-lg dark:hover:shadow-lg-light dark:bg-gray-900 cursor-pointer"
         ref={containerRef}
@@ -69,11 +71,7 @@ export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
           {...({ inert: '' } as any)}
         >
           <ScaledPreviewContainer className="origin-[center_center]" maxWidth={260} maxHeight={140}>
-            <SharedPopper.Popper
-              open={true}
-              zIndex={1}
-              globalStyle={convertToCssVars(convertSettings(settings))}
-            >
+            <SharedPopper.Popper open={true} zIndex={1} globalStyle={globalStyle}>
               <SharedPopper.PopperStaticContent
                 arrowSize={{
                   width: 20,

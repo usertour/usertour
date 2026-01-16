@@ -216,6 +216,88 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
 PopperBubblePortal.displayName = 'PopperBubblePortal';
 
 /* -------------------------------------------------------------------------------------------------
+ * PopperStaticBubble
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Props for PopperStaticBubble - a subset of PopperBubblePortalProps
+ * without fixed positioning offset properties
+ */
+type PopperStaticBubbleProps = Omit<PopperBubblePortalProps, 'positionOffsetX' | 'positionOffsetY'>;
+
+/**
+ * Static Bubble component for preview purposes
+ * Similar to PopperBubblePortal but without fixed positioning
+ * Can be used inside ScaledPreviewContainer for proper measurement and scaling
+ */
+const PopperStaticBubble = forwardRef<HTMLDivElement, PopperStaticBubbleProps>(
+  (props, forwardedRef) => {
+    const {
+      children,
+      dir = 'ltr',
+      width = 'auto',
+      position = 'center',
+      notchColor = 'white',
+      notchSize = 20,
+      avatarSize = 60,
+      avatarSrc = '',
+      className,
+    } = props;
+
+    // Derive anchor position for internal elements (notch, avatar) from bubble placement
+    const { vertical, horizontal } = useAnchorPosition(position);
+
+    // Calculate padding for avatar and notch space
+    const avatarSpacePadding = avatarSize + notchSize;
+
+    // Calculate outline style with padding based on vertical position (same as useBubbleExpandAnimation but without animation)
+    const outlineStyle: CSSProperties = {
+      ...(vertical === 'bottom'
+        ? { paddingBottom: avatarSpacePadding }
+        : { paddingTop: avatarSpacePadding }),
+    };
+
+    return (
+      <div
+        className={cn('usertour-widget-popper usertour-centered usertour-enabled', className)}
+        ref={forwardedRef}
+        dir={dir}
+        style={{ width }}
+      >
+        <div
+          className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative"
+          style={outlineStyle}
+        >
+          <div className="usertour-widget-popper__frame-wrapper">
+            <div className="usertour-root usertour-widget-popper-frame-root usertour-widget-popper-frame-root-iframe text-sdk-foreground">
+              {children}
+            </div>
+          </div>
+          <PopperAvatarNotch
+            vertical={vertical}
+            horizontal={horizontal}
+            color={notchColor}
+            size={notchSize}
+            offsetX={avatarSize}
+            offsetY={avatarSize}
+          />
+        </div>
+        <PopperBubbleAvatar
+          src={avatarSrc}
+          size={avatarSize}
+          vertical={vertical}
+          horizontal={horizontal}
+          minimizable={false}
+          applyPosition={true}
+        />
+      </div>
+    );
+  },
+);
+
+PopperStaticBubble.displayName = 'PopperStaticBubble';
+
+/* -------------------------------------------------------------------------------------------------
  * PopperAvatarNotch
  * -----------------------------------------------------------------------------------------------*/
 
@@ -462,6 +544,7 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
 
 export {
   PopperBubblePortal,
+  PopperStaticBubble,
   PopperBubbleAvatar,
   PopperBubbleAvatarWrapper,
   PopperAvatarNotch,
@@ -470,6 +553,7 @@ export {
 
 export type {
   PopperBubblePortalProps,
+  PopperStaticBubbleProps,
   PopperBubbleAvatarProps,
   PopperBubbleAvatarWrapperProps,
   PopperAvatarNotchProps,

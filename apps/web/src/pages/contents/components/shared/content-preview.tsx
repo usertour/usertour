@@ -1,20 +1,34 @@
 import { EyeNoneIcon } from '@usertour-packages/icons';
-import * as SharedPopper from '@usertour-packages/sdk';
-import { ChecklistContainer, ChecklistDropdown } from '@usertour-packages/sdk';
-import { ChecklistProgress } from '@usertour-packages/sdk';
-import { ChecklistItems } from '@usertour-packages/sdk';
-import { ChecklistDismiss } from '@usertour-packages/sdk';
-import { PopperMadeWith } from '@usertour-packages/sdk';
-import { ChecklistStaticPopper } from '@usertour-packages/sdk';
-import { ChecklistRoot } from '@usertour-packages/sdk';
+import {
+  ChecklistContainer,
+  ChecklistDismiss,
+  ChecklistDropdown,
+  ChecklistItems,
+  ChecklistProgress,
+  ChecklistRoot,
+  ChecklistStaticPopper,
+  Popper,
+  PopperClose,
+  PopperMadeWith,
+  PopperStaticBubble,
+  PopperStaticContent,
+  useSettingsStyles,
+} from '@usertour-packages/sdk';
 import { LauncherContainer, LauncherView } from '@usertour-packages/sdk/src/launcher';
 import { LauncherRoot } from '@usertour-packages/sdk/src/launcher';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { convertSettings, convertToCssVars } from '@usertour/helpers';
-import { ChecklistData, ContentVersion, LauncherData, Step, Theme } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
+import {
+  ChecklistData,
+  ContentVersion,
+  LauncherData,
+  Step,
+  StepContentType,
+  Theme,
+} from '@usertour/types';
 import { forwardRef, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMeasure } from 'react-use';
+
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 import type { CSSProperties, RefCallback } from 'react';
@@ -169,33 +183,57 @@ interface FlowPreviewProps {
   currentTheme: Theme;
   currentStep: Step;
 }
+
 const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
-  const isHidddenStep = currentStep.type === 'hidden';
-  if (isHidddenStep) {
+  const { globalStyle, themeSetting, avatarUrl } = useSettingsStyles(currentTheme.settings, {
+    useLocalAvatarPath: true,
+  });
+
+  // Handle hidden step
+  if (currentStep.type === StepContentType.HIDDEN) {
     return (
-      <div className="w-40 h-32 flex  flex-none items-center justify-center">
+      <div className="w-40 h-32 flex flex-none items-center justify-center">
         <EyeNoneIcon className="w-8 h-8" />
       </div>
     );
   }
 
+  // Handle bubble step
+  if (currentStep.type === StepContentType.BUBBLE) {
+    const bubbleSettings = themeSetting?.bubble;
+    const avatarSettings = themeSetting?.avatar;
+
+    return (
+      <Popper open={true} zIndex={1} globalStyle={globalStyle}>
+        <PopperStaticBubble
+          position={bubbleSettings?.placement?.position ?? 'leftBottom'}
+          width={`${bubbleSettings?.width}px`}
+          avatarSize={avatarSettings?.size}
+          avatarSrc={avatarUrl}
+          notchSize={themeSetting?.tooltip?.notchSize}
+          notchColor={themeSetting?.mainColor?.background}
+        >
+          {currentStep.setting.skippable && <PopperClose />}
+          <ContentEditorSerialize contents={currentStep.data} />
+        </PopperStaticBubble>
+      </Popper>
+    );
+  }
+
+  // Handle tooltip/modal step (default)
   return (
-    <SharedPopper.Popper
-      open={true}
-      zIndex={1}
-      globalStyle={convertToCssVars(convertSettings(currentTheme.settings))}
-    >
-      <SharedPopper.PopperStaticContent
+    <Popper open={true} zIndex={1} globalStyle={globalStyle}>
+      <PopperStaticContent
         arrowSize={{ width: 20, height: 10 }}
         side="bottom"
         showArrow={false}
         width={`${currentStep.setting.width}px`}
         height={'auto'}
       >
-        {currentStep.setting.skippable && <SharedPopper.PopperClose />}
+        {currentStep.setting.skippable && <PopperClose />}
         <ContentEditorSerialize contents={currentStep.data} />
-      </SharedPopper.PopperStaticContent>
-    </SharedPopper.Popper>
+      </PopperStaticContent>
+    </Popper>
   );
 };
 

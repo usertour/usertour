@@ -1,9 +1,9 @@
 import { EyeNoneIcon } from '@usertour-packages/icons';
 import * as SharedPopper from '@usertour-packages/sdk';
+import { useSettingsStyles } from '@usertour-packages/sdk';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { convertSettings, convertToCssVars } from '@usertour/helpers';
 import { ThemeTypesSetting, defaultSettings } from '@usertour/types';
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
 type CreatePopperContentProps = {
   text: string;
@@ -19,27 +19,23 @@ type CreatePopperContentProps = {
 
 export const PopperPreview = (props: CreatePopperContentProps) => {
   const { width, height, text, data, type, onClick, scale = 1 } = props;
-  const handleOnClick = () => {
-    onClick(type, data);
-  };
   const ref = useRef(null);
-  // const serialize = data ? serializeData(JSON.parse(data)) : [];
+
+  // Use unified settings hook for CSS vars generation
+  const { globalStyle, themeSetting } = useSettingsStyles(defaultSettings);
+
+  const handleOnClick = useCallback(() => {
+    onClick(type, data);
+  }, [onClick, type, data]);
+
   return (
     <div
       className="rounded-lg bg-background-700 w-52 h-52 flex flex-col cursor-pointer"
       onClick={handleOnClick}
     >
-      <div
-        className="flex-none justify-center flex flex-col items-center h-44	"
-        // style={{ transform: `scale(${scale})` }}
-      >
+      <div className="flex-none justify-center flex flex-col items-center h-44">
         {type !== 'hidden' && (
-          <SharedPopper.Popper
-            triggerRef={ref}
-            open={true}
-            zIndex={1111}
-            globalStyle={convertToCssVars(convertSettings(defaultSettings))}
-          >
+          <SharedPopper.Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={globalStyle}>
             <SharedPopper.PopperStaticContent
               arrowSize={{
                 width: 20,
@@ -50,10 +46,9 @@ export const PopperPreview = (props: CreatePopperContentProps) => {
               showArrow={type === 'tooltip'}
               width={width}
               height={height}
-              arrowColor={defaultSettings?.mainColor.background}
+              arrowColor={themeSetting?.mainColor?.background}
             >
               <SharedPopper.PopperClose />
-              {/* {...serialize} */}
               <ContentEditorSerialize contents={data} />
             </SharedPopper.PopperStaticContent>
           </SharedPopper.Popper>

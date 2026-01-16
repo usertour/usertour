@@ -9,7 +9,7 @@ import {
   PopperMadeWith,
   PopperOverlay,
   PopperProgress,
-  useThemeStyles,
+  useSettingsStyles,
 } from '@usertour-packages/sdk';
 import {
   ContentEditor,
@@ -65,7 +65,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     } = props;
     const [data, setData] = useState<any>(currentStep.data);
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme);
+    const { globalStyle, themeSetting } = useSettingsStyles(theme?.settings);
     const { shouldShowMadeWith = true } = useBuilderContext();
 
     const { upload } = useAws();
