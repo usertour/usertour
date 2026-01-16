@@ -9,6 +9,7 @@ import {
   PopperModalContentPotal,
   PopperProgress,
   useSettingsStyles,
+  useStepWidth,
 } from '@usertour-packages/sdk';
 import {
   ContentEditor,
@@ -95,6 +96,9 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
 
     const totalSteps = currentVersion?.steps?.length ?? 0;
 
+    // Get width with theme fallback if undefined
+    const { width } = useStepWidth({ step: currentStep, themeSetting });
+
     const progressType = themeSetting?.progress.type;
     const progressPosition = themeSetting?.progress.position;
     const progressEnabled = themeSetting?.progress.enabled;
@@ -115,7 +119,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
             positionOffsetX={currentStep.setting.positionOffsetX}
             positionOffsetY={currentStep.setting.positionOffsetY}
             enabledBackdrop={currentStep.setting.enabledBackdrop}
-            width={`${currentStep.setting.width}px`}
+            width={`${width}px`}
             ref={ref}
           >
             <PopperContent>

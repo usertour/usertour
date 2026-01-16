@@ -13,6 +13,7 @@ import {
   PopperStaticBubble,
   PopperStaticContent,
   useSettingsStyles,
+  getThemeWidthByStepType,
 } from '@usertour-packages/sdk';
 import { LauncherContainer, LauncherView } from '@usertour-packages/sdk/src/launcher';
 import { LauncherRoot } from '@usertour-packages/sdk/src/launcher';
@@ -44,6 +45,10 @@ const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
     useLocalAvatarPath: true,
   });
 
+  // Get width with theme fallback if undefined
+  const width =
+    currentStep.setting.width ?? getThemeWidthByStepType(currentStep.type, themeSetting);
+
   // Handle hidden step
   if (currentStep.type === StepContentType.HIDDEN) {
     return (
@@ -63,7 +68,7 @@ const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
       <Popper open={true} zIndex={1} globalStyle={globalStyle}>
         <PopperStaticBubble
           position={bubbleSettings?.placement?.position ?? 'leftBottom'}
-          width={`${bubbleSettings?.width}px`}
+          width={`${width}px`}
           avatarSize={avatarSettings?.size}
           avatarSrc={avatarUrl}
           notchSize={themeSetting?.tooltip?.notchSize}
@@ -84,7 +89,7 @@ const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
         arrowSize={{ width: 20, height: 10 }}
         side="bottom"
         showArrow={false}
-        width={`${currentStep.setting.width}px`}
+        width={`${width}px`}
         height={'auto'}
       >
         {currentStep.setting.skippable && <PopperClose />}

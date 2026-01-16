@@ -10,6 +10,7 @@ import {
   PopperOverlay,
   PopperProgress,
   useSettingsStyles,
+  useStepWidth,
 } from '@usertour-packages/sdk';
 import {
   ContentEditor,
@@ -95,6 +96,9 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
 
     const totalSteps = currentVersion?.steps?.length ?? 0;
 
+    // Get width with theme fallback if undefined
+    const { width } = useStepWidth({ step: currentStep, themeSetting });
+
     const enabledElementTypes = Object.values(ContentEditorElementType);
 
     const progressType = themeSetting?.progress.type;
@@ -132,7 +136,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                 : ((currentStep.setting?.align as Align) ?? 'center')
             }
             avoidCollisions={currentStep.setting?.alignType === 'auto'}
-            width={`${currentStep.setting.width}px`}
+            width={`${width}px`}
             arrowSize={{
               width: themeSetting?.tooltip.notchSize ?? 20,
               height: (themeSetting?.tooltip.notchSize ?? 10) / 2,

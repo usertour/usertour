@@ -96,7 +96,7 @@ export type StepTrigger = {
 };
 
 export type StepSettings = {
-  width: number;
+  width?: number; // undefined means use theme default width (Auto)
   height: number;
   skippable: boolean;
   enabledBackdrop: boolean;

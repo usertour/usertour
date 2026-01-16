@@ -9,6 +9,7 @@ import {
   PopperOverlay,
   PopperProgress,
   useSettingsStyles,
+  useStepWidth,
 } from '@usertour-packages/sdk';
 import {
   ContentEditorClickableElement,
@@ -201,6 +202,9 @@ const TourPopper = (props: TourPopperProps) => {
   } = props;
   const { themeSetting } = useSettingsStyles(themeSettings);
 
+  // Get width using the unified hook (handles undefined width with theme fallback)
+  const { width } = useStepWidth({ step: currentStep, themeSetting });
+
   // Create a responsive React.RefObject that updates when triggerRef changes
   const responsiveRef = useMemo(() => {
     const ref = { current: null as HTMLElement | null };
@@ -241,7 +245,7 @@ const TourPopper = (props: TourPopperProps) => {
         avoidCollisions={currentStep.setting.alignType === 'auto'}
         side={side}
         align={align}
-        width={`${currentStep.setting.width}px`}
+        width={`${width}px`}
         arrowSize={{
           width: themeSetting?.tooltip.notchSize ?? 20,
           height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
@@ -278,6 +282,10 @@ const TourModal = (props: TourModalProps) => {
     handleDismiss,
     handleOnClick,
   } = props;
+  const { themeSetting } = useSettingsStyles(themeSettings);
+
+  // Get width using the unified hook (handles undefined width with theme fallback)
+  const { width } = useStepWidth({ step: currentStep, themeSetting });
 
   const handleBackdropClick = useCallback(() => {
     const behavior = themeSettings?.modal?.backdropClickBehavior;
@@ -299,7 +307,7 @@ const TourModal = (props: TourModalProps) => {
         enabledBackdrop={currentStep.setting.enabledBackdrop}
         positionOffsetX={currentStep.setting.positionOffsetX}
         positionOffsetY={currentStep.setting.positionOffsetY}
-        width={`${currentStep.setting.width}px`}
+        width={`${width}px`}
         onBackdropClick={handleBackdropClick}
       >
         <PopperContent
@@ -334,6 +342,9 @@ const TourBubble = (props: TourModalProps) => {
   } = props;
   const { themeSetting, avatarUrl } = useSettingsStyles(themeSettings);
 
+  // Get width using the unified hook (handles undefined width with theme fallback)
+  const { width } = useStepWidth({ step: currentStep, themeSetting });
+
   // Get bubble settings from theme
   const bubblePlacement = themeSetting?.bubble?.placement;
   const avatarSettings = themeSetting?.avatar;
@@ -353,7 +364,7 @@ const TourBubble = (props: TourModalProps) => {
         position={bubblePlacement?.position ?? 'leftBottom'}
         positionOffsetX={bubblePlacement?.positionOffsetX ?? 20}
         positionOffsetY={bubblePlacement?.positionOffsetY ?? 20}
-        width={`${currentStep.setting.width}px`}
+        width={`${width}px`}
         avatarSize={avatarSettings?.size ?? 60}
         avatarSrc={avatarUrl}
         notchColor={themeSetting?.mainColor?.background}

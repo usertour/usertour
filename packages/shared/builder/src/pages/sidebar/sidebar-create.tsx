@@ -65,7 +65,7 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
         ...defaultStep,
         setting: {
           ...defaultStep.setting,
-          width: type === 'tooltip' ? defaultStep.setting.width : 550,
+          // width is undefined by default (Auto - uses theme default)
         },
         type,
         name: 'Untitled',

@@ -15,12 +15,13 @@ import {
   ContentAlignmentData,
   ContentModalPlacementData,
   Side,
-  Theme,
   StepContentType,
 } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
-import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getThemeWidthByStepType } from '@usertour-packages/sdk';
 import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useCurrentTheme } from '../../hooks/use-current-theme';
 import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
 import { ContentAlignment } from '../../components/content-alignment';
 import { ContentModal } from '../../components/content-modal';
@@ -91,6 +92,15 @@ const FlowBuilderDetailBody = () => {
     useBuilderContext();
   const { themeList } = useThemeListContext();
 
+  // Get the effective theme for the current step (step > version > default)
+  const effectiveTheme = useCurrentTheme({ fallbackToDefault: true });
+
+  // Get the default width from theme based on step type
+  const defaultWidth = useMemo(() => {
+    if (!currentStep) return 300;
+    return getThemeWidthByStepType(currentStep.type, effectiveTheme?.settings);
+  }, [currentStep?.type, effectiveTheme?.settings]);
+
   const handleEditTheme = useCallback(() => {
     if (!currentStep || !currentTheme) {
       return false;
@@ -133,12 +143,15 @@ const FlowBuilderDetailBody = () => {
     }));
   };
 
-  const handleWidthChange = (width: number) => {
-    updateCurrentStep((pre) => ({
-      ...pre,
-      setting: { ...pre.setting, width },
-    }));
-  };
+  const handleWidthChange = useCallback(
+    (width: number | undefined) => {
+      updateCurrentStep((pre) => ({
+        ...pre,
+        setting: { ...pre.setting, width },
+      }));
+    },
+    [updateCurrentStep],
+  );
 
   const handleContentTypeChange = (type: string) => {
     updateCurrentStep((pre) => ({
@@ -172,8 +185,9 @@ const FlowBuilderDetailBody = () => {
                 />
                 <Separator />
                 <ContentWidth
-                  type={currentStep.type as StepContentType.TOOLTIP | StepContentType.MODAL}
+                  type={currentStep.type as 'tooltip' | 'modal' | 'bubble'}
                   width={currentStep.setting.width}
+                  defaultWidth={defaultWidth}
                   onChange={handleWidthChange}
                 />
               </>
@@ -339,28 +353,10 @@ const FlowBuilderDetailEmbed = () => {
     projectId,
     createNewStep,
   } = useBuilderContext();
-  const { themeList } = useThemeListContext();
   const { contents } = useContentListContext();
   const { attributeList } = useAttributeListContext();
-  const [theme, setTheme] = useState<Theme>();
+  const theme = useCurrentTheme({ fallbackToDefault: true });
   const triggerRef = useRef<SVGSVGElement>(null);
-
-  useEffect(() => {
-    if (!themeList) {
-      return;
-    }
-    if (themeList.length > 0) {
-      let theme: Theme | undefined;
-      if (currentStep?.themeId) {
-        theme = themeList.find((item) => item.id === currentStep.themeId);
-      } else if (currentVersion?.themeId) {
-        theme = themeList.find((item) => item.id === currentVersion.themeId);
-      }
-      if (theme) {
-        setTheme(theme);
-      }
-    }
-  }, [currentStep, themeList, currentVersion]);
 
   const handleContentChange = (value: ContentEditorRoot[]) => {
     updateCurrentStep((pre) => ({ ...pre, data: value }));

@@ -6,7 +6,7 @@ export const defaultStep: Step = {
   sequence: 0,
   setting: {
     height: 0,
-    width: 250,
+    width: undefined, // Auto - use theme default width
     skippable: true,
     enabledBackdrop: false,
     enabledBlockTarget: false,

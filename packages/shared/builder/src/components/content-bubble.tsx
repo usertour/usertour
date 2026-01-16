@@ -9,6 +9,7 @@ import {
   PopperMadeWith,
   PopperProgress,
   useSettingsStyles,
+  useStepWidth,
 } from '@usertour-packages/sdk';
 import {
   ContentEditor,
@@ -102,6 +103,9 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
 
     const totalSteps = currentVersion?.steps?.length ?? 0;
 
+    // Get width with theme fallback if undefined
+    const { width } = useStepWidth({ step: currentStep, themeSetting });
+
     const progressType = themeSetting?.progress.type;
     const progressPosition = themeSetting?.progress.position;
     const progressEnabled = themeSetting?.progress.enabled;
@@ -123,7 +127,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
           position={themeSetting?.bubble?.placement?.position ?? 'rightBottom'}
           positionOffsetX={themeSetting?.bubble?.placement?.positionOffsetX}
           positionOffsetY={themeSetting?.bubble?.placement?.positionOffsetY}
-          width={`${themeSetting?.bubble?.width}px`}
+          width={`${width}px`}
           avatarSize={themeSetting?.avatar?.size}
           avatarSrc={avatarUrl}
           showAvatar={showAvatar}

@@ -146,7 +146,12 @@ const ContentDetailContentStep = ({
             <ContentBadge>{currentStep.type}</ContentBadge>
             {!isHiddenStep && (
               <>
-                <ContentBadge>Width: {currentStep.setting.width}px</ContentBadge>
+                <ContentBadge>
+                  Width:{' '}
+                  {currentStep.setting.width !== undefined
+                    ? `${currentStep.setting.width}px`
+                    : 'Auto'}
+                </ContentBadge>
                 <ContentBadge>Height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
                 <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
               </>

@@ -347,7 +347,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         sequence,
         setting: {
           ...defaultStep.setting,
-          width: finalStepType === 'modal' ? 550 : defaultStep.setting.width,
+          // width is undefined by default (Auto - uses theme default)
         },
       };
     }
