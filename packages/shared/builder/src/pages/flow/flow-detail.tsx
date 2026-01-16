@@ -21,6 +21,7 @@ import {
 import { cn } from '@usertour-packages/tailwind';
 import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
 import { ContentAlignment } from '../../components/content-alignment';
 import { ContentModal } from '../../components/content-modal';
 import { ContentModalPlacement } from '../../components/content-modal-placement';
@@ -455,6 +456,9 @@ const FlowBuilderDetailEmbed = () => {
 export const FlowBuilderDetail = () => {
   const ref = useRef<HTMLDivElement>(null);
   const { zIndex, position } = useBuilderContext();
+
+  // Auto-adjust sidebar position when content position overlaps
+  useAutoSidebarPosition();
 
   return (
     <>
