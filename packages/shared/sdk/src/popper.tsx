@@ -2,7 +2,7 @@ import { CSSProperties, forwardRef, useCallback, useEffect, useRef, useState } f
 import * as ArrowPrimitive from '@usertour-packages/react-arrow';
 import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
 import { useSize } from '@usertour-packages/react-use-size';
-import { CloseIcon, UsertourIcon } from '@usertour-packages/icons';
+import { RiCloseLargeFill, UsertourIcon } from '@usertour-packages/icons';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import * as Widget from '@usertour-packages/widget';
 import type { Rect, SideObject } from '@floating-ui/dom';
@@ -431,7 +431,7 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
         onClick={handleOnClick}
         ref={forwardedRef}
       >
-        <CloseIcon />
+        <RiCloseLargeFill className="w-4 h-[1em]" />
       </Widget.Button>
     );
   },
