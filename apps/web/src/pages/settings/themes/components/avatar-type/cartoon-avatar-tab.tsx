@@ -30,7 +30,7 @@ const AvatarButton = memo<AvatarButtonProps>(({ name, text, isSelected, onClick,
         disabled={disabled}
         className={cn(
           'w-12 h-12 p-1 transition-transform hover:scale-110',
-          isSelected && 'ring-2 ring-primary ring-offset-2',
+          isSelected && 'bg-accent',
           disabled && 'opacity-50 cursor-not-allowed hover:scale-100',
         )}
       >
