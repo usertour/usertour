@@ -2,11 +2,11 @@ import * as Popover from '@radix-ui/react-popover';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
+import * as Widget from '@usertour-packages/widget';
 import { useCallback, useEffect, useState, useMemo, memo } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import type { ContentEditorScaleElement } from '../../types/editor';
-import { Button } from '@usertour-packages/button';
 import { EditorError } from '../../components/editor-error';
 import { EditorErrorContent } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
@@ -39,15 +39,15 @@ const validateScaleRange = (lowRange: number, highRange: number): boolean => {
 // Memoized Scale Button Component
 const ScaleButton = memo<{ value: number; onClick?: () => void; isInteractive?: boolean }>(
   ({ value, onClick, isInteractive = true }) => (
-    <Button
+    <Widget.Button
+      variant="custom"
       className={BUTTON_BASE_CLASS}
-      forSdk
       onClick={onClick}
       disabled={!isInteractive}
       aria-label={`Scale option ${value}`}
     >
       {value}
-    </Button>
+    </Widget.Button>
   ),
 );
 

@@ -14,6 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
+import * as Widget from '@usertour-packages/widget';
 import { useState } from 'react';
 import { Path, Transforms } from 'slate';
 import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
@@ -98,15 +99,14 @@ export const ButtonElement = (props: RenderElementProps & { className?: string }
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <Button
+        <Widget.Button
           {...props.attributes}
-          forSdk={true}
           variant={element.data.type as any}
           contentEditable={false}
         >
           {props.children}
           <span>{element.data.text}</span>
-        </Button>
+        </Widget.Button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
@@ -230,9 +230,9 @@ export const ButtonElementSerialize = (props: ButtonElementSerializeType) => {
   };
   return (
     <>
-      <Button variant={element.data?.type as any} forSdk={true} onClick={handleOnClick}>
+      <Widget.Button variant={element.data?.type as any} onClick={handleOnClick}>
         <span>{element.data?.text}</span>
-      </Button>
+      </Widget.Button>
     </>
   );
 };

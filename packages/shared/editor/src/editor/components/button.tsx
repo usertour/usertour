@@ -1,6 +1,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import { Checkbox } from '@usertour-packages/checkbox';
+import * as Widget from '@usertour-packages/widget';
 import { ComboBox, ComboBoxOption } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
@@ -277,15 +278,14 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
       <EditorErrorAnchor>
         <Popover.Root onOpenChange={setIsOpen} open={isOpen}>
           <Popover.Trigger asChild>
-            <Button
-              forSdk={true}
+            <Widget.Button
               variant={element.data.type as any}
               contentEditable={false}
               className="h-fit"
               style={buttonStyle}
             >
               <span>{element.data.text}</span>
-            </Button>
+            </Widget.Button>
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content
@@ -382,16 +382,15 @@ export const ContentEditorButtonSerialize = (props: ContentEditorButtonSerialize
   const buttonStyle = useMemo(() => transformsStyle(element), [element.margin]);
 
   return (
-    <Button
+    <Widget.Button
       variant={element.data?.type as any}
-      forSdk={true}
       onClick={handleOnClick}
       className="h-fit"
       style={buttonStyle}
       disabled={loading}
     >
       <span>{element.data?.text}</span>
-    </Button>
+    </Widget.Button>
   );
 };
 

@@ -1,14 +1,13 @@
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
-import { Checkbox } from '@usertour-packages/checkbox';
 import { CheckboxIcon2, DeleteIcon, PlusIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import { RadioGroup, RadioGroupItem } from '@usertour-packages/radio-group';
 import { Switch } from '@usertour-packages/switch';
 import { TooltipContent } from '@usertour-packages/tooltip';
 import { Tooltip, TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
+import * as Widget from '@usertour-packages/widget';
 import { useCallback, useEffect, useState, useMemo, useRef, memo } from 'react';
 import { ContentActions } from '../../actions';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -106,11 +105,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
     () =>
       localData.options.map((option, index) => (
         <div className={itemBaseClass} key={index}>
-          <RadioGroupItem
-            value={option.value}
-            id={`r1${index}`}
-            className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
-          />
+          <Widget.RadioGroupItem value={option.value} id={`r1${index}`} />
           <Label htmlFor={`r1${index}`} className="cursor-pointer grow">
             {option.label || option.value}
           </Label>
@@ -124,11 +119,10 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
     () =>
       localData.options.map((option, index) => (
         <div className={itemBaseClass} key={index}>
-          <Checkbox
+          <Widget.Checkbox
             checked={option.checked}
             id={`c1${index}`}
-            className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
-            onCheckedChange={(checked) => handleOptionChange(index, 'checked', checked)}
+            onCheckedChange={(checked) => handleOptionChange(index, 'checked', checked as boolean)}
           />
           <Label htmlFor={`c1${index}`} className="grow cursor-pointer text-sm">
             {option.label || option.value || `${DEFAULT_OPTION_PREFIX} ${index + 1}`}
@@ -146,15 +140,11 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
             <div className="flex flex-col gap-2 w-full">
               <div className="space-y-2">
                 {!localData.allowMultiple ? (
-                  <RadioGroup defaultValue={localData.options[0]?.value}>
+                  <Widget.RadioGroup defaultValue={localData.options[0]?.value}>
                     {radioOptions}
                     {localData.enableOther && (
                       <div className={cn(itemBaseClass)}>
-                        <RadioGroupItem
-                          value="other"
-                          id="other-radio"
-                          className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
-                        />
+                        <Widget.RadioGroupItem value="other" id="other-radio" />
                         <div className="flex items-center grow gap-2 relative">
                           <span className="grow cursor-pointer leading-none">
                             {localData.otherPlaceholder || 'Other...'}
@@ -162,13 +152,13 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                         </div>
                       </div>
                     )}
-                  </RadioGroup>
+                  </Widget.RadioGroup>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {checkboxOptions}
                     {localData.enableOther && (
                       <div className={cn(itemBaseClass)}>
-                        <Checkbox className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background" />
+                        <Widget.Checkbox />
                         <div className="flex items-center grow gap-2 relative">
                           <span className="grow cursor-pointer leading-none">
                             {localData.otherPlaceholder || 'Other...'}
@@ -177,7 +167,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                       </div>
                     )}
                     <div className="flex justify-center w-full">
-                      <Button forSdk={true}>{localData.buttonText || DEFAULT_BUTTON_TEXT}</Button>
+                      <Widget.Button>{localData.buttonText || DEFAULT_BUTTON_TEXT}</Widget.Button>
                     </div>
                   </div>
                 )}
@@ -388,11 +378,7 @@ const OtherOptionSerialize = memo(
     itemBaseClass: string;
   }) => (
     <div className={cn(itemBaseClass, isEditing && 'hover:bg-transparent')}>
-      <RadioGroupItem
-        value="other"
-        id="other-radio"
-        className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
-      />
+      <Widget.RadioGroupItem value="other" id="other-radio" />
       <div className="flex items-center grow gap-2 relative">
         {isEditing ? (
           <>
@@ -406,17 +392,16 @@ const OtherOptionSerialize = memo(
               }}
               className="grow bg-transparent h-3.5 focus:outline-none focus:ring-0"
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 p-0 m-0 border-none text-sdk-question"
+            <Widget.Button
+              variant="custom"
+              className="w-8 h-8 p-0 m-0 border-none text-sdk-question hover:bg-sdk-question/20 rounded"
               onClick={() => {
                 setIsEditing(false);
                 onClick?.(element, otherValue);
               }}
             >
               <CheckboxIcon2 />
-            </Button>
+            </Widget.Button>
           </>
         ) : (
           <span
@@ -508,10 +493,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
                   key={index}
                   onClick={() => handleOptionClick(option.value)}
                 >
-                  <Checkbox
-                    checked={selectedValues.includes(option.value)}
-                    className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
-                  />
+                  <Widget.Checkbox checked={selectedValues.includes(option.value)} />
                   <span className="grow cursor-pointer text-sm">
                     {option.label || option.value || `${DEFAULT_OPTION_PREFIX} ${index + 1}`}
                   </span>
@@ -519,7 +501,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
               ))}
               {element.data.enableOther && (
                 <div className={cn(itemBaseClass, isEditing && 'hover:bg-transparent')}>
-                  <Checkbox
+                  <Widget.Checkbox
                     checked={isOtherChecked}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -531,7 +513,6 @@ export const ContentEditorMultipleChoiceSerialize = memo(
                         otherInputRef.current?.focus();
                       }
                     }}
-                    className="border-sdk-question data-[state=checked]:bg-sdk-question data-[state=checked]:text-sdk-background"
                   />
                   <div className="flex items-center grow gap-2 relative">
                     {isEditing ? (
@@ -561,13 +542,9 @@ export const ContentEditorMultipleChoiceSerialize = memo(
               )}
             </div>
             <div className="flex justify-center w-full">
-              <Button
-                forSdk={true}
-                disabled={!isValidSelection() || loading}
-                onClick={handleSubmit}
-              >
+              <Widget.Button disabled={!isValidSelection() || loading} onClick={handleSubmit}>
                 {element.data.buttonText || DEFAULT_BUTTON_TEXT}
-              </Button>
+              </Widget.Button>
             </div>
           </div>
         </div>
@@ -578,10 +555,8 @@ export const ContentEditorMultipleChoiceSerialize = memo(
       <div className="flex flex-col gap-2 w-full">
         <div className="space-y-2">
           <div className="flex flex-col gap-2">
-            <RadioGroup
+            <Widget.RadioGroup
               onValueChange={(value) => {
-                // Only trigger onClick for regular options, not "other"
-                // "other" option has its own submit logic in OtherOptionSerialize
                 if (value !== 'other') {
                   onClick?.(element, value);
                 }
@@ -589,11 +564,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
             >
               {options.map((option, index) => (
                 <div className={itemBaseClass} key={index}>
-                  <RadioGroupItem
-                    value={option.value}
-                    id={`r1${index}`}
-                    className="border-sdk-question text-sdk-foreground"
-                  />
+                  <Widget.RadioGroupItem value={option.value} id={`r1${index}`} />
                   <Label htmlFor={`r1${index}`} className="grow cursor-pointer text-sm">
                     {option.label || option.value}
                   </Label>
@@ -612,7 +583,7 @@ export const ContentEditorMultipleChoiceSerialize = memo(
                   itemBaseClass={itemBaseClass}
                 />
               )}
-            </RadioGroup>
+            </Widget.RadioGroup>
           </div>
         </div>
       </div>

@@ -161,8 +161,8 @@ describe('cn (tailwind-merge with SDK custom classes)', () => {
       expect(cn('bg-red-500', 'bg-sdk-progress')).toBe('bg-sdk-progress');
     });
 
-    test('should resolve bg-sdk-card vs bg-sdk-popover conflict', () => {
-      expect(cn('bg-sdk-card', 'bg-sdk-popover')).toBe('bg-sdk-popover');
+    test('should resolve bg-sdk-background vs bg-sdk-hover conflict', () => {
+      expect(cn('bg-sdk-background', 'bg-sdk-hover')).toBe('bg-sdk-hover');
     });
   });
 
@@ -286,13 +286,13 @@ describe('cn (tailwind-merge with SDK custom classes)', () => {
       const result = cn(
         'text-sdk-base',
         isActive && 'bg-sdk-active',
-        isCompleted && 'text-sdk-muted',
+        isCompleted && 'text-sdk-question',
         !isCompleted && 'text-sdk-foreground',
       );
       expect(result).toContain('text-sdk-base');
       expect(result).toContain('bg-sdk-active');
       expect(result).toContain('text-sdk-foreground');
-      expect(result).not.toContain('text-sdk-muted');
+      expect(result).not.toContain('text-sdk-question');
     });
 
     test('should handle NPS button classes with override', () => {

@@ -1,8 +1,8 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { Switch } from '@usertour-packages/switch';
+import * as Widget from '@usertour-packages/widget';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -144,16 +144,14 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
         <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div className="flex flex-col gap-2 items-center w-full">
-              <Input
+              <Widget.Input
                 placeholder={defaultValues.placeholder}
-                className="grow h-auto border-sdk-question bg-sdk-background"
+                className="grow h-auto"
                 aria-label="Text input field"
                 readOnly
               />
               <div className="flex justify-end w-full">
-                <Button forSdk={true} size="sm" className="flex-none">
-                  {defaultValues.buttonText}
-                </Button>
+                <Widget.Button className="flex-none">{defaultValues.buttonText}</Widget.Button>
               </div>
             </div>
           </Popover.Trigger>
@@ -290,23 +288,22 @@ export const ContentEditorSingleLineTextSerialize = (props: {
 
   return (
     <div className="flex flex-col gap-2 items-center w-full">
-      <Input
+      <Widget.Input
         placeholder={defaultValues.placeholder}
-        className="grow h-auto border-sdk-question bg-sdk-background"
+        className="grow h-auto"
         value={value}
         onChange={handleValueChange}
         aria-label="Text input field"
       />
       <div className="flex justify-end w-full">
-        <Button
-          forSdk={true}
+        <Widget.Button
           className="flex-none"
           onClick={handleSubmit}
           disabled={isDisabled}
           aria-label={`Submit ${defaultValues.buttonText}`}
         >
           {defaultValues.buttonText}
-        </Button>
+        </Widget.Button>
       </div>
     </div>
   );

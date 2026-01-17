@@ -2,11 +2,11 @@ import * as Popover from '@radix-ui/react-popover';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
+import * as Widget from '@usertour-packages/widget';
 import { useCallback, useEffect, useState, useMemo, memo } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorNPSElement } from '../../types/editor';
-import { Button } from '@usertour-packages/button';
 import { EditorError, EditorErrorContent } from '../../components/editor-error';
 import { EditorErrorAnchor } from '../../components/editor-error';
 import { isEmptyString } from '@usertour/helpers';
@@ -27,33 +27,31 @@ interface ContentEditorNPSProps {
 }
 
 // Memoized NPS Scale component for better performance
-const NPSScale = memo(
-  ({ onClick, forSdk = false }: { onClick?: (value: number) => void; forSdk?: boolean }) => {
-    const scaleButtons = useMemo(
-      () =>
-        Array.from({ length: NPS_SCALE_LENGTH }, (_, i) => (
-          <Button
-            key={`nps-button-${i}`}
-            className={buttonBaseClass}
-            onClick={() => onClick?.(i)}
-            forSdk={forSdk}
-          >
-            {i}
-          </Button>
-        )),
-      [onClick, forSdk],
-    );
+const NPSScale = memo(({ onClick }: { onClick?: (value: number) => void }) => {
+  const scaleButtons = useMemo(
+    () =>
+      Array.from({ length: NPS_SCALE_LENGTH }, (_, i) => (
+        <Widget.Button
+          key={`nps-button-${i}`}
+          variant="custom"
+          className={buttonBaseClass}
+          onClick={() => onClick?.(i)}
+        >
+          {i}
+        </Widget.Button>
+      )),
+    [onClick],
+  );
 
-    return (
-      <div
-        className="grid gap-1.5 !gap-1"
-        style={{ gridTemplateColumns: `repeat(${NPS_SCALE_LENGTH}, minmax(0px, 1fr))` }}
-      >
-        {scaleButtons}
-      </div>
-    );
-  },
-);
+  return (
+    <div
+      className="grid gap-1.5 !gap-1"
+      style={{ gridTemplateColumns: `repeat(${NPS_SCALE_LENGTH}, minmax(0px, 1fr))` }}
+    >
+      {scaleButtons}
+    </div>
+  );
+});
 
 NPSScale.displayName = 'NPSScale';
 
@@ -226,7 +224,7 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
         <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div className="w-full">
-              <NPSScale forSdk={true} />
+              <NPSScale />
               <NPSLabels lowLabel={localData.lowLabel} highLabel={localData.highLabel} />
             </div>
           </Popover.Trigger>
@@ -283,7 +281,7 @@ export const ContentEditorNPSSerialize = memo((props: ContentEditorNPSSerializeT
 
   return (
     <div className="w-full">
-      <NPSScale onClick={loading ? undefined : handleClick} forSdk={true} />
+      <NPSScale onClick={loading ? undefined : handleClick} />
       <NPSLabels lowLabel={element.data.lowLabel} highLabel={element.data.highLabel} />
     </div>
   );

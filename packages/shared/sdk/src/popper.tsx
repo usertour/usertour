@@ -4,7 +4,7 @@ import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
 import { useSize } from '@usertour-packages/react-use-size';
 import { CloseIcon, UsertourIcon } from '@usertour-packages/icons';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
-import { Button } from '@usertour-packages/button';
+import * as Widget from '@usertour-packages/widget';
 import type { Rect, SideObject } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
 import { computePositionStyle } from './utils/position';
@@ -423,17 +423,16 @@ const PopperClose = forwardRef<HTMLButtonElement, PopoverCloseProps>(
     );
 
     return (
-      <Button
+      <Widget.Button
         type="button"
         variant="custom"
         className={buttonClassName}
         aria-label="Close"
-        forSdk
         onClick={handleOnClick}
         ref={forwardedRef}
       >
         <CloseIcon />
-      </Button>
+      </Widget.Button>
     );
   },
 );

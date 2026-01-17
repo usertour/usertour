@@ -6,6 +6,7 @@ packages:
   - "packages/radix/*"
   - "packages/shared/*"
   - "packages/tailwind"
+  - "packages/widget"
   - "packages/license"
   - "packages/helpers"
   - "packages/types"

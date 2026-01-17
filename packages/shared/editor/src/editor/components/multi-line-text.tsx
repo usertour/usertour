@@ -1,9 +1,8 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { Switch } from '@usertour-packages/switch';
-import { Textarea } from '@usertour-packages/textarea';
+import * as Widget from '@usertour-packages/widget';
 import { useCallback, useEffect, useState } from 'react';
 import { ContentActions } from '../..';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -84,13 +83,12 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
         <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
           <Popover.Trigger asChild>
             <div className="flex flex-col gap-2 items-center w-full">
-              <Textarea
+              <Widget.Textarea
                 placeholder={localData.placeholder || DEFAULT_PLACEHOLDER}
-                className="border-sdk-question bg-sdk-background"
                 disabled
               />
               <div className="flex justify-end w-full">
-                <Button forSdk={true}>{localData.buttonText || DEFAULT_BUTTON_TEXT}</Button>
+                <Widget.Button>{localData.buttonText || DEFAULT_BUTTON_TEXT}</Widget.Button>
               </div>
             </div>
           </Popover.Trigger>
@@ -198,20 +196,18 @@ export const ContentEditorMultiLineTextSerialize = (props: {
 
   return (
     <div className="flex flex-col gap-2 items-center w-full">
-      <Textarea
+      <Widget.Textarea
         placeholder={element.data.placeholder || DEFAULT_PLACEHOLDER}
-        className="border-sdk-question bg-sdk-background"
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
       <div className="flex justify-end w-full">
-        <Button
-          forSdk={true}
+        <Widget.Button
           onClick={handleClick}
           disabled={loading || (element.data.required && isEmptyString(value))}
         >
           {element.data.buttonText || DEFAULT_BUTTON_TEXT}
-        </Button>
+        </Widget.Button>
       </div>
     </div>
   );
