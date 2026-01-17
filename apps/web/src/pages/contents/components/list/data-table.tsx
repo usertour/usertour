@@ -262,7 +262,7 @@ export function DataTable() {
   return (
     <div className="space-y-4">
       {/* <DataTableToolbar table={table} /> */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
         {contents.map((content) => (
           <ContentTableItem content={content} key={content.id} contentType={contentType} />
         ))}
