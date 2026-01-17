@@ -11,7 +11,7 @@ export interface IconProps extends React.SVGAttributes<SVGElement> {
 }
 
 export const H1Icon = forwardRef<SVGSVGElement, SvgProps>(
-  ({ width = 15, height = 15 }, forwardedRef) => {
+  ({ width = 16, height = 16 }, forwardedRef) => {
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -27,7 +27,7 @@ export const H1Icon = forwardRef<SVGSVGElement, SvgProps>(
 );
 
 export const H2Icon = forwardRef<SVGSVGElement, SvgProps>(
-  ({ width = 15, height = 15 }, forwardedRef) => {
+  ({ width = 16, height = 16 }, forwardedRef) => {
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -43,7 +43,7 @@ export const H2Icon = forwardRef<SVGSVGElement, SvgProps>(
 );
 
 export const ListOrderIcon = forwardRef<SVGSVGElement, SvgProps>(
-  ({ width = 15, height = 15 }, forwardedRef) => {
+  ({ width = 16, height = 16 }, forwardedRef) => {
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -59,7 +59,7 @@ export const ListOrderIcon = forwardRef<SVGSVGElement, SvgProps>(
 );
 
 export const ListUnOrderIcon = forwardRef(
-  ({ width = 15, height = 15 }: SvgProps, forwardedRef: any) => {
+  ({ width = 16, height = 16 }: SvgProps, forwardedRef: any) => {
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -78,8 +78,8 @@ export const DeleteIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -96,8 +96,8 @@ export const InsertColumnRightIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -114,8 +114,8 @@ export const InsertColumnLeftIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -132,8 +132,8 @@ export const ColumnIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -150,8 +150,8 @@ export const QuestionIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -168,8 +168,8 @@ export const SquareIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -186,8 +186,8 @@ export const ImageIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -204,8 +204,8 @@ export const ImageEditIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -222,8 +222,8 @@ export const VideoIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -240,8 +240,8 @@ export const ArrowRightIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -258,8 +258,8 @@ export const CloseCircleIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -276,8 +276,8 @@ export const Delete2Icon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -293,8 +293,8 @@ export const Delete2Icon = React.forwardRef<SVGSVGElement, IconProps>(
 export const MoreIcon = React.forwardRef<SVGSVGElement, IconProps>(({ ...props }, forwardedRef) => {
   return (
     <svg
-      width="15"
-      height="15"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
@@ -310,8 +310,8 @@ export const CloseIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -328,8 +328,8 @@ export const EyeOpenIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -366,8 +366,8 @@ export const SlideRightIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -384,8 +384,8 @@ export const SlideLeftIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -402,8 +402,8 @@ export const DoubleArrowLeftIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -420,8 +420,8 @@ export const DoubleArrowRightIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -438,8 +438,8 @@ export const SavedIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -456,8 +456,8 @@ export const CheckedIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -1372,8 +1372,8 @@ export const KeyboardIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
       <svg
-        width="15"
-        height="15"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
