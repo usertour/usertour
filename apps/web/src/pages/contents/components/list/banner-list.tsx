@@ -67,12 +67,14 @@ export const BannerListContent = () => {
             </TabsTrigger>
             <TabsTrigger value="published">Published</TabsTrigger>
           </TabsList>
-          <div className="ml-auto">
-            <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
-              <PlusCircledIcon className="mr-2 h-4 w-4" />
-              Create Banner
-            </Button>
-          </div>
+          {contents && contents.length > 0 && (
+            <div className="ml-auto">
+              <Button onClick={openCreateFormHandler} disabled={isViewOnly}>
+                <PlusCircledIcon className="mr-2 h-4 w-4" />
+                Create Banner
+              </Button>
+            </div>
+          )}
         </div>
         {isLoading && <ContentListSkeleton count={9} />}
         {!isLoading && contents && contents.length === 0 && (

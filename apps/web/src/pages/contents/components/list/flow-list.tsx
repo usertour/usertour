@@ -45,15 +45,17 @@ export const FlowListContent = () => {
               </p>
             </div>
           </div>
-          <Button
-            onClick={openCreateFormHandler}
-            className="flex-none"
-            id="create-flow-button"
-            disabled={isViewOnly}
-          >
-            <PlusCircledIcon className="mr-2 h-4 w-4" />
-            Create Flow
-          </Button>
+          {contents && contents.length > 0 && (
+            <Button
+              onClick={openCreateFormHandler}
+              className="flex-none"
+              id="create-flow-button"
+              disabled={isViewOnly}
+            >
+              <PlusCircledIcon className="mr-2 h-4 w-4" />
+              Create Flow
+            </Button>
+          )}
         </>
       </div>
       <Separator className="my-6" />

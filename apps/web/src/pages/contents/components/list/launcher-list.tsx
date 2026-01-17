@@ -37,10 +37,12 @@ export const LauncherListContent = () => {
               </p>
             </div>
           </div>
-          <Button onClick={openCreateFormHandler} className="flex-none" disabled={isViewOnly}>
-            <PlusCircledIcon className="mr-2 h-4 w-4" />
-            Create Launcher
-          </Button>
+          {contents && contents.length > 0 && (
+            <Button onClick={openCreateFormHandler} className="flex-none" disabled={isViewOnly}>
+              <PlusCircledIcon className="mr-2 h-4 w-4" />
+              Create Launcher
+            </Button>
+          )}
         </>
       </div>
       <Separator className="my-6" />

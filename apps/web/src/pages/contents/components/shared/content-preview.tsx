@@ -1,4 +1,6 @@
+import { memo } from 'react';
 import { EyeNoneIcon } from '@usertour-packages/icons';
+import { cn } from '@usertour-packages/tailwind';
 import {
   ChecklistContainer,
   ChecklistDismiss,
@@ -31,9 +33,13 @@ import {
 
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
-const EmptyContentPreview = () => {
-  return <img src="/images/empty.png" className="h-[160px]" />;
-};
+interface EmptyContentPreviewProps {
+  className?: string;
+}
+
+const EmptyContentPreview = memo(({ className }: EmptyContentPreviewProps) => {
+  return <img src="/images/empty.png" className={cn('h-[160px]', className)} alt="empty" />;
+});
 
 interface FlowPreviewProps {
   currentTheme: Theme;
