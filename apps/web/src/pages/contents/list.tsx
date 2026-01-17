@@ -23,20 +23,25 @@ interface ContentConfig {
   buttonId?: string;
 }
 
-// Flow description with documentation link
-const FlowDescription = () => (
+// Reusable content description component with documentation link
+interface ContentDescriptionProps {
+  text: string;
+  docUrl?: string;
+  linkText?: string;
+}
+
+const ContentDescription = ({ text, docUrl, linkText }: ContentDescriptionProps) => (
   <>
-    Step-by-step flows with tooltips and pop-up modals. Perfect for: product tours, user guides, and
-    announcements. <br />
-    <a
-      href="https://docs.usertour.io/building-experiences/creating-your-first-flow/"
-      className="text-primary"
-      target="_blank"
-      rel="noreferrer"
-    >
-      <span>Read more in our Creating your first flow guide</span>
-      <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
-    </a>
+    {text}
+    {docUrl && linkText && (
+      <>
+        <br />
+        <a href={docUrl} className="text-primary hover:underline" target="_blank" rel="noreferrer">
+          <span>{linkText}</span>
+          <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
+        </a>
+      </>
+    )}
   </>
 );
 
@@ -44,7 +49,13 @@ const FlowDescription = () => (
 const CONTENT_CONFIG: Record<string, ContentConfig> = {
   flows: {
     title: 'Flows',
-    description: <FlowDescription />,
+    description: (
+      <ContentDescription
+        text="Step-by-step flows with tooltips and pop-up modals. Perfect for: product tours, user guides, and announcements."
+        docUrl="https://docs.usertour.io/building-experiences/creating-your-first-flow/"
+        linkText="Read more in our Creating your first flow guide"
+      />
+    ),
     emptyTitle: 'No flows added',
     emptyDescription: 'You have not added any flows. Add one below.',
     createButtonText: 'Create Flow',
@@ -53,8 +64,13 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
   },
   checklists: {
     title: 'Checklists',
-    description:
-      'A checklist helps users feel accomplished, encourages them to engage more with your product, and guides them step-by-step through clear actions.',
+    description: (
+      <ContentDescription
+        text="A checklist helps users feel accomplished, encourages them to engage more with your product, and guides them step-by-step through clear actions."
+        docUrl="https://docs.usertour.io/how-to-guides/checklists"
+        linkText="Read more in our Checklists guide"
+      />
+    ),
     emptyTitle: 'No checklists added',
     emptyDescription: 'You have not added any checklists. Add one below.',
     createButtonText: 'Create Checklist',
@@ -62,8 +78,13 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
   },
   launchers: {
     title: 'Launchers',
-    description:
-      'Launchers work well for: Highlighting key features with hotspots, Showing helpful tips with tooltips.',
+    description: (
+      <ContentDescription
+        text="Launchers work well for: Highlighting key features with hotspots, Showing helpful tips with tooltips."
+        docUrl="https://docs.usertour.io/how-to-guides/launchers"
+        linkText="Read more in our Launchers guide"
+      />
+    ),
     emptyTitle: 'No launchers added',
     emptyDescription: 'You have not added any launchers. Add one below.',
     createButtonText: 'Create Launcher',
@@ -71,8 +92,9 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
   },
   banners: {
     title: 'Banners',
-    description:
-      'Banners are great for announcements, promotions, and important messages that need to be displayed prominently to users.',
+    description: (
+      <ContentDescription text="Banners are great for announcements, promotions, and important messages that need to be displayed prominently to users." />
+    ),
     emptyTitle: 'No banners added',
     emptyDescription: 'You have not added any banners. Add one below.',
     createButtonText: 'Create Banner',
