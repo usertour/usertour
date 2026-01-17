@@ -22,7 +22,7 @@ import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
+import { AutoScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
   ChecklistPreview,
@@ -90,7 +90,7 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
 };
 
 const ContentPreviewSkeleton = () => {
-  return <Skeleton className="w-[300px] h-[160px]" />;
+  return <Skeleton className="w-full h-full" />;
 };
 
 interface ContentPreviewProps {
@@ -121,17 +121,17 @@ const ContentPreview = ({
     currentStep
   ) {
     return (
-      <ScaledPreviewContainer>
+      <AutoScaledPreviewContainer padding={16}>
         <FlowPreview currentTheme={currentTheme} currentStep={currentStep} />
-      </ScaledPreviewContainer>
+      </AutoScaledPreviewContainer>
     );
   }
 
   if (type === ContentDataType.LAUNCHER && currentTheme && currentVersion) {
     return (
-      <ScaledPreviewContainer>
+      <AutoScaledPreviewContainer padding={16}>
         <LauncherPreview currentTheme={currentTheme} currentVersion={currentVersion} />
-      </ScaledPreviewContainer>
+      </AutoScaledPreviewContainer>
     );
   }
 
@@ -142,9 +142,9 @@ const ContentPreview = ({
     currentVersion?.data
   ) {
     return (
-      <ScaledPreviewContainer>
+      <AutoScaledPreviewContainer padding={16}>
         <ChecklistPreview currentTheme={currentTheme} currentVersion={currentVersion} />
-      </ScaledPreviewContainer>
+      </AutoScaledPreviewContainer>
     );
   }
 

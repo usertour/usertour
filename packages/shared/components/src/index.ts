@@ -13,11 +13,13 @@ export type { LocateItem } from './components/common/locate-select';
 export { defaultRulesItems } from './components/rules';
 export {
   ScaledPreviewContainer,
+  AutoScaledPreviewContainer,
   useScaledPreview,
   calculateScale,
 } from './components/preview/scaled-preview-container';
 export type {
   ScaledPreviewContainerProps,
+  AutoScaledPreviewContainerProps,
   UseScaledPreviewOptions,
   UseScaledPreviewResult,
 } from './components/preview/scaled-preview-container';

@@ -156,5 +156,83 @@ const ScaledPreviewContainer = memo(
 
 ScaledPreviewContainer.displayName = 'ScaledPreviewContainer';
 
-export { ScaledPreviewContainer, useScaledPreview, calculateScale };
-export type { ScaledPreviewContainerProps, UseScaledPreviewOptions, UseScaledPreviewResult };
+interface AutoScaledPreviewContainerProps {
+  children: React.ReactNode;
+  padding?: number;
+  className?: string;
+  onContentRectChange?: (contentRect: DOMRect, scale: number) => void;
+}
+
+/**
+ * Container component that automatically scales its children to fit within parent container
+ * Measures parent container size and adjusts scale accordingly
+ */
+const AutoScaledPreviewContainer = memo(
+  forwardRef<HTMLDivElement, AutoScaledPreviewContainerProps>(
+    ({ children, padding = 0, className = 'origin-center', onContentRectChange }, ref) => {
+      const [scale, setScale] = useState<number>(INITIAL_SCALE);
+      const prevScaleRef = useRef<number>(INITIAL_SCALE);
+
+      // Measure the wrapper (which fills parent container)
+      const [wrapperRef, wrapperRect] = useMeasure<HTMLDivElement>();
+      // Measure the actual content
+      const [contentRef, contentRect] = useMeasure<HTMLDivElement>();
+
+      // Calculate and update scale when dimensions change
+      useLayoutEffect(() => {
+        // Apply padding to available container dimensions
+        const availableWidth = (wrapperRect.width ?? 0) - padding * 2;
+        const availableHeight = (wrapperRect.height ?? 0) - padding * 2;
+
+        const newScale = calculateScale(
+          contentRect.width ?? 0,
+          contentRect.height ?? 0,
+          availableWidth,
+          availableHeight,
+        );
+
+        if (newScale !== null && newScale !== prevScaleRef.current) {
+          prevScaleRef.current = newScale;
+          setScale(newScale);
+        }
+      }, [contentRect, wrapperRect, padding]);
+
+      // Notify parent of rect/scale changes
+      useLayoutEffect(() => {
+        if (onContentRectChange && contentRect) {
+          onContentRectChange(contentRect as DOMRect, scale);
+        }
+      }, [contentRect, scale, onContentRectChange]);
+
+      // Memoize container style
+      const containerStyle = useMemo<CSSProperties>(
+        () => ({
+          scale: `${scale}`,
+        }),
+        [scale],
+      );
+
+      return (
+        <div ref={wrapperRef} className="w-full h-full flex items-center justify-center">
+          <div
+            ref={ref}
+            style={containerStyle}
+            className={cn('[&_iframe]:pointer-events-none', className)}
+          >
+            <div ref={contentRef}>{children}</div>
+          </div>
+        </div>
+      );
+    },
+  ),
+);
+
+AutoScaledPreviewContainer.displayName = 'AutoScaledPreviewContainer';
+
+export { ScaledPreviewContainer, AutoScaledPreviewContainer, useScaledPreview, calculateScale };
+export type {
+  ScaledPreviewContainerProps,
+  AutoScaledPreviewContainerProps,
+  UseScaledPreviewOptions,
+  UseScaledPreviewResult,
+};
