@@ -20,12 +20,6 @@ export type H2ElementType = {
   children: Descendant[];
 };
 
-export type H3ElementType = {
-  type: 'h3';
-  align?: string;
-  children: Descendant[];
-};
-
 export type BulletedListElementType = {
   type: 'bulleted-list';
   align?: string;
@@ -139,7 +133,6 @@ export type LinkElementType = {
 type CustomElement =
   | H1ElementType
   | H2ElementType
-  | H3ElementType
   | CodeElementType
   | QuoteElementType
   | DividerElementType

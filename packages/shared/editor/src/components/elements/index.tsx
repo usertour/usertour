@@ -45,10 +45,6 @@ export const ELEMENTS: ElementMap = {
     serialize: (props: any) => <HeadingElementSerialize headingSize={2} {...props} />,
     render: (props: MetaRenderElementProps) => <HeadingElement headingSize={2} {...props} />,
   },
-  h3: {
-    serialize: (props: any) => <HeadingElementSerialize headingSize={3} {...props} />,
-    render: (props: MetaRenderElementProps) => <HeadingElement headingSize={3} {...props} />,
-  },
   button: {
     serialize: ButtonElementSerialize,
     render: ButtonElement,

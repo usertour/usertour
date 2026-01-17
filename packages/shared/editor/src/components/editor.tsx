@@ -86,9 +86,13 @@ export const serializeLeaf = (node: Descendant, key = '') => {
 };
 
 const Element = (props: RenderElementProps) => {
-  const { element } = props;
+  const { element, children } = props;
   const cls = 'align' in element ? ALIGN_MAPPING[element.align as keyof typeof ALIGN_MAPPING] : '';
-  const Comp = ELEMENTS[element.type].render;
+  const Comp = ELEMENTS[element.type]?.render;
+  // Handle unknown element types gracefully (e.g., removed h3 type in old data)
+  if (!Comp) {
+    return <>{children}</>;
+  }
   return <Comp className={cls} key={uuidV4()} {...props} />;
 };
 
