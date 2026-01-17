@@ -150,6 +150,9 @@ export const extendBase = {
   screens: {
     '3xl': '2400px',
   },
+  minWidth: {
+    '2xl': '42rem', // 672px
+  },
   colors: {
     border: 'hsl(var(--border))',
     input: 'hsl(var(--input))',

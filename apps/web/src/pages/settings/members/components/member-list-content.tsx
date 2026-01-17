@@ -28,7 +28,7 @@ const MemberListContentTableRow = (props: MemberListContentTableRowProps) => {
           {data.isInvite && <Badge variant="success">Invite pending</Badge>}
         </div>
       </TableCell>
-      <TableCell className="truncate">{data.email}</TableCell>
+      <TableCell className="truncate hidden sm:table-cell">{data.email}</TableCell>
       <TableCell>{data.role}</TableCell>
       {/* <TableCell>{format(new Date(data.createdAt), 'PPpp')}</TableCell> */}
       <TableCell>
@@ -47,33 +47,32 @@ export const MemberListContent = () => {
   const isEmpty = members && members.length === 0;
 
   return (
-    <>
-      <div className="rounded-md border-none">
-        <Table className="table-fixed">
-          <TableHeader>
+    <div className="overflow-x-auto">
+      <Table className="table-fixed min-w-2xl">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead className="hidden sm:table-cell">Email</TableHead>
+            <TableHead className="w-28">Role</TableHead>
+            <TableHead className="w-20" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {!isEmpty &&
+            members?.map((member: TeamMember) => {
+              const key = member.isInvite ? member.inviteId : member.userId;
+              return <MemberListContentTableRow data={member} key={key} />;
+            })}
+          {isEmpty && (
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead className="w-32">Role</TableHead>
-              {/* <TableHead>CreatedAt</TableHead> */}
-              <TableHead className="w-24" />
+              <TableCell colSpan={4} className="h-24 text-center">
+                No results.
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {!isEmpty &&
-              members?.map((member: TeamMember) => {
-                const key = member.isInvite ? member.inviteId : member.userId;
-                return <MemberListContentTableRow data={member} key={key} />;
-              })}
-            {isEmpty && (
-              <TableRow>
-                <TableCell className="h-24 text-center">No results.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
