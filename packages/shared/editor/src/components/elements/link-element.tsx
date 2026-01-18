@@ -74,12 +74,12 @@ const DeleteLinkButton = memo(({ onDelete }: DeleteLinkButtonProps) => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            className="flex-none hover:bg-red-200"
+            className="flex-none hover:bg-destructive/20"
             variant="ghost"
             size="icon"
             onClick={onDelete}
           >
-            <DeleteIcon className="fill-red-500" />
+            <DeleteIcon className="fill-destructive" />
           </Button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
