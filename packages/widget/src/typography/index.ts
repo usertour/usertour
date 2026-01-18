@@ -17,3 +17,4 @@ export {
   type ListType,
 } from './list';
 export { Paragraph, getParagraphClassName, type ParagraphProps } from './paragraph';
+export { Link, getLinkClassName, type LinkProps } from './link';

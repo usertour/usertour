@@ -28,14 +28,6 @@
 .usertour-widget-root em {
   font-style: italic;
 }
-.usertour-widget-root a {
-  color: hsl(var(--usertour-link-color));
-  text-decoration: underline;
-}
-.usertour-widget-root a:hover {
-  color: hsl(var(--usertour-link-color));
-  text-decoration: none;
-}
 .usertour-widget-chrome > * {
   animation: usertour-widget-chrome-visible 200ms linear normal;
 }

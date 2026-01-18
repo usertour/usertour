@@ -32,6 +32,9 @@ export {
   Paragraph,
   getParagraphClassName,
   type ParagraphProps,
+  Link,
+  getLinkClassName,
+  type LinkProps,
 } from './typography';
 
 // Future: High-level components (to be migrated from shared/sdk)

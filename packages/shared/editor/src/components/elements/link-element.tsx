@@ -1,3 +1,11 @@
+import type { ReactNode } from 'react';
+import { memo, useCallback, useState } from 'react';
+import type { MouseEvent } from 'react';
+import type { Descendant } from 'slate';
+import { Transforms } from 'slate';
+import type { RenderElementProps } from 'slate-react';
+import { ReactEditor, useSlateStatic } from 'slate-react';
+
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
@@ -9,10 +17,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { MouseEvent, useCallback, useState } from 'react';
-import { Descendant, Transforms } from 'slate';
-import { ReactEditor, RenderElementProps, useSlateStatic } from 'slate-react';
-import { LinkElementType } from '../../types/slate';
+import { Link, getLinkClassName } from '@usertour-packages/widget';
+
+import type { LinkElementType } from '../../types/slate';
 import { PopperEditorMini, serializeMini, usePopperEditorContext } from '../editor';
 
 const initialValue: Descendant[] = [
@@ -21,6 +28,11 @@ const initialValue: Descendant[] = [
     children: [{ text: 'https://' }],
   },
 ];
+
+/**
+ * Link element for Slate editor
+ * Renders link with popover for editing URL and open type
+ */
 export const LinkElement = (props: RenderElementProps) => {
   const { zIndex, attributes } = usePopperEditorContext();
   const element = props.element as LinkElementType;
@@ -70,11 +82,7 @@ export const LinkElement = (props: RenderElementProps) => {
   return (
     <Popover.Root open={open} onOpenChange={handleOnOpenChange}>
       <Popover.Trigger onMouseDown={handleMouseDown} onClick={handleOnClick} asChild>
-        <span
-          {...props.attributes}
-          className="underline"
-          style={{ color: 'hsl(var(--usertour-link-color))' }}
-        >
+        <span {...props.attributes} className={getLinkClassName()}>
           {props.children}
         </span>
       </Popover.Trigger>
@@ -88,8 +96,8 @@ export const LinkElement = (props: RenderElementProps) => {
           sideOffset={5}
           alignOffset={-2}
         >
-          <div className=" flex flex-col space-y-2">
-            <div className=" flex flex-row space-x-1">
+          <div className="flex flex-col space-y-2">
+            <div className="flex flex-row space-x-1">
               <PopperEditorMini
                 zIndex={zIndex + EDITOR_RICH_ACTION_CONTENT + 1}
                 attributes={attributes}
@@ -116,16 +124,16 @@ export const LinkElement = (props: RenderElementProps) => {
               </TooltipProvider>
             </div>
             <Tabs className="w-full" defaultValue={openType} onValueChange={setOpenType}>
-              <TabsList className="h-auto w-full	">
+              <TabsList className="h-auto w-full">
                 <TabsTrigger
                   value="same"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground w-1/2"
+                  className="w-1/2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   Same tab
                 </TabsTrigger>
                 <TabsTrigger
                   value="new"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground w-1/2"
+                  className="w-1/2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   New tab
                 </TabsTrigger>
@@ -137,20 +145,33 @@ export const LinkElement = (props: RenderElementProps) => {
     </Popover.Root>
   );
 };
+
 LinkElement.displayName = 'LinkElement';
 
-type LinkElementSerializeType = {
-  children: React.ReactNode;
+// Component props types
+interface LinkElementSerializeProps {
+  children: ReactNode;
   element: LinkElementType;
-};
+}
 
-export const LinkElementSerialize = (props: LinkElementSerializeType) => {
+/**
+ * Link element for serialized/rendered output in SDK
+ * Uses the widget Link component for consistent styling
+ * Note: SDK content is rendered inside an iframe, so we need to use _parent for same tab
+ */
+export const LinkElementSerialize = memo((props: LinkElementSerializeProps) => {
   const { element, children } = props;
+  const isNewTab = element.openType === 'new';
+
   return (
-    <a href={element.url} target="_blank" rel="noreferrer">
+    <Link
+      href={element.url}
+      target={isNewTab ? '_blank' : '_parent'}
+      rel={isNewTab ? 'noreferrer' : undefined}
+    >
       {children}
-    </a>
+    </Link>
   );
-};
+});
 
 LinkElementSerialize.displayName = 'LinkElementSerialize';

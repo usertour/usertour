@@ -60,7 +60,7 @@ export const ELEMENTS: ElementMap = {
     render: UserAttributeElement,
   },
   link: {
-    serialize: LinkElementSerialize,
-    render: LinkElement,
+    serialize: (props: any) => <LinkElementSerialize {...props} />,
+    render: (props: MetaRenderElementProps) => <LinkElement {...props} />,
   },
 };
