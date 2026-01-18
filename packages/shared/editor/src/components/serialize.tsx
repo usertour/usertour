@@ -1,12 +1,12 @@
 import { uuidV4 } from '@usertour/helpers';
 import { useEffect, useState } from 'react';
-import type { ButtonData, CustomElementStrings } from '../types/slate';
+import type { CustomElementStrings } from '../types/slate';
 import { ALIGN_MAPPING, isText, serializeLeaf } from './editor';
 import { ELEMENTS } from './elements';
 
 type ALIGN_TYPE = 'left' | 'right' | 'center' | 'justify';
 
-export const serialize = (node: any, callback?: (type: string, params: ButtonData) => void) => {
+export const serialize = (node: any, callback?: (type: string, params: any) => void) => {
   const key = uuidV4();
   if (isText(node)) {
     return serializeLeaf(node, key);
@@ -40,7 +40,7 @@ export const serializeData = (data: any): React.ReactNode[] => {
   return s;
 };
 
-export const useSerialize = (callback?: (type: string, params: ButtonData) => void) => {
+export const useSerialize = (callback?: (type: string, params: any) => void) => {
   const [data, setData] = useState<any | null>(null);
   const [serializeData, setSerializeData] = useState<React.ReactNode[]>();
 

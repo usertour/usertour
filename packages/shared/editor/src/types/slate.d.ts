@@ -44,61 +44,6 @@ export type CodeElementType = {
   children: Descendant[];
 };
 
-export type GroupElementType = {
-  type: 'group';
-  isFirst: boolean;
-  isLast: boolean;
-  children: ColumnElementType[];
-};
-
-type ButtonData = {
-  type: string;
-  text: string;
-  action: string;
-};
-export type ButtonElementType = {
-  type: 'button';
-  data: ButtonData;
-  children: Descendant[];
-};
-
-type ElementWidth = {
-  type?: string;
-  value?: number;
-};
-
-type ElementMargin = {
-  enabled: boolean;
-  top?: number;
-  bottom?: number;
-  left?: number;
-  right?: number;
-};
-
-export type ColumnElementType = {
-  type: 'column';
-  style?: CSSProperties;
-  width?: ElementWidth;
-  children: Descendant[];
-};
-
-export type ImageElementType = {
-  type: 'image';
-  url: string;
-  width?: ElementWidth;
-  margin?: ElementMargin;
-  children: Descendant[];
-};
-
-export type EmbedElementType = {
-  type: 'embed';
-  url: string;
-  parsedUrl?: string;
-  width?: ElementWidth;
-  margin?: ElementMargin;
-  children: Descendant[];
-};
-
 export type UserAttributeElementType = {
   type: 'user-attribute';
   attrCode: string;
@@ -121,12 +66,7 @@ type CustomElement =
   | CodeElementType
   | BulletedListElementType
   | NumberedListElementType
-  | ButtonElementType
   | ItemListElementType
-  | GroupElementType
-  | ColumnElementType
-  | ImageElementType
-  | EmbedElementType
   | UserAttributeElementType
   | LinkElementType
   | PlainElementType;

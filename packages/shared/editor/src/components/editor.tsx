@@ -8,9 +8,6 @@ import { Descendant, Text, createEditor } from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { toggleTextProps } from '../lib/text';
-import { withButton } from '../lib/withButton';
-import { withEmbed } from '../lib/withEmbed';
-import { withImages } from '../lib/withImages';
 import { withLink } from '../lib/withLink';
 import { withUserAttribute } from '../lib/withUserAttribute';
 import { PopperEditorContextProps, PopperEditorProps } from '../types/editor';
@@ -146,10 +143,7 @@ export const PopperEditor = (props: PopperEditorProps) => {
   const renderElement = useCallback((props: RenderElementProps) => <Element {...props} />, []);
   const renderLeaf = useCallback((props: RenderLeafProps) => <Leaf {...props} />, []);
   const editor = useMemo(
-    () =>
-      withHistory(
-        withLink(withUserAttribute(withEmbed(withButton(withImages(withReact(createEditor())))))),
-      ),
+    () => withHistory(withLink(withUserAttribute(withReact(createEditor())))),
     [],
   );
   const [showToolbar, setShowToolbar] = useState(false);
@@ -265,11 +259,7 @@ export const PopperEditorMini = (props: PopperEditorProps) => {
   } = props;
   const renderElement = useCallback((props: RenderElementProps) => <Element {...props} />, []);
   const renderLeaf = useCallback((props: RenderLeafProps) => <Leaf {...props} />, []);
-  const editor = useMemo(
-    () =>
-      withHistory(withUserAttribute(withEmbed(withButton(withImages(withReact(createEditor())))))),
-    [],
-  );
+  const editor = useMemo(() => withHistory(withUserAttribute(withReact(createEditor()))), []);
   const [showToolbar, setShowToolbar] = useState(false);
   const [isEditorHover, setIsEditorHover] = useState(false);
   const [editorRef, setEditorRef] = useState<HTMLDivElement | null>(null);
