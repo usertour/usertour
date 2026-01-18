@@ -44,21 +44,6 @@ export type CodeElementType = {
   children: Descendant[];
 };
 
-export type QuoteElementType = {
-  type: 'quote';
-  children: Descendant[];
-};
-
-export type DividerElementType = {
-  type: 'divider';
-  children: Descendant[];
-};
-
-export type TodoElementType = {
-  type: 'todo';
-  children: Descendant[];
-};
-
 export type GroupElementType = {
   type: 'group';
   isFirst: boolean;
@@ -134,15 +119,12 @@ type CustomElement =
   | H1ElementType
   | H2ElementType
   | CodeElementType
-  | QuoteElementType
-  | DividerElementType
   | BulletedListElementType
   | NumberedListElementType
   | ButtonElementType
   | ItemListElementType
   | GroupElementType
   | ColumnElementType
-  | TodoElementType
   | ImageElementType
   | EmbedElementType
   | UserAttributeElementType

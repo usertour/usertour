@@ -4,7 +4,6 @@ import BulletedListElement, { BulletedListElementSerialize } from './bulleted-li
 import { ButtonElement, ButtonElementSerialize } from './button-element';
 import { CodeElement, CodeElementSerialize } from './code-element';
 import { ColumnElement, ColumnElementSerialize } from './column-element';
-import DividerElement, { DividerElementSerialize } from './divider-element';
 import { EmbedElement, EmbedElementSerialize } from './embed-element';
 import { GroupElement, GroupElementSerialize } from './group-element';
 import { HeadingElement, HeadingElementSerialize } from './heading-element';
@@ -13,8 +12,6 @@ import { LinkElement, LinkElementSerialize } from './link-element';
 import ListItemElement, { ListItemElementSerialize } from './list-item-element';
 import NumberedListElement, { NumberedListElementSerialize } from './numbered-list-element';
 import ParagraphElement, { ParagraphElementSerialize } from './paragraph-element';
-import QuoteElement, { QuoteElementSerialize } from './quote-element';
-import TodoElement, { TodoElementSerialize } from './todo-element';
 import { UserAttributeElement, UserAttributeElementSerialize } from './user-attr-element';
 
 export { CodeElement } from './code-element';
@@ -33,10 +30,6 @@ type MetaRenderElementProps = RenderElementProps & { className?: string };
 type ElementMap = Record<CustomElementStrings, ElementMetadata>;
 
 export const ELEMENTS: ElementMap = {
-  quote: {
-    serialize: QuoteElementSerialize,
-    render: QuoteElement,
-  },
   h1: {
     serialize: (props: any) => <HeadingElementSerialize headingSize={1} {...props} />,
     render: (props: MetaRenderElementProps) => <HeadingElement headingSize={1} {...props} />,
@@ -64,14 +57,6 @@ export const ELEMENTS: ElementMap = {
   image: {
     serialize: ImageElementSerialize,
     render: ImageElement,
-  },
-  todo: {
-    serialize: TodoElementSerialize,
-    render: TodoElement,
-  },
-  divider: {
-    serialize: DividerElementSerialize,
-    render: DividerElement,
   },
   code: {
     serialize: CodeElementSerialize,
