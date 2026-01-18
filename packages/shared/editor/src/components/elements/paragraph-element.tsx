@@ -1,33 +1,54 @@
-import { cn } from '@usertour-packages/tailwind';
-import React from 'react';
-import { RenderElementProps } from 'slate-react';
+import type { ReactNode } from 'react';
+import { Children, memo } from 'react';
+import type { RenderElementProps } from 'slate-react';
 
-const ParagraphElement = (props: RenderElementProps & { className?: string }) => {
+import { Paragraph, getParagraphClassName } from '@usertour-packages/widget';
+
+// Non-breaking space for empty paragraphs
+const NBSP = '\u00A0';
+
+// Component props types
+interface ParagraphElementProps extends RenderElementProps {
+  className?: string;
+}
+
+interface ParagraphElementSerializeProps {
+  className?: string;
+  children: ReactNode;
+}
+
+/**
+ * Paragraph element for Slate editor
+ * Renders paragraph with editor attributes for contenteditable support
+ */
+const ParagraphElement = memo((props: ParagraphElementProps) => {
   const { className, attributes, children } = props;
+
   return (
-    <p className={cn('w-full whitespace-pre-wrap break-words', className)} {...attributes}>
+    <p className={getParagraphClassName(className)} {...attributes}>
       {children}
     </p>
   );
-};
+});
 
-type ParagraphElementSerializeType = {
-  className?: string;
-  children: React.ReactNode;
-};
-export const ParagraphElementSerialize = (props: ParagraphElementSerializeType) => {
+ParagraphElement.displayName = 'ParagraphElement';
+
+/**
+ * Paragraph element for serialized/rendered output in SDK
+ * Uses the widget Paragraph component for consistent styling
+ * Handles empty paragraphs by inserting non-breaking space
+ */
+export const ParagraphElementSerialize = memo((props: ParagraphElementSerializeProps) => {
   const { className, children } = props;
 
-  // Use React.Children.toArray to properly handle Fragment and filter out null/undefined
+  // Use Children.toArray to properly handle Fragment and filter out null/undefined
   // This correctly detects empty paragraphs (all children are null after serialization)
-  const childArray = React.Children.toArray(children);
+  const childArray = Children.toArray(children);
   const isEmpty = childArray.length === 0;
 
-  return (
-    <p className={cn('w-full whitespace-pre-wrap break-words', className)}>
-      {isEmpty ? '\u00A0' : children}
-    </p>
-  );
-};
+  return <Paragraph className={className}>{isEmpty ? NBSP : children}</Paragraph>;
+});
+
+ParagraphElementSerialize.displayName = 'ParagraphElementSerialize';
 
 export default ParagraphElement;

@@ -29,6 +29,9 @@ export {
   type ListProps,
   type ListItemProps,
   type ListType,
+  Paragraph,
+  getParagraphClassName,
+  type ParagraphProps,
 } from './typography';
 
 // Future: High-level components (to be migrated from shared/sdk)

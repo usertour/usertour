@@ -40,8 +40,8 @@ export const ELEMENTS: ElementMap = {
     render: (props: MetaRenderElementProps) => <CodeElement {...props} />,
   },
   paragraph: {
-    serialize: ParagraphElementSerialize,
-    render: ParagraphElement,
+    serialize: (props: any) => <ParagraphElementSerialize {...props} />,
+    render: (props: MetaRenderElementProps) => <ParagraphElement {...props} />,
   },
   'bulleted-list': {
     serialize: (props: any) => <BulletedListElementSerialize {...props} />,

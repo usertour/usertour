@@ -16,3 +16,4 @@ export {
   type ListItemProps,
   type ListType,
 } from './list';
+export { Paragraph, getParagraphClassName, type ParagraphProps } from './paragraph';
