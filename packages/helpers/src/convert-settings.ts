@@ -279,8 +279,6 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-brand-hover-background-color': hexToHSLString(settings.brandColor.hover),
     '--usertour-font-family': settings.font.fontFamily,
     '--usertour-font-size': `${settings.font.fontSize}px`,
-    '--usertour-main-background-color': settings.mainColor.background,
-    '--usertour-main-foreground-color': settings.mainColor.color,
     '--usertour-main-hover-background-color': hexToHSLString(settings.mainColor.hover),
     '--usertour-main-active-background-color': hexToHSLString(settings.mainColor.active),
     '--usertour-line-height': `${settings.font.lineHeight}px`,

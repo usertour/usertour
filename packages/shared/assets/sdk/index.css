@@ -10,12 +10,10 @@
 }
 .usertour-widget-root {
   line-height: var(--usertour-line-height, 24px);
-  color: var(--usertour-main-foreground-color);
+  color: hsl(var(--usertour-foreground));
   font-weight: var(--usertour-font-weight-normal);
 }
 .usertour-root p,
-.usertour-root h1,
-.usertour-root h2,
 .usertour-root blockquote,
 .usertour-root pre,
 .usertour-root ol,
@@ -45,18 +43,6 @@
 .usertour-widget-root a:hover {
   color: hsl(var(--usertour-link-color));
   text-decoration: none;
-}
-.usertour-widget-root h1 {
-  font-size: var(--usertour-h1-font-size);
-  font-weight: var(--usertour-font-weight-bold, 600);
-  line-height: 1.25em;
-  color: var(--usertour-main-foreground-color);
-}
-.usertour-widget-root h2 {
-  font-size: var(--usertour-h2-font-size);
-  font-weight: var(--usertour-font-weight-bold, 600);
-  line-height: 1.25em;
-  color: var(--usertour-main-foreground-color);
 }
 .usertour-widget-chrome > * {
   animation: usertour-widget-chrome-visible 200ms linear normal;

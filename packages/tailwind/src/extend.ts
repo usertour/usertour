@@ -94,13 +94,17 @@ export const extendSdk = {
   minWidth: {
     'sdk-button': 'var(--usertour-button-min-width)',
   },
+  minHeight: {
+    'sdk-line-height': 'var(--usertour-line-height)',
+  },
   lineHeight: {
     'sdk-base': 'var(--usertour-line-height)',
+    'sdk-heading': '1.25em',
   },
   fontSize: {
     'sdk-base': 'var(--usertour-font-size)',
-    'sdk-h1': 'var(--usertour-font-size-h1)',
-    'sdk-h2': 'var(--usertour-font-size-h2)',
+    'sdk-h1': 'var(--usertour-h1-font-size)',
+    'sdk-h2': 'var(--usertour-h2-font-size)',
     'sdk-xs': 'calc(var(--usertour-font-size) * 0.75)',
     'sdk-sm': 'calc(var(--usertour-font-size) * 0.875)',
     'sdk-numbered-progress': 'var(--usertour-numbered-progress-bar-height)',

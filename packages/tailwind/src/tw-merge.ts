@@ -62,6 +62,9 @@ const customTwMerge = extendTailwindMerge({
       // minWidth group - matches min-w-* classes
       'min-w': ['min-w-sdk-button'],
 
+      // minHeight group - matches min-h-* classes
+      'min-h': ['min-h-sdk-line-height'],
+
       // height group - matches h-* classes
       h: [
         'h-sdk-line-height',
@@ -122,7 +125,7 @@ const customTwMerge = extendTailwindMerge({
 
       // lineHeight group - matches leading-* classes
       // Use object syntax { leading: [...] } to properly extend
-      leading: [{ leading: ['sdk-base'] }],
+      leading: [{ leading: ['sdk-base', 'sdk-heading'] }],
 
       // padding group - matches p-*, px-*, py-* classes
       px: ['px-sdk-button-x'],

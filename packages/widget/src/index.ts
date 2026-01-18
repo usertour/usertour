@@ -10,6 +10,14 @@ export {
   type RadioGroupItemProps,
 } from './primitives';
 
+// Typography - Text components
+export {
+  Heading,
+  getHeadingClassName,
+  type HeadingProps,
+  type HeadingLevel,
+} from './typography';
+
 // Future: High-level components (to be migrated from shared/sdk)
 // export { Popper, PopperContent, PopperArrow } from './popper';
 // export { Bubble } from './bubble';
