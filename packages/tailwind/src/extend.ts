@@ -56,6 +56,7 @@ export const extendSdk = {
     'sdk-sm': 'calc(var(--usertour-radius) - 4px)',
     'sdk-popper': 'var(--usertour-popper-radius)',
     'sdk-button': 'var(--usertour-button-border-radius)',
+    'sdk-code': 'calc(var(--usertour-font-size) * 0.25)',
   },
   borderWidth: {
     'sdk-btn-primary': 'var(--usertour-primary-border-width)',

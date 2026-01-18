@@ -36,8 +36,8 @@ export const ELEMENTS: ElementMap = {
     render: (props: MetaRenderElementProps) => <HeadingElement headingSize={2} {...props} />,
   },
   code: {
-    serialize: CodeElementSerialize,
-    render: CodeElement,
+    serialize: (props: any) => <CodeElementSerialize {...props} />,
+    render: (props: MetaRenderElementProps) => <CodeElement {...props} />,
   },
   paragraph: {
     serialize: ParagraphElementSerialize,

@@ -1,26 +1,45 @@
-import { cn } from '@usertour-packages/tailwind';
-import { RenderElementProps } from 'slate-react';
+import type { ReactNode } from 'react';
+import { memo } from 'react';
+import type { RenderElementProps } from 'slate-react';
 
-export const CodeElement = (props: RenderElementProps & { className?: string }) => {
-  const { className } = props;
-  return (
-    <pre className={cn('rounded bg-gray-100 p-8 font-mono text-sm text-gray-800', className)}>
-      <code {...props.attributes}>{props.children}</code>
-    </pre>
-  );
-};
+import { CodeBlock, getBlockCodeClassName, getPreClassName } from '@usertour-packages/widget';
 
-type CodeElementSerializeType = {
+// Component props types
+interface CodeElementProps extends RenderElementProps {
   className?: string;
-  children: React.ReactNode;
-};
-export const CodeElementSerialize = (props: CodeElementSerializeType) => {
-  const { className, children } = props;
+}
+
+interface CodeElementSerializeProps {
+  className?: string;
+  children: ReactNode;
+}
+
+/**
+ * Code block element for Slate editor
+ * Renders pre > code with editor attributes for contenteditable support
+ */
+export const CodeElement = memo((props: CodeElementProps) => {
+  const { className, attributes, children } = props;
+
   return (
-    <pre className={cn('rounded bg-gray-100 p-8 font-mono text-sm text-gray-800', className)}>
-      <code>{children}</code>
+    <pre className={getPreClassName(className)}>
+      <code className={getBlockCodeClassName()} {...attributes}>
+        {children}
+      </code>
     </pre>
   );
-};
+});
 
 CodeElement.displayName = 'CodeElement';
+
+/**
+ * Code block element for serialized/rendered output in SDK
+ * Uses the widget CodeBlock component for consistent styling
+ */
+export const CodeElementSerialize = memo((props: CodeElementSerializeProps) => {
+  const { className, children } = props;
+
+  return <CodeBlock className={className}>{children}</CodeBlock>;
+});
+
+CodeElementSerialize.displayName = 'CodeElementSerialize';

@@ -4,7 +4,15 @@ import { uuidV4 } from '@usertour/helpers';
 import { cn } from '@usertour-packages/tailwind';
 import isHotkey from 'is-hotkey';
 import React, { CSSProperties, useCallback, useMemo, useState } from 'react';
-import { Descendant, Text, createEditor } from 'slate';
+import {
+  Descendant,
+  Editor,
+  Element as SlateElement,
+  Path,
+  Text,
+  Transforms,
+  createEditor,
+} from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { toggleTextProps } from '../lib/text';
@@ -154,6 +162,35 @@ export const PopperEditor = (props: PopperEditorProps) => {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
+    // Handle Enter in code block
+    if (event.key === 'Enter') {
+      const [codeBlock] = Editor.nodes(editor, {
+        match: (n) => SlateElement.isElement(n) && n.type === 'code',
+      });
+
+      if (codeBlock) {
+        // Cmd/Ctrl+Enter: exit code block and create new paragraph
+        if (event.metaKey || event.ctrlKey) {
+          event.preventDefault();
+          const [, codePath] = codeBlock;
+          // Insert new paragraph after code block
+          Transforms.insertNodes(
+            editor,
+            { type: 'paragraph', children: [{ text: '' }] },
+            { at: Path.next(codePath) },
+          );
+          // Move cursor to new paragraph
+          Transforms.select(editor, Path.next(codePath));
+          return;
+        }
+
+        // Regular Enter: insert newline within code block
+        event.preventDefault();
+        editor.insertText('\n');
+        return;
+      }
+    }
+
     if (isInline && event.key === 'Enter') {
       event.preventDefault();
     }

@@ -12,6 +12,13 @@ export {
 
 // Typography - Text components
 export {
+  InlineCode,
+  CodeBlock,
+  getInlineCodeClassName,
+  getBlockCodeClassName,
+  getPreClassName,
+  type InlineCodeProps,
+  type CodeBlockProps,
   Heading,
   getHeadingClassName,
   type HeadingProps,
