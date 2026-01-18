@@ -13,14 +13,6 @@
   color: hsl(var(--usertour-foreground));
   font-weight: var(--usertour-font-weight-normal);
 }
-.usertour-root p,
-.usertour-root blockquote,
-.usertour-root pre,
-.usertour-root ol,
-.usertour-root ul {
-  min-height: var(--usertour-line-height, 24px);
-  flex-shrink: 0;
-}
 .usertour-widget-root,
 .usertour-widget-root button,
 .usertour-widget-root input,

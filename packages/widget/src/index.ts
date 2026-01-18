@@ -16,6 +16,12 @@ export {
   getHeadingClassName,
   type HeadingProps,
   type HeadingLevel,
+  List,
+  ListItem,
+  getListClassName,
+  type ListProps,
+  type ListItemProps,
+  type ListType,
 } from './typography';
 
 // Future: High-level components (to be migrated from shared/sdk)

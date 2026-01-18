@@ -1,16 +1,20 @@
-import { RenderElementProps } from 'slate-react';
+import type { RenderElementProps } from 'slate-react';
+
 import { CustomElementStrings } from '../../types/slate';
-import BulletedListElement, { BulletedListElementSerialize } from './bulleted-list-element';
+import { BulletedListElement, BulletedListElementSerialize } from './bulleted-list-element';
 import { CodeElement, CodeElementSerialize } from './code-element';
 import { HeadingElement, HeadingElementSerialize } from './heading-element';
 import { LinkElement, LinkElementSerialize } from './link-element';
-import ListItemElement, { ListItemElementSerialize } from './list-item-element';
-import NumberedListElement, { NumberedListElementSerialize } from './numbered-list-element';
+import { ListItemElement, ListItemElementSerialize } from './list-item-element';
+import { NumberedListElement, NumberedListElementSerialize } from './numbered-list-element';
 import ParagraphElement, { ParagraphElementSerialize } from './paragraph-element';
 import { UserAttributeElement, UserAttributeElementSerialize } from './user-attr-element';
 
+export { BulletedListElement } from './bulleted-list-element';
 export { CodeElement } from './code-element';
 export { HeadingElement } from './heading-element';
+export { ListItemElement } from './list-item-element';
+export { NumberedListElement } from './numbered-list-element';
 
 type ElementMetadata = {
   // eslint-disable-next-line no-unused-vars
@@ -40,16 +44,16 @@ export const ELEMENTS: ElementMap = {
     render: ParagraphElement,
   },
   'bulleted-list': {
-    serialize: BulletedListElementSerialize,
-    render: BulletedListElement,
+    serialize: (props: any) => <BulletedListElementSerialize {...props} />,
+    render: (props: MetaRenderElementProps) => <BulletedListElement {...props} />,
   },
   'numbered-list': {
-    serialize: NumberedListElementSerialize,
-    render: NumberedListElement,
+    serialize: (props: any) => <NumberedListElementSerialize {...props} />,
+    render: (props: MetaRenderElementProps) => <NumberedListElement {...props} />,
   },
   'list-item': {
-    serialize: ListItemElementSerialize,
-    render: ListItemElement,
+    serialize: (props: any) => <ListItemElementSerialize {...props} />,
+    render: (props: MetaRenderElementProps) => <ListItemElement {...props} />,
   },
   'user-attribute': {
     serialize: UserAttributeElementSerialize,
