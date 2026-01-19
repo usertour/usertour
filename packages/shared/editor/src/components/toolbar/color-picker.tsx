@@ -65,9 +65,13 @@ export const ColorPicker = memo(() => {
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      <PopoverContent sideOffset={5} className="w-auto p-0" onCloseAutoFocus={preventAutoFocus}>
+      <PopoverContent
+        sideOffset={5}
+        className="w-auto border-none bg-transparent p-0 shadow-none drop-shadow-popover"
+        onCloseAutoFocus={preventAutoFocus}
+      >
         <ColorPickerPanel color={currentColor} onChange={handleColorChange} showAutoButton />
-        <PopoverArrow className="fill-background" />
+        <PopoverArrow className="fill-background" width={20} height={10} />
       </PopoverContent>
     </Popover>
   );

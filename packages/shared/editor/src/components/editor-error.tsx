@@ -1,37 +1,45 @@
-import * as PopoverPrimitive from '@radix-ui/react-popover';
-
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverArrow,
+  PopoverContent,
+  PopoverTrigger,
+} from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
 import React from 'react';
 
-const EditorError = PopoverPrimitive.Root;
-const EditorErrorAnchor = PopoverPrimitive.Anchor;
+const EditorError = Popover;
+const EditorErrorAnchor = PopoverAnchor;
 
 const EditorErrorTrigger = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger>
+  React.ElementRef<typeof PopoverTrigger>,
+  React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 >(({ className, children, ...props }, ref) => (
-  <PopoverPrimitive.Trigger ref={ref} className={className} asChild {...props}>
+  <PopoverTrigger ref={ref} className={className} asChild {...props}>
     {children}
-  </PopoverPrimitive.Trigger>
+  </PopoverTrigger>
 ));
 
+EditorErrorTrigger.displayName = 'EditorErrorTrigger';
+
 const EditorErrorContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
+  React.ElementRef<typeof PopoverContent>,
+  React.ComponentPropsWithoutRef<typeof PopoverContent>
 >(({ className, align = 'center', side = 'right', sideOffset = 5, children, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
-      ref={ref}
-      align={align}
-      side={side}
-      sideOffset={sideOffset}
-      className={cn('z-50 bg-red-500 text-white rounded-lg p-2 w-48 text-sm', className)}
-      {...props}
-    >
-      {children}
-      <PopoverPrimitive.Arrow className="fill-red-500" width={10} height={5} />
-    </PopoverPrimitive.Content>
-  </PopoverPrimitive.Portal>
+  <PopoverContent
+    ref={ref}
+    align={align}
+    side={side}
+    sideOffset={sideOffset}
+    className={cn(
+      'z-50 border-none bg-destructive text-destructive-foreground rounded-lg p-2 w-48 text-sm',
+      className,
+    )}
+    {...props}
+  >
+    {children}
+    <PopoverArrow className="fill-destructive" width={10} height={5} />
+  </PopoverContent>
 ));
 
 EditorErrorContent.displayName = 'EditorErrorContent';

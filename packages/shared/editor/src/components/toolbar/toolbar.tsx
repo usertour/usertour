@@ -10,9 +10,7 @@ import {
   TextAlignRightIcon,
   UnderlineIcon,
 } from '@radix-ui/react-icons';
-import * as Popover from '@radix-ui/react-popover';
 import * as Toolbar from '@radix-ui/react-toolbar';
-import { cn } from '@usertour-packages/tailwind';
 import { EDITOR_RICH_TOOLBAR, EDITOR_RICH_TOOLBAR_MORE } from '@usertour-packages/constants';
 import {
   H1Icon,
@@ -22,7 +20,9 @@ import {
   MoreIcon,
   UserIcon,
 } from '@usertour-packages/icons';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { cn } from '@usertour-packages/tailwind';
 import {
   Tooltip,
   TooltipContent,
@@ -33,6 +33,7 @@ import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'reac
 import { useEvent, useMeasure } from 'react-use';
 import { Editor, Element as SlateElement, Transforms } from 'slate';
 import { useSlate } from 'slate-react';
+
 import { inertUserAttributeBlock, insertLink, isLinkActive } from '../../lib/editorHelper';
 import { getTextProps, toggleTextProps } from '../../lib/text';
 import { CustomEditor } from '../../types/slate';
@@ -316,52 +317,50 @@ export const EditorToolbar = () => {
         {/* <Toolbar.Separator className="w-[1px] bg-mauve6 mx-[10px]" /> */}
       </Toolbar.Root>
 
-      <Popover.Root>
+      <Popover>
         {isShowMore && (
-          <Popover.Trigger
+          <PopoverTrigger
             className={cn(
               'flex-shrink-0 flex-grow-0 basis-auto text-mauve11 h-[25px] px-[5px] rounded inline-flex text-[13px] leading-none items-center justify-center ml-0.5 outline-none hover:bg-violet3 hover:text-violet11 focus:relative focus:shadow-[0_0_0_2px] focus:shadow-violet7 first:ml-0 data-[state=on]:bg-violet5 data-[state=on]:text-violet11',
             )}
           >
             <MoreIcon className="fill-black" />
-          </Popover.Trigger>
+          </PopoverTrigger>
         )}
-        <Popover.Portal>
-          <Popover.Content
-            ref={refPopper}
-            sideOffset={10}
-            side="bottom"
-            style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR_MORE }}
+        <PopoverContent
+          ref={refPopper}
+          sideOffset={10}
+          side="bottom"
+          className="p-0 border-none bg-transparent shadow-none"
+          style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR_MORE }}
+        >
+          <Toolbar.Root
+            className={cn(
+              'flex p-[5px] w-full min-w-max rounded-lg bg-[#f4f8fb] border-b-[#dfeaf1] border-b border-solid',
+              isShowMore ? '' : 'hidden',
+            )}
+            style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR }}
+            aria-label="Formatting options"
           >
-            <Toolbar.Root
-              className={cn(
-                'flex p-[5px] w-full min-w-max rounded-lg bg-[#f4f8fb] border-b-[#dfeaf1] border-b border-solid',
-                isShowMore ? '' : 'hidden',
-              )}
-              // ref={ref}
-              style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR }}
-              aria-label="Formatting options"
-            >
-              {miniItem.length > 0 && (
-                <>
-                  <Toolbar.ToggleGroup
-                    type="single"
-                    defaultValue="center"
-                    aria-label="Text alignment"
-                  >
-                    {...miniItem}
-                  </Toolbar.ToggleGroup>
-                  <Toolbar.Separator className="w-[1px] bg-primary/30 mx-[10px] my-[3px]" />
-                </>
-              )}
-              <Toolbar.ToggleGroup type="single" defaultValue="center" aria-label="Text alignment">
-                {...alignItem}
-              </Toolbar.ToggleGroup>
-            </Toolbar.Root>
-            <Popover.Arrow className="fill-[#f4f8fb]" />
-          </Popover.Content>
-        </Popover.Portal>
-      </Popover.Root>
+            {miniItem.length > 0 && (
+              <>
+                <Toolbar.ToggleGroup
+                  type="single"
+                  defaultValue="center"
+                  aria-label="Text alignment"
+                >
+                  {...miniItem}
+                </Toolbar.ToggleGroup>
+                <Toolbar.Separator className="w-[1px] bg-primary/30 mx-[10px] my-[3px]" />
+              </>
+            )}
+            <Toolbar.ToggleGroup type="single" defaultValue="center" aria-label="Text alignment">
+              {...alignItem}
+            </Toolbar.ToggleGroup>
+          </Toolbar.Root>
+          <PopoverArrow className="fill-[#f4f8fb]" />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };

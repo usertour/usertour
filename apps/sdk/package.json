@@ -18,7 +18,6 @@
   "dependencies": {
     "@floating-ui/dom": "^1.4.4",
     "@floating-ui/react": "^0.24.3",
-    "@radix-ui/react-popover": "^1.0.6",
     "@usertour-packages/button": "workspace:*",
     "@usertour-packages/constants": "workspace:^",
     "@usertour-packages/dom": "workspace:^",

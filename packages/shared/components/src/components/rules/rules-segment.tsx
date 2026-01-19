@@ -1,5 +1,4 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import {
   Command,
@@ -9,6 +8,7 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { SegmentIcon } from '@usertour-packages/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
 import { ComboBox } from '@usertour-packages/combo-box';
 import {
@@ -94,14 +94,14 @@ const RulesSegmentName = () => {
 
   return (
     <div className="flex flex-row">
-      <Popover.Popover open={open} onOpenChange={setOpen}>
-        <Popover.PopoverTrigger asChild>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
           <Button variant="outline" className="flex-1 justify-between ">
             {selectedSegment?.name}
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
-        </Popover.PopoverTrigger>
-        <Popover.PopoverContent className="w-[350px] p-0" style={{ zIndex }}>
+        </PopoverTrigger>
+        <PopoverContent className="w-[350px] p-0" style={{ zIndex }}>
           <Command filter={handleFilter}>
             <CommandInput placeholder="" />
             <CommandEmpty>No items found.</CommandEmpty>
@@ -152,8 +152,8 @@ const RulesSegmentName = () => {
               </CommandGroup>
             </ScrollArea>
           </Command>
-        </Popover.PopoverContent>
-      </Popover.Popover>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };

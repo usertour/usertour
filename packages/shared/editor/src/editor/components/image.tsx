@@ -1,8 +1,3 @@
-import { useCallback, useMemo, useState } from 'react';
-
-import * as Popover from '@radix-ui/react-popover';
-import Upload from 'rc-upload';
-
 import { Button } from '@usertour-packages/button';
 import { Checkbox } from '@usertour-packages/checkbox';
 import { ComboBox } from '@usertour-packages/combo-box';
@@ -17,6 +12,7 @@ import {
 } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import {
   Tooltip,
   TooltipContent,
@@ -25,8 +21,11 @@ import {
 } from '@usertour-packages/tooltip';
 import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
-import { useContentEditorContext } from '../../contexts/content-editor-context';
+import Upload from 'rc-upload';
+import { useCallback, useMemo, useState } from 'react';
+
 /* eslint-disable @next/next/no-img-element */
+import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorElementInsertDirection,
   ContentEditorImageElement,
@@ -187,13 +186,13 @@ const ActionButtons = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            className="flex-none hover:bg-red-200"
+            className="flex-none hover:bg-destructive/20"
             variant="ghost"
             size="icon"
             onClick={onDelete}
             disabled={isLoading}
           >
-            <DeleteIcon className="fill-red-500" />
+            <DeleteIcon className="fill-destructive" />
           </Button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">Delete image</TooltipContent>
@@ -373,8 +372,8 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
 
   // Render image with popover
   const renderImageWithPopover = () => (
-    <Popover.Root>
-      <Popover.Trigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <img
           src={element.url}
           style={imageStyle}
@@ -382,52 +381,50 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
           alt="Editable content"
           onError={() => toast({ variant: 'destructive', title: 'Failed to load image' })}
         />
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          className="z-50 w-72 rounded-md border bg-background p-4 text-popover-foreground shadow-md outline-none"
-          side="right"
-          style={{ zIndex: zIndex }}
-          sideOffset={10}
-        >
-          <div className="flex flex-col gap-2.5">
-            <Label htmlFor="image-width">Image width</Label>
-            <div className="flex gap-x-2">
-              <Input
-                id="image-width"
-                type="text"
-                value={ensureDimensionWithDefaults(element.width).value?.toString() || ''}
-                placeholder="Column width"
-                onChange={handleWidthValueChange}
-                className="bg-background"
-              />
-              <ComboBox
-                options={WIDTH_TYPE_OPTIONS}
-                value={ensureDimensionWithDefaults(element.width).type}
-                onValueChange={handleWidthTypeChange}
-                placeholder="Select type"
-                className="flex-none w-20 h-auto px-2"
-                contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
-              />
-            </div>
-
-            <MarginControls
-              element={element}
-              onMarginChange={handleMarginValueChange}
-              onMarginEnabledChange={handleMarginCheckedChange}
+      </PopoverTrigger>
+      <PopoverContent
+        className="bg-background"
+        side="right"
+        style={{ zIndex: zIndex }}
+        sideOffset={10}
+      >
+        <div className="flex flex-col gap-2.5">
+          <Label htmlFor="image-width">Image width</Label>
+          <div className="flex gap-x-2">
+            <Input
+              id="image-width"
+              type="text"
+              value={ensureDimensionWithDefaults(element.width).value?.toString() || ''}
+              placeholder="Column width"
+              onChange={handleWidthValueChange}
+              className="bg-background"
             />
-
-            <ActionButtons
-              onDelete={handleDelete}
-              onReplace={handleUpload}
-              onAddLeft={handleAddLeft}
-              onAddRight={handleAddRight}
-              isLoading={isLoading}
+            <ComboBox
+              options={WIDTH_TYPE_OPTIONS}
+              value={ensureDimensionWithDefaults(element.width).type}
+              onValueChange={handleWidthTypeChange}
+              placeholder="Select type"
+              className="flex-none w-20 h-auto px-2"
+              contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
             />
           </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+
+          <MarginControls
+            element={element}
+            onMarginChange={handleMarginValueChange}
+            onMarginEnabledChange={handleMarginCheckedChange}
+          />
+
+          <ActionButtons
+            onDelete={handleDelete}
+            onReplace={handleUpload}
+            onAddLeft={handleAddLeft}
+            onAddRight={handleAddRight}
+            isLoading={isLoading}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 
   // Render upload area

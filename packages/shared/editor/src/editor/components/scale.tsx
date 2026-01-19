@@ -1,16 +1,15 @@
-import * as Popover from '@radix-ui/react-popover';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import * as Widget from '@usertour-packages/widget';
-import { useCallback, useEffect, useState, useMemo, memo } from 'react';
+import { isEmptyString } from '@usertour/helpers';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+
 import { ContentActions } from '../..';
+import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import type { ContentEditorScaleElement } from '../../types/editor';
-import { EditorError } from '../../components/editor-error';
-import { EditorErrorContent } from '../../components/editor-error';
-import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
 
 // Constants
@@ -244,8 +243,8 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
   return (
     <EditorError open={openError}>
       <EditorErrorAnchor className="w-full">
-        <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
-          <Popover.Trigger asChild>
+        <Popover onOpenChange={handleOpenChange} open={isOpen}>
+          <PopoverTrigger asChild>
             <div className="w-full">
               <ScaleDisplay
                 lowRange={localData.lowRange}
@@ -254,106 +253,103 @@ export const ContentEditorScale = (props: ContentEditorScaleProps) => {
                 highLabel={localData.highLabel}
               />
             </div>
-          </Popover.Trigger>
+          </PopoverTrigger>
+          <PopoverContent
+            className={POPOVER_CONTENT_CLASS}
+            style={{ zIndex }}
+            sideOffset={10}
+            side="right"
+          >
+            <div className={FORM_CONTAINER_CLASS}>
+              <Label htmlFor="scale-question">Question name</Label>
+              <Input
+                id="scale-question"
+                value={localData.name}
+                onChange={(e) => handleDataChange({ name: e.target.value })}
+                placeholder="Question name?"
+                aria-describedby={validationErrors.name ? 'name-error' : undefined}
+              />
+              {validationErrors.name && (
+                <p id="name-error" className="text-sm text-destructive">
+                  {validationErrors.name}
+                </p>
+              )}
 
-          <Popover.Portal>
-            <Popover.Content
-              className={POPOVER_CONTENT_CLASS}
-              style={{ zIndex }}
-              sideOffset={10}
-              side="right"
-            >
-              <div className={FORM_CONTAINER_CLASS}>
-                <Label htmlFor="scale-question">Question name</Label>
+              <Label>When answer is submitted</Label>
+              <ContentActions
+                zIndex={zIndex}
+                isShowIf={false}
+                isShowLogic={false}
+                currentStep={currentStep}
+                currentVersion={currentVersion}
+                onDataChange={(actions) => handleDataChange({ actions })}
+                defaultConditions={localData.actions || []}
+                attributes={attributes}
+                contents={contentList}
+                createStep={createStep}
+              />
+
+              <Label className="flex items-center gap-1">Scale range</Label>
+              <div className={RANGE_INPUT_CONTAINER_CLASS}>
                 <Input
-                  id="scale-question"
-                  value={localData.name}
-                  onChange={(e) => handleDataChange({ name: e.target.value })}
-                  placeholder="Question name?"
-                  aria-describedby={validationErrors.name ? 'name-error' : undefined}
+                  type="number"
+                  value={localData.lowRange}
+                  placeholder="0"
+                  min={0}
+                  max={100}
+                  onChange={(e) => handleRangeChange('lowRange', e.target.value)}
+                  aria-describedby={validationErrors.range ? 'range-error' : undefined}
                 />
-                {validationErrors.name && (
-                  <p id="name-error" className="text-sm text-red-500">
-                    {validationErrors.name}
-                  </p>
-                )}
-
-                <Label>When answer is submitted</Label>
-                <ContentActions
-                  zIndex={zIndex}
-                  isShowIf={false}
-                  isShowLogic={false}
-                  currentStep={currentStep}
-                  currentVersion={currentVersion}
-                  onDataChange={(actions) => handleDataChange({ actions })}
-                  defaultConditions={localData.actions || []}
-                  attributes={attributes}
-                  contents={contentList}
-                  createStep={createStep}
-                />
-
-                <Label className="flex items-center gap-1">Scale range</Label>
-                <div className={RANGE_INPUT_CONTAINER_CLASS}>
-                  <Input
-                    type="number"
-                    value={localData.lowRange}
-                    placeholder="0"
-                    min={0}
-                    max={100}
-                    onChange={(e) => handleRangeChange('lowRange', e.target.value)}
-                    aria-describedby={validationErrors.range ? 'range-error' : undefined}
-                  />
-                  <p>-</p>
-                  <Input
-                    type="number"
-                    value={localData.highRange}
-                    placeholder="10"
-                    min={0}
-                    max={100}
-                    onChange={(e) => handleRangeChange('highRange', e.target.value)}
-                    aria-describedby={validationErrors.range ? 'range-error' : undefined}
-                  />
-                </div>
-                {validationErrors.range && (
-                  <p id="range-error" className="text-sm text-red-500">
-                    {validationErrors.range}
-                  </p>
-                )}
-
-                <Label className="flex items-center gap-1">
-                  Labels
-                  <QuestionTooltip>
-                    Below each option, provide labels to clearly convey their meaning, such as "Bad"
-                    positioned under the left option and "Good" under the right.
-                  </QuestionTooltip>
-                </Label>
-                <div className={LABELS_INPUT_CONTAINER_CLASS}>
-                  <Input
-                    type="text"
-                    value={localData.lowLabel || ''}
-                    placeholder="Low label"
-                    onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
-                  />
-                  <Input
-                    type="text"
-                    value={localData.highLabel || ''}
-                    placeholder="High label"
-                    onChange={(e) => handleDataChange({ highLabel: e.target.value })}
-                  />
-                </div>
-
-                <BindAttribute
-                  zIndex={zIndex}
-                  bindToAttribute={localData.bindToAttribute || false}
-                  selectedAttribute={localData.selectedAttribute}
-                  projectId={projectId}
-                  onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
-                  onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+                <p>-</p>
+                <Input
+                  type="number"
+                  value={localData.highRange}
+                  placeholder="10"
+                  min={0}
+                  max={100}
+                  onChange={(e) => handleRangeChange('highRange', e.target.value)}
+                  aria-describedby={validationErrors.range ? 'range-error' : undefined}
                 />
               </div>
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+              {validationErrors.range && (
+                <p id="range-error" className="text-sm text-destructive">
+                  {validationErrors.range}
+                </p>
+              )}
+
+              <Label className="flex items-center gap-1">
+                Labels
+                <QuestionTooltip>
+                  Below each option, provide labels to clearly convey their meaning, such as "Bad"
+                  positioned under the left option and "Good" under the right.
+                </QuestionTooltip>
+              </Label>
+              <div className={LABELS_INPUT_CONTAINER_CLASS}>
+                <Input
+                  type="text"
+                  value={localData.lowLabel || ''}
+                  placeholder="Low label"
+                  onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
+                />
+                <Input
+                  type="text"
+                  value={localData.highLabel || ''}
+                  placeholder="High label"
+                  onChange={(e) => handleDataChange({ highLabel: e.target.value })}
+                />
+              </div>
+
+              <BindAttribute
+                zIndex={zIndex}
+                bindToAttribute={localData.bindToAttribute || false}
+                selectedAttribute={localData.selectedAttribute}
+                projectId={projectId}
+                onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+                onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
       </EditorErrorAnchor>
       <EditorErrorContent side="bottom" style={{ zIndex: zIndex }}>
         {isEmptyString(localData.name)

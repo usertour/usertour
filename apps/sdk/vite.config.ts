@@ -210,7 +210,7 @@ export default defineConfig(({ command, mode }) => {
         },
       },
       optimizeDeps: {
-        include: ['@dnd-kit/core', '@radix-ui/react-popover'],
+        include: ['@dnd-kit/core'],
         force: true,
       },
     } satisfies UserConfigExport;

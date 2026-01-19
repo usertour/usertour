@@ -1,5 +1,4 @@
 import { CaretSortIcon, CheckIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import {
   Command,
@@ -9,10 +8,12 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
+import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-packages/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
+import { cn } from '@usertour-packages/tailwind';
 import { getContentError } from '@usertour/helpers';
 import { Content, ContentDataType, Step } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
 import {
   Dispatch,
   SetStateAction,
@@ -23,6 +24,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
 import {
@@ -37,7 +39,6 @@ import {
 } from './actions-popper';
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
-import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-packages/icons';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface SelectItemType {
@@ -134,15 +135,15 @@ const PopoverWrapper = ({
   children: React.ReactNode;
   zIndex: number;
 }) => (
-  <Popover.Popover open={open} onOpenChange={onOpenChange}>
-    <Popover.PopoverTrigger asChild>{trigger}</Popover.PopoverTrigger>
-    <Popover.PopoverContent
+  <Popover open={open} onOpenChange={onOpenChange}>
+    <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+    <PopoverContent
       className="w-[350px] p-0"
       style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 1 }}
     >
       {children}
-    </Popover.PopoverContent>
-  </Popover.Popover>
+    </PopoverContent>
+  </Popover>
 );
 
 const ContentActionsContentsName = () => {

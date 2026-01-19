@@ -1,17 +1,17 @@
-import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import { Checkbox } from '@usertour-packages/checkbox';
+import { ComboBox } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
-import { VideoIcon } from '@usertour-packages/icons';
 import {
   ArrowRightIcon,
   DeleteIcon,
   InsertColumnLeftIcon,
   InsertColumnRightIcon,
+  VideoIcon,
 } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import { ComboBox } from '@usertour-packages/combo-box';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import {
   QuestionTooltip,
   Tooltip,
@@ -20,15 +20,16 @@ import {
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
 import { ContentOmbedInfo } from '@usertour/types';
-import { ChangeEvent, useCallback, useMemo, useState, forwardRef } from 'react';
-import { useContentEditorContext } from '../../contexts/content-editor-context';
+import { ChangeEvent, forwardRef, useCallback, useMemo, useState } from 'react';
+
 /* eslint-disable @next/next/no-img-element */
+import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorElementInsertDirection,
   ContentEditorEmebedElement,
+  ContentEditorHeight,
   ContentEditorMargin,
   ContentEditorWidth,
-  ContentEditorHeight,
 } from '../../types/editor';
 
 // Constants
@@ -313,12 +314,12 @@ const ActionButtons = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            className="flex-none hover:bg-red-200"
+            className="flex-none hover:bg-destructive/20"
             variant="ghost"
             size="icon"
             onClick={onDelete}
           >
-            <DeleteIcon className="fill-red-700" />
+            <DeleteIcon className="fill-destructive" />
           </Button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">Delete embed</TooltipContent>
@@ -497,82 +498,79 @@ export const ContentEditorEmbed = ({ element, path, id }: ContentEditorEmbedProp
   }, [element, getOembedInfo, updateElement, id]);
 
   return (
-    <Popover.Root>
-      <Popover.Trigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <EmbedContent element={element} isReadOnly={false} />
-      </Popover.Trigger>
-
-      <Popover.Portal>
-        <Popover.Content
-          className="z-50 rounded-md border bg-background p-4 text-popover-foreground shadow-md outline-none"
-          side="right"
-          align="start"
-          style={{ zIndex }}
-          sideOffset={10}
-        >
-          <div className="flex flex-col gap-2.5">
-            <div className="flex flex-row space-x-1">
-              <Label htmlFor="embed-url">Embed URL</Label>
-              <QuestionTooltip>
-                Enter the URL of any content you want to embed. This could be a YouTube video, a
-                form, documentation, a website, or even a direct link to a video file. We support
-                most embeddable content from the web.
-              </QuestionTooltip>
-            </div>
-            <div className="flex gap-x-2">
-              <Input
-                id="embed-url"
-                placeholder="Enter URL"
-                value={element.url}
-                onChange={handleUrlChange}
-                className="bg-background w-80"
-                disabled={isLoading}
-              />
-              <Button
-                className="flex-none w-20"
-                variant="ghost"
-                size="default"
-                onClick={handleSubmitUrl}
-                disabled={isLoading || !element.url.trim()}
-              >
-                <ArrowRightIcon className="mr-1" />
-                {isLoading ? 'Loading...' : 'Load'}
-              </Button>
-            </div>
-
-            <DimensionControl
-              label="Display width"
-              value={element.width?.value}
-              type={element.width?.type as DimensionType}
-              onValueChange={handleWidthValueChange}
-              onTypeChange={handleWidthTypeChange}
-              placeholder="Display width"
-            />
-
-            <DimensionControl
-              label="Display height"
-              value={element.height?.value}
-              type={element.height?.type as DimensionType}
-              onValueChange={handleHeightValueChange}
-              onTypeChange={handleHeightTypeChange}
-              placeholder="Display height"
-            />
-
-            <MarginControl
-              margin={element.margin}
-              onValueChange={handleMarginValueChange}
-              onCheckedChange={handleMarginCheckedChange}
-            />
-
-            <ActionButtons
-              onDelete={handleDelete}
-              onAddLeft={handleAddLeft}
-              onAddRight={handleAddRight}
-            />
+      </PopoverTrigger>
+      <PopoverContent
+        className="bg-background"
+        side="right"
+        align="start"
+        style={{ zIndex }}
+        sideOffset={10}
+      >
+        <div className="flex flex-col gap-2.5">
+          <div className="flex flex-row space-x-1">
+            <Label htmlFor="embed-url">Embed URL</Label>
+            <QuestionTooltip>
+              Enter the URL of any content you want to embed. This could be a YouTube video, a form,
+              documentation, a website, or even a direct link to a video file. We support most
+              embeddable content from the web.
+            </QuestionTooltip>
           </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+          <div className="flex gap-x-2">
+            <Input
+              id="embed-url"
+              placeholder="Enter URL"
+              value={element.url}
+              onChange={handleUrlChange}
+              className="bg-background w-80"
+              disabled={isLoading}
+            />
+            <Button
+              className="flex-none w-20"
+              variant="ghost"
+              size="default"
+              onClick={handleSubmitUrl}
+              disabled={isLoading || !element.url.trim()}
+            >
+              <ArrowRightIcon className="mr-1" />
+              {isLoading ? 'Loading...' : 'Load'}
+            </Button>
+          </div>
+
+          <DimensionControl
+            label="Display width"
+            value={element.width?.value}
+            type={element.width?.type as DimensionType}
+            onValueChange={handleWidthValueChange}
+            onTypeChange={handleWidthTypeChange}
+            placeholder="Display width"
+          />
+
+          <DimensionControl
+            label="Display height"
+            value={element.height?.value}
+            type={element.height?.type as DimensionType}
+            onValueChange={handleHeightValueChange}
+            onTypeChange={handleHeightTypeChange}
+            placeholder="Display height"
+          />
+
+          <MarginControl
+            margin={element.margin}
+            onValueChange={handleMarginValueChange}
+            onCheckedChange={handleMarginCheckedChange}
+          />
+
+          <ActionButtons
+            onDelete={handleDelete}
+            onAddLeft={handleAddLeft}
+            onAddRight={handleAddRight}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

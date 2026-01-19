@@ -1,15 +1,15 @@
-import * as Popover from '@radix-ui/react-popover';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import * as Widget from '@usertour-packages/widget';
-import { useCallback, useEffect, useState, useMemo, memo } from 'react';
+import { isEmptyString } from '@usertour/helpers';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+
 import { ContentActions } from '../..';
+import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorNPSElement } from '../../types/editor';
-import { EditorError, EditorErrorContent } from '../../components/editor-error';
-import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
 
 // Constants
@@ -221,29 +221,26 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
   return (
     <EditorError open={openError}>
       <EditorErrorAnchor className="w-full">
-        <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
-          <Popover.Trigger asChild>
+        <Popover onOpenChange={handleOpenChange} open={isOpen}>
+          <PopoverTrigger asChild>
             <div className="w-full">
               <NPSScale />
               <NPSLabels lowLabel={localData.lowLabel} highLabel={localData.highLabel} />
             </div>
-          </Popover.Trigger>
-
-          <Popover.Portal>
-            <Popover.Content
-              className="z-50 w-72 rounded-md border bg-background p-4 shadow-lg"
-              style={{ zIndex }}
-              sideOffset={10}
-              side="right"
-            >
-              <NPSPopoverContent
-                localData={localData}
-                handleDataChange={handleDataChange}
-                contextProps={contextProps}
-              />
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+          </PopoverTrigger>
+          <PopoverContent
+            className="bg-background shadow-lg"
+            style={{ zIndex }}
+            sideOffset={10}
+            side="right"
+          >
+            <NPSPopoverContent
+              localData={localData}
+              handleDataChange={handleDataChange}
+              contextProps={contextProps}
+            />
+          </PopoverContent>
+        </Popover>
       </EditorErrorAnchor>
       <EditorErrorContent side="bottom" style={{ zIndex }}>
         Question name is required

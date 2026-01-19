@@ -1,15 +1,21 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DragHandleDots2Icon, GearIcon } from '@radix-ui/react-icons';
-import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
-import { cn } from '@usertour-packages/tailwind';
 import { ComboBox, ComboBoxOption } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverArrow,
+  PopoverContent,
+  PopoverTrigger,
+} from '@usertour-packages/popover';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { cn } from '@usertour-packages/tailwind';
 import {
   Tooltip,
   TooltipContent,
@@ -18,6 +24,7 @@ import {
 } from '@usertour-packages/tooltip';
 import { ReactNode, forwardRef, useCallback, useMemo, useRef, useState } from 'react';
 import { useEvent } from 'react-use';
+
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorColumnElement,
@@ -137,12 +144,12 @@ const ActionButtons = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            className="flex-none hover:bg-red-200"
+            className="flex-none hover:bg-destructive/20"
             variant="ghost"
             size="icon"
             onClick={onDelete}
           >
-            <DeleteIcon className="fill-red-700" />
+            <DeleteIcon className="fill-destructive" />
           </Button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">Delete column</TooltipContent>
@@ -291,7 +298,7 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
   const composedRefs = useComposedRefs(ref as any, setNodeRef as any);
 
   return (
-    <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <div
         style={{ ...columnStyle, ...dragStyle }}
         ref={composedRefs}
@@ -311,12 +318,12 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
       >
         {!isDragging && isActive && (
           <div className="absolute -top-4 -left-[1px] h-4 px-1 rounded-none rounded-t bg-primary flex flex-row text-primary-foreground items-center justify-center">
-            <Popover.Anchor asChild>
-              <Popover.Trigger className="flex flex-row !text-[10px] items-center justify-center">
+            <PopoverAnchor asChild>
+              <PopoverTrigger className="flex flex-row !text-[10px] items-center justify-center">
                 column
                 <GearIcon className="ml-1 h-3 w-3" />
-              </Popover.Trigger>
-            </Popover.Anchor>
+              </PopoverTrigger>
+            </PopoverAnchor>
             <div
               className="items-center justify-center cursor-move"
               {...attributes}
@@ -330,64 +337,57 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
         {children}
       </div>
       {isActive && (
-        <Popover.Portal>
-          <Popover.Content
-            className="z-50 w-72 rounded-md border bg-background p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
-            side="left"
-            style={{ zIndex }}
-            sideOffset={5}
-          >
-            <div className="flex flex-col gap-2.5">
-              <Label>Column width</Label>
-              <div className="flex gap-x-2">
-                {width.type !== WIDTH_TYPES.FILL && (
-                  <Input
-                    type="number"
-                    value={width.value?.toString() || ''}
-                    placeholder="Column width"
-                    onChange={handleWidthValueChange}
-                    className="bg-background flex-none w-[120px]"
-                  />
-                )}
-                <ComboBox
-                  options={WIDTH_TYPE_OPTIONS}
-                  value={width.type}
-                  onValueChange={handleWidthTypeChange}
-                  placeholder="Select width type"
-                  className="shrink"
-                  contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+        <PopoverContent className="bg-background" side="left" style={{ zIndex }} sideOffset={5}>
+          <div className="flex flex-col gap-2.5">
+            <Label>Column width</Label>
+            <div className="flex gap-x-2">
+              {width.type !== WIDTH_TYPES.FILL && (
+                <Input
+                  type="number"
+                  value={width.value?.toString() || ''}
+                  placeholder="Column width"
+                  onChange={handleWidthValueChange}
+                  className="bg-background flex-none w-[120px]"
                 />
-              </div>
-
-              <Label>Distribute content</Label>
+              )}
               <ComboBox
-                options={JUSTIFY_CONTENT_OPTIONS_LIST}
-                value={element.justifyContent || DEFAULT_JUSTIFY_CONTENT}
-                onValueChange={handleDistributeValueChange}
-                placeholder="Select a distribute"
+                options={WIDTH_TYPE_OPTIONS}
+                value={width.type}
+                onValueChange={handleWidthTypeChange}
+                placeholder="Select width type"
+                className="shrink"
                 contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
-              />
-
-              <Label>Align Items</Label>
-              <ComboBox
-                options={ALIGN_ITEMS_OPTIONS_LIST}
-                value={element.alignItems || DEFAULT_ALIGN_ITEMS}
-                onValueChange={handleAlignValueChange}
-                placeholder="Select align items"
-                contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
-              />
-
-              <ActionButtons
-                onDelete={handleDelete}
-                onAddLeft={handleAddLeftColumn}
-                onAddRight={handleAddRightColumn}
               />
             </div>
-            <Popover.Arrow className="fill-slate-900" />
-          </Popover.Content>
-        </Popover.Portal>
+
+            <Label>Distribute content</Label>
+            <ComboBox
+              options={JUSTIFY_CONTENT_OPTIONS_LIST}
+              value={element.justifyContent || DEFAULT_JUSTIFY_CONTENT}
+              onValueChange={handleDistributeValueChange}
+              placeholder="Select a distribute"
+              contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+            />
+
+            <Label>Align Items</Label>
+            <ComboBox
+              options={ALIGN_ITEMS_OPTIONS_LIST}
+              value={element.alignItems || DEFAULT_ALIGN_ITEMS}
+              onValueChange={handleAlignValueChange}
+              placeholder="Select align items"
+              contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+            />
+
+            <ActionButtons
+              onDelete={handleDelete}
+              onAddLeft={handleAddLeftColumn}
+              onAddRight={handleAddRightColumn}
+            />
+          </div>
+          <PopoverArrow className="fill-slate-900" />
+        </PopoverContent>
       )}
-    </Popover.Root>
+    </Popover>
   );
 };
 

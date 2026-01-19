@@ -1,16 +1,17 @@
-import * as Popover from '@radix-ui/react-popover';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { Switch } from '@usertour-packages/switch';
 import * as Widget from '@usertour-packages/widget';
+import { isEmptyString } from '@usertour/helpers';
+import { BizAttributeTypes } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { ContentActions } from '../..';
+import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorSingleLineTextElement } from '../../types/editor';
-import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
-import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
-import { BizAttributeTypes } from '@usertour/types';
 
 interface ContentEditorSingleLineTextProps {
   element: ContentEditorSingleLineTextElement;
@@ -141,8 +142,8 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
   return (
     <EditorError open={openError}>
       <EditorErrorAnchor className="w-full">
-        <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
-          <Popover.Trigger asChild>
+        <Popover onOpenChange={handleOpenChange} open={isOpen}>
+          <PopoverTrigger asChild>
             <div className="flex flex-col gap-2 items-center w-full">
               <Widget.Input
                 placeholder={defaultValues.placeholder}
@@ -154,91 +155,88 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
                 <Widget.Button className="flex-none">{defaultValues.buttonText}</Widget.Button>
               </div>
             </div>
-          </Popover.Trigger>
-
-          <Popover.Portal>
-            <Popover.Content
-              className="z-50 w-72 rounded-md border bg-background p-4 shadow-lg"
-              style={{ zIndex }}
-              sideOffset={10}
-              side="right"
-              aria-label="Single line text configuration"
-            >
-              <div className="flex flex-col gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="question-name">Question name</Label>
-                  <Input
-                    id="question-name"
-                    value={localData.name}
-                    onChange={handleNameChange}
-                    placeholder="Enter question name"
-                    aria-describedby={isNameEmpty ? 'name-error' : undefined}
-                    aria-invalid={isNameEmpty}
-                  />
-                  {isNameEmpty && (
-                    <div id="name-error" className="text-sm text-red-500">
-                      Question name is required
-                    </div>
-                  )}
-                </div>
-
-                <Label>When answer is submitted</Label>
-                <ContentActions
-                  zIndex={zIndex}
-                  isShowIf={false}
-                  isShowLogic={false}
-                  currentStep={currentStep}
-                  currentVersion={currentVersion}
-                  onDataChange={handleActionsChange}
-                  defaultConditions={localData.actions || []}
-                  attributes={attributes}
-                  contents={contentList}
-                  createStep={createStep}
+          </PopoverTrigger>
+          <PopoverContent
+            className="bg-background shadow-lg"
+            style={{ zIndex }}
+            sideOffset={10}
+            side="right"
+            aria-label="Single line text configuration"
+          >
+            <div className="flex flex-col gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="question-name">Question name</Label>
+                <Input
+                  id="question-name"
+                  value={localData.name}
+                  onChange={handleNameChange}
+                  placeholder="Enter question name"
+                  aria-describedby={isNameEmpty ? 'name-error' : undefined}
+                  aria-invalid={isNameEmpty}
                 />
+                {isNameEmpty && (
+                  <div id="name-error" className="text-sm text-destructive">
+                    Question name is required
+                  </div>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="placeholder">Placeholder text</Label>
-                  <Input
-                    id="placeholder"
-                    value={localData.placeholder}
-                    onChange={handlePlaceholderChange}
-                    placeholder="Enter placeholder text"
-                  />
-                </div>
+              <Label>When answer is submitted</Label>
+              <ContentActions
+                zIndex={zIndex}
+                isShowIf={false}
+                isShowLogic={false}
+                currentStep={currentStep}
+                currentVersion={currentVersion}
+                onDataChange={handleActionsChange}
+                defaultConditions={localData.actions || []}
+                attributes={attributes}
+                contents={contentList}
+                createStep={createStep}
+              />
 
-                <div className="space-y-2">
-                  <Label htmlFor="button-text">Submit button text</Label>
-                  <Input
-                    id="button-text"
-                    value={localData.buttonText}
-                    onChange={handleButtonTextChange}
-                    placeholder="Enter button text"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="required">Required</Label>
-                  <Switch
-                    id="required"
-                    className="data-[state=unchecked]:bg-muted"
-                    checked={localData.required}
-                    onCheckedChange={handleRequiredChange}
-                  />
-                </div>
-
-                <BindAttribute
-                  zIndex={zIndex}
-                  bindToAttribute={localData.bindToAttribute || false}
-                  projectId={projectId}
-                  selectedAttribute={localData.selectedAttribute}
-                  onBindChange={handleBindChange}
-                  onAttributeChange={handleAttributeChange}
-                  dataType={BizAttributeTypes.String}
+              <div className="space-y-2">
+                <Label htmlFor="placeholder">Placeholder text</Label>
+                <Input
+                  id="placeholder"
+                  value={localData.placeholder}
+                  onChange={handlePlaceholderChange}
+                  placeholder="Enter placeholder text"
                 />
               </div>
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+
+              <div className="space-y-2">
+                <Label htmlFor="button-text">Submit button text</Label>
+                <Input
+                  id="button-text"
+                  value={localData.buttonText}
+                  onChange={handleButtonTextChange}
+                  placeholder="Enter button text"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="required">Required</Label>
+                <Switch
+                  id="required"
+                  className="data-[state=unchecked]:bg-muted"
+                  checked={localData.required}
+                  onCheckedChange={handleRequiredChange}
+                />
+              </div>
+
+              <BindAttribute
+                zIndex={zIndex}
+                bindToAttribute={localData.bindToAttribute || false}
+                projectId={projectId}
+                selectedAttribute={localData.selectedAttribute}
+                onBindChange={handleBindChange}
+                onAttributeChange={handleAttributeChange}
+                dataType={BizAttributeTypes.String}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
       </EditorErrorAnchor>
       <EditorErrorContent side="bottom" style={{ zIndex: zIndex }}>
         Question name is required

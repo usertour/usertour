@@ -69,11 +69,7 @@ export const ColorPicker = (props: ColorPickerProps) => {
       <PopoverContent
         align="start"
         sideOffset={5}
-        className="z-50 w-full p-0"
-        style={{
-          filter:
-            'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-        }}
+        className="w-full border-none bg-transparent p-0 shadow-none drop-shadow-popover"
       >
         <ColorPickerPanel
           color={color}

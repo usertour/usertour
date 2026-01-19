@@ -1,12 +1,4 @@
-import { Switch } from '@usertour-packages/switch';
-import { Label } from '@usertour-packages/label';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import * as Popover from '@radix-ui/react-popover';
-import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { AttributeCreateForm } from '../../form/attribute-create-form';
-import { useCallback, useState } from 'react';
-import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
 import { Button } from '@usertour-packages/button';
 import {
   Command,
@@ -15,8 +7,17 @@ import {
   CommandInput,
   CommandItem,
 } from '@usertour-packages/command';
+import { Label } from '@usertour-packages/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
+import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
+import { Switch } from '@usertour-packages/switch';
 import { cn } from '@usertour-packages/tailwind';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
+import { useCallback, useState } from 'react';
+
+import { AttributeCreateForm } from '../../form/attribute-create-form';
 
 interface BindAttributeProps {
   bindToAttribute: boolean;
@@ -88,18 +89,15 @@ export const BindAttribute = ({
       {bindToAttribute && (
         <>
           <div className="flex flex-row">
-            <Popover.Popover open={open} onOpenChange={setOpen}>
-              <Popover.PopoverTrigger asChild>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
                 <Button variant="outline" className="flex-1 justify-between">
                   {selectedAttributeData?.displayName || 'Select user attribute'}
                   <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
-              </Popover.PopoverTrigger>
-              <Popover.PopoverContent
-                className={cn(
-                  'w-64 p-0 border border-border rounded-md shadow-md',
-                  popoverContentClassName,
-                )}
+              </PopoverTrigger>
+              <PopoverContent
+                className={cn('w-64 p-0 border-border', popoverContentClassName)}
                 style={{ zIndex }}
               >
                 <Command>
@@ -135,8 +133,8 @@ export const BindAttribute = ({
                     </CommandGroup>
                   </ScrollArea>
                 </Command>
-              </Popover.PopoverContent>
-            </Popover.Popover>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <AttributeCreateForm

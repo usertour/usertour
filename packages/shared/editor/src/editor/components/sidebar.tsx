@@ -1,14 +1,16 @@
-import * as Popover from '@radix-ui/react-popover';
 import { EDITOR_SIDEBAR } from '@usertour-packages/constants';
 import { PlusIcon3 } from '@usertour-packages/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import type { PopoverProps } from '@usertour-packages/popover';
+import { cuid, isQuestionElement } from '@usertour/helpers';
 import { CSSProperties, useEffect, useState } from 'react';
+
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorElement,
   ContentEditorQuestionElement,
   ContentEditorSideBarType,
 } from '../../types/editor';
-import { cuid, isQuestionElement } from '@usertour/helpers';
 import { contentTypesConfig } from '../../utils/config';
 
 const selectStyle: CSSProperties = {
@@ -130,7 +132,7 @@ const getStyle = (type: ContentEditorSideBarType, isActived: boolean) => {
 };
 
 export const ContentEditorSideBarPopper = (
-  props: Popover.PopoverProps & {
+  props: PopoverProps & {
     onClick: (element: ContentEditorElement) => void;
   },
 ) => {
@@ -155,33 +157,27 @@ export const ContentEditorSideBarPopper = (
   };
 
   return (
-    <Popover.Root {...props}>
-      <Popover.Trigger asChild>{props.children}</Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          sideOffset={10}
-          className="z-50 bg-background p-4 rounded-lg"
-          style={{
-            zIndex: zIndex + EDITOR_SIDEBAR,
-            filter:
-              'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-          }}
-        >
-          <div className="grid grid-cols-3 gap-2">
-            {filteredContentTypes.map(({ name, icon: Icon, element }, index) => (
-              <div
-                key={index}
-                onClick={() => handleClick(element)}
-                className="rounded-lg text-sm flex flex-col border hover:shadow-lg dark:hover:shadow-lg-light cursor-pointer p-4 items-center justify-center pb-2"
-              >
-                <Icon className="h-6 w-6 text-primary" />
-                {name}
-              </div>
-            ))}
-          </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+    <Popover {...props}>
+      <PopoverTrigger asChild>{props.children}</PopoverTrigger>
+      <PopoverContent
+        sideOffset={10}
+        className="w-auto border-none bg-background rounded-lg drop-shadow-popover"
+        style={{ zIndex: zIndex + EDITOR_SIDEBAR }}
+      >
+        <div className="grid grid-cols-3 gap-2">
+          {filteredContentTypes.map(({ name, icon: Icon, element }, index) => (
+            <div
+              key={index}
+              onClick={() => handleClick(element)}
+              className="rounded-lg text-sm flex flex-col border hover:shadow-lg dark:hover:shadow-lg-light cursor-pointer p-4 items-center justify-center pb-2"
+            >
+              <Icon className="h-6 w-6 text-primary" />
+              {name}
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

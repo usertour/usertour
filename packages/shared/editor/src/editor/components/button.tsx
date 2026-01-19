@@ -1,20 +1,21 @@
-import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import { Checkbox } from '@usertour-packages/checkbox';
-import * as Widget from '@usertour-packages/widget';
 import { ComboBox, ComboBoxOption } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
+import * as Widget from '@usertour-packages/widget';
 import { RulesCondition } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { ContentActions } from '../..';
 import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -142,12 +143,12 @@ const ActionButtons = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            className="flex-none hover:bg-red-200"
+            className="flex-none hover:bg-destructive/20"
             variant="ghost"
             size="icon"
             onClick={onDelete}
           >
-            <DeleteIcon className="fill-red-500" />
+            <DeleteIcon className="fill-destructive" />
           </Button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">Delete button</TooltipContent>
@@ -276,8 +277,8 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
   return (
     <EditorError open={isShowError}>
       <EditorErrorAnchor>
-        <Popover.Root onOpenChange={setIsOpen} open={isOpen}>
-          <Popover.Trigger asChild>
+        <Popover onOpenChange={setIsOpen} open={isOpen}>
+          <PopoverTrigger asChild>
             <Widget.Button
               variant={element.data.type as any}
               contentEditable={false}
@@ -286,65 +287,63 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
             >
               <span>{element.data.text}</span>
             </Widget.Button>
-          </Popover.Trigger>
-          <Popover.Portal>
-            <Popover.Content
-              className="z-50 w-72 rounded-md border bg-background p-4 text-popover-foreground shadow-md outline-none"
-              side="right"
-              style={{ zIndex: zIndex }}
-              sideOffset={10}
-              alignOffset={-2}
-            >
-              <div className="flex flex-col gap-2.5">
-                <Label htmlFor="button-text">Button text</Label>
-                <Input
-                  type="text"
-                  className="bg-background"
-                  id="button-text"
-                  value={element.data.text}
-                  placeholder="Enter button text"
-                  onChange={handleButtonTextChange}
-                />
+          </PopoverTrigger>
+          <PopoverContent
+            className="bg-background"
+            side="right"
+            style={{ zIndex: zIndex }}
+            sideOffset={10}
+            alignOffset={-2}
+          >
+            <div className="flex flex-col gap-2.5">
+              <Label htmlFor="button-text">Button text</Label>
+              <Input
+                type="text"
+                className="bg-background"
+                id="button-text"
+                value={element.data.text}
+                placeholder="Enter button text"
+                onChange={handleButtonTextChange}
+              />
 
-                <Label>Button style</Label>
-                <ComboBox
-                  options={BUTTON_STYLE_OPTIONS}
-                  value={element.data.type}
-                  onValueChange={handleButtonStyleChange}
-                  placeholder="Select a style"
-                  contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
-                />
+              <Label>Button style</Label>
+              <ComboBox
+                options={BUTTON_STYLE_OPTIONS}
+                value={element.data.type}
+                onValueChange={handleButtonStyleChange}
+                placeholder="Select a style"
+                contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+              />
 
-                <MarginControls
-                  element={element}
-                  onMarginChange={handleMarginValueChange}
-                  onMarginEnabledChange={handleMarginCheckedChange}
-                />
+              <MarginControls
+                element={element}
+                onMarginChange={handleMarginValueChange}
+                onMarginEnabledChange={handleMarginCheckedChange}
+              />
 
-                <Label>When button is clicked</Label>
-                <ContentActions
-                  zIndex={zIndex}
-                  isShowIf={false}
-                  isShowLogic={false}
-                  currentStep={currentStep}
-                  currentVersion={currentVersion}
-                  onDataChange={handleActionChange}
-                  defaultConditions={element?.data?.actions || []}
-                  attributes={attributes}
-                  filterItems={actionItems}
-                  contents={contentList}
-                  createStep={createStep}
-                />
+              <Label>When button is clicked</Label>
+              <ContentActions
+                zIndex={zIndex}
+                isShowIf={false}
+                isShowLogic={false}
+                currentStep={currentStep}
+                currentVersion={currentVersion}
+                onDataChange={handleActionChange}
+                defaultConditions={element?.data?.actions || []}
+                attributes={attributes}
+                filterItems={actionItems}
+                contents={contentList}
+                createStep={createStep}
+              />
 
-                <ActionButtons
-                  onDelete={handleDelete}
-                  onAddLeft={handleAddLeft}
-                  onAddRight={handleAddRight}
-                />
-              </div>
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+              <ActionButtons
+                onDelete={handleDelete}
+                onAddLeft={handleAddLeft}
+                onAddRight={handleAddRight}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
       </EditorErrorAnchor>
       <EditorErrorContent style={{ zIndex: zIndex }}>
         please select at least one action

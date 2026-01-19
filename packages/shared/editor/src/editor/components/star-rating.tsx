@@ -1,16 +1,15 @@
-import * as Popover from '@radix-ui/react-popover';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
-import { useCallback, useEffect, useState, useMemo, memo } from 'react';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { isEmptyString } from '@usertour/helpers';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+
 import { ContentActions } from '../..';
+import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorStarRatingElement } from '../../types/editor';
-import { EditorErrorContent } from '../../components/editor-error';
-import { EditorError } from '../../components/editor-error';
-import { EditorErrorAnchor } from '../../components/editor-error';
-import { isEmptyString } from '@usertour/helpers';
 import { BindAttribute } from './bind-attribute';
 
 // Star SVG path constant to avoid recreation
@@ -218,8 +217,8 @@ export const ContentEditorStarRating = memo<ContentEditorStarRatingProps>((props
   return (
     <EditorError open={openError}>
       <EditorErrorAnchor>
-        <Popover.Root onOpenChange={handleOpenChange} open={isOpen}>
-          <Popover.Trigger asChild>
+        <Popover onOpenChange={handleOpenChange} open={isOpen}>
+          <PopoverTrigger asChild>
             <div>
               <StarRatingDisplay
                 scaleLength={scaleLength}
@@ -232,99 +231,96 @@ export const ContentEditorStarRating = memo<ContentEditorStarRatingProps>((props
                 isInteractive={false}
               />
             </div>
-          </Popover.Trigger>
+          </PopoverTrigger>
+          <PopoverContent
+            className="bg-background shadow-lg"
+            style={{ zIndex }}
+            sideOffset={10}
+            side="right"
+          >
+            <div className="flex flex-col gap-2.5">
+              <Label htmlFor="star-rating-question">Question name</Label>
+              <Input
+                id="star-rating-question"
+                value={localData.name}
+                onChange={(e) => handleDataChange({ name: e.target.value })}
+                placeholder="Question name?"
+                aria-invalid={hasValidationError}
+                aria-describedby={hasValidationError ? 'question-error' : undefined}
+              />
+              {hasValidationError && (
+                <div id="question-error" className="text-sm text-destructive">
+                  Question name is required
+                </div>
+              )}
 
-          <Popover.Portal>
-            <Popover.Content
-              className="z-50 w-72 rounded-md border bg-background p-4 shadow-lg"
-              style={{ zIndex }}
-              sideOffset={10}
-              side="right"
-            >
-              <div className="flex flex-col gap-2.5">
-                <Label htmlFor="star-rating-question">Question name</Label>
+              <Label>When answer is submitted</Label>
+              <ContentActions
+                zIndex={zIndex}
+                isShowIf={false}
+                isShowLogic={false}
+                currentStep={currentStep}
+                currentVersion={currentVersion}
+                onDataChange={(actions) => handleDataChange({ actions })}
+                defaultConditions={localData.actions || []}
+                attributes={attributes}
+                contents={contentList}
+                createStep={createStep}
+              />
+
+              <Label className="flex items-center gap-1">Scale range</Label>
+              <div className="flex flex-row gap-2 items-center">
                 <Input
-                  id="star-rating-question"
-                  value={localData.name}
-                  onChange={(e) => handleDataChange({ name: e.target.value })}
-                  placeholder="Question name?"
-                  aria-invalid={hasValidationError}
-                  aria-describedby={hasValidationError ? 'question-error' : undefined}
+                  type="number"
+                  value={localData.lowRange}
+                  placeholder="Default"
+                  disabled
+                  onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
                 />
-                {hasValidationError && (
-                  <div id="question-error" className="text-sm text-red-500">
-                    Question name is required
-                  </div>
-                )}
-
-                <Label>When answer is submitted</Label>
-                <ContentActions
-                  zIndex={zIndex}
-                  isShowIf={false}
-                  isShowLogic={false}
-                  currentStep={currentStep}
-                  currentVersion={currentVersion}
-                  onDataChange={(actions) => handleDataChange({ actions })}
-                  defaultConditions={localData.actions || []}
-                  attributes={attributes}
-                  contents={contentList}
-                  createStep={createStep}
-                />
-
-                <Label className="flex items-center gap-1">Scale range</Label>
-                <div className="flex flex-row gap-2 items-center">
-                  <Input
-                    type="number"
-                    value={localData.lowRange}
-                    placeholder="Default"
-                    disabled
-                    onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
-                  />
-                  <p>-</p>
-                  <Input
-                    type="number"
-                    value={localData.highRange}
-                    placeholder="Default"
-                    onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
-                    min={localData.lowRange + 1}
-                    max={10}
-                  />
-                </div>
-
-                <Label className="flex items-center gap-1">
-                  Labels
-                  <QuestionTooltip>
-                    Below each option, provide labels to clearly convey their meaning, such as "Bad"
-                    positioned under the left option and "Good" under the right.
-                  </QuestionTooltip>
-                </Label>
-                <div className="flex flex-row gap-2">
-                  <Input
-                    type="text"
-                    value={localData.lowLabel}
-                    placeholder="Default"
-                    onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
-                  />
-                  <Input
-                    type="text"
-                    value={localData.highLabel}
-                    placeholder="Default"
-                    onChange={(e) => handleDataChange({ highLabel: e.target.value })}
-                  />
-                </div>
-
-                <BindAttribute
-                  zIndex={zIndex}
-                  projectId={projectId}
-                  bindToAttribute={localData.bindToAttribute || false}
-                  selectedAttribute={localData.selectedAttribute}
-                  onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
-                  onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+                <p>-</p>
+                <Input
+                  type="number"
+                  value={localData.highRange}
+                  placeholder="Default"
+                  onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
+                  min={localData.lowRange + 1}
+                  max={10}
                 />
               </div>
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+
+              <Label className="flex items-center gap-1">
+                Labels
+                <QuestionTooltip>
+                  Below each option, provide labels to clearly convey their meaning, such as "Bad"
+                  positioned under the left option and "Good" under the right.
+                </QuestionTooltip>
+              </Label>
+              <div className="flex flex-row gap-2">
+                <Input
+                  type="text"
+                  value={localData.lowLabel}
+                  placeholder="Default"
+                  onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
+                />
+                <Input
+                  type="text"
+                  value={localData.highLabel}
+                  placeholder="Default"
+                  onChange={(e) => handleDataChange({ highLabel: e.target.value })}
+                />
+              </div>
+
+              <BindAttribute
+                zIndex={zIndex}
+                projectId={projectId}
+                bindToAttribute={localData.bindToAttribute || false}
+                selectedAttribute={localData.selectedAttribute}
+                onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+                onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
       </EditorErrorAnchor>
       <EditorErrorContent side="bottom" style={{ zIndex: zIndex }}>
         Question name is required

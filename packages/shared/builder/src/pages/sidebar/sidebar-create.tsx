@@ -1,6 +1,6 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { EXTENSION_SIDEBAR_POPPER } from '@usertour-packages/constants';
 import { StepContentType } from '@usertour/types';
 import { PopperPreview } from '../../components/preview';
@@ -87,43 +87,41 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
   );
 
   return (
-    <Popover.Root>
-      <Popover.Trigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <Button className="w-full h-10" variant="secondary">
           <PlusCircledIcon className="mr-2" />
           Create
         </Button>
-      </Popover.Trigger>
-      <Popover.Anchor virtualRef={container} />
-      <Popover.Portal>
-        <Popover.Content
-          className="z-50 w-fit rounded-xl dark:border-none bg-background-900 p-4 text-popover-foreground shadow-md outline-none border border-background-400	"
-          side="left"
-          align="start"
-          style={{ zIndex: zIndex + EXTENSION_SIDEBAR_POPPER }}
-          alignOffset={40}
-          sideOffset={2}
-        >
-          <h1 className="text-lg mb-3">Step type</h1>
-          <div className="grid grid-cols-2 gap-4">
-            {currentTheme?.settings &&
-              contentList.map((content, index) => {
-                return (
-                  <PopperPreview
-                    type={content.type}
-                    width={content.width}
-                    height={content.height}
-                    key={index}
-                    data={content.data}
-                    text={content.text}
-                    onClick={handleCreateStep}
-                  />
-                );
-              })}
-          </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+      </PopoverTrigger>
+      <PopoverAnchor virtualRef={container} />
+      <PopoverContent
+        className="w-fit rounded-xl dark:border-none bg-background-900 border-background-400"
+        side="left"
+        align="start"
+        style={{ zIndex: zIndex + EXTENSION_SIDEBAR_POPPER }}
+        alignOffset={40}
+        sideOffset={2}
+      >
+        <h1 className="text-lg mb-3">Step type</h1>
+        <div className="grid grid-cols-2 gap-4">
+          {currentTheme?.settings &&
+            contentList.map((content, index) => {
+              return (
+                <PopperPreview
+                  type={content.type}
+                  width={content.width}
+                  height={content.height}
+                  key={index}
+                  data={content.data}
+                  text={content.text}
+                  onClick={handleCreateStep}
+                />
+              );
+            })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 SidebarCreate.displayName = 'SidebarCreate';

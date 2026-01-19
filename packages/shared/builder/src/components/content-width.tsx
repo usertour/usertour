@@ -68,7 +68,7 @@ export const ContentWidth = memo((props: ContentWidthProps) => {
         <div className="absolute inset-y-0 end-0 flex items-center pointer-events-none pe-4">
           <span className="text-muted-foreground">px</span>
         </div>
-        {hasError && <p className="text-xs text-red-500 mt-1">Width cannot be 0</p>}
+        {hasError && <p className="text-xs text-destructive mt-1">Width cannot be 0</p>}
       </div>
     </div>
   );

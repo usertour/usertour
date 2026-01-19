@@ -212,6 +212,9 @@ export const extendBase = {
     md: 'calc(var(--radius) - 2px)',
     sm: 'calc(var(--radius) - 4px)',
   },
+  dropShadow: {
+    popover: ['0 3px 10px rgba(0, 0, 0, 0.15)', '0 1px 2px rgba(0, 0, 0, 0.1)'],
+  },
   // fontFamily: {
   //   sans: ["var(--font-sans)", ...fontFamily.sans],
   // },
