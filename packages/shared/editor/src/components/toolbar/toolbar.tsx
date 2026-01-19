@@ -216,9 +216,7 @@ export const EditorToolbar = () => {
     <ToolbarToggleItem value="underline" label="Underline" key={'underline'}>
       <MarkButton format="underline" Comp={UnderlineIcon} tips="Underline ⌘ U" />
     </ToolbarToggleItem>,
-    <ToolbarToggleItem value="color" label="Color" key={'color'}>
-      <ColorPicker container={ref.current} />
-    </ToolbarToggleItem>,
+    <ColorPicker key={'color'} />,
     <ToggleItemBlockButton format="code" key={'code'} tips="Code ⌘ `">
       <CodeIcon />
     </ToggleItemBlockButton>,
@@ -266,7 +264,11 @@ export const EditorToolbar = () => {
       const isInPopper = refPopper.current?.contains(event.target as any);
       const parentNode = ref.current?.parentNode;
       const isInEditor = parentNode ? parentNode.contains(event.target as any) : false;
-      if (!isInToolbar && !isInPopper && !isInEditor) {
+      // Check if click is inside any Radix Popover (e.g., ColorPicker panel)
+      const isInRadixPopover = (event.target as Element).closest?.(
+        '[data-radix-popper-content-wrapper]',
+      );
+      if (!isInToolbar && !isInPopper && !isInEditor && !isInRadixPopover) {
         setShowToolbar(false);
       }
     },

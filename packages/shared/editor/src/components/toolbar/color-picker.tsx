@@ -1,67 +1,76 @@
-import * as Popover from '@radix-ui/react-popover';
+import { RiFontColor } from '@usertour-packages/icons';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import { ColorPickerPanel } from '@usertour-packages/shared-components';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { useCallback } from 'react';
-import { ColorResult, SketchPicker } from 'react-color';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useSlate } from 'slate-react';
-import { getTextProps, setTextProps } from '../../lib/text';
+import { getTextProps, removeTextProps, setTextProps } from '../../lib/text';
 
-interface ColorPickerProps {
-  container: HTMLElement | null;
-}
-
-const TYPE = 'color';
+// Constants
+const COLOR_MARK = 'color';
 const DEFAULT_COLOR = '#000000';
+const ICON_SIZE = 15;
+const TOOLTIP_TEXT = 'Font color';
 
-export const ColorPicker = ({ container }: ColorPickerProps) => {
+// Toolbar button styles matching other toolbar items
+const TRIGGER_CLASS_NAME =
+  'flex-shrink-0 flex-grow-0 basis-auto text-mauve11 h-[25px] px-[5px] rounded ' +
+  'inline-flex text-[13px] leading-none items-center justify-center ml-0.5 outline-none ' +
+  'hover:bg-violet3 hover:text-violet11 focus:relative focus:shadow-[0_0_0_2px] ' +
+  'focus:shadow-violet7 first:ml-0 text-slate-900';
+
+// Prevent focus returning to trigger after closing
+const preventAutoFocus = (e: Event) => e.preventDefault();
+
+export const ColorPicker = memo(() => {
   const editor = useSlate();
+  const [open, setOpen] = useState(false);
 
-  const handleChange = useCallback(
-    (color: ColorResult) => {
-      setTextProps(editor, 'color', color.hex);
+  // Get current color from editor marks
+  const currentColor = useMemo(() => getTextProps(editor, COLOR_MARK, DEFAULT_COLOR), [editor]);
+
+  // Handle color change from panel
+  const handleColorChange = useCallback(
+    (isAuto: boolean, color?: string) => {
+      setOpen(false);
+
+      if (isAuto) {
+        removeTextProps(editor, COLOR_MARK);
+      } else if (color) {
+        setTextProps(editor, COLOR_MARK, color);
+      }
     },
     [editor],
   );
 
+  // Icon style with current color
+  const iconStyle = useMemo(() => ({ color: currentColor }), [currentColor]);
+
   return (
-    <>
-      <Popover.Root>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Popover.Trigger asChild>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width={15}
-                  height={15}
-                  style={{ fill: getTextProps(editor, TYPE, DEFAULT_COLOR) }}
-                >
-                  <path d="M15.2459 14H8.75407L7.15407 18H5L11 3H13L19 18H16.8459L15.2459 14ZM14.4459 12L12 5.88516L9.55407 12H14.4459ZM3 20H21V22H3V20Z" />
-                </svg>
-              </Popover.Trigger>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p>Font color</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <Popover.Portal container={container}>
-          <Popover.Content sideOffset={5}>
-            <SketchPicker
-              color={getTextProps(editor, TYPE, DEFAULT_COLOR)}
-              onChange={handleChange}
-            />
-            <Popover.Arrow className="fill-foreground" />
-          </Popover.Content>
-        </Popover.Portal>
-      </Popover.Root>
-    </>
+    <Popover open={open} onOpenChange={setOpen}>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger className={TRIGGER_CLASS_NAME}>
+              <RiFontColor size={ICON_SIZE} style={iconStyle} />
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            <p>{TOOLTIP_TEXT}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <PopoverContent sideOffset={5} className="w-auto p-0" onCloseAutoFocus={preventAutoFocus}>
+        <ColorPickerPanel color={currentColor} onChange={handleColorChange} showAutoButton />
+        <PopoverArrow className="fill-background" />
+      </PopoverContent>
+    </Popover>
   );
-};
+});
 
 ColorPicker.displayName = 'ColorPicker';

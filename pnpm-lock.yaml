@@ -3519,9 +3519,6 @@ importers:
       '@usertour-packages/separator':
         specifier: workspace:^
         version: link:../../components/separator
-      '@usertour-packages/shared-editor':
-        specifier: workspace:^
-        version: link:../editor
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../hooks
@@ -3567,6 +3564,9 @@ importers:
       react:
         specifier: ^18.2.0
         version: 18.2.0
+      react-colorful:
+        specifier: ^5.6.1
+        version: 5.6.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
@@ -3792,6 +3792,9 @@ importers:
       '@usertour-packages/select':
         specifier: workspace:^
         version: link:../../components/select
+      '@usertour-packages/shared-components':
+        specifier: workspace:^
+        version: link:../components
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../hooks

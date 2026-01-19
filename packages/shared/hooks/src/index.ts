@@ -4,3 +4,4 @@ export * from './hooks/gql';
 export * from './hooks/use-tooltip-target-missing-sessions';
 export * from './hooks/use-checklist-preview-animation';
 export { useContentCount } from './hooks/use-content-count';
+export { useCurrentUserId } from './hooks/use-current-user-id';

@@ -49,6 +49,7 @@
     "@usertour-packages/use-toast": "workspace:^",
     "@usertour-packages/textarea": "workspace:^",
     "@usertour-packages/radio-group": "workspace:^",
+    "@usertour-packages/shared-components": "workspace:^",
     "@usertour-packages/shared-hooks": "workspace:^",
     "@usertour-packages/dialog": "workspace:^",
     "@usertour-packages/badge": "workspace:^",

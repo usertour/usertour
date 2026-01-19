@@ -1,8 +1,10 @@
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+'use client';
+
 import { Button } from '@usertour-packages/button';
-import { TAILWINDCSS_COLORS } from '@usertour-packages/constants';
-import { CheckboxIcon, RemoveColorIcon, Delete2Icon, EditIcon } from '@usertour-packages/icons';
+import { StorageKeys } from '@usertour-packages/constants';
+import { CheckboxIcon, Delete2Icon, EditIcon, RemoveColorIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
+import { useCurrentUserId } from '@usertour-packages/shared-hooks';
 import {
   Tabs,
   UnderlineTabsContent,
@@ -16,173 +18,24 @@ import {
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
 import { cn } from '@usertour-packages/tailwind';
+import { firstLetterToUpperCase } from '@usertour/helpers';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import React, { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import { firstLetterToUpperCase } from '@/utils/common';
-import { isNearWhite, needsDarkText } from '@/utils/theme';
-import { ThemeSettingErrorPopover } from './theme-setting-error-popover';
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const RECENT_COLORS_KEY = 'theme-color-picker-recent';
-const MAX_RECENT_COLORS = 20;
-const TAILWIND_DOCS_URL = 'https://tailwindcss.com/docs/customizing-colors';
-
-const SELECTED_COLOR_SERIES = [
-  'slate',
-  'neutral',
-  'red',
-  'orange',
-  'yellow',
-  'lime',
-  'green',
-  'blue',
-  'purple',
-  'pink',
-] as const;
-
-const SELECTED_COLOR_LEVELS = [
-  '50',
-  '100',
-  '200',
-  '300',
-  '400',
-  '500',
-  '600',
-  '700',
-  '800',
-  '900',
-] as const;
-
-// ============================================================================
-// Types
-// ============================================================================
-
-type TailwindColorData = {
-  name: string;
-  level: string;
-  color: string;
-};
-
-type PickerProps = {
-  color?: string;
-  isAuto?: boolean;
-  showAutoButton?: boolean;
-  onChange: (isAuto: boolean, color?: string) => void;
-};
-
-type ColorButtonProps = {
-  color: string;
-  tooltip: string;
-  onClick: () => void;
-  children?: React.ReactNode;
-};
-
-type ThemeColorPickerProps = {
-  defaultColor: string;
-  autoColor?: string;
-  isAutoColor?: boolean;
-  showAutoButton?: boolean;
-  onChange?: (color: string) => void;
-  className?: string;
-  disabled?: boolean;
-};
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-const getRecentColors = (): string[] => {
-  try {
-    const stored = localStorage.getItem(RECENT_COLORS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveRecentColor = (color: string): string[] => {
-  const recent = getRecentColors();
-  const normalized = color.toLowerCase();
-  const filtered = recent.filter((c) => c.toLowerCase() !== normalized);
-  const updated = [normalized, ...filtered].slice(0, MAX_RECENT_COLORS);
-  localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(updated));
-  return updated;
-};
-
-const removeRecentColor = (colorToRemove: string): string[] => {
-  const recent = getRecentColors();
-  const updated = recent.filter((c) => c.toLowerCase() !== colorToRemove.toLowerCase());
-  localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(updated));
-  return updated;
-};
-
-// ============================================================================
-// Color Data Processing
-// ============================================================================
-
-const formatTailwindColorData = (
-  colors: Record<string, Record<string, string>>,
-): TailwindColorData[][] => {
-  const rows: TailwindColorData[][] = [];
-  for (const colorName of SELECTED_COLOR_SERIES) {
-    const colorSeries = colors[colorName];
-    if (!colorSeries) continue;
-    const cols: TailwindColorData[] = [];
-    for (const level of SELECTED_COLOR_LEVELS) {
-      const color = colorSeries[level];
-      if (color) {
-        cols.push({ name: colorName, level, color });
-      }
-    }
-    rows.push(cols);
-  }
-  return rows;
-};
-
-const tailwindColorData = formatTailwindColorData(TAILWINDCSS_COLORS);
-
-// Create a map for quick lookup of Tailwind colors by hex value
-const tailwindColorMap = new Map<string, TailwindColorData>(
-  tailwindColorData.flatMap((row) => row.map((col) => [col.color.toLowerCase(), col])),
-);
-
-const getTailwindColorInfo = (hex: string): TailwindColorData | undefined => {
-  return tailwindColorMap.get(hex.toLowerCase());
-};
-
-// Validate HEX color format: #rgb, #rrggbb, or #rrggbbaa
-const isValidHexColor = (color: string): boolean => {
-  if (!color) return true;
-  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/i.test(color);
-};
-
-// Normalize HEX color: convert #rgb to #rrggbb, #rgba to #rrggbbaa
-const normalizeHexColor = (color: string): string => {
-  if (!color.startsWith('#')) return color;
-  const hex = color.slice(1);
-  // #rgb -> #rrggbb or #rgba -> #rrggbbaa
-  if (hex.length === 3 || hex.length === 4) {
-    return `#${hex
-      .split('')
-      .map((c) => `${c}${c}`)
-      .join('')}`;
-  }
-  return color;
-};
-
-const HEX_ERROR_MESSAGE = 'Must be a HEX value using the format #rgb, #rrggbb, or #rrggbbaa.';
-
-const formatColorTooltip = (hex: string): string => {
-  const tailwindInfo = getTailwindColorInfo(hex);
-  if (tailwindInfo) {
-    return `Tailwind ${firstLetterToUpperCase(tailwindInfo.name)} ${tailwindInfo.level}: ${tailwindInfo.color}`;
-  }
-  return hex;
-};
+import type { ColorButtonProps, ColorPickerPanelProps } from './types';
+import {
+  formatColorTooltip,
+  getRecentColors,
+  HEX_ERROR_MESSAGE,
+  isValidHexColor,
+  normalizeHexColor,
+  removeRecentColor,
+  saveRecentColor,
+  SELECTED_COLOR_LEVELS,
+  tailwindColorData,
+  TAILWIND_DOCS_URL,
+} from './utils';
 
 // ============================================================================
 // Sub Components
@@ -205,7 +58,10 @@ const ColorButton = React.memo(({ color, tooltip, onClick, children }: ColorButt
     <Button
       variant="outline"
       size="icon"
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.();
+      }}
       className="w-full aspect-square h-auto rounded-none transition-transform hover:scale-125 hover:bg-transparent"
       style={{ backgroundColor: color, borderColor: color }}
     >
@@ -214,6 +70,33 @@ const ColorButton = React.memo(({ color, tooltip, onClick, children }: ColorButt
   </IconTooltip>
 ));
 ColorButton.displayName = 'ColorButton';
+
+// Error popover for invalid hex input
+const ErrorPopover = React.memo(
+  ({
+    error,
+    children,
+  }: {
+    error?: string;
+    children: React.ReactNode;
+  }) => {
+    if (!error) return <>{children}</>;
+
+    return (
+      <Tooltip open={!!error}>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          align="start"
+          className="bg-destructive text-destructive-foreground border-0"
+        >
+          {error}
+        </TooltipContent>
+      </Tooltip>
+    );
+  },
+);
+ErrorPopover.displayName = 'ErrorPopover';
 
 // Color input section at the top
 const ColorInput = React.memo(
@@ -238,14 +121,14 @@ const ColorInput = React.memo(
   }) => (
     <div className="flex flex-row items-center gap-2">
       <div className="w-6 h-6 shrink-0 rounded border" style={{ backgroundColor: displayColor }} />
-      <ThemeSettingErrorPopover error={error} side="bottom" align="start">
+      <ErrorPopover error={error}>
         <Input
           value={!isAuto ? inputColor : ''}
           className={cn('h-8 grow', error && 'border-destructive focus-visible:ring-destructive')}
           placeholder={isAuto ? displayColor : ''}
           onChange={onInputChange}
         />
-      </ThemeSettingErrorPopover>
+      </ErrorPopover>
       <IconTooltip tooltip="Use this color">
         <Button variant="ghost" size="icon" onClick={onSubmit} className="h-7 w-7 text-primary">
           <CheckboxIcon width={20} height={20} />
@@ -327,7 +210,10 @@ const RecentColors = React.memo(
               <Button
                 variant="link"
                 size="sm"
-                onClick={() => onEditToggle(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditToggle(false);
+                }}
                 className="h-6 p-0"
               >
                 Done
@@ -336,7 +222,10 @@ const RecentColors = React.memo(
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onEditToggle(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditToggle(true);
+                }}
                 className="h-6 w-6 text-muted-foreground hover:text-foreground"
               >
                 <EditIcon className="w-4 h-4" />
@@ -363,20 +252,27 @@ const RecentColors = React.memo(
 RecentColors.displayName = 'RecentColors';
 
 // ============================================================================
-// Main Components
+// Main Component
 // ============================================================================
 
-const Picker = (props: PickerProps) => {
+export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
   const { color = '', onChange, isAuto = false, showAutoButton = true } = props;
+  const uid = useCurrentUserId();
   const [inputColor, setInputColor] = useState(!isAuto ? color : '');
   const [recentColors, setRecentColors] = useState<string[]>([]);
   const [isEditingRecent, setIsEditingRecent] = useState(false);
   const [inputError, setInputError] = useState<string | undefined>(undefined);
 
-  // Load recent colors on mount
+  // Build user-specific storage key
+  const storageKey = useMemo(
+    () => (uid ? `${StorageKeys.COLOR_PICKER_RECENT}-${uid}` : StorageKeys.COLOR_PICKER_RECENT),
+    [uid],
+  );
+
+  // Load recent colors on mount or when storageKey changes
   useEffect(() => {
-    setRecentColors(getRecentColors());
-  }, []);
+    setRecentColors(getRecentColors(storageKey));
+  }, [storageKey]);
 
   const displayColor = useMemo(() => inputColor || color, [inputColor, color]);
 
@@ -390,13 +286,13 @@ const Picker = (props: PickerProps) => {
     if (inputColor) {
       // Normalize #rgb to #rrggbb format
       const normalizedColor = normalizeHexColor(inputColor);
-      const updated = saveRecentColor(normalizedColor);
+      const updated = saveRecentColor(storageKey, normalizedColor);
       setRecentColors(updated);
       onChange(false, normalizedColor);
     } else {
       onChange(true, '');
     }
-  }, [inputColor, onChange]);
+  }, [inputColor, onChange, storageKey]);
 
   const handleInputChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -415,11 +311,11 @@ const Picker = (props: PickerProps) => {
 
   const handleColorSelect = useCallback(
     (selectedColor: string) => {
-      const updated = saveRecentColor(selectedColor);
+      const updated = saveRecentColor(storageKey, selectedColor);
       setRecentColors(updated);
       onChange(false, selectedColor);
     },
-    [onChange],
+    [onChange, storageKey],
   );
 
   const handleColorfulChange = useCallback((hex: string) => {
@@ -433,13 +329,16 @@ const Picker = (props: PickerProps) => {
     [onChange],
   );
 
-  const handleRemoveRecentColor = useCallback((colorToRemove: string) => {
-    const updated = removeRecentColor(colorToRemove);
-    setRecentColors(updated);
-    if (updated.length === 0) {
-      setIsEditingRecent(false);
-    }
-  }, []);
+  const handleRemoveRecentColor = useCallback(
+    (colorToRemove: string) => {
+      const updated = removeRecentColor(storageKey, colorToRemove);
+      setRecentColors(updated);
+      if (updated.length === 0) {
+        setIsEditingRecent(false);
+      }
+    },
+    [storageKey],
+  );
 
   const handleEditToggle = useCallback((editing: boolean) => {
     setIsEditingRecent(editing);
@@ -464,11 +363,11 @@ const Picker = (props: PickerProps) => {
             <UnderlineTabsTrigger value="palette">Color palette</UnderlineTabsTrigger>
           </UnderlineTabsList>
           <UnderlineTabsContent value="picker">
-            <div className="h-72 theme-color-picker">
+            <div className="h-72 color-picker-panel">
               <HexColorPicker
                 color={displayColor}
                 onChange={handleColorfulChange}
-                className="!h-full !gap-2"
+                className="!w-full !h-full !gap-2"
               />
             </div>
           </UnderlineTabsContent>
@@ -488,83 +387,4 @@ const Picker = (props: PickerProps) => {
   );
 };
 
-export const ThemeColorPicker = (props: ThemeColorPickerProps) => {
-  const {
-    defaultColor,
-    onChange,
-    isAutoColor = false,
-    className = '',
-    autoColor = '',
-    showAutoButton = false,
-    disabled = false,
-  } = props;
-  const [color, setColor] = useState<string>(isAutoColor ? autoColor : defaultColor);
-  const [isAuto, setIsAuto] = useState(isAutoColor);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (isAuto && autoColor) {
-      setColor(autoColor);
-    }
-  }, [autoColor, isAuto]);
-
-  const handleColorChange = useCallback(
-    (isAutoValue: boolean, newColor = '') => {
-      setOpen(false);
-      setIsAuto(isAutoValue);
-      if (!isAutoValue && newColor) {
-        setColor(newColor);
-      }
-      onChange?.(isAutoValue ? 'Auto' : newColor);
-    },
-    [onChange],
-  );
-
-  const buttonClassName = useMemo(
-    () =>
-      cn(
-        'w-full border text-opacity-50 hover:text-opacity-100 disabled:opacity-100',
-        needsDarkText(color) ? 'text-black' : 'text-white',
-        isNearWhite(color) ? 'border-slate-300' : '',
-        className,
-      ),
-    [color, className],
-  );
-
-  const buttonStyle = useMemo(
-    () => ({
-      background: color,
-      borderColor: isNearWhite(color) ? undefined : color,
-    }),
-    [color],
-  );
-
-  return (
-    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
-      <PopoverTrigger asChild>
-        <Button className={buttonClassName} style={buttonStyle} disabled={disabled}>
-          {isAuto ? 'Auto' : color.toLowerCase()}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        sideOffset={5}
-        className="z-50 w-full p-0"
-        style={{
-          filter:
-            'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-        }}
-      >
-        <Picker
-          color={color}
-          isAuto={isAuto}
-          onChange={handleColorChange}
-          showAutoButton={showAutoButton}
-        />
-        <PopoverArrow className="fill-background" width={20} height={10} />
-      </PopoverContent>
-    </Popover>
-  );
-};
-
-ThemeColorPicker.displayName = 'ThemeColorPicker';
+ColorPickerPanel.displayName = 'ColorPickerPanel';

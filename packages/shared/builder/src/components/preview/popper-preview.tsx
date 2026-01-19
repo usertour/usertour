@@ -6,12 +6,12 @@ import {
   PopperClose,
   useSettingsStyles,
 } from '@usertour-packages/sdk';
+import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { AvatarType, defaultSettings } from '@usertour/types';
 import { memo, useCallback, useMemo, useRef } from 'react';
-import { ScaledPreviewContainer } from './scaled-preview-container';
 
-type CreatePopperContentProps = {
+type PopperPreviewProps = {
   text: string;
   data: any;
   type: string;
@@ -25,7 +25,7 @@ type CreatePopperContentProps = {
   maxHeight?: number;
 };
 
-export const PopperPreview = memo((props: CreatePopperContentProps) => {
+export const PopperPreview = memo((props: PopperPreviewProps) => {
   const { width, height, text, data, type, onClick, maxWidth = 180, maxHeight = 160 } = props;
   const ref = useRef(null);
 
