@@ -1,17 +1,26 @@
 import { Button } from '@usertour-packages/button';
 import { UserIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
+import { memo, useCallback } from 'react';
 import { useSlate } from 'slate-react';
-import { inertUserAttributeBlock } from '../../lib/editorHelper';
+import { insertUserAttributeBlock } from '../../lib/editorHelper';
 
-export const UserAttrButton = ({ className }: { className: string }) => {
+interface UserAttrButtonProps {
+  className?: string;
+}
+
+export const UserAttrButton = memo(({ className }: UserAttrButtonProps) => {
   const editor = useSlate();
-  const handleOnClick = () => {
-    inertUserAttributeBlock(editor);
-  };
+
+  const handleClick = useCallback(() => {
+    insertUserAttributeBlock(editor);
+  }, [editor]);
+
   return (
-    <Button variant="ghost" onClick={handleOnClick} className={cn('h-fit p-2', className)}>
+    <Button variant="ghost" onClick={handleClick} className={cn('h-fit p-2', className)}>
       <UserIcon height={15} width={15} />
     </Button>
   );
-};
+});
+
+UserAttrButton.displayName = 'UserAttrButton';

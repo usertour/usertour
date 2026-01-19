@@ -4,7 +4,8 @@ import { getNavitateError } from '@usertour/helpers';
 import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Descendant } from 'slate';
-import { PopperEditorMini, serializeMini } from '../richtext-editor/editor';
+import { PopperEditorMini } from '../richtext-editor/editor';
+import { serializeMini } from '../richtext-editor/serialize';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
 import {

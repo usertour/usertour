@@ -42,9 +42,9 @@ export const ContentEditorRichTextSerialize = (props: ContentEditorRichTextSeria
   const { element } = props;
 
   return (
-    <>
-      <div className="w-full">{element.data.map((node) => serialize(node))}</div>
-    </>
+    <div className="w-full">
+      {element.data.map((node, index) => serialize(node, undefined, index))}
+    </div>
   );
 };
 

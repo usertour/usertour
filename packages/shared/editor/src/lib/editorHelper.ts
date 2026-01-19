@@ -1,10 +1,19 @@
-import { Editor, Element as SlateElement, Range, Text, Transforms } from 'slate';
+import { Descendant, Editor, Element as SlateElement, Range, Text, Transforms } from 'slate';
 import {
   CustomEditor,
   CustomElementStrings,
   CustomMarkupStrings,
   LinkElementType,
 } from '../types/slate';
+
+/* Text Helpers */
+
+/**
+ * Check if a Slate node is a text node
+ */
+export const isText = (node: Descendant) => {
+  return Text.isText(node);
+};
 
 /* Block Helpers */
 
@@ -42,7 +51,10 @@ export const toggleMark = (editor: Editor, type: CustomMarkupStrings) => {
   );
 };
 
-export const inertUserAttributeBlock = (editor: CustomEditor) => {
+/**
+ * Insert a user attribute block at the current selection
+ */
+export const insertUserAttributeBlock = (editor: CustomEditor) => {
   Transforms.insertNodes(editor, {
     type: 'user-attribute',
     fallback: '',

@@ -83,6 +83,18 @@ export type CustomMarkup = {
 
 export type CustomMarkupStrings = keyof CustomMarkup;
 
+// Text formatting types (marks)
+export type TextFormat = 'bold' | 'italic' | 'underline' | 'color';
+
+// Text alignment types
+export type TextAlignFormat = 'left' | 'center' | 'right' | 'justify';
+
+// Block formatting types (includes element types and alignment)
+export type BlockFormat = CustomElementStrings | TextAlignFormat;
+
+// Combined format type for toolbar buttons
+export type FormatType = TextFormat | BlockFormat;
+
 export type CustomText = Partial<CustomMarkup> & {
   text: string;
   placeholder?: boolean;

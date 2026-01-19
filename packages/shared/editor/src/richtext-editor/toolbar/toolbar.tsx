@@ -29,21 +29,30 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useEvent, useMeasure } from 'react-use';
 import { Editor, Element as SlateElement, Transforms } from 'slate';
 import { useSlate } from 'slate-react';
 
-import { inertUserAttributeBlock, insertLink, isLinkActive } from '../../lib/editorHelper';
+import { insertUserAttributeBlock, insertLink, isLinkActive } from '../../lib/editorHelper';
 import { getTextProps, toggleTextProps } from '../../lib/text';
-import { CustomEditor } from '../../types/slate';
+import type { BlockFormat, CustomEditor, TextFormat } from '../../types/slate';
 import { usePopperEditorContext } from '../editor';
 import { ColorPicker } from './color-picker';
 
-const LIST_TYPES = ['numbered-list', 'bulleted-list'];
-const TEXT_ALIGN_TYPES = ['left', 'center', 'right', 'justify'];
+// Constants for list and alignment types
+const LIST_TYPES: readonly string[] = ['numbered-list', 'bulleted-list'];
+const TEXT_ALIGN_TYPES: readonly string[] = ['left', 'center', 'right', 'justify'];
 
-const toggleBlock = (editor: CustomEditor, format: any) => {
+// Toolbar responsive layout constants
+const TOOLBAR_RESPONSIVE_BREAKPOINT = 360; // Width threshold for showing "more" button
+const TOOLBAR_CONTAINER_PADDING = 10; // Padding around toolbar items
+const TOOLBAR_ITEM_WIDTH = 27; // Approximate width of each toolbar item
+
+/**
+ * Toggle block formatting (headings, lists, code, alignment)
+ */
+const toggleBlock = (editor: CustomEditor, format: BlockFormat) => {
   const isActive = isBlockActive(
     editor,
     format,
@@ -59,25 +68,32 @@ const toggleBlock = (editor: CustomEditor, format: any) => {
       !TEXT_ALIGN_TYPES.includes(format),
     split: true,
   });
+
   let newProperties: Partial<SlateElement>;
   if (TEXT_ALIGN_TYPES.includes(format)) {
     newProperties = {
       align: isActive ? undefined : format,
     };
   } else {
+    // Type assertion is safe here - alignment types are excluded by the if branch above
+    const elementType = isActive ? 'paragraph' : isList ? 'list-item' : format;
     newProperties = {
-      type: isActive ? 'paragraph' : isList ? 'list-item' : format,
+      type: elementType as SlateElement['type'],
     };
   }
   Transforms.setNodes<SlateElement>(editor, newProperties);
 
   if (!isActive && isList) {
-    const block = { type: format, children: [] };
+    // Type assertion is safe here because isList ensures format is 'numbered-list' or 'bulleted-list'
+    const block = { type: format as 'numbered-list' | 'bulleted-list', children: [] };
     Transforms.wrapNodes(editor, block);
   }
 };
 
-const isBlockActive = (editor: CustomEditor, format: any, blockType = 'type') => {
+/**
+ * Check if a block format is currently active
+ */
+const isBlockActive = (editor: CustomEditor, format: BlockFormat, blockType = 'type'): boolean => {
   const { selection } = editor;
   if (!selection) return false;
 
@@ -94,15 +110,30 @@ const isBlockActive = (editor: CustomEditor, format: any, blockType = 'type') =>
   return !!match;
 };
 
-const isMarkActive = (editor: CustomEditor, format: any) => {
-  return getTextProps(editor, format);
+/**
+ * Check if a text mark (bold, italic, etc.) is currently active
+ */
+const isMarkActive = (editor: CustomEditor, format: TextFormat): boolean => {
+  return !!getTextProps(editor, format);
 };
 
+// Props interfaces
 interface ToggleItemBlockButtonProps {
-  format: any;
+  format: BlockFormat;
   children: ReactNode;
   tips: string;
 }
+
+interface MarkButtonProps {
+  format: TextFormat;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Comp: React.ComponentType<any>;
+  tips: string;
+}
+
+/**
+ * Button for toggling block-level formatting
+ */
 const ToggleItemBlockButton = ({ format, children, tips = '' }: ToggleItemBlockButtonProps) => {
   const editor = useSlate();
   let isActive = isBlockActive(
@@ -115,10 +146,10 @@ const ToggleItemBlockButton = ({ format, children, tips = '' }: ToggleItemBlockB
     isActive = isLinkActive(editor);
   }
 
-  const handleMouseDown = (event: any) => {
+  const handleMouseDown = (event: React.MouseEvent) => {
     event.preventDefault();
     if (format === 'user-attribute') {
-      inertUserAttributeBlock(editor);
+      insertUserAttributeBlock(editor);
     } else if (format === 'link') {
       insertLink(editor, '');
     } else {
@@ -150,26 +181,27 @@ const ToggleItemBlockButton = ({ format, children, tips = '' }: ToggleItemBlockB
   );
 };
 
-const MarkButton = ({
-  format,
-  Comp,
-  tips = '',
-}: {
-  format: any;
-  Comp: any;
-  tips: string;
-}) => {
+/**
+ * Button for toggling text marks (bold, italic, underline)
+ */
+const MarkButton = ({ format, Comp, tips = '' }: MarkButtonProps) => {
   const editor = useSlate();
+
+  const handleMouseDown = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      toggleTextProps(editor, format);
+    },
+    [editor, format],
+  );
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Comp
             className={isMarkActive(editor, format) ? '' : 'opacity-50'}
-            onMouseDown={(event: any) => {
-              event.preventDefault();
-              toggleTextProps(editor, format);
-            }}
+            onMouseDown={handleMouseDown}
           />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
@@ -207,87 +239,101 @@ export const EditorToolbar = () => {
 
   const [isShowMore, setIsShowMore] = useState(false);
 
-  const itemMapping = [
-    <ToolbarToggleItem value="bold" label="Bold" key={'bold'}>
-      <MarkButton format="bold" Comp={FontBoldIcon} tips="Bold ⌘ B" />
-    </ToolbarToggleItem>,
-    <ToolbarToggleItem value="italic" label="Italic" key={'italic'}>
-      <MarkButton format="italic" Comp={FontItalicIcon} tips="Italic ⌘ I" />
-    </ToolbarToggleItem>,
-    <ToolbarToggleItem value="underline" label="Underline" key={'underline'}>
-      <MarkButton format="underline" Comp={UnderlineIcon} tips="Underline ⌘ U" />
-    </ToolbarToggleItem>,
-    <ColorPicker key={'color'} />,
-    <ToggleItemBlockButton format="code" key={'code'} tips="Code ⌘ `">
-      <CodeIcon />
-    </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="h1" key={'h1'} tips="H1">
-      <H1Icon />
-    </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="h2" key={'h2'} tips="H2">
-      <H2Icon />
-    </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="link" key={'link'} tips="Link">
-      <Link1Icon height={15} width={15} />
-    </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="user-attribute" key={'user-attribute'} tips="User attribute">
-      <UserIcon height={15} width={15} />
-    </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="numbered-list" key={'numbered-list'} tips="Numbered list">
-      <ListOrderIcon />
-    </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="bulleted-list" key={'bulleted-list'} tips="Bulleted list">
-      <ListUnOrderIcon />
-    </ToggleItemBlockButton>,
-  ];
+  // Memoize toolbar items to prevent unnecessary re-renders and useEffect triggers
+  const itemMapping = useMemo(
+    () => [
+      <ToolbarToggleItem value="bold" label="Bold" key="bold">
+        <MarkButton format="bold" Comp={FontBoldIcon} tips="Bold ⌘ B" />
+      </ToolbarToggleItem>,
+      <ToolbarToggleItem value="italic" label="Italic" key="italic">
+        <MarkButton format="italic" Comp={FontItalicIcon} tips="Italic ⌘ I" />
+      </ToolbarToggleItem>,
+      <ToolbarToggleItem value="underline" label="Underline" key="underline">
+        <MarkButton format="underline" Comp={UnderlineIcon} tips="Underline ⌘ U" />
+      </ToolbarToggleItem>,
+      <ColorPicker key="color" />,
+      <ToggleItemBlockButton format="code" key="code" tips="Code ⌘ `">
+        <CodeIcon />
+      </ToggleItemBlockButton>,
+      <ToggleItemBlockButton format="h1" key="h1" tips="H1">
+        <H1Icon />
+      </ToggleItemBlockButton>,
+      <ToggleItemBlockButton format="h2" key="h2" tips="H2">
+        <H2Icon />
+      </ToggleItemBlockButton>,
+      <ToggleItemBlockButton format="link" key="link" tips="Link">
+        <Link1Icon height={15} width={15} />
+      </ToggleItemBlockButton>,
+      <ToggleItemBlockButton format="user-attribute" key="user-attribute" tips="User attribute">
+        <UserIcon height={15} width={15} />
+      </ToggleItemBlockButton>,
+      <ToggleItemBlockButton format="numbered-list" key="numbered-list" tips="Numbered list">
+        <ListOrderIcon />
+      </ToggleItemBlockButton>,
+      <ToggleItemBlockButton format="bulleted-list" key="bulleted-list" tips="Bulleted list">
+        <ListUnOrderIcon />
+      </ToggleItemBlockButton>,
+    ],
+    [],
+  );
 
-  const alignItem = [
-    <ToggleItemBlockButton format="left" key={'left'} tips="Align left">
-      <TextAlignLeftIcon />
-    </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="center" key={'center'} tips="Align center">
-      <TextAlignCenterIcon />
-    </ToggleItemBlockButton>,
-    <ToggleItemBlockButton format="right" key={'right'} tips="Align right">
-      <TextAlignRightIcon />
-    </ToggleItemBlockButton>,
-  ];
+  // Memoize alignment items
+  const alignItem = useMemo(
+    () => [
+      <ToggleItemBlockButton format="left" key="left" tips="Align left">
+        <TextAlignLeftIcon />
+      </ToggleItemBlockButton>,
+      <ToggleItemBlockButton format="center" key="center" tips="Align center">
+        <TextAlignCenterIcon />
+      </ToggleItemBlockButton>,
+      <ToggleItemBlockButton format="right" key="right" tips="Align right">
+        <TextAlignRightIcon />
+      </ToggleItemBlockButton>,
+    ],
+    [],
+  );
 
-  const [topItem, setTopItem] = useState<typeof itemMapping>(itemMapping);
-  const [miniItem, setMiniItem] = useState<typeof itemMapping>([]);
+  const [topItem, setTopItem] = useState<React.ReactElement[]>([]);
+  const [miniItem, setMiniItem] = useState<React.ReactElement[]>([]);
 
   const [mref, rect] = useMeasure();
   const composedRefs = useComposedRefs(ref as any, mref as any);
 
-  const onClick = useCallback(
-    (event: MouseEvent) => {
-      const isInToolbar = ref.current?.contains(event.target as any);
-      const isInPopper = refPopper.current?.contains(event.target as any);
+  const handleClickOutside = useCallback(
+    (event: Event) => {
+      const mouseEvent = event as MouseEvent;
+      const isInToolbar = ref.current?.contains(mouseEvent.target as Node);
+      const isInPopper = refPopper.current?.contains(mouseEvent.target as Node);
       const parentNode = ref.current?.parentNode;
-      const isInEditor = parentNode ? parentNode.contains(event.target as any) : false;
+      const isInEditor = parentNode ? parentNode.contains(mouseEvent.target as Node) : false;
       // Check if click is inside any Radix Popover (e.g., ColorPicker panel)
-      const isInRadixPopover = (event.target as Element).closest?.(
+      const isInRadixPopover = (mouseEvent.target as Element).closest?.(
         '[data-radix-popper-content-wrapper]',
       );
       if (!isInToolbar && !isInPopper && !isInEditor && !isInRadixPopover) {
         setShowToolbar(false);
       }
     },
-    [refPopper, ref],
-  ) as any;
-  useEvent('click', onClick, window, { capture: false });
+    [setShowToolbar],
+  );
+  useEvent('click', handleClickOutside, window, { capture: false });
 
+  // Responsive toolbar: show "more" button when width is below threshold
   useEffect(() => {
-    if (rect.width < 360) {
-      const n = Math.max(Math.floor((rect.width - 10) / 27), 1);
-      setTopItem(itemMapping.slice(0, n - 1));
-      setMiniItem(itemMapping.slice(n - 1));
+    if (rect.width < TOOLBAR_RESPONSIVE_BREAKPOINT) {
+      const visibleItemCount = Math.max(
+        Math.floor((rect.width - TOOLBAR_CONTAINER_PADDING) / TOOLBAR_ITEM_WIDTH),
+        1,
+      );
+      setTopItem(itemMapping.slice(0, visibleItemCount - 1));
+      setMiniItem(itemMapping.slice(visibleItemCount - 1));
       setIsShowMore(true);
     } else {
       setTopItem(itemMapping);
+      setMiniItem([]);
       setIsShowMore(false);
     }
-  }, [rect.width]);
+  }, [rect.width, itemMapping]);
 
   return (
     <div
