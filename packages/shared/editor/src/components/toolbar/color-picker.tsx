@@ -32,7 +32,9 @@ export const ColorPicker = memo(() => {
   const [open, setOpen] = useState(false);
 
   // Get current color from editor marks
-  const currentColor = useMemo(() => getTextProps(editor, COLOR_MARK, DEFAULT_COLOR), [editor]);
+  // Note: Don't use useMemo here - editor reference is stable but marks change,
+  // we need to recalculate on every render triggered by useSlate
+  const currentColor = getTextProps(editor, COLOR_MARK, DEFAULT_COLOR);
 
   // Handle color change from panel
   const handleColorChange = useCallback(
