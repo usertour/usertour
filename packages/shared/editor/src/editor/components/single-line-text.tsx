@@ -8,7 +8,11 @@ import { BizAttributeTypes } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ContentActions } from '../..';
-import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
+import {
+  EditorError,
+  EditorErrorAnchor,
+  EditorErrorContent,
+} from '../../richtext-editor/editor-error';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorSingleLineTextElement } from '../../types/editor';
 import { BindAttribute } from './bind-attribute';

@@ -17,7 +17,11 @@ import { BizAttributeTypes } from '@usertour/types';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ContentActions } from '../../actions';
-import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
+import {
+  EditorError,
+  EditorErrorAnchor,
+  EditorErrorContent,
+} from '../../richtext-editor/editor-error';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import {
   ContentEditorMultipleChoiceElement,

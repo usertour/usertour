@@ -56,8 +56,8 @@ export const ELEMENTS: ElementMap = {
     render: (props: MetaRenderElementProps) => <ListItemElement {...props} />,
   },
   'user-attribute': {
-    serialize: UserAttributeElementSerialize,
-    render: UserAttributeElement,
+    serialize: (props: any) => <UserAttributeElementSerialize {...props} />,
+    render: (props: MetaRenderElementProps) => <UserAttributeElement {...props} />,
   },
   link: {
     serialize: (props: any) => <LinkElementSerialize {...props} />,

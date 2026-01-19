@@ -1,6 +1,6 @@
 import { Descendant } from 'slate';
-import { PopperEditor } from '../../components/editor';
-import { serialize } from '../../components/serialize';
+import { PopperEditor } from '../../richtext-editor/editor';
+import { serialize } from '../../richtext-editor/serialize';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import { ContentEditorTextElement } from '../../types/editor';
 

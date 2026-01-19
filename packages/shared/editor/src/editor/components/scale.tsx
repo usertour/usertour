@@ -7,7 +7,11 @@ import { isEmptyString } from '@usertour/helpers';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ContentActions } from '../..';
-import { EditorError, EditorErrorAnchor, EditorErrorContent } from '../../components/editor-error';
+import {
+  EditorError,
+  EditorErrorAnchor,
+  EditorErrorContent,
+} from '../../richtext-editor/editor-error';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import type { ContentEditorScaleElement } from '../../types/editor';
 import { BindAttribute } from './bind-attribute';
