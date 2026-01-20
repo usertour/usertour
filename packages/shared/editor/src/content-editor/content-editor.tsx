@@ -19,7 +19,7 @@ import {
 import { EDITOR_OVERLAY } from '@usertour-packages/constants';
 import { isClickableElement, replaceUserAttr } from '@usertour/helpers';
 import { UserTourTypes } from '@usertour/types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ContentEditorContextProvider,
@@ -271,19 +271,9 @@ const ContentEditorDragOverlay = () => {
   );
 };
 
-// const dropAnimation: DropAnimation = {
-//   ...defaultDropAnimation,
-//   sideEffects: defaultDropAnimationSideEffects({
-//     styles: {
-//       active: {
-//         opacity: '0.5',
-//       },
-//     },
-//   }),
-// };
 const Editor = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement | null>(null);
+  const [containerNode, setContainerNode] = useState<HTMLElement>();
   const {
     contents,
     isEditorHover,
@@ -296,69 +286,22 @@ const Editor = () => {
     zIndex,
   } = useContentEditorContext();
 
+  // Use callback ref to find parent container when DOM node is mounted
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      const parentNode = node.closest('.usertour-widget-root') as HTMLElement;
+      if (parentNode) {
+        setContainerNode(parentNode);
+      }
+    }
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-  // const lastOverId = useRef<UniqueIdentifier | null>(null);
-
-  // const collisionDetectionStrategy: CollisionDetection = useCallback(
-  //   (args) => {
-  //     if (activeId && contents.find((c) => c.id == activeId)) {
-  //       return closestCenter({
-  //         ...args,
-  //         droppableContainers: args.droppableContainers.filter((container) =>
-  //           contents.find((c) => c.id == container.id),
-  //         ),
-  //       });
-  //     }
-
-  //     // Start by finding any intersecting droppable
-  //     const pointerIntersections = pointerWithin(args);
-  //     const intersections =
-  //       pointerIntersections.length > 0
-  //         ? // If there are droppables intersecting with the pointer, return those
-  //           pointerIntersections
-  //         : rectIntersection(args);
-  //     let overId = getFirstCollision(intersections, 'id');
-
-  //     if (overId != null) {
-  //       if (contents.find((c) => c.id == overId)) {
-  //         const containerItems = contents.find((c) => c.id == overId)?.children;
-
-  //         // If a container is matched and it contains items (columns 'A', 'B', 'C')
-  //         if (containerItems && containerItems.length > 0) {
-  //           // Return the closest droppable within that container
-  //           overId = closestCorners({
-  //             ...args,
-  //             droppableContainers: args.droppableContainers.filter(
-  //               (container) =>
-  //                 container.id !== overId && containerItems.find((c) => c.id == container.id),
-  //             ),
-  //           })[0]?.id;
-  //         }
-  //       }
-
-  //       lastOverId.current = overId;
-
-  //       return [{ id: overId }];
-  //     }
-
-  //     // When a draggable item moves to a new container, the layout may shift
-  //     // and the `overId` may become `null`. We manually set the cached `lastOverId`
-  //     // to the id of the draggable item that was moved to the new container, otherwise
-  //     // the previous `overId` will be returned which can cause items to incorrectly shift positions
-  //     // if (recentlyMovedToNewContainer.current) {
-  //     //   lastOverId.current = activeId;
-  //     // }
-
-  //     // If no droppable is matched, return the last match
-  //     return lastOverId.current ? [{ id: lastOverId.current }] : [];
-  //   },
-  //   [activeId, contents],
-  // );
 
   function handleDragStart(event: any) {
     const { active } = event;
@@ -496,21 +439,10 @@ const Editor = () => {
     setActiveId(undefined);
   };
 
-  const [containerNode, setContainerNode] = useState<HTMLElement>();
-  useEffect(() => {
-    if (ref.current) {
-      const el = ref.current as HTMLElement;
-      const parentNode = el.closest('.usertour-widget-root') as HTMLElement;
-      if (parentNode) {
-        setContainerNode(parentNode);
-      }
-    }
-  }, [ref.current]);
-
   return (
     <div
       className="relative"
-      ref={ref}
+      ref={containerRef}
       onMouseOver={() => {
         setIsEditorHover(true);
       }}

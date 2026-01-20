@@ -258,7 +258,7 @@ const ChecklistLauncherContent = forwardRef<HTMLButtonElement, ChecklistLauncher
             paddingRight: paddingHorizontal,
           }}
         >
-          <div className="overflow-hidden	text-sdk-checklist-trigger-font h-6 font-sdk-checklist-trigger text-sdk-base flex items-center justify-center">
+          <div className="overflow-hidden	text-sdk-checklist-trigger-font h-6 font-sdk-checklist-trigger text-sdk-base leading-none flex items-center justify-center">
             {buttonText}
           </div>
           <div className="rounded-full w-6 h-6 text-sm bg-sdk-checklist-trigger-counter-background text-sdk-checklist-trigger-counter-font ml-1 flex items-center justify-center">

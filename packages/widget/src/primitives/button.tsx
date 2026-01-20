@@ -5,11 +5,12 @@ import * as React from 'react';
 import { cn } from '@usertour-packages/tailwind';
 
 // Base styles for Widget button
+// Note: leading-none overrides text-sdk-base's default line-height (buttons don't need it)
 const buttonBase = cn(
   'inline-flex items-center justify-center transition-colors',
   'outline-none focus-visible:ring-sdk-ring focus-visible:ring-[3px]',
   'disabled:pointer-events-none disabled:opacity-50',
-  'font-sdk text-sdk-base rounded-sdk-button h-auto min-w-sdk-button px-sdk-button-x',
+  'font-sdk text-sdk-base leading-none rounded-sdk-button h-auto min-w-sdk-button px-sdk-button-x',
 );
 
 // Custom variant base styles (only accessibility, no layout/appearance)

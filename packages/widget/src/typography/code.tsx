@@ -7,7 +7,7 @@ import { cn } from '@usertour-packages/tailwind';
 const INLINE_CODE_STYLES = [
   'py-0.5',
   'px-1',
-  'rounded-sdk-code',
+  'rounded-sdk-xs',
   'bg-sdk-foreground/5',
   'font-mono',
   'text-sdk-sm',
@@ -20,7 +20,7 @@ const BLOCK_CODE_STYLES = [
   'block',
   'p-2',
   'overflow-x-auto',
-  'rounded-sdk-code',
+  'rounded-sdk-xs',
   'bg-sdk-foreground/5',
   'font-mono',
   'text-sdk-sm',

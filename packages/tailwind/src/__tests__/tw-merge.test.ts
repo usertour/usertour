@@ -187,8 +187,38 @@ describe('cn (tailwind-merge with SDK custom classes)', () => {
       expect(cn('fill-sdk-foreground', 'fill-current')).toBe('fill-current');
     });
 
+    test('should resolve fill-current vs fill-sdk-background conflict', () => {
+      expect(cn('fill-current', 'fill-sdk-background')).toBe('fill-sdk-background');
+    });
+
+    test('should resolve fill-sdk-progress vs fill-sdk-foreground conflict', () => {
+      expect(cn('fill-sdk-progress', 'fill-sdk-foreground')).toBe('fill-sdk-foreground');
+    });
+
+    test('should resolve fill-none vs fill-sdk-question conflict', () => {
+      expect(cn('fill-none', 'fill-sdk-question')).toBe('fill-sdk-question');
+    });
+
     test('should resolve stroke-sdk-border vs stroke-black conflict', () => {
       expect(cn('stroke-sdk-border', 'stroke-black')).toBe('stroke-black');
+    });
+
+    test('should resolve stroke-current vs stroke-sdk-foreground conflict', () => {
+      expect(cn('stroke-current', 'stroke-sdk-foreground')).toBe('stroke-sdk-foreground');
+    });
+
+    test('should resolve stroke-sdk-progress vs stroke-sdk-border conflict', () => {
+      expect(cn('stroke-sdk-progress', 'stroke-sdk-border')).toBe('stroke-sdk-border');
+    });
+
+    test('should resolve stroke-none vs stroke-sdk-ring conflict', () => {
+      expect(cn('stroke-none', 'stroke-sdk-ring')).toBe('stroke-sdk-ring');
+    });
+
+    test('should NOT conflict fill-sdk-* with stroke-sdk-* (different utilities)', () => {
+      const result = cn('fill-sdk-foreground', 'stroke-sdk-border');
+      expect(result).toContain('fill-sdk-foreground');
+      expect(result).toContain('stroke-sdk-border');
     });
   });
 
@@ -216,13 +246,22 @@ describe('cn (tailwind-merge with SDK custom classes)', () => {
     });
   });
 
-  describe('SDK lineHeight classes', () => {
-    test('should resolve leading-sdk-base vs leading-6 conflict', () => {
-      expect(cn('leading-sdk-base', 'leading-6')).toBe('leading-6');
+  describe('SDK lineHeight behavior', () => {
+    // text-sdk-base includes line-height via fontSize config.
+    // Use leading-none to override if line-height is not needed.
+
+    test('leading-none should override text-sdk-base line-height', () => {
+      // For buttons and other elements that don't need line-height
+      const result = cn('text-sdk-base', 'leading-none');
+      expect(result).toContain('text-sdk-base');
+      expect(result).toContain('leading-none');
     });
 
-    test('should resolve leading-tight vs leading-sdk-base conflict', () => {
-      expect(cn('leading-tight', 'leading-sdk-base')).toBe('leading-sdk-base');
+    test('text-sdk-base can coexist with other leading classes', () => {
+      // Custom leading can override the default line-height
+      const result = cn('text-sdk-base', 'leading-6');
+      expect(result).toContain('text-sdk-base');
+      expect(result).toContain('leading-6');
     });
   });
 
@@ -268,6 +307,30 @@ describe('cn (tailwind-merge with SDK custom classes)', () => {
       expect(result).toContain('text-sdk-progress');
       expect(result).toContain('font-medium');
       expect(result).toContain('px-2');
+    });
+
+    test('should handle input field classes with text-sdk-base', () => {
+      // text-sdk-base includes line-height via fontSize config
+      const result = cn(
+        'h-9 w-full min-w-0 rounded-md border px-3 py-1 text-sdk-base shadow-xs',
+        'border-sdk-question bg-sdk-background text-sdk-question',
+      );
+      expect(result).toContain('text-sdk-base');
+      expect(result).toContain('text-sdk-question');
+      expect(result).toContain('border-sdk-question');
+      expect(result).toContain('bg-sdk-background');
+    });
+
+    test('should handle SVG icon classes with fill and stroke', () => {
+      const result = cn(
+        'w-4 h-4',
+        'fill-sdk-foreground stroke-sdk-border',
+        'hover:fill-sdk-progress hover:stroke-sdk-ring',
+      );
+      expect(result).toContain('fill-sdk-foreground');
+      expect(result).toContain('stroke-sdk-border');
+      expect(result).toContain('hover:fill-sdk-progress');
+      expect(result).toContain('hover:stroke-sdk-ring');
     });
 
     test('should handle button variant classes', () => {

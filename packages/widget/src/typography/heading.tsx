@@ -8,9 +8,9 @@ type HeadingLevel = 1 | 2;
 type HeadingTag = 'h1' | 'h2';
 
 // Shared heading styles using SDK Tailwind classes
+// Note: line-height is included in text-sdk-h1/h2 via fontSize config
 const HEADING_BASE_STYLES = [
   'font-sdk-bold',
-  'leading-sdk-heading',
   'text-sdk-foreground',
   'min-h-sdk-line-height',
   'shrink-0',

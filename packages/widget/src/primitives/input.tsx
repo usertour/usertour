@@ -11,8 +11,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         data-slot="input"
         className={cn(
-          // Base styles
-          'h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none',
+          // Base styles (text-sdk-base includes line-height)
+          'h-9 w-full min-w-0 rounded-md border px-3 py-1 text-sdk-base shadow-xs transition-[color,box-shadow] outline-none',
           'md:text-sm',
           // SDK-specific colors
           'border-sdk-question bg-sdk-background text-sdk-question',

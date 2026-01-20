@@ -56,7 +56,7 @@ export const extendSdk = {
     'sdk-sm': 'calc(var(--usertour-radius) - 4px)',
     'sdk-popper': 'var(--usertour-popper-radius)',
     'sdk-button': 'var(--usertour-button-border-radius)',
-    'sdk-code': 'calc(var(--usertour-font-size) * 0.25)',
+    'sdk-xs': 'calc(var(--usertour-font-size) * 0.25)',
   },
   borderWidth: {
     'sdk-btn-primary': 'var(--usertour-primary-border-width)',
@@ -79,6 +79,7 @@ export const extendSdk = {
     'sdk-button-x': 'var(--usertour-button-px)',
   },
   height: {
+    'sdk-font-size': 'var(--usertour-font-size)',
     'sdk-line-height': 'var(--usertour-line-height)',
     'sdk-button': 'var(--usertour-button-height)',
     'sdk-progress': 'var(--usertour-progress-bar-height)',
@@ -98,14 +99,13 @@ export const extendSdk = {
   minHeight: {
     'sdk-line-height': 'var(--usertour-line-height)',
   },
-  lineHeight: {
-    'sdk-base': 'var(--usertour-line-height)',
-    'sdk-heading': '1.25em',
-  },
   fontSize: {
-    'sdk-base': 'var(--usertour-font-size)',
-    'sdk-h1': 'var(--usertour-h1-font-size)',
-    'sdk-h2': 'var(--usertour-h2-font-size)',
+    // sdk-base includes line-height (following Tailwind convention)
+    // Use leading-none to override if line-height is not needed
+    'sdk-base': ['var(--usertour-font-size)', 'var(--usertour-line-height)'],
+    // Heading font sizes include line-height (1.25em) for consistency
+    'sdk-h1': ['var(--usertour-h1-font-size)', { lineHeight: '1.25em' }],
+    'sdk-h2': ['var(--usertour-h2-font-size)', { lineHeight: '1.25em' }],
     'sdk-xs': 'calc(var(--usertour-font-size) * 0.75)',
     'sdk-sm': 'calc(var(--usertour-font-size) * 0.875)',
     'sdk-numbered-progress': 'var(--usertour-numbered-progress-bar-height)',

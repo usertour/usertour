@@ -1,5 +1,5 @@
 import { Button } from '@usertour-packages/button';
-import { CheckboxIcon2, DeleteIcon, PlusIcon } from '@usertour-packages/icons';
+import { DeleteIcon, PlusIcon, RiCheckFill } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
@@ -40,7 +40,7 @@ interface ContentEditorMultipleChoiceProps {
 }
 
 const itemBaseClass =
-  'flex items-center overflow-hidden group cursor-pointer relative border bg-sdk-question/10 text-sdk-question border-sdk-question hover:text-sdk-question hover:bg-sdk-question/40 rounded-md main-transition p-2 gap-2 w-auto pr-0 h-8 items-center justify-center min-w-0';
+  'flex items-center overflow-hidden group cursor-pointer relative border bg-sdk-question/10 text-sdk-question border-sdk-question hover:text-sdk-question hover:bg-sdk-question/30 rounded-md main-transition pl-2 py-1 gap-2 w-auto pr-0 h-auto items-center justify-center min-w-0';
 
 export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoiceProps) => {
   const { element, id } = props;
@@ -112,7 +112,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
       localData.options.map((option, index) => (
         <div className={itemBaseClass} key={index}>
           <Widget.RadioGroupItem value={option.value} id={`r1${index}`} />
-          <Label htmlFor={`r1${index}`} className="cursor-pointer grow">
+          <Label htmlFor={`r1${index}`} className="cursor-pointer grow text-sdk-base leading-none">
             {option.label || option.value}
           </Label>
         </div>
@@ -130,7 +130,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
             id={`c1${index}`}
             onCheckedChange={(checked) => handleOptionChange(index, 'checked', checked as boolean)}
           />
-          <Label htmlFor={`c1${index}`} className="grow cursor-pointer text-sm">
+          <Label htmlFor={`c1${index}`} className="grow cursor-pointer text-sdk-base leading-none">
             {option.label || option.value || `${DEFAULT_OPTION_PREFIX} ${index + 1}`}
           </Label>
         </div>
@@ -152,7 +152,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                       <div className={cn(itemBaseClass)}>
                         <Widget.RadioGroupItem value="other" id="other-radio" />
                         <div className="flex items-center grow gap-2 relative">
-                          <span className="grow cursor-pointer leading-none">
+                          <span className="grow cursor-pointer text-sdk-base leading-none">
                             {localData.otherPlaceholder || 'Other...'}
                           </span>
                         </div>
@@ -166,7 +166,7 @@ export const ContentEditorMultipleChoice = (props: ContentEditorMultipleChoicePr
                       <div className={cn(itemBaseClass)}>
                         <Widget.Checkbox />
                         <div className="flex items-center grow gap-2 relative">
-                          <span className="grow cursor-pointer leading-none">
+                          <span className="grow cursor-pointer text-sdk-base leading-none">
                             {localData.otherPlaceholder || 'Other...'}
                           </span>
                         </div>
@@ -393,22 +393,22 @@ const OtherOptionSerialize = memo(
                 setOtherValue(e.target.value);
                 setIsOtherChecked(!!e.target.value);
               }}
-              className="grow bg-transparent h-3.5 focus:outline-none focus:ring-0"
+              className="grow bg-transparent text-sdk-base leading-none h-sdk-font-size focus:outline-none focus:ring-0"
             />
             <Widget.Button
               variant="custom"
-              className="w-8 h-8 p-0 m-0 border-none text-sdk-question hover:bg-sdk-question/20 rounded"
+              className="cursor-pointer w-6 h-6 shrink-0 p-1 m-0 bg-sdk-question hover:bg-sdk-question/90 active:bg-sdk-question/80 text-white border-0 rounded-sdk-xs transition-colors mr-1 ml-2"
               onClick={() => {
                 setIsEditing(false);
                 onClick?.(element, otherValue);
               }}
             >
-              <CheckboxIcon2 />
+              <RiCheckFill className="w-full h-full" />
             </Widget.Button>
           </>
         ) : (
           <span
-            className="grow cursor-pointer leading-none"
+            className="grow cursor-pointer text-sdk-base leading-none"
             onClick={(e) => {
               e.stopPropagation();
               setIsEditing(true);
@@ -424,12 +424,17 @@ const OtherOptionSerialize = memo(
 
 OtherOptionSerialize.displayName = 'OtherOptionSerialize';
 
-export const ContentEditorMultipleChoiceSerialize = memo(
-  (props: {
+// Multiple selection mode component
+const MultipleSelectionSerialize = memo(
+  ({
+    element,
+    options,
+    onClick,
+  }: {
     element: ContentEditorMultipleChoiceElement;
+    options: ContentEditorMultipleChoiceOption[];
     onClick?: (element: ContentEditorMultipleChoiceElement, value?: any) => Promise<void> | void;
   }) => {
-    const { element, onClick } = props;
     const [otherValue, setOtherValue] = useState<string>('');
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [selectedValues, setSelectedValues] = useState<string[]>([]);
@@ -437,122 +442,134 @@ export const ContentEditorMultipleChoiceSerialize = memo(
     const otherInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
 
-    const options = useMemo(() => {
-      if (element.data.shuffleOptions) {
-        return [...element.data.options].sort(() => Math.random() - 0.5);
-      }
-      return element.data.options;
-    }, [element.data.options, element.data.shuffleOptions]);
+    const isValidSelection = useCallback(() => {
+      const count = selectedValues.length + (isOtherChecked && otherValue ? 1 : 0);
+      const lowRange = Number(element.data.lowRange) || 0;
+      // When enableOther is true, the max selectable count should include the "Other" option
+      const maxOptions = options.length + (element.data.enableOther ? 1 : 0);
+      const highRange = Number(element.data.highRange) || maxOptions;
+      return count >= lowRange && count <= highRange;
+    }, [
+      selectedValues.length,
+      isOtherChecked,
+      otherValue,
+      element.data.lowRange,
+      element.data.highRange,
+      element.data.enableOther,
+      options.length,
+    ]);
 
-    if (element.data.allowMultiple) {
-      const isValidSelection = useCallback(() => {
-        const count = selectedValues.length + (isOtherChecked && otherValue ? 1 : 0);
-        const lowRange = Number(element.data.lowRange) || 0;
-        // When enableOther is true, the max selectable count should include the "Other" option
-        const maxOptions = options.length + (element.data.enableOther ? 1 : 0);
-        const highRange = Number(element.data.highRange) || maxOptions;
-        return count >= lowRange && count <= highRange;
-      }, [
-        selectedValues.length,
-        isOtherChecked,
-        otherValue,
-        element.data.lowRange,
-        element.data.highRange,
-        element.data.enableOther,
-        options.length,
-      ]);
-
-      const handleOptionClick = useCallback((value: string) => {
-        setSelectedValues((prev) => {
-          if (prev.includes(value)) {
-            return prev.filter((v) => v !== value);
-          }
-          return [...prev, value];
-        });
-      }, []);
-
-      const handleSubmit = useCallback(async () => {
-        if (isValidSelection() && onClick) {
-          setLoading(true);
-          try {
-            const values = [...selectedValues];
-            if (isOtherChecked && otherValue) {
-              values.push(otherValue);
-            }
-            await onClick(element, values);
-          } finally {
-            setLoading(false);
-          }
+    const handleOptionClick = useCallback((value: string) => {
+      setSelectedValues((prev) => {
+        if (prev.includes(value)) {
+          return prev.filter((v) => v !== value);
         }
-      }, [isValidSelection, selectedValues, isOtherChecked, otherValue, onClick, element]);
+        return [...prev, value];
+      });
+    }, []);
 
-      return (
-        <div className="flex flex-col gap-2 w-full">
-          <div className="space-y-2">
-            <div className="flex flex-col gap-2">
-              {options.map((option, index) => (
-                <div
-                  className={itemBaseClass}
-                  key={index}
-                  onClick={() => handleOptionClick(option.value)}
-                >
-                  <Widget.Checkbox checked={selectedValues.includes(option.value)} />
-                  <span className="grow cursor-pointer text-sm">
-                    {option.label || option.value || `${DEFAULT_OPTION_PREFIX} ${index + 1}`}
-                  </span>
-                </div>
-              ))}
-              {element.data.enableOther && (
-                <div className={cn(itemBaseClass, isEditing && 'hover:bg-transparent')}>
-                  <Widget.Checkbox
-                    checked={isOtherChecked}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isOtherChecked) {
-                        setOtherValue('');
-                        setIsOtherChecked(false);
-                      } else {
+    const handleSubmit = useCallback(async () => {
+      if (isValidSelection() && onClick) {
+        setLoading(true);
+        try {
+          const values = [...selectedValues];
+          if (isOtherChecked && otherValue) {
+            values.push(otherValue);
+          }
+          await onClick(element, values);
+        } finally {
+          setLoading(false);
+        }
+      }
+    }, [isValidSelection, selectedValues, isOtherChecked, otherValue, onClick, element]);
+
+    return (
+      <div className="flex flex-col gap-2 w-full">
+        <div className="space-y-2">
+          <div className="flex flex-col gap-2">
+            {options.map((option, index) => (
+              <div
+                className={itemBaseClass}
+                key={index}
+                onClick={() => handleOptionClick(option.value)}
+              >
+                <Widget.Checkbox checked={selectedValues.includes(option.value)} />
+                <span className="grow cursor-pointer text-sdk-base leading-none">
+                  {option.label || option.value || `${DEFAULT_OPTION_PREFIX} ${index + 1}`}
+                </span>
+              </div>
+            ))}
+            {element.data.enableOther && (
+              <div className={cn(itemBaseClass, isEditing && 'hover:bg-transparent')}>
+                <Widget.Checkbox
+                  checked={isOtherChecked}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isOtherChecked) {
+                      setOtherValue('');
+                      setIsOtherChecked(false);
+                    } else {
+                      setIsEditing(true);
+                      otherInputRef.current?.focus();
+                    }
+                  }}
+                />
+                <div className="flex items-center grow gap-2 relative">
+                  {isEditing ? (
+                    <input
+                      ref={otherInputRef}
+                      placeholder={element.data.otherPlaceholder || 'Other...'}
+                      value={otherValue}
+                      onChange={(e) => {
+                        setOtherValue(e.target.value);
+                        setIsOtherChecked(!!e.target.value);
+                      }}
+                      className="grow bg-transparent text-sdk-base leading-none h-sdk-font-size focus:outline-none focus:ring-0"
+                    />
+                  ) : (
+                    <span
+                      className="grow cursor-pointer text-sdk-base leading-none"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setIsEditing(true);
-                        otherInputRef.current?.focus();
-                      }
-                    }}
-                  />
-                  <div className="flex items-center grow gap-2 relative">
-                    {isEditing ? (
-                      <input
-                        ref={otherInputRef}
-                        placeholder={element.data.otherPlaceholder || 'Other...'}
-                        value={otherValue}
-                        onChange={(e) => {
-                          setOtherValue(e.target.value);
-                          setIsOtherChecked(!!e.target.value);
-                        }}
-                        className="grow bg-transparent h-3.5 focus:outline-none focus:ring-0"
-                      />
-                    ) : (
-                      <span
-                        className="grow cursor-pointer leading-none"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsEditing(true);
-                        }}
-                      >
-                        {otherValue || element.data.otherPlaceholder || 'Other...'}
-                      </span>
-                    )}
-                  </div>
+                      }}
+                    >
+                      {otherValue || element.data.otherPlaceholder || 'Other...'}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
-            <div className="flex justify-center w-full">
-              <Widget.Button disabled={!isValidSelection() || loading} onClick={handleSubmit}>
-                {element.data.buttonText || DEFAULT_BUTTON_TEXT}
-              </Widget.Button>
-            </div>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-center w-full">
+            <Widget.Button disabled={!isValidSelection() || loading} onClick={handleSubmit}>
+              {element.data.buttonText || DEFAULT_BUTTON_TEXT}
+            </Widget.Button>
           </div>
         </div>
-      );
-    }
+      </div>
+    );
+  },
+);
+
+MultipleSelectionSerialize.displayName = 'MultipleSelectionSerialize';
+
+// Single selection mode component
+const SingleSelectionSerialize = memo(
+  ({
+    element,
+    options,
+    onClick,
+  }: {
+    element: ContentEditorMultipleChoiceElement;
+    options: ContentEditorMultipleChoiceOption[];
+    onClick?: (element: ContentEditorMultipleChoiceElement, value?: any) => Promise<void> | void;
+  }) => {
+    const [otherValue, setOtherValue] = useState<string>('');
+    const [isEditing, setIsEditing] = useState<boolean>(false);
+    // isOtherChecked state is managed by OtherOptionSerialize via setIsOtherChecked
+    const [, setIsOtherChecked] = useState<boolean>(false);
+    const otherInputRef = useRef<HTMLInputElement>(null);
 
     return (
       <div className="flex flex-col gap-2 w-full">
@@ -568,7 +585,10 @@ export const ContentEditorMultipleChoiceSerialize = memo(
               {options.map((option, index) => (
                 <div className={itemBaseClass} key={index}>
                   <Widget.RadioGroupItem value={option.value} id={`r1${index}`} />
-                  <Label htmlFor={`r1${index}`} className="grow cursor-pointer text-sm">
+                  <Label
+                    htmlFor={`r1${index}`}
+                    className="grow cursor-pointer text-sdk-base leading-none"
+                  >
                     {option.label || option.value}
                   </Label>
                 </div>
@@ -591,6 +611,30 @@ export const ContentEditorMultipleChoiceSerialize = memo(
         </div>
       </div>
     );
+  },
+);
+
+SingleSelectionSerialize.displayName = 'SingleSelectionSerialize';
+
+export const ContentEditorMultipleChoiceSerialize = memo(
+  (props: {
+    element: ContentEditorMultipleChoiceElement;
+    onClick?: (element: ContentEditorMultipleChoiceElement, value?: any) => Promise<void> | void;
+  }) => {
+    const { element, onClick } = props;
+
+    const options = useMemo(() => {
+      if (element.data.shuffleOptions) {
+        return [...element.data.options].sort(() => Math.random() - 0.5);
+      }
+      return element.data.options;
+    }, [element.data.options, element.data.shuffleOptions]);
+
+    if (element.data.allowMultiple) {
+      return <MultipleSelectionSerialize element={element} options={options} onClick={onClick} />;
+    }
+
+    return <SingleSelectionSerialize element={element} options={options} onClick={onClick} />;
   },
 );
 
