@@ -337,7 +337,12 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
         {children}
       </div>
       {isActive && (
-        <PopoverContent className="bg-background" side="left" style={{ zIndex }} sideOffset={5}>
+        <PopoverContent
+          className="shadow-none drop-shadow-popover"
+          side="left"
+          style={{ zIndex }}
+          sideOffset={5}
+        >
           <div className="flex flex-col gap-2.5">
             <Label>Column width</Label>
             <div className="flex gap-x-2">
@@ -384,7 +389,7 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
               onAddRight={handleAddRightColumn}
             />
           </div>
-          <PopoverArrow className="fill-slate-900" />
+          <PopoverArrow className="fill-background" width={20} height={10} />
         </PopoverContent>
       )}
     </Popover>
