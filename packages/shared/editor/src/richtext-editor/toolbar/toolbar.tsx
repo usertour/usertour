@@ -8,7 +8,7 @@ import {
 import { EDITOR_RICH_TOOLBAR } from '@usertour-packages/constants';
 import { cn } from '@usertour-packages/tailwind';
 import { TooltipProvider } from '@usertour-packages/tooltip';
-import { memo, useCallback, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { usePopperEditorContext } from '../editor';
 import {
@@ -64,22 +64,29 @@ const renderToolbarItem = (item: ToolbarItemConfig) => {
 export const EditorToolbar = memo(() => {
   const { zIndex, setShowToolbar, showToolbar } = usePopperEditorContext();
   const overflowRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLElement | null>(null);
 
   // Responsive layout management
   const { visibleItems, overflowItems, showOverflow, measureRef, containerRef } =
     useResponsiveToolbar(TOOLBAR_ITEMS);
+
+  // Keep editorRef in sync with toolbar's parent element
+  // Note: Run on every render to ensure ref is always current
+  // since React doesn't track ref.current changes
+  useEffect(() => {
+    editorRef.current = containerRef.current?.parentElement ?? null;
+  });
 
   // Handle click outside to close toolbar
   const handleClickOutside = useCallback(() => {
     setShowToolbar(false);
   }, [setShowToolbar]);
 
+  // Stable refs array for click outside detection
+  const clickOutsideRefs = useMemo(() => [containerRef, overflowRef, editorRef], [containerRef]);
+
   // Click outside detection with editor container support
-  useClickOutside(
-    [containerRef, overflowRef, { current: containerRef.current?.parentElement ?? null }],
-    handleClickOutside,
-    showToolbar,
-  );
+  useClickOutside(clickOutsideRefs, handleClickOutside, showToolbar);
 
   return (
     <TooltipProvider>

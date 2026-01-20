@@ -1,5 +1,7 @@
 import type { RefObject } from 'react';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
+import { useEvent } from 'react-use';
+import { window } from '@usertour/helpers';
 
 /**
  * Hook to detect clicks outside of specified elements
@@ -11,12 +13,16 @@ export const useClickOutside = (
   enabled = true,
 ) => {
   const handleClickOutside = useCallback(
-    (event: MouseEvent) => {
+    (event: Event) => {
+      if (!enabled) return;
+
+      const mouseEvent = event as MouseEvent;
+
       // Check if click is inside any of the provided refs
-      const isInsideRefs = refs.some((ref) => ref.current?.contains(event.target as Node));
+      const isInsideRefs = refs.some((ref) => ref.current?.contains(mouseEvent.target as Node));
 
       // Check if click is inside any Radix Popover (e.g., ColorPicker panel)
-      const isInRadixPopover = (event.target as Element).closest?.(
+      const isInRadixPopover = (mouseEvent.target as Element).closest?.(
         '[data-radix-popper-content-wrapper]',
       );
 
@@ -24,17 +30,9 @@ export const useClickOutside = (
         onClickOutside();
       }
     },
-    [refs, onClickOutside],
+    [refs, onClickOutside, enabled],
   );
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    // Use capture: false to allow other click handlers to run first
-    window.addEventListener('click', handleClickOutside, { capture: false });
-
-    return () => {
-      window.removeEventListener('click', handleClickOutside, { capture: false });
-    };
-  }, [handleClickOutside, enabled]);
+  // Use react-use's useEvent for consistent event handling across the project
+  useEvent('click', handleClickOutside, window, { capture: false });
 };
