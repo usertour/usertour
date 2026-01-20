@@ -17,8 +17,12 @@ export const UserAttrButton = memo(({ className }: UserAttrButtonProps) => {
   }, [editor]);
 
   return (
-    <Button variant="ghost" onClick={handleClick} className={cn('h-fit p-2', className)}>
-      <UserIcon height={15} width={15} />
+    <Button
+      variant="ghost"
+      onClick={handleClick}
+      className={cn('h-auto px-2 rounded-l-none self-stretch', className)}
+    >
+      <UserIcon height={16} width={16} />
     </Button>
   );
 });

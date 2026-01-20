@@ -237,7 +237,7 @@ export const PopperEditorMini = (props: PopperEditorProps) => {
     <div
       ref={setEditorRef}
       className={cn(
-        'rounded-md border border-input p-2 relative flex flex-row items-center',
+        'rounded-md border border-input pl-2 relative flex flex-row items-center',
         'transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
         className,
       )}

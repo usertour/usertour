@@ -226,7 +226,7 @@ export const UserAttributeElement = memo((props: RenderElementProps) => {
           className={cn(USER_ATTR_TRIGGER_BASE_CLASS, open && USER_ATTR_TRIGGER_FOCUS_CLASS)}
           contentEditable={false}
         >
-          <UserIcon height={15} width={15} />
+          <UserIcon height={16} width={16} />
           {attrName ?? '...'}
           {children}
         </span>
