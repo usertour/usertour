@@ -1,1 +1,0 @@
-export { EditorToolbar } from './toolbar';

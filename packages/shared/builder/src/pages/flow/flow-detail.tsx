@@ -4,6 +4,7 @@ import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import {
+  EXTENSION_CONTENT_POPPER,
   EXTENSION_CONTENT_SIDEBAR,
   MESSAGE_CRX_OPEN_NEW_TARGET,
 } from '@usertour-packages/constants';
@@ -397,7 +398,7 @@ const FlowBuilderDetailEmbed = () => {
           currentContent={currentContent}
           contents={contents}
           triggerRef={triggerRef}
-          zIndex={zIndex}
+          zIndex={zIndex + EXTENSION_CONTENT_POPPER}
           projectId={projectId}
           currentStep={currentStep}
           currentVersion={currentVersion}

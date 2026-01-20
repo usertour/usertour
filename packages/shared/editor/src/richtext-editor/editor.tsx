@@ -10,8 +10,7 @@ import { toggleTextProps } from '../lib/text';
 import { PopperEditorContextProps, PopperEditorProps } from '../types/editor';
 import { ELEMENTS } from './elements';
 import { useSlateEditor } from './hooks';
-import { EditorToolbar } from './toolbar';
-import { UserAttrButton } from './toolbar/user-attr';
+import { EditorToolbar, UserAttrButton } from './toolbar';
 
 const HOTKEYS: Record<string, string> = {
   'mod+b': 'bold',
