@@ -2,5 +2,6 @@
 export * from './column';
 export * from './embed';
 export * from './margin';
+export * from './sidebar';
 export * from './styles';
 export * from './width';
