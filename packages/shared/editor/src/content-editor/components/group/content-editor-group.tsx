@@ -1,18 +1,20 @@
+// Main editable group component
+
 import { useDndMonitor } from '@dnd-kit/core';
 import { AnimateLayoutChanges, defaultAnimateLayoutChanges, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { DragHandleDots2Icon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { cn } from '@usertour-packages/tailwind';
-import { ReactNode, forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
-import { useContentEditorContext } from '../../contexts/content-editor-context';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
+
+import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
   ContentEditorElement,
   ContentEditorElementInsertDirection,
   ContentEditorGroupElement,
   ContentEditorSideBarType,
-} from '../../types/editor';
-import { ContentEditorSideBar } from './sidebar';
+} from '../../../types/editor';
+import { ContentEditorSideBar } from '../sidebar';
+import { GroupDragHandle } from './group-drag-handle';
 
 interface DragStyle {
   transform: string;
@@ -34,39 +36,6 @@ const createDragStyle = (
 const animateLayoutChanges: AnimateLayoutChanges = (args) =>
   defaultAnimateLayoutChanges({ ...args, wasDragging: true });
 
-// Drag handle component
-const DragHandle = ({
-  isVisible,
-  isOverlay = false,
-  setActivatorNodeRef,
-  attributes,
-  listeners,
-}: {
-  isVisible: boolean;
-  isOverlay?: boolean;
-  setActivatorNodeRef: (node: HTMLElement | null) => void;
-  attributes: any;
-  listeners: any;
-}) => {
-  if (!isVisible) return null;
-
-  return (
-    <Button
-      size="icon"
-      ref={setActivatorNodeRef}
-      className={cn(
-        'rounded-none absolute w-4 h-full rounded-l -left-4 cursor-move',
-        isOverlay && 'bg-sdk-primary',
-      )}
-      {...attributes}
-      {...listeners}
-    >
-      <DragHandleDots2Icon className="h-4" />
-    </Button>
-  );
-};
-
-// Main editable group component
 export interface ContentEditorGroupProps {
   children: ReactNode;
   element: ContentEditorGroupElement;
@@ -75,7 +44,7 @@ export interface ContentEditorGroupProps {
   items: any[];
 }
 
-export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
+export const ContentEditorGroup = memo((props: ContentEditorGroupProps) => {
   const { children, path, id, items } = props;
   const [isGroupHover, setIsGroupHover] = useState(false);
   const { insertColumnInGroup, activeId } = useContentEditorContext();
@@ -169,7 +138,7 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
       onFocus={handleFocus}
       onBlur={handleBlur}
     >
-      <DragHandle
+      <GroupDragHandle
         isVisible={shouldShowDragHandle}
         setActivatorNodeRef={setActivatorNodeRef}
         attributes={attributes}
@@ -188,43 +157,6 @@ export const ContentEditorGroup = (props: ContentEditorGroupProps) => {
       {children}
     </div>
   );
-};
+});
 
 ContentEditorGroup.displayName = 'ContentEditorGroup';
-
-// Overlay component
-export const ContentEditorGroupOverlay = forwardRef<HTMLDivElement, ContentEditorGroupProps>(
-  (props: ContentEditorGroupProps, ref) => {
-    const { children } = props;
-
-    return (
-      <div ref={ref} className="relative h-full w-full flex items-stretch">
-        <Button
-          size="icon"
-          className={cn(
-            'rounded-none absolute w-4 h-full rounded-l -left-4 cursor-move',
-            'bg-sdk-primary',
-          )}
-        >
-          <DragHandleDots2Icon className="h-4" />
-        </Button>
-        {children}
-      </div>
-    );
-  },
-);
-
-ContentEditorGroupOverlay.displayName = 'ContentEditorGroupOverlay';
-
-// Read-only serialized component for SDK
-export type ContentEditorGroupSerializeType = {
-  children: React.ReactNode;
-};
-
-export const ContentEditorGroupSerialize = (props: ContentEditorGroupSerializeType) => {
-  const { children } = props;
-
-  return <div className="relative flex items-stretch">{children}</div>;
-};
-
-ContentEditorGroupSerialize.displayName = 'ContentEditorGroupSerialize';
