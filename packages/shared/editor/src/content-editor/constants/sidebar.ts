@@ -12,7 +12,7 @@ export const SIDEBAR_SELECTION_COLORS = {
   icon: '#22c55e',
 } as const;
 
-// Base style for selection indicator
+// Base style for selection indicator (used for RIGHT sidebar)
 const SELECT_BASE_STYLE: CSSProperties = {
   boxSizing: 'border-box',
   height: '100%',
@@ -27,6 +27,7 @@ const SELECT_BASE_STYLE: CSSProperties = {
   background: SIDEBAR_SELECTION_COLORS.background,
   border: SIDEBAR_SELECTION_COLORS.borderSolid,
   opacity: 0,
+  transition: 'width 0.15s ease-out, transform, opacity 0.3s ease-out 0.1s',
   transformOrigin: 'right center',
   backfaceVisibility: 'hidden',
   transform: 'translateZ(0px) translateX(-1px)',
