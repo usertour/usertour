@@ -1,5 +1,4 @@
 import { Button } from '@usertour-packages/button';
-import { Checkbox } from '@usertour-packages/checkbox';
 import { ComboBox } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import {
@@ -8,7 +7,6 @@ import {
   ImageIcon,
   InsertColumnLeftIcon,
   InsertColumnRightIcon,
-  SpinnerIcon,
 } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
@@ -33,140 +31,41 @@ import {
   ContentEditorUploadRequestOption,
 } from '../../types/editor';
 import { promiseUploadFunc } from '../../utils/promiseUploadFunc';
-
-// Constants
-const MARGIN_KEY_MAPPING = {
-  left: 'marginLeft',
-  top: 'marginTop',
-  bottom: 'marginBottom',
-  right: 'marginRight',
-} as const;
-
-const WIDTH_TYPES = {
-  PERCENT: 'percent',
-  PIXELS: 'pixels',
-} as const;
-
-const WIDTH_TYPE_OPTIONS = [
-  { value: WIDTH_TYPES.PERCENT, name: '%' },
-  { value: WIDTH_TYPES.PIXELS, name: 'pixels' },
-];
-
-const MARGIN_POSITIONS = ['left', 'top', 'bottom', 'right'] as const;
-
-const DEFAULT_IMAGE_SIZE = 160; // 40 * 4 (w-40 h-40)
-const DEFAULT_SPINNER_SIZE = 40; // h-10 w-10
-const DEFAULT_WIDTH = 100;
-const DEFAULT_DIMENSION_TYPE: DimensionType = 'percent';
+import {
+  DEFAULT_IMAGE_SIZE,
+  DEFAULT_WIDTH,
+  IMAGE_WIDTH_TYPE_OPTIONS,
+  WIDTH_TYPES,
+} from '../constants';
+import { LoadingSpinner, MarginControls, TooltipActionButton } from '../shared';
+import type { DimensionType, MarginPosition, MarginStyleProps } from '../types';
+import { ensureDimensionWithDefaults, getWidthStyle, transformMarginStyle } from '../utils';
 
 // Types
-type MarginPosition = keyof typeof MARGIN_KEY_MAPPING;
-type DimensionType = 'percent' | 'pixels';
-
-interface ImageStyle {
+interface ImageStyle extends MarginStyleProps {
   width?: string;
-  marginLeft?: string;
-  marginTop?: string;
-  marginBottom?: string;
-  marginRight?: string;
 }
 
-// Utility functions
-const ensureDimensionWithDefaults = (dimension?: { type?: string; value?: number }): {
-  type: DimensionType;
-  value?: number;
-} => ({
-  type: (dimension?.type as DimensionType) || DEFAULT_DIMENSION_TYPE,
-  value: dimension?.value,
-});
-
+// Utility function for transforming element to style
 const transformsStyle = (element: ContentEditorImageElement): ImageStyle => {
   const style: ImageStyle = {};
 
-  // Handle width with defaults
-  const width = ensureDimensionWithDefaults(element.width);
-  if (width.value) {
-    style.width = width.type === WIDTH_TYPES.PERCENT ? `${width.value}%` : `${width.value}px`;
-  } else if (element.width?.type === WIDTH_TYPES.PERCENT) {
-    // Default to 100% if type is percent but no value
-    style.width = `${DEFAULT_WIDTH}%`;
-  }
-
-  // Handle margins
-  if (element.margin) {
-    for (const position of MARGIN_POSITIONS) {
-      const marginName = MARGIN_KEY_MAPPING[position];
-      if (element.margin?.[position]) {
-        style[marginName] = element.margin.enabled ? `${element.margin[position]}px` : undefined;
-      }
+  // Handle width - only process if element.width exists (preserve backward compatibility)
+  if (element.width) {
+    const width = ensureDimensionWithDefaults(element.width);
+    const widthStyle = getWidthStyle(width);
+    if (widthStyle) {
+      style.width = widthStyle;
+    } else if (element.width.type === WIDTH_TYPES.PERCENT) {
+      // Default to 100% if type is percent but no value
+      style.width = `${DEFAULT_WIDTH}%`;
     }
   }
 
-  return style;
+  // Handle margins using shared utility
+  const marginStyle = transformMarginStyle(element.margin);
+  return { ...style, ...marginStyle };
 };
-
-// Loading component
-const LoadingSpinner = ({ size = DEFAULT_SPINNER_SIZE }: { size?: number }) => (
-  <div className="flex items-center justify-center" style={{ width: size, height: size }}>
-    <SpinnerIcon className="animate-spin" style={{ width: size / 4, height: size / 4 }} />
-  </div>
-);
-
-// Margin controls component
-const MarginControls = ({
-  element,
-  onMarginChange,
-  onMarginEnabledChange,
-}: {
-  element: ContentEditorImageElement;
-  onMarginChange: (position: MarginPosition, value: string) => void;
-  onMarginEnabledChange: (enabled: boolean) => void;
-}) => (
-  <>
-    <div className="flex gap-x-2">
-      <Checkbox
-        id="margin"
-        checked={element.margin?.enabled}
-        onCheckedChange={onMarginEnabledChange}
-      />
-      <Label htmlFor="margin">Margin</Label>
-    </div>
-    {element.margin?.enabled && (
-      <div className="flex gap-x-2">
-        <div className="flex flex-col justify-center">
-          <Input
-            value={element.margin?.left}
-            placeholder="Left"
-            onChange={(e) => onMarginChange('left', e.target.value)}
-            className="bg-background flex-none w-20"
-          />
-        </div>
-        <div className="flex flex-col justify-center gap-y-2">
-          <Input
-            value={element.margin?.top}
-            onChange={(e) => onMarginChange('top', e.target.value)}
-            placeholder="Top"
-            className="bg-background flex-none w-20"
-          />
-          <Input
-            value={element.margin?.bottom}
-            onChange={(e) => onMarginChange('bottom', e.target.value)}
-            placeholder="Bottom"
-            className="bg-background flex-none w-20"
-          />
-        </div>
-        <div className="flex flex-col justify-center">
-          <Input
-            value={element.margin?.right}
-            placeholder="Right"
-            onChange={(e) => onMarginChange('right', e.target.value)}
-            className="bg-background flex-none w-20"
-          />
-        </div>
-      </div>
-    )}
-  </>
-);
 
 // Action buttons component
 const ActionButtons = ({
@@ -183,23 +82,15 @@ const ActionButtons = ({
   isLoading: boolean;
 }) => (
   <div className="flex items-center">
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            className="flex-none hover:bg-destructive/20"
-            variant="ghost"
-            size="icon"
-            onClick={onDelete}
-            disabled={isLoading}
-          >
-            <DeleteIcon className="fill-destructive" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">Delete image</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <TooltipActionButton
+      tooltip="Delete image"
+      icon={<DeleteIcon className="fill-destructive" />}
+      onClick={onDelete}
+      disabled={isLoading}
+      destructive
+    />
 
+    {/* Replace image button with Upload component - special case */}
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -218,41 +109,21 @@ const ActionButtons = ({
 
     <div className="grow" />
 
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            className="flex-none"
-            variant="ghost"
-            size="icon"
-            onClick={onAddLeft}
-            disabled={isLoading}
-          >
-            <InsertColumnLeftIcon className="fill-foreground" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">Insert image to the left</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <TooltipActionButton
+      tooltip="Insert image to the left"
+      icon={<InsertColumnLeftIcon className="fill-foreground" />}
+      onClick={onAddLeft}
+      disabled={isLoading}
+    />
 
     <div className="flex-none mx-1 leading-10">Insert image</div>
 
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            className="flex-none"
-            variant="ghost"
-            size="icon"
-            onClick={onAddRight}
-            disabled={isLoading}
-          >
-            <InsertColumnRightIcon className="fill-foreground" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">Insert image to the right</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <TooltipActionButton
+      tooltip="Insert image to the right"
+      icon={<InsertColumnRightIcon className="fill-foreground" />}
+      onClick={onAddRight}
+      disabled={isLoading}
+    />
   </div>
 );
 
@@ -438,7 +309,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
               className="bg-background"
             />
             <ComboBox
-              options={WIDTH_TYPE_OPTIONS}
+              options={IMAGE_WIDTH_TYPE_OPTIONS}
               value={ensureDimensionWithDefaults(element.width).type}
               onValueChange={handleWidthTypeChange}
               placeholder="Select type"
@@ -448,7 +319,7 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
           </div>
 
           <MarginControls
-            element={element}
+            margin={element.margin}
             onMarginChange={handleMarginValueChange}
             onMarginEnabledChange={handleMarginCheckedChange}
           />

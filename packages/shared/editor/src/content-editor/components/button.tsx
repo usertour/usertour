@@ -1,17 +1,9 @@
-import { Button } from '@usertour-packages/button';
-import { Checkbox } from '@usertour-packages/checkbox';
 import { ComboBox, ComboBoxOption } from '@usertour-packages/combo-box';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
 import * as Widget from '@usertour-packages/widget';
 import { RulesCondition } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -27,21 +19,10 @@ import {
   ContentEditorButtonElement,
   ContentEditorElementInsertDirection,
 } from '../../types/editor';
-
-// Constants
-const MARGIN_KEY_MAPPING = {
-  left: 'marginLeft',
-  top: 'marginTop',
-  bottom: 'marginBottom',
-  right: 'marginRight',
-} as const;
-
-const BUTTON_STYLES = {
-  DEFAULT: 'default',
-  SECONDARY: 'secondary',
-} as const;
-
-const MARGIN_POSITIONS = ['left', 'top', 'bottom', 'right'] as const;
+import { BUTTON_STYLES } from '../constants';
+import { MarginControls, TooltipActionButton } from '../shared';
+import type { MarginPosition, MarginStyleProps } from '../types';
+import { transformMarginStyle } from '../utils';
 
 // ComboBox options
 const BUTTON_STYLE_OPTIONS: ComboBoxOption[] = [
@@ -49,88 +30,10 @@ const BUTTON_STYLE_OPTIONS: ComboBoxOption[] = [
   { value: BUTTON_STYLES.SECONDARY, name: 'Secondary' },
 ];
 
-// Types
-type MarginPosition = keyof typeof MARGIN_KEY_MAPPING;
-
-interface ButtonStyleProps {
-  marginLeft?: string;
-  marginTop?: string;
-  marginBottom?: string;
-  marginRight?: string;
-}
-
-// Utility functions
-const transformsStyle = (element: ContentEditorButtonElement): ButtonStyleProps => {
-  const style: ButtonStyleProps = {};
-
-  // Handle margins
-  if (element.margin) {
-    for (const position of MARGIN_POSITIONS) {
-      const marginName = MARGIN_KEY_MAPPING[position];
-      if (element.margin?.[position]) {
-        style[marginName] = element.margin.enabled ? `${element.margin[position]}px` : undefined;
-      }
-    }
-  }
-
-  return style;
+// Utility function for transforming element to style
+const transformsStyle = (element: ContentEditorButtonElement): MarginStyleProps => {
+  return transformMarginStyle(element.margin);
 };
-
-// Margin controls component
-const MarginControls = ({
-  element,
-  onMarginChange,
-  onMarginEnabledChange,
-}: {
-  element: ContentEditorButtonElement;
-  onMarginChange: (position: MarginPosition, value: string) => void;
-  onMarginEnabledChange: (enabled: boolean) => void;
-}) => (
-  <>
-    <div className="flex gap-x-2">
-      <Checkbox
-        id="margin"
-        checked={element.margin?.enabled}
-        onCheckedChange={onMarginEnabledChange}
-      />
-      <Label htmlFor="margin">Margin</Label>
-    </div>
-    {element.margin?.enabled && (
-      <div className="flex gap-x-2">
-        <div className="flex flex-col justify-center">
-          <Input
-            value={element.margin?.left}
-            placeholder="Left"
-            onChange={(e) => onMarginChange('left', e.target.value)}
-            className="bg-background flex-none w-20"
-          />
-        </div>
-        <div className="flex flex-col justify-center gap-y-2">
-          <Input
-            value={element.margin?.top}
-            onChange={(e) => onMarginChange('top', e.target.value)}
-            placeholder="Top"
-            className="bg-background flex-none w-20"
-          />
-          <Input
-            value={element.margin?.bottom}
-            onChange={(e) => onMarginChange('bottom', e.target.value)}
-            placeholder="Bottom"
-            className="bg-background flex-none w-20"
-          />
-        </div>
-        <div className="flex flex-col justify-center">
-          <Input
-            value={element.margin?.right}
-            placeholder="Right"
-            onChange={(e) => onMarginChange('right', e.target.value)}
-            className="bg-background flex-none w-20"
-          />
-        </div>
-      </div>
-    )}
-  </>
-);
 
 // Action buttons component
 const ActionButtons = ({
@@ -143,43 +46,24 @@ const ActionButtons = ({
   onAddRight: () => void;
 }) => (
   <div className="flex items-center">
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            className="flex-none hover:bg-destructive/20"
-            variant="ghost"
-            size="icon"
-            onClick={onDelete}
-          >
-            <DeleteIcon className="fill-destructive" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">Delete button</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <TooltipActionButton
+      tooltip="Delete button"
+      icon={<DeleteIcon className="fill-destructive" />}
+      onClick={onDelete}
+      destructive
+    />
     <div className="grow" />
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button className="flex-none" variant="ghost" size="icon" onClick={onAddLeft}>
-            <InsertColumnLeftIcon className="fill-foreground" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">Insert button to the left</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <TooltipActionButton
+      tooltip="Insert button to the left"
+      icon={<InsertColumnLeftIcon className="fill-foreground" />}
+      onClick={onAddLeft}
+    />
     <div className="flex-none mx-1 leading-10">Insert button</div>
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button className="flex-none" variant="ghost" size="icon" onClick={onAddRight}>
-            <InsertColumnRightIcon className="fill-foreground" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">Insert button to the right</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <TooltipActionButton
+      tooltip="Insert button to the right"
+      icon={<InsertColumnRightIcon className="fill-foreground" />}
+      onClick={onAddRight}
+    />
   </div>
 );
 
@@ -320,7 +204,7 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
               />
 
               <MarginControls
-                element={element}
+                margin={element.margin}
                 onMarginChange={handleMarginValueChange}
                 onMarginEnabledChange={handleMarginCheckedChange}
               />

@@ -31,42 +31,22 @@ import {
   ContentEditorElement,
   ContentEditorElementInsertDirection,
 } from '../../types/editor';
+import {
+  ACTIVE_CLASSES,
+  ALIGN_ITEMS_OPTIONS,
+  COLUMN_WIDTH_TYPE_OPTIONS,
+  DEFAULT_ALIGN_ITEMS,
+  DEFAULT_JUSTIFY_CONTENT,
+  HOVER_CLASSES,
+  JUSTIFY_CONTENT_OPTIONS,
+  WIDTH_TYPES,
+} from '../constants';
+import { TooltipActionButton } from '../shared';
+import type { WidthType } from '../types';
+import { ensureWidthWithDefaults } from '../utils';
 import { ContentEditorSideBarPopper } from './sidebar';
 
-// Constants
-const WIDTH_TYPES = {
-  PERCENT: 'percent',
-  PIXELS: 'pixels',
-  FILL: 'fill',
-} as const;
-
-const JUSTIFY_CONTENT_OPTIONS = {
-  START: 'justify-start',
-  CENTER: 'justify-center',
-  END: 'justify-end',
-  BETWEEN: 'justify-between',
-  EVENLY: 'justify-evenly',
-  AROUND: 'justify-around',
-} as const;
-
-const ALIGN_ITEMS_OPTIONS = {
-  START: 'items-start',
-  CENTER: 'items-center',
-  END: 'items-end',
-  BASELINE: 'items-baseline',
-} as const;
-
-const DEFAULT_WIDTH_TYPE = WIDTH_TYPES.PERCENT;
-const DEFAULT_JUSTIFY_CONTENT = JUSTIFY_CONTENT_OPTIONS.START;
-const DEFAULT_ALIGN_ITEMS = ALIGN_ITEMS_OPTIONS.START;
-
-// ComboBox options
-const WIDTH_TYPE_OPTIONS: ComboBoxOption[] = [
-  { value: WIDTH_TYPES.PERCENT, name: '%' },
-  { value: WIDTH_TYPES.PIXELS, name: 'pixels' },
-  { value: WIDTH_TYPES.FILL, name: 'fill' },
-];
-
+// ComboBox options for justify content and align items
 const JUSTIFY_CONTENT_OPTIONS_LIST: ComboBoxOption[] = [
   { value: JUSTIFY_CONTENT_OPTIONS.START, name: 'Left' },
   { value: JUSTIFY_CONTENT_OPTIONS.CENTER, name: 'Center' },
@@ -83,13 +63,7 @@ const ALIGN_ITEMS_OPTIONS_LIST: ComboBoxOption[] = [
   { value: ALIGN_ITEMS_OPTIONS.BASELINE, name: 'Baseline' },
 ];
 
-// CSS Classes
-const activeClasses = 'outline-1 outline-primary outline';
-const hoverClasses = 'outline-1 outline-primary outline-dashed';
-
 // Types
-type WidthType = (typeof WIDTH_TYPES)[keyof typeof WIDTH_TYPES];
-
 interface ColumnStyle {
   marginBottom: string;
   marginRight?: string;
@@ -98,15 +72,7 @@ interface ColumnStyle {
   minWidth: string;
 }
 
-// Utility functions
-const ensureWidthWithDefaults = (width?: { type?: string; value?: number }): {
-  type: WidthType;
-  value?: number;
-} => ({
-  type: (width?.type as WidthType) || DEFAULT_WIDTH_TYPE,
-  value: width?.value,
-});
-
+// Utility function for transforming element to style
 const transformsStyle = (element: ContentEditorColumnElement): ColumnStyle => {
   const style: ColumnStyle = {
     marginBottom: '0px',
@@ -140,22 +106,14 @@ const ActionButtons = ({
   onAddRight: (element: ContentEditorElement) => void;
 }) => (
   <div className="flex items-center">
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            className="flex-none hover:bg-destructive/20"
-            variant="ghost"
-            size="icon"
-            onClick={onDelete}
-          >
-            <DeleteIcon className="fill-destructive" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">Delete column</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <TooltipActionButton
+      tooltip="Delete column"
+      icon={<DeleteIcon className="fill-destructive" />}
+      onClick={onDelete}
+      destructive
+    />
     <div className="grow" />
+    {/* Insert buttons with ContentEditorSideBarPopper - special case */}
     <TooltipProvider>
       <Tooltip>
         <ContentEditorSideBarPopper onClick={onAddLeft}>
@@ -306,8 +264,8 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
           'flex relative flex-row ',
           element?.justifyContent || DEFAULT_JUSTIFY_CONTENT,
           element?.alignItems || DEFAULT_ALIGN_ITEMS,
-          !activeId ? (isActive ? activeClasses : isHover ? hoverClasses : '') : '',
-          isDragging ? hoverClasses : '',
+          !activeId ? (isActive ? ACTIVE_CLASSES : isHover ? HOVER_CLASSES : '') : '',
+          isDragging ? HOVER_CLASSES : '',
           className,
         )}
         onMouseOver={() => setIsHover(true)}
@@ -356,7 +314,7 @@ export const ContentEditorColumn = (props: ContentEditorColumnProps) => {
                 />
               )}
               <ComboBox
-                options={WIDTH_TYPE_OPTIONS}
+                options={COLUMN_WIDTH_TYPE_OPTIONS}
                 value={width.type}
                 onValueChange={handleWidthTypeChange}
                 placeholder="Select width type"
@@ -419,7 +377,7 @@ export const ContentEditorColumnOverlay = forwardRef<HTMLDivElement, ContentEdit
           'flex relative flex-row ',
           element?.justifyContent || DEFAULT_JUSTIFY_CONTENT,
           element?.alignItems || DEFAULT_ALIGN_ITEMS,
-          !isInGroup ? hoverClasses : '',
+          !isInGroup ? HOVER_CLASSES : '',
           className,
         )}
         style={overlayStyle}
