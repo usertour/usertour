@@ -36,3 +36,20 @@ export const getWidthStyle = (
   }
   return undefined;
 };
+
+/**
+ * Sanitizes numeric input string by removing invalid characters
+ * - Removes non-digit characters except decimal point
+ * - Converts leading decimal point to "0." (e.g., ".5" -> "0.5")
+ * - Removes trailing decimal points
+ * - Ensures only one decimal point exists
+ */
+export const sanitizeNumericInput = (value: string): string => {
+  const cleaned = value
+    .replace(/[^\d.]/g, '')
+    .replace(/^\./, '0.')
+    .replace(/\.$/, '');
+
+  const parts = cleaned.split('.');
+  return parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : cleaned;
+};
