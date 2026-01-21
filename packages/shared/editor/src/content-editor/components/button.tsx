@@ -124,7 +124,8 @@ export const ContentEditorButton = (props: ContentEditorButtonProps) => {
 
   const handleMarginValueChange = useCallback(
     (position: MarginPosition, value: string) => {
-      const margin = { ...element.margin, [position]: value };
+      const numericValue = value === '' ? 0 : Number(value);
+      const margin = { ...element.margin, [position]: numericValue };
       updateElement({ ...element, margin } as any, id);
     },
     [element, id, updateElement],
