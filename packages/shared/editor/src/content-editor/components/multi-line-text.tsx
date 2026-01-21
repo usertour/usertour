@@ -1,25 +1,17 @@
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { Switch } from '@usertour-packages/switch';
 import * as Widget from '@usertour-packages/widget';
-import { isEmptyString } from '@usertour/helpers';
 import { BizAttributeTypes } from '@usertour/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
-import { ContentActions } from '../..';
+import { QuestionEditorBase } from '../shared/question-editor-base';
+import { QuestionNameField, ContentActionsField } from '../shared/question-popover-fields';
+import { TextInputPopoverFields } from '../shared/text-input-popover-fields';
 import {
-  EditorError,
-  EditorErrorAnchor,
-  EditorErrorContent,
-} from '../../richtext-editor/editor-error';
-import { useContentEditorContext } from '../../contexts/content-editor-context';
+  TextInputSerialize,
+  DEFAULT_PLACEHOLDER,
+  DEFAULT_BUTTON_TEXT,
+} from '../shared/text-input-serialize';
 import { ContentEditorMultiLineTextElement } from '../../types/editor';
 import { BindAttribute } from './bind-attribute';
-
-// Constants
-const DEFAULT_PLACEHOLDER = 'Enter text...';
-const DEFAULT_BUTTON_TEXT = 'Submit';
 
 interface ContentEditorMultiLineTextProps {
   element: ContentEditorMultiLineTextElement;
@@ -29,188 +21,87 @@ interface ContentEditorMultiLineTextProps {
 
 export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProps) => {
   const { element, id } = props;
-  const {
-    updateElement,
-    zIndex,
-    currentStep,
-    currentVersion,
-    attributes,
-    contentList,
-    createStep,
-    projectId,
-  } = useContentEditorContext();
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [openError, setOpenError] = useState<boolean>(false);
-  const [localData, setLocalData] = useState(element.data);
 
-  const handleDataChange = useCallback(
-    (data: Partial<ContentEditorMultiLineTextElement['data']>) => {
-      setLocalData((prevData) => ({ ...prevData, ...data }));
-    },
+  // Render the display component (trigger for popover)
+  const renderDisplay = useCallback(
+    (localData: ContentEditorMultiLineTextElement['data']) => (
+      <div className="flex flex-col gap-2 items-center w-full">
+        <Widget.Textarea
+          placeholder={localData.placeholder || DEFAULT_PLACEHOLDER}
+          disabled
+          aria-label="Multi-line text input preview"
+        />
+        <div className="flex justify-end w-full">
+          <Widget.Button>{localData.buttonText || DEFAULT_BUTTON_TEXT}</Widget.Button>
+        </div>
+      </div>
+    ),
     [],
   );
 
-  useEffect(() => {
-    setOpenError(isEmptyString(localData.name) && !isOpen);
-  }, [localData.name, isOpen]);
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      setIsOpen(open);
-      if (open) {
-        setOpenError(false);
-        return;
-      }
-      if (isEmptyString(localData.name)) {
-        setOpenError(true);
-        return;
-      }
-
-      // Only update if data has changed
-      if (JSON.stringify(localData) !== JSON.stringify(element.data)) {
-        updateElement(
-          {
-            ...element,
-            data: localData,
-          },
-          id,
-        );
-      }
-    },
-    [localData, element, id, updateElement],
+  // Render the popover content
+  const renderPopoverContent = useCallback(
+    ({
+      localData,
+      handleDataChange,
+      contextProps,
+    }: {
+      localData: ContentEditorMultiLineTextElement['data'];
+      handleDataChange: (data: Partial<ContentEditorMultiLineTextElement['data']>) => void;
+      contextProps: any;
+    }) => (
+      <div className="flex flex-col gap-4">
+        <QuestionNameField
+          value={localData.name || ''}
+          onChange={(name) => handleDataChange({ name })}
+        />
+        <ContentActionsField
+          actions={localData.actions}
+          onActionsChange={(actions) => handleDataChange({ actions })}
+          contextProps={contextProps}
+        />
+        <TextInputPopoverFields
+          placeholder={localData.placeholder || ''}
+          buttonText={localData.buttonText || ''}
+          required={localData.required || false}
+          onPlaceholderChange={(placeholder) => handleDataChange({ placeholder })}
+          onButtonTextChange={(buttonText) => handleDataChange({ buttonText })}
+          onRequiredChange={(required) => handleDataChange({ required })}
+        />
+        <BindAttribute
+          bindToAttribute={localData.bindToAttribute || false}
+          selectedAttribute={localData.selectedAttribute}
+          zIndex={contextProps.zIndex}
+          projectId={contextProps.projectId}
+          onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+          onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+          dataType={BizAttributeTypes.String}
+        />
+      </div>
+    ),
+    [],
   );
 
   return (
-    <EditorError open={openError}>
-      <EditorErrorAnchor className="w-full">
-        <Popover onOpenChange={handleOpenChange} open={isOpen}>
-          <PopoverTrigger asChild>
-            <div className="flex flex-col gap-2 items-center w-full">
-              <Widget.Textarea
-                placeholder={localData.placeholder || DEFAULT_PLACEHOLDER}
-                disabled
-              />
-              <div className="flex justify-end w-full">
-                <Widget.Button>{localData.buttonText || DEFAULT_BUTTON_TEXT}</Widget.Button>
-              </div>
-            </div>
-          </PopoverTrigger>
-          <PopoverContent
-            className="bg-background shadow-lg"
-            style={{ zIndex }}
-            sideOffset={10}
-            side="right"
-          >
-            <div className="flex flex-col gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="question-name">Question name</Label>
-                <Input
-                  id="question-name"
-                  value={localData.name || ''}
-                  onChange={(e) => handleDataChange({ name: e.target.value })}
-                  placeholder="Enter question name"
-                />
-              </div>
-              <Label>When answer is submitted</Label>
-              <ContentActions
-                zIndex={zIndex}
-                isShowIf={false}
-                isShowLogic={false}
-                currentStep={currentStep}
-                currentVersion={currentVersion}
-                onDataChange={(actions) => handleDataChange({ actions })}
-                defaultConditions={localData.actions || []}
-                attributes={attributes}
-                contents={contentList}
-                createStep={createStep}
-              />
-
-              <div className="space-y-2">
-                <Label htmlFor="placeholder">Placeholder</Label>
-                <Input
-                  id="placeholder"
-                  value={localData.placeholder || ''}
-                  onChange={(e) => handleDataChange({ placeholder: e.target.value })}
-                  placeholder="Enter placeholder text"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="button-text">Button text</Label>
-                <Input
-                  id="button-text"
-                  value={localData.buttonText || ''}
-                  onChange={(e) => handleDataChange({ buttonText: e.target.value })}
-                  placeholder="Enter button text"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="required"
-                  checked={localData.required || false}
-                  onCheckedChange={(checked) => handleDataChange({ required: checked })}
-                />
-                <Label htmlFor="required">Required</Label>
-              </div>
-              <BindAttribute
-                bindToAttribute={localData.bindToAttribute || false}
-                selectedAttribute={localData.selectedAttribute}
-                zIndex={zIndex}
-                projectId={projectId}
-                onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
-                onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
-                dataType={BizAttributeTypes.String}
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
-      </EditorErrorAnchor>
-      <EditorErrorContent side="bottom" style={{ zIndex }}>
-        Question name is required
-      </EditorErrorContent>
-    </EditorError>
+    <QuestionEditorBase
+      element={element}
+      id={id}
+      renderDisplay={renderDisplay}
+      renderPopoverContent={renderPopoverContent}
+    />
   );
 };
 
 ContentEditorMultiLineText.displayName = 'ContentEditorMultiLineText';
 
+// Serialize component using the shared TextInputSerialize
 export const ContentEditorMultiLineTextSerialize = (props: {
   element: ContentEditorMultiLineTextElement;
   onClick?: (element: ContentEditorMultiLineTextElement, value: string) => Promise<void> | void;
 }) => {
   const { element, onClick } = props;
-  const [value, setValue] = useState<string>('');
-  const [loading, setLoading] = useState(false);
 
-  const handleClick = async () => {
-    if (onClick) {
-      setLoading(true);
-      try {
-        await onClick(element, value);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-2 items-center w-full">
-      <Widget.Textarea
-        placeholder={element.data.placeholder || DEFAULT_PLACEHOLDER}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-      />
-      <div className="flex justify-end w-full">
-        <Widget.Button
-          onClick={handleClick}
-          disabled={loading || (element.data.required && isEmptyString(value))}
-        >
-          {element.data.buttonText || DEFAULT_BUTTON_TEXT}
-        </Widget.Button>
-      </div>
-    </div>
-  );
+  return <TextInputSerialize element={element} onClick={onClick} inputType="textarea" />;
 };
 
 ContentEditorMultiLineTextSerialize.displayName = 'ContentEditorMultiLineTextSerialize';
