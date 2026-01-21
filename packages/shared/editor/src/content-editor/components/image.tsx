@@ -13,6 +13,7 @@ import {
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import { Skeleton } from '@usertour-packages/skeleton';
 import {
   Tooltip,
   TooltipContent,
@@ -22,7 +23,7 @@ import {
 import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import Upload from 'rc-upload';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 /* eslint-disable @next/next/no-img-element */
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -273,6 +274,14 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
   } = useContentEditorContext();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
+
+  // Reset image loaded state when URL changes
+  useEffect(() => {
+    if (element.url) {
+      setIsImageLoaded(false);
+    }
+  }, [element.url]);
 
   // Memoized style calculation
   const imageStyle = useMemo(() => transformsStyle(element), [element.width, element.margin]);
@@ -298,7 +307,13 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
         }
 
         if (url) {
-          updateElement({ ...element, url }, id);
+          // Set default width to 100% if not already set
+          const updatedElement = {
+            ...element,
+            url,
+            width: element.width ?? { type: WIDTH_TYPES.PERCENT, value: DEFAULT_WIDTH },
+          };
+          updateElement(updatedElement, id);
         } else {
           toast({ variant: 'destructive', title: 'Failed to upload image' });
         }
@@ -370,17 +385,40 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
     [insertImg],
   );
 
+  const handleImageLoad = useCallback(() => {
+    setIsImageLoaded(true);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setIsImageLoaded(true);
+    toast({ variant: 'destructive', title: 'Failed to load image' });
+  }, [toast]);
+
   // Render image with popover
   const renderImageWithPopover = () => (
     <Popover>
       <PopoverTrigger asChild>
-        <img
-          src={element.url}
-          style={imageStyle}
-          className="cursor-pointer"
-          alt="Editable content"
-          onError={() => toast({ variant: 'destructive', title: 'Failed to load image' })}
-        />
+        <div
+          className="relative cursor-pointer"
+          style={{
+            ...imageStyle,
+            minHeight: isImageLoaded ? undefined : DEFAULT_IMAGE_SIZE,
+          }}
+        >
+          {/* Skeleton placeholder shown during image loading */}
+          {!isImageLoaded && <Skeleton className="absolute inset-0" />}
+          <img
+            src={element.url}
+            style={{
+              width: '100%',
+              opacity: isImageLoaded ? 1 : 0,
+              transition: 'opacity 200ms ease-in-out',
+            }}
+            alt="Editable content"
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+        </div>
       </PopoverTrigger>
       <PopoverContent
         className="bg-background"
@@ -449,19 +487,11 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
     </Upload>
   );
 
-  return (
-    <div className="group relative flex max-w-lg flex-col">
-      {element.url ? (
-        isLoading ? (
-          <LoadingSpinner size={DEFAULT_IMAGE_SIZE} />
-        ) : (
-          renderImageWithPopover()
-        )
-      ) : (
-        renderUploadArea()
-      )}
-    </div>
-  );
+  if (element.url) {
+    return isLoading ? <LoadingSpinner size={DEFAULT_IMAGE_SIZE} /> : renderImageWithPopover();
+  }
+
+  return renderUploadArea();
 };
 
 ContentEditorImage.displayName = 'ContentEditorImage';
@@ -481,9 +511,7 @@ export const ContentEditorImageSerialize = (props: ContentEditorImageSerializeTy
   }
 
   return (
-    <div className="group relative flex max-w-lg flex-col">
-      <img src={element.url} style={transformsStyle(element)} className={className} alt="Content" />
-    </div>
+    <img src={element.url} style={transformsStyle(element)} className={className} alt="Content" />
   );
 };
 

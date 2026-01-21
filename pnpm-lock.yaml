@@ -3783,6 +3783,9 @@ importers:
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../hooks
+      '@usertour-packages/skeleton':
+        specifier: workspace:^
+        version: link:../../components/skeleton
       '@usertour-packages/switch':
         specifier: workspace:^
         version: link:../../components/switch
