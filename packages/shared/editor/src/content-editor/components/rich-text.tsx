@@ -1,8 +1,10 @@
-import { Descendant } from 'slate';
+import type { Descendant } from 'slate';
+import { memo, useCallback } from 'react';
+
 import { PopperEditor } from '../../richtext-editor/editor';
 import { serialize } from '../../richtext-editor/serialize';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
-import { ContentEditorTextElement } from '../../types/editor';
+import type { ContentEditorTextElement } from '../../types/editor';
 
 export interface ContentEditorRichTextProps {
   element: ContentEditorTextElement;
@@ -10,13 +12,16 @@ export interface ContentEditorRichTextProps {
   id: string;
 }
 
-export const ContentEditorRichText = (props: ContentEditorRichTextProps) => {
+export const ContentEditorRichText = memo((props: ContentEditorRichTextProps) => {
   const { element, path, id } = props;
   const { updateElement, activeId, zIndex, attributes } = useContentEditorContext();
 
-  const handleUpdate = (value: Descendant[]) => {
-    updateElement({ ...element, data: value }, id);
-  };
+  const handleUpdate = useCallback(
+    (value: Descendant[]) => {
+      updateElement({ ...element, data: value }, id);
+    },
+    [element, id, updateElement],
+  );
 
   return (
     <PopperEditor
@@ -28,7 +33,7 @@ export const ContentEditorRichText = (props: ContentEditorRichTextProps) => {
       zIndex={zIndex}
     />
   );
-};
+});
 
 ContentEditorRichText.displayName = 'ContentEditorRichText';
 
