@@ -1,20 +1,18 @@
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
 import * as Widget from '@usertour-packages/widget';
 import { isEmptyString } from '@usertour/helpers';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 
-import { ContentActions } from '../..';
-import {
-  EditorError,
-  EditorErrorAnchor,
-  EditorErrorContent,
-} from '../../richtext-editor/editor-error';
-import { useContentEditorContext } from '../../contexts/content-editor-context';
 import type { ContentEditorScaleElement } from '../../types/editor';
 import { BindAttribute } from './bind-attribute';
+import {
+  QuestionEditorBase,
+  QuestionNameField,
+  ContentActionsField,
+  LabelsField,
+  ScaleRangeField,
+  useQuestionSerialize,
+} from '../shared';
+import type { QuestionContextProps, ValidationResult } from '../shared';
 
 // Constants
 const BUTTON_BASE_CLASS =
@@ -23,12 +21,6 @@ const BUTTON_BASE_CLASS =
 const SCALE_GRID_CLASS = 'grid gap-1.5 !gap-1';
 const LABELS_CONTAINER_CLASS =
   'flex mt-2.5 px-0.5 text-[13px] items-center justify-between opacity-80';
-const POPOVER_CONTENT_CLASS = 'z-50 w-72 rounded-md border bg-background p-4';
-const FORM_CONTAINER_CLASS = 'flex flex-col gap-2.5';
-const RANGE_INPUT_CONTAINER_CLASS = 'flex flex-row gap-2 items-center';
-const LABELS_INPUT_CONTAINER_CLASS = 'flex flex-row gap-2';
-
-// Types
 
 // Utility functions
 const calculateScaleLength = (lowRange: number, highRange: number): number => {
@@ -119,7 +111,90 @@ const ScaleDisplay = memo<{
 
 ScaleDisplay.displayName = 'ScaleDisplay';
 
-interface ContentEditorScaleProps {
+// Validation function for scale
+const validateScale = (data: ContentEditorScaleElement['data']): ValidationResult => {
+  if (isEmptyString(data.name)) {
+    return { isValid: false, errorMessage: 'Question name is required' };
+  }
+  if (!validateScaleRange(data.lowRange, data.highRange)) {
+    return {
+      isValid: false,
+      errorMessage: 'Invalid range: low must be ≤ high, and both must be between 0-100',
+    };
+  }
+  return { isValid: true };
+};
+
+// Memoized Popover Content component
+const ScalePopoverContent = memo(
+  ({
+    localData,
+    handleDataChange,
+    contextProps,
+  }: {
+    localData: ContentEditorScaleElement['data'];
+    handleDataChange: (data: Partial<ContentEditorScaleElement['data']>) => void;
+    contextProps: QuestionContextProps;
+  }) => {
+    const isRangeValid = useMemo(
+      () => validateScaleRange(localData.lowRange, localData.highRange),
+      [localData.lowRange, localData.highRange],
+    );
+
+    return (
+      <div className="flex flex-col gap-2.5">
+        <QuestionNameField
+          id="scale-question"
+          value={localData.name}
+          onChange={(name) => handleDataChange({ name })}
+          error={isEmptyString(localData.name) ? 'Question name is required' : undefined}
+        />
+
+        <ContentActionsField
+          actions={localData.actions}
+          onActionsChange={(actions) => handleDataChange({ actions })}
+          contextProps={contextProps}
+        />
+
+        <ScaleRangeField
+          lowRange={localData.lowRange}
+          highRange={localData.highRange}
+          onLowRangeChange={(lowRange) => handleDataChange({ lowRange })}
+          onHighRangeChange={(highRange) => handleDataChange({ highRange })}
+          minValue={0}
+          maxValue={100}
+          error={
+            !isRangeValid
+              ? 'Invalid range: low must be ≤ high, and both must be between 0-100'
+              : undefined
+          }
+        />
+
+        <LabelsField
+          lowLabel={localData.lowLabel}
+          highLabel={localData.highLabel}
+          onLowLabelChange={(lowLabel) => handleDataChange({ lowLabel })}
+          onHighLabelChange={(highLabel) => handleDataChange({ highLabel })}
+          lowPlaceholder="Low label"
+          highPlaceholder="High label"
+        />
+
+        <BindAttribute
+          zIndex={contextProps.zIndex}
+          bindToAttribute={localData.bindToAttribute || false}
+          selectedAttribute={localData.selectedAttribute}
+          projectId={contextProps.projectId}
+          onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+          onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+        />
+      </div>
+    );
+  },
+);
+
+ScalePopoverContent.displayName = 'ScalePopoverContent';
+
+export interface ContentEditorScaleProps {
   element: ContentEditorScaleElement;
   id: string;
   path: number[];
@@ -128,241 +203,37 @@ interface ContentEditorScaleProps {
 // Main Editor Component
 export const ContentEditorScale = (props: ContentEditorScaleProps) => {
   const { element, id } = props;
-  const {
-    updateElement,
-    zIndex,
-    currentStep,
-    currentVersion,
-    contentList,
-    createStep,
-    attributes,
-    projectId,
-  } = useContentEditorContext();
 
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [openError, setOpenError] = useState<boolean>(false);
-  const [localData, setLocalData] = useState(element.data);
-  const [validationErrors, setValidationErrors] = useState<{
-    range?: string;
-    name?: string;
-  }>({});
-
-  // Memoized calculations
-  const isRangeValid = useMemo(
-    () => validateScaleRange(localData.lowRange, localData.highRange),
-    [localData.lowRange, localData.highRange],
+  const renderDisplay = useCallback(
+    (localData: ContentEditorScaleElement['data']) => (
+      <ScaleDisplay
+        lowRange={localData.lowRange}
+        highRange={localData.highRange}
+        lowLabel={localData.lowLabel}
+        highLabel={localData.highLabel}
+      />
+    ),
+    [],
   );
 
-  const handleDataChange = useCallback(
-    (data: Partial<ContentEditorScaleElement['data']>) => {
-      setLocalData((prevData) => ({ ...prevData, ...data }));
-
-      // Clear validation errors when user starts typing
-      if (data.name !== undefined) {
-        setValidationErrors((prev) => ({ ...prev, name: undefined }));
-        // Clear error state if user is typing and popover is closed
-        if (!isOpen && !isEmptyString(data.name)) {
-          setOpenError(false);
-        }
-      }
-      if (data.lowRange !== undefined || data.highRange !== undefined) {
-        setValidationErrors((prev) => ({ ...prev, range: undefined }));
-        // Clear error state if user is typing and popover is closed
-        if (
-          !isOpen &&
-          validateScaleRange(
-            data.lowRange !== undefined ? data.lowRange : localData.lowRange,
-            data.highRange !== undefined ? data.highRange : localData.highRange,
-          )
-        ) {
-          setOpenError(false);
-        }
-      }
-    },
-    [isOpen, localData.lowRange, localData.highRange],
-  );
-
-  // Validation effect
-  useEffect(() => {
-    const errors: typeof validationErrors = {};
-
-    if (isEmptyString(localData.name)) {
-      errors.name = 'Question name is required';
-    }
-
-    if (!isRangeValid) {
-      errors.range = 'Invalid range: low must be ≤ high, and both must be between 0-100';
-    }
-
-    setValidationErrors(errors);
-  }, [localData.name, isRangeValid]);
-
-  // Error display effect
-  useEffect(() => {
-    setOpenError(isEmptyString(localData.name) && !isOpen);
-  }, [localData.name, isOpen]);
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      setIsOpen(open);
-
-      if (open) {
-        // When opening, clear any existing errors
-        setOpenError(false);
-        return;
-      }
-
-      // When closing, check for validation errors
-      const hasNameError = isEmptyString(localData.name);
-      const hasRangeError = !isRangeValid;
-
-      if (hasNameError || hasRangeError) {
-        // Show error if there are validation issues
-        setOpenError(true);
-        return;
-      }
-
-      // Only save if there are no validation errors
-      updateElement(
-        {
-          ...element,
-          data: localData,
-        },
-        id,
-      );
-    },
-    [localData, element, id, updateElement, isRangeValid],
-  );
-
-  const handleRangeChange = useCallback(
-    (field: 'lowRange' | 'highRange', value: string) => {
-      const numValue = Number(value);
-      if (!Number.isNaN(numValue)) {
-        handleDataChange({ [field]: numValue });
-      }
-    },
-    [handleDataChange],
+  const renderPopoverContent = useCallback(
+    (contentProps: {
+      localData: ContentEditorScaleElement['data'];
+      handleDataChange: (data: Partial<ContentEditorScaleElement['data']>) => void;
+      contextProps: QuestionContextProps;
+    }) => <ScalePopoverContent {...contentProps} />,
+    [],
   );
 
   return (
-    <EditorError open={openError}>
-      <EditorErrorAnchor className="w-full">
-        <Popover onOpenChange={handleOpenChange} open={isOpen}>
-          <PopoverTrigger asChild>
-            <div className="w-full">
-              <ScaleDisplay
-                lowRange={localData.lowRange}
-                highRange={localData.highRange}
-                lowLabel={localData.lowLabel}
-                highLabel={localData.highLabel}
-              />
-            </div>
-          </PopoverTrigger>
-          <PopoverContent
-            className={POPOVER_CONTENT_CLASS}
-            style={{ zIndex }}
-            sideOffset={10}
-            side="right"
-          >
-            <div className={FORM_CONTAINER_CLASS}>
-              <Label htmlFor="scale-question">Question name</Label>
-              <Input
-                id="scale-question"
-                value={localData.name}
-                onChange={(e) => handleDataChange({ name: e.target.value })}
-                placeholder="Question name?"
-                aria-describedby={validationErrors.name ? 'name-error' : undefined}
-              />
-              {validationErrors.name && (
-                <p id="name-error" className="text-sm text-destructive">
-                  {validationErrors.name}
-                </p>
-              )}
-
-              <Label>When answer is submitted</Label>
-              <ContentActions
-                zIndex={zIndex}
-                isShowIf={false}
-                isShowLogic={false}
-                currentStep={currentStep}
-                currentVersion={currentVersion}
-                onDataChange={(actions) => handleDataChange({ actions })}
-                defaultConditions={localData.actions || []}
-                attributes={attributes}
-                contents={contentList}
-                createStep={createStep}
-              />
-
-              <Label className="flex items-center gap-1">Scale range</Label>
-              <div className={RANGE_INPUT_CONTAINER_CLASS}>
-                <Input
-                  type="number"
-                  value={localData.lowRange}
-                  placeholder="0"
-                  min={0}
-                  max={100}
-                  onChange={(e) => handleRangeChange('lowRange', e.target.value)}
-                  aria-describedby={validationErrors.range ? 'range-error' : undefined}
-                />
-                <p>-</p>
-                <Input
-                  type="number"
-                  value={localData.highRange}
-                  placeholder="10"
-                  min={0}
-                  max={100}
-                  onChange={(e) => handleRangeChange('highRange', e.target.value)}
-                  aria-describedby={validationErrors.range ? 'range-error' : undefined}
-                />
-              </div>
-              {validationErrors.range && (
-                <p id="range-error" className="text-sm text-destructive">
-                  {validationErrors.range}
-                </p>
-              )}
-
-              <Label className="flex items-center gap-1">
-                Labels
-                <QuestionTooltip>
-                  Below each option, provide labels to clearly convey their meaning, such as "Bad"
-                  positioned under the left option and "Good" under the right.
-                </QuestionTooltip>
-              </Label>
-              <div className={LABELS_INPUT_CONTAINER_CLASS}>
-                <Input
-                  type="text"
-                  value={localData.lowLabel || ''}
-                  placeholder="Low label"
-                  onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
-                />
-                <Input
-                  type="text"
-                  value={localData.highLabel || ''}
-                  placeholder="High label"
-                  onChange={(e) => handleDataChange({ highLabel: e.target.value })}
-                />
-              </div>
-
-              <BindAttribute
-                zIndex={zIndex}
-                bindToAttribute={localData.bindToAttribute || false}
-                selectedAttribute={localData.selectedAttribute}
-                projectId={projectId}
-                onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
-                onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
-      </EditorErrorAnchor>
-      <EditorErrorContent side="bottom" style={{ zIndex: zIndex }}>
-        {isEmptyString(localData.name)
-          ? 'Question name is required'
-          : !isRangeValid
-            ? 'Invalid scale range'
-            : 'Please fix the errors above'}
-      </EditorErrorContent>
-    </EditorError>
+    <QuestionEditorBase
+      element={element}
+      id={id}
+      validate={validateScale}
+      renderDisplay={renderDisplay}
+      renderPopoverContent={renderPopoverContent}
+      popoverClassName="z-50 w-72 rounded-md border bg-background p-4"
+    />
   );
 };
 
@@ -378,18 +249,16 @@ export type ContentEditorScaleSerializeType = {
 
 export const ContentEditorScaleSerialize = memo<ContentEditorScaleSerializeType>((props) => {
   const { element, onClick } = props;
-  const [loading, setLoading] = useState(false);
+  const { loading, handleClick } = useQuestionSerialize(element, onClick);
 
-  const handleClick = async (el: any, value: number) => {
-    if (onClick) {
-      setLoading(true);
-      try {
-        await onClick(el, value);
-      } finally {
-        setLoading(false);
+  const handleScaleClick = useCallback(
+    (_el: ContentEditorScaleElement, value: number) => {
+      if (!loading) {
+        handleClick(value);
       }
-    }
-  };
+    },
+    [loading, handleClick],
+  );
 
   return (
     <ScaleDisplay
@@ -397,7 +266,7 @@ export const ContentEditorScaleSerialize = memo<ContentEditorScaleSerializeType>
       highRange={element.data.highRange}
       lowLabel={element.data.lowLabel}
       highLabel={element.data.highLabel}
-      onClick={loading ? undefined : handleClick}
+      onClick={loading ? undefined : handleScaleClick}
       element={element}
     />
   );

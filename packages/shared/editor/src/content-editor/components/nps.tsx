@@ -1,20 +1,16 @@
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
 import * as Widget from '@usertour-packages/widget';
-import { isEmptyString } from '@usertour/helpers';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 
-import { ContentActions } from '../..';
-import {
-  EditorError,
-  EditorErrorAnchor,
-  EditorErrorContent,
-} from '../../richtext-editor/editor-error';
-import { useContentEditorContext } from '../../contexts/content-editor-context';
-import { ContentEditorNPSElement } from '../../types/editor';
+import type { ContentEditorNPSElement } from '../../types/editor';
 import { BindAttribute } from './bind-attribute';
+import {
+  QuestionEditorBase,
+  QuestionNameField,
+  ContentActionsField,
+  LabelsField,
+  useQuestionSerialize,
+} from '../shared';
+import type { QuestionContextProps } from '../shared';
 
 // Constants
 const NPS_SCALE_LENGTH = 11;
@@ -23,12 +19,6 @@ const DEFAULT_HIGH_LABEL = 'Extremely likely';
 
 const buttonBaseClass =
   'flex items-center overflow-hidden group relative border bg-sdk-question/10 text-sdk-question border-sdk-question hover:text-sdk-question hover:border-sdk-question hover:bg-sdk-question/40 rounded-md main-transition p-2 justify-center w-auto min-w-0';
-
-interface ContentEditorNPSProps {
-  element: ContentEditorNPSElement;
-  id: string;
-  path: number[];
-}
 
 // Memoized NPS Scale component for better performance
 const NPSScale = memo(({ onClick }: { onClick?: (value: number) => void }) => {
@@ -78,183 +68,83 @@ const NPSPopoverContent = memo(
   }: {
     localData: ContentEditorNPSElement['data'];
     handleDataChange: (data: Partial<ContentEditorNPSElement['data']>) => void;
-    contextProps: {
-      zIndex: number;
-      currentStep: any;
-      currentVersion: any;
-      contentList: any;
-      createStep: any;
-      attributes: any;
-      projectId: string;
-    };
-  }) => {
-    const { zIndex, currentStep, currentVersion, contentList, createStep, attributes, projectId } =
-      contextProps;
+    contextProps: QuestionContextProps;
+  }) => (
+    <div className="flex flex-col gap-2.5">
+      <QuestionNameField
+        id="nps-question"
+        value={localData.name || ''}
+        onChange={(name) => handleDataChange({ name })}
+      />
 
-    return (
-      <div className="flex flex-col gap-2.5">
-        <Label htmlFor="nps-question">Question name</Label>
-        <Input
-          id="nps-question"
-          value={localData.name || ''}
-          onChange={(e) => handleDataChange({ name: e.target.value })}
-          placeholder="Question name?"
-        />
+      <ContentActionsField
+        actions={localData.actions}
+        onActionsChange={(actions) => handleDataChange({ actions })}
+        contextProps={contextProps}
+      />
 
-        <Label>When answer is submitted</Label>
-        <ContentActions
-          zIndex={zIndex}
-          isShowIf={false}
-          isShowLogic={false}
-          currentStep={currentStep}
-          currentVersion={currentVersion}
-          onDataChange={(actions) => handleDataChange({ actions })}
-          defaultConditions={localData.actions || []}
-          attributes={attributes}
-          contents={contentList}
-          createStep={createStep}
-        />
+      <LabelsField
+        lowLabel={localData.lowLabel}
+        highLabel={localData.highLabel}
+        onLowLabelChange={(lowLabel) => handleDataChange({ lowLabel })}
+        onHighLabelChange={(highLabel) => handleDataChange({ highLabel })}
+      />
 
-        <Label className="flex items-center gap-1">
-          Labels
-          <QuestionTooltip>
-            Below each option, provide labels to clearly convey their meaning, such as "Bad"
-            positioned under the left option and "Good" under the right.
-          </QuestionTooltip>
-        </Label>
-
-        <div className="flex flex-row gap-2">
-          <Input
-            type="text"
-            value={localData.lowLabel || ''}
-            placeholder="Default"
-            onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
-          />
-          <Input
-            type="text"
-            value={localData.highLabel || ''}
-            placeholder="Default"
-            onChange={(e) => handleDataChange({ highLabel: e.target.value })}
-          />
-        </div>
-
-        <BindAttribute
-          bindToAttribute={localData.bindToAttribute || false}
-          selectedAttribute={localData.selectedAttribute}
-          zIndex={zIndex}
-          projectId={projectId}
-          onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
-          onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
-        />
-      </div>
-    );
-  },
+      <BindAttribute
+        bindToAttribute={localData.bindToAttribute || false}
+        selectedAttribute={localData.selectedAttribute}
+        zIndex={contextProps.zIndex}
+        projectId={contextProps.projectId}
+        onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+        onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+      />
+    </div>
+  ),
 );
 
 NPSPopoverContent.displayName = 'NPSPopoverContent';
 
+export interface ContentEditorNPSProps {
+  element: ContentEditorNPSElement;
+  id: string;
+  path: number[];
+}
+
 export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
   const { element, id } = props;
-  const {
-    updateElement,
-    zIndex,
-    currentStep,
-    currentVersion,
-    contentList,
-    createStep,
-    attributes,
-    projectId,
-  } = useContentEditorContext();
 
-  const [openError, setOpenError] = useState(false);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [localData, setLocalData] = useState(element.data);
-
-  // Memoize context props to prevent unnecessary re-renders
-  const contextProps = useMemo(
-    () => ({
-      zIndex,
-      currentStep,
-      currentVersion,
-      contentList,
-      createStep,
-      attributes,
-      projectId,
-    }),
-    [zIndex, currentStep, currentVersion, contentList, createStep, attributes, projectId],
+  const renderDisplay = useCallback(
+    (localData: ContentEditorNPSElement['data']) => (
+      <>
+        <NPSScale />
+        <NPSLabels lowLabel={localData.lowLabel} highLabel={localData.highLabel} />
+      </>
+    ),
+    [],
   );
 
-  const handleDataChange = useCallback((data: Partial<ContentEditorNPSElement['data']>) => {
-    setLocalData((prevData) => ({ ...prevData, ...data }));
-  }, []);
-
-  // Validate name field when popover closes
-  useEffect(() => {
-    setOpenError(isEmptyString(localData.name) && !isOpen);
-  }, [localData.name, isOpen]);
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      setIsOpen(open);
-
-      if (open) {
-        setOpenError(false);
-        return;
-      }
-
-      // Validate and save data when closing
-      if (isEmptyString(localData.name)) {
-        setOpenError(true);
-        return;
-      }
-
-      // Only update if data has changed
-      if (JSON.stringify(localData) !== JSON.stringify(element.data)) {
-        updateElement(
-          {
-            ...element,
-            data: localData,
-          },
-          id,
-        );
-      }
-    },
-    [localData, element, id, updateElement],
+  const renderPopoverContent = useCallback(
+    (contentProps: {
+      localData: ContentEditorNPSElement['data'];
+      handleDataChange: (data: Partial<ContentEditorNPSElement['data']>) => void;
+      contextProps: QuestionContextProps;
+    }) => <NPSPopoverContent {...contentProps} />,
+    [],
   );
 
   return (
-    <EditorError open={openError}>
-      <EditorErrorAnchor className="w-full">
-        <Popover onOpenChange={handleOpenChange} open={isOpen}>
-          <PopoverTrigger asChild>
-            <div className="w-full">
-              <NPSScale />
-              <NPSLabels lowLabel={localData.lowLabel} highLabel={localData.highLabel} />
-            </div>
-          </PopoverTrigger>
-          <PopoverContent
-            className="bg-background shadow-lg"
-            style={{ zIndex }}
-            sideOffset={10}
-            side="right"
-          >
-            <NPSPopoverContent
-              localData={localData}
-              handleDataChange={handleDataChange}
-              contextProps={contextProps}
-            />
-          </PopoverContent>
-        </Popover>
-      </EditorErrorAnchor>
-      <EditorErrorContent side="bottom" style={{ zIndex }}>
-        Question name is required
-      </EditorErrorContent>
-    </EditorError>
+    <QuestionEditorBase
+      element={element}
+      id={id}
+      renderDisplay={renderDisplay}
+      renderPopoverContent={renderPopoverContent}
+    />
   );
 };
 
 ContentEditorNPS.displayName = 'ContentEditorNPS';
 
+// Serialize Component
 export type ContentEditorNPSSerializeType = {
   className?: string;
   children?: React.ReactNode;
@@ -264,21 +154,7 @@ export type ContentEditorNPSSerializeType = {
 
 export const ContentEditorNPSSerialize = memo((props: ContentEditorNPSSerializeType) => {
   const { element, onClick } = props;
-  const [loading, setLoading] = useState(false);
-
-  const handleClick = useCallback(
-    async (value: number) => {
-      if (onClick) {
-        setLoading(true);
-        try {
-          await onClick(element, value);
-        } finally {
-          setLoading(false);
-        }
-      }
-    },
-    [onClick, element],
-  );
+  const { loading, handleClick } = useQuestionSerialize(element, onClick);
 
   return (
     <div className="w-full">

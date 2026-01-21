@@ -1,20 +1,17 @@
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { isEmptyString } from '@usertour/helpers';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 
-import { ContentActions } from '../..';
-import {
-  EditorError,
-  EditorErrorAnchor,
-  EditorErrorContent,
-} from '../../richtext-editor/editor-error';
-import { useContentEditorContext } from '../../contexts/content-editor-context';
-import { ContentEditorStarRatingElement } from '../../types/editor';
+import type { ContentEditorStarRatingElement } from '../../types/editor';
 import { BindAttribute } from './bind-attribute';
+import {
+  QuestionEditorBase,
+  QuestionNameField,
+  ContentActionsField,
+  LabelsField,
+  ScaleRangeField,
+  useQuestionSerialize,
+} from '../shared';
+import type { QuestionContextProps } from '../shared';
 
 // Star SVG path constant to avoid recreation
 const STAR_PATH =
@@ -144,7 +141,65 @@ const StarRatingDisplay = memo<StarRatingDisplayProps>(
 
 StarRatingDisplay.displayName = 'StarRatingDisplay';
 
-interface ContentEditorStarRatingProps {
+// Memoized Popover Content component
+const StarRatingPopoverContent = memo(
+  ({
+    localData,
+    handleDataChange,
+    contextProps,
+  }: {
+    localData: ContentEditorStarRatingElement['data'];
+    handleDataChange: (data: Partial<ContentEditorStarRatingElement['data']>) => void;
+    contextProps: QuestionContextProps;
+  }) => (
+    <div className="flex flex-col gap-2.5">
+      <QuestionNameField
+        id="star-rating-question"
+        value={localData.name}
+        onChange={(name) => handleDataChange({ name })}
+      />
+
+      <ContentActionsField
+        actions={localData.actions}
+        onActionsChange={(actions) => handleDataChange({ actions })}
+        contextProps={contextProps}
+      />
+
+      <ScaleRangeField
+        lowRange={localData.lowRange}
+        highRange={localData.highRange}
+        onLowRangeChange={(lowRange) => handleDataChange({ lowRange })}
+        onHighRangeChange={(highRange) => handleDataChange({ highRange })}
+        minValue={1}
+        maxValue={10}
+        lowDisabled={true}
+        lowPlaceholder="Default"
+        highPlaceholder="Default"
+        highMinFollowsLow={true}
+      />
+
+      <LabelsField
+        lowLabel={localData.lowLabel}
+        highLabel={localData.highLabel}
+        onLowLabelChange={(lowLabel) => handleDataChange({ lowLabel })}
+        onHighLabelChange={(highLabel) => handleDataChange({ highLabel })}
+      />
+
+      <BindAttribute
+        zIndex={contextProps.zIndex}
+        projectId={contextProps.projectId}
+        bindToAttribute={localData.bindToAttribute || false}
+        selectedAttribute={localData.selectedAttribute}
+        onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+        onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
+      />
+    </div>
+  ),
+);
+
+StarRatingPopoverContent.displayName = 'StarRatingPopoverContent';
+
+export interface ContentEditorStarRatingProps {
   element: ContentEditorStarRatingElement;
   id: string;
   path: number[];
@@ -152,33 +207,7 @@ interface ContentEditorStarRatingProps {
 
 export const ContentEditorStarRating = memo<ContentEditorStarRatingProps>((props) => {
   const { element, id } = props;
-  const {
-    updateElement,
-    zIndex,
-    currentStep,
-    currentVersion,
-    contentList,
-    createStep,
-    attributes,
-    projectId,
-  } = useContentEditorContext();
-
-  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [openError, setOpenError] = useState<boolean>(false);
-  const [localData, setLocalData] = useState(element.data);
-
-  // Memoize computed values
-  const scaleLength = useMemo(
-    () => localData.highRange - localData.lowRange + 1,
-    [localData.highRange, localData.lowRange],
-  );
-
-  const hasValidationError = useMemo(() => isEmptyString(localData.name), [localData.name]);
-
-  const handleDataChange = useCallback((data: Partial<ContentEditorStarRatingElement['data']>) => {
-    setLocalData((prevData) => ({ ...prevData, ...data }));
-  }, []);
 
   const handleStarHover = useCallback((index: number) => {
     setHoveredIndex(index);
@@ -188,154 +217,49 @@ export const ContentEditorStarRating = memo<ContentEditorStarRatingProps>((props
     setHoveredIndex(null);
   }, []);
 
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      setIsOpen(open);
-
-      if (open) {
-        setOpenError(false);
-        return;
-      }
-
-      if (hasValidationError) {
-        setOpenError(true);
-        return;
-      }
-
-      updateElement(
-        {
-          ...element,
-          data: localData,
-        },
-        id,
+  const renderDisplay = useCallback(
+    (localData: ContentEditorStarRatingElement['data']) => {
+      const scaleLength = localData.highRange - localData.lowRange + 1;
+      return (
+        <StarRatingDisplay
+          scaleLength={scaleLength}
+          hoveredIndex={hoveredIndex}
+          onStarHover={handleStarHover}
+          onStarLeave={handleStarLeave}
+          lowRange={localData.lowRange}
+          lowLabel={localData.lowLabel}
+          highLabel={localData.highLabel}
+          isInteractive={false}
+        />
       );
     },
-    [hasValidationError, localData, element, id, updateElement],
+    [hoveredIndex, handleStarHover, handleStarLeave],
   );
 
-  // Update error state when validation changes
-  useEffect(() => {
-    setOpenError(hasValidationError && !isOpen);
-  }, [hasValidationError, isOpen]);
+  const renderPopoverContent = useCallback(
+    (contentProps: {
+      localData: ContentEditorStarRatingElement['data'];
+      handleDataChange: (data: Partial<ContentEditorStarRatingElement['data']>) => void;
+      contextProps: QuestionContextProps;
+    }) => <StarRatingPopoverContent {...contentProps} />,
+    [],
+  );
 
   return (
-    <EditorError open={openError}>
-      <EditorErrorAnchor>
-        <Popover onOpenChange={handleOpenChange} open={isOpen}>
-          <PopoverTrigger asChild>
-            <div>
-              <StarRatingDisplay
-                scaleLength={scaleLength}
-                hoveredIndex={hoveredIndex}
-                onStarHover={handleStarHover}
-                onStarLeave={handleStarLeave}
-                lowRange={localData.lowRange}
-                lowLabel={localData.lowLabel}
-                highLabel={localData.highLabel}
-                isInteractive={false}
-              />
-            </div>
-          </PopoverTrigger>
-          <PopoverContent
-            className="bg-background shadow-lg"
-            style={{ zIndex }}
-            sideOffset={10}
-            side="right"
-          >
-            <div className="flex flex-col gap-2.5">
-              <Label htmlFor="star-rating-question">Question name</Label>
-              <Input
-                id="star-rating-question"
-                value={localData.name}
-                onChange={(e) => handleDataChange({ name: e.target.value })}
-                placeholder="Question name?"
-                aria-invalid={hasValidationError}
-                aria-describedby={hasValidationError ? 'question-error' : undefined}
-              />
-              {hasValidationError && (
-                <div id="question-error" className="text-sm text-destructive">
-                  Question name is required
-                </div>
-              )}
-
-              <Label>When answer is submitted</Label>
-              <ContentActions
-                zIndex={zIndex}
-                isShowIf={false}
-                isShowLogic={false}
-                currentStep={currentStep}
-                currentVersion={currentVersion}
-                onDataChange={(actions) => handleDataChange({ actions })}
-                defaultConditions={localData.actions || []}
-                attributes={attributes}
-                contents={contentList}
-                createStep={createStep}
-              />
-
-              <Label className="flex items-center gap-1">Scale range</Label>
-              <div className="flex flex-row gap-2 items-center">
-                <Input
-                  type="number"
-                  value={localData.lowRange}
-                  placeholder="Default"
-                  disabled
-                  onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
-                />
-                <p>-</p>
-                <Input
-                  type="number"
-                  value={localData.highRange}
-                  placeholder="Default"
-                  onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
-                  min={localData.lowRange + 1}
-                  max={10}
-                />
-              </div>
-
-              <Label className="flex items-center gap-1">
-                Labels
-                <QuestionTooltip>
-                  Below each option, provide labels to clearly convey their meaning, such as "Bad"
-                  positioned under the left option and "Good" under the right.
-                </QuestionTooltip>
-              </Label>
-              <div className="flex flex-row gap-2">
-                <Input
-                  type="text"
-                  value={localData.lowLabel}
-                  placeholder="Default"
-                  onChange={(e) => handleDataChange({ lowLabel: e.target.value })}
-                />
-                <Input
-                  type="text"
-                  value={localData.highLabel}
-                  placeholder="Default"
-                  onChange={(e) => handleDataChange({ highLabel: e.target.value })}
-                />
-              </div>
-
-              <BindAttribute
-                zIndex={zIndex}
-                projectId={projectId}
-                bindToAttribute={localData.bindToAttribute || false}
-                selectedAttribute={localData.selectedAttribute}
-                onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
-                onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
-      </EditorErrorAnchor>
-      <EditorErrorContent side="bottom" style={{ zIndex: zIndex }}>
-        Question name is required
-      </EditorErrorContent>
-    </EditorError>
+    <QuestionEditorBase
+      element={element}
+      id={id}
+      renderDisplay={renderDisplay}
+      renderPopoverContent={renderPopoverContent}
+      errorAnchorClassName=""
+      triggerClassName=""
+    />
   );
 });
 
 ContentEditorStarRating.displayName = 'ContentEditorStarRating';
 
-interface ContentEditorStarRatingSerializeProps {
+export interface ContentEditorStarRatingSerializeProps {
   element: ContentEditorStarRatingElement;
   onClick?: (element: ContentEditorStarRatingElement, value: number) => Promise<void>;
 }
@@ -344,7 +268,7 @@ export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSeri
   (props) => {
     const { element, onClick } = props;
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-    const [loading, setLoading] = useState(false);
+    const { loading, handleClick } = useQuestionSerialize(element, onClick);
 
     const scaleLength = useMemo(
       () => element.data.highRange - element.data.lowRange + 1,
@@ -359,27 +283,13 @@ export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSeri
       setHoveredIndex(null);
     }, []);
 
-    const handleStarClick = useCallback(
-      async (value: number) => {
-        if (onClick) {
-          setLoading(true);
-          try {
-            await onClick(element, value);
-          } finally {
-            setLoading(false);
-          }
-        }
-      },
-      [onClick, element],
-    );
-
     return (
       <StarRatingDisplay
         scaleLength={scaleLength}
         hoveredIndex={hoveredIndex}
         onStarHover={handleStarHover}
         onStarLeave={handleStarLeave}
-        onStarClick={loading ? undefined : handleStarClick}
+        onStarClick={loading ? undefined : handleClick}
         lowRange={element.data.lowRange}
         lowLabel={element.data.lowLabel}
         highLabel={element.data.highLabel}
