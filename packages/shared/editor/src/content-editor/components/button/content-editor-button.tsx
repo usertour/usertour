@@ -6,10 +6,10 @@ import { RulesCondition } from '@usertour/types';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
-  EditorError,
-  EditorErrorAnchor,
-  EditorErrorContent,
-} from '../../../richtext-editor/editor-error';
+  EditorErrorTooltip,
+  EditorErrorTooltipTrigger,
+  EditorErrorTooltipContent,
+} from '../../shared/editor-error-tooltip';
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
   ContentEditorButtonElement,
@@ -120,9 +120,9 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
   }, [element?.data?.actions, isOpen]);
 
   return (
-    <EditorError open={isShowError}>
-      <EditorErrorAnchor>
-        <Popover onOpenChange={setIsOpen} open={isOpen}>
+    <EditorErrorTooltip open={isShowError}>
+      <Popover onOpenChange={setIsOpen} open={isOpen}>
+        <EditorErrorTooltipTrigger>
           <PopoverTrigger asChild>
             <Widget.Button
               variant={element.data.type as any}
@@ -133,38 +133,38 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
               <span>{element.data.text}</span>
             </Widget.Button>
           </PopoverTrigger>
-          <PopoverContent
-            className="bg-background"
-            side="right"
-            style={{ zIndex: zIndex }}
-            sideOffset={10}
-            alignOffset={-2}
-          >
-            <ButtonPopoverContent
-              element={element}
-              zIndex={zIndex}
-              onButtonTextChange={handleButtonTextChange}
-              onButtonStyleChange={handleButtonStyleChange}
-              onMarginChange={handleMarginValueChange}
-              onMarginEnabledChange={handleMarginCheckedChange}
-              onActionChange={handleActionChange}
-              onDelete={handleDelete}
-              onAddLeft={handleAddLeft}
-              onAddRight={handleAddRight}
-              currentStep={currentStep}
-              currentVersion={currentVersion}
-              attributes={attributes}
-              actionItems={actionItems}
-              contentList={contentList}
-              createStep={createStep}
-            />
-          </PopoverContent>
-        </Popover>
-      </EditorErrorAnchor>
-      <EditorErrorContent style={{ zIndex: zIndex }}>
-        please select at least one action
-      </EditorErrorContent>
-    </EditorError>
+        </EditorErrorTooltipTrigger>
+        <PopoverContent
+          className="bg-background"
+          side="right"
+          style={{ zIndex: zIndex }}
+          sideOffset={10}
+          alignOffset={-2}
+        >
+          <ButtonPopoverContent
+            element={element}
+            zIndex={zIndex}
+            onButtonTextChange={handleButtonTextChange}
+            onButtonStyleChange={handleButtonStyleChange}
+            onMarginChange={handleMarginValueChange}
+            onMarginEnabledChange={handleMarginCheckedChange}
+            onActionChange={handleActionChange}
+            onDelete={handleDelete}
+            onAddLeft={handleAddLeft}
+            onAddRight={handleAddRight}
+            currentStep={currentStep}
+            currentVersion={currentVersion}
+            attributes={attributes}
+            actionItems={actionItems}
+            contentList={contentList}
+            createStep={createStep}
+          />
+        </PopoverContent>
+      </Popover>
+      <EditorErrorTooltipContent style={{ zIndex: zIndex }}>
+        Please select at least one action
+      </EditorErrorTooltipContent>
+    </EditorErrorTooltip>
   );
 });
 
