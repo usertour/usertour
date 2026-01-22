@@ -3,6 +3,7 @@ export { Button, type ButtonProps } from './primitives';
 export { Input, type InputProps } from './primitives';
 export { Textarea, type TextareaProps } from './primitives';
 export { Checkbox, type CheckboxProps } from './primitives';
+export { Label, type LabelProps } from './primitives';
 export {
   RadioGroup,
   RadioGroupItem,

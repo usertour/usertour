@@ -71,12 +71,12 @@ export const MultipleChoicePopoverContent = memo(
         localData.options.map((option, index) => (
           <div key={index} className="flex gap-2">
             <Input
-              value={option.value}
+              value={option.value ?? ''}
               onChange={(e) => onOptionChange(index, 'value', e.target.value)}
               placeholder="Value"
             />
             <Input
-              value={option.label}
+              value={option.label ?? ''}
               onChange={(e) => onOptionChange(index, 'label', e.target.value)}
               placeholder="Option label"
             />
@@ -141,14 +141,14 @@ export const MultipleChoicePopoverContent = memo(
             <div className="flex flex-row gap-2 items-center">
               <Input
                 type="number"
-                value={localData.lowRange}
+                value={localData.lowRange ?? ''}
                 placeholder="Default"
                 onChange={(e) => onDataChange({ lowRange: Number(e.target.value) })}
               />
               <p>-</p>
               <Input
                 type="number"
-                value={localData.highRange}
+                value={localData.highRange ?? ''}
                 placeholder="Default"
                 onChange={(e) => onDataChange({ highRange: Number(e.target.value) })}
               />
@@ -157,7 +157,7 @@ export const MultipleChoicePopoverContent = memo(
               <Label htmlFor="button-text">Submit button text</Label>
               <Input
                 id="button-text"
-                value={localData.buttonText}
+                value={localData.buttonText ?? ''}
                 onChange={(e) => onDataChange({ buttonText: e.target.value })}
                 placeholder="Enter button text"
               />
