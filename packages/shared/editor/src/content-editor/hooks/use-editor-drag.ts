@@ -5,6 +5,8 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { useCallback, useMemo } from 'react';
 
 import type { ContentEditorRoot } from '../../types/editor';
+import { createGroupFromColumn } from '../../utils/helper';
+import { getDropZoneIndex, isDropZoneId } from '../components/group-drop-zone';
 
 export interface UseEditorDragOptions {
   contents: ContentEditorRoot[];
@@ -45,7 +47,7 @@ export const useEditorDrag = ({
 
   // Set of group ids for O(1) container check
   const containerIds = useMemo(() => {
-    return new Set(contents.map((c) => c.id).filter(Boolean));
+    return new Set(contents.map((c) => c.id).filter((id): id is string => Boolean(id)));
   }, [contents]);
 
   // O(1) helper to find container for a given id
@@ -149,7 +151,7 @@ export const useEditorDrag = ({
     [findContainer, isContainer, setContents],
   );
 
-  // Drag end handler - only handles column reordering within same group
+  // Drag end handler - handles column reordering within same group and drop zone drops
   // Group reordering and cross-group column moves are handled in dragOver
   const handleDragEnd = useCallback(
     ({ active, over }: DragEndEvent) => {
@@ -164,6 +166,61 @@ export const useEditorDrag = ({
 
       // Group reordering is already handled in dragOver, just reset activeId
       if (isContainer(dragActiveId)) {
+        setActiveId(undefined);
+        return;
+      }
+
+      // Handle drop zone - create new group from column
+      if (isDropZoneId(overId)) {
+        const activeContainer = findContainer(dragActiveId);
+        if (!activeContainer) {
+          setActiveId(undefined);
+          return;
+        }
+
+        const dropZoneIndex = getDropZoneIndex(overId);
+
+        setContents((prev) => {
+          // Find the column being dragged
+          const sourceGroup = prev.find((c) => c.id === activeContainer.id);
+          const column = sourceGroup?.children.find((c) => c.id === dragActiveId);
+
+          if (!column) return prev;
+
+          // Create new group from the column
+          const newGroup = createGroupFromColumn(column);
+
+          // Remove column from source group and filter empty groups
+          const updatedContents = prev
+            .map((content) => {
+              if (content.id === activeContainer.id) {
+                return {
+                  ...content,
+                  children: content.children.filter((c) => c.id !== dragActiveId),
+                };
+              }
+              return content;
+            })
+            .filter((c) => c.children.length > 0);
+
+          // Calculate the actual insert index after removing the column
+          // If source group was removed (became empty), adjust the index
+          const sourceGroupIndex = prev.findIndex((c) => c.id === activeContainer.id);
+          const sourceGroupRemoved = sourceGroup?.children.length === 1;
+          let actualInsertIndex = dropZoneIndex;
+
+          if (sourceGroupRemoved && sourceGroupIndex < dropZoneIndex) {
+            actualInsertIndex = Math.max(0, dropZoneIndex - 1);
+          }
+
+          // Insert new group at the drop zone index
+          return [
+            ...updatedContents.slice(0, actualInsertIndex),
+            newGroup,
+            ...updatedContents.slice(actualInsertIndex),
+          ];
+        });
+
         setActiveId(undefined);
         return;
       }

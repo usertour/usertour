@@ -27,6 +27,7 @@ import { useEditorDrag } from '../hooks/use-editor-drag';
 import { useHoverState } from '../hooks/use-hover-state';
 import { ContentEditorDragOverlay } from './drag-overlay';
 import { ContentEditorGroup } from './group';
+import { GroupDropZone } from './group-drop-zone';
 import { ContentEditorRenderColumn } from './render-column';
 import { ContentEditorSideBar } from './sidebar';
 
@@ -121,21 +122,24 @@ export const Editor = () => {
       >
         <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
           {contents.map((content, i) => (
-            <ContentEditorGroup
-              element={content.element}
-              key={content.id}
-              path={[i]}
-              items={content.children.map((c) => ({ id: c.id ?? '' }))}
-              id={content.id ?? ''}
-            >
-              <SortableContext
+            <div key={content.id}>
+              <GroupDropZone index={i} />
+              <ContentEditorGroup
+                element={content.element}
+                path={[i]}
                 items={content.children.map((c) => ({ id: c.id ?? '' }))}
-                strategy={horizontalListSortingStrategy}
+                id={content.id ?? ''}
               >
-                <ContentEditorRenderColumn columns={content.children} parentPath={[i]} />
-              </SortableContext>
-            </ContentEditorGroup>
+                <SortableContext
+                  items={content.children.map((c) => ({ id: c.id ?? '' }))}
+                  strategy={horizontalListSortingStrategy}
+                >
+                  <ContentEditorRenderColumn columns={content.children} parentPath={[i]} />
+                </SortableContext>
+              </ContentEditorGroup>
+            </div>
           ))}
+          <GroupDropZone index={contents.length} />
         </SortableContext>
         {containerNode &&
           createPortal(

@@ -68,6 +68,14 @@ export const createNewColumn = (children: ContentEditorRootElement[]) => {
   };
 };
 
+export const createGroupFromColumn = (column: ContentEditorRootColumn) => {
+  return {
+    ...EmptyGroup,
+    id: uuidV4(),
+    children: [column],
+  };
+};
+
 export const defaultInitialValue = [
   {
     ...EmptyGroup,
