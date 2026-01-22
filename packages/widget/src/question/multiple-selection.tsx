@@ -1,10 +1,9 @@
-// Multiple selection (checkbox) display component - shared between editor and serialize
+// Multiple selection (checkbox) component for SDK widget
 
 import { cn } from '@usertour-packages/tailwind';
-import * as Widget from '@usertour-packages/widget';
 import { forwardRef, memo, useCallback, useState } from 'react';
 
-import type { ContentEditorMultipleChoiceOption } from '../../../types/editor';
+import { Button, Checkbox, Label } from '../primitives';
 import {
   DEFAULT_BUTTON_TEXT,
   DEFAULT_OPTION_PREFIX,
@@ -14,9 +13,10 @@ import {
 } from './constants';
 import { OptionItem } from './option-item';
 import { OtherOptionInput } from './other-option-input';
+import type { SelectionOption } from './types';
 
-interface MultipleSelectionDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
-  options: ContentEditorMultipleChoiceOption[];
+export interface MultipleSelectionProps extends React.HTMLAttributes<HTMLDivElement> {
+  options: SelectionOption[];
   enableOther?: boolean;
   otherPlaceholder?: string;
   buttonText?: string;
@@ -29,8 +29,12 @@ interface MultipleSelectionDisplayProps extends React.HTMLAttributes<HTMLDivElem
   onCheckedChange?: (index: number, checked: boolean) => void;
 }
 
-export const MultipleSelectionDisplay = memo(
-  forwardRef<HTMLDivElement, MultipleSelectionDisplayProps>(
+/**
+ * Multiple selection (checkbox) component for SDK widget
+ * Displays checkbox options for multiple choice selection
+ */
+export const MultipleSelection = memo(
+  forwardRef<HTMLDivElement, MultipleSelectionProps>(
     (
       {
         options,
@@ -134,14 +138,14 @@ export const MultipleSelectionDisplay = memo(
             <div className="flex flex-col gap-2">
               {options.map((option, index) => (
                 <OptionItem key={index}>
-                  <Widget.Checkbox
+                  <Checkbox
                     checked={getCheckboxChecked(option.value, index)}
                     id={`c1${index}`}
                     onCheckedChange={() => handleOptionClick(option.value, index)}
                   />
-                  <Widget.Label htmlFor={`c1${index}`} className="grow cursor-pointer">
+                  <Label htmlFor={`c1${index}`} className="grow cursor-pointer">
                     {option.label || option.value || `${DEFAULT_OPTION_PREFIX} ${index + 1}`}
-                  </Widget.Label>
+                  </Label>
                 </OptionItem>
               ))}
               {enableOther && (
@@ -151,7 +155,7 @@ export const MultipleSelectionDisplay = memo(
                     isInteractive && isEditing && OPTION_ITEM_EDITING_CLASS,
                   )}
                 >
-                  <Widget.Checkbox
+                  <Checkbox
                     checked={isOtherChecked}
                     onClick={isInteractive ? handleOtherCheckboxClick : undefined}
                   />
@@ -164,19 +168,19 @@ export const MultipleSelectionDisplay = memo(
                       onEditingChange={setIsEditing}
                     />
                   ) : (
-                    <Widget.Label className="grow cursor-pointer">
+                    <Label className="grow cursor-pointer">
                       {otherPlaceholder || DEFAULT_OTHER_PLACEHOLDER}
-                    </Widget.Label>
+                    </Label>
                   )}
                 </div>
               )}
               <div className="flex justify-center w-full">
-                <Widget.Button
+                <Button
                   disabled={isInteractive ? !isValidSelection() || loading : false}
                   onClick={isInteractive ? handleSubmit : undefined}
                 >
                   {buttonText || DEFAULT_BUTTON_TEXT}
-                </Widget.Button>
+                </Button>
               </div>
             </div>
           </div>
@@ -186,4 +190,8 @@ export const MultipleSelectionDisplay = memo(
   ),
 );
 
-MultipleSelectionDisplay.displayName = 'MultipleSelectionDisplay';
+MultipleSelection.displayName = 'MultipleSelection';
+
+// Backward compatibility alias
+export const MultipleSelectionDisplay = MultipleSelection;
+export type MultipleSelectionDisplayProps = MultipleSelectionProps;

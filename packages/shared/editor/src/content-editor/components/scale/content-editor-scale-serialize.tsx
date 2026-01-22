@@ -1,10 +1,10 @@
 // Serialize component for scale (read-only mode for SDK)
 
+import { Scale } from '@usertour-packages/widget';
 import { memo, useCallback } from 'react';
 
 import type { ContentEditorScaleElement } from '../../../types/editor';
 import { useSerializeClick } from '../../hooks';
-import { ScaleDisplay } from './scale-display';
 
 export interface ContentEditorScaleSerializeProps {
   element: ContentEditorScaleElement;
@@ -16,7 +16,7 @@ export const ContentEditorScaleSerialize = memo<ContentEditorScaleSerializeProps
   const { loading, handleClick } = useSerializeClick(element, onClick);
 
   const handleScaleClick = useCallback(
-    (_el: ContentEditorScaleElement, value: number) => {
+    (value: number) => {
       if (!loading) {
         handleClick(value);
       }
@@ -25,13 +25,13 @@ export const ContentEditorScaleSerialize = memo<ContentEditorScaleSerializeProps
   );
 
   return (
-    <ScaleDisplay
+    <Scale
       lowRange={element.data.lowRange}
       highRange={element.data.highRange}
       lowLabel={element.data.lowLabel}
       highLabel={element.data.highLabel}
       onValueChange={loading ? undefined : handleScaleClick}
-      element={element}
+      isInteractive={true}
     />
   );
 });

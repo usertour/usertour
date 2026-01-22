@@ -8,6 +8,5 @@ export { ContentEditorElementType } from './types/editor';
 export * from './richtext-editor/serialize';
 export * from './utils/helper';
 export { ContentActions } from './actions';
-export { StarButton } from './content-editor/components/star-rating';
 export { contentTypesConfig } from './utils/config';
 export { AttributeCreateForm } from './form/attribute-create-form';

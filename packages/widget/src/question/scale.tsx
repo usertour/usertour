@@ -1,14 +1,13 @@
-// Scale display component for preview and serialize
+// Scale component for SDK widget
 
-import * as Widget from '@usertour-packages/widget';
 import { forwardRef, memo, useCallback, useMemo } from 'react';
 
-import type { ContentEditorScaleElement } from '../../../types/editor';
+import { Button } from '../primitives';
 import {
   QUESTION_BUTTON_BASE_CLASS,
-  QUESTION_SCALE_GRID_CLASS,
   QUESTION_LABELS_CONTAINER_CLASS,
-} from '../../constants';
+  QUESTION_SCALE_GRID_CLASS,
+} from './constants';
 
 // Utility functions
 export const calculateScaleLength = (lowRange: number, highRange: number): number => {
@@ -22,7 +21,7 @@ export const validateScaleRange = (lowRange: number, highRange: number): boolean
 // Memoized Scale Button Component
 const ScaleButton = memo<{ value: number; onClick?: () => void; isInteractive?: boolean }>(
   ({ value, onClick, isInteractive = true }) => (
-    <Widget.Button
+    <Button
       variant="custom"
       className={QUESTION_BUTTON_BASE_CLASS}
       onClick={onClick}
@@ -30,26 +29,32 @@ const ScaleButton = memo<{ value: number; onClick?: () => void; isInteractive?: 
       aria-label={`Scale option ${value}`}
     >
       {value}
-    </Widget.Button>
+    </Button>
   ),
 );
 
 ScaleButton.displayName = 'ScaleButton';
 
-// Scale Display Component Props
-export interface ScaleDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
+// Scale Component Props
+export interface ScaleProps extends React.HTMLAttributes<HTMLDivElement> {
   lowRange: number;
   highRange: number;
   lowLabel?: string;
   highLabel?: string;
-  onValueChange?: (element: ContentEditorScaleElement, value: number) => void;
-  element?: ContentEditorScaleElement;
+  onValueChange?: (value: number) => void;
+  isInteractive?: boolean;
 }
 
-// Memoized Scale Display Component with forwardRef for Radix compatibility
-export const ScaleDisplay = memo(
-  forwardRef<HTMLDivElement, ScaleDisplayProps>(
-    ({ lowRange, highRange, lowLabel, highLabel, onValueChange, element, ...props }, ref) => {
+/**
+ * Scale component for SDK widget
+ * Displays interactive or static numeric scale UI
+ */
+export const Scale = memo(
+  forwardRef<HTMLDivElement, ScaleProps>(
+    (
+      { lowRange, highRange, lowLabel, highLabel, onValueChange, isInteractive = true, ...props },
+      ref,
+    ) => {
       const scaleValues = useMemo(() => {
         const length = calculateScaleLength(lowRange, highRange);
         return Array.from({ length }, (_, i) => lowRange + i);
@@ -58,11 +63,11 @@ export const ScaleDisplay = memo(
 
       const handleValueChange = useCallback(
         (value: number) => {
-          if (onValueChange && element) {
-            onValueChange(element, value);
+          if (onValueChange) {
+            onValueChange(value);
           }
         },
-        [onValueChange, element],
+        [onValueChange],
       );
 
       return (
@@ -80,7 +85,7 @@ export const ScaleDisplay = memo(
                 key={value}
                 value={value}
                 onClick={() => handleValueChange(value)}
-                isInteractive={!!onValueChange}
+                isInteractive={isInteractive && !!onValueChange}
               />
             ))}
           </div>
@@ -96,4 +101,8 @@ export const ScaleDisplay = memo(
   ),
 );
 
-ScaleDisplay.displayName = 'ScaleDisplay';
+Scale.displayName = 'Scale';
+
+// Backward compatibility alias
+export const ScaleDisplay = Scale;
+export type ScaleDisplayProps = ScaleProps;

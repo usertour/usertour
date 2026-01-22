@@ -1,10 +1,10 @@
 // Serialize component for NPS (read-only mode for SDK)
 
+import { NPSLabels, NPSScale } from '@usertour-packages/widget';
 import { memo } from 'react';
 
 import type { ContentEditorNPSElement } from '../../../types/editor';
 import { useSerializeClick } from '../../hooks';
-import { NPSScale, NPSLabels } from './nps-display';
 
 export interface ContentEditorNPSSerializeProps {
   element: ContentEditorNPSElement;

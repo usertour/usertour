@@ -1,9 +1,9 @@
-// Star rating display component for preview and serialize
+// Star rating component for SDK widget
 
 import { cn } from '@usertour-packages/tailwind';
 import { forwardRef, memo, useCallback, useMemo } from 'react';
 
-import { STAR_SVG_PATH, QUESTION_LABELS_CONTAINER_CLASS } from '../../constants';
+import { QUESTION_LABELS_CONTAINER_CLASS, STAR_SVG_PATH } from './constants';
 
 interface StarButtonProps {
   className?: string;
@@ -46,7 +46,7 @@ export const StarButton = memo<StarButtonProps>(
 
 StarButton.displayName = 'StarButton';
 
-export interface StarRatingDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface StarRatingProps extends React.HTMLAttributes<HTMLDivElement> {
   scaleLength: number;
   hoveredIndex: number | null;
   onStarHover: (index: number) => void;
@@ -58,9 +58,12 @@ export interface StarRatingDisplayProps extends React.HTMLAttributes<HTMLDivElem
   isInteractive?: boolean;
 }
 
-// Memoized Star Rating Display Component with forwardRef for Radix compatibility
-export const StarRatingDisplay = memo(
-  forwardRef<HTMLDivElement, StarRatingDisplayProps>(
+/**
+ * Star Rating component for SDK widget
+ * Displays interactive or static star rating UI
+ */
+export const StarRating = memo(
+  forwardRef<HTMLDivElement, StarRatingProps>(
     (
       {
         scaleLength,
@@ -103,7 +106,6 @@ export const StarRatingDisplay = memo(
           <div
             className="grid gap-2"
             style={{ gridTemplateColumns: `repeat(${scaleLength}, minmax(0px, 1fr))` }}
-            data-relin-paragraph="655"
             onMouseLeave={onStarLeave}
             role="radiogroup"
             aria-label="Star rating"
@@ -134,4 +136,8 @@ export const StarRatingDisplay = memo(
   ),
 );
 
-StarRatingDisplay.displayName = 'StarRatingDisplay';
+StarRating.displayName = 'StarRating';
+
+// Backward compatibility alias
+export const StarRatingDisplay = StarRating;
+export type StarRatingDisplayProps = StarRatingProps;

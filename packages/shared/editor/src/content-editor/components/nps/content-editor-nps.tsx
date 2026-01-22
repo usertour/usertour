@@ -1,5 +1,6 @@
 // Main editable NPS component
 
+import { NPSLabels, NPSScale } from '@usertour-packages/widget';
 import { memo, useCallback } from 'react';
 
 import type { ContentEditorNPSElement } from '../../../types/editor';
@@ -11,7 +12,6 @@ import {
   LabelsField,
 } from '../../shared';
 import type { QuestionContextProps } from '../../shared';
-import { NPSScale, NPSLabels } from './nps-display';
 
 // Memoized Popover Content component
 const NPSPopoverContent = memo(

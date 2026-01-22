@@ -740,6 +740,9 @@ importers:
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../packages/components/use-toast
+      '@usertour-packages/widget':
+        specifier: workspace:^
+        version: link:../../packages/widget
       '@usertour/helpers':
         specifier: workspace:^
         version: link:../../packages/helpers
@@ -4251,6 +4254,9 @@ importers:
       '@radix-ui/react-slot':
         specifier: ^1.0.2
         version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
+      '@usertour-packages/icons':
+        specifier: workspace:*
+        version: link:../shared/icons
       '@usertour-packages/tailwind':
         specifier: workspace:*
         version: link:../tailwind

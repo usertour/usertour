@@ -1,16 +1,16 @@
 // Unified "Other" option input component for both single and multiple selection modes
 
 import { RiCheckFill } from '@usertour-packages/icons';
-import * as Widget from '@usertour-packages/widget';
-import { memo, useCallback, useRef, useEffect } from 'react';
+import { memo, useCallback, useEffect, useRef } from 'react';
 
+import { Button } from '../primitives';
 import {
   DEFAULT_OTHER_PLACEHOLDER,
   OTHER_INPUT_CLASS,
   OTHER_SUBMIT_BUTTON_CLASS,
 } from './constants';
 
-interface OtherOptionInputProps {
+export interface OtherOptionInputProps {
   placeholder?: string;
   value: string;
   isEditing: boolean;
@@ -20,6 +20,10 @@ interface OtherOptionInputProps {
   showSubmitButton?: boolean;
 }
 
+/**
+ * Other option input component for selection components
+ * Provides text input for custom "Other" option
+ */
 export const OtherOptionInput = memo(
   ({
     placeholder,
@@ -72,13 +76,13 @@ export const OtherOptionInput = memo(
             className={OTHER_INPUT_CLASS}
           />
           {showSubmitButton && (
-            <Widget.Button
+            <Button
               variant="custom"
               className={OTHER_SUBMIT_BUTTON_CLASS}
               onClick={handleSubmitClick}
             >
               <RiCheckFill className="w-full h-full" />
-            </Widget.Button>
+            </Button>
           )}
         </div>
       );

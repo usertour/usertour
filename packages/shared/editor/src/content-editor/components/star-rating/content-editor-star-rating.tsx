@@ -1,5 +1,6 @@
 // Main editable star rating component
 
+import { StarRating } from '@usertour-packages/widget';
 import { memo, useCallback, useState } from 'react';
 
 import type { ContentEditorStarRatingElement } from '../../../types/editor';
@@ -12,7 +13,6 @@ import {
   ScaleRangeField,
 } from '../../shared';
 import type { QuestionContextProps } from '../../shared';
-import { StarRatingDisplay } from './star-rating-display';
 
 // Memoized Popover Content component
 const StarRatingPopoverContent = memo(
@@ -94,7 +94,7 @@ export const ContentEditorStarRating = memo<ContentEditorStarRatingProps>((props
     (localData: ContentEditorStarRatingElement['data']) => {
       const scaleLength = localData.highRange - localData.lowRange + 1;
       return (
-        <StarRatingDisplay
+        <StarRating
           scaleLength={scaleLength}
           hoveredIndex={hoveredIndex}
           onStarHover={handleStarHover}

@@ -1,10 +1,10 @@
 // Serialize component for star rating (read-only mode for SDK)
 
+import { StarRating } from '@usertour-packages/widget';
 import { memo, useCallback, useMemo, useState } from 'react';
 
 import type { ContentEditorStarRatingElement } from '../../../types/editor';
 import { useSerializeClick } from '../../hooks';
-import { StarRatingDisplay } from './star-rating-display';
 
 export interface ContentEditorStarRatingSerializeProps {
   element: ContentEditorStarRatingElement;
@@ -31,7 +31,7 @@ export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSeri
     }, []);
 
     return (
-      <StarRatingDisplay
+      <StarRating
         scaleLength={scaleLength}
         hoveredIndex={hoveredIndex}
         onStarHover={handleStarHover}

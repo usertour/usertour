@@ -1,8 +1,10 @@
 // Main editable embed component
 
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import type { EmbedData } from '@usertour-packages/widget';
+import { Embed } from '@usertour-packages/widget';
 import type { ContentOmbedInfo } from '@usertour/types';
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
@@ -13,7 +15,6 @@ import { EMBED_DIMENSION_TYPE_OPTIONS } from '../../constants';
 import { ActionButtonsBase, MarginControls, WidthControls } from '../../shared';
 import type { DimensionType, MarginPosition } from '../../types';
 import { ensureDimensionWithDefaults } from '../../utils';
-import { EmbedContent } from './embed-content';
 import { EmbedUrlInput } from './embed-url-input';
 
 export interface ContentEditorEmbedProps {
@@ -164,10 +165,24 @@ export const ContentEditorEmbed = memo(({ element, path, id }: ContentEditorEmbe
     }
   }, [element, getOembedInfo, updateElement, id]);
 
+  // Map element properties to EmbedData format
+  // Type assertion needed due to ContentEditorWidth.type being string vs DimensionType literal
+  const embedData = useMemo<EmbedData>(
+    () => ({
+      url: element.url,
+      parsedUrl: element.parsedUrl,
+      width: element.width as EmbedData['width'],
+      height: element.height as EmbedData['height'],
+      margin: element.margin,
+      oembed: element.oembed,
+    }),
+    [element.url, element.parsedUrl, element.width, element.height, element.margin, element.oembed],
+  );
+
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <EmbedContent element={element} isReadOnly={false} />
+        <Embed data={embedData} isReadOnly={false} />
       </PopoverTrigger>
       <PopoverContent
         className="bg-background"

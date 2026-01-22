@@ -1,12 +1,12 @@
 // Multiple selection (checkbox) serialize component
 
+import { MultipleSelection } from '@usertour-packages/widget';
 import { memo, useCallback } from 'react';
 
 import type {
   ContentEditorMultipleChoiceElement,
   ContentEditorMultipleChoiceOption,
 } from '../../../types/editor';
-import { MultipleSelectionDisplay } from './multiple-selection-display';
 
 interface MultipleSelectionSerializeProps {
   element: ContentEditorMultipleChoiceElement;
@@ -24,7 +24,7 @@ export const MultipleSelectionSerialize = memo(
     );
 
     return (
-      <MultipleSelectionDisplay
+      <MultipleSelection
         options={options}
         enableOther={element.data.enableOther}
         otherPlaceholder={element.data.otherPlaceholder}

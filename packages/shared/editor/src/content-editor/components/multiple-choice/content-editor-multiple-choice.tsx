@@ -1,13 +1,12 @@
 // Main editable multiple choice component
 
+import { MultipleSelection, SingleSelection } from '@usertour-packages/widget';
 import { memo, useCallback, useState } from 'react';
 
 import type { ContentEditorMultipleChoiceElement } from '../../../types/editor';
 import { QuestionEditorBase } from '../../shared/question-editor-base';
 import type { QuestionContextProps } from '../../shared';
 import { MultipleChoicePopoverContent } from './multiple-choice-popover-content';
-import { SingleSelectionDisplay } from './single-selection-display';
-import { MultipleSelectionDisplay } from './multiple-selection-display';
 
 export interface ContentEditorMultipleChoiceProps {
   element: ContentEditorMultipleChoiceElement;
@@ -42,7 +41,7 @@ export const ContentEditorMultipleChoice = memo((props: ContentEditorMultipleCho
 
       if (localData.allowMultiple) {
         return (
-          <MultipleSelectionDisplay
+          <MultipleSelection
             options={localData.options}
             enableOther={localData.enableOther}
             otherPlaceholder={localData.otherPlaceholder}
@@ -55,7 +54,7 @@ export const ContentEditorMultipleChoice = memo((props: ContentEditorMultipleCho
       }
 
       return (
-        <SingleSelectionDisplay
+        <SingleSelection
           options={localData.options}
           enableOther={localData.enableOther}
           otherPlaceholder={localData.otherPlaceholder}

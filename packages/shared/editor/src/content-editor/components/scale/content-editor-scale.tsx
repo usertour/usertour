@@ -1,6 +1,7 @@
 // Main editable scale component
 
 import { isEmptyString } from '@usertour/helpers';
+import { Scale, validateScaleRange } from '@usertour-packages/widget';
 import { memo, useCallback, useMemo } from 'react';
 
 import type { ContentEditorScaleElement } from '../../../types/editor';
@@ -13,7 +14,6 @@ import {
   ScaleRangeField,
 } from '../../shared';
 import type { QuestionContextProps, ValidationResult } from '../../shared';
-import { ScaleDisplay, validateScaleRange } from './scale-display';
 
 // Validation function for scale
 const validateScale = (data: ContentEditorScaleElement['data']): ValidationResult => {
@@ -110,11 +110,12 @@ export const ContentEditorScale = memo((props: ContentEditorScaleProps) => {
 
   const renderDisplay = useCallback(
     (localData: ContentEditorScaleElement['data']) => (
-      <ScaleDisplay
+      <Scale
         lowRange={localData.lowRange}
         highRange={localData.highRange}
         lowLabel={localData.lowLabel}
         highLabel={localData.highLabel}
+        isInteractive={false}
       />
     ),
     [],

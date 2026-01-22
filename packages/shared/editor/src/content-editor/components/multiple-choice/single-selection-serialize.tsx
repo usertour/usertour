@@ -1,12 +1,12 @@
 // Single selection (radio) serialize component
 
+import { SingleSelection } from '@usertour-packages/widget';
 import { memo, useCallback } from 'react';
 
 import type {
   ContentEditorMultipleChoiceElement,
   ContentEditorMultipleChoiceOption,
 } from '../../../types/editor';
-import { SingleSelectionDisplay } from './single-selection-display';
 
 interface SingleSelectionSerializeProps {
   element: ContentEditorMultipleChoiceElement;
@@ -31,7 +31,7 @@ export const SingleSelectionSerialize = memo(
     );
 
     return (
-      <SingleSelectionDisplay
+      <SingleSelection
         options={options}
         enableOther={element.data.enableOther}
         otherPlaceholder={element.data.otherPlaceholder}

@@ -1,10 +1,9 @@
-// Single selection (radio) display component - shared between editor and serialize
+// Single selection (radio) component for SDK widget
 
 import { cn } from '@usertour-packages/tailwind';
-import * as Widget from '@usertour-packages/widget';
 import { forwardRef, memo, useCallback, useState } from 'react';
 
-import type { ContentEditorMultipleChoiceOption } from '../../../types/editor';
+import { Label, RadioGroup, RadioGroupItem } from '../primitives';
 import {
   DEFAULT_OTHER_PLACEHOLDER,
   OPTION_ITEM_BASE_CLASS,
@@ -12,9 +11,10 @@ import {
 } from './constants';
 import { OptionItem } from './option-item';
 import { OtherOptionInput } from './other-option-input';
+import type { SelectionOption } from './types';
 
-interface SingleSelectionDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
-  options: ContentEditorMultipleChoiceOption[];
+export interface SingleSelectionProps extends React.HTMLAttributes<HTMLDivElement> {
+  options: SelectionOption[];
   enableOther?: boolean;
   otherPlaceholder?: string;
   defaultValue?: string;
@@ -23,8 +23,12 @@ interface SingleSelectionDisplayProps extends React.HTMLAttributes<HTMLDivElemen
   onOtherSubmit?: (value: string) => void;
 }
 
-export const SingleSelectionDisplay = memo(
-  forwardRef<HTMLDivElement, SingleSelectionDisplayProps>(
+/**
+ * Single selection (radio) component for SDK widget
+ * Displays radio button options for single choice selection
+ */
+export const SingleSelection = memo(
+  forwardRef<HTMLDivElement, SingleSelectionProps>(
     (
       {
         options,
@@ -59,16 +63,16 @@ export const SingleSelectionDisplay = memo(
       return (
         <div ref={ref} className="flex flex-col gap-2 w-full" {...props}>
           <div className="space-y-2">
-            <Widget.RadioGroup
+            <RadioGroup
               defaultValue={defaultValue}
               onValueChange={isInteractive ? handleValueChange : undefined}
             >
               {options.map((option, index) => (
                 <OptionItem key={index}>
-                  <Widget.RadioGroupItem value={option.value} id={`r1${index}`} />
-                  <Widget.Label htmlFor={`r1${index}`} className="grow cursor-pointer">
+                  <RadioGroupItem value={option.value} id={`r1${index}`} />
+                  <Label htmlFor={`r1${index}`} className="grow cursor-pointer">
                     {option.label || option.value}
-                  </Widget.Label>
+                  </Label>
                 </OptionItem>
               ))}
               {enableOther && (
@@ -78,7 +82,7 @@ export const SingleSelectionDisplay = memo(
                     isInteractive && isEditing && OPTION_ITEM_EDITING_CLASS,
                   )}
                 >
-                  <Widget.RadioGroupItem value="other" id="other-radio" />
+                  <RadioGroupItem value="other" id="other-radio" />
                   {isInteractive ? (
                     <OtherOptionInput
                       placeholder={otherPlaceholder}
@@ -90,13 +94,13 @@ export const SingleSelectionDisplay = memo(
                       showSubmitButton
                     />
                   ) : (
-                    <Widget.Label className="grow cursor-pointer">
+                    <Label className="grow cursor-pointer">
                       {otherPlaceholder || DEFAULT_OTHER_PLACEHOLDER}
-                    </Widget.Label>
+                    </Label>
                   )}
                 </div>
               )}
-            </Widget.RadioGroup>
+            </RadioGroup>
           </div>
         </div>
       );
@@ -104,4 +108,8 @@ export const SingleSelectionDisplay = memo(
   ),
 );
 
-SingleSelectionDisplay.displayName = 'SingleSelectionDisplay';
+SingleSelection.displayName = 'SingleSelection';
+
+// Backward compatibility alias
+export const SingleSelectionDisplay = SingleSelection;
+export type SingleSelectionDisplayProps = SingleSelectionProps;

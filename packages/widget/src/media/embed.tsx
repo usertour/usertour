@@ -1,16 +1,15 @@
-// Embed content display component
+// Embed component for SDK widget
 
 import { VideoIcon } from '@usertour-packages/icons';
 import { forwardRef, useMemo } from 'react';
 
-import type { ContentEditorEmebedElement } from '../../../types/editor';
 import {
   DEFAULT_EMBED_HEIGHT,
   DEFAULT_EMBED_SIZE,
   DEFAULT_EMBED_WIDTH,
   MARGIN_KEY_MAPPING,
-} from '../../constants';
-import type { MarginPosition } from '../../types';
+} from './constants';
+import type { EmbedData, MarginPosition } from './types';
 
 // Utility function to calculate aspect ratio
 const calculateAspectRatio = (width?: number, height?: number): number => {
@@ -18,44 +17,44 @@ const calculateAspectRatio = (width?: number, height?: number): number => {
   return height / width;
 };
 
-// Transform element properties to CSS styles
-const transformsStyle = (element: ContentEditorEmebedElement): React.CSSProperties => {
+// Transform embed data to CSS styles
+const transformsStyle = (data: EmbedData): React.CSSProperties => {
   const style: React.CSSProperties = {};
-  const aspectRatio = calculateAspectRatio(element.oembed?.width, element.oembed?.height);
+  const aspectRatio = calculateAspectRatio(data.oembed?.width, data.oembed?.height);
 
   // Handle width
-  if (!element.width || element.width?.type === 'percent') {
-    const width = element?.width?.value ?? DEFAULT_EMBED_WIDTH;
+  if (!data.width || data.width?.type === 'percent') {
+    const width = data?.width?.value ?? DEFAULT_EMBED_WIDTH;
     style.width = `calc(${width}% + 0px)`;
 
     if (aspectRatio > 0) {
       style.height = '0px';
       style.paddingBottom = `calc(${aspectRatio * width}% + 0px)`;
     }
-  } else if (element?.width?.value) {
-    style.width = `${element.width.value}px`;
-    style.height = aspectRatio ? `${element.width.value * aspectRatio}px` : '100%';
+  } else if (data?.width?.value) {
+    style.width = `${data.width.value}px`;
+    style.height = aspectRatio ? `${data.width.value * aspectRatio}px` : '100%';
     style.paddingBottom = '0px';
   }
 
   // Handle height
-  if (!element.height || element.height?.type === 'percent') {
-    const height = element?.height?.value ?? DEFAULT_EMBED_HEIGHT;
+  if (!data.height || data.height?.type === 'percent') {
+    const height = data?.height?.value ?? DEFAULT_EMBED_HEIGHT;
     style.height = `calc(${height}% + 0px)`;
     style.paddingBottom = '0px';
-  } else if (element?.height?.value) {
-    style.height = `${element.height.value}px`;
+  } else if (data?.height?.value) {
+    style.height = `${data.height.value}px`;
     style.paddingBottom = '0px';
   }
 
   // Handle margins
-  if (element.margin) {
+  if (data.margin) {
     for (const [key, marginName] of Object.entries(MARGIN_KEY_MAPPING)) {
       const marginKey = key as MarginPosition;
-      const marginValue = element.margin?.[marginKey];
+      const marginValue = data.margin?.[marginKey];
 
       if (marginValue !== undefined) {
-        if (element.margin.enabled) {
+        if (data.margin.enabled) {
           (style as Record<string, unknown>)[marginName] = `${marginValue}px`;
         } else {
           (style as Record<string, unknown>)[marginName] = undefined;
@@ -67,19 +66,25 @@ const transformsStyle = (element: ContentEditorEmebedElement): React.CSSProperti
   return style;
 };
 
-export interface EmbedContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  element: ContentEditorEmebedElement;
+export interface EmbedProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Embed data containing URL, dimensions, and oembed info */
+  data: EmbedData;
+  /** Whether the embed is in read-only mode (enables pointer events) */
   isReadOnly?: boolean;
 }
 
-export const EmbedContent = forwardRef<HTMLDivElement, EmbedContentProps>(
-  ({ element, isReadOnly = false, ...props }, ref) => {
+/**
+ * Embed component for SDK widget
+ * Displays embedded content from external providers (YouTube, Vimeo, etc.)
+ */
+export const Embed = forwardRef<HTMLDivElement, EmbedProps>(
+  ({ data, isReadOnly = false, ...props }, ref) => {
     const containerStyle = useMemo(
       () => ({
         position: 'relative' as const,
-        ...transformsStyle(element),
+        ...transformsStyle(data),
       }),
-      [element],
+      [data],
     );
 
     const innerStyle = useMemo(
@@ -95,16 +100,16 @@ export const EmbedContent = forwardRef<HTMLDivElement, EmbedContentProps>(
     );
 
     const sanitizedHtml = useMemo(() => {
-      if (element.oembed?.html) {
-        return element.oembed.html
+      if (data.oembed?.html) {
+        return data.oembed.html
           .replace(/width=[0-9,"']+/, 'width="100%"')
           .replace(/height=[0-9,"']+/, 'height="100%"');
       }
       return null;
-    }, [element.oembed?.html]);
+    }, [data.oembed?.html]);
 
     // Render oembed HTML content
-    if (element.oembed?.html && element.parsedUrl) {
+    if (data.oembed?.html && data.parsedUrl) {
       return (
         <div ref={ref} style={containerStyle} {...props}>
           <div
@@ -120,7 +125,7 @@ export const EmbedContent = forwardRef<HTMLDivElement, EmbedContentProps>(
     }
 
     // Render iframe for parsed URL
-    if (element.parsedUrl) {
+    if (data.parsedUrl) {
       const iframeStyle: React.CSSProperties | undefined = isReadOnly
         ? undefined
         : {
@@ -131,7 +136,7 @@ export const EmbedContent = forwardRef<HTMLDivElement, EmbedContentProps>(
       return (
         <div ref={ref} style={containerStyle} {...props}>
           <iframe
-            src={element.parsedUrl}
+            src={data.parsedUrl}
             width="100%"
             height="100%"
             frameBorder="0"
@@ -162,4 +167,8 @@ export const EmbedContent = forwardRef<HTMLDivElement, EmbedContentProps>(
   },
 );
 
-EmbedContent.displayName = 'EmbedContent';
+Embed.displayName = 'Embed';
+
+// Backward compatibility alias
+export const EmbedContent = Embed;
+export type EmbedContentProps = EmbedProps;
