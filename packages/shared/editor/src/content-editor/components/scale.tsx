@@ -1,6 +1,6 @@
 import * as Widget from '@usertour-packages/widget';
 import { isEmptyString } from '@usertour/helpers';
-import { memo, useCallback, useMemo } from 'react';
+import { forwardRef, memo, useCallback, useMemo } from 'react';
 
 import type { ContentEditorScaleElement } from '../../types/editor';
 import { BindAttribute } from './bind-attribute';
@@ -48,66 +48,65 @@ const ScaleButton = memo<{ value: number; onClick?: () => void; isInteractive?: 
 
 ScaleButton.displayName = 'ScaleButton';
 
-// Memoized Scale Display Component
-const ScaleDisplay = memo<{
+// Scale Display Component Props
+interface ScaleDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
   lowRange: number;
   highRange: number;
   lowLabel?: string;
   highLabel?: string;
-  onClick?: (element: ContentEditorScaleElement, value: number) => void;
+  onValueChange?: (element: ContentEditorScaleElement, value: number) => void;
   element?: ContentEditorScaleElement;
-}>(({ lowRange, highRange, lowLabel, highLabel, onClick, element }) => {
-  const scaleValues = useMemo(() => {
-    const length = calculateScaleLength(lowRange, highRange);
-    return Array.from({ length }, (_, i) => lowRange + i);
-  }, [lowRange, highRange]);
-  const scaleLength = scaleValues.length;
+}
 
-  const handleButtonClick = useCallback(
-    (value: number) => {
-      if (onClick && element) {
-        onClick(element, value);
-      }
-    },
-    [onClick, element],
-  );
+// Memoized Scale Display Component with forwardRef for Radix compatibility
+const ScaleDisplay = memo(
+  forwardRef<HTMLDivElement, ScaleDisplayProps>(
+    ({ lowRange, highRange, lowLabel, highLabel, onValueChange, element, ...props }, ref) => {
+      const scaleValues = useMemo(() => {
+        const length = calculateScaleLength(lowRange, highRange);
+        return Array.from({ length }, (_, i) => lowRange + i);
+      }, [lowRange, highRange]);
+      const scaleLength = scaleValues.length;
 
-  if (scaleLength === 0) {
-    return (
-      <div className="w-full p-4 text-center text-gray-500 border border-dashed rounded-md">
-        Invalid scale range
-      </div>
-    );
-  }
+      const handleValueChange = useCallback(
+        (value: number) => {
+          if (onValueChange && element) {
+            onValueChange(element, value);
+          }
+        },
+        [onValueChange, element],
+      );
 
-  return (
-    <div className="w-full">
-      <div
-        className={SCALE_GRID_CLASS}
-        style={{
-          gridTemplateColumns: `repeat(${scaleLength}, minmax(0px, 1fr))`,
-        }}
-        role="radiogroup"
-        aria-label="Scale options"
-      >
-        {scaleValues.map((value) => (
-          <ScaleButton
-            key={value}
-            value={value}
-            onClick={() => handleButtonClick(value)}
-            isInteractive={!!onClick}
-          />
-        ))}
-      </div>
-      {(lowLabel || highLabel) && (
-        <div className={LABELS_CONTAINER_CLASS}>
-          <p>{lowLabel}</p>
-          <p>{highLabel}</p>
+      return (
+        <div ref={ref} className="w-full" {...props}>
+          <div
+            className={SCALE_GRID_CLASS}
+            style={{
+              gridTemplateColumns: `repeat(${scaleLength}, minmax(0px, 1fr))`,
+            }}
+            role="radiogroup"
+            aria-label="Scale options"
+          >
+            {scaleValues.map((value) => (
+              <ScaleButton
+                key={value}
+                value={value}
+                onClick={() => handleValueChange(value)}
+                isInteractive={!!onValueChange}
+              />
+            ))}
+          </div>
+          {(lowLabel || highLabel) && (
+            <div className={LABELS_CONTAINER_CLASS}>
+              <p>{lowLabel}</p>
+              <p>{highLabel}</p>
+            </div>
+          )}
         </div>
-      )}
-    </div>
-  );
-});
+      );
+    },
+  ),
+);
 
 ScaleDisplay.displayName = 'ScaleDisplay';
 
@@ -266,7 +265,7 @@ export const ContentEditorScaleSerialize = memo<ContentEditorScaleSerializeType>
       highRange={element.data.highRange}
       lowLabel={element.data.lowLabel}
       highLabel={element.data.highLabel}
-      onClick={loading ? undefined : handleScaleClick}
+      onValueChange={loading ? undefined : handleScaleClick}
       element={element}
     />
   );

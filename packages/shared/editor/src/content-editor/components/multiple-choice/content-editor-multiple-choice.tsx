@@ -8,10 +8,10 @@ import { isEmptyString } from '@usertour/helpers';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
-  EditorError,
-  EditorErrorAnchor,
-  EditorErrorContent,
-} from '../../../richtext-editor/editor-error';
+  EditorErrorTooltip,
+  EditorErrorTooltipTrigger,
+  EditorErrorTooltipContent,
+} from '../../shared/editor-error-tooltip';
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import type {
   ContentEditorMultipleChoiceElement,
@@ -176,9 +176,9 @@ export const ContentEditorMultipleChoice = memo((props: ContentEditorMultipleCho
   );
 
   return (
-    <EditorError open={openError}>
-      <EditorErrorAnchor className="w-full">
-        <Popover onOpenChange={handleOpenChange} open={isOpen}>
+    <EditorErrorTooltip open={openError}>
+      <Popover onOpenChange={handleOpenChange} open={isOpen}>
+        <EditorErrorTooltipTrigger>
           <PopoverTrigger asChild>
             <div className="flex flex-col gap-2 w-full">
               <div className="space-y-2">
@@ -209,25 +209,25 @@ export const ContentEditorMultipleChoice = memo((props: ContentEditorMultipleCho
               </div>
             </div>
           </PopoverTrigger>
-          <PopoverContent
-            className="w-96 bg-background shadow-lg"
-            style={{ zIndex }}
-            sideOffset={10}
-            side="right"
-          >
-            <MultipleChoicePopoverContent
-              localData={localData}
-              onDataChange={handleDataChange}
-              onOptionChange={handleOptionChange}
-              contextProps={contextProps}
-            />
-          </PopoverContent>
-        </Popover>
-      </EditorErrorAnchor>
-      <EditorErrorContent side="bottom" style={{ zIndex }}>
+        </EditorErrorTooltipTrigger>
+        <PopoverContent
+          className="w-96 bg-background shadow-lg"
+          style={{ zIndex }}
+          sideOffset={10}
+          side="right"
+        >
+          <MultipleChoicePopoverContent
+            localData={localData}
+            onDataChange={handleDataChange}
+            onOptionChange={handleOptionChange}
+            contextProps={contextProps}
+          />
+        </PopoverContent>
+      </Popover>
+      <EditorErrorTooltipContent side="bottom" style={{ zIndex }}>
         Question name is required
-      </EditorErrorContent>
-    </EditorError>
+      </EditorErrorTooltipContent>
+    </EditorErrorTooltip>
   );
 });
 

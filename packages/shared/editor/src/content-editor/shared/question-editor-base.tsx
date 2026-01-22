@@ -6,10 +6,10 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import {
-  EditorError,
-  EditorErrorAnchor,
-  EditorErrorContent,
-} from '../../richtext-editor/editor-error';
+  EditorErrorTooltip,
+  EditorErrorTooltipTrigger,
+  EditorErrorTooltipContent,
+} from './editor-error-tooltip';
 import { useContentEditorContext } from '../../contexts/content-editor-context';
 import type { ContentEditorElement } from '../../types/editor';
 import type { QuestionContextProps } from './question-popover-fields';
@@ -34,6 +34,7 @@ export interface QuestionEditorBaseProps<T extends QuestionElementBase> {
   // Custom validation function - if not provided, only validates name
   validate?: (data: T['data']) => ValidationResult;
   // Render the display component (trigger for popover)
+  // Note: renderDisplay should return a single element (not a fragment) for PopoverTrigger
   renderDisplay: (localData: T['data']) => ReactNode;
   // Render the popover content
   renderPopoverContent: (props: {
@@ -43,10 +44,6 @@ export interface QuestionEditorBaseProps<T extends QuestionElementBase> {
   }) => ReactNode;
   // Optional popover class name
   popoverClassName?: string;
-  // Optional error anchor class name
-  errorAnchorClassName?: string;
-  // Optional trigger wrapper class name
-  triggerClassName?: string;
 }
 
 // Default validation - just check if name is empty
@@ -63,8 +60,6 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
     renderDisplay,
     renderPopoverContent,
     popoverClassName = 'bg-background shadow-lg',
-    errorAnchorClassName = 'w-full',
-    triggerClassName = 'w-full',
   } = props;
 
   const {
@@ -142,30 +137,28 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
   );
 
   return (
-    <EditorError open={openError}>
-      <EditorErrorAnchor className={errorAnchorClassName}>
-        <Popover onOpenChange={handleOpenChange} open={isOpen}>
-          <PopoverTrigger asChild>
-            <div className={triggerClassName || undefined}>{renderDisplay(localData)}</div>
-          </PopoverTrigger>
-          <PopoverContent
-            className={popoverClassName}
-            style={{ zIndex }}
-            sideOffset={10}
-            side="right"
-          >
-            {renderPopoverContent({
-              localData,
-              handleDataChange,
-              contextProps,
-            })}
-          </PopoverContent>
-        </Popover>
-      </EditorErrorAnchor>
-      <EditorErrorContent side="bottom" style={{ zIndex }}>
+    <EditorErrorTooltip open={openError}>
+      <Popover onOpenChange={handleOpenChange} open={isOpen}>
+        <EditorErrorTooltipTrigger>
+          <PopoverTrigger asChild>{renderDisplay(localData)}</PopoverTrigger>
+        </EditorErrorTooltipTrigger>
+        <PopoverContent
+          className={popoverClassName}
+          style={{ zIndex }}
+          sideOffset={10}
+          side="right"
+        >
+          {renderPopoverContent({
+            localData,
+            handleDataChange,
+            contextProps,
+          })}
+        </PopoverContent>
+      </Popover>
+      <EditorErrorTooltipContent side="bottom" style={{ zIndex }}>
         {validationResult.errorMessage || 'Please fix the errors above'}
-      </EditorErrorContent>
-    </EditorError>
+      </EditorErrorTooltipContent>
+    </EditorErrorTooltip>
   );
 }
 

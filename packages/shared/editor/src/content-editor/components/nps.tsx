@@ -115,10 +115,10 @@ export const ContentEditorNPS = (props: ContentEditorNPSProps) => {
 
   const renderDisplay = useCallback(
     (localData: ContentEditorNPSElement['data']) => (
-      <>
+      <div className="w-full">
         <NPSScale />
         <NPSLabels lowLabel={localData.lowLabel} highLabel={localData.highLabel} />
-      </>
+      </div>
     ),
     [],
   );

@@ -1,5 +1,5 @@
 import { cn } from '@usertour-packages/tailwind';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 
 import type { ContentEditorStarRatingElement } from '../../types/editor';
 import { BindAttribute } from './bind-attribute';
@@ -58,85 +58,92 @@ export const StarButton = memo<StarButtonProps>(
 
 StarButton.displayName = 'StarButton';
 
-interface StarRatingDisplayProps {
+interface StarRatingDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
   scaleLength: number;
   hoveredIndex: number | null;
   onStarHover: (index: number) => void;
   onStarLeave: () => void;
-  onStarClick?: (index: number) => void;
+  onValueChange?: (value: number) => void;
   lowRange: number;
   lowLabel?: string;
   highLabel?: string;
   isInteractive?: boolean;
 }
 
-const StarRatingDisplay = memo<StarRatingDisplayProps>(
-  ({
-    scaleLength,
-    hoveredIndex,
-    onStarHover,
-    onStarLeave,
-    onStarClick,
-    lowRange,
-    lowLabel,
-    highLabel,
-    isInteractive = true,
-  }) => {
-    const stars = useMemo(
-      () =>
-        Array.from({ length: scaleLength }, (_, i) => ({
-          index: i,
-          value: lowRange + i,
-          isHighlighted: hoveredIndex !== null && i <= hoveredIndex,
-        })),
-      [scaleLength, lowRange, hoveredIndex],
-    );
-
-    const handleKeyDown = useCallback(
-      (event: React.KeyboardEvent<Element>, index: number) => {
-        if (!isInteractive || !onStarClick) return;
-
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onStarClick(index);
-        }
+// Memoized Star Rating Display Component with forwardRef for Radix compatibility
+const StarRatingDisplay = memo(
+  forwardRef<HTMLDivElement, StarRatingDisplayProps>(
+    (
+      {
+        scaleLength,
+        hoveredIndex,
+        onStarHover,
+        onStarLeave,
+        onValueChange,
+        lowRange,
+        lowLabel,
+        highLabel,
+        isInteractive = true,
+        ...props
       },
-      [isInteractive, onStarClick],
-    );
+      ref,
+    ) => {
+      const stars = useMemo(
+        () =>
+          Array.from({ length: scaleLength }, (_, i) => ({
+            index: i,
+            value: lowRange + i,
+            isHighlighted: hoveredIndex !== null && i <= hoveredIndex,
+          })),
+        [scaleLength, lowRange, hoveredIndex],
+      );
 
-    return (
-      <div>
-        <div
-          className="grid gap-2"
-          style={{ gridTemplateColumns: `repeat(${scaleLength}, minmax(0px, 1fr))` }}
-          data-relin-paragraph="655"
-          onMouseLeave={onStarLeave}
-          role="radiogroup"
-          aria-label="Star rating"
-        >
-          {stars.map(({ index, value, isHighlighted }) => (
-            <StarButton
-              key={index}
-              className={cn('text-sdk-question/30', {
-                'text-sdk-question': isHighlighted,
-              })}
-              onMouseEnter={() => onStarHover(index)}
-              onClick={isInteractive ? () => onStarClick?.(value) : undefined}
-              onKeyDown={(e) => handleKeyDown(e, value)}
-              aria-label={`${value} star${value !== 1 ? 's' : ''}`}
-              aria-pressed={isHighlighted}
-            />
-          ))}
-        </div>
-        {(lowLabel || highLabel) && (
-          <div className="flex mt-2.5 px-0.5 text-[13px] items-center justify-between opacity-80">
-            <p>{lowLabel}</p>
-            <p>{highLabel}</p>
+      const handleKeyDown = useCallback(
+        (event: React.KeyboardEvent<Element>, index: number) => {
+          if (!isInteractive || !onValueChange) return;
+
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onValueChange(index);
+          }
+        },
+        [isInteractive, onValueChange],
+      );
+
+      return (
+        <div ref={ref} {...props}>
+          <div
+            className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${scaleLength}, minmax(0px, 1fr))` }}
+            data-relin-paragraph="655"
+            onMouseLeave={onStarLeave}
+            role="radiogroup"
+            aria-label="Star rating"
+          >
+            {stars.map(({ index, value, isHighlighted }) => (
+              <StarButton
+                key={index}
+                className={cn('text-sdk-question/30', {
+                  'text-sdk-question': isHighlighted,
+                })}
+                onMouseEnter={() => onStarHover(index)}
+                onClick={isInteractive ? () => onValueChange?.(value) : undefined}
+                onKeyDown={(e) => handleKeyDown(e, value)}
+                aria-label={`${value} star${value !== 1 ? 's' : ''}`}
+                aria-pressed={isHighlighted}
+              />
+            ))}
           </div>
-        )}
-      </div>
-    );
-  },
+          {(lowLabel || highLabel) && (
+            <div className="flex mt-2.5 px-0.5 text-[13px] items-center justify-between opacity-80">
+              <p>{lowLabel}</p>
+              <p>{highLabel}</p>
+            </div>
+          )}
+        </div>
+      );
+    },
+  ),
 );
 
 StarRatingDisplay.displayName = 'StarRatingDisplay';
@@ -251,8 +258,6 @@ export const ContentEditorStarRating = memo<ContentEditorStarRatingProps>((props
       id={id}
       renderDisplay={renderDisplay}
       renderPopoverContent={renderPopoverContent}
-      errorAnchorClassName=""
-      triggerClassName=""
     />
   );
 });
@@ -289,7 +294,7 @@ export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSeri
         hoveredIndex={hoveredIndex}
         onStarHover={handleStarHover}
         onStarLeave={handleStarLeave}
-        onStarClick={loading ? undefined : handleClick}
+        onValueChange={loading ? undefined : handleClick}
         lowRange={element.data.lowRange}
         lowLabel={element.data.lowLabel}
         highLabel={element.data.highLabel}

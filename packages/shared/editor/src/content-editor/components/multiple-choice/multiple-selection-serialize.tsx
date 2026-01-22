@@ -133,11 +133,11 @@ export const MultipleSelectionSerialize = memo(
                 </div>
               </div>
             )}
-          </div>
-          <div className="flex justify-center w-full">
-            <Widget.Button disabled={!isValidSelection() || loading} onClick={handleSubmit}>
-              {element.data.buttonText || DEFAULT_BUTTON_TEXT}
-            </Widget.Button>
+            <div className="flex justify-center w-full">
+              <Widget.Button disabled={!isValidSelection() || loading} onClick={handleSubmit}>
+                {element.data.buttonText || DEFAULT_BUTTON_TEXT}
+              </Widget.Button>
+            </div>
           </div>
         </div>
       </div>

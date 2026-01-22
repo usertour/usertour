@@ -40,35 +40,33 @@ export const SingleSelectionSerialize = memo(
     return (
       <div className="flex flex-col gap-2 w-full">
         <div className="space-y-2">
-          <div className="flex flex-col gap-2">
-            <Widget.RadioGroup onValueChange={handleValueChange}>
-              {options.map((option, index) => (
-                <OptionItem key={index}>
-                  <Widget.RadioGroupItem value={option.value} id={`r1${index}`} />
-                  <Label
-                    htmlFor={`r1${index}`}
-                    className="grow cursor-pointer text-sdk-base leading-none"
-                  >
-                    {option.label || option.value}
-                  </Label>
-                </OptionItem>
-              ))}
-              {element.data.enableOther && (
-                <div className={cn(OPTION_ITEM_BASE_CLASS, isEditing && OPTION_ITEM_EDITING_CLASS)}>
-                  <Widget.RadioGroupItem value="other" id="other-radio" />
-                  <OtherOptionInput
-                    placeholder={element.data.otherPlaceholder}
-                    value={otherValue}
-                    isEditing={isEditing}
-                    onValueChange={setOtherValue}
-                    onEditingChange={setIsEditing}
-                    onSubmit={handleOtherSubmit}
-                    showSubmitButton
-                  />
-                </div>
-              )}
-            </Widget.RadioGroup>
-          </div>
+          <Widget.RadioGroup onValueChange={handleValueChange}>
+            {options.map((option, index) => (
+              <OptionItem key={index}>
+                <Widget.RadioGroupItem value={option.value} id={`r1${index}`} />
+                <Label
+                  htmlFor={`r1${index}`}
+                  className="grow cursor-pointer text-sdk-base leading-none"
+                >
+                  {option.label || option.value}
+                </Label>
+              </OptionItem>
+            ))}
+            {element.data.enableOther && (
+              <div className={cn(OPTION_ITEM_BASE_CLASS, isEditing && OPTION_ITEM_EDITING_CLASS)}>
+                <Widget.RadioGroupItem value="other" id="other-radio" />
+                <OtherOptionInput
+                  placeholder={element.data.otherPlaceholder}
+                  value={otherValue}
+                  isEditing={isEditing}
+                  onValueChange={setOtherValue}
+                  onEditingChange={setIsEditing}
+                  onSubmit={handleOtherSubmit}
+                  showSubmitButton
+                />
+              </div>
+            )}
+          </Widget.RadioGroup>
         </div>
       </div>
     );
