@@ -7,7 +7,7 @@ import {
   PopperProgress,
   PopperClose,
   PopperOverlay,
-} from '@usertour-packages/sdk';
+} from '@usertour-packages/widget';
 import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
 import { useRef } from 'react';

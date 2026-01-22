@@ -1,11 +1,11 @@
-import { PopperMadeWith } from '@usertour-packages/sdk';
 import {
+  PopperMadeWith,
   LauncherContentWrapper,
   LauncherPopper,
   LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
-} from '@usertour-packages/sdk/src/launcher';
+} from '@usertour-packages/widget';
 import {
   ContentEditorClickableElement,
   ContentEditorSerialize,

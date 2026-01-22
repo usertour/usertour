@@ -16,9 +16,10 @@ import {
   PopperStaticContent,
   useSettingsStyles,
   getThemeWidthByStepType,
-} from '@usertour-packages/sdk';
-import { LauncherContainer, LauncherView } from '@usertour-packages/sdk/src/launcher';
-import { LauncherRoot } from '@usertour-packages/sdk/src/launcher';
+  LauncherContainer,
+  LauncherView,
+  LauncherRoot,
+} from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import {

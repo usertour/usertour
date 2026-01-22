@@ -8,8 +8,8 @@ import {
   ChecklistPopperContent,
   ChecklistProgress,
   ChecklistRoot,
-} from '@usertour-packages/sdk/src/checklist';
-import { PopperMadeWith } from '@usertour-packages/sdk/src/popper';
+  PopperMadeWith,
+} from '@usertour-packages/widget';
 import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useMemo, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';

@@ -1,5 +1,5 @@
 import { LauncherIconSource } from '@usertour/types';
-import { IconsList } from '@usertour-packages/sdk';
+import { IconsList } from '@usertour-packages/widget';
 import { TAB_VALUES } from './constants';
 
 /**

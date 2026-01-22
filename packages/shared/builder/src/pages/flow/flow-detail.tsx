@@ -20,7 +20,7 @@ import {
 } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
 import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getThemeWidthByStepType } from '@usertour-packages/sdk';
+import { getThemeWidthByStepType } from '@usertour-packages/widget';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { useCurrentTheme } from '../../hooks/use-current-theme';
 import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';

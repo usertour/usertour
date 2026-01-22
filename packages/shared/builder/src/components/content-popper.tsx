@@ -11,7 +11,7 @@ import {
   PopperProgress,
   useSettingsStyles,
   useStepWidth,
-} from '@usertour-packages/sdk';
+} from '@usertour-packages/widget';
 import {
   ContentEditor,
   ContentEditorElementType,

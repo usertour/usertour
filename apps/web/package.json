@@ -59,7 +59,6 @@
     "@usertour-packages/react-use-rect": "workspace:^",
     "@usertour-packages/react-use-size": "workspace:^",
     "@usertour-packages/scroll-area": "workspace:^",
-    "@usertour-packages/sdk": "workspace:^",
     "@usertour-packages/select": "workspace:^",
     "@usertour-packages/separator": "workspace:^",
     "@usertour-packages/shared-components": "workspace:^",

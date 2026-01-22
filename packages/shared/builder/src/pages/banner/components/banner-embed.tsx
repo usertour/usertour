@@ -1,6 +1,6 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
 import { useThemeListContext } from '@usertour-packages/contexts';
-import { useSettingsStyles } from '@usertour-packages/sdk';
+import { useSettingsStyles } from '@usertour-packages/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
 import { Theme } from '@usertour/types';
 import { useEffect, useMemo, useRef } from 'react';

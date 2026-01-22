@@ -5,7 +5,7 @@ import {
   PopperStaticBubble,
   PopperClose,
   useSettingsStyles,
-} from '@usertour-packages/sdk';
+} from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { AvatarType, defaultSettings } from '@usertour/types';

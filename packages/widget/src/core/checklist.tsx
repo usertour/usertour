@@ -27,7 +27,7 @@ import { TaskArrowIcon, CheckmarkIcon, DropDownIcon } from '@usertour-packages/i
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { computePositionStyle } from './utils/position';
 import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
-import * as Widget from '@usertour-packages/widget';
+import { Button } from '../primitives';
 import { useSize } from '@usertour-packages/react-use-size';
 import {
   canCompleteChecklistItem,
@@ -240,7 +240,7 @@ const ChecklistLauncherContent = forwardRef<HTMLButtonElement, ChecklistLauncher
     );
 
     return (
-      <Widget.Button
+      <Button
         variant="custom"
         ref={ref}
         style={{
@@ -269,7 +269,7 @@ const ChecklistLauncherContent = forwardRef<HTMLButtonElement, ChecklistLauncher
             )}
           </div>
         </div>
-      </Widget.Button>
+      </Button>
     );
   },
 );
@@ -560,7 +560,7 @@ const ChecklistDropdown = forwardRef<HTMLButtonElement, React.HTMLAttributes<HTM
     }, [handleExpandedChange]);
 
     return (
-      <Widget.Button
+      <Button
         variant="custom"
         ref={ref}
         className={buttonClassName}
@@ -569,7 +569,7 @@ const ChecklistDropdown = forwardRef<HTMLButtonElement, React.HTMLAttributes<HTM
         {...restProps}
       >
         <DropDownIcon height={24} width={24} />
-      </Widget.Button>
+      </Button>
     );
   },
 );
@@ -633,10 +633,10 @@ const ChecklistDismissConfirm = forwardRef<HTMLDivElement, React.HTMLAttributes<
       <div ref={ref} {...props} className="flex flex-col">
         <div className="text-sdk-base font-sdk-bold">Dismiss checklist?</div>
         <div className="flex flex-row space-x-2 items-center justify-center my-4">
-          <Widget.Button onClick={onDismiss}>Yes, dismiss</Widget.Button>
-          <Widget.Button variant="secondary" onClick={handleCancel}>
+          <Button onClick={onDismiss}>Yes, dismiss</Button>
+          <Button variant="secondary" onClick={handleCancel}>
             Cancel
-          </Widget.Button>
+          </Button>
         </div>
       </div>
     );
@@ -694,14 +694,14 @@ const ChecklistDismiss = forwardRef<HTMLDivElement, ChecklistDismissProps>((prop
       )}
       {!data.preventDismissChecklist && (
         <div className="w-full flex justify-end h-6 items-center">
-          <Widget.Button
+          <Button
             variant="custom"
             className={textClassName}
             onClick={handleDismiss}
             aria-label="Dismiss checklist"
           >
             Dismiss checklist
-          </Widget.Button>
+          </Button>
         </div>
       )}
       {data.autoDismissChecklist && isAllCompleted && (
@@ -782,7 +782,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
   }, [isClickable, item.isCompleted, item?.clickedActions?.length]);
 
   return (
-    <Widget.Button
+    <Button
       variant="custom"
       disabled={!isClickable}
       className={cn(
@@ -813,7 +813,7 @@ const ChecklistItem = (props: ChecklistItemProps) => {
           !isCompleted && isClickable && 'group-hover:opacity-100 group-hover:translate-x-0',
         )}
       />
-    </Widget.Button>
+    </Button>
   );
 };
 

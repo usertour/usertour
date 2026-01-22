@@ -6,7 +6,7 @@ import {
   PopperMadeWith,
   PopperProgress,
   useSettingsStyles,
-} from '@usertour-packages/sdk';
+} from '@usertour-packages/widget';
 import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import {
   AvatarType,

@@ -46,7 +46,7 @@
     "@usertour-packages/select": "workspace:^",
     "@usertour-packages/separator": "workspace:^",
     "@usertour-packages/shared-hooks": "workspace:^",
-    "@usertour-packages/sdk": "workspace:^",
+    "@usertour-packages/widget": "workspace:^",
     "@usertour/helpers": "workspace:^",
     "@usertour-packages/slider": "workspace:^",
     "@usertour-packages/switch": "workspace:^",

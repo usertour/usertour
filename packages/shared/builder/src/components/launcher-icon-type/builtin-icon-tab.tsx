@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconsList } from '@usertour-packages/sdk';
+import { IconsList } from '@usertour-packages/widget';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
 import { Button } from '@usertour-packages/button';
 import { cn } from '@usertour-packages/tailwind';

@@ -1,8 +1,8 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import * as SharedPopper from '@usertour-packages/sdk';
-import { useSettingsStyles } from '@usertour-packages/sdk';
+import * as SharedPopper from '@usertour-packages/widget';
+import { useSettingsStyles } from '@usertour-packages/widget';
 import { GoogleFontCss, ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { Theme } from '@usertour/types';

@@ -56,7 +56,7 @@
     "@usertour-packages/radio-group": "workspace:^",
     "@usertour-packages/react-compose-refs": "workspace:^",
     "@usertour-packages/scroll-area": "workspace:^",
-    "@usertour-packages/sdk": "workspace:^",
+    "@usertour-packages/widget": "workspace:^",
     "@usertour-packages/select": "workspace:^",
     "@usertour-packages/separator": "workspace:^",
     "@usertour-packages/shared-components": "workspace:^",

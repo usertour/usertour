@@ -1,4 +1,4 @@
-import { LauncherContainer, LauncherRoot, LauncherView } from '@usertour-packages/sdk/src/launcher';
+import { LauncherContainer, LauncherRoot, LauncherView } from '@usertour-packages/widget';
 import {
   LauncherActionType,
   LauncherData,

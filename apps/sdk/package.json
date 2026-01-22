@@ -25,7 +25,7 @@
     "@usertour-packages/frame": "workspace:*",
     "@usertour-packages/icons": "workspace:^",
     "@usertour-packages/react-context": "workspace:^",
-    "@usertour-packages/sdk": "workspace:^",
+    "@usertour-packages/widget": "workspace:^",
     "@usertour-packages/shared-editor": "workspace:^",
     "@usertour-packages/tailwind": "workspace:^",
     "@usertour/helpers": "workspace:^",

@@ -8,7 +8,7 @@ import {
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
   ChecklistRoot,
-} from '@usertour-packages/sdk';
+} from '@usertour-packages/widget';
 import {
   ContentEditorClickableElement,
   ContentEditorSerialize,

@@ -117,8 +117,5 @@ export {
   MARGIN_POSITIONS,
 } from './media';
 
-// Future: High-level components (to be migrated from shared/sdk)
-// export { Popper, PopperContent, PopperArrow } from './popper';
-// export { Bubble } from './bubble';
-// export { Checklist } from './checklist';
-// export { Launcher } from './launcher';
+// Core - SDK core components (Popper, Bubble, Checklist, Launcher)
+export * from './core';
