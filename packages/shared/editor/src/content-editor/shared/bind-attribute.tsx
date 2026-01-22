@@ -1,3 +1,5 @@
+// Bind to user attribute component for question editors
+
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {
@@ -19,13 +21,13 @@ import { useCallback, useState } from 'react';
 
 import { AttributeCreateForm } from '../../form/attribute-create-form';
 
-interface BindAttributeProps {
+export interface BindAttributeProps {
   bindToAttribute: boolean;
   selectedAttribute?: string;
   zIndex: number;
   onBindChange: (checked: boolean) => void;
   onAttributeChange: (value: string) => void;
-  dataType?: BizAttributeTypes; // Optional parameter for different input types
+  dataType?: BizAttributeTypes;
   projectId: string;
   popoverContentClassName?: string;
 }
@@ -36,7 +38,7 @@ export const BindAttribute = ({
   zIndex,
   onBindChange,
   onAttributeChange,
-  dataType = BizAttributeTypes.Number, // Default to Number for NPS
+  dataType = BizAttributeTypes.Number,
   projectId,
   popoverContentClassName,
 }: BindAttributeProps) => {
@@ -154,3 +156,5 @@ export const BindAttribute = ({
     </div>
   );
 };
+
+BindAttribute.displayName = 'BindAttribute';

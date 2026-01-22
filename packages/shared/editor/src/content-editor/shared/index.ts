@@ -1,5 +1,6 @@
 // Re-export all shared components
 export * from './action-buttons-base';
+export * from './bind-attribute';
 export * from './drag-handle';
 export * from './loading-spinner';
 export * from './margin-controls';

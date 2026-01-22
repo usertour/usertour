@@ -1,25 +1,24 @@
+// Main editable single-line text component
+
 import * as Widget from '@usertour-packages/widget';
 import { BizAttributeTypes } from '@usertour/types';
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 
-import { QuestionEditorBase } from '../shared/question-editor-base';
-import { QuestionNameField, ContentActionsField } from '../shared/question-popover-fields';
-import { TextInputPopoverFields } from '../shared/text-input-popover-fields';
-import {
-  TextInputSerialize,
-  DEFAULT_PLACEHOLDER,
-  DEFAULT_BUTTON_TEXT,
-} from '../shared/text-input-serialize';
-import { ContentEditorSingleLineTextElement } from '../../types/editor';
-import { BindAttribute } from './bind-attribute';
+import type { ContentEditorSingleLineTextElement } from '../../../types/editor';
+import { BindAttribute } from '../../shared/bind-attribute';
+import { QuestionEditorBase } from '../../shared/question-editor-base';
+import { QuestionNameField, ContentActionsField } from '../../shared/question-popover-fields';
+import { TextInputPopoverFields } from '../../shared/text-input-popover-fields';
+import { DEFAULT_PLACEHOLDER, DEFAULT_BUTTON_TEXT } from '../../shared/text-input-serialize';
+import type { QuestionContextProps } from '../../shared';
 
-interface ContentEditorSingleLineTextProps {
+export interface ContentEditorSingleLineTextProps {
   element: ContentEditorSingleLineTextElement;
   id: string;
   path: number[];
 }
 
-export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextProps) => {
+export const ContentEditorSingleLineText = memo((props: ContentEditorSingleLineTextProps) => {
   const { element, id } = props;
 
   // Render the display component (trigger for popover)
@@ -51,7 +50,7 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
     }: {
       localData: ContentEditorSingleLineTextElement['data'];
       handleDataChange: (data: Partial<ContentEditorSingleLineTextElement['data']>) => void;
-      contextProps: any;
+      contextProps: QuestionContextProps;
     }) => (
       <div className="flex flex-col gap-4">
         <QuestionNameField
@@ -93,25 +92,6 @@ export const ContentEditorSingleLineText = (props: ContentEditorSingleLineTextPr
       renderPopoverContent={renderPopoverContent}
     />
   );
-};
+});
 
 ContentEditorSingleLineText.displayName = 'ContentEditorSingleLineText';
-
-// Serialize component using the shared TextInputSerialize
-export const ContentEditorSingleLineTextSerialize = (props: {
-  element: ContentEditorSingleLineTextElement;
-  onClick?: (element: ContentEditorSingleLineTextElement, value: string) => Promise<void> | void;
-}) => {
-  const { element, onClick } = props;
-
-  return (
-    <TextInputSerialize
-      element={element}
-      onClick={onClick}
-      inputType="input"
-      inputClassName="grow h-auto"
-    />
-  );
-};
-
-ContentEditorSingleLineTextSerialize.displayName = 'ContentEditorSingleLineTextSerialize';

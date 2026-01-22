@@ -19,7 +19,7 @@ import type {
   ContentEditorMultipleChoiceElement,
   ContentEditorMultipleChoiceOption,
 } from '../../../types/editor';
-import { BindAttribute } from '../bind-attribute';
+import { BindAttribute } from '../../shared/bind-attribute';
 
 interface MultipleChoicePopoverContentProps {
   localData: ContentEditorMultipleChoiceElement['data'];

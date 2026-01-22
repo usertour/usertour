@@ -1,25 +1,24 @@
+// Main editable multi-line text component
+
 import * as Widget from '@usertour-packages/widget';
 import { BizAttributeTypes } from '@usertour/types';
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 
-import { QuestionEditorBase } from '../shared/question-editor-base';
-import { QuestionNameField, ContentActionsField } from '../shared/question-popover-fields';
-import { TextInputPopoverFields } from '../shared/text-input-popover-fields';
-import {
-  TextInputSerialize,
-  DEFAULT_PLACEHOLDER,
-  DEFAULT_BUTTON_TEXT,
-} from '../shared/text-input-serialize';
-import { ContentEditorMultiLineTextElement } from '../../types/editor';
-import { BindAttribute } from './bind-attribute';
+import type { ContentEditorMultiLineTextElement } from '../../../types/editor';
+import { BindAttribute } from '../../shared/bind-attribute';
+import { QuestionEditorBase } from '../../shared/question-editor-base';
+import { QuestionNameField, ContentActionsField } from '../../shared/question-popover-fields';
+import { TextInputPopoverFields } from '../../shared/text-input-popover-fields';
+import { DEFAULT_PLACEHOLDER, DEFAULT_BUTTON_TEXT } from '../../shared/text-input-serialize';
+import type { QuestionContextProps } from '../../shared';
 
-interface ContentEditorMultiLineTextProps {
+export interface ContentEditorMultiLineTextProps {
   element: ContentEditorMultiLineTextElement;
   id: string;
   path: number[];
 }
 
-export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProps) => {
+export const ContentEditorMultiLineText = memo((props: ContentEditorMultiLineTextProps) => {
   const { element, id } = props;
 
   // Render the display component (trigger for popover)
@@ -48,7 +47,7 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
     }: {
       localData: ContentEditorMultiLineTextElement['data'];
       handleDataChange: (data: Partial<ContentEditorMultiLineTextElement['data']>) => void;
-      contextProps: any;
+      contextProps: QuestionContextProps;
     }) => (
       <div className="flex flex-col gap-4">
         <QuestionNameField
@@ -90,18 +89,6 @@ export const ContentEditorMultiLineText = (props: ContentEditorMultiLineTextProp
       renderPopoverContent={renderPopoverContent}
     />
   );
-};
+});
 
 ContentEditorMultiLineText.displayName = 'ContentEditorMultiLineText';
-
-// Serialize component using the shared TextInputSerialize
-export const ContentEditorMultiLineTextSerialize = (props: {
-  element: ContentEditorMultiLineTextElement;
-  onClick?: (element: ContentEditorMultiLineTextElement, value: string) => Promise<void> | void;
-}) => {
-  const { element, onClick } = props;
-
-  return <TextInputSerialize element={element} onClick={onClick} inputType="textarea" />;
-};
-
-ContentEditorMultiLineTextSerialize.displayName = 'ContentEditorMultiLineTextSerialize';
