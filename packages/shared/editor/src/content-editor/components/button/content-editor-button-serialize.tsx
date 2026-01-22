@@ -12,14 +12,12 @@ const transformsStyle = (element: ContentEditorButtonElement): MarginStyleProps 
   return transformMarginStyle(element.margin);
 };
 
-export type ContentEditorButtonSerializeType = {
-  className?: string;
-  children?: React.ReactNode;
+export interface ContentEditorButtonSerializeProps {
   element: ContentEditorButtonElement;
   onClick?: (element: ContentEditorButtonElement) => Promise<void>;
-};
+}
 
-export const ContentEditorButtonSerialize = memo((props: ContentEditorButtonSerializeType) => {
+export const ContentEditorButtonSerialize = memo((props: ContentEditorButtonSerializeProps) => {
   const { element, onClick } = props;
 
   const [loading, setLoading] = useState(false);

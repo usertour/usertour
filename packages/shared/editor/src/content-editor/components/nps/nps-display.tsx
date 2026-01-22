@@ -3,13 +3,19 @@
 import * as Widget from '@usertour-packages/widget';
 import { memo, useMemo } from 'react';
 
-// Constants
-export const NPS_SCALE_LENGTH = 11;
-export const DEFAULT_LOW_LABEL = 'Not at all likely';
-export const DEFAULT_HIGH_LABEL = 'Extremely likely';
+import {
+  NPS_SCALE_LENGTH,
+  NPS_DEFAULT_LOW_LABEL,
+  NPS_DEFAULT_HIGH_LABEL,
+  QUESTION_BUTTON_BASE_CLASS,
+  QUESTION_SCALE_GRID_CLASS,
+  QUESTION_LABELS_CONTAINER_CLASS,
+} from '../../constants';
 
-const BUTTON_BASE_CLASS =
-  'flex items-center overflow-hidden group relative border bg-sdk-question/10 text-sdk-question border-sdk-question hover:text-sdk-question hover:border-sdk-question hover:bg-sdk-question/40 rounded-md main-transition p-2 justify-center w-auto min-w-0';
+// Re-export constants for backward compatibility
+export { NPS_SCALE_LENGTH } from '../../constants';
+export const DEFAULT_LOW_LABEL = NPS_DEFAULT_LOW_LABEL;
+export const DEFAULT_HIGH_LABEL = NPS_DEFAULT_HIGH_LABEL;
 
 // Memoized NPS Scale component for better performance
 export const NPSScale = memo(({ onClick }: { onClick?: (value: number) => void }) => {
@@ -19,7 +25,7 @@ export const NPSScale = memo(({ onClick }: { onClick?: (value: number) => void }
         <Widget.Button
           key={`nps-button-${i}`}
           variant="custom"
-          className={BUTTON_BASE_CLASS}
+          className={QUESTION_BUTTON_BASE_CLASS}
           onClick={() => onClick?.(i)}
         >
           {i}
@@ -30,7 +36,7 @@ export const NPSScale = memo(({ onClick }: { onClick?: (value: number) => void }
 
   return (
     <div
-      className="grid gap-1.5 !gap-1"
+      className={QUESTION_SCALE_GRID_CLASS}
       style={{ gridTemplateColumns: `repeat(${NPS_SCALE_LENGTH}, minmax(0px, 1fr))` }}
     >
       {scaleButtons}
@@ -43,9 +49,9 @@ NPSScale.displayName = 'NPSScale';
 // Memoized Labels component
 export const NPSLabels = memo(
   ({ lowLabel, highLabel }: { lowLabel?: string; highLabel?: string }) => (
-    <div className="flex mt-2.5 px-0.5 text-[13px] items-center justify-between opacity-80">
-      <p>{lowLabel || DEFAULT_LOW_LABEL}</p>
-      <p>{highLabel || DEFAULT_HIGH_LABEL}</p>
+    <div className={QUESTION_LABELS_CONTAINER_CLASS}>
+      <p>{lowLabel || NPS_DEFAULT_LOW_LABEL}</p>
+      <p>{highLabel || NPS_DEFAULT_HIGH_LABEL}</p>
     </div>
   ),
 );

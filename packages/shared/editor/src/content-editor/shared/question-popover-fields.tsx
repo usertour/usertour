@@ -6,16 +6,21 @@ import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { memo } from 'react';
 
 import { ContentActions } from '../../actions';
-import type { RulesCondition } from '@usertour/types';
+import type { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 
 // Types
 export interface QuestionContextProps {
   zIndex: number;
-  currentStep: any;
-  currentVersion: any;
-  contentList: any;
-  createStep: any;
-  attributes: any;
+  currentStep?: Step;
+  currentVersion?: ContentVersion;
+  contentList?: Content[];
+  createStep?: (
+    currentVersion: ContentVersion,
+    sequence: number,
+    stepType?: string,
+    duplicateStep?: Step,
+  ) => Promise<Step | undefined>;
+  attributes?: Attribute[];
   projectId: string;
 }
 

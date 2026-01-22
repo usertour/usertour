@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { useToast } from '@usertour-packages/use-toast';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
@@ -56,7 +56,7 @@ export interface ContentEditorImageProps {
   id: string;
 }
 
-export const ContentEditorImage = (props: ContentEditorImageProps) => {
+export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
   const { element, path, id } = props;
   const {
     zIndex,
@@ -216,6 +216,6 @@ export const ContentEditorImage = (props: ContentEditorImageProps) => {
       </PopoverContent>
     </Popover>
   );
-};
+});
 
 ContentEditorImage.displayName = 'ContentEditorImage';

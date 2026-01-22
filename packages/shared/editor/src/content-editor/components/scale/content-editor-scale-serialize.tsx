@@ -3,7 +3,7 @@
 import { memo, useCallback } from 'react';
 
 import type { ContentEditorScaleElement } from '../../../types/editor';
-import { useQuestionSerialize } from '../../shared';
+import { useSerializeClick } from '../../hooks';
 import { ScaleDisplay } from './scale-display';
 
 export interface ContentEditorScaleSerializeProps {
@@ -13,7 +13,7 @@ export interface ContentEditorScaleSerializeProps {
 
 export const ContentEditorScaleSerialize = memo<ContentEditorScaleSerializeProps>((props) => {
   const { element, onClick } = props;
-  const { loading, handleClick } = useQuestionSerialize(element, onClick);
+  const { loading, handleClick } = useSerializeClick(element, onClick);
 
   const handleScaleClick = useCallback(
     (_el: ContentEditorScaleElement, value: number) => {

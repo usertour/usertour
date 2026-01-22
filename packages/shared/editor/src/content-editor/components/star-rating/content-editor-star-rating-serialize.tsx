@@ -3,7 +3,7 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 
 import type { ContentEditorStarRatingElement } from '../../../types/editor';
-import { useQuestionSerialize } from '../../shared';
+import { useSerializeClick } from '../../hooks';
 import { StarRatingDisplay } from './star-rating-display';
 
 export interface ContentEditorStarRatingSerializeProps {
@@ -15,7 +15,7 @@ export const ContentEditorStarRatingSerialize = memo<ContentEditorStarRatingSeri
   (props) => {
     const { element, onClick } = props;
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-    const { loading, handleClick } = useQuestionSerialize(element, onClick);
+    const { loading, handleClick } = useSerializeClick(element, onClick);
 
     const scaleLength = useMemo(
       () => element.data.highRange - element.data.lowRange + 1,

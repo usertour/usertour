@@ -1,4 +1,4 @@
-// Shared hook for question serialize components with loading state
+// Shared hook for serialize components with loading state
 
 import { useCallback, useState } from 'react';
 
@@ -8,7 +8,7 @@ import { useCallback, useState } from 'react';
  * @param onClick - Optional async click handler
  * @returns loading state and handleClick function
  */
-export function useQuestionSerialize<T, V>(
+export function useSerializeClick<T, V>(
   element: T,
   onClick?: (element: T, value: V) => Promise<void>,
 ): {

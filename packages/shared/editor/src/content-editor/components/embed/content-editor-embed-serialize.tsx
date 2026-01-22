@@ -1,16 +1,16 @@
 // Serialize component for embed (read-only mode for SDK)
 
+import { memo } from 'react';
+
 import type { ContentEditorEmebedElement } from '../../../types/editor';
 import { EmbedContent } from './embed-content';
 
 export interface ContentEditorEmbedSerializeProps {
-  className?: string;
-  children?: React.ReactNode;
   element: ContentEditorEmebedElement;
 }
 
-export const ContentEditorEmbedSerialize = ({ element }: ContentEditorEmbedSerializeProps) => {
+export const ContentEditorEmbedSerialize = memo<ContentEditorEmbedSerializeProps>(({ element }) => {
   return <EmbedContent element={element} isReadOnly />;
-};
+});
 
 ContentEditorEmbedSerialize.displayName = 'ContentEditorEmbedSerialize';

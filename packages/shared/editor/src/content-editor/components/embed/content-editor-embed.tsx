@@ -2,7 +2,7 @@
 
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import type { ContentOmbedInfo } from '@usertour/types';
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
@@ -22,7 +22,7 @@ export interface ContentEditorEmbedProps {
   id: string;
 }
 
-export const ContentEditorEmbed = ({ element, path, id }: ContentEditorEmbedProps) => {
+export const ContentEditorEmbed = memo(({ element, path, id }: ContentEditorEmbedProps) => {
   const { zIndex, insertElementInColumn, deleteElementInColumn, updateElement, getOembedInfo } =
     useContentEditorContext();
 
@@ -220,6 +220,6 @@ export const ContentEditorEmbed = ({ element, path, id }: ContentEditorEmbedProp
       </PopoverContent>
     </Popover>
   );
-};
+});
 
 ContentEditorEmbed.displayName = 'ContentEditorEmbed';

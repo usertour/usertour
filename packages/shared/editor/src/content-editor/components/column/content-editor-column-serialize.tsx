@@ -40,6 +40,3 @@ export const ContentEditorColumnSerialize = memo(
 );
 
 ContentEditorColumnSerialize.displayName = 'ContentEditorColumnSerialize';
-
-// Export type alias for backward compatibility
-export type ContentEditorColumnSerializeType = ContentEditorColumnSerializeProps;

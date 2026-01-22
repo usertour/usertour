@@ -10,7 +10,6 @@ export * from './width-controls';
 // Question editor shared components
 export * from './question-editor-base';
 export * from './question-popover-fields';
-export * from './question-serialize-wrapper';
 
 // Text input shared components
 export * from './text-input-popover-fields';

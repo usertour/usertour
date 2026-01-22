@@ -20,49 +20,42 @@ import type {
   ContentEditorMultipleChoiceOption,
 } from '../../../types/editor';
 import { BindAttribute } from '../../shared/bind-attribute';
+import type { QuestionContextProps } from '../../shared';
 
 interface MultipleChoicePopoverContentProps {
   localData: ContentEditorMultipleChoiceElement['data'];
-  onDataChange: (data: Partial<ContentEditorMultipleChoiceElement['data']>) => void;
-  onOptionChange: (
-    index: number,
-    field: keyof ContentEditorMultipleChoiceOption,
-    value: string | boolean,
-  ) => void;
-  contextProps: {
-    zIndex: number;
-    currentStep: any;
-    currentVersion: any;
-    contentList: any;
-    createStep: any;
-    attributes: any;
-    projectId: string;
-  };
+  handleDataChange: (data: Partial<ContentEditorMultipleChoiceElement['data']>) => void;
+  contextProps: QuestionContextProps;
 }
 
 export const MultipleChoicePopoverContent = memo(
-  ({
-    localData,
-    onDataChange,
-    onOptionChange,
-    contextProps,
-  }: MultipleChoicePopoverContentProps) => {
+  ({ localData, handleDataChange, contextProps }: MultipleChoicePopoverContentProps) => {
     const { zIndex, currentStep, currentVersion, contentList, createStep, attributes, projectId } =
       contextProps;
 
+    // Handle option field change
+    const handleOptionChange = useCallback(
+      (index: number, field: keyof ContentEditorMultipleChoiceOption, value: string | boolean) => {
+        const newOptions = [...localData.options];
+        newOptions[index] = { ...newOptions[index], [field]: value };
+        handleDataChange({ options: newOptions });
+      },
+      [localData.options, handleDataChange],
+    );
+
     const handleAddOption = useCallback(() => {
-      onDataChange({
+      handleDataChange({
         options: [...localData.options, { label: '', value: '', checked: false }],
       });
-    }, [localData.options, onDataChange]);
+    }, [localData.options, handleDataChange]);
 
     const handleRemoveOption = useCallback(
       (index: number) => {
-        onDataChange({
+        handleDataChange({
           options: localData.options.filter((_, i) => i !== index),
         });
       },
-      [localData.options, onDataChange],
+      [localData.options, handleDataChange],
     );
 
     // Memoize options list to prevent unnecessary re-renders
@@ -72,12 +65,12 @@ export const MultipleChoicePopoverContent = memo(
           <div key={index} className="flex gap-2">
             <Input
               value={option.value ?? ''}
-              onChange={(e) => onOptionChange(index, 'value', e.target.value)}
+              onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
               placeholder="Value"
             />
             <Input
               value={option.label ?? ''}
-              onChange={(e) => onOptionChange(index, 'label', e.target.value)}
+              onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
               placeholder="Option label"
             />
             <TooltipProvider>
@@ -97,7 +90,7 @@ export const MultipleChoicePopoverContent = memo(
             </TooltipProvider>
           </div>
         )),
-      [localData.options, onOptionChange, handleRemoveOption],
+      [localData.options, handleOptionChange, handleRemoveOption],
     );
 
     return (
@@ -107,7 +100,7 @@ export const MultipleChoicePopoverContent = memo(
           <Input
             id="question-name"
             value={localData.name || ''}
-            onChange={(e) => onDataChange({ name: e.target.value })}
+            onChange={(e) => handleDataChange({ name: e.target.value })}
             placeholder="Enter question name"
           />
         </div>
@@ -119,7 +112,7 @@ export const MultipleChoicePopoverContent = memo(
           isShowLogic={false}
           currentStep={currentStep}
           currentVersion={currentVersion}
-          onDataChange={(actions) => onDataChange({ actions })}
+          onDataChange={(actions) => handleDataChange({ actions })}
           defaultConditions={localData.actions || []}
           attributes={attributes}
           contents={contentList}
@@ -143,14 +136,14 @@ export const MultipleChoicePopoverContent = memo(
                 type="number"
                 value={localData.lowRange ?? ''}
                 placeholder="Default"
-                onChange={(e) => onDataChange({ lowRange: Number(e.target.value) })}
+                onChange={(e) => handleDataChange({ lowRange: Number(e.target.value) })}
               />
               <p>-</p>
               <Input
                 type="number"
                 value={localData.highRange ?? ''}
                 placeholder="Default"
-                onChange={(e) => onDataChange({ highRange: Number(e.target.value) })}
+                onChange={(e) => handleDataChange({ highRange: Number(e.target.value) })}
               />
             </div>
             <div className="space-y-2">
@@ -158,7 +151,7 @@ export const MultipleChoicePopoverContent = memo(
               <Input
                 id="button-text"
                 value={localData.buttonText ?? ''}
-                onChange={(e) => onDataChange({ buttonText: e.target.value })}
+                onChange={(e) => handleDataChange({ buttonText: e.target.value })}
                 placeholder="Enter button text"
               />
             </div>
@@ -171,7 +164,7 @@ export const MultipleChoicePopoverContent = memo(
               id="shuffle"
               checked={localData.shuffleOptions}
               className="data-[state=unchecked]:bg-muted"
-              onCheckedChange={(checked) => onDataChange({ shuffleOptions: checked })}
+              onCheckedChange={(checked) => handleDataChange({ shuffleOptions: checked })}
             />
             <Label htmlFor="shuffle">Shuffle option order</Label>
           </div>
@@ -181,7 +174,7 @@ export const MultipleChoicePopoverContent = memo(
               id="other"
               checked={localData.enableOther}
               className="data-[state=unchecked]:bg-muted"
-              onCheckedChange={(checked) => onDataChange({ enableOther: checked })}
+              onCheckedChange={(checked) => handleDataChange({ enableOther: checked })}
             />
             <Label htmlFor="other">Enable "Other" option</Label>
           </div>
@@ -192,7 +185,7 @@ export const MultipleChoicePopoverContent = memo(
               <Input
                 id="other-placeholder"
                 value={localData.otherPlaceholder || ''}
-                onChange={(e) => onDataChange({ otherPlaceholder: e.target.value })}
+                onChange={(e) => handleDataChange({ otherPlaceholder: e.target.value })}
                 placeholder="Other..."
               />
             </div>
@@ -203,7 +196,7 @@ export const MultipleChoicePopoverContent = memo(
               id="multiple"
               checked={localData.allowMultiple}
               className="data-[state=unchecked]:bg-muted"
-              onCheckedChange={(checked) => onDataChange({ allowMultiple: checked })}
+              onCheckedChange={(checked) => handleDataChange({ allowMultiple: checked })}
             />
             <Label htmlFor="multiple">Allow multiple selection</Label>
           </div>
@@ -213,8 +206,8 @@ export const MultipleChoicePopoverContent = memo(
             popoverContentClassName="w-[350px]"
             bindToAttribute={localData.bindToAttribute || false}
             selectedAttribute={localData.selectedAttribute}
-            onBindChange={(checked) => onDataChange({ bindToAttribute: checked })}
-            onAttributeChange={(value) => onDataChange({ selectedAttribute: value })}
+            onBindChange={(checked) => handleDataChange({ bindToAttribute: checked })}
+            onAttributeChange={(value) => handleDataChange({ selectedAttribute: value })}
             dataType={localData.allowMultiple ? BizAttributeTypes.List : BizAttributeTypes.String}
             projectId={projectId}
           />

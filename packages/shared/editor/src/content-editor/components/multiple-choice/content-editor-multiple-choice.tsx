@@ -1,24 +1,15 @@
 // Main editable multiple choice component
 
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { isEmptyString } from '@usertour/helpers';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 
-import {
-  EditorErrorTooltip,
-  EditorErrorTooltipTrigger,
-  EditorErrorTooltipContent,
-} from '../../shared/editor-error-tooltip';
-import { useContentEditorContext } from '../../../contexts/content-editor-context';
-import type {
-  ContentEditorMultipleChoiceElement,
-  ContentEditorMultipleChoiceOption,
-} from '../../../types/editor';
+import type { ContentEditorMultipleChoiceElement } from '../../../types/editor';
+import { QuestionEditorBase } from '../../shared/question-editor-base';
+import type { QuestionContextProps } from '../../shared';
 import { MultipleChoicePopoverContent } from './multiple-choice-popover-content';
 import { SingleSelectionDisplay } from './single-selection-display';
 import { MultipleSelectionDisplay } from './multiple-selection-display';
 
-interface ContentEditorMultipleChoiceProps {
+export interface ContentEditorMultipleChoiceProps {
   element: ContentEditorMultipleChoiceElement;
   id: string;
   path: number[];
@@ -26,141 +17,74 @@ interface ContentEditorMultipleChoiceProps {
 
 export const ContentEditorMultipleChoice = memo((props: ContentEditorMultipleChoiceProps) => {
   const { element, id } = props;
-  const {
-    updateElement,
-    zIndex,
-    currentStep,
-    currentVersion,
-    contentList,
-    createStep,
-    attributes,
-    projectId,
-  } = useContentEditorContext();
 
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [localData, setLocalData] = useState(element.data);
-  const [openError, setOpenError] = useState(false);
+  // Local state for checkbox handling in preview
+  const [localCheckedState, setLocalCheckedState] = useState<Record<string, boolean>>({});
 
-  const handleDataChange = useCallback(
-    (data: Partial<ContentEditorMultipleChoiceElement['data']>) => {
-      setLocalData((prevData) => ({ ...prevData, ...data }));
-    },
-    [],
-  );
+  // Render the display component (trigger for popover)
+  const renderDisplay = useCallback(
+    (localData: ContentEditorMultipleChoiceElement['data']) => {
+      // Handler for checkbox checked change in preview
+      const handleCheckboxChange = (index: number, checked: boolean) => {
+        const option = localData.options[index];
+        if (option) {
+          setLocalCheckedState((prev) => ({
+            ...prev,
+            [option.value]: checked,
+          }));
+        }
+      };
 
-  useEffect(() => {
-    setOpenError(isEmptyString(localData.name) && !isOpen);
-  }, [localData.name, isOpen]);
+      // Memoize checked values for multiple selection display
+      const checkedValues = localData.options
+        .filter((o) => localCheckedState[o.value] ?? o.checked)
+        .map((o) => o.value);
 
-  const handleOptionChange = useCallback(
-    (index: number, field: keyof ContentEditorMultipleChoiceOption, value: string | boolean) => {
-      setLocalData((prevData) => {
-        const newOptions = [...prevData.options];
-        newOptions[index] = { ...newOptions[index], [field]: value };
-        return { ...prevData, options: newOptions };
-      });
-    },
-    [],
-  );
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      setIsOpen(open);
-      if (open) {
-        setOpenError(false);
-        return;
-      }
-      if (isEmptyString(localData.name)) {
-        setOpenError(true);
-        return;
-      }
-
-      // Only update if data has changed
-      if (JSON.stringify(localData) !== JSON.stringify(element.data)) {
-        updateElement(
-          {
-            ...element,
-            data: localData,
-          },
-          id,
+      if (localData.allowMultiple) {
+        return (
+          <MultipleSelectionDisplay
+            options={localData.options}
+            enableOther={localData.enableOther}
+            otherPlaceholder={localData.otherPlaceholder}
+            buttonText={localData.buttonText}
+            isInteractive={false}
+            checkedValues={checkedValues}
+            onCheckedChange={handleCheckboxChange}
+          />
         );
       }
+
+      return (
+        <SingleSelectionDisplay
+          options={localData.options}
+          enableOther={localData.enableOther}
+          otherPlaceholder={localData.otherPlaceholder}
+          defaultValue={localData.options[0]?.value}
+          isInteractive={false}
+        />
+      );
     },
-    [localData, element, id, updateElement],
+    [localCheckedState],
   );
 
-  // Memoize context props to prevent unnecessary re-renders
-  const contextProps = useMemo(
-    () => ({
-      zIndex,
-      currentStep,
-      currentVersion,
-      contentList,
-      createStep,
-      attributes,
-      projectId,
-    }),
-    [zIndex, currentStep, currentVersion, contentList, createStep, attributes, projectId],
-  );
-
-  // Handler for checkbox checked change in preview
-  const handleCheckboxChange = useCallback(
-    (index: number, checked: boolean) => {
-      handleOptionChange(index, 'checked', checked);
-    },
-    [handleOptionChange],
-  );
-
-  // Memoize checked values for multiple selection display
-  const checkedValues = useMemo(
-    () => localData.options.filter((o) => o.checked).map((o) => o.value),
-    [localData.options],
+  // Render the popover content
+  const renderPopoverContent = useCallback(
+    (contentProps: {
+      localData: ContentEditorMultipleChoiceElement['data'];
+      handleDataChange: (data: Partial<ContentEditorMultipleChoiceElement['data']>) => void;
+      contextProps: QuestionContextProps;
+    }) => <MultipleChoicePopoverContent {...contentProps} />,
+    [],
   );
 
   return (
-    <EditorErrorTooltip open={openError}>
-      <Popover onOpenChange={handleOpenChange} open={isOpen}>
-        <EditorErrorTooltipTrigger>
-          <PopoverTrigger asChild>
-            {localData.allowMultiple ? (
-              <MultipleSelectionDisplay
-                options={localData.options}
-                enableOther={localData.enableOther}
-                otherPlaceholder={localData.otherPlaceholder}
-                buttonText={localData.buttonText}
-                isInteractive={false}
-                checkedValues={checkedValues}
-                onCheckedChange={handleCheckboxChange}
-              />
-            ) : (
-              <SingleSelectionDisplay
-                options={localData.options}
-                enableOther={localData.enableOther}
-                otherPlaceholder={localData.otherPlaceholder}
-                defaultValue={localData.options[0]?.value}
-                isInteractive={false}
-              />
-            )}
-          </PopoverTrigger>
-        </EditorErrorTooltipTrigger>
-        <PopoverContent
-          className="w-96 bg-background shadow-lg"
-          style={{ zIndex }}
-          sideOffset={10}
-          side="right"
-        >
-          <MultipleChoicePopoverContent
-            localData={localData}
-            onDataChange={handleDataChange}
-            onOptionChange={handleOptionChange}
-            contextProps={contextProps}
-          />
-        </PopoverContent>
-      </Popover>
-      <EditorErrorTooltipContent side="bottom" style={{ zIndex }}>
-        Question name is required
-      </EditorErrorTooltipContent>
-    </EditorErrorTooltip>
+    <QuestionEditorBase
+      element={element}
+      id={id}
+      renderDisplay={renderDisplay}
+      renderPopoverContent={renderPopoverContent}
+      popoverClassName="w-96 bg-background shadow-lg"
+    />
   );
 });
 

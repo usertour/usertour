@@ -3,7 +3,7 @@
 import { memo } from 'react';
 
 import type { ContentEditorNPSElement } from '../../../types/editor';
-import { useQuestionSerialize } from '../../shared';
+import { useSerializeClick } from '../../hooks';
 import { NPSScale, NPSLabels } from './nps-display';
 
 export interface ContentEditorNPSSerializeProps {
@@ -13,7 +13,7 @@ export interface ContentEditorNPSSerializeProps {
 
 export const ContentEditorNPSSerialize = memo<ContentEditorNPSSerializeProps>((props) => {
   const { element, onClick } = props;
-  const { loading, handleClick } = useQuestionSerialize(element, onClick);
+  const { loading, handleClick } = useSerializeClick(element, onClick);
 
   return (
     <div className="w-full">

@@ -1,6 +1,8 @@
 // Read-only serialized image component for SDK
 
 /* eslint-disable @next/next/no-img-element */
+import { memo } from 'react';
+
 import type { ContentEditorImageElement } from '../../../types/editor';
 import type { MarginStyleProps } from '../../types';
 import { DEFAULT_WIDTH, WIDTH_TYPES } from '../../constants';
@@ -32,13 +34,12 @@ const transformsStyle = (element: ContentEditorImageElement): ImageStyle => {
   return { ...style, ...marginStyle };
 };
 
-export type ContentEditorImageSerializeType = {
+export interface ContentEditorImageSerializeProps {
   className?: string;
-  children?: React.ReactNode;
   element: ContentEditorImageElement;
-};
+}
 
-export const ContentEditorImageSerialize = (props: ContentEditorImageSerializeType) => {
+export const ContentEditorImageSerialize = memo<ContentEditorImageSerializeProps>((props) => {
   const { element, className } = props;
 
   if (!element.url) {
@@ -48,6 +49,6 @@ export const ContentEditorImageSerialize = (props: ContentEditorImageSerializeTy
   return (
     <img src={element.url} style={transformsStyle(element)} className={className} alt="Content" />
   );
-};
+});
 
 ContentEditorImageSerialize.displayName = 'ContentEditorImageSerialize';
