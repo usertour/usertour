@@ -62,10 +62,10 @@ importers:
         version: link:../../packages/components/button
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../../packages/shared/constants
+        version: link:../../packages/constants
       '@usertour-packages/dom':
         specifier: workspace:^
-        version: link:../../packages/shared/dom
+        version: link:../../packages/dom
       '@usertour-packages/finder':
         specifier: workspace:^
         version: link:../../packages/shared/finder
@@ -74,7 +74,7 @@ importers:
         version: link:../../packages/components/frame
       '@usertour-packages/icons':
         specifier: workspace:^
-        version: link:../../packages/shared/icons
+        version: link:../../packages/icons
       '@usertour-packages/react-context':
         specifier: workspace:^
         version: link:../../packages/radix/context
@@ -640,7 +640,7 @@ importers:
         version: link:../../packages/components/command
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../../packages/shared/constants
+        version: link:../../packages/constants
       '@usertour-packages/context-menu':
         specifier: workspace:^
         version: link:../../packages/components/context-menu
@@ -664,7 +664,7 @@ importers:
         version: link:../../packages/shared/i18n
       '@usertour-packages/icons':
         specifier: workspace:^
-        version: link:../../packages/shared/icons
+        version: link:../../packages/icons
       '@usertour-packages/input':
         specifier: workspace:^
         version: link:../../packages/components/input
@@ -2831,6 +2831,37 @@ importers:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
+  packages/constants:
+    devDependencies:
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+
+  packages/dom:
+    dependencies:
+      '@babel/runtime':
+        specifier: ^7.13.10
+        version: 7.27.6
+      '@types/react':
+        specifier: '*'
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: '*'
+        version: 18.2.7
+      '@usertour-packages/react-slot':
+        specifier: workspace:*
+        version: link:../radix/slot
+      react:
+        specifier: ^16.8 || ^17.0 || ^18.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^16.8 || ^17.0 || ^18.0
+        version: 18.2.0(react@18.2.0)
+    devDependencies:
+      '@testing-library/react':
+        specifier: ^10.4.8
+        version: 10.4.9(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+
   packages/helpers:
     dependencies:
       '@paralleldrive/cuid2':
@@ -2888,6 +2919,52 @@ importers:
       typescript:
         specifier: ^5.0.2
         version: 5.3.3
+
+  packages/icons:
+    dependencies:
+      '@radix-ui/react-slot':
+        specifier: ^1.0.2
+        version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
+      '@remixicon/react':
+        specifier: ^4.8.0
+        version: 4.8.0(react@18.2.0)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.37
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: ^18.0.11
+        version: 18.2.7
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.3.4
+        version: 0.3.5(eslint@8.57.1)
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+      vite:
+        specifier: ^4.3.9
+        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
   packages/license:
     dependencies:
@@ -3199,7 +3276,7 @@ importers:
         version: link:../../components/command
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../constants
+        version: link:../../constants
       '@usertour-packages/context-menu':
         specifier: workspace:^
         version: link:../../components/context-menu
@@ -3229,7 +3306,7 @@ importers:
         version: link:../../components/hover-card
       '@usertour-packages/icons':
         specifier: workspace:^
-        version: link:../icons
+        version: link:../../icons
       '@usertour-packages/input':
         specifier: workspace:^
         version: link:../../components/input
@@ -3455,7 +3532,7 @@ importers:
         version: link:../../components/command
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../constants
+        version: link:../../constants
       '@usertour-packages/context-menu':
         specifier: workspace:^
         version: link:../../components/context-menu
@@ -3476,7 +3553,7 @@ importers:
         version: link:../../components/hover-card
       '@usertour-packages/icons':
         specifier: workspace:^
-        version: link:../icons
+        version: link:../../icons
       '@usertour-packages/input':
         specifier: workspace:^
         version: link:../../components/input
@@ -3602,12 +3679,6 @@ importers:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
-  packages/shared/constants:
-    devDependencies:
-      typescript:
-        specifier: ^5.0.2
-        version: 5.1.6
-
   packages/shared/contexts:
     dependencies:
       '@apollo/client':
@@ -3659,31 +3730,6 @@ importers:
       vite:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
-  packages/shared/dom:
-    dependencies:
-      '@babel/runtime':
-        specifier: ^7.13.10
-        version: 7.26.0
-      '@types/react':
-        specifier: '*'
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: '*'
-        version: 18.2.7
-      '@usertour-packages/react-slot':
-        specifier: workspace:*
-        version: link:../../radix/slot
-      react:
-        specifier: ^16.8 || ^17.0 || ^18.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^16.8 || ^17.0 || ^18.0
-        version: 18.2.0(react@18.2.0)
-    devDependencies:
-      '@testing-library/react':
-        specifier: ^10.4.8
-        version: 10.4.9(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
 
   packages/shared/editor:
     dependencies:
@@ -3743,7 +3789,7 @@ importers:
         version: link:../../components/command
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../constants
+        version: link:../../constants
       '@usertour-packages/dialog':
         specifier: workspace:^
         version: link:../../components/dialog
@@ -3755,7 +3801,7 @@ importers:
         version: link:../../components/form
       '@usertour-packages/icons':
         specifier: workspace:^
-        version: link:../icons
+        version: link:../../icons
       '@usertour-packages/input':
         specifier: workspace:^
         version: link:../../components/input
@@ -3989,7 +4035,7 @@ importers:
         version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../constants
+        version: link:../../constants
       '@usertour-packages/gql':
         specifier: workspace:^
         version: link:../gql
@@ -4041,52 +4087,6 @@ importers:
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
   packages/shared/i18n: {}
-
-  packages/shared/icons:
-    dependencies:
-      '@radix-ui/react-slot':
-        specifier: ^1.0.2
-        version: 1.1.0(@types/react@18.2.15)(react@18.2.0)
-      '@remixicon/react':
-        specifier: ^4.8.0
-        version: 4.8.0(react@18.2.0)
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.1.6))(eslint@8.57.1)(typescript@5.1.6)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.1.6)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.1.6
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
   packages/tailwind:
     dependencies:
@@ -4177,13 +4177,13 @@ importers:
         version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
       '@usertour-packages/dom':
         specifier: workspace:^
-        version: link:../shared/dom
+        version: link:../dom
       '@usertour-packages/frame':
         specifier: workspace:*
         version: link:../components/frame
       '@usertour-packages/icons':
         specifier: workspace:*
-        version: link:../shared/icons
+        version: link:../icons
       '@usertour-packages/react-arrow':
         specifier: workspace:^
         version: link:../radix/arrow
@@ -4744,10 +4744,6 @@ packages:
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
-
-  '@babel/runtime-corejs3@7.26.0':
-    resolution: {integrity: sha512-YXHu5lN8kJCb1LOb9PgV6pvak43X2h4HvRApcN5SdWeaItQOzfn1hgP6jasD6KWQyJDBxrVmA9o9OivlnNJK/w==}
-    engines: {node: '>=6.9.0'}
 
   '@babel/runtime-corejs3@7.28.0':
     resolution: {integrity: sha512-nlIXnSqLcBij8K8TtkxbBJgfzfvi75V1pAKSM7dUXejGw12vJAqez74jZrHTsJ3Z+Aczc5Q/6JgNjKRMsVU44g==}
@@ -9359,10 +9355,6 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
-  chalk@5.3.0:
-    resolution: {integrity: sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==}
-    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
-
   chalk@5.4.1:
     resolution: {integrity: sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
@@ -9667,9 +9659,6 @@ packages:
 
   copy-to-clipboard@3.3.3:
     resolution: {integrity: sha512-2KV8NhB5JqC3ky0r9PMCAZKbUHSwtEo4CwCs0KXgruG43gX5PMqDEBbVU4OUzw2MuAWUfsuFmWvEKG5QRfSnJA==}
-
-  core-js-pure@3.39.0:
-    resolution: {integrity: sha512-7fEcWwKI4rJinnK+wLTezeg2smbFFdSBP6E2kQZNbnzM2s1rpKQ6aaRteZSSg7FLU3P0HGGVo/gbpfanU36urg==}
 
   core-js-pure@3.43.0:
     resolution: {integrity: sha512-i/AgxU2+A+BbJdMxh3v7/vxi2SbFqxiFmg6VsDwYB4jkucrd1BZNA9a9gphC0fYMG5IBSgQcbQnk865VCLe7xA==}
@@ -16045,11 +16034,6 @@ snapshots:
       '@babel/core': 7.26.0
       '@babel/helper-plugin-utils': 7.25.9
 
-  '@babel/runtime-corejs3@7.26.0':
-    dependencies:
-      core-js-pure: 3.39.0
-      regenerator-runtime: 0.14.1
-
   '@babel/runtime-corejs3@7.28.0':
     dependencies:
       core-js-pure: 3.43.0
@@ -16198,7 +16182,7 @@ snapshots:
       '@commitlint/execute-rule': 19.5.0
       '@commitlint/resolve-extends': 19.5.0
       '@commitlint/types': 19.5.0
-      chalk: 5.3.0
+      chalk: 5.4.1
       cosmiconfig: 9.0.0(typescript@5.3.3)
       cosmiconfig-typescript-loader: 6.1.0(@types/node@20.17.5)(cosmiconfig@9.0.0(typescript@5.3.3))(typescript@5.3.3)
       lodash.isplainobject: 4.0.6
@@ -16222,7 +16206,7 @@ snapshots:
   '@commitlint/types@19.5.0':
     dependencies:
       '@types/conventional-commits-parser': 5.0.1
-      chalk: 5.3.0
+      chalk: 5.4.1
     optional: true
 
   '@cspotcode/source-map-support@0.8.1':
@@ -20314,7 +20298,7 @@ snapshots:
 
   '@testing-library/react@10.4.9(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@babel/runtime': 7.26.0
+      '@babel/runtime': 7.27.6
       '@testing-library/dom': 7.31.2
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -21358,7 +21342,7 @@ snapshots:
   aria-query@4.2.2:
     dependencies:
       '@babel/runtime': 7.27.6
-      '@babel/runtime-corejs3': 7.26.0
+      '@babel/runtime-corejs3': 7.28.0
 
   array-find-index@1.0.2: {}
 
@@ -21686,8 +21670,6 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
-  chalk@5.3.0: {}
-
   chalk@5.4.1: {}
 
   chance@1.1.11: {}
@@ -21994,8 +21976,6 @@ snapshots:
   copy-to-clipboard@3.3.3:
     dependencies:
       toggle-selection: 1.0.6
-
-  core-js-pure@3.39.0: {}
 
   core-js-pure@3.43.0: {}
 
@@ -23710,7 +23690,7 @@ snapshots:
     dependencies:
       '@ljharb/through': 2.3.13
       ansi-escapes: 4.3.2
-      chalk: 5.3.0
+      chalk: 5.4.1
       cli-cursor: 3.1.0
       cli-width: 4.1.0
       external-editor: 3.1.0
