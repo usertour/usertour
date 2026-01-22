@@ -1,16 +1,15 @@
-// Serialize component for embed (read-only mode for SDK)
+// Embed serialize component for SDK rendering
 
-import type { EmbedData } from '@usertour-packages/widget';
-import { Embed } from '@usertour-packages/widget';
+import type { ContentEditorEmebedElement } from '@usertour/types';
 import { memo, useMemo } from 'react';
 
-import type { ContentEditorEmebedElement } from '../../../types/editor';
+import { Embed, type EmbedData } from '../../media';
 
-export interface ContentEditorEmbedSerializeProps {
+export interface EmbedSerializeProps {
   element: ContentEditorEmebedElement;
 }
 
-export const ContentEditorEmbedSerialize = memo<ContentEditorEmbedSerializeProps>(({ element }) => {
+export const EmbedSerialize = memo<EmbedSerializeProps>(({ element }) => {
   // Map element properties to EmbedData format
   // Type assertion needed due to ContentEditorWidth.type being string vs DimensionType literal
   const embedData = useMemo<EmbedData>(
@@ -28,4 +27,4 @@ export const ContentEditorEmbedSerialize = memo<ContentEditorEmbedSerializeProps
   return <Embed data={embedData} isReadOnly />;
 });
 
-ContentEditorEmbedSerialize.displayName = 'ContentEditorEmbedSerialize';
+EmbedSerialize.displayName = 'EmbedSerialize';

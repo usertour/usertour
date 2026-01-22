@@ -1,5 +1,6 @@
 import { EyeNoneIcon } from '@usertour-packages/icons';
 import {
+  ContentEditorSerialize,
   Popper,
   PopperStaticContent,
   PopperStaticBubble,
@@ -7,7 +8,6 @@ import {
   useSettingsStyles,
 } from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
-import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { AvatarType, defaultSettings } from '@usertour/types';
 import { memo, useCallback, useMemo, useRef } from 'react';
 

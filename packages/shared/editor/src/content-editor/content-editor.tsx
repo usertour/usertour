@@ -5,12 +5,6 @@ import { ContentEditorElementType, type ContentEditorProps } from '../types/edit
 import { defaultInitialValue } from '../utils/helper';
 import { Editor } from './components/editor';
 
-// Re-export from element registry for backward compatibility
-export { contentEditorElements } from './element-registry';
-
-// Re-export serialize component
-export { ContentEditorSerialize } from './serialize';
-
 export const ContentEditor = (props: ContentEditorProps) => {
   const {
     initialValue = defaultInitialValue,

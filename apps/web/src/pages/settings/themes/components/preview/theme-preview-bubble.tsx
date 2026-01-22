@@ -1,4 +1,5 @@
 import {
+  ContentEditorSerialize,
   Popper,
   PopperBubblePortal,
   PopperClose,
@@ -7,7 +8,7 @@ import {
   PopperProgress,
   useSettingsStyles,
 } from '@usertour-packages/widget';
-import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
+import type { ContentEditorRoot } from '@usertour/types';
 import {
   AvatarType,
   ProgressBarPosition,

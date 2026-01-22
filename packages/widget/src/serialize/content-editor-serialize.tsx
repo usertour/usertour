@@ -1,12 +1,14 @@
-// Serialize component for content editor
+// Main serialize component for content editor
 
 import { isClickableElement, replaceUserAttr } from '@usertour/helpers';
-import type { UserTourTypes } from '@usertour/types';
+import type {
+  ContentEditorClickableElement,
+  ContentEditorRoot,
+  UserTourTypes,
+} from '@usertour/types';
 import { memo, useMemo } from 'react';
 
-import type { ContentEditorClickableElement, ContentEditorRoot } from '../../types/editor';
-import { ContentEditorColumnSerialize, ContentEditorGroupSerialize } from '../element-registry';
-import { getElementSerializer } from '../element-registry';
+import { ColumnSerialize, getElementSerializer, GroupSerialize } from './element-registry';
 
 export interface ContentEditorSerializeProps {
   contents: ContentEditorRoot[];
@@ -26,9 +28,9 @@ export const ContentEditorSerialize = memo((props: ContentEditorSerializeProps) 
   return (
     <>
       {editorContents.map((content, groupIndex) => (
-        <ContentEditorGroupSerialize key={groupIndex}>
+        <GroupSerialize key={groupIndex}>
           {content.children.map((column, columnIndex) => (
-            <ContentEditorColumnSerialize element={column.element} key={columnIndex}>
+            <ColumnSerialize element={column.element} key={columnIndex}>
               {column.children.map((element, elementIndex) => {
                 const Comp = getElementSerializer(element.element.type);
                 if (!Comp) {
@@ -46,9 +48,9 @@ export const ContentEditorSerialize = memo((props: ContentEditorSerializeProps) 
                 }
                 return <Comp element={element.element} key={elementIndex} />;
               })}
-            </ContentEditorColumnSerialize>
+            </ColumnSerialize>
           ))}
-        </ContentEditorGroupSerialize>
+        </GroupSerialize>
       ))}
     </>
   );

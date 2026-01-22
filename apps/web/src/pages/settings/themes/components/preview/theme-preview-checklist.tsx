@@ -8,12 +8,12 @@ import {
   ChecklistPopperContent,
   ChecklistProgress,
   ChecklistRoot,
+  ContentEditorSerialize,
   PopperMadeWith,
 } from '@usertour-packages/widget';
 import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useMemo, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';
-import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface ThemePreviewChecklistProps {

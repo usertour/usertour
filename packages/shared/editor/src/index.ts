@@ -1,5 +1,5 @@
 export { PopperEditor, PopperEditorMini } from './richtext-editor/editor';
-export { ContentEditor, ContentEditorSerialize } from './content-editor/content-editor';
+export { ContentEditor } from './content-editor/content-editor';
 export { ELEMENTS } from './richtext-editor/elements';
 export type { Descendant } from 'slate';
 export type * from './types/slate';

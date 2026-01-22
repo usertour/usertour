@@ -1,17 +1,17 @@
-// Serialize component for NPS (read-only mode for SDK)
+// NPS serialize component for SDK rendering
 
-import { NPSLabels, NPSScale } from '@usertour-packages/widget';
+import type { ContentEditorNPSElement } from '@usertour/types';
 import { memo } from 'react';
 
-import type { ContentEditorNPSElement } from '../../../types/editor';
-import { useSerializeClick } from '../../hooks';
+import { NPSLabels, NPSScale } from '../../question';
+import { useSerializeClick } from '../hooks';
 
-export interface ContentEditorNPSSerializeProps {
+export interface NPSSerializeProps {
   element: ContentEditorNPSElement;
   onClick?: (element: ContentEditorNPSElement, value: number) => Promise<void>;
 }
 
-export const ContentEditorNPSSerialize = memo<ContentEditorNPSSerializeProps>((props) => {
+export const NPSSerialize = memo<NPSSerializeProps>((props) => {
   const { element, onClick } = props;
   const { loading, handleClick } = useSerializeClick(element, onClick);
 
@@ -23,4 +23,4 @@ export const ContentEditorNPSSerialize = memo<ContentEditorNPSSerializeProps>((p
   );
 });
 
-ContentEditorNPSSerialize.displayName = 'ContentEditorNPSSerialize';
+NPSSerialize.displayName = 'NPSSerialize';

@@ -9,6 +9,7 @@ import {
   ChecklistProgress,
   ChecklistRoot,
   ChecklistStaticPopper,
+  ContentEditorSerialize,
   Popper,
   PopperClose,
   PopperMadeWith,
@@ -21,7 +22,6 @@ import {
   LauncherRoot,
 } from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
-import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
 import {
   AvatarType,
   ChecklistData,

@@ -119,3 +119,6 @@ export {
 
 // Core - SDK core components (Popper, Bubble, Checklist, Launcher)
 export * from './core';
+
+// Serialize - Content editor serialization for SDK rendering
+export { ContentEditorSerialize } from './serialize';

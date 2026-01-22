@@ -1,9 +1,10 @@
 // Shared serialize component for text input editors (SingleLineText, MultiLineText)
 
-import * as Widget from '@usertour-packages/widget';
 import { isEmptyString } from '@usertour/helpers';
 import { memo, useCallback, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
+
+import { Button, Input, Textarea } from '../../primitives';
 
 // Constants
 const DEFAULT_PLACEHOLDER = 'Enter text...';
@@ -68,7 +69,7 @@ function TextInputSerializeInner<T extends { data: TextInputElementData }>({
   }, [onClick, element, value]);
 
   // Render the appropriate input component
-  const InputComponent = inputType === 'textarea' ? Widget.Textarea : Widget.Input;
+  const InputComponent = inputType === 'textarea' ? Textarea : Input;
   const inputProps = inputType === 'input' ? { className: inputClassName || 'grow h-auto' } : {};
 
   return (
@@ -81,14 +82,14 @@ function TextInputSerializeInner<T extends { data: TextInputElementData }>({
         {...inputProps}
       />
       <div className="flex justify-end w-full">
-        <Widget.Button
+        <Button
           className={inputType === 'input' ? 'flex-none' : undefined}
           onClick={handleSubmit}
           disabled={isDisabled}
           aria-label={`Submit ${defaultValues.buttonText}`}
         >
           {defaultValues.buttonText}
-        </Widget.Button>
+        </Button>
       </div>
     </div>
   );
@@ -98,4 +99,4 @@ function TextInputSerializeInner<T extends { data: TextInputElementData }>({
 export const TextInputSerialize = memo(TextInputSerializeInner) as typeof TextInputSerializeInner;
 
 // Export constants for use in other components
-export { DEFAULT_PLACEHOLDER, DEFAULT_BUTTON_TEXT };
+export { DEFAULT_BUTTON_TEXT, DEFAULT_PLACEHOLDER };

@@ -13,4 +13,3 @@ export * from './question-popover-fields';
 
 // Text input shared components
 export * from './text-input-popover-fields';
-export * from './text-input-serialize';

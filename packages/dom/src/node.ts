@@ -1,7 +1,8 @@
 import { getWindow } from './getWindow';
 
 export function isNode(value: any): value is Node {
-  return value instanceof getWindow(value).Node;
+  const win = getWindow(value) as Window & typeof globalThis;
+  return value instanceof win.Node;
 }
 
 export function getNodeName(node: Node | Window): string {

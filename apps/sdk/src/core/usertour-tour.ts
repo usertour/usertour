@@ -1,10 +1,8 @@
 import { smoothScroll } from '@usertour-packages/dom';
 import {
+  AttributeBizTypes,
   ContentEditorClickableElement,
   ContentEditorQuestionElement,
-} from '@usertour-packages/shared-editor';
-import {
-  AttributeBizTypes,
   MissingTooltipTargetBehavior,
   RulesCondition,
   StepContentType,

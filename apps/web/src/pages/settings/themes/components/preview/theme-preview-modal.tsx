@@ -1,4 +1,5 @@
 import {
+  ContentEditorSerialize,
   Popper,
   PopperClose,
   PopperContent,
@@ -6,7 +7,7 @@ import {
   PopperModalContentPotal,
   PopperProgress,
 } from '@usertour-packages/widget';
-import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
+import type { ContentEditorRoot } from '@usertour/types';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
 
 import { useSubscriptionContext } from '@/contexts/subscription-context';

@@ -1,4 +1,5 @@
 import {
+  ContentEditorSerialize,
   Popper,
   PopperBubblePortal,
   PopperClose,
@@ -12,12 +13,9 @@ import {
   useStepWidth,
 } from '@usertour-packages/widget';
 import {
-  ContentEditorClickableElement,
-  ContentEditorSerialize,
-} from '@usertour-packages/shared-editor';
-import {
   Align,
   AvatarType,
+  ContentEditorClickableElement,
   contentEndReason,
   ModalBackdropClickBehavior,
   ProgressBarPosition,

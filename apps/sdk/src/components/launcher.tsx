@@ -1,4 +1,5 @@
 import {
+  ContentEditorSerialize,
   PopperMadeWith,
   LauncherContentWrapper,
   LauncherPopper,
@@ -8,9 +9,6 @@ import {
 } from '@usertour-packages/widget';
 import {
   ContentEditorClickableElement,
-  ContentEditorSerialize,
-} from '@usertour-packages/shared-editor';
-import {
   LauncherActionType,
   LauncherData,
   LauncherPositionType,

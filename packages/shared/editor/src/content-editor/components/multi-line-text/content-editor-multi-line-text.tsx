@@ -9,7 +9,7 @@ import { BindAttribute } from '../../shared/bind-attribute';
 import { QuestionEditorBase } from '../../shared/question-editor-base';
 import { QuestionNameField, ContentActionsField } from '../../shared/question-popover-fields';
 import { TextInputPopoverFields } from '../../shared/text-input-popover-fields';
-import { DEFAULT_PLACEHOLDER, DEFAULT_BUTTON_TEXT } from '../../shared/text-input-serialize';
+import { DEFAULT_PLACEHOLDER, DEFAULT_BUTTON_TEXT } from '../../shared/text-input-constants';
 import type { QuestionContextProps } from '../../shared';
 
 export interface ContentEditorMultiLineTextProps {
