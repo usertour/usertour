@@ -1,5 +1,5 @@
 // Custom hook for handling editor drag and drop logic
-// Uses preview-based approach for columns (Notion-style vertical indicator)
+// Uses preview-based approach for both columns and groups (Notion-style indicator)
 
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -11,7 +11,7 @@ import {
   isColumnDropIndicatorId,
   parseColumnDropIndicatorId,
 } from '../components/column-drop-indicator';
-import { getDropZoneIndex, isDropZoneId } from '../components/group-drop-zone';
+import { DROP_ZONE_ID_PREFIX, getDropZoneIndex, isDropZoneId } from '../components/group-drop-zone';
 
 export interface UseEditorDragOptions {
   contents: ContentEditorRoot[];
@@ -82,7 +82,7 @@ export const useEditorDrag = ({
     [setActiveId],
   );
 
-  // Drag over handler - uses preview-based approach for columns
+  // Drag over handler - uses preview-based approach for both columns and groups
   const handleDragOver = useCallback(
     ({ active, over }: DragOverEvent) => {
       const dragActiveId = active.id as string;
@@ -97,20 +97,49 @@ export const useEditorDrag = ({
       const activeContainer = findContainer(dragActiveId);
       const overContainer = findContainer(overId);
 
-      // Handle group reordering - live reordering (groups are few)
+      // Handle group reordering - preview-based approach
       if (isContainer(dragActiveId)) {
-        setDropPreview(null);
-        if (!overContainer) return;
-        setContents((prev) => {
-          const oldIndex = prev.findIndex((c) => c.id === dragActiveId);
-          const newIndex = prev.findIndex((c) => c.id === overContainer.id);
-          if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return prev;
-          return arrayMove(prev, oldIndex, newIndex);
-        });
+        // Handle drop zone hover for group
+        if (isDropZoneId(overId)) {
+          const dropZoneIndex = getDropZoneIndex(overId);
+          const activeIndex = contents.findIndex((c) => c.id === dragActiveId);
+
+          // Adjust index if dragging from above the drop zone
+          let insertIndex = dropZoneIndex;
+          if (activeIndex < dropZoneIndex) {
+            insertIndex = Math.max(0, dropZoneIndex - 1);
+          }
+
+          setDropPreview((prev) => {
+            if (prev?.type === 'group' && prev?.insertIndex === insertIndex) {
+              return prev;
+            }
+            return { type: 'group', containerId: DROP_ZONE_ID_PREFIX, insertIndex };
+          });
+          return;
+        }
+
+        // Handle hover over another group - calculate insert position
+        if (overContainer) {
+          const activeIndex = contents.findIndex((c) => c.id === dragActiveId);
+          const overIndex = contents.findIndex((c) => c.id === overContainer.id);
+
+          if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+            // Insert before or after based on direction
+            const insertIndex = activeIndex < overIndex ? overIndex : overIndex;
+
+            setDropPreview((prev) => {
+              if (prev?.type === 'group' && prev?.insertIndex === insertIndex) {
+                return prev;
+              }
+              return { type: 'group', containerId: DROP_ZONE_ID_PREFIX, insertIndex };
+            });
+          }
+        }
         return;
       }
 
-      // Handle drop zone hover - clear column preview
+      // Handle drop zone hover for column - clear column preview
       if (isDropZoneId(overId)) {
         setDropPreview(null);
         return;
@@ -122,12 +151,13 @@ export const useEditorDrag = ({
         if (parsed) {
           setDropPreview((prev) => {
             if (
+              prev?.type === 'column' &&
               prev?.containerId === parsed.containerId &&
               prev?.insertIndex === parsed.insertIndex
             ) {
               return prev;
             }
-            return parsed;
+            return { type: 'column', ...parsed };
           });
         }
         return;
@@ -139,7 +169,7 @@ export const useEditorDrag = ({
         return;
       }
 
-      // Calculate insertion index for preview
+      // Calculate insertion index for column preview
       let insertIndex = 0;
       if (isContainer(overId)) {
         // Dropping onto a group - insert at the end
@@ -163,7 +193,7 @@ export const useEditorDrag = ({
         }
       }
 
-      // Update preview state (only if changed to avoid unnecessary re-renders)
+      // Update column preview state (only if changed to avoid unnecessary re-renders)
       const containerId = overContainer.id;
       if (!containerId) {
         setDropPreview(null);
@@ -171,16 +201,20 @@ export const useEditorDrag = ({
       }
 
       setDropPreview((prev) => {
-        if (prev?.containerId === containerId && prev?.insertIndex === insertIndex) {
+        if (
+          prev?.type === 'column' &&
+          prev?.containerId === containerId &&
+          prev?.insertIndex === insertIndex
+        ) {
           return prev;
         }
-        return { containerId, insertIndex };
+        return { type: 'column', containerId, insertIndex };
       });
     },
-    [contents, findContainer, isContainer, setContents, setDropPreview],
+    [contents, findContainer, isContainer, setDropPreview],
   );
 
-  // Drag end handler - performs actual column moves based on dropPreview
+  // Drag end handler - performs actual moves based on dropPreview
   const handleDragEnd = useCallback(
     ({ active, over }: DragEndEvent) => {
       const dragActiveId = active.id as string;
@@ -198,8 +232,35 @@ export const useEditorDrag = ({
         return;
       }
 
-      // Group reordering is already handled in dragOver, just reset state
+      // Handle group reordering based on drop zone
       if (isContainer(dragActiveId)) {
+        if (isDropZoneId(overId)) {
+          const dropZoneIndex = getDropZoneIndex(overId);
+          const activeIndex = contents.findIndex((c) => c.id === dragActiveId);
+
+          if (activeIndex !== -1 && activeIndex !== dropZoneIndex) {
+            // Adjust index if dragging from above the drop zone
+            let targetIndex = dropZoneIndex;
+            if (activeIndex < dropZoneIndex) {
+              targetIndex = Math.max(0, dropZoneIndex - 1);
+            }
+
+            if (activeIndex !== targetIndex) {
+              setContents((prev) => arrayMove(prev, activeIndex, targetIndex));
+            }
+          }
+        } else {
+          // Drop on another group - reorder to that position
+          const overContainer = findContainer(overId);
+          if (overContainer) {
+            const activeIndex = contents.findIndex((c) => c.id === dragActiveId);
+            const overIndex = contents.findIndex((c) => c.id === overContainer.id);
+
+            if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+              setContents((prev) => arrayMove(prev, activeIndex, overIndex));
+            }
+          }
+        }
         cleanup();
         return;
       }

@@ -72,8 +72,12 @@ export enum ContentEditorElementInsertDirection {
   LEFT = 'left',
 }
 
+// Drop preview type for Notion-style drag indicator
+export type DropPreviewType = 'column' | 'group';
+
 // Drop preview state for Notion-style drag indicator
 export interface DropPreview {
+  type: DropPreviewType;
   containerId: string;
   insertIndex: number;
 }
