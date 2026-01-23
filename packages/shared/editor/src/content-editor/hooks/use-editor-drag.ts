@@ -125,14 +125,11 @@ export const useEditorDrag = ({
           const overIndex = contents.findIndex((c) => c.id === overContainer.id);
 
           if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
-            // Insert before or after based on direction
-            const insertIndex = activeIndex < overIndex ? overIndex : overIndex;
-
             setDropPreview((prev) => {
-              if (prev?.type === 'group' && prev?.insertIndex === insertIndex) {
+              if (prev?.type === 'group' && prev?.insertIndex === overIndex) {
                 return prev;
               }
-              return { type: 'group', containerId: DROP_ZONE_ID_PREFIX, insertIndex };
+              return { type: 'group', containerId: DROP_ZONE_ID_PREFIX, insertIndex: overIndex };
             });
           }
         }
