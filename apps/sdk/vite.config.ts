@@ -82,10 +82,7 @@ const createBuildPlugins = (env: 'development' | 'production') => [
 const createManualChunks = (moduleName: string): string | undefined => {
   // Icons package - separate chunk (typically large due to icon assets)
   // Match both package name and actual file path in monorepo
-  if (
-    moduleName.includes('@usertour-packages/icons') ||
-    moduleName.includes('packages/shared/icons')
-  ) {
+  if (moduleName.includes('@usertour-packages/icons') || moduleName.includes('packages/icons')) {
     return 'vendor-icons';
   }
 
