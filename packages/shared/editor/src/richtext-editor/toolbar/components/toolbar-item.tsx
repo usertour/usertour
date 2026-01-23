@@ -1,10 +1,12 @@
 'use client';
 
 import { ToggleItem as ToolbarToggleItem } from '@radix-ui/react-toolbar';
+import { EDITOR_RICH_TOOLBAR_MORE } from '@usertour-packages/constants';
 import { cn } from '@usertour-packages/tailwind';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
 import { memo } from 'react';
 
+import { usePopperEditorContext } from '../../editor';
 import {
   TOOLBAR_BUTTON_ACTIVE,
   TOOLBAR_BUTTON_BASE,
@@ -18,6 +20,8 @@ import type { ToolbarItemProps } from '../toolbar.types';
  */
 export const ToolbarItem = memo(
   ({ isActive, onToggle, tooltip, ariaLabel, value, children }: ToolbarItemProps) => {
+    const { zIndex } = usePopperEditorContext();
+
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -33,7 +37,11 @@ export const ToolbarItem = memo(
             {children}
           </ToolbarToggleItem>
         </TooltipTrigger>
-        <TooltipContent className="max-w-xs">
+        <TooltipContent
+          className="max-w-xs"
+          usePortal
+          style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR_MORE }}
+        >
           <p>{tooltip}</p>
         </TooltipContent>
       </Tooltip>

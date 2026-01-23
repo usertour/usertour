@@ -1,10 +1,12 @@
 'use client';
 
+import { EDITOR_RICH_TOOLBAR_MORE } from '@usertour-packages/constants';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
 import { memo } from 'react';
 
+import { usePopperEditorContext } from '../../editor';
 import {
   TOOLBAR_BUTTON_ACTIVE,
   TOOLBAR_BUTTON_BASE,
@@ -27,6 +29,8 @@ export const ToolbarPopoverItem = memo(
     popoverContent,
     popoverZIndex,
   }: ToolbarPopoverItemProps) => {
+    const { zIndex } = usePopperEditorContext();
+
     return (
       <Popover open={open} onOpenChange={onOpenChange}>
         <Tooltip>
@@ -41,7 +45,11 @@ export const ToolbarPopoverItem = memo(
               {children}
             </PopoverTrigger>
           </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
+          <TooltipContent
+            className="max-w-xs"
+            usePortal
+            style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR_MORE }}
+          >
             <p>{tooltip}</p>
           </TooltipContent>
         </Tooltip>
