@@ -72,6 +72,12 @@ export enum ContentEditorElementInsertDirection {
   LEFT = 'left',
 }
 
+// Drop preview state for Notion-style drag indicator
+export interface DropPreview {
+  containerId: string;
+  insertIndex: number;
+}
+
 export type ContentEditorContextProps = ContentEditorProps & {
   activeId: string | undefined;
   setActiveId: React.Dispatch<React.SetStateAction<string | undefined>>;
@@ -79,6 +85,8 @@ export type ContentEditorContextProps = ContentEditorProps & {
   setContents: React.Dispatch<React.SetStateAction<ContentEditorRoot[]>>;
   isEditorHover: boolean;
   setIsEditorHover: React.Dispatch<React.SetStateAction<boolean>>;
+  dropPreview: DropPreview | null;
+  setDropPreview: React.Dispatch<React.SetStateAction<DropPreview | null>>;
   insertColumnInGroup: (
     element: ContentEditorElement,
     path: number[],

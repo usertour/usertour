@@ -1,17 +1,23 @@
 // Custom hook for handling editor drag and drop logic
+// Uses preview-based approach for columns (Notion-style vertical indicator)
 
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useCallback, useMemo } from 'react';
 
-import type { ContentEditorRoot } from '../../types/editor';
+import type { ContentEditorRoot, DropPreview } from '../../types/editor';
 import { createGroupFromColumn } from '../../utils/helper';
+import {
+  isColumnDropIndicatorId,
+  parseColumnDropIndicatorId,
+} from '../components/column-drop-indicator';
 import { getDropZoneIndex, isDropZoneId } from '../components/group-drop-zone';
 
 export interface UseEditorDragOptions {
   contents: ContentEditorRoot[];
   setContents: React.Dispatch<React.SetStateAction<ContentEditorRoot[]>>;
   setActiveId: React.Dispatch<React.SetStateAction<string | undefined>>;
+  setDropPreview: React.Dispatch<React.SetStateAction<DropPreview | null>>;
 }
 
 export interface UseEditorDragReturn {
@@ -26,6 +32,7 @@ export const useEditorDrag = ({
   contents,
   setContents,
   setActiveId,
+  setDropPreview,
 }: UseEditorDragOptions): UseEditorDragReturn => {
   // Map for O(1) container lookup - maps any id (group or column) to its parent container
   const containerMap = useMemo(() => {
@@ -75,20 +82,24 @@ export const useEditorDrag = ({
     [setActiveId],
   );
 
-  // Drag over handler
+  // Drag over handler - uses preview-based approach for columns
   const handleDragOver = useCallback(
     ({ active, over }: DragOverEvent) => {
       const dragActiveId = active.id as string;
       const overId = over?.id as string | undefined;
+
+      // Clear preview if no valid drop target
       if (!overId) {
+        setDropPreview(null);
         return;
       }
 
       const activeContainer = findContainer(dragActiveId);
       const overContainer = findContainer(overId);
 
-      // Handle group reordering - provides instant visual feedback during drag
+      // Handle group reordering - live reordering (groups are few)
       if (isContainer(dragActiveId)) {
+        setDropPreview(null);
         if (!overContainer) return;
         setContents((prev) => {
           const oldIndex = prev.findIndex((c) => c.id === dragActiveId);
@@ -99,74 +110,97 @@ export const useEditorDrag = ({
         return;
       }
 
-      // Skip if no containers found or same container (handled in dragEnd)
-      if (!activeContainer || !overContainer || activeContainer.id === overContainer.id) {
+      // Handle drop zone hover - clear column preview
+      if (isDropZoneId(overId)) {
+        setDropPreview(null);
         return;
       }
 
-      // Handle column moving between groups - use shallow copy for better performance
-      setContents((prev) => {
-        // Find the column being dragged from the current state
-        const activeContent = prev.find((c) => c.id === activeContainer.id);
-        const activeColumn = activeContent?.children.find((c) => c.id === dragActiveId);
+      // Handle column drop indicator hover - set preview from indicator data
+      if (isColumnDropIndicatorId(overId)) {
+        const parsed = parseColumnDropIndicatorId(overId);
+        if (parsed) {
+          setDropPreview((prev) => {
+            if (
+              prev?.containerId === parsed.containerId &&
+              prev?.insertIndex === parsed.insertIndex
+            ) {
+              return prev;
+            }
+            return parsed;
+          });
+        }
+        return;
+      }
 
-        if (!activeColumn) {
+      // Skip if no containers found
+      if (!activeContainer || !overContainer) {
+        setDropPreview(null);
+        return;
+      }
+
+      // Calculate insertion index for preview
+      let insertIndex = 0;
+      if (isContainer(overId)) {
+        // Dropping onto a group - insert at the end
+        const targetGroup = contents.find((c) => c.id === overId);
+        insertIndex = targetGroup?.children.length ?? 0;
+      } else {
+        // Dropping onto a column - calculate insert position
+        const overContent = contents.find((c) => c.id === overContainer.id);
+        const overColumnIndex = overContent?.children.findIndex((c) => c.id === overId) ?? -1;
+        const activeColumnIndex =
+          overContent?.children.findIndex((c) => c.id === dragActiveId) ?? -1;
+
+        if (overColumnIndex >= 0) {
+          // Determine if we're inserting before or after the over column
+          // If dragging from left to right, insert after; from right to left, insert before
+          if (activeContainer.id === overContainer.id && activeColumnIndex < overColumnIndex) {
+            insertIndex = overColumnIndex + 1;
+          } else {
+            insertIndex = overColumnIndex;
+          }
+        }
+      }
+
+      // Update preview state (only if changed to avoid unnecessary re-renders)
+      const containerId = overContainer.id;
+      if (!containerId) {
+        setDropPreview(null);
+        return;
+      }
+
+      setDropPreview((prev) => {
+        if (prev?.containerId === containerId && prev?.insertIndex === insertIndex) {
           return prev;
         }
-
-        // Calculate insertion index
-        let overIndex = 0;
-        if (isContainer(overId)) {
-          // Dropping onto a group - insert at the end
-          const targetGroup = prev.find((c) => c.id === overId);
-          overIndex = targetGroup?.children.length ?? 0;
-        } else {
-          // Dropping onto a column - insert at that position
-          const overContent = prev.find((c) => c.id === overContainer.id);
-          const overColumnIndex = overContent?.children.findIndex((c) => c.id === overId) ?? -1;
-          overIndex = overColumnIndex >= 0 ? overColumnIndex : 0;
-        }
-
-        // Build new contents array with shallow copies
-        return prev
-          .map((content) => {
-            if (content.id === activeContainer.id) {
-              // Remove column from source group
-              return {
-                ...content,
-                children: content.children.filter((c) => c.id !== dragActiveId),
-              };
-            }
-            if (content.id === overContainer.id) {
-              // Add column to target group at the correct position
-              const newChildren = [...content.children];
-              newChildren.splice(overIndex, 0, activeColumn);
-              return { ...content, children: newChildren };
-            }
-            return content;
-          })
-          .filter((c) => c.children.length > 0);
+        return { containerId, insertIndex };
       });
     },
-    [findContainer, isContainer, setContents],
+    [contents, findContainer, isContainer, setContents, setDropPreview],
   );
 
-  // Drag end handler - handles column reordering within same group and drop zone drops
-  // Group reordering and cross-group column moves are handled in dragOver
+  // Drag end handler - performs actual column moves based on dropPreview
   const handleDragEnd = useCallback(
     ({ active, over }: DragEndEvent) => {
       const dragActiveId = active.id as string;
       const overId = over?.id as string | undefined;
 
+      // Helper to cleanup drag state
+      const cleanup = () => {
+        setActiveId(undefined);
+        setDropPreview(null);
+      };
+
       // Early return for invalid drops
       if (!overId || dragActiveId === overId) {
-        setActiveId(undefined);
+        cleanup();
         return;
       }
 
-      // Group reordering is already handled in dragOver, just reset activeId
+      // Group reordering is already handled in dragOver, just reset state
       if (isContainer(dragActiveId)) {
-        setActiveId(undefined);
+        cleanup();
         return;
       }
 
@@ -174,7 +208,7 @@ export const useEditorDrag = ({
       if (isDropZoneId(overId)) {
         const activeContainer = findContainer(dragActiveId);
         if (!activeContainer) {
-          setActiveId(undefined);
+          cleanup();
           return;
         }
 
@@ -204,7 +238,6 @@ export const useEditorDrag = ({
             .filter((c) => c.children.length > 0);
 
           // Calculate the actual insert index after removing the column
-          // If source group was removed (became empty), adjust the index
           const sourceGroupIndex = prev.findIndex((c) => c.id === activeContainer.id);
           const sourceGroupRemoved = sourceGroup?.children.length === 1;
           let actualInsertIndex = dropZoneIndex;
@@ -221,51 +254,148 @@ export const useEditorDrag = ({
           ];
         });
 
-        setActiveId(undefined);
+        cleanup();
+        return;
+      }
+
+      // Handle column drop indicator - move column to specific position
+      if (isColumnDropIndicatorId(overId)) {
+        const parsed = parseColumnDropIndicatorId(overId);
+        if (!parsed) {
+          cleanup();
+          return;
+        }
+
+        const { containerId: targetContainerId, insertIndex } = parsed;
+        const activeContainer = findContainer(dragActiveId);
+
+        if (!activeContainer) {
+          cleanup();
+          return;
+        }
+
+        setContents((prev) => {
+          // Find the column being dragged
+          const sourceGroup = prev.find((c) => c.id === activeContainer.id);
+          const column = sourceGroup?.children.find((c) => c.id === dragActiveId);
+
+          if (!column) return prev;
+
+          // Same group move
+          if (activeContainer.id === targetContainerId) {
+            const activeIndex = sourceGroup?.children.findIndex((c) => c.id === dragActiveId) ?? -1;
+            if (activeIndex === -1) return prev;
+
+            // Adjust insert index if moving from earlier position
+            const adjustedInsertIndex = activeIndex < insertIndex ? insertIndex - 1 : insertIndex;
+
+            return prev.map((content) => {
+              if (content.id === targetContainerId) {
+                const newChildren = content.children.filter((c) => c.id !== dragActiveId);
+                newChildren.splice(adjustedInsertIndex, 0, column);
+                return { ...content, children: newChildren };
+              }
+              return content;
+            });
+          }
+
+          // Cross-group move
+          return prev
+            .map((content) => {
+              if (content.id === activeContainer.id) {
+                // Remove from source
+                return {
+                  ...content,
+                  children: content.children.filter((c) => c.id !== dragActiveId),
+                };
+              }
+              if (content.id === targetContainerId) {
+                // Insert at target position
+                const newChildren = [...content.children];
+                newChildren.splice(insertIndex, 0, column);
+                return { ...content, children: newChildren };
+              }
+              return content;
+            })
+            .filter((c) => c.children.length > 0);
+        });
+
+        cleanup();
         return;
       }
 
       const activeContainer = findContainer(dragActiveId);
       const overContainer = findContainer(overId);
 
-      // Skip if containers not found or cross-group (already handled in dragOver)
-      if (!activeContainer || !overContainer || activeContainer.id !== overContainer.id) {
-        setActiveId(undefined);
+      // Skip if containers not found
+      if (!activeContainer || !overContainer) {
+        cleanup();
         return;
       }
 
-      // Skip if dropping onto a container
+      // Skip if dropping onto a container directly
       if (isContainer(overId)) {
-        setActiveId(undefined);
+        cleanup();
         return;
       }
 
       // Handle column reordering within the same group
-      const activeIndex = activeContainer.children.findIndex((c) => c.id === dragActiveId);
-      const overIndex = overContainer.children.findIndex((c) => c.id === overId);
+      if (activeContainer.id === overContainer.id) {
+        const activeIndex = activeContainer.children.findIndex((c) => c.id === dragActiveId);
+        const overIndex = overContainer.children.findIndex((c) => c.id === overId);
 
-      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
-        setActiveId(undefined);
+        if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+          setContents((prev) =>
+            prev.map((content) => {
+              if (content.id === activeContainer.id) {
+                return {
+                  ...content,
+                  children: arrayMove(content.children, activeIndex, overIndex),
+                };
+              }
+              return content;
+            }),
+          );
+        }
+        cleanup();
         return;
       }
+
+      // Handle cross-group column move based on preview
+      const activeColumn = activeContainer.children.find((c) => c.id === dragActiveId);
+      if (!activeColumn) {
+        cleanup();
+        return;
+      }
+
+      // Calculate target insert index
+      const overColumnIndex = overContainer.children.findIndex((c) => c.id === overId);
+      const insertIndex = overColumnIndex >= 0 ? overColumnIndex : overContainer.children.length;
 
       setContents((prev) =>
         prev
           .map((content) => {
             if (content.id === activeContainer.id) {
+              // Remove column from source group
               return {
                 ...content,
-                children: arrayMove(content.children, activeIndex, overIndex),
+                children: content.children.filter((c) => c.id !== dragActiveId),
               };
+            }
+            if (content.id === overContainer.id) {
+              // Add column to target group at the insert position
+              const newChildren = [...content.children];
+              newChildren.splice(insertIndex, 0, activeColumn);
+              return { ...content, children: newChildren };
             }
             return content;
           })
           .filter((c) => c.children.length > 0),
       );
 
-      setActiveId(undefined);
+      cleanup();
     },
-    [findContainer, isContainer, setActiveId, setContents],
+    [findContainer, isContainer, setActiveId, setContents, setDropPreview],
   );
 
   return {

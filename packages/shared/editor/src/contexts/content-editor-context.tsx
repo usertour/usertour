@@ -11,6 +11,7 @@ import type {
   ContentEditorRoot,
   ContentEditorRootColumn,
   ContentEditorRootElement,
+  DropPreview,
 } from '../types/editor';
 import { ContentEditorElementInsertDirection, ContentEditorElementType } from '../types/editor';
 import { createNewColumn, createNewGroup } from '../utils/helper';
@@ -98,6 +99,7 @@ export const ContentEditorContextProvider = ({
   const [isEditorHover, setIsEditorHover] = useState(false);
   const [contents, setContents] = useState<ContentEditorRoot[]>(() => addID(initialValue));
   const [activeId, setActiveId] = useState<string | undefined>();
+  const [dropPreview, setDropPreview] = useState<DropPreview | null>(null);
   const { toast } = useToast();
 
   // Use ref to avoid stale closure issues with onValueChange
@@ -339,6 +341,8 @@ export const ContentEditorContextProvider = ({
     setContents,
     activeId,
     setActiveId,
+    dropPreview,
+    setDropPreview,
   };
 
   return <ContentEditorContext.Provider value={value}>{children}</ContentEditorContext.Provider>;

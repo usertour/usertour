@@ -48,11 +48,11 @@ export const GroupDropZone = memo(({ index }: GroupDropZoneProps) => {
       {isOver && (
         <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex items-center justify-center">
           {/* Left dot */}
-          <div className="h-2 w-2 rounded-full bg-[#155EEF]" />
+          <div className="h-2 w-2 rounded-full bg-primary" />
           {/* Line */}
-          <div className="h-0.5 flex-1 bg-[#155EEF]" />
+          <div className="h-0.5 flex-1 bg-primary" />
           {/* Right dot */}
-          <div className="h-2 w-2 rounded-full bg-[#155EEF]" />
+          <div className="h-2 w-2 rounded-full bg-primary" />
         </div>
       )}
     </div>

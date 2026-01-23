@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { EDITOR_OVERLAY } from '@usertour-packages/constants';
-import { useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useContentEditorContext } from '../../contexts/content-editor-context';
@@ -50,6 +50,7 @@ export const Editor = () => {
     activeId,
     setActiveId,
     setContents,
+    setDropPreview,
     zIndex,
   } = useContentEditorContext();
 
@@ -79,6 +80,7 @@ export const Editor = () => {
     contents,
     setContents,
     setActiveId,
+    setDropPreview,
   });
 
   const { handleMouseEnter, handleMouseLeave, handleFocus, handleBlur } = useHoverState({
@@ -122,7 +124,7 @@ export const Editor = () => {
       >
         <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
           {contents.map((content, i) => (
-            <div key={content.id}>
+            <Fragment key={content.id}>
               <GroupDropZone index={i} />
               <ContentEditorGroup
                 element={content.element}
@@ -134,10 +136,14 @@ export const Editor = () => {
                   items={content.children.map((c) => ({ id: c.id ?? '' }))}
                   strategy={horizontalListSortingStrategy}
                 >
-                  <ContentEditorRenderColumn columns={content.children} parentPath={[i]} />
+                  <ContentEditorRenderColumn
+                    columns={content.children}
+                    parentPath={[i]}
+                    containerId={content.id ?? ''}
+                  />
                 </SortableContext>
               </ContentEditorGroup>
-            </div>
+            </Fragment>
           ))}
           <GroupDropZone index={contents.length} />
         </SortableContext>
