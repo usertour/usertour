@@ -1,8 +1,5 @@
 // Drop zone component for groups and columns
-// Uses actual droppable elements for proper dnd-kit integration
-// Shows horizontal line indicator for:
-// - Column dragging to become a new group
-// - Group reordering
+// Shows horizontal line indicator for group/column insertion
 
 import { useDroppable } from '@dnd-kit/core';
 import { memo, useMemo } from 'react';
@@ -17,7 +14,7 @@ export interface GroupDropZoneProps {
 }
 
 export const GroupDropZone = memo(({ index }: GroupDropZoneProps) => {
-  const { activeId, contents, dropPreview } = useContentEditorContext();
+  const { activeId, dropPreview } = useContentEditorContext();
   const dropZoneId = `${DROP_ZONE_ID_PREFIX}${index}`;
 
   const { setNodeRef, isOver } = useDroppable({
@@ -27,12 +24,6 @@ export const GroupDropZone = memo(({ index }: GroupDropZoneProps) => {
       index,
     },
   });
-
-  // Check if the active item is a group
-  const isGroupDragging = useMemo(() => {
-    if (!activeId) return false;
-    return contents.some((c) => c.id === activeId);
-  }, [activeId, contents]);
 
   // Check if this is the preview position for group dragging
   const isGroupPreviewPosition = useMemo(() => {
@@ -45,28 +36,16 @@ export const GroupDropZone = memo(({ index }: GroupDropZoneProps) => {
     return null;
   }
 
-  // For group dragging, show indicator at preview position or when hovering
-  // For column dragging, show indicator when hovering (column becoming new group)
+  // Show indicator when hovering or at preview position
   const shouldShowIndicator = isOver || isGroupPreviewPosition;
 
   return (
     <div
       ref={setNodeRef}
-      className="relative w-full transition-all duration-150 ease-out"
-      style={{ height: shouldShowIndicator ? 48 : isGroupDragging ? 8 : 16 }}
-    >
-      {/* Visual indicator line */}
-      {shouldShowIndicator && (
-        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex items-center justify-center">
-          {/* Left dot */}
-          <div className="h-2 w-2 rounded-full bg-primary" />
-          {/* Line */}
-          <div className="h-0.5 flex-1 bg-primary" />
-          {/* Right dot */}
-          <div className="h-2 w-2 rounded-full bg-primary" />
-        </div>
-      )}
-    </div>
+      className={`h-1 w-full bg-primary/50 transition-opacity duration-150 ${
+        shouldShowIndicator ? 'opacity-100' : 'opacity-0'
+      }`}
+    />
   );
 });
 
