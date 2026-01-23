@@ -9,6 +9,7 @@ import { Label } from '@usertour-packages/label';
 import { Popover, PopoverArrow, PopoverContent } from '@usertour-packages/popover';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { cn } from '@usertour-packages/tailwind';
+import { PADDING_KEY_MAPPING } from '@usertour-packages/widget';
 import type React from 'react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -30,10 +31,13 @@ import {
   JUSTIFY_CONTENT_OPTIONS_LIST,
   WIDTH_TYPES,
 } from '../../constants';
+import { PaddingControls } from '../../shared';
 import type { WidthType } from '../../types';
 import { ensureWidthWithDefaults, transformColumnStyle } from '../../utils';
 import { ColumnActionButtons } from './column-action-buttons';
 import { ColumnHeader } from './column-header';
+
+type PaddingPosition = keyof typeof PADDING_KEY_MAPPING;
 
 export interface ContentEditorColumnProps {
   element: ContentEditorColumnElement;
@@ -64,7 +68,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
   // Memoized styles and values
   const columnStyle = useMemo(
     () => transformColumnStyle(element),
-    [element.width, element.style?.marginRight],
+    [element.width, element.style?.marginRight, element.padding],
   );
   const dragStyle = useMemo(
     () => ({
@@ -138,6 +142,22 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
         type: element.width?.type as WidthType,
       });
       updateElement({ ...element, width: updatedWidth }, id);
+    },
+    [element, id, updateElement],
+  );
+
+  const handlePaddingValueChange = useCallback(
+    (position: PaddingPosition, value: string) => {
+      const numericValue = Number(value) || 0;
+      const padding = { ...element.padding, [position]: numericValue };
+      updateElement({ ...element, padding }, id);
+    },
+    [element, id, updateElement],
+  );
+
+  const handlePaddingCheckedChange = useCallback(
+    (enabled: boolean) => {
+      updateElement({ ...element, padding: { ...element.padding, enabled } }, id);
     },
     [element, id, updateElement],
   );
@@ -226,6 +246,12 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
               onValueChange={handleAlignValueChange}
               placeholder="Select align items"
               contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+            />
+
+            <PaddingControls
+              padding={element.padding}
+              onPaddingChange={handlePaddingValueChange}
+              onPaddingEnabledChange={handlePaddingCheckedChange}
             />
 
             <ColumnActionButtons

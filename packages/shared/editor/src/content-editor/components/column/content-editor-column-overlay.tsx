@@ -24,7 +24,7 @@ export const ContentEditorColumnOverlay = memo(
 
     const overlayStyle = useMemo(
       () => transformColumnStyle(element),
-      [element.width, element.style?.marginRight],
+      [element.width, element.style?.marginRight, element.padding],
     );
 
     return (

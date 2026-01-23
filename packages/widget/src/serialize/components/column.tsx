@@ -20,7 +20,7 @@ export interface ColumnSerializeProps {
 export const ColumnSerialize = memo(({ element, children }: ColumnSerializeProps) => {
   const serializeStyle = useMemo(
     () => transformColumnStyle(element),
-    [element.width, element.style?.marginRight],
+    [element.width, element.style?.marginRight, element.padding],
   );
 
   return (

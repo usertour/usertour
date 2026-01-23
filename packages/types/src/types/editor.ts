@@ -69,6 +69,14 @@ export type ContentEditorMargin = {
   right?: number;
 };
 
+export type ContentEditorPadding = {
+  enabled?: boolean;
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+};
+
 //Image element
 export type ContentEditorImageElement = {
   type: ContentEditorElementType.IMAGE;
@@ -97,6 +105,7 @@ export type ContentEditorColumnElement = {
   justifyContent?: string;
   alignItems?: string;
   width?: ContentEditorWidth;
+  padding?: ContentEditorPadding;
 };
 
 //Group element

@@ -121,4 +121,16 @@ export {
 export * from './core';
 
 // Serialize - Content editor serialization for SDK rendering
-export { ContentEditorSerialize } from './serialize';
+export {
+  ContentEditorSerialize,
+  // Style transformation utilities
+  transformMarginStyle,
+  transformPaddingStyle,
+  createDefaultMarginConfig,
+  createDefaultPaddingConfig,
+  // Constants
+  PADDING_KEY_MAPPING,
+  PADDING_POSITIONS,
+  // Types
+  type PaddingStyleProps,
+} from './serialize';

@@ -3,6 +3,16 @@
 // Re-export margin constants from media
 export { MARGIN_KEY_MAPPING, MARGIN_POSITIONS } from '../media/constants';
 
+// Padding constants
+export const PADDING_KEY_MAPPING = {
+  left: 'paddingLeft',
+  top: 'paddingTop',
+  bottom: 'paddingBottom',
+  right: 'paddingRight',
+} as const;
+
+export const PADDING_POSITIONS = ['left', 'top', 'bottom', 'right'] as const;
+
 // Width constants
 export const WIDTH_TYPES = {
   PERCENT: 'percent',

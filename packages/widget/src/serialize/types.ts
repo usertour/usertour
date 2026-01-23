@@ -42,8 +42,16 @@ export interface MarginStyleProps {
   marginRight?: string;
 }
 
+// Padding style props
+export interface PaddingStyleProps {
+  paddingLeft?: string;
+  paddingTop?: string;
+  paddingBottom?: string;
+  paddingRight?: string;
+}
+
 // Column style types
-export interface ColumnStyle {
+export interface ColumnStyle extends PaddingStyleProps {
   marginBottom: string;
   marginRight?: string;
   width?: string;

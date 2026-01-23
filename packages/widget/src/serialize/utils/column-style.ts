@@ -5,6 +5,7 @@ import type { ContentEditorColumnElement } from '@usertour/types';
 import { WIDTH_TYPES } from '../constants';
 import type { ColumnStyle } from '../types';
 import { ensureWidthWithDefaults } from './dimension';
+import { transformPaddingStyle } from './style-transforms';
 
 /**
  * Transforms column element properties to CSS style object
@@ -28,5 +29,8 @@ export const transformColumnStyle = (element: ContentEditorColumnElement): Colum
     style.flex = '1 0 0px';
   }
 
-  return style;
+  // Add padding styles
+  const paddingStyle = transformPaddingStyle(element.padding);
+
+  return { ...style, ...paddingStyle };
 };

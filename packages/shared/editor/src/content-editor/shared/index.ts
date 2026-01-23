@@ -4,6 +4,7 @@ export * from './bind-attribute';
 export * from './drag-handle';
 export * from './loading-spinner';
 export * from './margin-controls';
+export * from './padding-controls';
 export * from './tooltip-action-button';
 export * from './width-controls';
 

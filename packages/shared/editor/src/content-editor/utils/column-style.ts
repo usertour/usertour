@@ -1,10 +1,13 @@
 // Column style transformation utilities
 
+import type { PaddingStyleProps } from '@usertour-packages/widget';
+import { transformPaddingStyle } from '@usertour-packages/widget';
+
 import type { ContentEditorColumnElement } from '../../types/editor';
 import { WIDTH_TYPES } from '../constants';
 import { ensureWidthWithDefaults } from './dimension';
 
-export interface ColumnStyle {
+export interface ColumnStyle extends PaddingStyleProps {
   marginBottom: string;
   marginRight?: string;
   width?: string;
@@ -34,5 +37,8 @@ export const transformColumnStyle = (element: ContentEditorColumnElement): Colum
     style.flex = '1 0 0px';
   }
 
-  return style;
+  // Add padding styles
+  const paddingStyle = transformPaddingStyle(element.padding);
+
+  return { ...style, ...paddingStyle };
 };
