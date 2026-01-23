@@ -19,18 +19,12 @@ import { GroupDragHandle } from './group-drag-handle';
 interface DragStyle {
   transform: string;
   transition: string | undefined;
-  opacity: number;
 }
 
 // Utility functions
-const createDragStyle = (
-  transform: any,
-  transition: string | undefined,
-  isDragging: boolean,
-): DragStyle => ({
+const createDragStyle = (transform: any, transition: string | undefined): DragStyle => ({
   transform: CSS.Transform.toString(transform) || '',
   transition,
-  opacity: isDragging ? 0.5 : 1,
 });
 
 const animateLayoutChanges: AnimateLayoutChanges = (args) =>
@@ -68,10 +62,7 @@ export const ContentEditorGroup = memo((props: ContentEditorGroupProps) => {
   });
 
   // Memoized values and styles
-  const dragStyle = useMemo(
-    () => createDragStyle(transform, transition, isDragging),
-    [transform, transition, isDragging],
-  );
+  const dragStyle = useMemo(() => createDragStyle(transform, transition), [transform, transition]);
 
   const shouldShowDragHandle = useMemo(
     () => isDragging || isGroupHover,

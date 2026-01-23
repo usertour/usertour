@@ -70,9 +70,8 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
     () => ({
       transform: CSS.Transform.toString(transform),
       transition,
-      opacity: isDragging ? 0.5 : 1,
     }),
-    [transform, transition, isDragging],
+    [transform, transition],
   );
 
   const width = useMemo(() => ensureWidthWithDefaults(element.width), [element.width]);
@@ -165,7 +164,6 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
           element?.justifyContent ?? DEFAULT_JUSTIFY_CONTENT,
           element?.alignItems ?? DEFAULT_ALIGN_ITEMS,
           !activeId ? (isActive ? ACTIVE_CLASSES : isHover ? HOVER_CLASSES : '') : '',
-          isDragging ? HOVER_CLASSES : '',
           className,
         )}
         onMouseOver={handleMouseOver}

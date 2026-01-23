@@ -31,21 +31,19 @@ export const GroupDropZone = memo(({ index }: GroupDropZoneProps) => {
     return dropPreview.insertIndex === index;
   }, [dropPreview, index]);
 
-  // Only render when there's an active drag
-  if (!activeId) {
-    return null;
-  }
+  // Show indicator when hovering or at preview position (only during drag)
+  const shouldShowIndicator = activeId && (isOver || isGroupPreviewPosition);
 
-  // Show indicator when hovering or at preview position
-  const shouldShowIndicator = isOver || isGroupPreviewPosition;
-
+  // Use h-0 wrapper with absolute positioned indicator to avoid layout shift
   return (
-    <div
-      ref={setNodeRef}
-      className={`h-1 w-full bg-primary/50 transition-opacity duration-150 ${
-        shouldShowIndicator ? 'opacity-100' : 'opacity-0'
-      }`}
-    />
+    <div className="relative h-0 w-full overflow-visible">
+      <div
+        ref={setNodeRef}
+        className={`absolute left-0 right-0 z-10 h-1 -translate-y-1/2 bg-primary/50 transition-opacity duration-150 ${
+          shouldShowIndicator ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+    </div>
   );
 });
 

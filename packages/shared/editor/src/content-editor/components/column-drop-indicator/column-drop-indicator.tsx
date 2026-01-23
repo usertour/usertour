@@ -1,5 +1,5 @@
 // Vertical drop indicator for column insertion (Notion-style)
-// Uses useDroppable to participate in dnd-kit collision detection
+// Uses absolute positioning to avoid layout shift when drag starts
 
 import { useDroppable } from '@dnd-kit/core';
 import { memo, useMemo } from 'react';
@@ -43,21 +43,19 @@ export const ColumnDropIndicator = memo(
       return dropPreview.containerId === containerId && dropPreview.insertIndex === insertIndex;
     }, [dropPreview, containerId, insertIndex]);
 
-    // Only render when dragging a column
-    if (!isColumnDragging) {
-      return null;
-    }
+    // Show indicator when hovering or at preview position (only during column drag)
+    const shouldShowIndicator = isColumnDragging && (isPreviewPosition || isOver);
 
-    // Show indicator when hovering or at preview position
-    const shouldShowIndicator = isPreviewPosition || isOver;
-
+    // Use w-0 wrapper with absolute positioned indicator to avoid layout shift
     return (
-      <div
-        ref={setNodeRef}
-        className={`w-1 self-stretch bg-primary/50 transition-opacity duration-150 ${
-          shouldShowIndicator ? 'opacity-100' : 'opacity-0'
-        }`}
-      />
+      <div className="relative w-0 self-stretch overflow-visible">
+        <div
+          ref={setNodeRef}
+          className={`absolute top-0 bottom-0 z-10 w-1 -translate-x-1/2 bg-primary/50 transition-opacity duration-150 ${
+            shouldShowIndicator ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      </div>
     );
   },
 );
