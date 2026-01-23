@@ -120,38 +120,3 @@ export const defaultInitialValue = [
     ],
   },
 ] as ContentEditorRoot[];
-
-export const groupData = [
-  {
-    type: 'group',
-    isFirst: true,
-    isLast: true,
-    children: [
-      {
-        type: 'column',
-        width: { type: 'fill', value: 50 },
-
-        justifyContent: 'justify-center',
-        style: { marginRight: '30' },
-        children: [
-          {
-            type: 'paragraph',
-            children: [{ text: 'Write text here' }],
-          },
-        ],
-      },
-      {
-        type: 'column',
-        width: { type: 'fill', value: 50 },
-        justifyContent: 'justify-center',
-        style: { marginRight: '30' },
-        children: [
-          {
-            type: 'paragraph',
-            children: [{ text: 'Write text here' }],
-          },
-        ],
-      },
-    ],
-  },
-];
