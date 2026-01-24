@@ -104,7 +104,7 @@ const SidebarContent = memo(
         >
           <div className="flex items-center justify-between ">
             <div className="grow inline-flex items-center text-sm ">
-              <DragHandleDots2Icon {...listeners} className="cursor-grab active:cursor-grabbing" />
+              <DragHandleDots2Icon {...listeners} className="cursor-move" />
               {step.type === StepContentType.TOOLTIP && (
                 <TooltipIcon className="w-4 h-4 mt-0.5 mx-0.5" />
               )}
@@ -241,7 +241,11 @@ export const SidebarContents = () => {
   } = useBuilderContext();
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum distance (px) before drag activates to prevent accidental drags
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -378,7 +382,7 @@ export const SidebarContents = () => {
             />
           ))}
         </SortableContext>
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {activeId !== null && activeStep ? (
             <SidebarContent
               index={activeStep.index}
