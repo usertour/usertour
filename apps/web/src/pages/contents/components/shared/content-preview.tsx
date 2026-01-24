@@ -50,6 +50,7 @@ interface FlowPreviewProps {
 const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
   const { globalStyle, themeSetting, avatarUrl } = useSettingsStyles(currentTheme.settings, {
     useLocalAvatarPath: true,
+    type: currentStep.type,
   });
 
   // Get width with theme fallback if undefined
