@@ -72,7 +72,7 @@ export interface Usertour {
 
   // setServerEndpoint(serverEndpoint: string | null | undefined): void;
 
-  // disableEvalJs(): void;
+  disableEvalJs(): void;
 }
 
 export interface Attributes {

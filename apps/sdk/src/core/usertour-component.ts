@@ -144,6 +144,14 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Checks if JavaScript evaluation is disabled
+   * @returns True if eval is disabled, false otherwise
+   */
+  isEvalJsDisabled(): boolean {
+    return this.instance.isEvalJsDisabled();
+  }
+
+  /**
    * Gets the open state of the component
    * @returns true if the component is open, false otherwise
    */
@@ -253,6 +261,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
         this.startTour(contentId, opts),
       handleNavigate: (data: any) => this.handleNavigate(data),
       close: (reason: contentEndReason) => this.close(reason),
+      isEvalJsDisabled: this.isEvalJsDisabled(),
     };
   }
 

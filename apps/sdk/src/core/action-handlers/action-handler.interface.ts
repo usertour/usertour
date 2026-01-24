@@ -40,6 +40,10 @@ export interface ActionHandlerContext {
    * Shows a step by cvid (Tour-specific)
    */
   showStepByCvid?: (stepCvid: string) => Promise<void>;
+  /**
+   * Indicates if JavaScript evaluation via eval is disabled
+   */
+  isEvalJsDisabled: boolean;
 }
 
 /**
