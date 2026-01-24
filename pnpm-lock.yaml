@@ -78,9 +78,6 @@ importers:
       '@usertour-packages/react-context':
         specifier: workspace:^
         version: link:../../packages/radix/context
-      '@usertour-packages/shared-editor':
-        specifier: workspace:^
-        version: link:../../packages/shared/editor
       '@usertour-packages/tailwind':
         specifier: workspace:^
         version: link:../../packages/tailwind
@@ -849,8 +846,8 @@ importers:
         specifier: ^10.0.5
         version: 10.0.5(react@18.2.0)
       usertour.js:
-        specifier: ^0.0.10
-        version: 0.0.10
+        specifier: ^0.0.15
+        version: 0.0.15
       vite-plugin-mkcert:
         specifier: ^1.17.5
         version: 1.17.6(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
@@ -14697,8 +14694,8 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
-  usertour.js@0.0.10:
-    resolution: {integrity: sha512-81tHrlpy7ci4t+NFOYeLrG7mnypnQrGpkXdBUkIK5OCNYrFznIMEywPMTcdfXBeIaZtBJofZ6vY2dgWTAXijoA==}
+  usertour.js@0.0.15:
+    resolution: {integrity: sha512-z2x4pOD6bJNH6+U9+f/UnmLJxye6mwse/JBJH+1GSJ96APACUjNjmtxNSGWaeTG2y+eab2siFZ1vq1Jr1ghteg==}
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -28222,7 +28219,7 @@ snapshots:
     dependencies:
       react: 18.2.0
 
-  usertour.js@0.0.10: {}
+  usertour.js@0.0.15: {}
 
   util-deprecate@1.0.2: {}
 
