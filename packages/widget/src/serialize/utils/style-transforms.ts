@@ -1,5 +1,6 @@
 // Style transformation utilities for serialize components
 
+import { toNumericValue } from '@usertour/helpers';
 import type { ContentEditorPadding } from '@usertour/types';
 
 import {
@@ -23,8 +24,11 @@ export const transformMarginStyle = (margin?: MarginConfig): MarginStyleProps =>
   for (const position of MARGIN_POSITIONS) {
     const marginName = MARGIN_KEY_MAPPING[position];
     const marginValue = margin[position as keyof MarginConfig];
-    if (marginValue !== undefined && typeof marginValue === 'number') {
-      style[marginName as keyof MarginStyleProps] = margin.enabled ? `${marginValue}px` : undefined;
+    const numericValue = toNumericValue(marginValue as number | string | undefined);
+    if (numericValue !== undefined) {
+      style[marginName as keyof MarginStyleProps] = margin.enabled
+        ? `${numericValue}px`
+        : undefined;
     }
   }
 
@@ -54,10 +58,12 @@ export const transformPaddingStyle = (padding?: ContentEditorPadding): PaddingSt
 
   for (const position of PADDING_POSITIONS) {
     const paddingName = PADDING_KEY_MAPPING[position];
-    const paddingValue = padding[position as keyof ContentEditorPadding];
-    if (paddingValue !== undefined && typeof paddingValue === 'number') {
+    // TypeScript infers the value might include 'enabled' (boolean), so we need to assert
+    const paddingValue = padding[position] as number | string | undefined;
+    const numericValue = toNumericValue(paddingValue);
+    if (numericValue !== undefined) {
       style[paddingName as keyof PaddingStyleProps] = padding.enabled
-        ? `${paddingValue}px`
+        ? `${numericValue}px`
         : undefined;
     }
   }

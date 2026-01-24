@@ -83,7 +83,7 @@ export const LIST_PREVIEW_CONTENT = [
               },
               margin: {
                 top: 0,
-                left: '10',
+                left: 10,
                 bottom: 0,
                 right: 0,
                 enabled: true,

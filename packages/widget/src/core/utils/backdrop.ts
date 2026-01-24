@@ -1,3 +1,4 @@
+import { toNumericValue } from '@usertour/helpers';
 import { getComputedStyle } from '@usertour-packages/dom';
 
 import type { Rect, SideObject } from '@floating-ui/dom';
@@ -24,10 +25,12 @@ interface PaddingObject {
 
 /**
  * Parse opening padding value into a padding object
- * @param openingPadding - Can be either a number for uniform padding or an object with specific padding values
+ * @param openingPadding - Can be either a number/string for uniform padding or an object with specific padding values
  * @returns A padding object with all sides specified
  */
-function parseOpeningPadding(openingPadding?: number | Partial<PaddingObject>): PaddingObject {
+function parseOpeningPadding(
+  openingPadding?: number | string | Partial<PaddingObject>,
+): PaddingObject {
   const defaultPadding = {
     paddingLeft: 0,
     paddingRight: 0,
@@ -40,21 +43,28 @@ function parseOpeningPadding(openingPadding?: number | Partial<PaddingObject>): 
     return defaultPadding;
   }
 
-  // If openingPadding is a number, apply it uniformly
-  if (typeof openingPadding === 'number') {
-    return {
-      ...defaultPadding,
-      paddingLeft: openingPadding,
-      paddingRight: openingPadding,
-      paddingTop: openingPadding,
-      paddingBottom: openingPadding,
-    };
+  // If openingPadding is a number or string, convert and apply it uniformly
+  if (typeof openingPadding === 'number' || typeof openingPadding === 'string') {
+    const numericValue = toNumericValue(openingPadding);
+    if (numericValue !== undefined) {
+      return {
+        ...defaultPadding,
+        paddingLeft: numericValue,
+        paddingRight: numericValue,
+        paddingTop: numericValue,
+        paddingBottom: numericValue,
+      };
+    }
+    return defaultPadding;
   }
 
-  // If openingPadding is an object, merge with default values
+  // If openingPadding is an object, convert each property and merge with default values
   return {
     ...defaultPadding,
-    ...openingPadding,
+    paddingLeft: toNumericValue(openingPadding.paddingLeft) ?? defaultPadding.paddingLeft,
+    paddingRight: toNumericValue(openingPadding.paddingRight) ?? defaultPadding.paddingRight,
+    paddingTop: toNumericValue(openingPadding.paddingTop) ?? defaultPadding.paddingTop,
+    paddingBottom: toNumericValue(openingPadding.paddingBottom) ?? defaultPadding.paddingBottom,
   };
 }
 
@@ -139,7 +149,7 @@ export function positionModal(
   rect: Rect,
   zIndex: number,
   viewportRect: Rect,
-  modalOverlayOpeningPadding?: number,
+  modalOverlayOpeningPadding?: number | string | Partial<PaddingObject>,
   modalOverlayOpeningRadius?: any,
 ): ModalPosition {
   const targetBorderRadius = getBorderRadius(reference);

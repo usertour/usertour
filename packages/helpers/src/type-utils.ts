@@ -78,3 +78,22 @@ export const isFile = (x: unknown): x is File => {
   // eslint-disable-next-line posthog-js/no-direct-file-check
   return x instanceof File;
 };
+
+/**
+ * Converts a value to a numeric value, supporting both number and string types for backward compatibility
+ * @param value - The value to convert (can be number, string, or undefined)
+ * @returns The numeric value if valid, undefined otherwise
+ */
+export const toNumericValue = (value: number | string | undefined): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value === 'number') {
+    return Number.isNaN(value) ? undefined : value;
+  }
+  if (typeof value === 'string') {
+    const numericValue = Number(value);
+    return Number.isNaN(numericValue) ? undefined : numericValue;
+  }
+  return undefined;
+};

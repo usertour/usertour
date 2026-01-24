@@ -1,5 +1,7 @@
 // Style transformation utilities
 
+import { toNumericValue } from '@usertour/helpers';
+
 import { MARGIN_KEY_MAPPING, MARGIN_POSITIONS } from '../constants/margin';
 import type { MarginConfig, MarginStyleProps } from '../types/margin';
 
@@ -16,8 +18,11 @@ export const transformMarginStyle = (margin?: MarginConfig): MarginStyleProps =>
   for (const position of MARGIN_POSITIONS) {
     const marginName = MARGIN_KEY_MAPPING[position];
     const marginValue = margin[position as keyof MarginConfig];
-    if (marginValue !== undefined && typeof marginValue === 'number') {
-      style[marginName as keyof MarginStyleProps] = margin.enabled ? `${marginValue}px` : undefined;
+    const numericValue = toNumericValue(marginValue);
+    if (numericValue !== undefined) {
+      style[marginName as keyof MarginStyleProps] = margin.enabled
+        ? `${numericValue}px`
+        : undefined;
     }
   }
 

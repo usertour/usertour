@@ -1,5 +1,6 @@
 // Column style transformation utilities
 
+import { toNumericValue } from '@usertour/helpers';
 import type { PaddingStyleProps } from '@usertour-packages/widget';
 import { transformPaddingStyle } from '@usertour-packages/widget';
 
@@ -19,9 +20,10 @@ export interface ColumnStyle extends PaddingStyleProps {
  * Transforms column element properties to CSS style object
  */
 export const transformColumnStyle = (element: ContentEditorColumnElement): ColumnStyle => {
+  const marginRightValue = toNumericValue(element.style?.marginRight);
   const style: ColumnStyle = {
     marginBottom: '0px',
-    marginRight: element.style?.marginRight ? `${element.style.marginRight}px` : undefined,
+    marginRight: marginRightValue !== undefined ? `${marginRightValue}px` : undefined,
     width: 'auto',
     flex: '0 0 auto',
     minWidth: '0',
