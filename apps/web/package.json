@@ -111,7 +111,7 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.6",
     "use-debounce": "^10.0.5",
-    "usertour.js": "^0.0.10",
+    "usertour.js": "^0.0.15",
     "vite-plugin-mkcert": "^1.17.5",
     "zod": "^3.21.4"
   },
