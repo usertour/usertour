@@ -346,7 +346,7 @@ export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
 
   return (
     <TooltipProvider>
-      <div className="bg-background p-4 rounded space-y-3 w-72">
+      <div className="bg-background p-4 rounded space-y-3 w-64">
         <ColorInput
           inputColor={inputColor}
           displayColor={displayColor}
@@ -363,7 +363,7 @@ export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
             <UnderlineTabsTrigger value="palette">Color palette</UnderlineTabsTrigger>
           </UnderlineTabsList>
           <UnderlineTabsContent value="picker">
-            <div className="h-72 color-picker-panel">
+            <div className="h-64 color-picker-panel">
               <HexColorPicker
                 color={displayColor}
                 onChange={handleColorfulChange}
