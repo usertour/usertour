@@ -1,6 +1,8 @@
 import { useFloating, offset, flip, shift } from '@floating-ui/react-dom';
 import type React from 'react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEvent } from 'react-use';
+import { window } from '@usertour/helpers';
 import type { Editor, BaseRange } from 'slate';
 import { Range as SlateRange } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
@@ -87,6 +89,12 @@ export const useFloatingToolbar = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [virtualElement, setVirtualElement] = useState<VirtualElement | null>(null);
   const domRangeRef = useRef<SlateSelection | null>(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+
+  // Track mouse down/up state to prevent toolbar from showing during text selection
+  // Similar to Tiptap: only show toolbar after mouse is released
+  useEvent('mousedown', () => setIsMouseDown(true), window, { capture: false });
+  useEvent('mouseup', () => setIsMouseDown(false), window, { capture: false });
 
   // Serialize selection for dependency tracking
   // This ensures useLayoutEffect runs when selection actually changes
@@ -109,7 +117,9 @@ export const useFloatingToolbar = () => {
     // Check if selection exists and is not collapsed (has actual text selected)
     const hasSelection = currentSelection && !SlateRange.isCollapsed(currentSelection);
 
-    if (!hasSelection) {
+    // Don't show toolbar while mouse is down (during text selection)
+    // Only show after mouse is released, similar to Tiptap behavior
+    if (!hasSelection || isMouseDown) {
       clearToolbarState(setIsVisible, setVirtualElement, domRangeRef);
       return;
     }
@@ -139,7 +149,7 @@ export const useFloatingToolbar = () => {
       clearToolbarState(setIsVisible, setVirtualElement, domRangeRef);
     }
     // Use serialized selection key to track selection changes
-  }, [editor, selectionKey]);
+  }, [editor, selectionKey, isMouseDown]);
 
   // Use Floating UI for positioning
   const { refs, floatingStyles, placement, update } = useFloating({
