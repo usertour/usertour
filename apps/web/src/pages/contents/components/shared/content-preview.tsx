@@ -13,6 +13,7 @@ import {
   Popper,
   PopperClose,
   PopperMadeWith,
+  PopperProgress,
   PopperStaticBubble,
   PopperStaticContent,
   useSettingsStyles,
@@ -27,6 +28,8 @@ import {
   ChecklistData,
   ContentVersion,
   LauncherData,
+  ProgressBarPosition,
+  ProgressBarType,
   Step,
   StepContentType,
   Theme,
@@ -45,17 +48,38 @@ const EmptyContentPreview = memo(({ className }: EmptyContentPreviewProps) => {
 interface FlowPreviewProps {
   currentTheme: Theme;
   currentStep: Step;
+  currentVersion?: ContentVersion;
+  currentStepIndex?: number;
 }
 
-const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
+const FlowPreview = ({
+  currentTheme,
+  currentStep,
+  currentVersion,
+  currentStepIndex = 0,
+}: FlowPreviewProps) => {
   const { globalStyle, themeSetting, avatarUrl } = useSettingsStyles(currentTheme.settings, {
     useLocalAvatarPath: true,
     type: currentStep.type,
   });
+  const { shouldShowMadeWith } = useSubscriptionContext();
 
   // Get width with theme fallback if undefined
   const width =
     currentStep.setting.width ?? getThemeWidthByStepType(currentStep.type, themeSetting);
+
+  // Calculate progress bar display
+  const totalSteps = currentVersion?.steps?.length ?? 0;
+  const progressType = themeSetting?.progress.type;
+  const progressPosition = themeSetting?.progress.position;
+  const progressEnabled = themeSetting?.progress.enabled;
+
+  // Optimized progress display logic
+  const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;
+  const showTopProgress =
+    progressEnabled && (isFullWidthProgress || progressPosition === ProgressBarPosition.TOP);
+  const showBottomProgress =
+    progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
 
   // Handle hidden step
   if (currentStep.type === StepContentType.HIDDEN) {
@@ -84,7 +108,24 @@ const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
           showAvatar={showAvatar}
         >
           {currentStep.setting.skippable && <PopperClose />}
+          {showTopProgress && (
+            <PopperProgress
+              type={progressType}
+              position={progressPosition}
+              currentStepIndex={currentStepIndex}
+              totalSteps={totalSteps}
+            />
+          )}
           <ContentEditorSerialize contents={currentStep.data} />
+          {showBottomProgress && (
+            <PopperProgress
+              type={progressType}
+              position={progressPosition}
+              currentStepIndex={currentStepIndex}
+              totalSteps={totalSteps}
+            />
+          )}
+          {shouldShowMadeWith && <PopperMadeWith />}
         </PopperStaticBubble>
       </Popper>
     );
@@ -94,14 +135,35 @@ const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
   return (
     <Popper open={true} zIndex={1} globalStyle={globalStyle}>
       <PopperStaticContent
-        arrowSize={{ width: 20, height: 10 }}
+        arrowSize={{
+          width: themeSetting?.tooltip.notchSize ?? 20,
+          height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
+        }}
         side="bottom"
-        showArrow={false}
+        showArrow={currentStep.type === StepContentType.TOOLTIP}
         width={`${width}px`}
         height={'auto'}
+        arrowColor={themeSetting?.mainColor?.background}
       >
         {currentStep.setting.skippable && <PopperClose />}
+        {showTopProgress && (
+          <PopperProgress
+            type={progressType}
+            position={progressPosition}
+            currentStepIndex={currentStepIndex}
+            totalSteps={totalSteps}
+          />
+        )}
         <ContentEditorSerialize contents={currentStep.data} />
+        {showBottomProgress && (
+          <PopperProgress
+            type={progressType}
+            position={progressPosition}
+            currentStepIndex={currentStepIndex}
+            totalSteps={totalSteps}
+          />
+        )}
+        {shouldShowMadeWith && <PopperMadeWith />}
       </PopperStaticContent>
     </Popper>
   );

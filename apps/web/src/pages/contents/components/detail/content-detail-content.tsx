@@ -113,7 +113,12 @@ const ContentDetailContentStep = ({
                 setScale(scale);
               }}
             >
-              <FlowPreview currentTheme={currentTheme} currentStep={currentStep} />
+              <FlowPreview
+                currentTheme={currentTheme}
+                currentStep={currentStep}
+                currentVersion={currentVersion}
+                currentStepIndex={index}
+              />
             </ScaledPreviewContainer>
           </div>
         )}

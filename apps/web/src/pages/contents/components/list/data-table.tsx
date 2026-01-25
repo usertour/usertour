@@ -120,9 +120,18 @@ const ContentPreview = ({
     currentTheme &&
     currentStep
   ) {
+    // Find the index of currentStep in the steps array
+    const stepIndex = currentVersion?.steps?.findIndex((step) => step.id === currentStep.id);
+    const currentStepIndex = stepIndex !== undefined && stepIndex >= 0 ? stepIndex : 0;
+
     return (
       <AutoScaledPreviewContainer padding={16}>
-        <FlowPreview currentTheme={currentTheme} currentStep={currentStep} />
+        <FlowPreview
+          currentTheme={currentTheme}
+          currentStep={currentStep}
+          currentVersion={currentVersion}
+          currentStepIndex={currentStepIndex}
+        />
       </AutoScaledPreviewContainer>
     );
   }
