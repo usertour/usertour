@@ -7,6 +7,8 @@ import type { Editor, BaseRange } from 'slate';
 import { Range as SlateRange } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
 
+import { isInsideToolbarPopover } from './toolbar-popover-utils';
+
 /**
  * Virtual element type for Floating UI
  */
@@ -113,16 +115,10 @@ export const useFloatingToolbar = () => {
       const target = mouseEvent.target as Element;
       // Check if click is inside the toolbar
       const isInsideToolbar = refs.floating.current?.contains(target as Node);
-      // Check if click is inside any Radix Popover content (rendered via Portal)
-      const isInRadixPopoverContent =
-        target.closest?.('[data-radix-popper-content-wrapper]') ||
-        target.closest?.('[data-radix-portal]') ||
-        // Check if click is inside an open Radix UI component (likely PopoverContent)
-        // that is not inside the toolbar (meaning it's in a Portal)
-        (target.closest?.('[data-state="open"]') &&
-          !refs.floating.current?.contains(target.closest?.('[data-state="open"]') as Node));
-      // Only set isMouseDown if clicking outside the toolbar and Portal popovers
-      if (!isInsideToolbar && !isInRadixPopoverContent) {
+      // Check if click is inside a toolbar popover (rendered via Portal)
+      const isInToolbarPopover = isInsideToolbarPopover(target, refs.floating);
+      // Only set isMouseDown if clicking outside the toolbar and toolbar popovers
+      if (!isInsideToolbar && !isInToolbarPopover) {
         setIsMouseDown(true);
       }
     },

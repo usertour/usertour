@@ -54,6 +54,7 @@ export const ToolbarPopoverItem = memo(
           </TooltipContent>
         </Tooltip>
         <PopoverContent
+          data-toolbar-popover=""
           sideOffset={5}
           className="w-auto border-none bg-transparent p-0 shadow-none drop-shadow-popover"
           style={popoverZIndex ? { zIndex: popoverZIndex } : undefined}
