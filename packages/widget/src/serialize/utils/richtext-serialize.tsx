@@ -62,6 +62,11 @@ export const serializeMini = (node: DescendantNode): string => {
 
   const element = node as ElementNode;
 
+  // Skip slash-input elements - they are temporary UI elements for editing only
+  if (element.type === 'slash-input') {
+    return '';
+  }
+
   if (element.type === 'user-attribute') {
     return `{${element.attrCode || element.fallback}}`;
   }
@@ -248,6 +253,12 @@ const serializeNode = (
   }
 
   const element = node as ElementNode;
+
+  // Skip slash-input elements - they are temporary UI elements for editing only
+  if (element.type === 'slash-input') {
+    return null;
+  }
+
   const children = element.children?.map((n, i) => serializeNode(n, `${path}-${i}`, callback));
   const cls = element.align ? ALIGN_MAPPING[element.align] || '' : '';
   const type = element.type as ElementType;

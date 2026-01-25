@@ -60,6 +60,11 @@ export type LinkElementType = {
   children: Descendant[];
 };
 
+export type SlashInputElementType = {
+  type: 'slash-input';
+  children: Descendant[];
+};
+
 type CustomElement =
   | H1ElementType
   | H2ElementType
@@ -69,6 +74,7 @@ type CustomElement =
   | ItemListElementType
   | UserAttributeElementType
   | LinkElementType
+  | SlashInputElementType
   | PlainElementType;
 
 export type CustomElementStrings = CustomElement['type'];

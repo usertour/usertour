@@ -4,8 +4,10 @@ import { getNavitateError } from '@usertour/helpers';
 import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Descendant } from 'slate';
+import { serializeMini as serializeMiniWidget } from '@usertour-packages/widget/src/serialize/utils';
+import type { DescendantNode } from '@usertour-packages/widget/src/serialize/types';
+
 import { PopperEditorMini } from '../richtext-editor/editor';
-import { serializeMini } from '../richtext-editor/serialize';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
 import {
@@ -21,6 +23,11 @@ import {
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
 import { useAutoOpenPopover } from './use-auto-open-popover';
+
+// Adapter function to convert Slate Descendant to DescendantNode for serializeMini
+const serializeMini = (node: Descendant): string => {
+  return serializeMiniWidget(node as unknown as DescendantNode);
+};
 
 export interface ContentActionsNavigateProps {
   index: number;

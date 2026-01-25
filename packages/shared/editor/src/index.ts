@@ -5,7 +5,6 @@ export type { Descendant } from 'slate';
 export type * from './types/slate';
 export type * from './types/editor';
 export { ContentEditorElementType } from './types/editor';
-export * from './richtext-editor/serialize';
 export * from './utils/helper';
 export { ContentActions } from './actions';
 export { contentTypesConfig } from './utils/config';

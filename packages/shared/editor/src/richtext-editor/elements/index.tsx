@@ -9,6 +9,7 @@ import { ListItemElement, ListItemElementSerialize } from './list-item-element';
 import { NumberedListElement, NumberedListElementSerialize } from './numbered-list-element';
 import ParagraphElement, { ParagraphElementSerialize } from './paragraph-element';
 import { UserAttributeElement, UserAttributeElementSerialize } from './user-attr-element';
+import { SlashInputElement, SlashInputElementSerialize } from './slash-input-element';
 
 export { BulletedListElement } from './bulleted-list-element';
 export { CodeElement } from './code-element';
@@ -62,5 +63,9 @@ export const ELEMENTS: ElementMap = {
   link: {
     serialize: (props: any) => <LinkElementSerialize {...props} />,
     render: (props: MetaRenderElementProps) => <LinkElement {...props} />,
+  },
+  'slash-input': {
+    serialize: (props: any) => <SlashInputElementSerialize {...props} />,
+    render: (props: MetaRenderElementProps) => <SlashInputElement {...props} />,
   },
 };

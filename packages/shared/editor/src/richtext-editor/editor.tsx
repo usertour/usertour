@@ -11,6 +11,7 @@ import { PopperEditorContextProps, PopperEditorProps } from '../types/editor';
 import { ELEMENTS } from './elements';
 import { useSlateEditor } from './hooks';
 import { EditorToolbar, UserAttrButton } from './toolbar';
+import { SlashCommandEditableWrapper } from './toolbar/components/slash-command-editable-wrapper';
 
 const HOTKEYS: Record<string, string> = {
   'mod+b': 'bold',
@@ -180,7 +181,7 @@ export const PopperEditor = (props: PopperEditorProps) => {
       <PopperEditorContext.Provider value={contextValue}>
         <Slate editor={editor} initialValue={initialValue} onChange={handleSlateChange}>
           {isShowToolBar && <EditorToolbar />}
-          <Editable
+          <SlashCommandEditableWrapper
             renderElement={renderElement}
             renderLeaf={renderLeaf}
             placeholder="Write text here…"

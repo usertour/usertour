@@ -5,7 +5,14 @@ export { EditorToolbar } from './toolbar';
 export { UserAttrButton } from './user-attr';
 
 // Configuration for customization
-export { ALIGNMENT_ITEMS, LIST_TYPES, TEXT_ALIGN_TYPES, TOOLBAR_ITEMS } from './toolbar.config';
+export {
+  ALIGNMENT_ITEMS,
+  LIST_TYPES,
+  SLASH_COMMANDS,
+  TEXT_ALIGN_TYPES,
+  TOOLBAR_ITEMS,
+} from './toolbar.config';
+export type { SlashCommandConfig } from './toolbar.config';
 
 // Types for external use
 export type {

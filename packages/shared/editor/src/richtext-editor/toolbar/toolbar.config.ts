@@ -15,6 +15,8 @@ import {
   RiUserFill,
 } from '@usertour-packages/icons';
 
+import type { ComponentType } from 'react';
+
 import type { AlignmentItemConfig, ToolbarItemConfig } from './toolbar.types';
 
 // Main toolbar items configuration
@@ -136,3 +138,67 @@ export const LIST_TYPES: readonly string[] = ['numbered-list', 'bulleted-list'];
 
 // Text alignment types for block formatting
 export const TEXT_ALIGN_TYPES: readonly string[] = ['left', 'center', 'right', 'justify'];
+
+// Slash command configuration
+export interface SlashCommandConfig {
+  id: string;
+  label: string;
+  icon: ComponentType<any>;
+  action: 'insert' | 'format';
+  // For insert actions
+  insertType?: 'user-attribute' | 'link';
+  // For format actions
+  formatType?: 'block';
+  format?: string;
+}
+
+// Slash commands available in the menu
+export const SLASH_COMMANDS: SlashCommandConfig[] = [
+  {
+    id: 'user-attribute',
+    label: 'User Attribute',
+    icon: RiUserFill,
+    action: 'insert',
+    insertType: 'user-attribute',
+  },
+  {
+    id: 'h1',
+    label: 'Heading 1',
+    icon: RiH1,
+    action: 'format',
+    formatType: 'block',
+    format: 'h1',
+  },
+  {
+    id: 'h2',
+    label: 'Heading 2',
+    icon: RiH2,
+    action: 'format',
+    formatType: 'block',
+    format: 'h2',
+  },
+  {
+    id: 'code',
+    label: 'Code Block',
+    icon: RiCodeSSlashFill,
+    action: 'format',
+    formatType: 'block',
+    format: 'code',
+  },
+  {
+    id: 'numbered-list',
+    label: 'Numbered List',
+    icon: RiListOrdered2,
+    action: 'format',
+    formatType: 'block',
+    format: 'numbered-list',
+  },
+  {
+    id: 'bulleted-list',
+    label: 'Bulleted List',
+    icon: RiListUnordered,
+    action: 'format',
+    formatType: 'block',
+    format: 'bulleted-list',
+  },
+];
