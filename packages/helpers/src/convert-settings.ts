@@ -8,6 +8,41 @@ const defaultFontFamily =
   '-apple-system, "system-ui", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"';
 
 /**
+ * Checks if a font family requires loading from Google Fonts
+ * @param fontFamily - The font family string to check
+ * @returns true if the font should be loaded from Google Fonts, false otherwise
+ */
+export const shouldLoadGoogleFont = (fontFamily: string | undefined | null): boolean => {
+  if (!fontFamily) {
+    return false;
+  }
+  return fontFamily !== 'System font' && fontFamily !== 'Custom font';
+};
+
+/**
+ * Builds a Google Fonts API URL for the given font family
+ * Properly encodes spaces as '+' and handles special characters
+ * @param fontFamily - The font family name(s) to encode
+ * @returns The complete Google Fonts CSS API URL
+ */
+export const buildGoogleFontUrl = (fontFamily: string): string => {
+  // Replace spaces with '+' (Google Fonts API requirement)
+  // Encode pipe separator '|' as '%7C' for multiple fonts
+  // URL encode other special characters while preserving '+'
+  const encoded = fontFamily
+    .split('|')
+    .map((font) => {
+      // Trim whitespace and replace spaces with '+'
+      const withSpaces = font.trim().replace(/\s+/g, '+');
+      // Encode special characters but preserve '+' and common safe characters
+      // Use encodeURIComponent but then restore '+' since Google Fonts uses it for spaces
+      return encodeURIComponent(withSpaces).replace(/%2B/g, '+');
+    })
+    .join('%7C');
+  return `https://fonts.googleapis.com/css2?family=${encoded}`;
+};
+
+/**
  * Custom merge function that treats null/undefined as "use default value".
  * This ensures that missing or explicitly null values in settings
  * will fallback to defaultSettings values.
