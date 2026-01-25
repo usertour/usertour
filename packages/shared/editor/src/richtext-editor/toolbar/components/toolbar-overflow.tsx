@@ -81,7 +81,6 @@ export const ToolbarOverflow = memo(
         </PopoverTrigger>
         <PopoverContent
           ref={ref}
-          withoutPortal={true}
           sideOffset={10}
           side="bottom"
           className="p-0 border-none bg-transparent shadow-none"

@@ -105,16 +105,24 @@ export const useFloatingToolbar = () => {
 
   // Track mouse down/up state to prevent toolbar from showing during text selection
   // Similar to Tiptap: only show toolbar after mouse is released
-  // Don't set isMouseDown if clicking inside the toolbar itself
+  // Don't set isMouseDown if clicking inside the toolbar itself or Portal popovers
   useEvent(
     'mousedown',
     (event: Event) => {
       const mouseEvent = event as MouseEvent;
-      const target = mouseEvent.target as Node;
+      const target = mouseEvent.target as Element;
       // Check if click is inside the toolbar
-      const isInsideToolbar = refs.floating.current?.contains(target);
-      // Only set isMouseDown if clicking outside the toolbar
-      if (!isInsideToolbar) {
+      const isInsideToolbar = refs.floating.current?.contains(target as Node);
+      // Check if click is inside any Radix Popover content (rendered via Portal)
+      const isInRadixPopoverContent =
+        target.closest?.('[data-radix-popper-content-wrapper]') ||
+        target.closest?.('[data-radix-portal]') ||
+        // Check if click is inside an open Radix UI component (likely PopoverContent)
+        // that is not inside the toolbar (meaning it's in a Portal)
+        (target.closest?.('[data-state="open"]') &&
+          !refs.floating.current?.contains(target.closest?.('[data-state="open"]') as Node));
+      // Only set isMouseDown if clicking outside the toolbar and Portal popovers
+      if (!isInsideToolbar && !isInRadixPopoverContent) {
         setIsMouseDown(true);
       }
     },
