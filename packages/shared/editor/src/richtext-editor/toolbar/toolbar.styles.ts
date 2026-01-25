@@ -21,10 +21,11 @@ export const TOOLBAR_BUTTON_INACTIVE = 'opacity-50 hover:bg-primary/15';
 export const TOOLBAR_TOGGLE_GROUP = 'flex gap-0.5';
 
 // Toolbar container styles
+// Floating positioning is handled by Floating UI, no fixed positioning needed
 export const TOOLBAR_CONTAINER = cn(
-  'fixed -top-8 left-0 flex flex-row items-center',
+  'flex flex-row items-center',
   'p-2 w-full min-w-max',
-  'rounded-t-lg bg-editor-toolbar',
+  'rounded-lg bg-editor-toolbar',
 );
 
 // Overflow popover content styles

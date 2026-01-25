@@ -34,10 +34,6 @@ export interface UseSlateEditorOptions {
 export interface UseSlateEditorReturn {
   /** The Slate editor instance */
   editor: ReturnType<typeof createEditor>;
-  /** Whether the toolbar is visible */
-  showToolbar: boolean;
-  /** Set toolbar visibility */
-  setShowToolbar: React.Dispatch<React.SetStateAction<boolean>>;
   /** Whether mouse is hovering over editor */
   isEditorHover: boolean;
   /** Set editor hover state */
@@ -82,7 +78,6 @@ export const useSlateEditor = (options: UseSlateEditorOptions): UseSlateEditorRe
   }, [withLinks]);
 
   // Editor state
-  const [showToolbar, setShowToolbar] = useState(false);
   const [isEditorHover, setIsEditorHover] = useState(false);
   const [editorRef, setEditorRef] = useState<HTMLDivElement | null>(null);
 
@@ -120,14 +115,12 @@ export const useSlateEditor = (options: UseSlateEditorOptions): UseSlateEditorRe
     (): PopperEditorContextProps => ({
       zIndex,
       container: editorRef,
-      showToolbar,
       isEditorHover,
       customUploadRequest,
       setIsEditorHover,
-      setShowToolbar,
       attributes,
     }),
-    [zIndex, editorRef, showToolbar, isEditorHover, customUploadRequest, attributes],
+    [zIndex, editorRef, isEditorHover, customUploadRequest, attributes],
   );
 
   // Memoize mouse event handlers
@@ -136,8 +129,6 @@ export const useSlateEditor = (options: UseSlateEditorOptions): UseSlateEditorRe
 
   return {
     editor,
-    showToolbar,
-    setShowToolbar,
     isEditorHover,
     setIsEditorHover,
     editorRef,

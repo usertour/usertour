@@ -128,6 +128,5 @@ export type PopperEditorContextProps = PopperEditorProps & {
   rect?: UseMeasureRect;
   isEditorHover: boolean;
   setIsEditorHover: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowToolbar: React.Dispatch<React.SetStateAction<boolean>>;
   container: HTMLDivElement | null;
 };

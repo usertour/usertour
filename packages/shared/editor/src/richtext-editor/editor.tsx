@@ -134,7 +134,6 @@ export const PopperEditor = (props: PopperEditorProps) => {
 
   const {
     editor,
-    setShowToolbar,
     setEditorRef,
     handleSlateChange,
     contextValue,
@@ -151,10 +150,6 @@ export const PopperEditor = (props: PopperEditorProps) => {
     ElementComponent: Element,
     LeafComponent: Leaf,
   });
-
-  const handleOnFocus = useCallback(() => {
-    setShowToolbar(true);
-  }, [setShowToolbar]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -192,7 +187,6 @@ export const PopperEditor = (props: PopperEditorProps) => {
             spellCheck
             autoFocus={false}
             style={{ outline: 'none' }}
-            onFocus={handleOnFocus}
             onKeyDown={handleKeyDown}
           />
         </Slate>

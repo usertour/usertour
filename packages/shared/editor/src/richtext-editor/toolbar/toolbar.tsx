@@ -6,9 +6,10 @@ import {
   ToggleGroup as ToolbarToggleGroup,
 } from '@radix-ui/react-toolbar';
 import { EDITOR_RICH_TOOLBAR } from '@usertour-packages/constants';
-import { cn } from '@usertour-packages/tailwind';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { Transforms } from 'slate';
+import { useSlate } from 'slate-react';
 
 import { usePopperEditorContext } from '../editor';
 import {
@@ -20,7 +21,7 @@ import {
   ToolbarOverflow,
   UserAttrButton,
 } from './components';
-import { useClickOutside, useResponsiveToolbar } from './hooks';
+import { useClickOutside, useFloatingToolbar, useResponsiveToolbar } from './hooks';
 import { ALIGNMENT_ITEMS, TOOLBAR_ITEMS } from './toolbar.config';
 import { TOOLBAR_CONTAINER, TOOLBAR_SEPARATOR, TOOLBAR_TOGGLE_GROUP } from './toolbar.styles';
 import type {
@@ -62,13 +63,26 @@ const renderToolbarItem = (item: ToolbarItemConfig) => {
  * - Optimized with React.memo and memoized callbacks
  */
 export const EditorToolbar = memo(() => {
-  const { zIndex, setShowToolbar, showToolbar } = usePopperEditorContext();
+  const { zIndex } = usePopperEditorContext();
+  const editor = useSlate();
   const overflowRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLElement | null>(null);
+
+  // Floating toolbar positioning based on selection
+  const { isVisible, floatingStyles, refs } = useFloatingToolbar();
 
   // Responsive layout management
   const { visibleItems, overflowItems, showOverflow, measureRef, containerRef } =
     useResponsiveToolbar(TOOLBAR_ITEMS);
+
+  // Combine measureRef with floating refs
+  const combinedRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      measureRef(node);
+      refs.setFloating(node);
+    },
+    [measureRef, refs],
+  );
 
   // Keep editorRef in sync with toolbar's parent element
   // Note: Run on every render to ensure ref is always current
@@ -77,24 +91,34 @@ export const EditorToolbar = memo(() => {
     editorRef.current = containerRef.current?.parentElement ?? null;
   });
 
-  // Handle click outside to close toolbar
+  // Handle click outside to close toolbar (by deselecting)
   const handleClickOutside = useCallback(() => {
-    setShowToolbar(false);
-  }, [setShowToolbar]);
+    // Clear selection when clicking outside to hide the toolbar
+    if (editor.selection) {
+      Transforms.deselect(editor);
+    }
+  }, [editor]);
 
   // Stable refs array for click outside detection
   const clickOutsideRefs = useMemo(() => [containerRef, overflowRef, editorRef], [containerRef]);
 
   // Click outside detection with editor container support
-  useClickOutside(clickOutsideRefs, handleClickOutside, showToolbar);
+  useClickOutside(clickOutsideRefs, handleClickOutside, isVisible);
+
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <TooltipProvider>
       <ToolbarRoot
-        ref={measureRef}
+        ref={combinedRef}
         aria-label="Formatting options"
-        className={cn(TOOLBAR_CONTAINER, !showToolbar && 'hidden')}
-        style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR }}
+        className={TOOLBAR_CONTAINER}
+        style={{
+          ...floatingStyles,
+          zIndex: zIndex + EDITOR_RICH_TOOLBAR,
+        }}
       >
         <ToolbarToggleGroup
           type="multiple"
