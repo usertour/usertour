@@ -17,16 +17,16 @@ export const useClickOutside = (
       if (!enabled) return;
 
       const mouseEvent = event as MouseEvent;
+      const target = mouseEvent.target as Element;
 
       // Check if click is inside any of the provided refs
-      const isInsideRefs = refs.some((ref) => ref.current?.contains(mouseEvent.target as Node));
+      const isInsideRefs = refs.some((ref) => ref.current?.contains(target as Node));
 
-      // Check if click is inside any Radix Popover (e.g., ColorPicker panel)
-      const isInRadixPopover = (mouseEvent.target as Element).closest?.(
-        '[data-radix-popper-content-wrapper]',
-      );
+      // Check if click is inside any Radix Popover content (e.g., ColorPicker panel)
+      // Some PopoverContent components are rendered via Portal, so they're not in the toolbar DOM tree
+      const isInRadixPopoverContent = target.closest?.('[data-radix-popper-content-wrapper]');
 
-      if (!isInsideRefs && !isInRadixPopover) {
+      if (!isInsideRefs && !isInRadixPopoverContent) {
         onClickOutside();
       }
     },
