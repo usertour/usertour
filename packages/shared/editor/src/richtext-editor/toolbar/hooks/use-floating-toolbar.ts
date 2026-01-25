@@ -91,9 +91,36 @@ export const useFloatingToolbar = () => {
   const domRangeRef = useRef<SlateSelection | null>(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
 
+  // Use Floating UI for positioning
+  const { refs, floatingStyles, placement, update } = useFloating({
+    strategy: 'fixed',
+    placement: 'top',
+    middleware: [
+      offset(8), // 8px gap between selection and toolbar
+      flip(), // Flip to bottom if not enough space above
+      shift({ padding: 8 }), // Shift horizontally to stay in viewport
+    ],
+    // Don't use whileElementsMounted - we'll manually update when needed
+  });
+
   // Track mouse down/up state to prevent toolbar from showing during text selection
   // Similar to Tiptap: only show toolbar after mouse is released
-  useEvent('mousedown', () => setIsMouseDown(true), window, { capture: false });
+  // Don't set isMouseDown if clicking inside the toolbar itself
+  useEvent(
+    'mousedown',
+    (event: Event) => {
+      const mouseEvent = event as MouseEvent;
+      const target = mouseEvent.target as Node;
+      // Check if click is inside the toolbar
+      const isInsideToolbar = refs.floating.current?.contains(target);
+      // Only set isMouseDown if clicking outside the toolbar
+      if (!isInsideToolbar) {
+        setIsMouseDown(true);
+      }
+    },
+    window,
+    { capture: false },
+  );
   useEvent('mouseup', () => setIsMouseDown(false), window, { capture: false });
 
   // Serialize selection for dependency tracking
@@ -150,18 +177,6 @@ export const useFloatingToolbar = () => {
     }
     // Use serialized selection key to track selection changes
   }, [editor, selectionKey, isMouseDown]);
-
-  // Use Floating UI for positioning
-  const { refs, floatingStyles, placement, update } = useFloating({
-    strategy: 'fixed',
-    placement: 'top',
-    middleware: [
-      offset(8), // 8px gap between selection and toolbar
-      flip(), // Flip to bottom if not enough space above
-      shift({ padding: 8 }), // Shift horizontally to stay in viewport
-    ],
-    // Don't use whileElementsMounted - we'll manually update when needed
-  });
 
   // Update reference element and position when virtual element changes
   // Use useLayoutEffect for faster response

@@ -67,6 +67,10 @@ export const EditorToolbar = memo(() => {
   const editor = useSlate();
   const overflowRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLElement | null>(null);
+  // Local ref for synchronous click detection
+  // containerRef from useResponsiveToolbar is updated asynchronously via state,
+  // which can cause click detection to fail when clicking the toolbar
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
 
   // Floating toolbar positioning based on selection
   const { isVisible, floatingStyles, refs } = useFloatingToolbar();
@@ -76,10 +80,13 @@ export const EditorToolbar = memo(() => {
     useResponsiveToolbar(TOOLBAR_ITEMS);
 
   // Combine measureRef with floating refs
+  // Also update local toolbarRef synchronously for click detection
   const combinedRef = useCallback(
     (node: HTMLDivElement | null) => {
       measureRef(node);
       refs.setFloating(node);
+      // Update local ref synchronously for reliable click detection
+      toolbarRef.current = node;
     },
     [measureRef, refs],
   );
@@ -99,10 +106,11 @@ export const EditorToolbar = memo(() => {
   }, [editor]);
 
   // Stable refs array for click outside detection
+  // Use toolbarRef instead of containerRef for synchronous click detection
   // Include all refs that should prevent toolbar from closing when clicked
   const clickOutsideRefs = useMemo(
-    () => [containerRef, overflowRef, editorRef],
-    [containerRef, overflowRef, editorRef],
+    () => [toolbarRef, overflowRef, editorRef],
+    [overflowRef, editorRef],
   );
 
   // Click outside detection with editor container support
