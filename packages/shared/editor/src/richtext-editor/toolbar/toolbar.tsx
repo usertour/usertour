@@ -85,11 +85,10 @@ export const EditorToolbar = memo(() => {
   );
 
   // Keep editorRef in sync with toolbar's parent element
-  // Note: Run on every render to ensure ref is always current
-  // since React doesn't track ref.current changes
+  // Update only when containerRef changes to avoid unnecessary updates
   useEffect(() => {
     editorRef.current = containerRef.current?.parentElement ?? null;
-  });
+  }, [containerRef]);
 
   // Handle click outside to close toolbar (by deselecting)
   const handleClickOutside = useCallback(() => {
@@ -100,7 +99,11 @@ export const EditorToolbar = memo(() => {
   }, [editor]);
 
   // Stable refs array for click outside detection
-  const clickOutsideRefs = useMemo(() => [containerRef, overflowRef, editorRef], [containerRef]);
+  // Include all refs that should prevent toolbar from closing when clicked
+  const clickOutsideRefs = useMemo(
+    () => [containerRef, overflowRef, editorRef],
+    [containerRef, overflowRef, editorRef],
+  );
 
   // Click outside detection with editor container support
   useClickOutside(clickOutsideRefs, handleClickOutside, isVisible);
