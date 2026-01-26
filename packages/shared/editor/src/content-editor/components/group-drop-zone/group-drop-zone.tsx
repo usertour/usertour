@@ -39,7 +39,7 @@ export const GroupDropZone = memo(({ index }: GroupDropZoneProps) => {
     <div className="relative h-0 w-full overflow-visible">
       <div
         ref={setNodeRef}
-        className={`absolute left-0 right-0 z-10 h-1 -translate-y-1/2 bg-primary/50 transition-opacity duration-150 ${
+        className={`absolute left-0 right-0 z-10 h-0.5 -translate-y-1/2 bg-primary transition-opacity duration-150 ${
           shouldShowIndicator ? 'opacity-100' : 'opacity-0'
         }`}
       />

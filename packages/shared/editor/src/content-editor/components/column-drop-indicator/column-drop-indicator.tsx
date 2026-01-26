@@ -51,7 +51,7 @@ export const ColumnDropIndicator = memo(
       <div className="relative w-0 self-stretch overflow-visible">
         <div
           ref={setNodeRef}
-          className={`absolute top-0 bottom-0 z-10 w-1 -translate-x-1/2 bg-primary/50 transition-opacity duration-150 ${
+          className={`absolute top-0 bottom-0 z-10 w-0.5 -translate-x-1/2 bg-primary transition-opacity duration-150 ${
             shouldShowIndicator ? 'opacity-100' : 'opacity-0'
           }`}
         />
