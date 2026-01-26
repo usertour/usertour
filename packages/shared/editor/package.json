@@ -43,6 +43,7 @@
     "@usertour-packages/tailwind": "workspace:*",
     "@usertour-packages/tabs": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
+    "@usertour-packages/ui": "workspace:^",
     "@usertour/types": "workspace:^",
     "@usertour-packages/switch": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",

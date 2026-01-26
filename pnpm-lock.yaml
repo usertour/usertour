@@ -3844,6 +3844,9 @@ importers:
       '@usertour-packages/tooltip':
         specifier: workspace:^
         version: link:../../components/tooltip
+      '@usertour-packages/ui':
+        specifier: workspace:^
+        version: link:../../components/ui
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../components/use-toast

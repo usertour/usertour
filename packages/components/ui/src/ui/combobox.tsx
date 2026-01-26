@@ -132,7 +132,7 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
-        "data-highlighted:bg-accent data-highlighted:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -253,6 +253,30 @@ function ComboboxChipsInput({ className, children, ...props }: ComboboxPrimitive
   );
 }
 
+/**
+ * Inline ComboboxInput for use in inline contexts (e.g., Slate editor)
+ * Renders a plain input element without InputGroup wrapper to avoid div nesting
+ */
+const ComboboxInputInline = React.forwardRef<
+  HTMLInputElement,
+  ComboboxPrimitive.Input.Props & {
+    className?: string;
+  }
+>(({ className, ...props }, ref) => {
+  return (
+    <ComboboxPrimitive.Input
+      className={cn('outline-none', className)}
+      render={React.createElement('input', {
+        ref,
+        className: cn('outline-none', className),
+      })}
+      {...props}
+    />
+  );
+});
+
+ComboboxInputInline.displayName = 'ComboboxInputInline';
+
 function useComboboxAnchor() {
   return React.useRef<HTMLDivElement | null>(null);
 }
@@ -260,6 +284,7 @@ function useComboboxAnchor() {
 export {
   Combobox,
   ComboboxInput,
+  ComboboxInputInline,
   ComboboxContent,
   ComboboxList,
   ComboboxItem,
