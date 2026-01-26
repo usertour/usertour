@@ -427,7 +427,7 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
           anchor={anchorRef}
           side="bottom"
           align="start"
-          sideOffset={8}
+          sideOffset={4}
           className="w-64 border border-foreground/5 shadow-toolbar !ring-0"
           style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR_MORE }}
         >
