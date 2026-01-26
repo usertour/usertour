@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import type { RenderElementProps, RenderLeafProps } from 'slate-react';
+import type { RenderElementProps, RenderLeafProps, RenderPlaceholderProps } from 'slate-react';
 import { Editable } from 'slate-react';
 
 import { useSlashCommandKeyboard } from './slash-command-keyboard-handler';
@@ -17,11 +17,23 @@ interface SlashCommandEditableWrapperProps {
 }
 
 /**
+ * Custom placeholder renderer with italic style
+ */
+const renderPlaceholder = ({ attributes, children }: RenderPlaceholderProps) => {
+  return (
+    <span {...attributes} className="italic text-muted-foreground pointer-events-none">
+      {children}
+    </span>
+  );
+};
+
+/**
  * Wrapper component that adds slash command keyboard handling to Editable
  * Must be inside Slate context
  */
 export const SlashCommandEditableWrapper = ({
   onKeyDown,
+  placeholder,
   ...editableProps
 }: SlashCommandEditableWrapperProps) => {
   const handleSlashKeyDown = useSlashCommandKeyboard();
@@ -39,7 +51,14 @@ export const SlashCommandEditableWrapper = ({
     [handleSlashKeyDown, onKeyDown],
   );
 
-  return <Editable {...editableProps} onKeyDown={handleKeyDown} />;
+  return (
+    <Editable
+      {...editableProps}
+      placeholder={placeholder}
+      renderPlaceholder={renderPlaceholder}
+      onKeyDown={handleKeyDown}
+    />
+  );
 };
 
 SlashCommandEditableWrapper.displayName = 'SlashCommandEditableWrapper';

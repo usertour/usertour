@@ -184,7 +184,7 @@ export const PopperEditor = (props: PopperEditorProps) => {
           <SlashCommandEditableWrapper
             renderElement={renderElement}
             renderLeaf={renderLeaf}
-            placeholder="Write text here…"
+            placeholder="Write, type '/' for commands…"
             spellCheck
             autoFocus={false}
             style={{ outline: 'none' }}
