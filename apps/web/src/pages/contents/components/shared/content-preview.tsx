@@ -210,9 +210,10 @@ const ChecklistPreview = (props: {
     <ChecklistRoot data={data} themeSettings={themeSettings} zIndex={10000}>
       <ChecklistContainer>
         <ChecklistStaticPopper>
+          <ContentEditorSerialize contents={data.content} />
           <ChecklistDropdown />
           <ChecklistProgress width={45} />
-          <ChecklistItems />
+          <ChecklistItems disabledUpdate />
           <ChecklistDismiss />
           {shouldShowMadeWith && <PopperMadeWith />}
         </ChecklistStaticPopper>
