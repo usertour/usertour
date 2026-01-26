@@ -26,12 +26,14 @@ export const TOOLBAR_TOGGLE_GROUP = 'flex gap-1';
 // Floating positioning is handled by Floating UI, no fixed positioning needed
 // Width is content-based, adapts to content size
 // Tiptap-style: background color from design system, border with 5% opacity using foreground color, and multi-layer shadow
+// Includes fade-in animation when toolbar appears (only opacity, no transform/position changes)
 export const TOOLBAR_CONTAINER = cn(
   'flex flex-row items-center',
   'p-1 min-w-max',
   'rounded-xl bg-background',
   'border border-foreground/5',
   'shadow-toolbar',
+  'animate-toolbar-fade-in',
   // Previous style (backup):
   // 'flex flex-row items-center',
   // 'p-1 min-w-max',

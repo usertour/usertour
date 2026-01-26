@@ -235,10 +235,15 @@ export const extendBase = {
       from: { height: 'var(--radix-accordion-content-height)' },
       to: { height: 0 },
     },
+    'toolbar-fade-in': {
+      from: { opacity: '0' },
+      to: { opacity: '1' },
+    },
   },
   animation: {
     'accordion-down': 'accordion-down 0.2s ease-out',
     'accordion-up': 'accordion-up 0.2s ease-out',
+    'toolbar-fade-in': 'toolbar-fade-in 0.2s cubic-bezier(0.46, 0.03, 0.52, 0.96)',
   },
 };
 
