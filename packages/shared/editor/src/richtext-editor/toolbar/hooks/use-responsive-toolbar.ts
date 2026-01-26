@@ -24,13 +24,21 @@ export const useResponsiveToolbar = (
 
   // Calculate visible and overflow items based on container width
   useEffect(() => {
+    // If width is not measured yet (0 or very small), show all items
+    if (rect.width === 0 || rect.width < 50) {
+      setVisibleItems(items);
+      setOverflowItems([]);
+      setShowOverflow(false);
+      return;
+    }
+
     if (rect.width < RESPONSIVE.BREAKPOINT) {
       const visibleItemCount = Math.max(
         Math.floor((rect.width - RESPONSIVE.CONTAINER_PADDING) / RESPONSIVE.ITEM_WIDTH),
         1,
       );
       // Reserve one slot for the "more" button
-      const actualVisibleCount = visibleItemCount - 1;
+      const actualVisibleCount = Math.max(visibleItemCount - 1, 0);
       setVisibleItems(items.slice(0, actualVisibleCount));
       setOverflowItems(items.slice(actualVisibleCount));
       setShowOverflow(true);

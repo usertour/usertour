@@ -22,15 +22,16 @@ export const TOOLBAR_TOGGLE_GROUP = 'flex gap-0.5';
 
 // Toolbar container styles
 // Floating positioning is handled by Floating UI, no fixed positioning needed
+// Width is content-based, adapts to content size
 export const TOOLBAR_CONTAINER = cn(
   'flex flex-row items-center',
-  'p-2 w-full min-w-max',
+  'p-1 min-w-max',
   'rounded-lg bg-editor-toolbar',
 );
 
 // Overflow popover content styles
 export const TOOLBAR_OVERFLOW_CONTENT = cn(
-  'flex flex-row items-center p-1.5 w-full min-w-max rounded-lg',
+  'flex flex-row items-center p-1 w-full min-w-max rounded-lg',
   'bg-editor-toolbar',
 );
 
