@@ -178,7 +178,7 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
     <ComboboxPrimitive.Empty
       data-slot="combobox-empty"
       className={cn(
-        'text-muted-foreground hidden w-full justify-center py-2 text-center text-sm group-data-empty/combobox-content:flex',
+        'text-muted-foreground hidden w-full justify-center py-2 text-center text-sm group-data-[empty]/combobox-content:flex',
         className,
       )}
       {...props}
@@ -265,7 +265,6 @@ const ComboboxInputInline = React.forwardRef<
 >(({ className, ...props }, ref) => {
   return (
     <ComboboxPrimitive.Input
-      className={cn('outline-none', className)}
       render={React.createElement('input', {
         ref,
         className: cn('outline-none', className),
