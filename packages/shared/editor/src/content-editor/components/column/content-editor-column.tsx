@@ -2,7 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ComboBox } from '@usertour-packages/combo-box';
+import { SelectPopover } from '@usertour-packages/shared-components';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
@@ -220,7 +220,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
                   className="bg-background flex-none w-[120px]"
                 />
               )}
-              <ComboBox
+              <SelectPopover
                 options={COLUMN_WIDTH_TYPE_OPTIONS}
                 value={width.type}
                 onValueChange={handleWidthTypeChange}
@@ -231,7 +231,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
             </div>
 
             <Label>Distribute content</Label>
-            <ComboBox
+            <SelectPopover
               options={JUSTIFY_CONTENT_OPTIONS_LIST}
               value={element.justifyContent ?? DEFAULT_JUSTIFY_CONTENT}
               onValueChange={handleDistributeValueChange}
@@ -240,7 +240,7 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
             />
 
             <Label>Align Items</Label>
-            <ComboBox
+            <SelectPopover
               options={ALIGN_ITEMS_OPTIONS_LIST}
               value={element.alignItems ?? DEFAULT_ALIGN_ITEMS}
               onValueChange={handleAlignValueChange}

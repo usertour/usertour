@@ -1,6 +1,6 @@
 // Button popover content component
 
-import { ComboBox, ComboBoxOption } from '@usertour-packages/combo-box';
+import { SelectPopover, SelectPopoverOption } from '@usertour-packages/shared-components';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
@@ -14,8 +14,8 @@ import { BUTTON_STYLES } from '../../constants';
 import { ActionButtonsBase, MarginControls } from '../../shared';
 import type { MarginPosition } from '../../types';
 
-// ComboBox options
-const BUTTON_STYLE_OPTIONS: ComboBoxOption[] = [
+// SelectPopover options
+const BUTTON_STYLE_OPTIONS: SelectPopoverOption[] = [
   { value: BUTTON_STYLES.DEFAULT, name: 'Primary' },
   { value: BUTTON_STYLES.SECONDARY, name: 'Secondary' },
 ];
@@ -76,7 +76,7 @@ export const ButtonPopoverContent = memo(
       />
 
       <Label>Button style</Label>
-      <ComboBox
+      <SelectPopover
         options={BUTTON_STYLE_OPTIONS}
         value={element.data.type}
         onValueChange={onButtonStyleChange}

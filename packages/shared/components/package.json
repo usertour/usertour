@@ -26,7 +26,6 @@
     "@usertour-packages/calendar": "workspace:^",
     "@usertour-packages/card": "workspace:^",
     "@usertour-packages/checkbox": "workspace:^",
-    "@usertour-packages/combo-box": "workspace:^",
     "@usertour-packages/command": "workspace:^",
     "@usertour-packages/constants": "workspace:^",
     "@usertour-packages/context-menu": "workspace:^",

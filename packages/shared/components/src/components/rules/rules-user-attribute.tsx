@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popo
 import { isUndefined } from '@usertour/helpers';
 import { cn } from '@usertour-packages/tailwind';
 import { format } from 'date-fns';
-import { ComboBox } from '@usertour-packages/combo-box';
+import { SelectPopover } from '../common/select-popover';
 import {
   Dispatch,
   SetStateAction,
@@ -289,7 +289,7 @@ const RulesUserAttributeCondition = () => {
   );
 
   return (
-    <ComboBox
+    <SelectPopover
       options={activeConditionMapping || []}
       value={localData?.logic}
       onValueChange={handleConditionChange}

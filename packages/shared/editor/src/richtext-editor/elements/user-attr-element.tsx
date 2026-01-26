@@ -6,7 +6,7 @@ import { ReactEditor, useSlateStatic } from 'slate-react';
 
 import type { Attribute } from '@usertour/types';
 import { Button } from '@usertour-packages/button';
-import { ComboBox } from '@usertour-packages/combo-box';
+import { SelectPopover } from '@usertour-packages/shared-components';
 import { DeleteIcon, UserIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
@@ -108,7 +108,7 @@ const UserAttrPopoverContent = memo(
         alignOffset={-2}
       >
         <div className="flex flex-col gap-2.5">
-          <ComboBox
+          <SelectPopover
             options={options}
             value={attrCode}
             onValueChange={onAttrChange}

@@ -13,14 +13,14 @@ import { cn } from '@usertour-packages/tailwind';
 import type { CSSProperties } from 'react';
 import { useCallback, useState } from 'react';
 
-export interface ComboBoxOption {
+export interface SelectPopoverOption {
   value: string;
   name: string;
   display?: string;
 }
 
-export interface ComboBoxProps {
-  options: ComboBoxOption[];
+export interface SelectPopoverProps {
+  options: SelectPopoverOption[];
   value?: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
@@ -31,7 +31,7 @@ export interface ComboBoxProps {
   disabled?: boolean;
 }
 
-export const ComboBox = ({
+export const SelectPopover = ({
   options,
   value,
   onValueChange,
@@ -41,12 +41,12 @@ export const ComboBox = ({
   contentClassName,
   contentStyle,
   disabled = false,
-}: ComboBoxProps) => {
+}: SelectPopoverProps) => {
   const [open, setOpen] = useState(false);
   const selectedOption = options.find((opt) => opt.value === value);
 
   const handleSelect = useCallback(
-    (option: ComboBoxOption) => {
+    (option: SelectPopoverOption) => {
       onValueChange(option.value);
       setOpen(false);
     },
@@ -100,4 +100,4 @@ export const ComboBox = ({
   );
 };
 
-ComboBox.displayName = 'ComboBox';
+SelectPopover.displayName = 'SelectPopover';

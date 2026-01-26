@@ -1477,61 +1477,6 @@ importers:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
-  packages/components/combo-box:
-    dependencies:
-      '@radix-ui/react-icons':
-        specifier: ^1.3.0
-        version: 1.3.1(react@18.2.0)
-      '@usertour-packages/button':
-        specifier: workspace:*
-        version: link:../button
-      '@usertour-packages/command':
-        specifier: workspace:*
-        version: link:../command
-      '@usertour-packages/popover':
-        specifier: workspace:*
-        version: link:../popover
-      '@usertour-packages/tailwind':
-        specifier: workspace:*
-        version: link:../../tailwind
-    devDependencies:
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.3.3
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
   packages/components/command:
     dependencies:
       '@radix-ui/react-dialog':
@@ -3521,9 +3466,6 @@ importers:
       '@usertour-packages/checkbox':
         specifier: workspace:^
         version: link:../../components/checkbox
-      '@usertour-packages/combo-box':
-        specifier: workspace:^
-        version: link:../../components/combo-box
       '@usertour-packages/command':
         specifier: workspace:^
         version: link:../../components/command
@@ -3778,9 +3720,6 @@ importers:
       '@usertour-packages/checkbox':
         specifier: workspace:^
         version: link:../../components/checkbox
-      '@usertour-packages/combo-box':
-        specifier: workspace:^
-        version: link:../../components/combo-box
       '@usertour-packages/command':
         specifier: workspace:^
         version: link:../../components/command

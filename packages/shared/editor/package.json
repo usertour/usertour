@@ -27,7 +27,6 @@
     "@usertour-packages/button": "workspace:^",
     "@usertour-packages/checkbox": "workspace:^",
     "@usertour-packages/widget": "workspace:^",
-    "@usertour-packages/combo-box": "workspace:^",
     "@usertour-packages/command": "workspace:^",
     "@usertour-packages/constants": "workspace:^",
     "@usertour-packages/dropdown-menu": "workspace:^",

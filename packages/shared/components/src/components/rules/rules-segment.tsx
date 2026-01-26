@@ -10,7 +10,7 @@ import {
 import { SegmentIcon } from '@usertour-packages/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
-import { ComboBox } from '@usertour-packages/combo-box';
+import { SelectPopover } from '../common/select-popover';
 import {
   Dispatch,
   SetStateAction,
@@ -163,7 +163,7 @@ const RulesSegmentCondition = () => {
   const { combobox: zIndex } = useRulesZIndex();
 
   return (
-    <ComboBox
+    <SelectPopover
       options={conditions}
       value={conditionValue}
       onValueChange={setConditionValue}

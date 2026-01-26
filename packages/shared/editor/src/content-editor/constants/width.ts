@@ -1,6 +1,6 @@
 // Width-related constants shared across content editor components
 
-import type { ComboBoxOption } from '@usertour-packages/combo-box';
+import type { SelectPopoverOption } from '@usertour-packages/shared-components';
 
 export const WIDTH_TYPES = {
   PERCENT: 'percent',
@@ -9,13 +9,13 @@ export const WIDTH_TYPES = {
 } as const;
 
 // Width type options for image component (without fill)
-export const IMAGE_WIDTH_TYPE_OPTIONS: ComboBoxOption[] = [
+export const IMAGE_WIDTH_TYPE_OPTIONS: SelectPopoverOption[] = [
   { value: WIDTH_TYPES.PERCENT, name: '%' },
   { value: WIDTH_TYPES.PIXELS, name: 'pixels' },
 ];
 
 // Width type options for column component (with fill)
-export const COLUMN_WIDTH_TYPE_OPTIONS: ComboBoxOption[] = [
+export const COLUMN_WIDTH_TYPE_OPTIONS: SelectPopoverOption[] = [
   { value: WIDTH_TYPES.PERCENT, name: '%' },
   { value: WIDTH_TYPES.PIXELS, name: 'pixels' },
   { value: WIDTH_TYPES.FILL, name: 'fill' },

@@ -9,6 +9,8 @@ export { SelectorDialog } from './components/selector/selector-dialog';
 export { LoadingContainer } from './components/common/loading';
 export { LocateSelect } from './components/common/locate-select';
 export type { LocateItem } from './components/common/locate-select';
+export { SelectPopover } from './components/common/select-popover';
+export type { SelectPopoverOption, SelectPopoverProps } from './components/common/select-popover';
 export { defaultRulesItems } from './components/rules';
 export { ColorPicker, ColorPickerPanel } from './components/color-picker';
 export type { ColorPickerProps, ColorPickerPanelProps } from './components/color-picker';

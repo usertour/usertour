@@ -1,7 +1,7 @@
 // Shared WidthControls component for content editor elements
 
-import type { ComboBoxOption } from '@usertour-packages/combo-box';
-import { ComboBox } from '@usertour-packages/combo-box';
+import type { SelectPopoverOption } from '@usertour-packages/shared-components';
+import { SelectPopover } from '@usertour-packages/shared-components';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
@@ -16,7 +16,7 @@ const MAX_PERCENT_VALUE = 100;
 export interface WidthControlsProps {
   label?: string;
   value: DimensionConfig;
-  options: ComboBoxOption[];
+  options: SelectPopoverOption[];
   onTypeChange: (type: string) => void;
   onValueChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   zIndex: number;
@@ -126,7 +126,7 @@ export const WidthControls = memo(
               className={inputClassName}
             />
           )}
-          <ComboBox
+          <SelectPopover
             options={options}
             value={value.type}
             onValueChange={handleTypeChange}
