@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Editor, Transforms } from 'slate';
+import { Editor, Element as SlateElement, Transforms } from 'slate';
 import type { RenderElementProps } from 'slate-react';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 
@@ -67,7 +67,41 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
         Transforms.removeNodes(editor, { at: path });
 
         if (command.action === 'insert' && command.insertType === 'user-attribute') {
+          // Insert user attribute block
           insertUserAttributeBlock(editor);
+
+          // Move cursor after the inserted user attribute element
+          // Find the inserted user attribute node (it should be at the current selection)
+          const { selection } = editor;
+          if (selection) {
+            try {
+              // Get the parent path (the user attribute element path)
+              const parentPath = selection.anchor.path.slice(0, -1);
+              const [parentNode] = Editor.node(editor, parentPath);
+
+              if (
+                parentNode &&
+                SlateElement.isElement(parentNode) &&
+                'type' in parentNode &&
+                parentNode.type === 'user-attribute'
+              ) {
+                // Try to find the position after the user attribute element
+                const afterPoint = Editor.after(editor, {
+                  path: parentPath,
+                  offset: 0,
+                });
+                if (afterPoint) {
+                  Transforms.select(editor, afterPoint);
+                } else {
+                  // If no next point, move cursor forward one character
+                  Transforms.move(editor, { distance: 1, unit: 'character' });
+                }
+              }
+            } catch {
+              // Fallback: move cursor forward
+              Transforms.move(editor, { distance: 1, unit: 'character' });
+            }
+          }
         } else if (command.action === 'format' && command.format) {
           toggleBlock(editor, command.format as BlockFormat);
         }
