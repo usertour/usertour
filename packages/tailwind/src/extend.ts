@@ -212,6 +212,14 @@ export const extendBase = {
     md: 'calc(var(--radius) - 2px)',
     sm: 'calc(var(--radius) - 4px)',
   },
+  boxShadow: {
+    toolbar: [
+      '0px 16px 48px 0px hsl(var(--foreground) / 0.04)',
+      '0px 12px 24px 0px hsl(var(--foreground) / 0.04)',
+      '0px 6px 8px 0px hsl(var(--foreground) / 0.02)',
+      '0px 2px 3px 0px hsl(var(--foreground) / 0.02)',
+    ].join(', '),
+  },
   dropShadow: {
     popover: ['0 3px 10px rgba(0, 0, 0, 0.15)', '0 1px 2px rgba(0, 0, 0, 0.1)'],
   },

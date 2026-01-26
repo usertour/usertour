@@ -106,7 +106,7 @@ export const ToolbarOverflow = memo(
             )}
             <AlignmentGroup items={alignmentItems} />
           </ToolbarRoot>
-          <PopoverArrow className="fill-editor-toolbar" width={10} height={5} />
+          <PopoverArrow className="fill-background" width={10} height={5} />
         </PopoverContent>
       </Popover>
     );

@@ -17,22 +17,36 @@ export const TOOLBAR_BUTTON_ACTIVE = 'bg-primary/15 text-primary';
 // Inactive state styles
 export const TOOLBAR_BUTTON_INACTIVE = 'opacity-50 hover:bg-primary/15';
 
-// Toggle group styles - gap for button spacing
-export const TOOLBAR_TOGGLE_GROUP = 'flex gap-0.5';
+// Toggle group styles - gap for button spacing (4px matching Tiptap)
+export const TOOLBAR_TOGGLE_GROUP = 'flex gap-1';
+// Previous style (backup):
+// export const TOOLBAR_TOGGLE_GROUP = 'flex gap-0.5';
 
 // Toolbar container styles
 // Floating positioning is handled by Floating UI, no fixed positioning needed
 // Width is content-based, adapts to content size
+// Tiptap-style: background color from design system, border with 5% opacity using foreground color, and multi-layer shadow
 export const TOOLBAR_CONTAINER = cn(
   'flex flex-row items-center',
   'p-1 min-w-max',
-  'rounded-lg bg-editor-toolbar',
+  'rounded-xl bg-background',
+  'border border-foreground/5',
+  'shadow-toolbar',
+  // Previous style (backup):
+  // 'flex flex-row items-center',
+  // 'p-1 min-w-max',
+  // 'rounded-lg bg-editor-toolbar',
 );
 
 // Overflow popover content styles
 export const TOOLBAR_OVERFLOW_CONTENT = cn(
-  'flex flex-row items-center p-1 w-full min-w-max rounded-lg',
-  'bg-editor-toolbar',
+  'flex flex-row items-center p-1 w-full min-w-max rounded-xl',
+  'bg-background',
+  'border border-foreground/5',
+  'shadow-toolbar',
+  // Previous style (backup):
+  // 'flex flex-row items-center p-1 w-full min-w-max rounded-lg',
+  // 'bg-editor-toolbar',
 );
 
 // Separator styles (height matches button size)
