@@ -36,6 +36,7 @@ import type { WidthType } from '../../types';
 import { ensureWidthWithDefaults, transformColumnStyle } from '../../utils';
 import { ColumnActionButtons } from './column-action-buttons';
 import { ColumnHeader } from './column-header';
+import { useColumnHeaderPosition } from './hooks/use-column-header-position';
 
 type PaddingPosition = keyof typeof PADDING_KEY_MAPPING;
 
@@ -79,6 +80,13 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
   );
 
   const width = useMemo(() => ensureWidthWithDefaults(element.width), [element.width]);
+
+  // FloatingUI positioning for ColumnHeader
+  const isHeaderEnabled = !isDragging && isActive;
+  const { floatingStyles, refs: headerRefs } = useColumnHeaderPosition({
+    referenceRef: ref,
+    enabled: isHeaderEnabled,
+  });
 
   // Event handlers
   const onMousedown = useCallback(
@@ -192,11 +200,13 @@ export const ContentEditorColumn = memo((props: ContentEditorColumnProps) => {
         onFocus={handleMouseOver}
         onBlur={handleMouseOut}
       >
-        {!isDragging && isActive && (
+        {isHeaderEnabled && (
           <ColumnHeader
             attributes={attributes}
             listeners={listeners as Record<string, unknown>}
             setActivatorNodeRef={setActivatorNodeRef}
+            floatingStyles={floatingStyles}
+            setFloating={headerRefs.setFloating}
           />
         )}
         {children}
