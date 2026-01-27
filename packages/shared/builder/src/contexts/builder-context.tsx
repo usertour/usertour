@@ -14,7 +14,7 @@ import { useEvent } from 'react-use';
 import { useToast } from '@usertour-packages/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
-import { getDefaultDataForType } from '../utils/default-data';
+import { getEmptyDataForType } from '../utils/default-data';
 import { duplicateStep, generateUniqueCopyName } from '@usertour/helpers';
 import {
   useGetContentLazyQuery,
@@ -343,7 +343,7 @@ export const BuilderProvider = (props: BuilderProviderProps) => {
         ...defaultStep,
         type: finalStepType,
         name: 'Untitled',
-        data: getDefaultDataForType(finalStepType),
+        data: getEmptyDataForType(),
         sequence,
         setting: {
           ...defaultStep.setting,
