@@ -22,8 +22,8 @@ const HOTKEYS: Record<string, string> = {
 
 /**
  * Handle Enter key in code blocks
- * - Cmd/Ctrl+Enter: Exit code block and create new paragraph
- * - Regular Enter: Insert newline within code block
+ * - Shift+Enter: Insert newline within code block
+ * - Regular Enter: Exit code block and create new paragraph
  * @returns true if the event was handled
  */
 const handleCodeBlockEnter = (editor: Editor, event: React.KeyboardEvent): boolean => {
@@ -37,7 +37,10 @@ const handleCodeBlockEnter = (editor: Editor, event: React.KeyboardEvent): boole
 
   event.preventDefault();
 
-  if (event.metaKey || event.ctrlKey) {
+  if (event.shiftKey) {
+    // Insert newline within code block
+    editor.insertText('\n');
+  } else {
     // Exit code block: insert paragraph after and move cursor
     const [, codePath] = codeBlock;
     Transforms.insertNodes(
@@ -46,9 +49,6 @@ const handleCodeBlockEnter = (editor: Editor, event: React.KeyboardEvent): boole
       { at: Path.next(codePath) },
     );
     Transforms.select(editor, Path.next(codePath));
-  } else {
-    // Insert newline within code block
-    editor.insertText('\n');
   }
 
   return true;
