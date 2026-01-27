@@ -55,6 +55,71 @@ const handleCodeBlockEnter = (editor: Editor, event: React.KeyboardEvent): boole
 };
 
 /**
+ * Handle Enter key in list items
+ * - If list item is empty, exit list and create paragraph
+ * - Otherwise, let Slate handle default behavior (create new list item)
+ * @returns true if the event was handled
+ */
+const handleListEnter = (editor: Editor, event: React.KeyboardEvent): boolean => {
+  if (event.key !== 'Enter') return false;
+
+  const [listItem] = Editor.nodes(editor, {
+    match: (n) => SlateElement.isElement(n) && n.type === 'list-item',
+  });
+
+  if (!listItem) return false;
+
+  const text = Editor.string(editor, listItem[1]);
+  const isEmpty = text.trim() === '';
+
+  // If list item is empty, exit list and create paragraph
+  if (isEmpty) {
+    event.preventDefault();
+
+    // Unwrap parent list and convert to paragraph
+    Transforms.unwrapNodes(editor, {
+      match: (n) =>
+        SlateElement.isElement(n) && (n.type === 'bulleted-list' || n.type === 'numbered-list'),
+      split: true,
+    });
+    Transforms.setNodes(editor, { type: 'paragraph' });
+
+    return true;
+  }
+
+  // Let Slate handle default behavior (create new list item)
+  return false;
+};
+
+/**
+ * Handle Enter key in headings (h1, h2)
+ * - Always create paragraph instead of another heading
+ * @returns true if the event was handled
+ */
+const handleHeadingEnter = (editor: Editor, event: React.KeyboardEvent): boolean => {
+  if (event.key !== 'Enter') return false;
+
+  const [heading] = Editor.nodes(editor, {
+    match: (n) => SlateElement.isElement(n) && (n.type === 'h1' || n.type === 'h2'),
+  });
+
+  if (!heading) return false;
+
+  event.preventDefault();
+  const [, headingPath] = heading;
+
+  // Insert paragraph after heading
+  Transforms.insertNodes(
+    editor,
+    { type: 'paragraph', children: [{ text: '' }] },
+    { at: Path.next(headingPath) },
+  );
+  Transforms.select(editor, Path.next(headingPath));
+
+  return true;
+};
+
+/**
  * Handle text formatting hotkeys (bold, italic, underline, code)
  */
 const handleFormattingHotkeys = (editor: Editor, event: React.KeyboardEvent): void => {
@@ -156,6 +221,12 @@ export const PopperEditor = (props: PopperEditorProps) => {
     (event: React.KeyboardEvent) => {
       // Code block has special Enter handling
       if (handleCodeBlockEnter(editor, event)) return;
+
+      // Handle list Enter key
+      if (handleListEnter(editor, event)) return;
+
+      // Handle heading Enter key
+      if (handleHeadingEnter(editor, event)) return;
 
       // Inline mode blocks Enter
       if (isInline && event.key === 'Enter') {
