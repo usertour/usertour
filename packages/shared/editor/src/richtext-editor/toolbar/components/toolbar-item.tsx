@@ -19,7 +19,7 @@ import type { ToolbarItemProps } from '../toolbar.types';
  * Provides consistent styling and accessibility features
  */
 export const ToolbarItem = memo(
-  ({ isActive, onToggle, tooltip, ariaLabel, value, children }: ToolbarItemProps) => {
+  ({ isActive, onToggle, tooltip, ariaLabel, value, children, disabled }: ToolbarItemProps) => {
     const { zIndex } = usePopperEditorContext();
 
     return (
@@ -28,11 +28,16 @@ export const ToolbarItem = memo(
           <ToolbarToggleItem
             className={cn(
               TOOLBAR_BUTTON_BASE,
-              isActive ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE,
+              disabled
+                ? 'opacity-20 cursor-not-allowed'
+                : isActive
+                  ? TOOLBAR_BUTTON_ACTIVE
+                  : TOOLBAR_BUTTON_INACTIVE,
             )}
             value={value}
             aria-label={ariaLabel}
-            onMouseDown={onToggle}
+            disabled={disabled}
+            onMouseDown={disabled ? undefined : onToggle}
           >
             {children}
           </ToolbarToggleItem>

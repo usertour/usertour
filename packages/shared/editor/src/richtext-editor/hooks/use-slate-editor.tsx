@@ -4,6 +4,7 @@ import { createEditor } from 'slate';
 import { withHistory } from 'slate-history';
 import type { RenderElementProps, RenderLeafProps } from 'slate-react';
 import { withReact } from 'slate-react';
+import { withAlignReset } from '../../lib/withAlignReset';
 import { withLink } from '../../lib/withLink';
 import { withUserAttribute } from '../../lib/withUserAttribute';
 import type { PopperEditorContextProps, PopperEditorProps } from '../../types/editor';
@@ -73,7 +74,7 @@ export const useSlateEditor = (options: UseSlateEditorOptions): UseSlateEditorRe
 
   // Create editor instance with plugins (memoized)
   const editor = useMemo(() => {
-    const baseEditor = withHistory(withUserAttribute(withReact(createEditor())));
+    const baseEditor = withHistory(withAlignReset(withUserAttribute(withReact(createEditor()))));
     return withLinks ? withLink(baseEditor) : baseEditor;
   }, [withLinks]);
 

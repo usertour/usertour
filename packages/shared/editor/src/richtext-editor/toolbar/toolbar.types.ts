@@ -73,6 +73,7 @@ export interface ToolbarItemProps {
   ariaLabel: string;
   value: string;
   children: React.ReactNode;
+  disabled?: boolean;
 }
 
 // Toolbar popover item component props (for popover buttons like color picker)

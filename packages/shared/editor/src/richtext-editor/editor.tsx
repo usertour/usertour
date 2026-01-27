@@ -111,7 +111,7 @@ const handleHeadingEnter = (editor: Editor, event: React.KeyboardEvent): boolean
   // Insert paragraph after heading
   Transforms.insertNodes(
     editor,
-    { type: 'paragraph', children: [{ text: '' }] },
+    { type: 'paragraph', align: undefined, children: [{ text: '' }] },
     { at: Path.next(headingPath) },
   );
   Transforms.select(editor, Path.next(headingPath));
@@ -144,7 +144,11 @@ export const ALIGN_MAPPING: Record<string, string> = {
  */
 const Element = (props: RenderElementProps) => {
   const { element, children } = props;
-  const cls = 'align' in element ? ALIGN_MAPPING[element.align as keyof typeof ALIGN_MAPPING] : '';
+  const alignValue = 'align' in element ? element.align : undefined;
+  const cls =
+    alignValue && alignValue in ALIGN_MAPPING
+      ? ALIGN_MAPPING[alignValue as keyof typeof ALIGN_MAPPING]
+      : '';
   const Comp = ELEMENTS[element.type]?.render;
   // Handle unknown element types gracefully (e.g., removed h3 type in old data)
   if (!Comp) {

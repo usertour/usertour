@@ -27,9 +27,44 @@ const isBlockActive = (editor: CustomEditor, format: BlockFormat, blockType = 't
 };
 
 /**
+ * Check if cursor is currently in a list or code block
+ * These block types should not support alignment
+ */
+const isInListOrCode = (editor: CustomEditor): boolean => {
+  const { selection } = editor;
+  if (!selection) return false;
+
+  const [match] = Array.from(
+    Editor.nodes(editor, {
+      at: Editor.unhangRange(editor, selection),
+      match: (n) =>
+        !Editor.isEditor(n) &&
+        SlateElement.isElement(n) &&
+        (n.type === 'list-item' ||
+          n.type === 'bulleted-list' ||
+          n.type === 'numbered-list' ||
+          n.type === 'code'),
+    }),
+  );
+
+  return !!match;
+};
+
+/**
  * Toggle block formatting (headings, lists, code, alignment)
  */
 const toggleBlock = (editor: CustomEditor, format: BlockFormat) => {
+  const { selection } = editor;
+  // Early return if no selection
+  if (!selection) {
+    return;
+  }
+
+  // Prevent alignment changes when in list or code block
+  if (TEXT_ALIGN_TYPES.includes(format) && isInListOrCode(editor)) {
+    return;
+  }
+
   const isActive = isBlockActive(
     editor,
     format,
@@ -88,4 +123,4 @@ export const useBlockFormat = (format: BlockFormat): UseBlockFormatReturn => {
 };
 
 // Export utilities for external use
-export { isBlockActive, toggleBlock };
+export { isBlockActive, isInListOrCode, toggleBlock };
