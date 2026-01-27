@@ -429,7 +429,7 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
           align="start"
           sideOffset={4}
           className="w-64 border border-foreground/5 shadow-toolbar !ring-0"
-          style={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR_MORE }}
+          positionerStyle={{ zIndex: zIndex + EDITOR_RICH_TOOLBAR_MORE }}
         >
           <ComboboxEmpty className="items-center justify-center gap-2 pb-0">
             <RiSearchLine className="h-4 w-4 text-muted-foreground" />
