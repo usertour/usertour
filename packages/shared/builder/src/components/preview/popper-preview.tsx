@@ -8,15 +8,14 @@ import {
   useSettingsStyles,
 } from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
-import { AvatarType, defaultSettings } from '@usertour/types';
+import { AvatarType, defaultSettings, StepContentType } from '@usertour/types';
 import { memo, useCallback, useMemo, useRef } from 'react';
 
 type PopperPreviewProps = {
   text: string;
   data: any;
   type: string;
-  key: number;
-  onClick: (type: string, data: string) => void;
+  onClick: (type: string, data: any) => void;
   width: string;
   height: string;
   /** Max width for auto-scaling (default: 180) */
@@ -70,7 +69,7 @@ export const PopperPreview = memo((props: PopperPreviewProps) => {
             height: 10,
           }}
           side="bottom"
-          showArrow={type === 'tooltip'}
+          showArrow={type === StepContentType.TOOLTIP}
           width={width}
           height={height}
           arrowColor={themeSetting?.mainColor?.background}
@@ -89,16 +88,16 @@ export const PopperPreview = memo((props: PopperPreviewProps) => {
       onClick={handleOnClick}
     >
       <div className="flex-none justify-center flex flex-col items-center h-44">
-        {type !== 'hidden' && (
+        {type !== StepContentType.HIDDEN && (
           <ScaledPreviewContainer
             maxWidth={maxWidth}
             maxHeight={maxHeight}
             className="origin-[center_center]"
           >
-            {type === 'bubble' ? bubblePreview : popperPreview}
+            {type === StepContentType.BUBBLE ? bubblePreview : popperPreview}
           </ScaledPreviewContainer>
         )}
-        {type === 'hidden' && <EyeNoneIcon className="w-6 h-6" />}
+        {type === StepContentType.HIDDEN && <EyeNoneIcon className="w-6 h-6" />}
       </div>
       <div className="bg-background-400 flex-none leading-8 text-foreground text-center rounded-b-lg">
         {text}
