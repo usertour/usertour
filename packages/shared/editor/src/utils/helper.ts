@@ -42,7 +42,7 @@ export const EmptyEmbed = {
 export const EmptyText = {
   element: {
     type: 'text',
-    data: [{ type: 'paragraph', children: [{ text: 'Write text here' }] }],
+    data: [{ type: 'paragraph', children: [{ text: '' }] }],
   },
 } as ContentEditorRootElement;
 

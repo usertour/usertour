@@ -4,7 +4,7 @@ import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@usertou
 import { EXTENSION_SIDEBAR_POPPER } from '@usertour-packages/constants';
 import { StepContentType } from '@usertour/types';
 import { PopperPreview } from '../../components/preview';
-import { getDefaultDataForType } from '../../utils/default-data';
+import { getDefaultDataForType, getEmptyDataForType } from '../../utils/default-data';
 import { defaultStep } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
@@ -56,11 +56,13 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
   const { container } = props;
 
   const handleCreateStep = useCallback(
-    (type: string, content: any) => {
+    (type: string, _content: any) => {
       if (!currentVersion) {
         return;
       }
       const index = currentVersion.steps?.length ?? 0;
+      // Use empty data when creating, not the preview data
+      const emptyData = getEmptyDataForType();
       setCurrentStep({
         ...defaultStep,
         setting: {
@@ -69,7 +71,7 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
         },
         type,
         name: 'Untitled',
-        data: content,
+        data: emptyData,
         sequence: index,
       });
       setCurrentIndex(index);

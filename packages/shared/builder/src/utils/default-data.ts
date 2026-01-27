@@ -8,6 +8,7 @@ import {
   LauncherTriggerElement,
   LauncherTriggerEvent,
 } from '@usertour/types';
+import { EmptyGroup, EmptyColumn, EmptyText } from '@usertour-packages/shared-editor';
 
 export const defaultLauncherData: LauncherData = {
   type: LauncherDataType.ICON,
@@ -323,4 +324,23 @@ export const getDefaultDataForType = (type: string) => {
     default:
       return defaultTooltipContent; // Use defaultTooltipContent for tooltip (simple text)
   }
+};
+
+// Create empty step data based on type (using EmptyText)
+export const getEmptyDataForType = (): ContentEditorRoot[] => {
+  return [
+    {
+      ...EmptyGroup,
+      children: [
+        {
+          ...EmptyColumn,
+          children: [
+            {
+              ...EmptyText,
+            },
+          ],
+        },
+      ],
+    },
+  ];
 };
