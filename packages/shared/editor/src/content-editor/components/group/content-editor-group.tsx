@@ -139,8 +139,7 @@ export const ContentEditorGroup = memo((props: ContentEditorGroupProps) => {
       {shouldShowSidebar && (
         <ContentEditorSideBar
           type={ContentEditorSideBarType.RIGHT}
-          setIsOpen={setIsOpen}
-          isOpen={isOpen}
+          onPopoverOpenChange={setIsOpen}
           onClick={insertBlockAtRight}
         />
       )}

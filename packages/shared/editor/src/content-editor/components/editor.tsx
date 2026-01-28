@@ -107,8 +107,7 @@ export const Editor = () => {
     >
       {shouldShowSidebar && (
         <ContentEditorSideBar
-          isOpen={isOpen}
-          setIsOpen={setIsOpen}
+          onPopoverOpenChange={setIsOpen}
           onClick={insertGroupAtTop}
           type={ContentEditorSideBarType.TOP}
         />
@@ -157,8 +156,7 @@ export const Editor = () => {
       </DndContext>
       {shouldShowSidebar && (
         <ContentEditorSideBar
-          isOpen={isOpen}
-          setIsOpen={setIsOpen}
+          onPopoverOpenChange={setIsOpen}
           onClick={insertGroupAtBottom}
           type={ContentEditorSideBarType.BOTTOM}
         />

@@ -10,12 +10,11 @@ import { ContentEditorSideBarPopper } from './content-editor-sidebar-popper';
 export interface ContentEditorSideBarProps {
   onClick: (element: ContentEditorElement) => void;
   type: ContentEditorSideBarType;
-  isOpen?: boolean;
-  setIsOpen?: (open: boolean) => void;
+  onPopoverOpenChange?: (open: boolean) => void;
 }
 
 export const ContentEditorSideBar = memo((props: ContentEditorSideBarProps) => {
-  const { onClick, type, setIsOpen } = props;
+  const { onClick, type, onPopoverOpenChange } = props;
   const [isHover, setHover] = useState(false);
   const [open, setOpen] = useState<boolean>(false);
 
@@ -28,18 +27,17 @@ export const ContentEditorSideBar = memo((props: ContentEditorSideBarProps) => {
   // Event handlers with useCallback
   const handleButtonClick = useCallback(
     (element: ContentEditorElement) => {
-      setIsOpen?.(false);
       onClick(element);
     },
-    [onClick, setIsOpen],
+    [onClick],
   );
 
   const handleOnOpenChange = useCallback(
     (isOpen: boolean) => {
       setOpen(isOpen);
-      setIsOpen?.(isOpen);
+      onPopoverOpenChange?.(isOpen);
     },
-    [setIsOpen],
+    [onPopoverOpenChange],
   );
 
   const handleMouseOver = useCallback(() => {
