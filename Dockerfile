@@ -63,8 +63,8 @@ WORKDIR /app
 # Set npm registry and install base tools
 RUN npm install -g pnpm
 
-# Install system dependencies
-RUN apk add --no-cache nginx openssl openssl-dev libc6-compat gettext
+# Install system dependencies (curl needed for healthchecks)
+RUN apk add --no-cache nginx openssl openssl-dev libc6-compat gettext curl
 
 # Copy nginx configuration
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
