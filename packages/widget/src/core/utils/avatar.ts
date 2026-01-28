@@ -1,36 +1,29 @@
-import { getAvatarCdnUrl, getAvatarLocalPath } from '@usertour-packages/icons';
 import { AvatarType, ThemeTypesSetting } from '@usertour/types';
-
-const DEFAULT_AVATAR_NAME = 'alex';
 
 /**
  * Get avatar URL from theme settings
- * Supports cartoon avatars (via CDN or local path) and custom URL/upload avatars
+ * Supports custom URL/upload avatars
+ * Note: For CARTOON type, use avatarComponent from useSettingsStyles hook instead
  *
  * @param settings - Theme settings containing avatar configuration
- * @param useLocalPath - If true, use local path for cartoon avatars (for web admin),
- *                       otherwise use CDN URL (for SDK runtime)
- * @returns Avatar URL string
+ * @returns Avatar URL string (empty for CARTOON type, actual URL for URL/UPLOAD types)
  */
-export const getAvatarUrlFromSettings = (
-  settings?: ThemeTypesSetting,
-  useLocalPath = false,
-): string => {
+export const getAvatarUrlFromSettings = (settings?: ThemeTypesSetting): string => {
   const avatar = settings?.avatar;
-  const getPath = useLocalPath ? getAvatarLocalPath : getAvatarCdnUrl;
 
-  // Return default avatar when not configured
+  // Return empty string when not configured (will use default avatarComponent)
   if (!avatar) {
-    return getPath(DEFAULT_AVATAR_NAME);
+    return '';
   }
 
   switch (avatar.type) {
     case AvatarType.CARTOON:
-      return getPath(avatar.name ?? DEFAULT_AVATAR_NAME);
+      // CARTOON avatars use inline SVG components, no URL needed
+      return '';
     case AvatarType.URL:
     case AvatarType.UPLOAD:
-      return avatar.url ?? getPath(DEFAULT_AVATAR_NAME);
+      return avatar.url ?? '';
     default:
-      return getPath(DEFAULT_AVATAR_NAME);
+      return '';
   }
 };

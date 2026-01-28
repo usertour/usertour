@@ -31,9 +31,6 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
   // Use unified settings hook for CSS vars and avatar URL
   const { globalStyle, themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(
     settings as ThemeTypesSetting,
-    {
-      useLocalAvatarPath: true,
-    },
   );
 
   const progressType = themeSetting?.progress.type;

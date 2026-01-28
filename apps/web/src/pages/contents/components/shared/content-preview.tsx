@@ -58,10 +58,13 @@ const FlowPreview = ({
   currentVersion,
   currentStepIndex = 0,
 }: FlowPreviewProps) => {
-  const { globalStyle, themeSetting, avatarUrl } = useSettingsStyles(currentTheme.settings, {
-    useLocalAvatarPath: true,
-    type: currentStep.type,
-  });
+  // avatarUrl is used in BUBBLE step type, kept for consistency and fallback
+  const { globalStyle, themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(
+    currentTheme.settings,
+    {
+      type: currentStep.type,
+    },
+  );
   const { shouldShowMadeWith } = useSubscriptionContext();
 
   // Get width with theme fallback if undefined
@@ -103,6 +106,7 @@ const FlowPreview = ({
           width={`${width}px`}
           avatarSize={avatarSettings?.size}
           avatarSrc={avatarUrl}
+          avatarComponent={avatarComponent}
           notchSize={themeSetting?.tooltip?.notchSize}
           notchColor={themeSetting?.mainColor?.background}
           showAvatar={showAvatar}

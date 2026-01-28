@@ -74,7 +74,6 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
       theme?.settings,
       {
         type: StepContentType.BUBBLE,
-        useLocalAvatarPath: true,
       },
     );
 

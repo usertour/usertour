@@ -13,16 +13,6 @@ import {
 export type { AvatarComponent, AvatarListItem, AvatarProps };
 
 /**
- * CDN base URL for avatar images
- */
-export const AVATAR_CDN_BASE_URL = 'https://r3.usertour.io/avatar';
-
-/**
- * Local base path for avatar images (used in web admin)
- */
-export const AVATAR_LOCAL_BASE_PATH = '/images/avatar';
-
-/**
  * List of all available avatar names
  */
 export const AVATAR_NAMES = [
@@ -37,28 +27,6 @@ export const AVATAR_NAMES = [
 ] as const;
 
 export type AvatarName = (typeof AVATAR_NAMES)[number];
-
-/**
- * Get the CDN URL for an avatar by name
- * @param name - The avatar name (e.g., 'alex', 'bella')
- * @returns The CDN URL for the avatar
- */
-export const getAvatarCdnUrl = (name: string): string => {
-  const normalizedName = name.toLowerCase();
-  const validName = AVATAR_NAMES.includes(normalizedName as AvatarName) ? normalizedName : 'alex';
-  return `${AVATAR_CDN_BASE_URL}/${validName}.svg`;
-};
-
-/**
- * Get the local path for an avatar by name (for web admin)
- * @param name - The avatar name (e.g., 'alex', 'bella')
- * @returns The local path for the avatar
- */
-export const getAvatarLocalPath = (name: string): string => {
-  const normalizedName = name.toLowerCase();
-  const validName = AVATAR_NAMES.includes(normalizedName as AvatarName) ? normalizedName : 'alex';
-  return `${AVATAR_LOCAL_BASE_PATH}/${validName}.svg`;
-};
 
 // Re-export inline SVG avatar components from avatar-icons
 export {
