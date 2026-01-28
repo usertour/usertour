@@ -15,6 +15,9 @@ const LIST_TYPE_STYLES: Record<ListType, string> = {
   unordered: 'list-disc',
 };
 
+// Shared list item styles using SDK Tailwind classes
+const LIST_ITEM_STYLES = ['whitespace-pre-wrap', 'break-words'] as const;
+
 /**
  * Get the HTML list tag based on type
  */
@@ -25,6 +28,11 @@ const getListTag = (type: ListType): ListTag => (type === 'ordered' ? 'ol' : 'ul
  */
 export const getListClassName = (type: ListType, className?: string): string =>
   cn(LIST_TYPE_STYLES[type], LIST_BASE_STYLES, className);
+
+/**
+ * Generate list item class names
+ */
+export const getListItemClassName = (className?: string): string => cn(LIST_ITEM_STYLES, className);
 
 // Component props types
 export interface ListProps extends HTMLAttributes<HTMLOListElement | HTMLUListElement> {
@@ -69,7 +77,7 @@ export const ListItem = memo(
     const { className, children, ...rest } = props;
 
     return (
-      <li ref={ref} className={className} {...rest}>
+      <li ref={ref} className={getListItemClassName(className)} {...rest}>
         {children}
       </li>
     );

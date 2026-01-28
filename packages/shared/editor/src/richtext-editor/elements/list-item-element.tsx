@@ -22,9 +22,9 @@ export const ListItemElement = memo((props: ListItemElementProps) => {
   const { className, attributes, children } = props;
 
   return (
-    <li className={className} {...attributes}>
+    <ListItem className={className} {...attributes}>
       {children}
-    </li>
+    </ListItem>
   );
 });
 

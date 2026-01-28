@@ -14,6 +14,8 @@ const HEADING_BASE_STYLES = [
   'text-sdk-foreground',
   'min-h-sdk-line-height',
   'shrink-0',
+  'whitespace-pre-wrap',
+  'break-words',
 ] as const;
 
 const HEADING_LEVEL_STYLES: Record<HeadingLevel, string> = {
