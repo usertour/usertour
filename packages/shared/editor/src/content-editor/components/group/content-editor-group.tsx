@@ -69,7 +69,10 @@ export const ContentEditorGroup = memo((props: ContentEditorGroupProps) => {
     [isDragging, isGroupHover],
   );
 
-  const shouldShowSidebar = useMemo(() => isGroupHover || isOpen, [isGroupHover, isOpen]);
+  const shouldShowSidebar = useMemo(
+    () => !activeId && (isGroupHover || isOpen),
+    [activeId, isGroupHover, isOpen],
+  );
 
   // Event handlers
   const insertBlockAtRight = useCallback(
@@ -135,14 +138,12 @@ export const ContentEditorGroup = memo((props: ContentEditorGroupProps) => {
         attributes={attributes}
         listeners={listeners}
       />
-
-      {shouldShowSidebar && (
-        <ContentEditorSideBar
-          type={ContentEditorSideBarType.RIGHT}
-          onPopoverOpenChange={setIsOpen}
-          onClick={insertBlockAtRight}
-        />
-      )}
+      <ContentEditorSideBar
+        type={ContentEditorSideBarType.RIGHT}
+        onPopoverOpenChange={setIsOpen}
+        onClick={insertBlockAtRight}
+        visible={shouldShowSidebar}
+      />
 
       {children}
     </div>

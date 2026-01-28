@@ -39,19 +39,20 @@ const MEASURING_CONFIG = {
 };
 
 export const Editor = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [containerNode, setContainerNode] = useState<HTMLElement>();
+  const [isOpenTop, setIsOpenTop] = useState(false);
+  const [isOpenBottom, setIsOpenBottom] = useState(false);
   const {
     contents,
-    isEditorHover,
     setIsEditorHover,
     insertGroupAtTop,
     insertGroupAtBottom,
-    activeId,
     setActiveId,
     setContents,
     setDropPreview,
     zIndex,
+    activeId,
+    isEditorHover,
   } = useContentEditorContext();
 
   // Use callback ref to find parent container when DOM node is mounted
@@ -90,8 +91,16 @@ export const Editor = () => {
   // Memoized sortable items
   const sortableItems = useMemo(() => contents.map((c) => ({ id: c.id ?? '' })), [contents]);
 
-  // Sidebar visibility
-  const shouldShowSidebar = !activeId && (isEditorHover || isOpen);
+  // Calculate sidebar visibility
+  const shouldShowTopSidebar = useMemo(
+    () => !activeId && (isEditorHover || isOpenTop),
+    [activeId, isEditorHover, isOpenTop],
+  );
+
+  const shouldShowBottomSidebar = useMemo(
+    () => !activeId && (isEditorHover || isOpenBottom),
+    [activeId, isEditorHover, isOpenBottom],
+  );
 
   // DragOverlay style
   const dragOverlayStyle = useMemo(() => ({ zIndex: zIndex + EDITOR_OVERLAY }), [zIndex]);
@@ -105,13 +114,12 @@ export const Editor = () => {
       onFocus={handleFocus}
       onBlur={handleBlur}
     >
-      {shouldShowSidebar && (
-        <ContentEditorSideBar
-          onPopoverOpenChange={setIsOpen}
-          onClick={insertGroupAtTop}
-          type={ContentEditorSideBarType.TOP}
-        />
-      )}
+      <ContentEditorSideBar
+        onClick={insertGroupAtTop}
+        type={ContentEditorSideBarType.TOP}
+        visible={shouldShowTopSidebar}
+        onPopoverOpenChange={setIsOpenTop}
+      />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -154,13 +162,12 @@ export const Editor = () => {
             containerNode,
           )}
       </DndContext>
-      {shouldShowSidebar && (
-        <ContentEditorSideBar
-          onPopoverOpenChange={setIsOpen}
-          onClick={insertGroupAtBottom}
-          type={ContentEditorSideBarType.BOTTOM}
-        />
-      )}
+      <ContentEditorSideBar
+        onClick={insertGroupAtBottom}
+        type={ContentEditorSideBarType.BOTTOM}
+        visible={shouldShowBottomSidebar}
+        onPopoverOpenChange={setIsOpenBottom}
+      />
     </div>
   );
 };
