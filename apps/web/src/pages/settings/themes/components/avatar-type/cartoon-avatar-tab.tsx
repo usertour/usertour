@@ -1,5 +1,6 @@
 import { memo, useCallback } from 'react';
 
+import { AvatarsList, type AvatarComponent } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { cn } from '@usertour-packages/tailwind';
 import {
@@ -9,7 +10,6 @@ import {
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
 
-import { getLocalAvatarUrl, LOCAL_AVATARS } from './constants';
 import type { CartoonAvatarTabProps } from './types';
 
 interface AvatarButtonProps {
@@ -18,9 +18,10 @@ interface AvatarButtonProps {
   isSelected: boolean;
   onClick: () => void;
   disabled?: boolean;
+  Avatar: AvatarComponent;
 }
 
-const AvatarButton = memo<AvatarButtonProps>(({ name, text, isSelected, onClick, disabled }) => (
+const AvatarButton = memo<AvatarButtonProps>(({ text, isSelected, onClick, disabled, Avatar }) => (
   <Tooltip>
     <TooltipTrigger asChild>
       <Button
@@ -34,13 +35,7 @@ const AvatarButton = memo<AvatarButtonProps>(({ name, text, isSelected, onClick,
           disabled && 'opacity-50 cursor-not-allowed hover:scale-100',
         )}
       >
-        <img
-          src={getLocalAvatarUrl(name)}
-          alt={text}
-          width={40}
-          height={40}
-          className="rounded-full object-cover"
-        />
+        <Avatar size={40} className="rounded-full object-cover" />
       </Button>
     </TooltipTrigger>
     <TooltipContent className="max-w-xs bg-foreground">{text}</TooltipContent>
@@ -61,11 +56,12 @@ export const CartoonAvatarTab = memo<CartoonAvatarTabProps>(
       <TooltipProvider>
         <div className="flex flex-col">
           <div className="grid grid-cols-4 gap-2 p-2 max-h-48 overflow-y-auto">
-            {LOCAL_AVATARS.map(({ name, text }) => (
+            {AvatarsList.map(({ name, text, Avatar }) => (
               <AvatarButton
                 key={name}
                 name={name}
                 text={text}
+                Avatar={Avatar}
                 isSelected={name === selectedName}
                 onClick={() => handleSelect(name)}
                 disabled={disabled}

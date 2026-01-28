@@ -1,4 +1,4 @@
-import type { FC, SVGProps } from 'react';
+import type { ComponentType, SVGProps } from 'react';
 
 /**
  * Avatar component props
@@ -9,9 +9,9 @@ export interface AvatarProps extends SVGProps<SVGSVGElement> {
 }
 
 /**
- * Avatar component type
+ * Avatar component type (ComponentType allows memo-wrapped components)
  */
-export type AvatarComponent = FC<AvatarProps>;
+export type AvatarComponent = ComponentType<AvatarProps>;
 
 /**
  * Avatar list item for rendering avatar selection grid

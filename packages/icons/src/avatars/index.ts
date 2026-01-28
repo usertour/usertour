@@ -1,6 +1,14 @@
-import React from 'react';
-
 import type { AvatarComponent, AvatarListItem, AvatarProps } from './types';
+import {
+  AlexAvatar,
+  BellaAvatar,
+  ChrisAvatar,
+  DanielAvatar,
+  EmmaAvatar,
+  FrankAvatar,
+  GraceAvatar,
+  HenryAvatar,
+} from './avatar-icons';
 
 export type { AvatarComponent, AvatarListItem, AvatarProps };
 
@@ -52,49 +60,28 @@ export const getAvatarLocalPath = (name: string): string => {
   return `${AVATAR_LOCAL_BASE_PATH}/${validName}.svg`;
 };
 
-/**
- * Create an avatar component from a URL
- */
-const createAvatarComponent = (url: string, displayName: string): AvatarComponent => {
-  const AvatarComponent: AvatarComponent = ({ size = 60, className, style, ...props }) => {
-    return React.createElement('img', {
-      src: url,
-      alt: displayName,
-      width: size,
-      height: size,
-      className,
-      style: {
-        borderRadius: '50%',
-        objectFit: 'cover' as const,
-        ...style,
-      },
-      ...props,
-    });
-  };
-  AvatarComponent.displayName = `${displayName}Avatar`;
-  return AvatarComponent;
+// Re-export inline SVG avatar components from avatar-icons
+export {
+  AlexAvatar,
+  BellaAvatar,
+  ChrisAvatar,
+  DanielAvatar,
+  EmmaAvatar,
+  FrankAvatar,
+  GraceAvatar,
+  HenryAvatar,
 };
 
-// Create avatar components using CDN URLs
-export const AlexAvatar = createAvatarComponent(getAvatarCdnUrl('alex'), 'Alex');
-export const BellaAvatar = createAvatarComponent(getAvatarCdnUrl('bella'), 'Bella');
-export const ChrisAvatar = createAvatarComponent(getAvatarCdnUrl('chris'), 'Chris');
-export const DanielAvatar = createAvatarComponent(getAvatarCdnUrl('daniel'), 'Daniel');
-export const EmmaAvatar = createAvatarComponent(getAvatarCdnUrl('emma'), 'Emma');
-export const FrankAvatar = createAvatarComponent(getAvatarCdnUrl('frank'), 'Frank');
-export const GraceAvatar = createAvatarComponent(getAvatarCdnUrl('grace'), 'Grace');
-export const HenryAvatar = createAvatarComponent(getAvatarCdnUrl('henry'), 'Henry');
-
-// Avatar registry for dynamic lookup
+// Avatar registry for dynamic lookup (assertion: memo avatar components are compatible with AvatarComponent)
 const avatarRegistry: Record<string, AvatarComponent> = {
-  alex: AlexAvatar,
-  bella: BellaAvatar,
-  chris: ChrisAvatar,
-  daniel: DanielAvatar,
-  emma: EmmaAvatar,
-  frank: FrankAvatar,
-  grace: GraceAvatar,
-  henry: HenryAvatar,
+  alex: AlexAvatar as AvatarComponent,
+  bella: BellaAvatar as AvatarComponent,
+  chris: ChrisAvatar as AvatarComponent,
+  daniel: DanielAvatar as AvatarComponent,
+  emma: EmmaAvatar as AvatarComponent,
+  frank: FrankAvatar as AvatarComponent,
+  grace: GraceAvatar as AvatarComponent,
+  henry: HenryAvatar as AvatarComponent,
 };
 
 /**
@@ -118,12 +105,12 @@ export const getAvatarNames = (): string[] => {
  * List of all available avatars for rendering selection UI
  */
 export const AvatarsList: AvatarListItem[] = [
-  { name: 'alex', text: 'Alex', Avatar: AlexAvatar },
-  { name: 'bella', text: 'Bella', Avatar: BellaAvatar },
-  { name: 'chris', text: 'Chris', Avatar: ChrisAvatar },
-  { name: 'daniel', text: 'Daniel', Avatar: DanielAvatar },
-  { name: 'emma', text: 'Emma', Avatar: EmmaAvatar },
-  { name: 'frank', text: 'Frank', Avatar: FrankAvatar },
-  { name: 'grace', text: 'Grace', Avatar: GraceAvatar },
-  { name: 'henry', text: 'Henry', Avatar: HenryAvatar },
+  { name: 'alex', text: 'Alex', Avatar: AlexAvatar as AvatarComponent },
+  { name: 'bella', text: 'Bella', Avatar: BellaAvatar as AvatarComponent },
+  { name: 'chris', text: 'Chris', Avatar: ChrisAvatar as AvatarComponent },
+  { name: 'daniel', text: 'Daniel', Avatar: DanielAvatar as AvatarComponent },
+  { name: 'emma', text: 'Emma', Avatar: EmmaAvatar as AvatarComponent },
+  { name: 'frank', text: 'Frank', Avatar: FrankAvatar as AvatarComponent },
+  { name: 'grace', text: 'Grace', Avatar: GraceAvatar as AvatarComponent },
+  { name: 'henry', text: 'Henry', Avatar: HenryAvatar as AvatarComponent },
 ];
