@@ -1,6 +1,7 @@
 import { convertSettings, mergeThemeDefaultSettings } from '@usertour/helpers';
 import { convertToCssVars } from '@usertour/helpers';
-import { ThemeTypesSetting } from '@usertour/types';
+import { getAvatar, type AvatarComponent } from '@usertour-packages/icons';
+import { AvatarType, ThemeTypesSetting } from '@usertour/types';
 import { useMemo } from 'react';
 
 import { getAvatarUrlFromSettings } from '../utils/avatar';
@@ -16,6 +17,7 @@ interface UseSettingsStylesResult {
   globalStyle: string;
   themeSetting: ThemeTypesSetting;
   avatarUrl: string;
+  avatarComponent: AvatarComponent | null;
 }
 
 /**
@@ -46,5 +48,13 @@ export const useSettingsStyles = (
     [themeSetting, useLocalAvatarPath],
   );
 
-  return { globalStyle, themeSetting, avatarUrl };
+  const avatarComponent = useMemo(() => {
+    const avatar = themeSetting?.avatar;
+    if (avatar?.type === AvatarType.CARTOON && avatar?.name) {
+      return getAvatar(avatar.name) ?? null;
+    }
+    return null;
+  }, [themeSetting]);
+
+  return { globalStyle, themeSetting, avatarUrl, avatarComponent };
 };

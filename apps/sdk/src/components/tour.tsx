@@ -339,7 +339,7 @@ const TourBubble = (props: TourModalProps) => {
     handleDismiss,
     handleOnClick,
   } = props;
-  const { themeSetting, avatarUrl } = useSettingsStyles(themeSettings);
+  const { themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(themeSettings);
 
   // Get width using the unified hook (handles undefined width with theme fallback)
   const { width } = useStepWidth({ step: currentStep, themeSetting });
@@ -366,6 +366,7 @@ const TourBubble = (props: TourModalProps) => {
         width={`${width}px`}
         avatarSize={avatarSettings?.size ?? 60}
         avatarSrc={avatarUrl}
+        avatarComponent={avatarComponent}
         notchColor={themeSetting?.mainColor?.background}
         showAvatar={showAvatar}
       >

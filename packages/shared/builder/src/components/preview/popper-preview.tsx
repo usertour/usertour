@@ -29,7 +29,8 @@ export const PopperPreview = memo((props: PopperPreviewProps) => {
   const ref = useRef(null);
 
   // Use unified settings hook for CSS vars generation
-  const { globalStyle, themeSetting, avatarUrl } = useSettingsStyles(defaultSettings);
+  const { globalStyle, themeSetting, avatarUrl, avatarComponent } =
+    useSettingsStyles(defaultSettings);
 
   const handleOnClick = useCallback(() => {
     onClick(type, data);
@@ -48,6 +49,7 @@ export const PopperPreview = memo((props: PopperPreviewProps) => {
           width={width}
           avatarSize={avatarSettings?.size ?? 60}
           avatarSrc={avatarUrl}
+          avatarComponent={avatarComponent}
           notchSize={themeSetting?.tooltip?.notchSize ?? 20}
           notchColor={themeSetting?.mainColor?.background}
           showAvatar={showAvatar}
@@ -57,7 +59,7 @@ export const PopperPreview = memo((props: PopperPreviewProps) => {
         </PopperStaticBubble>
       </Popper>
     );
-  }, [themeSetting, globalStyle, avatarUrl, width, data]);
+  }, [themeSetting, globalStyle, avatarUrl, avatarComponent, width, data]);
 
   // Memoized tooltip/modal type preview
   const popperPreview = useMemo(

@@ -70,10 +70,13 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const { globalStyle, themeSetting, avatarUrl } = useSettingsStyles(theme?.settings, {
-      type: StepContentType.BUBBLE,
-      useLocalAvatarPath: true,
-    });
+    const { globalStyle, themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(
+      theme?.settings,
+      {
+        type: StepContentType.BUBBLE,
+        useLocalAvatarPath: true,
+      },
+    );
 
     const { shouldShowMadeWith = true } = useBuilderContext();
 
@@ -130,6 +133,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
           width={`${width}px`}
           avatarSize={themeSetting?.avatar?.size}
           avatarSrc={avatarUrl}
+          avatarComponent={avatarComponent}
           showAvatar={showAvatar}
           ref={ref}
         >

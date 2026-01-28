@@ -1,4 +1,4 @@
-import {
+import React, {
   CSSProperties,
   forwardRef,
   useCallback,
@@ -10,6 +10,7 @@ import {
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { cn } from '@usertour-packages/tailwind';
 import { Frame, useFrame } from '@usertour-packages/frame';
+import { type AvatarComponent } from '@usertour-packages/icons';
 import { computePositionStyle } from './utils/position';
 import { usePopperContext } from './popper-context';
 import { useBubbleExpandAnimation } from './hooks';
@@ -39,8 +40,10 @@ interface PopperBubblePortalProps {
   notchSize?: number;
   /** Avatar size in pixels, also determines notch horizontal offset */
   avatarSize?: number;
-  /** Avatar image source URL */
+  /** Avatar image source URL (used when avatarComponent is not provided) */
   avatarSrc?: string;
+  /** Avatar component (takes precedence over avatarSrc when provided) */
+  avatarComponent?: AvatarComponent | null;
   /** Additional className */
   className?: string;
   /** Whether to show avatar and notch (default: true) */
@@ -65,8 +68,8 @@ interface PopperAvatarNotchProps {
 }
 
 interface PopperBubbleAvatarProps {
-  /** Avatar image source URL */
-  src: string;
+  /** Avatar image source URL (used when avatarComponent is not provided) */
+  src?: string;
   /** Image alt text */
   alt?: string;
   /** Avatar size in pixels */
@@ -83,6 +86,8 @@ interface PopperBubbleAvatarProps {
   className?: string;
   /** Whether to apply absolute positioning (default: true) */
   applyPosition?: boolean;
+  /** Avatar component (takes precedence over src when provided) */
+  avatarComponent?: AvatarComponent | null;
 }
 
 type PopperBubbleAvatarWrapperProps = PopperBubbleAvatarProps;
@@ -140,6 +145,7 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
       notchSize = 20,
       avatarSize = 60,
       avatarSrc = '',
+      avatarComponent,
       className,
       showAvatar = true,
     } = props;
@@ -208,6 +214,7 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
         {showAvatar && (
           <PopperBubbleAvatarWrapper
             src={avatarSrc}
+            avatarComponent={avatarComponent}
             size={avatarSize}
             vertical={vertical}
             horizontal={horizontal}
@@ -248,6 +255,7 @@ const PopperStaticBubble = forwardRef<HTMLDivElement, PopperStaticBubbleProps>(
       notchSize = 20,
       avatarSize = 60,
       avatarSrc = '',
+      avatarComponent,
       className,
       showAvatar = true,
     } = props;
@@ -297,6 +305,7 @@ const PopperStaticBubble = forwardRef<HTMLDivElement, PopperStaticBubbleProps>(
         {showAvatar && (
           <PopperBubbleAvatar
             src={avatarSrc}
+            avatarComponent={avatarComponent}
             size={avatarSize}
             vertical={vertical}
             horizontal={horizontal}
@@ -400,6 +409,7 @@ const PopperBubbleAvatar = forwardRef<HTMLDivElement, PopperBubbleAvatarProps>((
     onClick,
     className,
     applyPosition = true,
+    avatarComponent,
   } = props;
 
   const handleClick = useCallback(() => {
@@ -447,7 +457,14 @@ const PopperBubbleAvatar = forwardRef<HTMLDivElement, PopperBubbleAvatarProps>((
           : undefined
       }
     >
-      <img src={src} alt={alt} className="h-full w-full object-cover" />
+      {avatarComponent ? (
+        React.createElement(avatarComponent, {
+          size,
+          className: 'h-full w-full object-cover',
+        })
+      ) : (
+        <img src={src} alt={alt} className="h-full w-full object-cover" />
+      )}
     </div>
   );
 });
@@ -499,6 +516,7 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
     minimizable,
     onClick,
     className,
+    avatarComponent,
   } = props;
 
   // Get shared data from Popper context
@@ -524,6 +542,7 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
         <PopperBubbleAvatarInFrame
           src={src}
           alt={alt}
+          avatarComponent={avatarComponent}
           size={size}
           vertical={vertical}
           horizontal={horizontal}
@@ -542,6 +561,7 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
     <PopperBubbleAvatar
       src={src}
       alt={alt}
+      avatarComponent={avatarComponent}
       size={size}
       vertical={vertical}
       horizontal={horizontal}

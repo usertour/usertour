@@ -29,7 +29,7 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
   const { shouldShowMadeWith } = useSubscriptionContext();
 
   // Use unified settings hook for CSS vars and avatar URL
-  const { globalStyle, themeSetting, avatarUrl } = useSettingsStyles(
+  const { globalStyle, themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(
     settings as ThemeTypesSetting,
     {
       useLocalAvatarPath: true,
@@ -64,6 +64,7 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
           width={`${bubbleSettings?.width ?? 300}px`}
           avatarSize={avatarSettings?.size ?? 60}
           avatarSrc={avatarUrl}
+          avatarComponent={avatarComponent}
           notchSize={themeSetting?.tooltip?.notchSize ?? 20}
           notchColor={themeSetting?.mainColor.background}
           showAvatar={showAvatar}
