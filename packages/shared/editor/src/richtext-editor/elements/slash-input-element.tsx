@@ -388,6 +388,30 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
     return command.label;
   }, []);
 
+  /**
+   * Resolve the slash command that matches the current block type
+   * so the Combobox can preselect/highlight it when the menu opens
+   */
+  const currentBlockCommand = useMemo((): SlashCommandConfig | null => {
+    try {
+      const path = ReactEditor.findPath(editor, element);
+      const [parentNode, parentPath] = Editor.parent(editor, path);
+      if (!parentNode || !SlateElement.isElement(parentNode)) {
+        return null;
+      }
+      let blockType = (parentNode as SlateElement).type;
+      if (blockType === 'list-item') {
+        const [listNode] = Editor.parent(editor, parentPath);
+        if (listNode && SlateElement.isElement(listNode)) {
+          blockType = (listNode as SlateElement).type;
+        }
+      }
+      return SLASH_COMMANDS.find((c) => c.id === blockType) ?? null;
+    } catch {
+      return null;
+    }
+  }, [editor, element]);
+
   // Auto-focus input when element is mounted
   useEffect(() => {
     const timer = requestAnimationFrame(() => {
@@ -404,10 +428,11 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
         open={true}
         onOpenChange={handleOpenChange}
         onValueChange={handleValueChange}
+        value={currentBlockCommand}
         autoHighlight
         inputValue={searchQuery}
         onInputValueChange={(value: string) => {
-          updateInputValue(value || '');
+          updateInputValue(value ?? '');
         }}
       >
         <span ref={anchorRef} className="relative inline-block min-h-[1lh]">
@@ -439,8 +464,8 @@ export const SlashInputElement = memo((props: RenderElementProps) => {
             {(command: SlashCommandConfig) => {
               const Icon = command.icon;
               return (
-                <ComboboxItem key={command.id} value={command}>
-                  <Icon className="mr-2 h-4 w-4 flex-shrink-0" />
+                <ComboboxItem key={command.id} value={command} className="group">
+                  <Icon className="mr-2 h-4 w-4 flex-shrink-0 group-data-[highlighted]:text-primary" />
                   <span className="flex-1 truncate">{command.label}</span>
                 </ComboboxItem>
               );

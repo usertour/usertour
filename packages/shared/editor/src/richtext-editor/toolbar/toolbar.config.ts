@@ -11,6 +11,7 @@ import {
   RiLink,
   RiListOrdered2,
   RiListUnordered,
+  RiText,
   RiUnderline,
   RiUserFill,
 } from '@usertour-packages/icons';
@@ -155,11 +156,12 @@ export interface SlashCommandConfig {
 // Slash commands available in the menu
 export const SLASH_COMMANDS: SlashCommandConfig[] = [
   {
-    id: 'user-attribute',
-    label: 'User Attribute',
-    icon: RiUserFill,
-    action: 'insert',
-    insertType: 'user-attribute',
+    id: 'paragraph',
+    label: 'Text',
+    icon: RiText,
+    action: 'format',
+    formatType: 'block',
+    format: 'paragraph',
   },
   {
     id: 'h1',
@@ -200,5 +202,12 @@ export const SLASH_COMMANDS: SlashCommandConfig[] = [
     action: 'format',
     formatType: 'block',
     format: 'bulleted-list',
+  },
+  {
+    id: 'user-attribute',
+    label: 'User Attribute',
+    icon: RiUserFill,
+    action: 'insert',
+    insertType: 'user-attribute',
   },
 ];
