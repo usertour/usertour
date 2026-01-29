@@ -351,6 +351,13 @@ const TourBubble = (props: TourModalProps) => {
   // Determine whether to show avatar based on avatar type
   const showAvatar = avatarSettings?.type !== AvatarType.NONE;
 
+  const handleBackdropClick = useCallback(() => {
+    const behavior = themeSettings?.modal?.backdropClickBehavior;
+    if (behavior === ModalBackdropClickBehavior.DISMISS_FLOW) {
+      handleDismiss(contentEndReason.BACKDROP_DISMISS);
+    }
+  }, [themeSettings, handleDismiss]);
+
   return (
     <Popper
       isIframeMode={true}
@@ -369,6 +376,8 @@ const TourBubble = (props: TourModalProps) => {
         avatarComponent={avatarComponent}
         notchColor={themeSetting?.mainColor?.background}
         showAvatar={showAvatar}
+        enabledBackdrop={currentStep.setting.enabledBackdrop}
+        onBackdropClick={handleBackdropClick}
       >
         <PopperContent
           currentStep={currentStep}

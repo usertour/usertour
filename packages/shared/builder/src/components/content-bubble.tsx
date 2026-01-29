@@ -134,6 +134,8 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
           avatarSrc={avatarUrl}
           avatarComponent={avatarComponent}
           showAvatar={showAvatar}
+          enabledBackdrop={currentStep.setting.enabledBackdrop}
+          onBackdropClick={undefined}
           ref={ref}
         >
           <PopperContent>

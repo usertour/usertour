@@ -48,6 +48,10 @@ interface PopperBubblePortalProps {
   className?: string;
   /** Whether to show avatar and notch (default: true) */
   showAvatar?: boolean;
+  /** Whether to show backdrop (default: false) */
+  enabledBackdrop?: boolean;
+  /** Click handler for backdrop */
+  onBackdropClick?: () => void;
 }
 
 interface PopperAvatarNotchProps {
@@ -127,8 +131,8 @@ const useAnchorPosition = (placement: string) => {
  * -----------------------------------------------------------------------------------------------*/
 
 /**
- * Bubble Portal component with optional avatar notch
- * Similar to PopperModalContentPotal but without backdrop
+ * Bubble Portal component with optional avatar notch and backdrop
+ * Similar to PopperModalContentPotal with optional backdrop support
  */
 const BUBBLE_NAME = 'PopperBubblePortal';
 
@@ -148,6 +152,8 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
       avatarComponent,
       className,
       showAvatar = true,
+      enabledBackdrop = false,
+      onBackdropClick,
     } = props;
 
     // State to control content visibility (toggled by clicking avatar)
@@ -181,48 +187,57 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
     });
 
     return (
-      <div
-        className={cn('usertour-widget-popper usertour-centered usertour-enabled', className)}
-        ref={composedRefs}
-        data-usertour-popper-content-wrapper=""
-        style={{
-          ...style,
-          width: width,
-          zIndex: zIndex,
-        }}
-        dir={dir}
-      >
+      <>
+        {enabledBackdrop && (
+          <div
+            className="usertour-widget-backdrop"
+            style={{ position: 'fixed', visibility: 'visible', zIndex }}
+            onClick={onBackdropClick}
+          />
+        )}
         <div
-          className={cn(
-            'usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative',
-            !isContentVisible && 'usertour-widget-popper-outline--minimized',
-          )}
-          style={outlineStyle}
+          className={cn('usertour-widget-popper usertour-centered usertour-enabled', className)}
+          ref={composedRefs}
+          data-usertour-popper-content-wrapper=""
+          style={{
+            ...style,
+            width: width,
+            zIndex: enabledBackdrop ? zIndex + 1 : zIndex,
+          }}
+          dir={dir}
         >
-          <div className="usertour-widget-popper__frame-wrapper">{children}</div>
+          <div
+            className={cn(
+              'usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative',
+              !isContentVisible && 'usertour-widget-popper-outline--minimized',
+            )}
+            style={outlineStyle}
+          >
+            <div className="usertour-widget-popper__frame-wrapper">{children}</div>
+            {showAvatar && (
+              <PopperAvatarNotch
+                vertical={vertical}
+                horizontal={horizontal}
+                color={notchColor}
+                size={notchSize}
+                offsetX={avatarSize}
+                offsetY={avatarSize}
+              />
+            )}
+          </div>
           {showAvatar && (
-            <PopperAvatarNotch
+            <PopperBubbleAvatarWrapper
+              src={avatarSrc}
+              avatarComponent={avatarComponent}
+              size={avatarSize}
               vertical={vertical}
               horizontal={horizontal}
-              color={notchColor}
-              size={notchSize}
-              offsetX={avatarSize}
-              offsetY={avatarSize}
+              minimizable={true}
+              onClick={handleAvatarClick}
             />
           )}
         </div>
-        {showAvatar && (
-          <PopperBubbleAvatarWrapper
-            src={avatarSrc}
-            avatarComponent={avatarComponent}
-            size={avatarSize}
-            vertical={vertical}
-            horizontal={horizontal}
-            minimizable={true}
-            onClick={handleAvatarClick}
-          />
-        )}
-      </div>
+      </>
     );
   },
 );
