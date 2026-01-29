@@ -17,7 +17,7 @@ export const transformMarginStyle = (margin?: MarginConfig): MarginStyleProps =>
 
   for (const position of MARGIN_POSITIONS) {
     const marginName = MARGIN_KEY_MAPPING[position];
-    const marginValue = margin[position as keyof MarginConfig];
+    const marginValue = margin[position];
     const numericValue = toNumericValue(marginValue);
     if (numericValue !== undefined) {
       style[marginName as keyof MarginStyleProps] = margin.enabled
