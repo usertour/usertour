@@ -20,6 +20,7 @@ import {
   PopperContentProps,
   PopperProps,
 } from './popper';
+import { useLauncherPopperContentProps } from './hooks/use-launcher-popper-content-props';
 import { useSettingsStyles } from './hooks/use-settings-styles';
 import { hiddenStyle } from './utils/content';
 
@@ -436,28 +437,9 @@ LauncherPopper.displayName = 'LauncherPopper';
 
 const LauncherPopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props, ref) => {
   const { themeSetting, data } = useLauncherContext();
+  const popperContentProps = useLauncherPopperContentProps({ themeSetting, data });
 
-  return (
-    <PopperContentPotal
-      ref={ref}
-      width={`${data.tooltip.width}px`}
-      sideOffset={data.tooltip.alignment.sideOffset}
-      alignOffset={data.tooltip.alignment.alignOffset}
-      side={data.tooltip.alignment.side}
-      align={
-        data.tooltip.alignment.alignType === 'auto'
-          ? 'center'
-          : (data.tooltip.alignment.align ?? 'center')
-      }
-      avoidCollisions={data.tooltip.alignment.alignType === 'auto'}
-      arrowSize={{
-        width: themeSetting?.tooltip.notchSize ?? 20,
-        height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
-      }}
-      arrowColor={themeSetting?.mainColor.background}
-      {...props}
-    />
-  );
+  return <PopperContentPotal ref={ref} {...popperContentProps} {...props} />;
 });
 
 LauncherPopperContentPotal.displayName = 'LauncherPopperContentPotal';
