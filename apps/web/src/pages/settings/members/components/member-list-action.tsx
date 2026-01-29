@@ -40,7 +40,7 @@ export const MemberListAction = (props: MemberListActionProps) => {
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-[200px]">
+        <DropdownMenuContent align="end" className="min-w-[200px]">
           {data.isInvite && (
             <DropdownMenuItem
               className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"

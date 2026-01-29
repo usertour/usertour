@@ -22,13 +22,13 @@ import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AutoScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
   ChecklistPreview,
   EmptyContentPreview,
   FlowPreview,
   LauncherPreview,
-  ScaledPreviewContainer,
 } from '../shared/content-preview';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
@@ -90,7 +90,7 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
 };
 
 const ContentPreviewSkeleton = () => {
-  return <Skeleton className="w-[300px] h-[160px]" />;
+  return <Skeleton className="w-full h-full" />;
 };
 
 interface ContentPreviewProps {
@@ -120,18 +120,27 @@ const ContentPreview = ({
     currentTheme &&
     currentStep
   ) {
+    // Find the index of currentStep in the steps array
+    const stepIndex = currentVersion?.steps?.findIndex((step) => step.id === currentStep.id);
+    const currentStepIndex = stepIndex !== undefined && stepIndex >= 0 ? stepIndex : 0;
+
     return (
-      <ScaledPreviewContainer>
-        <FlowPreview currentTheme={currentTheme} currentStep={currentStep} />
-      </ScaledPreviewContainer>
+      <AutoScaledPreviewContainer padding={16}>
+        <FlowPreview
+          currentTheme={currentTheme}
+          currentStep={currentStep}
+          currentVersion={currentVersion}
+          currentStepIndex={currentStepIndex}
+        />
+      </AutoScaledPreviewContainer>
     );
   }
 
   if (type === ContentDataType.LAUNCHER && currentTheme && currentVersion) {
     return (
-      <ScaledPreviewContainer>
+      <AutoScaledPreviewContainer padding={16}>
         <LauncherPreview currentTheme={currentTheme} currentVersion={currentVersion} />
-      </ScaledPreviewContainer>
+      </AutoScaledPreviewContainer>
     );
   }
 
@@ -142,9 +151,9 @@ const ContentPreview = ({
     currentVersion?.data
   ) {
     return (
-      <ScaledPreviewContainer>
+      <AutoScaledPreviewContainer padding={16}>
         <ChecklistPreview currentTheme={currentTheme} currentVersion={currentVersion} />
-      </ScaledPreviewContainer>
+      </AutoScaledPreviewContainer>
     );
   }
 
@@ -262,7 +271,7 @@ export function DataTable() {
   return (
     <div className="space-y-4">
       {/* <DataTableToolbar table={table} /> */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
         {contents.map((content) => (
           <ContentTableItem content={content} key={content.id} contentType={contentType} />
         ))}

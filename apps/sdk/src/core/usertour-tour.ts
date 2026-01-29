@@ -1,26 +1,36 @@
 import { smoothScroll } from '@usertour-packages/dom';
 import {
+  AttributeBizTypes,
   ContentEditorClickableElement,
   ContentEditorQuestionElement,
-} from '@usertour-packages/shared-editor';
-import {
-  AttributeBizTypes,
+  MissingTooltipTargetBehavior,
   RulesCondition,
   StepContentType,
   contentEndReason,
   SessionStep,
   SessionTheme,
 } from '@usertour/types';
-import { isUndefined, isQuestionElement } from '@usertour/helpers';
+import { isQuestionElement } from '@usertour/helpers';
 import { TourStore, BaseStore } from '@/types/store';
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
-import { UsertourComponent } from '@/core/usertour-component';
+import {
+  UsertourComponent,
+  BuildStoreOptions,
+  CustomStoreDataContext,
+} from '@/core/usertour-component';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { logger } from '@/utils';
 import { createQuestionAnswerEventData } from '@/core/usertour-helper';
 import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
-import { CommonActionHandler, TourActionHandler } from '@/core/action-handlers';
+import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
+
+/**
+ * Tour-specific options for buildStoreData
+ */
+type TourBuildOptions = BuildStoreOptions & {
+  stepOverride?: SessionStep;
+};
 
 export class UsertourTour extends UsertourComponent<TourStore> {
   // === Properties ===
@@ -38,15 +48,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
   /**
    * Creates an action handler context with tour-specific methods
+   * @param source - The source of the action (button or trigger)
    * @returns ActionHandlerContext object with mapped methods including tour-specific ones
    */
-  protected createActionHandlerContext() {
-    const baseContext = super.createActionHandlerContext();
+  protected createActionHandlerContext(source: ActionSource) {
+    const baseContext = super.createActionHandlerContext(source);
     return {
       ...baseContext,
       showStepByCvid: (stepCvid: string) => this.showStepByCvid(stepCvid),
-      handleDismiss: (reason?: contentEndReason) =>
-        this.handleDismiss(reason ?? contentEndReason.ACTION),
     };
   }
 
@@ -112,10 +121,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
-   * Handles the dismiss event
-   * @param reason - The reason for dismissing the tour, defaults to USER_CLOSED
+   * Handles the dismiss event from UI (X button, backdrop click)
+   * @param reason - The reason for dismissing the tour, defaults to CLOSE_BUTTON_DISMISS
    */
-  async handleDismiss(reason?: contentEndReason) {
+  async handleDismiss(reason: contentEndReason = contentEndReason.CLOSE_BUTTON_DISMISS) {
     await this.close(reason);
   }
 
@@ -142,6 +151,15 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
   }
 
+  /**
+   * Handles actions triggered by StepTrigger
+   * Uses TRIGGER_DISMISS reason for dismiss actions instead of ACTION_DISMISS
+   * @param actions - The actions to handle
+   */
+  private async handleTriggerActions(actions: RulesCondition[]): Promise<void> {
+    await this.handleActions(actions, ActionSource.TRIGGER);
+  }
+
   // === Store Management ===
   /**
    * Gets the z-index for the tour component
@@ -153,11 +171,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
   /**
    * Gets custom tour store data
-   * @param baseData - The base store data that can be used for custom logic
+   * @param context - Context containing baseData and optional options with stepOverride
    * @protected
    */
-  protected getCustomStoreData(baseData: Partial<BaseStore> | null): Partial<TourStore> {
-    const currentStep = this.getCurrentStep();
+  protected getCustomStoreData(
+    context: CustomStoreDataContext<TourBuildOptions>,
+  ): Partial<TourStore> {
+    const { baseData, options } = context;
+    const currentStep = options?.stepOverride ?? this.getCurrentStep();
 
     return {
       currentStep,
@@ -223,7 +244,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
         this.getContentId(),
         step.trigger,
         () => this.getSessionAttributes(), // Simple function that gets fresh attributes
-        (actions) => this.handleActions(actions),
+        (actions) => this.handleTriggerActions(actions),
       );
       await this.stepTrigger.process();
     }
@@ -254,6 +275,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
     if (step.type === StepContentType.MODAL) {
       await this.showModal(step);
+    }
+    if (step.type === StepContentType.BUBBLE) {
+      await this.showBubble(step);
     }
   }
 
@@ -304,7 +328,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const storeData = await this.buildStoreData();
     if (!storeData) {
       logger.error('Store not found', { step });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
     this.setupElementWatcher(step, { ...storeData, triggerRef: null });
@@ -326,11 +350,36 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const storeData = await this.buildStoreData();
     if (!storeData) {
       logger.error('Store not found', { step });
-      await this.close(contentEndReason.SYSTEM_CLOSED);
+      await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
     const stepInfo = this.getStepInfo(step);
     // Set up modal state
+    this.setStoreData({
+      ...storeData,
+      ...stepInfo,
+      openState: true,
+    });
+  }
+
+  /**
+   * Display a bubble step in the tour
+   * @param step - The step to be displayed as a bubble
+   * @param useStepOverride - Whether to use the step as override (for fallback scenarios)
+   * @private
+   */
+  private async showBubble(step: SessionStep, useStepOverride = false): Promise<void> {
+    // Only use stepOverride when explicitly requested (e.g., tooltip -> bubble fallback)
+    const options = useStepOverride ? { stepOverride: step } : undefined;
+    const storeData = await this.buildStoreData(options);
+    if (!storeData) {
+      logger.error('Store not found', { step });
+      await this.close(contentEndReason.STORE_NOT_FOUND);
+      return;
+    }
+    const stepInfo = this.getStepInfo(step);
+
+    // Set up bubble state
     this.setStoreData({
       ...storeData,
       ...stepInfo,
@@ -357,10 +406,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       return;
     }
     this.watcher = new UsertourElementWatcher(step.target);
-    const targetMissingSeconds = this.instance.getTargetMissingSeconds();
-    if (!isUndefined(targetMissingSeconds)) {
-      this.watcher.setTargetMissingSeconds(targetMissingSeconds);
-    }
+
+    // Priority: API setting > Theme setting > Default (6 seconds)
+    const DEFAULT_TARGET_MISSING_SECONDS = 6;
+    const targetMissingSeconds =
+      this.instance.getTargetMissingSeconds() ??
+      store.themeSettings?.tooltip?.missingTargetTolerance ??
+      DEFAULT_TARGET_MISSING_SECONDS;
+    this.watcher.setTargetMissingSeconds(targetMissingSeconds);
 
     // Handle element found
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
@@ -371,7 +424,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
     // Handle element not found (fire-and-forget since event system doesn't await)
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND_TIMEOUT, () => {
-      this.handleElementNotFound(step);
+      this.handleElementNotFound(step, store);
     });
 
     // Handle element changed
@@ -424,11 +477,21 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * Handles when the target element is not found
    * @private
    */
-  private async handleElementNotFound(step: SessionStep): Promise<void> {
+  private async handleElementNotFound(step: SessionStep, store: TourStore): Promise<void> {
     const currentStep = this.getCurrentStep();
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
+
+    const behavior = store.themeSettings?.tooltip?.missingTargetBehavior;
+
+    if (behavior === MissingTooltipTargetBehavior.USE_BUBBLE) {
+      // Convert tooltip to bubble, use stepOverride to ensure correct styles
+      await this.showBubble({ ...step, type: StepContentType.BUBBLE }, true);
+      return;
+    }
+
+    // Default: AUTO_DISMISS
     await this.reportTooltipTargetMissing(step);
     await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
   }

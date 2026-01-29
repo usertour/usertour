@@ -80,6 +80,12 @@ const createBuildPlugins = (env: 'development' | 'production') => [
 // Helper function for code splitting
 // Separates @usertour-packages into its own chunk and keeps core initialization code with main bundle
 const createManualChunks = (moduleName: string): string | undefined => {
+  // Icons package - separate chunk (typically large due to icon assets)
+  // Match both package name and actual file path in monorepo
+  if (moduleName.includes('@usertour-packages/icons') || moduleName.includes('packages/icons')) {
+    return 'vendor-icons';
+  }
+
   // Internal Usertour packages - separate chunk
   if (moduleName.includes('@usertour-packages') || moduleName.includes('@usertour/')) {
     return 'vendor-usertour';
@@ -201,7 +207,7 @@ export default defineConfig(({ command, mode }) => {
         },
       },
       optimizeDeps: {
-        include: ['@dnd-kit/core', '@radix-ui/react-popover'],
+        include: ['@dnd-kit/core'],
         force: true,
       },
     } satisfies UserConfigExport;

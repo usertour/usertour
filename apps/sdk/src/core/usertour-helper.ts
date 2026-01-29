@@ -7,11 +7,9 @@ import {
   SessionAttribute,
   AttributeBizTypes,
   RulesEvaluationOptions,
-} from '@usertour/types';
-import {
   ContentEditorQuestionElement,
   ContentEditorElementType,
-} from '@usertour-packages/shared-editor';
+} from '@usertour/types';
 import { document, location, window } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
 

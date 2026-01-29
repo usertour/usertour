@@ -1,18 +1,19 @@
 import { isRestrictedType, uuidV4 } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
-import { createContext, useContext, useEffect, useState } from 'react';
-import {
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+
+import type {
   ContentEditorColumnElement,
   ContentEditorContextProps,
   ContentEditorContextProviderProps,
   ContentEditorElement,
-  ContentEditorElementInsertDirection,
-  ContentEditorElementType,
   ContentEditorGroupElement,
   ContentEditorRoot,
   ContentEditorRootColumn,
   ContentEditorRootElement,
+  DropPreview,
 } from '../types/editor';
+import { ContentEditorElementInsertDirection, ContentEditorElementType } from '../types/editor';
 import { createNewColumn, createNewGroup } from '../utils/helper';
 
 const ContentEditorContext = createContext<ContentEditorContextProps | undefined>(undefined);
@@ -25,7 +26,7 @@ export const useContentEditorContext = () => {
   return context;
 };
 
-const addID = (contents: ContentEditorRoot[]) => {
+const addID = (contents: ContentEditorRoot[]): ContentEditorRoot[] => {
   return contents.map((content) => ({
     ...content,
     id: uuidV4(),
@@ -40,23 +41,23 @@ const addID = (contents: ContentEditorRoot[]) => {
   }));
 };
 
-const removeID = (contents: ContentEditorRoot[]) => {
-  return contents.map(({ id, ...content }) => ({
+const removeID = (contents: ContentEditorRoot[]): ContentEditorRoot[] => {
+  return contents.map(({ id: _id, ...content }) => ({
     ...content,
-    children: content.children.map(({ id, ...column }) => ({
+    children: content.children.map(({ id: _colId, ...column }) => ({
       ...column,
-      children: column.children.map(({ id, ...element }) => ({
+      children: column.children.map(({ id: _elemId, ...element }) => ({
         ...element,
       })),
     })),
-  }));
+  })) as ContentEditorRoot[];
 };
 
 // Helper function to check for existing restricted type
 export const checkExistingRestrictedType = (
   contents: ContentEditorRoot[],
   elementType: ContentEditorElementType,
-) => {
+): boolean => {
   // If the new element is not a restricted type, we can always add it
   if (!isRestrictedType(elementType)) {
     return true;
@@ -76,18 +77,18 @@ const RESTRICTED_TYPE_ERROR = {
   title: 'Each step can only contain one question. Add a new step instead.',
 } as const;
 
-// Helper function to handle restricted type check and show error
-const handleRestrictedTypeCheck = (
-  contents: ContentEditorRoot[],
-  element: ContentEditorElement,
-  toast: any,
-): boolean => {
-  if (!checkExistingRestrictedType(contents, element.type)) {
-    toast(RESTRICTED_TYPE_ERROR);
-    return false;
-  }
-  return true;
-};
+// Helper to insert item at index immutably
+const insertAt = <T,>(array: T[], index: number, item: T): T[] => [
+  ...array.slice(0, index),
+  item,
+  ...array.slice(index),
+];
+
+// Helper to remove item at index immutably
+const removeAt = <T,>(array: T[], index: number): T[] => [
+  ...array.slice(0, index),
+  ...array.slice(index + 1),
+];
 
 export const ContentEditorContextProvider = ({
   children,
@@ -96,125 +97,236 @@ export const ContentEditorContextProvider = ({
   ...props
 }: ContentEditorContextProviderProps) => {
   const [isEditorHover, setIsEditorHover] = useState(false);
-  const [contents, setContents] = useState<ContentEditorRoot[]>(addID(initialValue));
+  const [contents, setContents] = useState<ContentEditorRoot[]>(() => addID(initialValue));
   const [activeId, setActiveId] = useState<string | undefined>();
+  const [dropPreview, setDropPreview] = useState<DropPreview | null>(null);
   const { toast } = useToast();
 
-  const insertGroupAtTop = (element: ContentEditorElement) => {
-    if (!handleRestrictedTypeCheck(contents, element, toast)) return;
+  // Use ref to avoid stale closure issues with onValueChange
+  const onValueChangeRef = useRef(onValueChange);
+  onValueChangeRef.current = onValueChange;
 
-    setContents((pre) => {
-      const group = createNewGroup([{ element, children: null, id: uuidV4() }]);
-      return [group, ...pre];
-    });
-  };
-
-  const insertGroupAtBottom = (element: ContentEditorElement) => {
-    if (!handleRestrictedTypeCheck(contents, element, toast)) return;
-
-    setContents((pre) => [...pre, createNewGroup([{ element, children: null, id: uuidV4() }])]);
-  };
-
-  const insertColumnInGroup = (
-    element: ContentEditorElement,
-    path: number[],
-    direction: ContentEditorElementInsertDirection,
-  ) => {
-    if (!handleRestrictedTypeCheck(contents, element, toast)) return;
-    setContents((pre) => {
-      const column = createNewColumn([{ element, children: null, id: uuidV4() }]);
-      //insert at group
-      if (path.length === 1) {
-        const index = direction === 'right' ? pre[path[0]].children.length : 0;
-        pre[path[0]].children.splice(index, 0, column);
-      } else {
-        const index =
-          direction === 'right'
-            ? path[path.length - 1] + 1
-            : Math.max(path[path.length - 1] - 1, 0);
-        pre[path[0]].children.splice(index, 0, column);
+  // Helper function to handle restricted type check and show error
+  const handleRestrictedTypeCheck = useCallback(
+    (currentContents: ContentEditorRoot[], element: ContentEditorElement): boolean => {
+      if (!checkExistingRestrictedType(currentContents, element.type)) {
+        toast(RESTRICTED_TYPE_ERROR);
+        return false;
       }
-      return [...pre];
-    });
-  };
+      return true;
+    },
+    [toast],
+  );
 
-  const deleteColumn = (path: number[]) => {
-    setContents((pre) => {
-      if (pre[path[0]].children.length === 1) {
-        pre.splice(path[0], 1);
-      } else {
-        pre[path[0]].children.splice(path[1], 1);
-      }
-      return [...pre];
-    });
-  };
-
-  // path=[1,1,1] group,column,element
-  const insertElementInColumn = (
-    element: ContentEditorElement,
-    path: number[],
-    direction: ContentEditorElementInsertDirection,
-  ) => {
-    setContents((pre) => {
-      const index =
-        direction === 'right' ? path[path.length - 1] + 1 : Math.max(path[path.length - 1] - 1, 0);
-      pre[path[0]].children[path[1]].children.splice(index, 0, {
-        element,
-        children: null,
-        id: uuidV4(),
+  const insertGroupAtTop = useCallback(
+    (element: ContentEditorElement) => {
+      setContents((prev) => {
+        if (!handleRestrictedTypeCheck(prev, element)) return prev;
+        const group = createNewGroup([{ element, children: null, id: uuidV4() }]);
+        return [group, ...prev];
       });
-      return [...pre];
-    });
-  };
+    },
+    [handleRestrictedTypeCheck],
+  );
 
-  const deleteElementInColumn = (path: number[]) => {
-    setContents((pre) => {
-      const childrens = pre[path[0]].children[path[1]].children;
-      if (childrens.length === 1) {
-        if (pre[path[0]].children.length === 1) {
-          pre.splice(path[0], 1);
+  const insertGroupAtBottom = useCallback(
+    (element: ContentEditorElement) => {
+      setContents((prev) => {
+        if (!handleRestrictedTypeCheck(prev, element)) return prev;
+        return [...prev, createNewGroup([{ element, children: null, id: uuidV4() }])];
+      });
+    },
+    [handleRestrictedTypeCheck],
+  );
+
+  const insertColumnInGroup = useCallback(
+    (
+      element: ContentEditorElement,
+      path: number[],
+      direction: ContentEditorElementInsertDirection,
+    ) => {
+      setContents((prev) => {
+        if (!handleRestrictedTypeCheck(prev, element)) return prev;
+
+        const column = createNewColumn([{ element, children: null, id: uuidV4() }]);
+        const groupIndex = path[0];
+
+        // Calculate insert index
+        let insertIndex: number;
+        if (path.length === 1) {
+          // Insert at group level
+          insertIndex = direction === 'right' ? prev[groupIndex].children.length : 0;
         } else {
-          pre[path[0]].children.splice(path[1], 1);
+          // Insert relative to column
+          insertIndex =
+            direction === 'right'
+              ? path[path.length - 1] + 1
+              : Math.max(path[path.length - 1] - 1, 0);
         }
-      } else {
-        pre[path[0]].children[path[1]].children.splice(path[2], 1);
-      }
-      return [...pre];
-    });
-  };
 
-  const update = (
-    list: ContentEditorRoot[] | ContentEditorRootColumn[] | ContentEditorRootElement[],
-    id: string,
-    element: ContentEditorElement | ContentEditorColumnElement | ContentEditorGroupElement,
-  ): any => {
-    return list.map((item) => {
-      if (item.id === id) {
-        return { ...item, element: { ...item.element, ...element } };
-      }
-      if (item.children) {
-        return { ...item, children: update(item.children, id, element) };
-      }
-      return item;
-    });
-  };
+        // Immutable update
+        return prev.map((group, idx) => {
+          if (idx !== groupIndex) return group;
+          return {
+            ...group,
+            children: insertAt(group.children, insertIndex, column),
+          };
+        });
+      });
+    },
+    [handleRestrictedTypeCheck],
+  );
 
-  const updateElement = (
-    element: ContentEditorElement | ContentEditorColumnElement | ContentEditorGroupElement,
-    id: string,
-  ) => {
-    setContents((pre) => {
-      return update(pre, id, element);
-    });
-  };
+  const deleteColumn = useCallback((path: number[]) => {
+    setContents((prev) => {
+      const groupIndex = path[0];
+      const columnIndex = path[1];
+      const group = prev[groupIndex];
 
+      // If only one column, remove the entire group
+      if (group.children.length === 1) {
+        return removeAt(prev, groupIndex);
+      }
+
+      // Otherwise, remove just the column
+      return prev.map((g, idx) => {
+        if (idx !== groupIndex) return g;
+        return {
+          ...g,
+          children: removeAt(g.children, columnIndex),
+        };
+      });
+    });
+  }, []);
+
+  // path=[groupIndex, columnIndex, elementIndex]
+  const insertElementInColumn = useCallback(
+    (
+      element: ContentEditorElement,
+      path: number[],
+      direction: ContentEditorElementInsertDirection,
+    ) => {
+      setContents((prev) => {
+        const groupIndex = path[0];
+        const columnIndex = path[1];
+        const elementIndex = path[path.length - 1];
+
+        const insertIndex =
+          direction === 'right' ? elementIndex + 1 : Math.max(elementIndex - 1, 0);
+
+        const newElement: ContentEditorRootElement = {
+          element,
+          children: null,
+          id: uuidV4(),
+        };
+
+        return prev.map((group, gIdx) => {
+          if (gIdx !== groupIndex) return group;
+          return {
+            ...group,
+            children: group.children.map((column, cIdx) => {
+              if (cIdx !== columnIndex) return column;
+              return {
+                ...column,
+                children: insertAt(column.children, insertIndex, newElement),
+              };
+            }),
+          };
+        });
+      });
+    },
+    [],
+  );
+
+  const deleteElementInColumn = useCallback((path: number[]) => {
+    setContents((prev) => {
+      const groupIndex = path[0];
+      const columnIndex = path[1];
+      const elementIndex = path[2];
+
+      const group = prev[groupIndex];
+      const column = group.children[columnIndex];
+      const elements = column.children;
+
+      // If only one element in column
+      if (elements.length === 1) {
+        // If only one column in group, remove entire group
+        if (group.children.length === 1) {
+          return removeAt(prev, groupIndex);
+        }
+        // Otherwise, remove the column
+        return prev.map((g, gIdx) => {
+          if (gIdx !== groupIndex) return g;
+          return {
+            ...g,
+            children: removeAt(g.children, columnIndex),
+          };
+        });
+      }
+
+      // Remove just the element
+      return prev.map((g, gIdx) => {
+        if (gIdx !== groupIndex) return g;
+        return {
+          ...g,
+          children: g.children.map((col, cIdx) => {
+            if (cIdx !== columnIndex) return col;
+            return {
+              ...col,
+              children: removeAt(col.children, elementIndex),
+            };
+          }),
+        };
+      });
+    });
+  }, []);
+
+  // Recursive update function with proper typing
+  type ContentItem = ContentEditorRoot | ContentEditorRootColumn | ContentEditorRootElement;
+  type ContentChildren = ContentEditorRootColumn[] | ContentEditorRootElement[] | null;
+
+  const updateRecursive = useCallback(
+    (
+      list: ContentItem[],
+      id: string,
+      newElement: ContentEditorElement | ContentEditorColumnElement | ContentEditorGroupElement,
+    ): ContentItem[] => {
+      return list.map((item) => {
+        if (item.id === id) {
+          return { ...item, element: { ...item.element, ...newElement } } as ContentItem;
+        }
+        const itemChildren = item.children as ContentChildren;
+        if (itemChildren && Array.isArray(itemChildren)) {
+          return {
+            ...item,
+            children: updateRecursive(itemChildren, id, newElement),
+          } as ContentItem;
+        }
+        return item;
+      });
+    },
+    [],
+  );
+
+  const updateElement = useCallback(
+    (
+      element: ContentEditorElement | ContentEditorColumnElement | ContentEditorGroupElement,
+      id: string,
+    ) => {
+      setContents((prev) => updateRecursive(prev, id, element) as ContentEditorRoot[]);
+    },
+    [updateRecursive],
+  );
+
+  // Use ref pattern to avoid adding onValueChange to dependency array
   useEffect(() => {
-    if (onValueChange) {
-      onValueChange(removeID(contents));
+    const callback = onValueChangeRef.current;
+    if (callback) {
+      callback(removeID(contents));
     }
   }, [contents]);
 
-  const value = {
+  const value: ContentEditorContextProps = {
     ...props,
     contents,
     isEditorHover,
@@ -229,6 +341,8 @@ export const ContentEditorContextProvider = ({
     setContents,
     activeId,
     setActiveId,
+    dropPreview,
+    setDropPreview,
   };
 
   return <ContentEditorContext.Provider value={value}>{children}</ContentEditorContext.Provider>;

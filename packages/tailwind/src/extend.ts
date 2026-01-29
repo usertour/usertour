@@ -3,24 +3,13 @@ export const extendSdk = {
     sdk: {
       border: 'var(--usertour-border)',
       input: 'var(--usertour-input)',
-      ring: 'var(--usertour-ring)',
+      ring: 'hsl(var(--usertour-focus-color))', // Format: "h s% l% / opacity"
       link: 'hsl(var(--usertour-link-color))',
       xbutton: 'var(--usertour-xbutton)',
       background: 'hsl(var(--usertour-background))',
       foreground: 'hsl(var(--usertour-foreground))',
       hover: 'hsl(var(--usertour-main-hover-background-color))',
       active: 'hsl(var(--usertour-main-active-background-color))',
-      destructive: 'var(--usertour-destructive)',
-      'destructive-foreground': 'var(--usertour-destructive-foreground)',
-      'destructive-hover': 'var(--usertour-destructive-hover)',
-      muted: 'var(--usertour-muted)',
-      'muted-foreground': 'var(--usertour-muted-foreground)',
-      accent: 'var(--usertour-accent)',
-      'accent-foreground': 'var(--usertour-accent-foreground)',
-      popover: 'var(--usertour-popover)',
-      'popover-foreground': 'var(--usertour-popover-foreground)',
-      card: 'var(--usertour-card)',
-      'card-foreground': 'var(--usertour-card-foreground)',
       progress: 'var(--usertour-progress-bar-color)',
       question: 'hsl(var(--usertour-question-color))',
       brand: {
@@ -67,6 +56,7 @@ export const extendSdk = {
     'sdk-sm': 'calc(var(--usertour-radius) - 4px)',
     'sdk-popper': 'var(--usertour-popper-radius)',
     'sdk-button': 'var(--usertour-button-border-radius)',
+    'sdk-xs': 'calc(var(--usertour-font-size) * 0.25)',
   },
   borderWidth: {
     'sdk-btn-primary': 'var(--usertour-primary-border-width)',
@@ -89,6 +79,7 @@ export const extendSdk = {
     'sdk-button-x': 'var(--usertour-button-px)',
   },
   height: {
+    'sdk-font-size': 'var(--usertour-font-size)',
     'sdk-line-height': 'var(--usertour-line-height)',
     'sdk-button': 'var(--usertour-button-height)',
     'sdk-progress': 'var(--usertour-progress-bar-height)',
@@ -105,13 +96,16 @@ export const extendSdk = {
   minWidth: {
     'sdk-button': 'var(--usertour-button-min-width)',
   },
-  lineHeight: {
-    'sdk-base': 'var(--usertour-line-height)',
+  minHeight: {
+    'sdk-line-height': 'var(--usertour-line-height)',
   },
   fontSize: {
-    'sdk-base': 'var(--usertour-font-size)',
-    'sdk-h1': 'var(--usertour-font-size-h1)',
-    'sdk-h2': 'var(--usertour-font-size-h2)',
+    // sdk-base includes line-height (following Tailwind convention)
+    // Use leading-none to override if line-height is not needed
+    'sdk-base': ['var(--usertour-font-size)', 'var(--usertour-line-height)'],
+    // Heading font sizes include line-height (1.25em) for consistency
+    'sdk-h1': ['var(--usertour-h1-font-size)', { lineHeight: '1.25em' }],
+    'sdk-h2': ['var(--usertour-h2-font-size)', { lineHeight: '1.25em' }],
     'sdk-xs': 'calc(var(--usertour-font-size) * 0.75)',
     'sdk-sm': 'calc(var(--usertour-font-size) * 0.875)',
     'sdk-numbered-progress': 'var(--usertour-numbered-progress-bar-height)',
@@ -149,6 +143,9 @@ export const extendSdk = {
 export const extendBase = {
   screens: {
     '3xl': '2400px',
+  },
+  minWidth: {
+    '2xl': '42rem', // 672px
   },
   colors: {
     border: 'hsl(var(--border))',
@@ -215,6 +212,17 @@ export const extendBase = {
     md: 'calc(var(--radius) - 2px)',
     sm: 'calc(var(--radius) - 4px)',
   },
+  boxShadow: {
+    toolbar: [
+      '0px 16px 48px 0px hsl(var(--foreground) / 0.04)',
+      '0px 12px 24px 0px hsl(var(--foreground) / 0.04)',
+      '0px 6px 8px 0px hsl(var(--foreground) / 0.02)',
+      '0px 2px 3px 0px hsl(var(--foreground) / 0.02)',
+    ].join(', '),
+  },
+  dropShadow: {
+    popover: ['0 3px 10px rgba(0, 0, 0, 0.15)', '0 1px 2px rgba(0, 0, 0, 0.1)'],
+  },
   // fontFamily: {
   //   sans: ["var(--font-sans)", ...fontFamily.sans],
   // },
@@ -227,10 +235,15 @@ export const extendBase = {
       from: { height: 'var(--radix-accordion-content-height)' },
       to: { height: 0 },
     },
+    'toolbar-fade-in': {
+      from: { opacity: '0' },
+      to: { opacity: '1' },
+    },
   },
   animation: {
     'accordion-down': 'accordion-down 0.2s ease-out',
     'accordion-up': 'accordion-up 0.2s ease-out',
+    'toolbar-fade-in': 'toolbar-fade-in 0.2s cubic-bezier(0.46, 0.03, 0.52, 0.96)',
   },
 };
 

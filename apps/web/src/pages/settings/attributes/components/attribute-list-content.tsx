@@ -33,59 +33,61 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
   }
 
   return (
-    <>
-      <div className="rounded-md border-none">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Display name</TableHead>
-              <TableHead>Code name</TableHead>
-              <TableHead className="w-32">Data type</TableHead>
-              <TableHead className="w-60">CreatedAt</TableHead>
-              <TableHead className="w-24" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {attributes ? (
-              attributes?.map((attribute: Attribute) => (
-                <TableRow className="cursor-pointer" key={attribute.id} onClick={() => {}}>
-                  <TableCell className="truncate">
-                    {attribute.description ? (
-                      <div className="flex flex-col">
-                        <span className="truncate">{attribute.displayName}</span>
-                        <span className="text-xs text-muted-foreground truncate">
-                          {attribute.description}
-                        </span>
-                      </div>
-                    ) : (
-                      attribute.displayName
-                    )}
-                  </TableCell>
-                  <TableCell className="truncate">{attribute.codeName}</TableCell>
-                  <TableCell>
-                    {attribute.dataType === 1 && 'Number'}
-                    {attribute.dataType === 2 && 'String'}
-                    {attribute.dataType === 3 && 'Boolean'}
-                    {attribute.dataType === 4 && 'List'}
-                    {attribute.dataType === 5 && 'DateTime'}
-                    {attribute.dataType === 6 && 'RandomAB'}
-                    {attribute.dataType === 7 && 'RandomNumber'}
-                  </TableCell>
-                  <TableCell>{format(new Date(attribute.createdAt), 'PPpp')}</TableCell>
-                  <TableCell>
-                    <AttributeListAction attribute={attribute} />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell className="h-24 text-center">No results.</TableCell>
+    <div className="overflow-x-auto">
+      <Table className="table-fixed min-w-2xl">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Display name</TableHead>
+            <TableHead>Code name</TableHead>
+            <TableHead className="w-28 hidden sm:table-cell">Data type</TableHead>
+            <TableHead className="w-48 hidden lg:table-cell">CreatedAt</TableHead>
+            <TableHead className="w-20" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {attributes ? (
+            attributes?.map((attribute: Attribute) => (
+              <TableRow className="cursor-pointer" key={attribute.id} onClick={() => {}}>
+                <TableCell className="truncate">
+                  {attribute.description ? (
+                    <div className="flex flex-col">
+                      <span className="truncate">{attribute.displayName}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {attribute.description}
+                      </span>
+                    </div>
+                  ) : (
+                    attribute.displayName
+                  )}
+                </TableCell>
+                <TableCell className="truncate">{attribute.codeName}</TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {attribute.dataType === 1 && 'Number'}
+                  {attribute.dataType === 2 && 'String'}
+                  {attribute.dataType === 3 && 'Boolean'}
+                  {attribute.dataType === 4 && 'List'}
+                  {attribute.dataType === 5 && 'DateTime'}
+                  {attribute.dataType === 6 && 'RandomAB'}
+                  {attribute.dataType === 7 && 'RandomNumber'}
+                </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  {format(new Date(attribute.createdAt), 'PPpp')}
+                </TableCell>
+                <TableCell>
+                  <AttributeListAction attribute={attribute} />
+                </TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={5} className="h-24 text-center">
+                No results.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

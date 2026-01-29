@@ -3,6 +3,7 @@ import {
   ArrowRightIcon,
   EyeNoneIcon,
   ModelIcon,
+  RiMessageFill,
   SpinnerIcon,
   TooltipIcon,
 } from '@usertour-packages/icons';
@@ -19,7 +20,7 @@ import {
   DropdownMenuSelectItem,
 } from '@usertour-packages/dropdown-menu';
 import { getStepError } from '@usertour/helpers';
-import { Step, ContentVersion } from '@usertour/types';
+import { Step, ContentVersion, StepContentType } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
@@ -49,12 +50,14 @@ export interface ContentActionsStepProps {
 // Get step type icon
 const getStepTypeIcon = (type: string) => {
   switch (type) {
-    case 'hidden':
-      return <EyeNoneIcon className="w-4 h-4 mr-1" />;
-    case 'tooltip':
+    case StepContentType.BUBBLE:
+      return <RiMessageFill className="w-4 h-4 mr-1" />;
+    case StepContentType.TOOLTIP:
       return <TooltipIcon className="w-4 h-4 mt-1 mr-1" />;
-    case 'modal':
+    case StepContentType.MODAL:
       return <ModelIcon className="w-4 h-4 mt-0.5 mr-1" />;
+    case StepContentType.HIDDEN:
+      return <EyeNoneIcon className="w-4 h-4 mr-1" />;
     default:
       return null;
   }
@@ -332,24 +335,31 @@ export const ContentActionsStep = (props: ContentActionsStepProps) => {
             <DropdownMenuSubContent>
               <DropdownMenuItem
                 className="cursor-pointer"
-                onSelect={() => handleCreateStepWrapper('hidden')}
+                onSelect={() => handleCreateStepWrapper(StepContentType.BUBBLE)}
               >
-                <EyeNoneIcon className="w-4 h-4 mr-1 flex-none" />
-                Hidden
+                <RiMessageFill className="w-4 h-4 mr-1 flex-none" />
+                Speech Bubble
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
-                onSelect={() => handleCreateStepWrapper('tooltip')}
+                onSelect={() => handleCreateStepWrapper(StepContentType.TOOLTIP)}
               >
                 <TooltipIcon className="w-4 h-4 mr-1 mt-1 flex-none" />
                 Tooltip
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
-                onSelect={() => handleCreateStepWrapper('modal')}
+                onSelect={() => handleCreateStepWrapper(StepContentType.MODAL)}
               >
                 <ModelIcon className="w-4 h-4 mr-1 mt-0.5 flex-none" />
                 Modal
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => handleCreateStepWrapper(StepContentType.HIDDEN)}
+              >
+                <EyeNoneIcon className="w-4 h-4 mr-1 flex-none" />
+                Hidden
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>

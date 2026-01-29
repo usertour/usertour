@@ -81,8 +81,9 @@ export class UsertourCore extends Evented {
 
   // === Private Properties ===
   private baseZIndex = WidgetZIndex.BASE;
-  private targetMissingSeconds = 6;
+  private targetMissingSeconds: number | undefined = undefined;
   private customNavigate: ((url: string) => void) | null = null;
+  private evalJsDisabled = false;
   private readonly id: string;
   private attributeManager: UsertourAttributeManager;
   private uiManager: UsertourUIManager;
@@ -437,6 +438,22 @@ export class UsertourCore extends Evented {
    */
   getCustomNavigate(): ((url: string) => void) | null {
     return this.customNavigate;
+  }
+
+  /**
+   * Disables JavaScript evaluation via eval
+   * When disabled, JAVASCRIPT_EVALUATE actions will be skipped
+   */
+  disableEvalJs(): void {
+    this.evalJsDisabled = true;
+  }
+
+  /**
+   * Checks if JavaScript evaluation is disabled
+   * @returns True if eval is disabled, false otherwise
+   */
+  isEvalJsDisabled(): boolean {
+    return this.evalJsDisabled;
   }
 
   // === Public API: State Queries ===

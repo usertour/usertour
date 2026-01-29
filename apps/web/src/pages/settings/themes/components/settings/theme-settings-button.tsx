@@ -1,4 +1,4 @@
-import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
+import { ColorPicker } from '@usertour-packages/shared-components';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
 import { ThemeTypesSettingsButton } from '@usertour/types';
 import { Input } from '@usertour-packages/input';
@@ -61,7 +61,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
       <div className="flex flex-row w-full">
         <div className="flex flex-col space-y-1 basis-1/3">
           <div className="text-sm">Font color</div>
-          <ThemeColorPicker
+          <ColorPicker
             defaultColor={data.textColor.color}
             showAutoButton={true}
             isAutoColor={data.textColor.color === 'Auto'}
@@ -75,7 +75,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
         </div>
         <div className="flex flex-col space-y-1 basis-1/3">
           <div className="text-sm">Hover</div>
-          <ThemeColorPicker
+          <ColorPicker
             defaultColor={data.textColor.hover}
             showAutoButton={true}
             isAutoColor={data.textColor.hover === 'Auto'}
@@ -89,7 +89,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
         </div>
         <div className="flex flex-col space-y-1 basis-1/3">
           <div className="text-sm">Click</div>
-          <ThemeColorPicker
+          <ColorPicker
             defaultColor={data.textColor.active}
             showAutoButton={true}
             isAutoColor={data.textColor.active === 'Auto'}
@@ -107,7 +107,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
       <div className="flex flex-row w-full">
         <div className="flex flex-col space-y-1 basis-1/3">
           <div className="text-sm">Background</div>
-          <ThemeColorPicker
+          <ColorPicker
             defaultColor={data.backgroundColor.background}
             showAutoButton={true}
             isAutoColor={data.backgroundColor.background === 'Auto'}
@@ -123,7 +123,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
         </div>
         <div className="flex flex-col space-y-1 basis-1/3">
           <div className="text-sm">Hover</div>
-          <ThemeColorPicker
+          <ColorPicker
             defaultColor={data.backgroundColor.hover}
             showAutoButton={true}
             isAutoColor={data.backgroundColor.hover === 'Auto'}
@@ -139,7 +139,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
         </div>
         <div className="flex flex-col space-y-1 basis-1/3">
           <div className="text-sm">Click</div>
-          <ThemeColorPicker
+          <ColorPicker
             defaultColor={data.backgroundColor.active}
             showAutoButton={true}
             isAutoColor={data.backgroundColor.active === 'Auto'}
@@ -194,7 +194,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
         <div className="flex flex-row w-full">
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Border color</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={data.border.color.color}
               showAutoButton={true}
               isAutoColor={data.border.color.color === 'Auto'}
@@ -213,7 +213,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Hover</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={data.border.color.hover}
               showAutoButton={true}
               isAutoColor={data.border.color.hover === 'Auto'}
@@ -232,7 +232,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Click</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={data.border.color.active}
               showAutoButton={true}
               isAutoColor={data.border.color.active === 'Auto'}

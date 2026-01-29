@@ -1,47 +1,54 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { EXTENSION_SIDEBAR_POPPER } from '@usertour-packages/constants';
-import { PopperPreview } from '@usertour-packages/shared-components';
-import { getDefaultDataForType } from '../../utils/default-data';
+import { StepContentType, ContentEditorRoot } from '@usertour/types';
+import { PopperPreview } from '../../components/preview';
+import { getDefaultDataForType, getEmptyDataForType } from '../../utils/default-data';
 import { defaultStep } from '@usertour/helpers';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 
-const contentList: any[] = [
-  {
-    // data: '[{"type":"paragraph","children":[{"text":"Hello, I an Lucky"}]}]',
-    data: getDefaultDataForType('tooltip'),
-    type: 'tooltip',
-    text: 'Tooltip',
-    width: '240px',
-    height: '98px',
-    scale: 0.7,
-  },
-  {
-    // data: '[{"type":"image","url":"https://assets.usertour.io/2918eea0-7daf-45c0-bc27-74a5ac2aca86/icon-theme-default-img (2).png","width":{"type":"percent","value":100},"children":[{"text":""}]},{"type":"paragraph","children":[{"text":"Track your favorites"}]}]',
-    data: getDefaultDataForType('modal'),
-    type: 'modal',
-    text: 'Modal',
-    width: '300px',
-    height: '300px',
-    scale: 0.5,
-  },
-  {
-    // data: '[{"type":"image","url":"https://assets.usertour.io/2918eea0-7daf-45c0-bc27-74a5ac2aca86/icon-theme-default-img (2).png","width":{"type":"percent","value":100},"children":[{"text":""}]},{"type":"paragraph","children":[{"text":"Track your favorites"}]}]',
-    data: getDefaultDataForType('hidden'),
-    type: 'hidden',
-    text: 'Hidden',
-    width: '240px',
-    height: '240px',
-    scale: 0.5,
-  },
-];
+interface ContentTypeConfig {
+  data: ContentEditorRoot[];
+  type: StepContentType;
+  text: string;
+  width: string;
+  height: string;
+}
 
 interface SidebarCreateProps {
   container: React.MutableRefObject<HTMLDivElement | null>;
 }
-export const SidebarCreate = (props: SidebarCreateProps) => {
+
+const CONTENT_TYPE_CONFIGS: Omit<ContentTypeConfig, 'data'>[] = [
+  {
+    type: StepContentType.BUBBLE,
+    text: 'Speech bubble',
+    width: '240px',
+    height: '98px',
+  },
+  {
+    type: StepContentType.TOOLTIP,
+    text: 'Tooltip',
+    width: '240px',
+    height: '98px',
+  },
+  {
+    type: StepContentType.MODAL,
+    text: 'Modal',
+    width: '300px',
+    height: '300px',
+  },
+  {
+    type: StepContentType.HIDDEN,
+    text: 'Hidden',
+    width: '240px',
+    height: '240px',
+  },
+];
+
+export const SidebarCreate = ({ container }: SidebarCreateProps) => {
   const {
     setCurrentIndex,
     setCurrentMode,
@@ -51,79 +58,92 @@ export const SidebarCreate = (props: SidebarCreateProps) => {
     setCurrentStep,
     isWebBuilder,
   } = useBuilderContext();
-  const { container } = props;
+
+  // Memoize content list to avoid recalculating on every render
+  const contentList = useMemo<ContentTypeConfig[]>(() => {
+    return CONTENT_TYPE_CONFIGS.map((config) => ({
+      ...config,
+      data: getDefaultDataForType(config.type),
+    }));
+  }, []);
 
   const handleCreateStep = useCallback(
-    (type: string, content: any) => {
+    (type: string, _content?: unknown) => {
       if (!currentVersion) {
         return;
       }
+
       const index = currentVersion.steps?.length ?? 0;
+      const emptyData = getEmptyDataForType();
+
       setCurrentStep({
         ...defaultStep,
         setting: {
           ...defaultStep.setting,
-          width: type === 'tooltip' ? defaultStep.setting.width : 550,
+          // width is undefined by default (Auto - uses theme default)
         },
         type,
         name: 'Untitled',
-        data: content,
+        data: emptyData,
         sequence: index,
       });
+
       setCurrentIndex(index);
+
+      // Determine the appropriate mode based on builder type and step type
       if (isWebBuilder) {
         setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
       } else {
-        if (type === 'tooltip') {
-          setCurrentMode({ mode: BuilderMode.ELEMENT_SELECTOR });
-        } else {
-          setCurrentMode({ mode: BuilderMode.FLOW_STEP_DETAIL });
-        }
+        const mode =
+          type === StepContentType.TOOLTIP
+            ? BuilderMode.ELEMENT_SELECTOR
+            : BuilderMode.FLOW_STEP_DETAIL;
+        setCurrentMode({ mode });
       }
     },
-    [currentVersion],
+    [currentVersion, setCurrentStep, setCurrentIndex, setCurrentMode, isWebBuilder],
   );
 
+  const popoverZIndex = useMemo(() => zIndex + EXTENSION_SIDEBAR_POPPER, [zIndex]);
+
+  const shouldShowContentList = Boolean(currentTheme?.settings);
+
   return (
-    <Popover.Root>
-      <Popover.Trigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <Button className="w-full h-10" variant="secondary">
           <PlusCircledIcon className="mr-2" />
           Create
         </Button>
-      </Popover.Trigger>
-      <Popover.Anchor virtualRef={container} />
-      <Popover.Portal>
-        <Popover.Content
-          className="z-50 w-fit rounded-xl dark:border-none bg-background-900 p-4 text-popover-foreground shadow-md outline-none border border-background-400	"
-          side="left"
-          align="start"
-          style={{ zIndex: zIndex + EXTENSION_SIDEBAR_POPPER }}
-          alignOffset={40}
-          sideOffset={2}
-        >
-          <h1 className="text-lg mb-3">Step Type</h1>
+      </PopoverTrigger>
+      <PopoverAnchor virtualRef={container} />
+      <PopoverContent
+        className="w-fit rounded-xl dark:border-none bg-background-900 border-background-400"
+        side="left"
+        align="start"
+        style={{ zIndex: popoverZIndex }}
+        alignOffset={40}
+        sideOffset={2}
+      >
+        <h1 className="text-lg mb-3">Step type</h1>
+        {shouldShowContentList && (
           <div className="grid grid-cols-2 gap-4">
-            {currentTheme?.settings &&
-              contentList.map((content, index) => {
-                return (
-                  <PopperPreview
-                    settings={currentTheme?.settings}
-                    scale={content.scale}
-                    type={content.type}
-                    width={content.width}
-                    height={content.height}
-                    key={index}
-                    data={content.data}
-                    text={content.text}
-                    onClick={handleCreateStep}
-                  />
-                );
-              })}
+            {contentList.map((content) => (
+              <PopperPreview
+                key={content.type}
+                type={content.type}
+                width={content.width}
+                height={content.height}
+                data={content.data}
+                text={content.text}
+                onClick={handleCreateStep}
+              />
+            ))}
           </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 };
+
 SidebarCreate.displayName = 'SidebarCreate';

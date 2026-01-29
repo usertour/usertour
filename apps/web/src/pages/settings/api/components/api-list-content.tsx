@@ -22,34 +22,38 @@ export const ApiListContent = () => {
   }
 
   return (
-    <Table className="table-fixed">
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Key</TableHead>
-          <TableHead className="w-60">CreatedAt</TableHead>
-          <TableHead className="w-24" />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {accessTokens?.map((token: AccessToken) => (
-          <TableRow key={token.id}>
-            <TableCell className="truncate">{token.name}</TableCell>
-            <TableCell className="truncate">{token.accessToken}</TableCell>
-            <TableCell>{format(new Date(token.createdAt), 'PPpp')}</TableCell>
-            <TableCell>
-              <ApiListAction token={token} environmentId={environment.id} />
-            </TableCell>
-          </TableRow>
-        ))}
-        {accessTokens?.length === 0 && (
+    <div className="overflow-x-auto">
+      <Table className="table-fixed min-w-2xl">
+        <TableHeader>
           <TableRow>
-            <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-              No API keys found.
-            </TableCell>
+            <TableHead>Name</TableHead>
+            <TableHead>Key</TableHead>
+            <TableHead className="w-48 hidden lg:table-cell">CreatedAt</TableHead>
+            <TableHead className="w-20" />
           </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {accessTokens?.map((token: AccessToken) => (
+            <TableRow key={token.id}>
+              <TableCell className="truncate">{token.name}</TableCell>
+              <TableCell className="truncate">{token.accessToken}</TableCell>
+              <TableCell className="hidden lg:table-cell">
+                {format(new Date(token.createdAt), 'PPpp')}
+              </TableCell>
+              <TableCell>
+                <ApiListAction token={token} environmentId={environment.id} />
+              </TableCell>
+            </TableRow>
+          ))}
+          {accessTokens?.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                No API keys found.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };

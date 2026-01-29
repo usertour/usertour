@@ -227,6 +227,31 @@ const translations = {
       },
     },
   },
+  themes: {
+    createForm: {
+      title: 'Create theme',
+      name: {
+        label: 'Name',
+        placeholder: 'Enter theme name',
+        required: 'Please enter your theme name.',
+      },
+      isDefault: {
+        label: 'Set as default theme',
+      },
+      submit: 'Submit',
+      cancel: 'Cancel',
+      toast: {
+        success: 'Theme created successfully',
+        createFailed: 'Create theme failed.',
+        projectMissing: 'Project not found. Please refresh the page.',
+      },
+    },
+    listHeader: {
+      newTheme: 'New Theme',
+      description:
+        'With themes, you can make flows and other Usertour content look like a native part of your app.',
+    },
+  },
 };
 
 export default translations;

@@ -1176,7 +1176,7 @@ export const extractStepTriggerAttributeIds = (steps: Step[]): string[] => {
 
   for (const step of steps) {
     if (step.trigger && isArray(step.trigger)) {
-      for (const trigger of step.trigger) {
+      for (const trigger of step.trigger as any[]) {
         // Type assertion to handle JsonValue type
         const typedTrigger = trigger as any;
         if (typedTrigger?.conditions && isArray(typedTrigger.conditions)) {
@@ -1215,7 +1215,7 @@ export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
     }
     // Extract attribute codes from step.trigger[].actions
     if (step.trigger && isArray(step.trigger)) {
-      for (const trigger of step.trigger) {
+      for (const trigger of step.trigger as any[]) {
         const typedTrigger = trigger as any;
         if (typedTrigger?.actions && isArray(typedTrigger.actions)) {
           const codes = extractAttrCodesFromActions(typedTrigger.actions);

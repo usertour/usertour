@@ -1,21 +1,19 @@
-import * as PopoverPrimitive from '@radix-ui/react-popover';
-
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
 import React from 'react';
 import { useRulesZIndex } from './rules-context';
 
-const RulesPopover = PopoverPrimitive.Root;
+const RulesPopover = Popover;
 
-interface RulesPopoverTriggerProps
-  extends React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger> {
+interface RulesPopoverTriggerProps extends React.ComponentPropsWithoutRef<typeof PopoverTrigger> {
   icon?: React.ReactNode;
 }
 
 const RulesPopoverTrigger = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Trigger>,
+  React.ElementRef<typeof PopoverTrigger>,
   RulesPopoverTriggerProps
 >(({ className, children, icon, ...props }, ref) => (
-  <PopoverPrimitive.Trigger ref={ref} asChild {...props}>
+  <PopoverTrigger ref={ref} asChild {...props}>
     <button
       type="button"
       className={cn(
@@ -28,12 +26,12 @@ const RulesPopoverTrigger = React.forwardRef<
       )}
       <span className="flex-1">{children}</span>
     </button>
-  </PopoverPrimitive.Trigger>
+  </PopoverTrigger>
 ));
 
 const RulesPopoverContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
+  React.ElementRef<typeof PopoverContent>,
+  React.ComponentPropsWithoutRef<typeof PopoverContent>
 >(
   (
     {
@@ -50,23 +48,19 @@ const RulesPopoverContent = React.forwardRef<
     const { popover: zIndex } = useRulesZIndex();
 
     return (
-      <PopoverPrimitive.Content
+      <PopoverContent
         ref={ref}
         align={align}
         side={side}
         sideOffset={sideOffset}
         alignOffset={alignOffset}
-        className={cn('border bg-popover rounded p-4 w-96', className)}
-        style={{
-          zIndex,
-          filter:
-            'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-        }}
+        className={cn('rounded w-96 drop-shadow-popover', className)}
+        style={{ zIndex }}
         {...props}
       >
         {children}
-        <PopoverPrimitive.Arrow className="fill-background" width={20} height={10} />
-      </PopoverPrimitive.Content>
+        <PopoverArrow className="fill-background" width={20} height={10} />
+      </PopoverContent>
     );
   },
 );

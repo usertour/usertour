@@ -193,7 +193,8 @@ export const isValidEvent = (eventName: string, bizSession: BizSession, events: 
   }
 
   // Check if event has specific validation rules
-  const validationRule = EVENT_VALIDATION_RULES[eventName as keyof typeof EVENT_VALIDATION_RULES];
+  const validationRule =
+    EVENT_VALIDATION_RULES[eventName as unknown as keyof typeof EVENT_VALIDATION_RULES];
   if (validationRule) {
     return validationRule.validate(bizEvents, events, bizSession);
   }

@@ -1,32 +1,36 @@
 import {
+  ContentEditorSerialize,
   Popper,
-  PopperContentFrame,
+  PopperBubblePortal,
   PopperClose,
-  PopperProgress,
+  PopperContentFrame,
+  PopperContentPotal,
   PopperMadeWith,
   PopperModalContentPotal,
   PopperOverlay,
-  PopperContentPotal,
-} from '@usertour-packages/sdk';
-import {
-  ContentEditorClickableElement,
-  ContentEditorSerialize,
-} from '@usertour-packages/shared-editor';
+  PopperProgress,
+  useSettingsStyles,
+  useStepWidth,
+} from '@usertour-packages/widget';
 import {
   Align,
+  AvatarType,
+  ContentEditorClickableElement,
+  contentEndReason,
+  ModalBackdropClickBehavior,
   ProgressBarPosition,
   ProgressBarType,
   RulesCondition,
+  SessionStep,
   Side,
   StepContentType,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
-import { useEffect, useSyncExternalStore, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
+
 import { UsertourTour } from '@/core/usertour-tour';
 import { off, on } from '@/utils';
-import { useSettingsStyles } from '@usertour-packages/sdk';
-import { SessionStep } from '@usertour/types';
 
 // Base props that are shared between TourPopper and TourModal
 type TourBaseProps = {
@@ -40,7 +44,7 @@ type TourBaseProps = {
   totalSteps: number;
   removeBranding: boolean;
   themeSettings: ThemeTypesSetting;
-  handleDismiss: () => void;
+  handleDismiss: (reason?: contentEndReason) => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
@@ -58,7 +62,7 @@ type PopperContentProps = {
   totalSteps: number;
   themeSettings: ThemeTypesSetting;
   removeBranding: boolean;
-  handleDismiss: () => void;
+  handleDismiss: (reason?: contentEndReason) => void;
   handleOnClick: (element: ContentEditorClickableElement, value?: any) => Promise<void>;
 };
 
@@ -197,6 +201,9 @@ const TourPopper = (props: TourPopperProps) => {
   } = props;
   const { themeSetting } = useSettingsStyles(themeSettings);
 
+  // Get width using the unified hook (handles undefined width with theme fallback)
+  const { width } = useStepWidth({ step: currentStep, themeSetting });
+
   // Create a responsive React.RefObject that updates when triggerRef changes
   const responsiveRef = useMemo(() => {
     const ref = { current: null as HTMLElement | null };
@@ -237,7 +244,7 @@ const TourPopper = (props: TourPopperProps) => {
         avoidCollisions={currentStep.setting.alignType === 'auto'}
         side={side}
         align={align}
-        width={`${currentStep.setting.width}px`}
+        width={`${width}px`}
         arrowSize={{
           width: themeSetting?.tooltip.notchSize ?? 20,
           height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
@@ -274,6 +281,17 @@ const TourModal = (props: TourModalProps) => {
     handleDismiss,
     handleOnClick,
   } = props;
+  const { themeSetting } = useSettingsStyles(themeSettings);
+
+  // Get width using the unified hook (handles undefined width with theme fallback)
+  const { width } = useStepWidth({ step: currentStep, themeSetting });
+
+  const handleBackdropClick = useCallback(() => {
+    const behavior = themeSettings?.modal?.backdropClickBehavior;
+    if (behavior === ModalBackdropClickBehavior.DISMISS_FLOW) {
+      handleDismiss(contentEndReason.BACKDROP_DISMISS);
+    }
+  }, [themeSettings, handleDismiss]);
 
   return (
     <Popper
@@ -288,7 +306,8 @@ const TourModal = (props: TourModalProps) => {
         enabledBackdrop={currentStep.setting.enabledBackdrop}
         positionOffsetX={currentStep.setting.positionOffsetX}
         positionOffsetY={currentStep.setting.positionOffsetY}
-        width={`${currentStep.setting.width}px`}
+        width={`${width}px`}
+        onBackdropClick={handleBackdropClick}
       >
         <PopperContent
           currentStep={currentStep}
@@ -301,6 +320,76 @@ const TourModal = (props: TourModalProps) => {
           handleOnClick={handleOnClick}
         />
       </PopperModalContentPotal>
+    </Popper>
+  );
+};
+
+const TourBubble = (props: TourModalProps) => {
+  const {
+    openState,
+    zIndex,
+    globalStyle,
+    currentStep,
+    assets,
+    userAttributes,
+    currentStepIndex,
+    totalSteps,
+    themeSettings,
+    removeBranding,
+    handleDismiss,
+    handleOnClick,
+  } = props;
+  const { themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(themeSettings);
+
+  // Get width using the unified hook (handles undefined width with theme fallback)
+  const { width } = useStepWidth({ step: currentStep, themeSetting });
+
+  // Get bubble settings from theme
+  const bubblePlacement = themeSetting?.bubble?.placement;
+  const avatarSettings = themeSetting?.avatar;
+
+  // Determine whether to show avatar based on avatar type
+  const showAvatar = avatarSettings?.type !== AvatarType.NONE;
+
+  const handleBackdropClick = useCallback(() => {
+    const behavior = themeSettings?.modal?.backdropClickBehavior;
+    if (behavior === ModalBackdropClickBehavior.DISMISS_FLOW) {
+      handleDismiss(contentEndReason.BACKDROP_DISMISS);
+    }
+  }, [themeSettings, handleDismiss]);
+
+  return (
+    <Popper
+      isIframeMode={true}
+      open={openState}
+      zIndex={zIndex}
+      globalStyle={globalStyle}
+      assets={assets}
+    >
+      <PopperBubblePortal
+        position={bubblePlacement?.position ?? 'leftBottom'}
+        positionOffsetX={bubblePlacement?.positionOffsetX ?? 20}
+        positionOffsetY={bubblePlacement?.positionOffsetY ?? 20}
+        width={`${width}px`}
+        avatarSize={avatarSettings?.size ?? 60}
+        avatarSrc={avatarUrl}
+        avatarComponent={avatarComponent}
+        notchColor={themeSetting?.mainColor?.background}
+        showAvatar={showAvatar}
+        enabledBackdrop={currentStep.setting.enabledBackdrop}
+        onBackdropClick={handleBackdropClick}
+      >
+        <PopperContent
+          currentStep={currentStep}
+          userAttributes={userAttributes}
+          currentStepIndex={currentStepIndex}
+          totalSteps={totalSteps}
+          themeSettings={themeSettings}
+          removeBranding={removeBranding}
+          handleDismiss={handleDismiss}
+          handleOnClick={handleOnClick}
+        />
+      </PopperBubblePortal>
     </Popper>
   );
 };
@@ -331,6 +420,10 @@ export const TourWidget = (props: { tour: UsertourTour }) => {
 
   if (stepType === StepContentType.MODAL) {
     return <TourModal {...commonProps} />;
+  }
+
+  if (stepType === StepContentType.BUBBLE) {
+    return <TourBubble {...commonProps} />;
   }
 
   return null;

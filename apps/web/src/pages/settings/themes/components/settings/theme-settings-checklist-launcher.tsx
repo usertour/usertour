@@ -1,4 +1,4 @@
-import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
+import { ColorPicker } from '@usertour-packages/shared-components';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
 import { ModalPosition } from '@usertour/types';
@@ -106,7 +106,7 @@ export const ThemeSettingsChecklistLauncher = () => {
         <div className="space-y-1">
           <div className="text-sm">Font color</div>
           <div className="flex">
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.checklistLauncher.color.color}
               showAutoButton={true}
               isAutoColor={settings.checklistLauncher.color.color === 'Auto'}
@@ -123,7 +123,7 @@ export const ThemeSettingsChecklistLauncher = () => {
         <div className="flex flex-row w-full">
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Background</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.checklistLauncher.color.background}
               className="rounded-r-none"
               showAutoButton={true}
@@ -142,7 +142,7 @@ export const ThemeSettingsChecklistLauncher = () => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Hover</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.checklistLauncher.color.hover}
               className="rounded-none border-x-0"
               showAutoButton={true}
@@ -161,7 +161,7 @@ export const ThemeSettingsChecklistLauncher = () => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Active</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.checklistLauncher.color.active}
               className="rounded-l-none"
               showAutoButton={true}
@@ -182,7 +182,7 @@ export const ThemeSettingsChecklistLauncher = () => {
         <div className="space-y-1">
           <div className="text-sm">Counter font color</div>
           <div className="flex">
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.checklistLauncher.counter.color}
               showAutoButton={true}
               isAutoColor={settings.checklistLauncher.counter.color === 'Auto'}
@@ -199,7 +199,7 @@ export const ThemeSettingsChecklistLauncher = () => {
         <div className="space-y-1">
           <div className="text-sm">Counter background color</div>
           <div className="flex">
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.checklistLauncher.counter.background}
               showAutoButton={true}
               isAutoColor={settings.checklistLauncher.counter.background === 'Auto'}

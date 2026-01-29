@@ -6,8 +6,8 @@ import {
   ThemeTypesSetting,
   contentEndReason,
 } from '@usertour/types';
-import { ChecklistStore, BaseStore } from '@/types/store';
-import { UsertourComponent } from '@/core/usertour-component';
+import { ChecklistStore } from '@/types/store';
+import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
@@ -206,10 +206,10 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
 
   /**
    * Gets custom checklist store data
-   * @param baseData - The base store data that can be used for custom logic
+   * @param _context - Context object (unused in checklist)
    * @protected
    */
-  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<ChecklistStore> {
+  protected getCustomStoreData(_context: CustomStoreDataContext): Partial<ChecklistStore> {
     const checklistData = this.getChecklistData();
     const expanded = this.getExpandedStateStorage(this.getSessionId());
     return {
@@ -274,7 +274,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * Handles the dismiss event of the checklist
    */
   async handleDismiss() {
-    await this.close(contentEndReason.USER_CLOSED);
+    await this.close(contentEndReason.DISMISS_BUTTON);
   }
 
   /**

@@ -1,6 +1,6 @@
 import { Environment, Project } from '@usertour/types';
-import { UID_COOKIE } from '@usertour-packages/constants';
 import {
+  useCurrentUserId,
   useGlobalConfigQuery,
   useGetUserInfoQuery,
   useLogoutMutation,
@@ -8,7 +8,6 @@ import {
 import { removeAuthToken } from '@usertour/helpers';
 import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
-import { useCookie } from 'react-use';
 
 interface AppContextProps {
   environment: Environment | null;
@@ -34,7 +33,7 @@ export const AppProvider = (props: AppProviderProps) => {
   const { children } = props;
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [userInfo, setUserInfo] = useState<UserProfile | null | undefined>(undefined);
-  const [uid] = useCookie(UID_COOKIE);
+  const uid = useCurrentUserId();
   const { data, refetch, loading, error } = useGetUserInfoQuery(uid || undefined);
   const { data: globalConfig } = useGlobalConfigQuery();
   const { invoke: logout } = useLogoutMutation();

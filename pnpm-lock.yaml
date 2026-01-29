@@ -47,7 +47,7 @@ importers:
         version: 7.3.0(@swc/core@1.7.42)(postcss@8.4.47)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))(typescript@5.3.3)
       turbo:
         specifier: latest
-        version: 2.7.2
+        version: 2.7.3
 
   apps/sdk:
     dependencies:
@@ -57,42 +57,39 @@ importers:
       '@floating-ui/react':
         specifier: ^0.24.3
         version: 0.24.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@radix-ui/react-popover':
-        specifier: ^1.0.6
-        version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour-packages/button':
         specifier: workspace:*
         version: link:../../packages/components/button
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../../packages/shared/constants
+        version: link:../../packages/constants
       '@usertour-packages/dom':
         specifier: workspace:^
-        version: link:../../packages/shared/dom
+        version: link:../../packages/dom
       '@usertour-packages/finder':
         specifier: workspace:^
         version: link:../../packages/shared/finder
       '@usertour-packages/frame':
         specifier: workspace:*
         version: link:../../packages/components/frame
+      '@usertour-packages/icons':
+        specifier: workspace:^
+        version: link:../../packages/icons
       '@usertour-packages/react-context':
         specifier: workspace:^
         version: link:../../packages/radix/context
-      '@usertour-packages/sdk':
-        specifier: workspace:^
-        version: link:../../packages/shared/sdk
-      '@usertour-packages/shared-editor':
-        specifier: workspace:^
-        version: link:../../packages/shared/editor
       '@usertour-packages/tailwind':
         specifier: workspace:^
         version: link:../../packages/tailwind
+      '@usertour-packages/widget':
+        specifier: workspace:^
+        version: link:../../packages/widget
       '@usertour/helpers':
-        specifier: ^0.0.60
-        version: 0.0.60(typescript@5.1.6)
+        specifier: workspace:^
+        version: link:../../packages/helpers
       '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
+        specifier: workspace:^
+        version: link:../../packages/types
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -341,14 +338,14 @@ importers:
         specifier: ^4.7.1
         version: 4.7.4
       '@usertour/helpers':
-        specifier: ^0.0.60
-        version: 0.0.60(typescript@4.9.5)
+        specifier: workspace:^
+        version: link:../../packages/helpers
       '@usertour/license':
         specifier: ^0.0.2
         version: 0.0.2
       '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
+        specifier: workspace:^
+        version: link:../../packages/types
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -439,6 +436,9 @@ importers:
       pg:
         specifier: ^8.13.1
         version: 8.13.1
+      prisma:
+        specifier: 5.12.1
+        version: 5.12.1
       redis:
         specifier: ^4.7.0
         version: 4.7.0
@@ -524,9 +524,6 @@ importers:
       prettier:
         specifier: 2.8.4
         version: 2.8.4
-      prisma:
-        specifier: 5.12.1
-        version: 5.12.1
       prisma-dbml-generator:
         specifier: 0.12.0
         version: 0.12.0(encoding@0.1.13)
@@ -587,9 +584,6 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@radix-ui/react-popover':
-        specifier: ^1.0.6
-        version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-slider':
         specifier: ^1.1.2
         version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -604,7 +598,7 @@ importers:
         version: 8.20.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@uiw/react-codemirror':
         specifier: ^4.23.0
-        version: 4.23.6(@babel/runtime@7.27.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.2.3))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.2.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        version: 4.23.6(@babel/runtime@7.28.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.2.3))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.2.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour-packages/alert':
         specifier: workspace:^
         version: link:../../packages/components/alert
@@ -643,7 +637,7 @@ importers:
         version: link:../../packages/components/command
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../../packages/shared/constants
+        version: link:../../packages/constants
       '@usertour-packages/context-menu':
         specifier: workspace:^
         version: link:../../packages/components/context-menu
@@ -667,7 +661,7 @@ importers:
         version: link:../../packages/shared/i18n
       '@usertour-packages/icons':
         specifier: workspace:^
-        version: link:../../packages/shared/icons
+        version: link:../../packages/icons
       '@usertour-packages/input':
         specifier: workspace:^
         version: link:../../packages/components/input
@@ -695,9 +689,6 @@ importers:
       '@usertour-packages/scroll-area':
         specifier: workspace:^
         version: link:../../packages/components/scroll-area
-      '@usertour-packages/sdk':
-        specifier: workspace:^
-        version: link:../../packages/shared/sdk
       '@usertour-packages/select':
         specifier: workspace:^
         version: link:../../packages/components/select
@@ -743,12 +734,15 @@ importers:
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../packages/components/use-toast
+      '@usertour-packages/widget':
+        specifier: workspace:^
+        version: link:../../packages/widget
       '@usertour/helpers':
-        specifier: ^0.0.60
-        version: 0.0.60(typescript@5.1.6)
+        specifier: workspace:^
+        version: link:../../packages/helpers
       '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
+        specifier: workspace:^
+        version: link:../../packages/types
       apollo3-cache-persist:
         specifier: ^0.14.1
         version: 0.14.1(@apollo/client@3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))
@@ -852,8 +846,8 @@ importers:
         specifier: ^10.0.5
         version: 10.0.5(react@18.2.0)
       usertour.js:
-        specifier: ^0.0.10
-        version: 0.0.10
+        specifier: ^0.0.15
+        version: 0.0.15
       vite-plugin-mkcert:
         specifier: ^1.17.5
         version: 1.17.6(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
@@ -1479,61 +1473,6 @@ importers:
       typescript:
         specifier: ^5.0.2
         version: 5.1.6
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
-  packages/components/combo-box:
-    dependencies:
-      '@radix-ui/react-icons':
-        specifier: ^1.3.0
-        version: 1.3.1(react@18.2.0)
-      '@usertour-packages/button':
-        specifier: workspace:*
-        version: link:../button
-      '@usertour-packages/command':
-        specifier: workspace:*
-        version: link:../command
-      '@usertour-packages/popover':
-        specifier: workspace:*
-        version: link:../popover
-      '@usertour-packages/tailwind':
-        specifier: workspace:*
-        version: link:../../tailwind
-    devDependencies:
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.3.3
       vite:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
@@ -2791,6 +2730,67 @@ importers:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
+  packages/components/ui:
+    dependencies:
+      '@base-ui/react':
+        specifier: 1.0.0-rc.2
+        version: 1.0.0-rc.2(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@tabler/icons-react':
+        specifier: ^3.31.0
+        version: 3.36.1(react@18.2.0)
+      '@usertour-packages/button':
+        specifier: workspace:*
+        version: link:../button
+      '@usertour-packages/input':
+        specifier: workspace:*
+        version: link:../input
+      '@usertour-packages/tailwind':
+        specifier: workspace:*
+        version: link:../../tailwind
+      '@usertour-packages/textarea':
+        specifier: workspace:*
+        version: link:../textarea
+      class-variance-authority:
+        specifier: ^0.4.0
+        version: 0.4.0(typescript@5.3.3)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.37
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: ^18.0.11
+        version: 18.2.7
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.3.4
+        version: 0.3.5(eslint@8.57.1)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+      vite:
+        specifier: ^4.3.9
+        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
+
   packages/components/use-toast:
     dependencies:
       sonner:
@@ -2830,6 +2830,141 @@ importers:
       typescript:
         specifier: ^5.0.2
         version: 5.1.6
+      vite:
+        specifier: ^4.3.9
+        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
+
+  packages/constants:
+    devDependencies:
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+
+  packages/dom:
+    dependencies:
+      '@babel/runtime':
+        specifier: ^7.13.10
+        version: 7.27.6
+      '@types/react':
+        specifier: '*'
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: '*'
+        version: 18.2.7
+      '@usertour-packages/react-slot':
+        specifier: workspace:*
+        version: link:../radix/slot
+      react:
+        specifier: ^16.8 || ^17.0 || ^18.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^16.8 || ^17.0 || ^18.0
+        version: 18.2.0(react@18.2.0)
+    devDependencies:
+      '@testing-library/react':
+        specifier: ^10.4.8
+        version: 10.4.9(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+
+  packages/helpers:
+    dependencies:
+      '@paralleldrive/cuid2':
+        specifier: ^2.2.2
+        version: 2.2.2
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
+      chroma-js:
+        specifier: ^3.1.2
+        version: 3.1.2
+      class-variance-authority:
+        specifier: ^0.4.0
+        version: 0.4.0(typescript@5.3.3)
+      date-fns:
+        specifier: ^2.30.0
+        version: 2.30.0
+      deepmerge-ts:
+        specifier: ^7.1.3
+        version: 7.1.3
+      fast-deep-equal:
+        specifier: ^3.1.3
+        version: 3.1.3
+      uuid:
+        specifier: ^9.0.1
+        version: 9.0.1
+    devDependencies:
+      '@jest/types':
+        specifier: ^29.6.3
+        version: 29.6.3
+      '@types/chroma-js':
+        specifier: ^3.1.1
+        version: 3.1.1
+      '@types/jest':
+        specifier: 29.4.0
+        version: 29.4.0
+      '@types/uuid':
+        specifier: ^9.0.6
+        version: 9.0.8
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      jest:
+        specifier: 29.5.0
+        version: 29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))
+      ts-jest:
+        specifier: 29.0.5
+        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+
+  packages/icons:
+    dependencies:
+      '@radix-ui/react-slot':
+        specifier: ^1.0.2
+        version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
+      '@remixicon/react':
+        specifier: ^4.8.0
+        version: 4.8.0(react@18.2.0)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.37
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: ^18.0.11
+        version: 18.2.7
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.3.4
+        version: 0.3.5(eslint@8.57.1)
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
       vite:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
@@ -3103,9 +3238,6 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@radix-ui/react-popover':
-        specifier: ^1.0.6
-        version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-slider':
         specifier: ^1.1.2
         version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -3147,7 +3279,7 @@ importers:
         version: link:../../components/command
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../constants
+        version: link:../../constants
       '@usertour-packages/context-menu':
         specifier: workspace:^
         version: link:../../components/context-menu
@@ -3177,7 +3309,7 @@ importers:
         version: link:../../components/hover-card
       '@usertour-packages/icons':
         specifier: workspace:^
-        version: link:../icons
+        version: link:../../icons
       '@usertour-packages/input':
         specifier: workspace:^
         version: link:../../components/input
@@ -3199,9 +3331,6 @@ importers:
       '@usertour-packages/scroll-area':
         specifier: workspace:^
         version: link:../../components/scroll-area
-      '@usertour-packages/sdk':
-        specifier: workspace:^
-        version: link:../sdk
       '@usertour-packages/select':
         specifier: workspace:^
         version: link:../../components/select
@@ -3241,12 +3370,15 @@ importers:
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../components/use-toast
+      '@usertour-packages/widget':
+        specifier: workspace:^
+        version: link:../../widget
       '@usertour/helpers':
-        specifier: ^0.0.60
-        version: 0.0.60(typescript@5.1.6)
+        specifier: workspace:^
+        version: link:../../helpers
       '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
+        specifier: workspace:^
+        version: link:../../types
       animejs:
         specifier: ^3.2.1
         version: 3.2.2
@@ -3271,6 +3403,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      rc-upload:
+        specifier: ^4.3.5
+        version: 4.8.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -3362,12 +3497,9 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@radix-ui/react-popover':
-        specifier: ^1.0.6
-        version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@uiw/react-codemirror':
         specifier: ^4.23.0
-        version: 4.23.6(@babel/runtime@7.27.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.2.3))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.2.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        version: 4.23.6(@babel/runtime@7.28.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.2.3))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.2.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour-packages/alert':
         specifier: workspace:^
         version: link:../../components/alert
@@ -3395,15 +3527,12 @@ importers:
       '@usertour-packages/checkbox':
         specifier: workspace:^
         version: link:../../components/checkbox
-      '@usertour-packages/combo-box':
-        specifier: workspace:^
-        version: link:../../components/combo-box
       '@usertour-packages/command':
         specifier: workspace:^
         version: link:../../components/command
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../constants
+        version: link:../../constants
       '@usertour-packages/context-menu':
         specifier: workspace:^
         version: link:../../components/context-menu
@@ -3424,7 +3553,7 @@ importers:
         version: link:../../components/hover-card
       '@usertour-packages/icons':
         specifier: workspace:^
-        version: link:../icons
+        version: link:../../icons
       '@usertour-packages/input':
         specifier: workspace:^
         version: link:../../components/input
@@ -3446,18 +3575,12 @@ importers:
       '@usertour-packages/scroll-area':
         specifier: workspace:^
         version: link:../../components/scroll-area
-      '@usertour-packages/sdk':
-        specifier: workspace:^
-        version: link:../sdk
       '@usertour-packages/select':
         specifier: workspace:^
         version: link:../../components/select
       '@usertour-packages/separator':
         specifier: workspace:^
         version: link:../../components/separator
-      '@usertour-packages/shared-editor':
-        specifier: workspace:^
-        version: link:../editor
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../hooks
@@ -3485,12 +3608,15 @@ importers:
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../components/use-toast
+      '@usertour-packages/widget':
+        specifier: workspace:^
+        version: link:../../widget
       '@usertour/helpers':
-        specifier: ^0.0.60
-        version: 0.0.60(typescript@5.1.6)
+        specifier: workspace:^
+        version: link:../../helpers
       '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
+        specifier: workspace:^
+        version: link:../../types
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -3503,6 +3629,9 @@ importers:
       react:
         specifier: ^18.2.0
         version: 18.2.0
+      react-colorful:
+        specifier: ^5.6.1
+        version: 5.6.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
@@ -3550,12 +3679,6 @@ importers:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
-  packages/shared/constants:
-    devDependencies:
-      typescript:
-        specifier: ^5.0.2
-        version: 5.1.6
-
   packages/shared/contexts:
     dependencies:
       '@apollo/client':
@@ -3568,8 +3691,8 @@ importers:
         specifier: workspace:^
         version: link:../gql
       '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
+        specifier: workspace:^
+        version: link:../../types
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -3608,31 +3731,6 @@ importers:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
-  packages/shared/dom:
-    dependencies:
-      '@babel/runtime':
-        specifier: ^7.13.10
-        version: 7.26.0
-      '@types/react':
-        specifier: '*'
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: '*'
-        version: 18.2.7
-      '@usertour-packages/react-slot':
-        specifier: workspace:*
-        version: link:../../radix/slot
-      react:
-        specifier: ^16.8 || ^17.0 || ^18.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^16.8 || ^17.0 || ^18.0
-        version: 18.2.0(react@18.2.0)
-    devDependencies:
-      '@testing-library/react':
-        specifier: ^10.4.8
-        version: 10.4.9(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-
   packages/shared/editor:
     dependencies:
       '@codemirror/lang-javascript':
@@ -3665,9 +3763,6 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@radix-ui/react-popover':
-        specifier: ^1.0.7
-        version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@radix-ui/react-slot':
         specifier: ^1.0.2
         version: 1.1.0(@types/react@18.2.15)(react@18.2.0)
@@ -3676,7 +3771,7 @@ importers:
         version: 1.1.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@uiw/react-codemirror':
         specifier: ^4.23.0
-        version: 4.23.6(@babel/runtime@7.27.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.2.3))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.2.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        version: 4.23.6(@babel/runtime@7.28.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.2.3))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.2.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@usertour-packages/badge':
         specifier: workspace:^
         version: link:../../components/badge
@@ -3686,15 +3781,12 @@ importers:
       '@usertour-packages/checkbox':
         specifier: workspace:^
         version: link:../../components/checkbox
-      '@usertour-packages/combo-box':
-        specifier: workspace:^
-        version: link:../../components/combo-box
       '@usertour-packages/command':
         specifier: workspace:^
         version: link:../../components/command
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../constants
+        version: link:../../constants
       '@usertour-packages/dialog':
         specifier: workspace:^
         version: link:../../components/dialog
@@ -3706,7 +3798,7 @@ importers:
         version: link:../../components/form
       '@usertour-packages/icons':
         specifier: workspace:^
-        version: link:../icons
+        version: link:../../icons
       '@usertour-packages/input':
         specifier: workspace:^
         version: link:../../components/input
@@ -3728,9 +3820,15 @@ importers:
       '@usertour-packages/select':
         specifier: workspace:^
         version: link:../../components/select
+      '@usertour-packages/shared-components':
+        specifier: workspace:^
+        version: link:../components
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../hooks
+      '@usertour-packages/skeleton':
+        specifier: workspace:^
+        version: link:../../components/skeleton
       '@usertour-packages/switch':
         specifier: workspace:^
         version: link:../../components/switch
@@ -3746,15 +3844,21 @@ importers:
       '@usertour-packages/tooltip':
         specifier: workspace:^
         version: link:../../components/tooltip
+      '@usertour-packages/ui':
+        specifier: workspace:^
+        version: link:../../components/ui
       '@usertour-packages/use-toast':
         specifier: workspace:^
         version: link:../../components/use-toast
+      '@usertour-packages/widget':
+        specifier: workspace:^
+        version: link:../../widget
       '@usertour/helpers':
-        specifier: ^0.0.60
-        version: 0.0.60(typescript@5.1.6)
+        specifier: workspace:^
+        version: link:../../helpers
       '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
+        specifier: workspace:^
+        version: link:../../types
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -3924,64 +4028,6 @@ importers:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
-  packages/shared/helpers:
-    dependencies:
-      '@paralleldrive/cuid2':
-        specifier: ^2.2.2
-        version: 2.2.2
-      '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
-      chroma-js:
-        specifier: ^3.1.2
-        version: 3.1.2
-      class-variance-authority:
-        specifier: ^0.4.0
-        version: 0.4.0(typescript@5.3.3)
-      date-fns:
-        specifier: ^2.30.0
-        version: 2.30.0
-      deepmerge-ts:
-        specifier: ^7.1.3
-        version: 7.1.3
-      fast-deep-equal:
-        specifier: ^3.1.3
-        version: 3.1.3
-      uuid:
-        specifier: ^9.0.1
-        version: 9.0.1
-    devDependencies:
-      '@jest/types':
-        specifier: ^29.6.3
-        version: 29.6.3
-      '@types/chroma-js':
-        specifier: ^3.1.1
-        version: 3.1.1
-      '@types/jest':
-        specifier: 29.4.0
-        version: 29.4.0
-      '@types/uuid':
-        specifier: ^9.0.6
-        version: 9.0.8
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      jest:
-        specifier: 29.5.0
-        version: 29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))
-      ts-jest:
-        specifier: 29.0.5
-        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.3.3
-
   packages/shared/hooks:
     dependencies:
       '@apollo/client':
@@ -3989,16 +4035,16 @@ importers:
         version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
       '@usertour-packages/constants':
         specifier: workspace:^
-        version: link:../constants
+        version: link:../../constants
       '@usertour-packages/gql':
         specifier: workspace:^
         version: link:../gql
       '@usertour/helpers':
-        specifier: ^0.0.60
-        version: 0.0.60(typescript@5.1.6)
+        specifier: workspace:^
+        version: link:../../helpers
       '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
+        specifier: workspace:^
+        version: link:../../types
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -4041,140 +4087,6 @@ importers:
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
   packages/shared/i18n: {}
-
-  packages/shared/icons:
-    dependencies:
-      '@radix-ui/react-slot':
-        specifier: ^1.0.2
-        version: 1.1.0(@types/react@18.2.15)(react@18.2.0)
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.1.6))(eslint@8.57.1)(typescript@5.1.6)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.1.6)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.1.6
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
-  packages/shared/sdk:
-    dependencies:
-      '@floating-ui/dom':
-        specifier: ^1.4.4
-        version: 1.6.12
-      '@floating-ui/react':
-        specifier: ^0.24.3
-        version: 0.24.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@floating-ui/react-dom':
-        specifier: ^2.0.0
-        version: 2.1.2(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@radix-ui/react-icons':
-        specifier: ^1.3.0
-        version: 1.3.1(react@18.2.0)
-      '@usertour-packages/button':
-        specifier: workspace:^
-        version: link:../../components/button
-      '@usertour-packages/dom':
-        specifier: workspace:^
-        version: link:../dom
-      '@usertour-packages/frame':
-        specifier: workspace:*
-        version: link:../../components/frame
-      '@usertour-packages/icons':
-        specifier: workspace:^
-        version: link:../icons
-      '@usertour-packages/react-arrow':
-        specifier: workspace:^
-        version: link:../../radix/arrow
-      '@usertour-packages/react-compose-refs':
-        specifier: workspace:^
-        version: link:../../radix/compose-refs
-      '@usertour-packages/react-context':
-        specifier: workspace:^
-        version: link:../../radix/context
-      '@usertour-packages/react-use-size':
-        specifier: workspace:^
-        version: link:../../radix/use-size
-      '@usertour-packages/tailwind':
-        specifier: workspace:^
-        version: link:../../tailwind
-      '@usertour/helpers':
-        specifier: ^0.0.60
-        version: 0.0.60(typescript@5.1.6)
-      '@usertour/types':
-        specifier: ^0.0.43
-        version: 0.0.43
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.1.6))(eslint@8.57.1)(typescript@5.1.6)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.1.6)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.1.6
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
-  packages/shared/types:
-    devDependencies:
-      typescript:
-        specifier: ^5.0.2
-        version: 5.1.6
 
   packages/tailwind:
     dependencies:
@@ -4230,6 +4142,109 @@ importers:
       vite:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.4.2)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
+
+  packages/types:
+    devDependencies:
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+
+  packages/widget:
+    dependencies:
+      '@floating-ui/dom':
+        specifier: ^1.4.4
+        version: 1.6.12
+      '@floating-ui/react':
+        specifier: ^0.24.3
+        version: 0.24.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@floating-ui/react-dom':
+        specifier: ^2.0.0
+        version: 2.1.2(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@radix-ui/react-checkbox':
+        specifier: ^1.0.4
+        version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@radix-ui/react-icons':
+        specifier: ^1.3.0
+        version: 1.3.1(react@18.2.0)
+      '@radix-ui/react-label':
+        specifier: ^2.0.2
+        version: 2.1.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@radix-ui/react-radio-group':
+        specifier: ^1.1.3
+        version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@radix-ui/react-slot':
+        specifier: ^1.0.2
+        version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
+      '@usertour-packages/dom':
+        specifier: workspace:^
+        version: link:../dom
+      '@usertour-packages/frame':
+        specifier: workspace:*
+        version: link:../components/frame
+      '@usertour-packages/icons':
+        specifier: workspace:*
+        version: link:../icons
+      '@usertour-packages/react-arrow':
+        specifier: workspace:^
+        version: link:../radix/arrow
+      '@usertour-packages/react-compose-refs':
+        specifier: workspace:^
+        version: link:../radix/compose-refs
+      '@usertour-packages/react-context':
+        specifier: workspace:^
+        version: link:../radix/context
+      '@usertour-packages/react-use-size':
+        specifier: workspace:^
+        version: link:../radix/use-size
+      '@usertour-packages/tailwind':
+        specifier: workspace:*
+        version: link:../tailwind
+      '@usertour/helpers':
+        specifier: workspace:^
+        version: link:../helpers
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
+      class-variance-authority:
+        specifier: ^0.4.0
+        version: 0.4.0(typescript@5.3.3)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.37
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: ^18.0.11
+        version: 18.2.7
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.3.4
+        version: 0.3.5(eslint@8.57.1)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+      vite:
+        specifier: ^4.3.9
+        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
 packages:
 
@@ -4730,10 +4745,6 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
 
-  '@babel/runtime-corejs3@7.26.0':
-    resolution: {integrity: sha512-YXHu5lN8kJCb1LOb9PgV6pvak43X2h4HvRApcN5SdWeaItQOzfn1hgP6jasD6KWQyJDBxrVmA9o9OivlnNJK/w==}
-    engines: {node: '>=6.9.0'}
-
   '@babel/runtime-corejs3@7.28.0':
     resolution: {integrity: sha512-nlIXnSqLcBij8K8TtkxbBJgfzfvi75V1pAKSM7dUXejGw12vJAqez74jZrHTsJ3Z+Aczc5Q/6JgNjKRMsVU44g==}
     engines: {node: '>=6.9.0'}
@@ -4744,6 +4755,10 @@ packages:
 
   '@babel/runtime@7.27.6':
     resolution: {integrity: sha512-vbavdySgbTTrmFE+EsiqUTzlOr5bzlnJtUv9PynGCAKvfQqjIXbvFdumPM/GxMDfyuGMJaJAU6TO4zc1Jf1i8Q==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/runtime@7.28.6':
+    resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.25.9':
@@ -4757,6 +4772,27 @@ packages:
   '@babel/types@7.26.0':
     resolution: {integrity: sha512-Z/yiTPj+lDVnF7lWeKCIJzaIkI0vYO87dMpZ4bg4TDrFe4XXLFWL1TbXU27gBP3QccxV9mZICCrnjnYlJjXHOA==}
     engines: {node: '>=6.9.0'}
+
+  '@base-ui/react@1.0.0-rc.2':
+    resolution: {integrity: sha512-T5ITVw5miu86dEUCQMSqU/AOqkaXxxZVwuhOFjFjbNlZGGOUDi+ngkE532Ay0INJNv5FHGalprEWiFHe9nLxPg==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      '@types/react': ^17 || ^18 || ^19
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  '@base-ui/utils@0.2.3':
+    resolution: {integrity: sha512-/CguQ2PDaOzeVOkllQR8nocJ0FFIDqsWIcURsVmm53QGo8NhFNpePjNlyPIB41luxfOqnG7PU0xicMEw3ls7XQ==}
+    peerDependencies:
+      '@types/react': ^17 || ^18 || ^19
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
@@ -5210,11 +5246,23 @@ packages:
   '@floating-ui/core@1.6.8':
     resolution: {integrity: sha512-7XJ9cPU+yI2QeLS+FCSlqNFZJq8arvswefkZrYI1yQBbftw6FyrZOxYSh+9S7z7TpeWlRt9zJ5IhM1WIL334jA==}
 
+  '@floating-ui/core@1.7.3':
+    resolution: {integrity: sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==}
+
   '@floating-ui/dom@1.6.12':
     resolution: {integrity: sha512-NP83c0HjokcGVEMeoStg317VD9W7eDlGK7457dMBANbKA6GJZdc7rjujdgqzTaz93jkGgc5P/jeWbaCHnMNc+w==}
 
+  '@floating-ui/dom@1.7.4':
+    resolution: {integrity: sha512-OOchDgh4F2CchOX94cRVqhvy7b3AFb+/rQXyswmzmGakRfkMgoWVjfnLWkRirfLEfuD4ysVW16eXzwt3jHIzKA==}
+
   '@floating-ui/react-dom@2.1.2':
     resolution: {integrity: sha512-06okr5cgPzMNBy+Ycse2A6udMi4bqwW/zgBF/rwjcNqWkyr82Mcg8b0vjX8OJpZFy/FKjJmw6wV7t44kK6kW7A==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@floating-ui/react-dom@2.1.6':
+    resolution: {integrity: sha512-4JX6rEatQEvlmgU80wZyq9RT96HZJa88q8hp0pBd+LrczeDI4o6uA2M+uvxngVHo4Ihr8uibXxH6+70zhAFrVw==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -5224,6 +5272,9 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
+
+  '@floating-ui/utils@0.2.10':
+    resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
   '@floating-ui/utils@0.2.8':
     resolution: {integrity: sha512-kym7SodPp8/wloecOpcmSnWJsK7M0E5Wg8UcFA+uO4B9s5d0ywXOEro/8HM9x0rW+TljRzul/14UYz3TleT3ig==}
@@ -7775,6 +7826,11 @@ packages:
     resolution: {integrity: sha512-mUnk8rPJBI9loFDZ+YzPGdeniYK+FTmRD1TMCz7ev2SNIozyKKpnGgsxO34u6Z4z/t0ITuu7voi/AshfsGsgFg==}
     engines: {node: '>=14.0.0'}
 
+  '@remixicon/react@4.8.0':
+    resolution: {integrity: sha512-cbzR04GKWa3zWdgn0C2i+u/avb167iWeu9gqFO00UGu84meARPAm3oKowDZTU6dlk/WS3UHo6k//LMRM1l7CRw==}
+    peerDependencies:
+      react: '>=18.2.0'
+
   '@rollup/plugin-babel@6.0.4':
     resolution: {integrity: sha512-YF7Y52kFdFT/xVSuVdjkV5ZdX/3YtmX0QulG+x0taQOtJdHYzVU61aSSkAgVJ7NOv6qPkIYiJSgSWWN/DM5sGw==}
     engines: {node: '>=14.0.0'}
@@ -8280,6 +8336,14 @@ packages:
 
   '@swc/types@0.1.13':
     resolution: {integrity: sha512-JL7eeCk6zWCbiYQg2xQSdLXQJl8Qoc9rXmG2cEKvHe3CKwMHwHGpfOb8frzNLmbycOo6I51qxnLnn9ESf4I20Q==}
+
+  '@tabler/icons-react@3.36.1':
+    resolution: {integrity: sha512-/8nOXeNeMoze9xY/QyEKG65wuvRhkT3q9aytaur6Gj8bYU2A98YVJyLc9MRmc5nVvpy+bRlrrwK/Ykr8WGyUWg==}
+    peerDependencies:
+      react: '>= 16'
+
+  '@tabler/icons@3.36.1':
+    resolution: {integrity: sha512-f4Jg3Fof/Vru5ioix/UO4GX+sdDsF9wQo47FbtvG+utIYYVQ/QVAC0QYgcBbAjQGfbdOh2CCf0BgiFOF9Ixtjw==}
 
   '@tailwindcss/forms@0.5.9':
     resolution: {integrity: sha512-tM4XVr2+UVTxXJzey9Twx48c1gcxFStqn1pQz0tRsX8o3DvxhN5oY5pvyAbUx7VTaZxpej4Zzvc6h+1RJBzpIg==}
@@ -8832,14 +8896,8 @@ packages:
   '@ungap/structured-clone@1.2.0':
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  '@usertour/helpers@0.0.60':
-    resolution: {integrity: sha512-hI1xaTzVMc1GTWmFs2pXXQ7J0NpdN46H6zGfeuWOjcCLVe1XpTuVZkYNuJi4SkNAMYjW8OKEFYZChV6f048uKw==}
-
   '@usertour/license@0.0.2':
     resolution: {integrity: sha512-9TbX5kfupLmJ04vwDr6vOrfSNQ8lW5lArvx/9V62uDDuOnAqV4T7/lhk/ijJXrKf4KfgmeCVMG7YR1+3lKCQJw==}
-
-  '@usertour/types@0.0.43':
-    resolution: {integrity: sha512-3K4Cky0wMmJyao23g+b6NyxiqF6EnqARfseV1rWzd0O7aWxg8qP6h3OaAHC7XmeApvcqn1TLQ/hqXzY7u0q04g==}
 
   '@vitejs/plugin-basic-ssl@1.1.0':
     resolution: {integrity: sha512-wO4Dk/rm8u7RNhOf95ZzcEmC9rYOncYgvq4z3duaJrCgjN8BxAnDVyndanfcJZ0O6XZzHz6Q0hTimxTg8Y9g/A==}
@@ -9345,10 +9403,6 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
-  chalk@5.3.0:
-    resolution: {integrity: sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==}
-    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
-
   chalk@5.4.1:
     resolution: {integrity: sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
@@ -9653,9 +9707,6 @@ packages:
 
   copy-to-clipboard@3.3.3:
     resolution: {integrity: sha512-2KV8NhB5JqC3ky0r9PMCAZKbUHSwtEo4CwCs0KXgruG43gX5PMqDEBbVU4OUzw2MuAWUfsuFmWvEKG5QRfSnJA==}
-
-  core-js-pure@3.39.0:
-    resolution: {integrity: sha512-7fEcWwKI4rJinnK+wLTezeg2smbFFdSBP6E2kQZNbnzM2s1rpKQ6aaRteZSSg7FLU3P0HGGVo/gbpfanU36urg==}
 
   core-js-pure@3.43.0:
     resolution: {integrity: sha512-i/AgxU2+A+BbJdMxh3v7/vxi2SbFqxiFmg6VsDwYB4jkucrd1BZNA9a9gphC0fYMG5IBSgQcbQnk865VCLe7xA==}
@@ -13595,6 +13646,9 @@ packages:
   reselect@4.1.8:
     resolution: {integrity: sha512-ab9EmR80F/zQTMNeneUr4cv+jSwPJgIlvEmVwLerwrWVbpLlBuls9XHzIeTFy4cegU2NHBp3va0LKOzU5qFEYQ==}
 
+  reselect@5.1.1:
+    resolution: {integrity: sha512-K/BG6eIky/SBpzfHZv/dd+9JBFiS4SWV7FIujVyJRux6e45+73RaUHXLmIR1f7WOMaQ0U1km6qwklRQxpJJY0w==}
+
   resize-observer-polyfill@1.5.1:
     resolution: {integrity: sha512-LwZrotdHOo12nQuZlHEmtuXdqGoOD0OhaxopaNFxWzInpEgaLWoVuAMbTzixuosCx2nEG58ngzW3vxdWoxIgdg==}
 
@@ -14220,6 +14274,9 @@ packages:
   tabbable@6.2.0:
     resolution: {integrity: sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==}
 
+  tabbable@6.4.0:
+    resolution: {integrity: sha512-05PUHKSNE8ou2dwIxTngl4EzcnsCDZGJ/iCLtDflR/SHB/ny14rXc+qU5P4mG9JkusiV7EivzY9Mhm55AzAvCg==}
+
   tailwind-merge@2.5.4:
     resolution: {integrity: sha512-0q8cfZHMu9nuYP/b5Shb7Y7Sh1B7Nnl5GqNr1U+n2p6+mybvRtayrQ+0042Z5byvTA8ihjlP8Odo8/VnHbZu4Q==}
 
@@ -14510,38 +14567,38 @@ packages:
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
-  turbo-darwin-64@2.7.2:
-    resolution: {integrity: sha512-dxY3X6ezcT5vm3coK6VGixbrhplbQMwgNsCsvZamS/+/6JiebqW9DKt4NwpgYXhDY2HdH00I7FWs3wkVuan4rA==}
+  turbo-darwin-64@2.7.3:
+    resolution: {integrity: sha512-aZHhvRiRHXbJw1EcEAq4aws1hsVVUZ9DPuSFaq9VVFAKCup7niIEwc22glxb7240yYEr1vLafdQ2U294Vcwz+w==}
     cpu: [x64]
     os: [darwin]
 
-  turbo-darwin-arm64@2.7.2:
-    resolution: {integrity: sha512-1bXmuwPLqNFt3mzrtYcVx1sdJ8UYb124Bf48nIgcpMCGZy3kDhgxNv1503kmuK/37OGOZbsWSQFU4I08feIuSg==}
+  turbo-darwin-arm64@2.7.3:
+    resolution: {integrity: sha512-CkVrHSq+Bnhl9sX2LQgqQYVfLTWC2gvI74C4758OmU0djfrssDKU9d4YQF0AYXXhIIRZipSXfxClQziIMD+EAg==}
     cpu: [arm64]
     os: [darwin]
 
-  turbo-linux-64@2.7.2:
-    resolution: {integrity: sha512-kP+TiiMaiPugbRlv57VGLfcjFNsFbo8H64wMBCPV2270Or2TpDCBULMzZrvEsvWFjT3pBFvToYbdp8/Kw0jAQg==}
+  turbo-linux-64@2.7.3:
+    resolution: {integrity: sha512-GqDsCNnzzr89kMaLGpRALyigUklzgxIrSy2pHZVXyifgczvYPnLglex78Aj3T2gu+T3trPPH2iJ+pWucVOCC2Q==}
     cpu: [x64]
     os: [linux]
 
-  turbo-linux-arm64@2.7.2:
-    resolution: {integrity: sha512-VDJwQ0+8zjAfbyY6boNaWfP6RIez4ypKHxwkuB6SrWbOSk+vxTyW5/hEjytTwK8w/TsbKVcMDyvpora8tEsRFw==}
+  turbo-linux-arm64@2.7.3:
+    resolution: {integrity: sha512-NdCDTfIcIo3dWjsiaAHlxu5gW61Ed/8maah1IAF/9E3EtX0aAHNiBMbuYLZaR4vRJ7BeVkYB6xKWRtdFLZ0y3g==}
     cpu: [arm64]
     os: [linux]
 
-  turbo-windows-64@2.7.2:
-    resolution: {integrity: sha512-rPjqQXVnI6A6oxgzNEE8DNb6Vdj2Wwyhfv3oDc+YM3U9P7CAcBIlKv/868mKl4vsBtz4ouWpTQNXG8vljgJO+w==}
+  turbo-windows-64@2.7.3:
+    resolution: {integrity: sha512-7bVvO987daXGSJVYBoG8R4Q+csT1pKIgLJYZevXRQ0Hqw0Vv4mKme/TOjYXs9Qb1xMKh51Tb3bXKDbd8/4G08g==}
     cpu: [x64]
     os: [win32]
 
-  turbo-windows-arm64@2.7.2:
-    resolution: {integrity: sha512-tcnHvBhO515OheIFWdxA+qUvZzNqqcHbLVFc1+n+TJ1rrp8prYicQtbtmsiKgMvr/54jb9jOabU62URAobnB7g==}
+  turbo-windows-arm64@2.7.3:
+    resolution: {integrity: sha512-nTodweTbPmkvwMu/a55XvjMsPtuyUSC+sV7f/SR57K36rB2I0YG21qNETN+00LOTUW9B3omd8XkiXJkt4kx/cw==}
     cpu: [arm64]
     os: [win32]
 
-  turbo@2.7.2:
-    resolution: {integrity: sha512-5JIA5aYBAJSAhrhbyag1ZuMSgUZnHtI+Sq3H8D3an4fL8PeF+L1yYvbEJg47akP1PFfATMf5ehkqFnxfkmuwZQ==}
+  turbo@2.7.3:
+    resolution: {integrity: sha512-+HjKlP4OfYk+qzvWNETA3cUO5UuK6b5MSc2UJOKyvBceKucQoQGb2g7HlC2H1GHdkfKrk4YF1VPvROkhVZDDLQ==}
     hasBin: true
 
   type-check@0.4.0:
@@ -14694,8 +14751,13 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
-  usertour.js@0.0.10:
-    resolution: {integrity: sha512-81tHrlpy7ci4t+NFOYeLrG7mnypnQrGpkXdBUkIK5OCNYrFznIMEywPMTcdfXBeIaZtBJofZ6vY2dgWTAXijoA==}
+  use-sync-external-store@1.6.0:
+    resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  usertour.js@0.0.15:
+    resolution: {integrity: sha512-z2x4pOD6bJNH6+U9+f/UnmLJxye6mwse/JBJH+1GSJ96APACUjNjmtxNSGWaeTG2y+eab2siFZ1vq1Jr1ghteg==}
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -16031,11 +16093,6 @@ snapshots:
       '@babel/core': 7.26.0
       '@babel/helper-plugin-utils': 7.25.9
 
-  '@babel/runtime-corejs3@7.26.0':
-    dependencies:
-      core-js-pure: 3.39.0
-      regenerator-runtime: 0.14.1
-
   '@babel/runtime-corejs3@7.28.0':
     dependencies:
       core-js-pure: 3.43.0
@@ -16045,6 +16102,8 @@ snapshots:
       regenerator-runtime: 0.14.1
 
   '@babel/runtime@7.27.6': {}
+
+  '@babel/runtime@7.28.6': {}
 
   '@babel/template@7.25.9':
     dependencies:
@@ -16068,6 +16127,31 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
+
+  '@base-ui/react@1.0.0-rc.2(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+    dependencies:
+      '@babel/runtime': 7.28.6
+      '@base-ui/utils': 0.2.3(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@floating-ui/react-dom': 2.1.6(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@floating-ui/utils': 0.2.10
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      reselect: 5.1.1
+      tabbable: 6.4.0
+      use-sync-external-store: 1.6.0(react@18.2.0)
+    optionalDependencies:
+      '@types/react': 18.2.15
+
+  '@base-ui/utils@0.2.3(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+    dependencies:
+      '@babel/runtime': 7.28.6
+      '@floating-ui/utils': 0.2.10
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      reselect: 5.1.1
+      use-sync-external-store: 1.6.0(react@18.2.0)
+    optionalDependencies:
+      '@types/react': 18.2.15
 
   '@bcoe/v8-coverage@0.2.3': {}
 
@@ -16184,7 +16268,7 @@ snapshots:
       '@commitlint/execute-rule': 19.5.0
       '@commitlint/resolve-extends': 19.5.0
       '@commitlint/types': 19.5.0
-      chalk: 5.3.0
+      chalk: 5.4.1
       cosmiconfig: 9.0.0(typescript@5.3.3)
       cosmiconfig-typescript-loader: 6.1.0(@types/node@20.17.5)(cosmiconfig@9.0.0(typescript@5.3.3))(typescript@5.3.3)
       lodash.isplainobject: 4.0.6
@@ -16208,7 +16292,7 @@ snapshots:
   '@commitlint/types@19.5.0':
     dependencies:
       '@types/conventional-commits-parser': 5.0.1
-      chalk: 5.3.0
+      chalk: 5.4.1
     optional: true
 
   '@cspotcode/source-map-support@0.8.1':
@@ -16423,14 +16507,29 @@ snapshots:
     dependencies:
       '@floating-ui/utils': 0.2.8
 
+  '@floating-ui/core@1.7.3':
+    dependencies:
+      '@floating-ui/utils': 0.2.10
+
   '@floating-ui/dom@1.6.12':
     dependencies:
       '@floating-ui/core': 1.6.8
       '@floating-ui/utils': 0.2.8
 
+  '@floating-ui/dom@1.7.4':
+    dependencies:
+      '@floating-ui/core': 1.7.3
+      '@floating-ui/utils': 0.2.10
+
   '@floating-ui/react-dom@2.1.2(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@floating-ui/dom': 1.6.12
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+
+  '@floating-ui/react-dom@2.1.6(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+    dependencies:
+      '@floating-ui/dom': 1.7.4
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
 
@@ -16441,6 +16540,8 @@ snapshots:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       tabbable: 6.2.0
+
+  '@floating-ui/utils@0.2.10': {}
 
   '@floating-ui/utils@0.2.8': {}
 
@@ -19674,6 +19775,10 @@ snapshots:
 
   '@remix-run/router@1.20.0': {}
 
+  '@remixicon/react@4.8.0(react@18.2.0)':
+    dependencies:
+      react: 18.2.0
+
   '@rollup/plugin-babel@6.0.4(@babel/core@7.26.0)(@types/babel__core@7.20.5)(rollup@3.29.5)':
     dependencies:
       '@babel/core': 7.26.0
@@ -20270,6 +20375,13 @@ snapshots:
       '@swc/counter': 0.1.3
     optional: true
 
+  '@tabler/icons-react@3.36.1(react@18.2.0)':
+    dependencies:
+      '@tabler/icons': 3.36.1
+      react: 18.2.0
+
+  '@tabler/icons@3.36.1': {}
+
   '@tailwindcss/forms@0.5.9(tailwindcss@3.4.14(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.1.6)))':
     dependencies:
       mini-svg-data-uri: 1.4.4
@@ -20296,7 +20408,7 @@ snapshots:
 
   '@testing-library/react@10.4.9(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@babel/runtime': 7.26.0
+      '@babel/runtime': 7.27.6
       '@testing-library/dom': 7.31.2
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -20995,9 +21107,9 @@ snapshots:
       '@codemirror/state': 6.4.1
       '@codemirror/view': 6.34.1
 
-  '@uiw/react-codemirror@4.23.6(@babel/runtime@7.27.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.2.3))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.2.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+  '@uiw/react-codemirror@4.23.6(@babel/runtime@7.28.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.2.3))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.2.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.6
       '@codemirror/commands': 6.7.1
       '@codemirror/state': 6.4.1
       '@codemirror/theme-one-dark': 6.1.2
@@ -21014,37 +21126,9 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@usertour/helpers@0.0.60(typescript@4.9.5)':
-    dependencies:
-      '@paralleldrive/cuid2': 2.2.2
-      '@usertour/types': 0.0.43
-      chroma-js: 3.1.2
-      class-variance-authority: 0.4.0(typescript@4.9.5)
-      date-fns: 2.30.0
-      deepmerge-ts: 7.1.3
-      fast-deep-equal: 3.1.3
-      uuid: 9.0.1
-    transitivePeerDependencies:
-      - typescript
-
-  '@usertour/helpers@0.0.60(typescript@5.1.6)':
-    dependencies:
-      '@paralleldrive/cuid2': 2.2.2
-      '@usertour/types': 0.0.43
-      chroma-js: 3.1.2
-      class-variance-authority: 0.4.0(typescript@5.1.6)
-      date-fns: 2.30.0
-      deepmerge-ts: 7.1.3
-      fast-deep-equal: 3.1.3
-      uuid: 9.0.1
-    transitivePeerDependencies:
-      - typescript
-
   '@usertour/license@0.0.2':
     dependencies:
       jsonwebtoken: 9.0.2
-
-  '@usertour/types@0.0.43': {}
 
   '@vitejs/plugin-basic-ssl@1.1.0(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))':
     dependencies:
@@ -21368,7 +21452,7 @@ snapshots:
   aria-query@4.2.2:
     dependencies:
       '@babel/runtime': 7.27.6
-      '@babel/runtime-corejs3': 7.26.0
+      '@babel/runtime-corejs3': 7.28.0
 
   array-find-index@1.0.2: {}
 
@@ -21696,8 +21780,6 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
-  chalk@5.3.0: {}
-
   chalk@5.4.1: {}
 
   chance@1.1.11: {}
@@ -21773,10 +21855,6 @@ snapshots:
       '@types/validator': 13.12.2
       libphonenumber-js: 1.11.12
       validator: 13.12.0
-
-  class-variance-authority@0.4.0(typescript@4.9.5):
-    optionalDependencies:
-      typescript: 4.9.5
 
   class-variance-authority@0.4.0(typescript@5.1.6):
     optionalDependencies:
@@ -22008,8 +22086,6 @@ snapshots:
   copy-to-clipboard@3.3.3:
     dependencies:
       toggle-selection: 1.0.6
-
-  core-js-pure@3.39.0: {}
 
   core-js-pure@3.43.0: {}
 
@@ -23724,7 +23800,7 @@ snapshots:
     dependencies:
       '@ljharb/through': 2.3.13
       ansi-escapes: 4.3.2
-      chalk: 5.3.0
+      chalk: 5.4.1
       cli-cursor: 3.1.0
       cli-width: 4.1.0
       external-editor: 3.1.0
@@ -26469,7 +26545,7 @@ snapshots:
 
   rc-upload@4.8.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
     dependencies:
-      '@babel/runtime': 7.26.0
+      '@babel/runtime': 7.27.6
       classnames: 2.5.1
       rc-util: 5.43.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react: 18.2.0
@@ -26844,6 +26920,8 @@ snapshots:
       - supports-color
 
   reselect@4.1.8: {}
+
+  reselect@5.1.1: {}
 
   resize-observer-polyfill@1.5.1: {}
 
@@ -27612,6 +27690,8 @@ snapshots:
 
   tabbable@6.2.0: {}
 
+  tabbable@6.4.0: {}
+
   tailwind-merge@2.5.4: {}
 
   tailwindcss-animate@1.0.7(tailwindcss@3.4.14(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.1.6))):
@@ -28123,32 +28203,32 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  turbo-darwin-64@2.7.2:
+  turbo-darwin-64@2.7.3:
     optional: true
 
-  turbo-darwin-arm64@2.7.2:
+  turbo-darwin-arm64@2.7.3:
     optional: true
 
-  turbo-linux-64@2.7.2:
+  turbo-linux-64@2.7.3:
     optional: true
 
-  turbo-linux-arm64@2.7.2:
+  turbo-linux-arm64@2.7.3:
     optional: true
 
-  turbo-windows-64@2.7.2:
+  turbo-windows-64@2.7.3:
     optional: true
 
-  turbo-windows-arm64@2.7.2:
+  turbo-windows-arm64@2.7.3:
     optional: true
 
-  turbo@2.7.2:
+  turbo@2.7.3:
     optionalDependencies:
-      turbo-darwin-64: 2.7.2
-      turbo-darwin-arm64: 2.7.2
-      turbo-linux-64: 2.7.2
-      turbo-linux-arm64: 2.7.2
-      turbo-windows-64: 2.7.2
-      turbo-windows-arm64: 2.7.2
+      turbo-darwin-64: 2.7.3
+      turbo-darwin-arm64: 2.7.3
+      turbo-linux-64: 2.7.3
+      turbo-linux-arm64: 2.7.3
+      turbo-windows-64: 2.7.3
+      turbo-windows-arm64: 2.7.3
 
   type-check@0.4.0:
     dependencies:
@@ -28256,7 +28336,11 @@ snapshots:
     dependencies:
       react: 18.2.0
 
-  usertour.js@0.0.10: {}
+  use-sync-external-store@1.6.0(react@18.2.0):
+    dependencies:
+      react: 18.2.0
+
+  usertour.js@0.0.15: {}
 
   util-deprecate@1.0.2: {}
 

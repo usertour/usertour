@@ -23,7 +23,12 @@ import {
   SessionTheme,
 } from '@usertour/types';
 import { uuidV4, isEqual, extractLinkUrl } from '@usertour/helpers';
-import { ActionManager, ActionHandler, ActionHandlerContext } from '@/core/action-handlers';
+import {
+  ActionManager,
+  ActionHandler,
+  ActionHandlerContext,
+  ActionSource,
+} from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
 import { SDKClientEvents } from '@usertour-packages/constants';
 import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
@@ -38,6 +43,21 @@ interface ComponentOptions {
   /** Monitoring interval in milliseconds (default: 200) */
   monitoringInterval?: number;
 }
+
+/**
+ * Generic options type for buildStoreData
+ * Subclasses can define their own specific options types
+ */
+export type BuildStoreOptions = Record<string, unknown>;
+
+/**
+ * Context object passed to getCustomStoreData
+ * Contains base data and optional configuration options
+ */
+export type CustomStoreDataContext<TOptions = BuildStoreOptions> = {
+  baseData: Partial<BaseStore>;
+  options?: TOptions;
+};
 
 /**
  * Abstract base class for all Usertour components (Tour, Launcher, Checklist)
@@ -124,6 +144,14 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Checks if JavaScript evaluation is disabled
+   * @returns True if eval is disabled, false otherwise
+   */
+  isEvalJsDisabled(): boolean {
+    return this.instance.isEvalJsDisabled();
+  }
+
+  /**
    * Gets the open state of the component
    * @returns true if the component is open, false otherwise
    */
@@ -163,15 +191,16 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   /**
    * Builds the complete store data for the component
    * This method combines base store data with component-specific data
+   * @param options - Optional configuration options for building store data
    * @returns {TStore | null} The complete store data object
    */
-  async buildStoreData(): Promise<TStore | null> {
+  async buildStoreData(options?: BuildStoreOptions): Promise<TStore | null> {
     const baseData = await this.buildBaseStoreData();
     if (!baseData) {
       return null;
     }
 
-    const customData = this.getCustomStoreData(baseData);
+    const customData = this.getCustomStoreData({ baseData, options });
 
     return {
       ...baseData,
@@ -197,7 +226,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       globalStyle,
       themeSettings,
     };
-    const customData = this.getCustomStoreData(baseData);
+    const customData = this.getCustomStoreData({ baseData });
 
     // Update store with common and specific data
     this.updateStore({
@@ -209,23 +238,30 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   /**
    * Handles actions using the strategy pattern
    * @param actions - The actions to handle
+   * @param source - Action source (button or trigger), defaults to BUTTON
    */
-  async handleActions(actions: RulesCondition[]): Promise<void> {
-    const context = this.createActionHandlerContext();
+  async handleActions(
+    actions: RulesCondition[],
+    source: ActionSource = ActionSource.BUTTON,
+  ): Promise<void> {
+    const context = this.createActionHandlerContext(source);
     await this.actionManager.handleActions(actions, context);
   }
 
   /**
    * Creates an action handler context with component methods
+   * @param source - The source of the action (button or trigger)
    * @returns ActionHandlerContext object with mapped methods
    * @protected
    */
-  protected createActionHandlerContext(): ActionHandlerContext {
+  protected createActionHandlerContext(source: ActionSource): ActionHandlerContext {
     return {
+      source,
       startTour: (contentId: string, opts?: UserTourTypes.StartOptions) =>
         this.startTour(contentId, opts),
       handleNavigate: (data: any) => this.handleNavigate(data),
       close: (reason: contentEndReason) => this.close(reason),
+      isEvalJsDisabled: this.isEvalJsDisabled(),
     };
   }
 
@@ -295,13 +331,11 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
-   * Gets custom store data - can be overridden by subclasses
-   * @param baseData - The base store data that can be used for custom logic
+   * Gets custom store data - must be implemented by subclasses
+   * @param context - Context object containing baseData and optional options
    * @protected
    */
-  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<TStore> {
-    return {};
-  }
+  protected abstract getCustomStoreData(context: CustomStoreDataContext): Partial<TStore>;
 
   /**
    * Builds the base store data common to all components

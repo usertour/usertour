@@ -12,7 +12,7 @@ import {
   ChecklistProgress,
   ChecklistRoot,
   PopperMadeWith,
-} from '@usertour-packages/sdk';
+} from '@usertour-packages/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
 import { ChecklistInitialDisplay, ContentEditorElementType, Theme } from '@usertour/types';
 import { isEqual } from 'lodash';

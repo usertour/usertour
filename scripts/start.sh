@@ -25,13 +25,18 @@ sed -i "s/\${NEST_SERVER_PORT}/$NEST_SERVER_PORT/g" /etc/nginx/conf.d/default.co
 # Start nginx
 nginx
 
+# Change to server directory for prisma commands
+cd /app/apps/server
+
 # Run database migrations with retry
 MAX_RETRIES=${DB_MIGRATE_RETRIES:-3}
 RETRY_INTERVAL=3
 
 for i in $(seq 1 $MAX_RETRIES); do
     echo "Attempting database migration (attempt $i/$MAX_RETRIES)..."
-    if pnpm prisma migrate deploy; then
+    # Use npx to execute prisma from local node_modules
+    # npx will find prisma in ./node_modules/.bin/prisma
+    if npx prisma migrate deploy --preview-feature; then
         echo "Database migration completed successfully!"
         break
     fi
@@ -44,7 +49,7 @@ for i in $(seq 1 $MAX_RETRIES); do
 done
 
 # Seed database
-pnpm prisma db seed
+npx prisma db seed
 
 # Start Node.js server
-node dist/main 
+node dist/main

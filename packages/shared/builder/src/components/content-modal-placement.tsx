@@ -50,11 +50,11 @@ export const ContentModalPlacement = (props: ContentModalPlacementProps) => {
   const handleCurrentPositionChange = (position: ModalPosition) => {
     update((pre) => ({ ...pre, position }));
   };
-  const handleOffsetXChange = (value: number) => {
-    update((pre) => ({ ...pre, positionOffsetX: Number(value) }));
+  const handleOffsetXChange = (value: number | undefined) => {
+    update((pre) => ({ ...pre, positionOffsetX: value ?? 0 }));
   };
-  const handleOffsetYChange = (value: number) => {
-    update((pre) => ({ ...pre, positionOffsetY: Number(value) }));
+  const handleOffsetYChange = (value: number | undefined) => {
+    update((pre) => ({ ...pre, positionOffsetY: value ?? 0 }));
   };
 
   return (

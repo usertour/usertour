@@ -20,12 +20,6 @@ export type H2ElementType = {
   children: Descendant[];
 };
 
-export type H3ElementType = {
-  type: 'h3';
-  align?: string;
-  children: Descendant[];
-};
-
 export type BulletedListElementType = {
   type: 'bulleted-list';
   align?: string;
@@ -50,76 +44,6 @@ export type CodeElementType = {
   children: Descendant[];
 };
 
-export type QuoteElementType = {
-  type: 'quote';
-  children: Descendant[];
-};
-
-export type DividerElementType = {
-  type: 'divider';
-  children: Descendant[];
-};
-
-export type TodoElementType = {
-  type: 'todo';
-  children: Descendant[];
-};
-
-export type GroupElementType = {
-  type: 'group';
-  isFirst: boolean;
-  isLast: boolean;
-  children: ColumnElementType[];
-};
-
-type ButtonData = {
-  type: string;
-  text: string;
-  action: string;
-};
-export type ButtonElementType = {
-  type: 'button';
-  data: ButtonData;
-  children: Descendant[];
-};
-
-type ElementWidth = {
-  type?: string;
-  value?: number;
-};
-
-type ElementMargin = {
-  enabled: boolean;
-  top?: number;
-  bottom?: number;
-  left?: number;
-  right?: number;
-};
-
-export type ColumnElementType = {
-  type: 'column';
-  style?: CSSProperties;
-  width?: ElementWidth;
-  children: Descendant[];
-};
-
-export type ImageElementType = {
-  type: 'image';
-  url: string;
-  width?: ElementWidth;
-  margin?: ElementMargin;
-  children: Descendant[];
-};
-
-export type EmbedElementType = {
-  type: 'embed';
-  url: string;
-  parsedUrl?: string;
-  width?: ElementWidth;
-  margin?: ElementMargin;
-  children: Descendant[];
-};
-
 export type UserAttributeElementType = {
   type: 'user-attribute';
   attrCode: string;
@@ -136,24 +60,21 @@ export type LinkElementType = {
   children: Descendant[];
 };
 
+export type SlashInputElementType = {
+  type: 'slash-input';
+  children: Descendant[];
+};
+
 type CustomElement =
   | H1ElementType
   | H2ElementType
-  | H3ElementType
   | CodeElementType
-  | QuoteElementType
-  | DividerElementType
   | BulletedListElementType
   | NumberedListElementType
-  | ButtonElementType
   | ItemListElementType
-  | GroupElementType
-  | ColumnElementType
-  | TodoElementType
-  | ImageElementType
-  | EmbedElementType
   | UserAttributeElementType
   | LinkElementType
+  | SlashInputElementType
   | PlainElementType;
 
 export type CustomElementStrings = CustomElement['type'];
@@ -167,6 +88,18 @@ export type CustomMarkup = {
 };
 
 export type CustomMarkupStrings = keyof CustomMarkup;
+
+// Text formatting types (marks)
+export type TextFormat = 'bold' | 'italic' | 'underline' | 'color';
+
+// Text alignment types
+export type TextAlignFormat = 'left' | 'center' | 'right' | 'justify';
+
+// Block formatting types (includes element types and alignment)
+export type BlockFormat = CustomElementStrings | TextAlignFormat;
+
+// Combined format type for toolbar buttons
+export type FormatType = TextFormat | BlockFormat;
 
 export type CustomText = Partial<CustomMarkup> & {
   text: string;

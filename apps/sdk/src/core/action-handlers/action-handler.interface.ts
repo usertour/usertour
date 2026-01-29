@@ -6,10 +6,24 @@ import {
 } from '@usertour/types';
 
 /**
+ * Action source - indicates where the action was triggered from
+ */
+export enum ActionSource {
+  // User clicked a button that has actions configured
+  BUTTON = 'button',
+  // StepTrigger condition met, actions executed automatically
+  TRIGGER = 'trigger',
+}
+
+/**
  * Context object passed to action handlers
- * Provides access to component methods needed by handlers
+ * Provides access to component methods and metadata needed by handlers
  */
 export interface ActionHandlerContext {
+  /**
+   * The source of the action (button click or trigger)
+   */
+  source: ActionSource;
   /**
    * Starts a tour with given content ID
    */
@@ -27,9 +41,9 @@ export interface ActionHandlerContext {
    */
   showStepByCvid?: (stepCvid: string) => Promise<void>;
   /**
-   * Handles dismiss action (Tour-specific)
+   * Indicates if JavaScript evaluation via eval is disabled
    */
-  handleDismiss?: (reason: contentEndReason) => Promise<void>;
+  isEvalJsDisabled: boolean;
 }
 
 /**
@@ -46,7 +60,7 @@ export interface ActionHandler {
   /**
    * Handle the action
    * @param action - The action to handle
-   * @param context - The context object with component methods
+   * @param context - The context object with component methods and source
    * @returns Promise that resolves when the action is handled
    */
   handle(action: RulesCondition, context: ActionHandlerContext): Promise<void>;

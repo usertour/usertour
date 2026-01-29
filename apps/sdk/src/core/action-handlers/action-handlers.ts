@@ -1,7 +1,8 @@
 import { ContentActionsItemType, RulesCondition, contentEndReason } from '@usertour/types';
 import { evalCode } from '@usertour/helpers';
 import { ErrorMessages } from '@/types/error-messages';
-import { BaseActionHandler, ActionHandlerContext } from './action-handler.interface';
+import { logger } from '@/utils';
+import { BaseActionHandler, ActionHandlerContext, ActionSource } from './action-handler.interface';
 
 /**
  * Handler for common actions that all components support
@@ -19,6 +20,10 @@ export class CommonActionHandler extends BaseActionHandler {
         await context.startTour(action.data.contentId, { cvid: action.data.stepCvid });
         break;
       case ContentActionsItemType.JAVASCRIPT_EVALUATE:
+        if (context.isEvalJsDisabled) {
+          logger.warn('JavaScript evaluation is disabled. Skipping JAVASCRIPT_EVALUATE action.');
+          return;
+        }
         evalCode(action.data.value);
         break;
       case ContentActionsItemType.PAGE_NAVIGATE:
@@ -37,7 +42,7 @@ export class LauncherActionHandler extends BaseActionHandler {
   async handle(action: RulesCondition, context: ActionHandlerContext): Promise<void> {
     switch (action.type) {
       case ContentActionsItemType.LAUNCHER_DISMIS:
-        await context.close(contentEndReason.USER_CLOSED);
+        await context.close(contentEndReason.ACTION_DISMISS);
         break;
     }
   }
@@ -52,7 +57,7 @@ export class ChecklistActionHandler extends BaseActionHandler {
   async handle(action: RulesCondition, context: ActionHandlerContext): Promise<void> {
     switch (action.type) {
       case ContentActionsItemType.CHECKLIST_DISMIS:
-        await context.close(contentEndReason.USER_CLOSED);
+        await context.close(contentEndReason.ACTION_DISMISS);
         break;
     }
   }
@@ -75,12 +80,15 @@ export class TourActionHandler extends BaseActionHandler {
         }
         await context.showStepByCvid(action.data.stepCvid);
         break;
-      case ContentActionsItemType.FLOW_DISMIS:
-        if (!context.handleDismiss) {
-          throw new Error(ErrorMessages.HANDLE_DISMISS_NOT_AVAILABLE);
-        }
-        await context.handleDismiss(contentEndReason.USER_CLOSED);
+      case ContentActionsItemType.FLOW_DISMIS: {
+        // Determine reason based on context.source
+        const reason =
+          context.source === ActionSource.TRIGGER
+            ? contentEndReason.TRIGGER_DISMISS
+            : contentEndReason.ACTION_DISMISS;
+        await context.close(reason);
         break;
+      }
     }
   }
 }

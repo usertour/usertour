@@ -1,27 +1,31 @@
-import * as PopoverPrimitive from '@radix-ui/react-popover';
-
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverArrow,
+  PopoverContent,
+  PopoverTrigger,
+} from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
 import React from 'react';
 
-const RulesError = PopoverPrimitive.Root;
-const RulesErrorAnchor = PopoverPrimitive.Anchor;
+const RulesError = Popover;
+const RulesErrorAnchor = PopoverAnchor;
 
 const RulesErrorTrigger = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger>
+  React.ElementRef<typeof PopoverTrigger>,
+  React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 >(({ className, children, ...props }, ref) => (
-  <PopoverPrimitive.Trigger ref={ref} className={className} asChild {...props}>
+  <PopoverTrigger ref={ref} className={className} asChild {...props}>
     {children}
-  </PopoverPrimitive.Trigger>
+  </PopoverTrigger>
 ));
 
-interface RulesErrorContentProps
-  extends React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> {
+interface RulesErrorContentProps extends React.ComponentPropsWithoutRef<typeof PopoverContent> {
   zIndex: number;
 }
 
 const RulesErrorContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
+  React.ElementRef<typeof PopoverContent>,
   RulesErrorContentProps
 >(
   (
@@ -29,23 +33,21 @@ const RulesErrorContent = React.forwardRef<
     ref,
   ) => {
     return (
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          ref={ref}
-          align={align}
-          side={side}
-          sideOffset={sideOffset}
-          style={{ zIndex }}
-          className={cn(
-            'bg-destructive text-destructive-foreground rounded-lg p-2 w-48 text-sm',
-            className,
-          )}
-          {...props}
-        >
-          {children}
-          <PopoverPrimitive.Arrow className="fill-destructive" width={10} height={5} />
-        </PopoverPrimitive.Content>
-      </PopoverPrimitive.Portal>
+      <PopoverContent
+        ref={ref}
+        align={align}
+        side={side}
+        sideOffset={sideOffset}
+        style={{ zIndex }}
+        className={cn(
+          'border-none bg-destructive text-destructive-foreground rounded-lg p-2 w-48 text-sm',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+        <PopoverArrow className="fill-destructive" width={10} height={5} />
+      </PopoverContent>
     );
   },
 );

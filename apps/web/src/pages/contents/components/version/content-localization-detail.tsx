@@ -5,12 +5,12 @@ import {
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { ArrowLeftIcon, ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
-import * as Popover from '@radix-ui/react-popover';
 import { Badge } from '@usertour-packages/badge';
 import { useAws } from '@usertour-packages/builder/src/hooks/use-aws';
 import { Button } from '@usertour-packages/button';
 import { ImageEditIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { Separator } from '@usertour-packages/separator';
 import type {
   ContentEditorButtonElement,
@@ -117,7 +117,7 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
     onChange({ ...element, url });
   };
   return (
-    <Popover.Root>
+    <Popover>
       <ContentLocalizationTemplateContainer name={'Image'}>
         <ContentLocalizationTemplateB1 name={defaultLocate?.name}>
           <img src={element.url} className="max-w-64 max-h-64	" />
@@ -142,42 +142,40 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
                   Upload image
                 </LocalizationButton>
               </Upload>
-              <Popover.Trigger asChild>
+              <PopoverTrigger asChild>
                 <LocalizationButton>
                   <KeyboardIcon className="mx-1 fill-primary" />
                   Enter url
                 </LocalizationButton>
-              </Popover.Trigger>
-              <Popover.PopoverPortal>
-                <Popover.Content
-                  className="z-50 rounded-md border bg-background p-4 text-popover-foreground shadow-md outline-none w-[400px]"
-                  side="top"
-                  align="center"
-                  sideOffset={5}
-                >
-                  <div className="flex flex-row space-x-2">
-                    <Input
-                      placeholder="Enter url"
-                      value={remoteImageUrl}
-                      onChange={(e) => {
-                        setRemoteImageUrl(e.target.value);
-                      }}
-                      className="bg-background w-80 "
-                    />
-                    <Button
-                      className="flex-none  h-9 py-1"
-                      variant="ghost"
-                      size="default"
-                      onClick={() => {
-                        handleImageUrlChange(remoteImageUrl);
-                      }}
-                    >
-                      <ArrowRightIcon className="mr-1 " />
-                      Load
-                    </Button>
-                  </div>
-                </Popover.Content>
-              </Popover.PopoverPortal>
+              </PopoverTrigger>
+              <PopoverContent
+                className="bg-background w-[400px]"
+                side="top"
+                align="center"
+                sideOffset={5}
+              >
+                <div className="flex flex-row space-x-2">
+                  <Input
+                    placeholder="Enter url"
+                    value={remoteImageUrl}
+                    onChange={(e) => {
+                      setRemoteImageUrl(e.target.value);
+                    }}
+                    className="bg-background w-80 "
+                  />
+                  <Button
+                    className="flex-none  h-9 py-1"
+                    variant="ghost"
+                    size="default"
+                    onClick={() => {
+                      handleImageUrlChange(remoteImageUrl);
+                    }}
+                  >
+                    <ArrowRightIcon className="mr-1 " />
+                    Load
+                  </Button>
+                </div>
+              </PopoverContent>
               <LocalizationButton
                 onClick={() => {
                   handleImageUrlChange(element.url);
@@ -191,7 +189,7 @@ const ContentLocalizationImage = (props: ContentLocalizationImageProps) => {
           {/* <Input value={element.url} onChange={() => {}} /> */}
         </ContentLocalizationTemplateB2>
       </ContentLocalizationTemplateContainer>
-    </Popover.Root>
+    </Popover>
   );
 };
 

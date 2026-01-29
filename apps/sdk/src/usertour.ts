@@ -153,6 +153,10 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       app.setCustomNavigate(customNavigate);
     },
 
+    disableEvalJs: () => {
+      app.disableEvalJs();
+    },
+
     on: (eventName: string, _listener: (...args: any[]) => void) => {
       // Intentionally empty - reserved for future event system
       logger.warn('on method is not yet implemented', { eventName });

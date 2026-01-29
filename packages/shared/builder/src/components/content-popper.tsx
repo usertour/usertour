@@ -9,8 +9,9 @@ import {
   PopperMadeWith,
   PopperOverlay,
   PopperProgress,
-  useThemeStyles,
-} from '@usertour-packages/sdk';
+  useSettingsStyles,
+  useStepWidth,
+} from '@usertour-packages/widget';
 import {
   ContentEditor,
   ContentEditorElementType,
@@ -65,7 +66,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     } = props;
     const [data, setData] = useState<any>(currentStep.data);
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme);
+    const { globalStyle, themeSetting } = useSettingsStyles(theme?.settings);
     const { shouldShowMadeWith = true } = useBuilderContext();
 
     const { upload } = useAws();
@@ -94,6 +95,9 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     };
 
     const totalSteps = currentVersion?.steps?.length ?? 0;
+
+    // Get width with theme fallback if undefined
+    const { width } = useStepWidth({ step: currentStep, themeSetting });
 
     const enabledElementTypes = Object.values(ContentEditorElementType);
 
@@ -132,7 +136,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
                 : ((currentStep.setting?.align as Align) ?? 'center')
             }
             avoidCollisions={currentStep.setting?.alignType === 'auto'}
-            width={`${currentStep.setting.width}px`}
+            width={`${width}px`}
             arrowSize={{
               width: themeSetting?.tooltip.notchSize ?? 20,
               height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
