@@ -5,6 +5,8 @@ node_modules
 .pnp
 .pnp.js
 .husky
+package-lock.json
+yarn.lock
 
 # testing
 coverage

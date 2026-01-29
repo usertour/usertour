@@ -1,5 +1,6 @@
 import { AssetAttributes } from '@usertour-packages/frame';
 import {
+  ContentEditorSerialize,
   PopperMadeWith,
   ChecklistProgress,
   ChecklistDismiss,
@@ -8,14 +9,11 @@ import {
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
   ChecklistRoot,
-} from '@usertour-packages/sdk';
-import {
-  ContentEditorClickableElement,
-  ContentEditorSerialize,
-} from '@usertour-packages/shared-editor';
+} from '@usertour-packages/widget';
 import {
   ChecklistData,
   ChecklistItemType,
+  ContentEditorClickableElement,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';

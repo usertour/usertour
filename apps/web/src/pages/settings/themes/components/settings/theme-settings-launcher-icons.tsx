@@ -1,4 +1,4 @@
-import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
+import { ColorPicker } from '@usertour-packages/shared-components';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSlider } from '@/components/molecules/theme/theme-setting-slider';
 import { useThemeSettingsContext } from '../theme-settings-panel';
@@ -27,7 +27,7 @@ export const ThemeSettingsLauncherIcons = () => {
         <div className="flex flex-row w-full">
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Color</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.launcherIcon.color.color}
               showAutoButton={true}
               isAutoColor={settings.launcherIcon.color.color === 'Auto'}
@@ -43,7 +43,7 @@ export const ThemeSettingsLauncherIcons = () => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Hover</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.launcherIcon.color.hover}
               showAutoButton={true}
               isAutoColor={settings.launcherIcon.color.hover === 'Auto'}
@@ -59,7 +59,7 @@ export const ThemeSettingsLauncherIcons = () => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Click</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.launcherIcon.color.active}
               showAutoButton={true}
               isAutoColor={settings.launcherIcon.color.active === 'Auto'}

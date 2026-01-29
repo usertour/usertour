@@ -70,6 +70,7 @@ const LauncherTooltipBody = () => {
           <ContentWidth
             type="tooltip"
             width={launcherTooltip?.width}
+            defaultWidth={300}
             onChange={(value) => updateLauncherTooltip({ width: value })}
           />
           <ContentAlignment

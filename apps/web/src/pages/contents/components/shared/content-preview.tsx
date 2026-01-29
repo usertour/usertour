@@ -1,201 +1,175 @@
+import { memo } from 'react';
 import { EyeNoneIcon } from '@usertour-packages/icons';
-import * as SharedPopper from '@usertour-packages/sdk';
-import { ChecklistContainer, ChecklistDropdown } from '@usertour-packages/sdk';
-import { ChecklistProgress } from '@usertour-packages/sdk';
-import { ChecklistItems } from '@usertour-packages/sdk';
-import { ChecklistDismiss } from '@usertour-packages/sdk';
-import { PopperMadeWith } from '@usertour-packages/sdk';
-import { ChecklistStaticPopper } from '@usertour-packages/sdk';
-import { ChecklistRoot } from '@usertour-packages/sdk';
-import { LauncherContainer, LauncherView } from '@usertour-packages/sdk/src/launcher';
-import { LauncherRoot } from '@usertour-packages/sdk/src/launcher';
-import { ContentEditorSerialize } from '@usertour-packages/shared-editor';
-import { convertSettings, convertToCssVars } from '@usertour/helpers';
-import { ChecklistData, ContentVersion, LauncherData, Step, Theme } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
-import { forwardRef, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useMeasure } from 'react-use';
+import {
+  ChecklistContainer,
+  ChecklistDismiss,
+  ChecklistDropdown,
+  ChecklistItems,
+  ChecklistProgress,
+  ChecklistRoot,
+  ChecklistStaticPopper,
+  ContentEditorSerialize,
+  Popper,
+  PopperClose,
+  PopperMadeWith,
+  PopperProgress,
+  PopperStaticBubble,
+  PopperStaticContent,
+  useSettingsStyles,
+  getThemeWidthByStepType,
+  LauncherContainer,
+  LauncherView,
+  LauncherRoot,
+} from '@usertour-packages/widget';
+import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
+import {
+  AvatarType,
+  ChecklistData,
+  ContentVersion,
+  LauncherData,
+  ProgressBarPosition,
+  ProgressBarType,
+  Step,
+  StepContentType,
+  Theme,
+} from '@usertour/types';
+
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
-import type { CSSProperties, RefCallback } from 'react';
-
-// Constants for scaled preview
-const INITIAL_SCALE = 0.01;
-const MAX_SCALE = 1;
-
-const EmptyContentPreview = () => {
-  return <img src="/images/empty.png" className="h-[160px]" />;
-};
-
-/**
- * Calculate the appropriate scale factor to fit content within max dimensions
- * Returns null if dimensions are invalid
- */
-const calculateScale = (
-  width: number,
-  height: number,
-  maxWidth: number,
-  maxHeight: number,
-): number | null => {
-  if (width <= 0 || height <= 0) {
-    return null;
-  }
-
-  const widthScale = maxWidth / width;
-  const heightScale = maxHeight / height;
-  const newScale = Math.min(widthScale, heightScale, MAX_SCALE);
-
-  return Number.isFinite(newScale) && newScale > 0 ? newScale : null;
-};
-
-interface UseScaledPreviewOptions {
-  maxWidth: number;
-  maxHeight: number;
-  onContentRectChange?: (contentRect: DOMRect, scale: number) => void;
-}
-
-interface UseScaledPreviewResult {
-  scale: number;
-  contentRef: RefCallback<HTMLDivElement>;
-  containerStyle: CSSProperties;
-}
-
-/**
- * Custom hook for calculating and managing scaled preview state
- * Uses ResizeObserver to measure original (unscaled) content dimensions
- */
-const useScaledPreview = ({
-  maxWidth,
-  maxHeight,
-  onContentRectChange,
-}: UseScaledPreviewOptions): UseScaledPreviewResult => {
-  const [scale, setScale] = useState<number>(INITIAL_SCALE);
-  const [contentRef, contentRect] = useMeasure<HTMLDivElement>();
-  const prevScaleRef = useRef<number>(INITIAL_SCALE);
-
-  // Calculate and update scale when content dimensions change
-  useLayoutEffect(() => {
-    if (!contentRect) return;
-
-    // contentRect contains original (unscaled) dimensions because:
-    // 1. useMeasure uses ResizeObserver which measures layout dimensions
-    // 2. Scale transform is applied to outer container, not the measured element
-    const newScale = calculateScale(
-      contentRect.width ?? 0,
-      contentRect.height ?? 0,
-      maxWidth,
-      maxHeight,
-    );
-
-    if (newScale !== null && newScale !== prevScaleRef.current) {
-      prevScaleRef.current = newScale;
-      setScale(newScale);
-    }
-  }, [contentRect, maxWidth, maxHeight]);
-
-  // Notify parent of rect/scale changes
-  useLayoutEffect(() => {
-    if (onContentRectChange && contentRect) {
-      onContentRectChange(contentRect as DOMRect, scale);
-    }
-  }, [contentRect, scale, onContentRectChange]);
-
-  // Memoize container style
-  const containerStyle = useMemo<CSSProperties>(
-    () => ({
-      scale: `${scale}`,
-    }),
-    [scale],
-  );
-
-  return {
-    scale,
-    contentRef,
-    containerStyle,
-  };
-};
-
-interface ScaledPreviewContainerProps {
-  children: React.ReactNode;
-  maxWidth?: number;
-  maxHeight?: number;
+interface EmptyContentPreviewProps {
   className?: string;
-  onContentRectChange?: (contentRect: DOMRect, scale: number) => void;
 }
 
-/**
- * Container component that scales its children to fit within specified max dimensions
- * Uses smooth transition animation when scale changes
- */
-const ScaledPreviewContainer = forwardRef<HTMLDivElement, ScaledPreviewContainerProps>(
-  (
-    {
-      children,
-      maxWidth = 300,
-      maxHeight = 160,
-      className = 'origin-[center_center]',
-      onContentRectChange,
-    },
-    ref,
-  ) => {
-    const handleContentRectChange = useCallback(
-      (contentRect: DOMRect, scale: number) => {
-        onContentRectChange?.(contentRect, scale);
-      },
-      [onContentRectChange],
-    );
-
-    const { contentRef, containerStyle } = useScaledPreview({
-      maxWidth,
-      maxHeight,
-      onContentRectChange: handleContentRectChange,
-    });
-
-    return (
-      <div
-        ref={ref}
-        style={containerStyle}
-        className={cn('[&_iframe]:pointer-events-none', className)}
-      >
-        <div ref={contentRef}>{children}</div>
-      </div>
-    );
-  },
-);
-
-ScaledPreviewContainer.displayName = 'ScaledPreviewContainer';
+const EmptyContentPreview = memo(({ className }: EmptyContentPreviewProps) => {
+  return <img src="/images/empty.png" className={cn('h-[160px]', className)} alt="empty" />;
+});
 
 interface FlowPreviewProps {
   currentTheme: Theme;
   currentStep: Step;
+  currentVersion?: ContentVersion;
+  currentStepIndex?: number;
 }
-const FlowPreview = ({ currentTheme, currentStep }: FlowPreviewProps) => {
-  const isHidddenStep = currentStep.type === 'hidden';
-  if (isHidddenStep) {
+
+const FlowPreview = ({
+  currentTheme,
+  currentStep,
+  currentVersion,
+  currentStepIndex = 0,
+}: FlowPreviewProps) => {
+  // avatarUrl is used in BUBBLE step type, kept for consistency and fallback
+  const { globalStyle, themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(
+    currentTheme.settings,
+    {
+      type: currentStep.type,
+    },
+  );
+  const { shouldShowMadeWith } = useSubscriptionContext();
+
+  // Get width with theme fallback if undefined
+  const width =
+    currentStep.setting.width ?? getThemeWidthByStepType(currentStep.type, themeSetting);
+
+  // Calculate progress bar display
+  const totalSteps = currentVersion?.steps?.length ?? 0;
+  const progressType = themeSetting?.progress.type;
+  const progressPosition = themeSetting?.progress.position;
+  const progressEnabled = themeSetting?.progress.enabled;
+
+  // Optimized progress display logic
+  const isFullWidthProgress = progressType === ProgressBarType.FULL_WIDTH;
+  const showTopProgress =
+    progressEnabled && (isFullWidthProgress || progressPosition === ProgressBarPosition.TOP);
+  const showBottomProgress =
+    progressEnabled && !isFullWidthProgress && progressPosition === ProgressBarPosition.BOTTOM;
+
+  // Handle hidden step
+  if (currentStep.type === StepContentType.HIDDEN) {
     return (
-      <div className="w-40 h-32 flex  flex-none items-center justify-center">
+      <div className="w-40 h-32 flex flex-none items-center justify-center">
         <EyeNoneIcon className="w-8 h-8" />
       </div>
     );
   }
 
+  // Handle bubble step
+  if (currentStep.type === StepContentType.BUBBLE) {
+    const bubbleSettings = themeSetting?.bubble;
+    const avatarSettings = themeSetting?.avatar;
+    const showAvatar = avatarSettings?.type !== AvatarType.NONE;
+
+    return (
+      <Popper open={true} zIndex={1} globalStyle={globalStyle}>
+        <PopperStaticBubble
+          position={bubbleSettings?.placement?.position ?? 'leftBottom'}
+          width={`${width}px`}
+          avatarSize={avatarSettings?.size}
+          avatarSrc={avatarUrl}
+          avatarComponent={avatarComponent}
+          notchSize={themeSetting?.tooltip?.notchSize}
+          notchColor={themeSetting?.mainColor?.background}
+          showAvatar={showAvatar}
+        >
+          {currentStep.setting.skippable && <PopperClose />}
+          {showTopProgress && (
+            <PopperProgress
+              type={progressType}
+              position={progressPosition}
+              currentStepIndex={currentStepIndex}
+              totalSteps={totalSteps}
+            />
+          )}
+          <ContentEditorSerialize contents={currentStep.data} />
+          {showBottomProgress && (
+            <PopperProgress
+              type={progressType}
+              position={progressPosition}
+              currentStepIndex={currentStepIndex}
+              totalSteps={totalSteps}
+            />
+          )}
+          {shouldShowMadeWith && <PopperMadeWith />}
+        </PopperStaticBubble>
+      </Popper>
+    );
+  }
+
+  // Handle tooltip/modal step (default)
   return (
-    <SharedPopper.Popper
-      open={true}
-      zIndex={1}
-      globalStyle={convertToCssVars(convertSettings(currentTheme.settings))}
-    >
-      <SharedPopper.PopperStaticContent
-        arrowSize={{ width: 20, height: 10 }}
+    <Popper open={true} zIndex={1} globalStyle={globalStyle}>
+      <PopperStaticContent
+        arrowSize={{
+          width: themeSetting?.tooltip.notchSize ?? 20,
+          height: (themeSetting?.tooltip.notchSize ?? 10) / 2,
+        }}
         side="bottom"
-        showArrow={false}
-        width={`${currentStep.setting.width}px`}
+        showArrow={currentStep.type === StepContentType.TOOLTIP}
+        width={`${width}px`}
         height={'auto'}
+        arrowColor={themeSetting?.mainColor?.background}
       >
-        {currentStep.setting.skippable && <SharedPopper.PopperClose />}
+        {currentStep.setting.skippable && <PopperClose />}
+        {showTopProgress && (
+          <PopperProgress
+            type={progressType}
+            position={progressPosition}
+            currentStepIndex={currentStepIndex}
+            totalSteps={totalSteps}
+          />
+        )}
         <ContentEditorSerialize contents={currentStep.data} />
-      </SharedPopper.PopperStaticContent>
-    </SharedPopper.Popper>
+        {showBottomProgress && (
+          <PopperProgress
+            type={progressType}
+            position={progressPosition}
+            currentStepIndex={currentStepIndex}
+            totalSteps={totalSteps}
+          />
+        )}
+        {shouldShowMadeWith && <PopperMadeWith />}
+      </PopperStaticContent>
+    </Popper>
   );
 };
 
@@ -215,6 +189,9 @@ const LauncherPreview = ({
         <LauncherView
           type={data.type}
           iconType={data.iconType}
+          iconSource={data.iconSource}
+          iconUrl={data.iconUrl}
+          buttonText={data.buttonText}
           style={{
             zIndex: 1,
           }}
@@ -237,9 +214,10 @@ const ChecklistPreview = (props: {
     <ChecklistRoot data={data} themeSettings={themeSettings} zIndex={10000}>
       <ChecklistContainer>
         <ChecklistStaticPopper>
+          <ContentEditorSerialize contents={data.content} />
           <ChecklistDropdown />
           <ChecklistProgress width={45} />
-          <ChecklistItems />
+          <ChecklistItems disabledUpdate />
           <ChecklistDismiss />
           {shouldShowMadeWith && <PopperMadeWith />}
         </ChecklistStaticPopper>

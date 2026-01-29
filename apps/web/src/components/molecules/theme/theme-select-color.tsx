@@ -1,4 +1,4 @@
-import { ThemeColorPicker } from './theme-color-picker';
+import { ColorPicker } from '@usertour-packages/shared-components';
 
 type ThemeSelectColorProps = {
   text: string;
@@ -24,7 +24,7 @@ export const ThemeSelectColor = (props: ThemeSelectColorProps) => {
         </label>
       </div>
       <div className="flex-none w-36 relative">
-        <ThemeColorPicker
+        <ColorPicker
           defaultColor={defaultColor}
           onChange={onChange}
           autoColor={autoColor}

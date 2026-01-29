@@ -12,6 +12,10 @@ export const setTextProps = (editor: Editor, format: string, value: any) => {
   Editor.addMark(editor, format, value);
 };
 
+export const removeTextProps = (editor: Editor, format: string) => {
+  Editor.removeMark(editor, format);
+};
+
 export const toggleTextProps = (editor: Editor, format: string) => {
   const active = getTextProps(editor, format);
   if (active) {

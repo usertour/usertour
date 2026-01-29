@@ -6,6 +6,7 @@ import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { cn } from '@usertour-packages/tailwind';
 import { createContext, forwardRef, useContext, useMemo, useCallback, ReactNode } from 'react';
 import { ThemeSettingsBackdrop } from './settings/theme-settings-backdrop';
+import { ThemeSettingsFocusHighlight } from './settings/theme-settings-focus-highlight';
 import { ThemeSettingsBasicColor } from './settings/theme-settings-basic-color';
 import { ThemeSettingsBeacon } from './settings/theme-settings-beacon';
 import { ThemeSettingsBorder } from './settings/theme-settings-border';
@@ -14,11 +15,14 @@ import { ThemeSettingsChecklist } from './settings/theme-settings-checklist';
 import { ThemeSettingsChecklistLauncher } from './settings/theme-settings-checklist-launcher';
 import { ThemeSettingsFont } from './settings/theme-settings-font';
 import { ThemeSettingsLauncherIcons } from './settings/theme-settings-launcher-icons';
+import { ThemeSettingsLauncherButtons } from './settings/theme-settings-launcher-buttons';
 import { ThemeSettingsModal } from './settings/theme-settings-modal';
 import { ThemeSettingsProgress } from './settings/theme-settings-progress';
 import { ThemeSettingsSurvey } from './settings/theme-settings-survey';
 import { ThemeSettingsTooltip } from './settings/theme-settings-tooltip';
 import { ThemeSettingsXbutton } from './settings/theme-settings-xbutton';
+import { ThemeSettingsBubble } from './settings/theme-settings-bubble';
+import { ThemeSettingsAvatar } from './settings/theme-settings-avatar';
 import { ConditionalVariationsPanel } from './conditional-variations-panel';
 
 const AccordionItem = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
@@ -141,6 +145,13 @@ export const ThemeSettingsAccordionContent = () => (
       </AccordionContent>
     </AccordionItem>
 
+    <AccordionItem value="avatar">
+      <AccordionTrigger>Avatar</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsAvatar />
+      </AccordionContent>
+    </AccordionItem>
+
     <AccordionItem value="font">
       <AccordionTrigger>Font</AccordionTrigger>
       <AccordionContent>
@@ -170,6 +181,12 @@ export const ThemeSettingsAccordionContent = () => (
       <AccordionTrigger>Buttons</AccordionTrigger>
       <AccordionContent>
         <ThemeSettingsButtons />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="bubble">
+      <AccordionTrigger>Speech bubble</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsBubble />
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="tooptip">
@@ -214,10 +231,22 @@ export const ThemeSettingsAccordionContent = () => (
         <ThemeSettingsLauncherIcons />
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="launcher-buttons">
+      <AccordionTrigger>Launcher buttons</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsLauncherButtons />
+      </AccordionContent>
+    </AccordionItem>
     <AccordionItem value="backdrop">
       <AccordionTrigger>Backdrop</AccordionTrigger>
       <AccordionContent>
         <ThemeSettingsBackdrop />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="focus-highlight">
+      <AccordionTrigger>Focus highlight</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsFocusHighlight />
       </AccordionContent>
     </AccordionItem>
   </>

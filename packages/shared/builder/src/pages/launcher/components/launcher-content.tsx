@@ -1,13 +1,13 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
-import { PopperMadeWith } from '@usertour-packages/sdk';
 import {
+  PopperMadeWith,
   LauncherContainer,
   LauncherContentWrapper,
   LauncherPopper,
   LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
-} from '@usertour-packages/sdk/src/launcher';
+} from '@usertour-packages/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
 import { getDefaultDataForType } from '../../../utils/default-data';
 import {

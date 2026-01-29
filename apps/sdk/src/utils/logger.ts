@@ -15,17 +15,16 @@ export const logger = {
   _log: (level: 'log' | 'warn' | 'error', ...args: any[]) => {
     if (window && debugEnabled && !isUndefined(window.console) && window.console) {
       const consoleLog = window.console[level];
-      // eslint-disable-next-line no-console
-      consoleLog(LOGGER_PREFIX, ...args);
       const now = performance.now();
       const t = lastT ? Math.round(now - lastT) : 0;
       lastT = now;
+      // eslint-disable-next-line no-console
       consoleLog(
         `%c${LOGGER_PREFIX} %c${args[0]} %c+${t}ms`,
         'color:#1FDB7D;',
         '',
         'color:#1FDB7D;',
-        ...args,
+        ...args.slice(1),
       );
     }
   },

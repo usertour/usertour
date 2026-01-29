@@ -21,17 +21,6 @@ const sdkColors = [
   'sdk-foreground',
   'sdk-hover',
   'sdk-active',
-  'sdk-destructive',
-  'sdk-destructive-foreground',
-  'sdk-destructive-hover',
-  'sdk-muted',
-  'sdk-muted-foreground',
-  'sdk-accent',
-  'sdk-accent-foreground',
-  'sdk-popover',
-  'sdk-popover-foreground',
-  'sdk-card',
-  'sdk-card-foreground',
   'sdk-progress',
   'sdk-question',
   // Brand colors
@@ -72,6 +61,9 @@ const customTwMerge = extendTailwindMerge({
     classGroups: {
       // minWidth group - matches min-w-* classes
       'min-w': ['min-w-sdk-button'],
+
+      // minHeight group - matches min-h-* classes
+      'min-h': ['min-h-sdk-line-height'],
 
       // height group - matches h-* classes
       h: [
@@ -114,10 +106,10 @@ const customTwMerge = extendTailwindMerge({
       'ring-color': [{ ring: sdkColors }],
 
       // fill group - fill-sdk-* for SVG fill
-      fill: [{ fill: sdkColors }],
+      fill: sdkColors,
 
       // stroke group - stroke-sdk-* for SVG stroke
-      stroke: [{ stroke: sdkColors }],
+      stroke: sdkColors,
 
       // fontWeight group - matches font-* classes for font weight
       'font-weight': [
@@ -131,9 +123,9 @@ const customTwMerge = extendTailwindMerge({
       // fontFamily group - matches font-* classes for font family
       'font-family': ['font-sdk'],
 
-      // lineHeight group - matches leading-* classes
-      // Use object syntax { leading: [...] } to properly extend
-      leading: [{ leading: ['sdk-base'] }],
+      // Note: No custom leading classes needed.
+      // text-sdk-base and text-sdk-h1/h2 include line-height via fontSize config.
+      // Use leading-none to override if line-height is not needed.
 
       // padding group - matches p-*, px-*, py-* classes
       px: ['px-sdk-button-x'],

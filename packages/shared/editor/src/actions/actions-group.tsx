@@ -165,13 +165,14 @@ export const ContentActionsGroup = () => {
       : 'and') ?? 'and',
   );
 
-  const setNewConditions = (newConditions: RulesCondition[]) => {
-    const isHasError = hasActionError(newConditions);
-    setConditions(newConditions);
-    if (onDataChange) {
-      onDataChange(newConditions, isHasError);
-    }
-  };
+  const setNewConditions = useCallback(
+    (newConditions: RulesCondition[]) => {
+      const isHasError = hasActionError(newConditions);
+      setConditions(newConditions);
+      onDataChange?.(newConditions, isHasError);
+    },
+    [onDataChange],
+  );
 
   const handleOnSelect = useCallback(
     (type: string) => {
@@ -190,7 +191,7 @@ export const ContentActionsGroup = () => {
         }
       }, 150);
     },
-    [conditionType, conditions],
+    [conditionType, conditions, setNewConditions],
   );
 
   useEffect(() => {

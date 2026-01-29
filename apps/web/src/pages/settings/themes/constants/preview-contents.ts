@@ -83,7 +83,7 @@ export const LIST_PREVIEW_CONTENT = [
               },
               margin: {
                 top: 0,
-                left: '10',
+                left: 10,
                 bottom: 0,
                 right: 0,
                 enabled: true,
@@ -352,6 +352,47 @@ export const MODAL_PREVIEW_CONTENT = [
 /**
  * Preview content for NPS survey theme preview
  */
+/**
+ * Preview content for bubble theme preview
+ */
+export const BUBBLE_PREVIEW_CONTENT = [
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          justifyContent: 'justify-center',
+          width: {
+            type: 'fill',
+          },
+          style: {},
+        },
+        children: [
+          {
+            element: {
+              type: 'text',
+              data: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      text: 'Hi there! 👋 Need help getting started? I can guide you through the key features.',
+                    },
+                  ],
+                  align: 'left',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  },
+] as ContentEditorRoot[];
+
 export const NPS_PREVIEW_CONTENT = [
   {
     element: {
