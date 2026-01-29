@@ -14,20 +14,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   private client: Redis | null = null;
 
-  constructor(private configService: ConfigService) {
-    this.logger.log('Initializing Redis client');
-    this.client = new Redis({
-      host: configService.getOrThrow('redis.host'),
-      port: configService.getOrThrow('redis.port'),
-      username: configService.get('redis.username'),
-      password: configService.get('redis.password'),
-    });
-
-    // Prevent unhandled error events (e.g. ETIMEDOUT, ENOTFOUND)
-    this.client.on('error', (err) => {
-      this.logger.error(`Redis connection error: ${err.message}`);
-    });
-  }
+  constructor(private configService: ConfigService) {}
 
   getClient(): Redis {
     if (!this.client) {
@@ -37,10 +24,17 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
-    if (!this.client) {
-      this.logger.log('Skip redis initialization in desktop mode');
-      return;
-    }
+    this.logger.log('Initializing Redis client');
+    this.client = new Redis({
+      host: this.configService.getOrThrow('redis.host'),
+      port: this.configService.getOrThrow('redis.port'),
+      username: this.configService.get('redis.username'),
+      password: this.configService.get('redis.password'),
+    });
+
+    this.client.on('error', (err) => {
+      this.logger.error(`Redis connection error: ${err.message}`);
+    });
 
     if (this.client.status === 'ready') {
       this.logger.log('Redis connection established');
@@ -57,6 +51,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       await Promise.race([once(this.client, 'ready'), timeoutPromise]);
       this.logger.log('Redis connection established');
     } catch (error) {
+      this.client?.disconnect();
+      this.client = null;
       this.logger.error(`Failed to establish Redis connection: ${error}`);
       throw error;
     }
