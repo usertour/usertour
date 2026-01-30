@@ -125,7 +125,7 @@ export const ContentList = () => {
       contentType={contentType}
     >
       <ThemeListProvider projectId={project?.id}>
-        <ContentListSidebar />
+        <ContentListSidebar title={config.title} />
         <ScrollArea className="h-full w-full">
           <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
             <ContentListLayout {...config} />

@@ -7,6 +7,7 @@ import {
   GroupIcon2,
   LauncherIcon,
   SettingsIcon,
+  BannerIcon,
 } from '@usertour-packages/icons';
 import { TooltipContent } from '@usertour-packages/tooltip';
 import { TooltipTrigger } from '@usertour-packages/tooltip';
@@ -45,6 +46,13 @@ const navigations = [
     contentType: 'checklists',
     routeIds: ['checklists'],
     icon: ChecklistIcon,
+  },
+  {
+    name: 'Banners',
+    href: '/banners',
+    contentType: 'banners',
+    routeIds: ['banners'],
+    icon: BannerIcon,
   },
   {
     name: 'Users',
