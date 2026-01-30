@@ -225,6 +225,30 @@ const translations = {
       },
     },
   },
+  themes: {
+    createForm: {
+      title: '创建主题',
+      name: {
+        label: '名称',
+        placeholder: '输入主题名称',
+        required: '请输入您的主题名称。',
+      },
+      isDefault: {
+        label: '设置为默认主题',
+      },
+      submit: '提交',
+      cancel: '取消',
+      toast: {
+        success: '主题创建成功',
+        createFailed: '创建主题失败。',
+        projectMissing: '未找到项目。请刷新页面。',
+      },
+    },
+    listHeader: {
+      newTheme: '新建主题',
+      description: '通过主题，您可以让流程和其他 Usertour 内容看起来像是您应用的原生部分。',
+    },
+  },
 };
 
 export default translations;

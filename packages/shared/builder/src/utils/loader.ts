@@ -1,3 +1,5 @@
+import { buildGoogleFontUrl, shouldLoadGoogleFont } from '@usertour/helpers';
+
 const loadStyleSheet = async (url: string, doc: Document) => {
   const sheet = doc.createElement('link');
   sheet.rel = 'stylesheet';
@@ -5,8 +7,6 @@ const loadStyleSheet = async (url: string, doc: Document) => {
   sheet.type = 'text/css';
   doc.head.appendChild(sheet);
   return new Promise((resolve: (isLoaded: boolean) => void) => {
-    sheet.onload = () => resolve(true);
-    sheet.addEventListener('load', () => resolve(true));
     sheet.onload = () => {
       resolve(true);
     };
@@ -18,8 +18,8 @@ const loadStyleSheet = async (url: string, doc: Document) => {
 };
 
 export const loadGoogleFontCss = (fontFamily: string, doc: Document) => {
-  if (fontFamily && fontFamily !== 'System font' && fontFamily !== 'Custom font') {
-    const url = `https://fonts.googleapis.com/css2?family=${fontFamily}`;
+  if (shouldLoadGoogleFont(fontFamily)) {
+    const url = buildGoogleFontUrl(fontFamily);
     return loadStyleSheet(url, doc);
   }
 };

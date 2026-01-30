@@ -23,13 +23,9 @@ import {
 } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
+import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditForm } from '../shared/content-edit-form';
-import {
-  ChecklistPreview,
-  FlowPreview,
-  LauncherPreview,
-  ScaledPreviewContainer,
-} from '../shared/content-preview';
+import { ChecklistPreview, FlowPreview, LauncherPreview } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
 
@@ -117,7 +113,12 @@ const ContentDetailContentStep = ({
                 setScale(scale);
               }}
             >
-              <FlowPreview currentTheme={currentTheme} currentStep={currentStep} />
+              <FlowPreview
+                currentTheme={currentTheme}
+                currentStep={currentStep}
+                currentVersion={currentVersion}
+                currentStepIndex={index}
+              />
             </ScaledPreviewContainer>
           </div>
         )}
@@ -150,7 +151,12 @@ const ContentDetailContentStep = ({
             <ContentBadge>{currentStep.type}</ContentBadge>
             {!isHiddenStep && (
               <>
-                <ContentBadge>Width: {currentStep.setting.width}px</ContentBadge>
+                <ContentBadge>
+                  Width:{' '}
+                  {currentStep.setting.width !== undefined
+                    ? `${currentStep.setting.width}px`
+                    : 'Auto'}
+                </ContentBadge>
                 <ContentBadge>Height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
                 <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
               </>

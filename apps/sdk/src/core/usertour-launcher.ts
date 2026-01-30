@@ -4,8 +4,8 @@ import {
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
-import { LauncherStore, BaseStore } from '@/types/store';
-import { UsertourComponent } from '@/core/usertour-component';
+import { LauncherStore } from '@/types/store';
+import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
@@ -94,13 +94,6 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     }
   }
 
-  /**
-   * Handles the dismiss event of the launcher
-   */
-  async handleDismiss() {
-    await this.close(contentEndReason.USER_CLOSED);
-  }
-
   // === Store Management ===
   /**
    * Gets the z-index for the launcher component
@@ -116,10 +109,10 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
 
   /**
    * Gets custom launcher store data
-   * @param baseData - The base store data that can be used for custom logic
+   * @param _context - Context object (unused in launcher)
    * @protected
    */
-  protected getCustomStoreData(_baseData: Partial<BaseStore> | null): Partial<LauncherStore> {
+  protected getCustomStoreData(_context: CustomStoreDataContext): Partial<LauncherStore> {
     const launcherData = this.getLauncherData();
     return {
       launcherData,

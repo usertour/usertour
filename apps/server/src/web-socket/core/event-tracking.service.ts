@@ -708,7 +708,8 @@ export class EventTrackingService {
     );
 
     // Pre-process: update user attributes if needed
-    if (bindToAttribute && answer) {
+    // Use isNullish to handle falsy values like 0 (valid NPS score)
+    if (bindToAttribute && !isNullish(answer)) {
       await this.bizService.upsertBizUsers(
         tx,
         externalUserId,

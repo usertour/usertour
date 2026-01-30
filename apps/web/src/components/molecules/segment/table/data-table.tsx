@@ -94,90 +94,97 @@ export function DataTable<TData>({
       .filter((column) => columnVisibility[column.id] !== false);
 
     return (
-      <Table className={className}>
-        <TableHeader>
-          <TableRow>
-            {visibleColumns.map((column, colIndex) => (
-              <TableHead
-                key={`header-skeleton-${column.id || colIndex}`}
-                className={column.id === 'select' ? 'w-10' : undefined}
-              >
-                <Skeleton className="h-4 w-20" />
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {Array.from({ length: TableStyles.SKELETON_ROWS as number }, (_, index) =>
-            renderSkeletonRow(visibleColumns, index),
-          )}
-        </TableBody>
-      </Table>
+      <div className="overflow-x-auto">
+        <Table className={`min-w-2xl ${className ?? ''}`}>
+          <TableHeader>
+            <TableRow>
+              {visibleColumns.map((column, colIndex) => (
+                <TableHead
+                  key={`header-skeleton-${column.id || colIndex}`}
+                  className={column.id === 'select' ? 'w-10' : undefined}
+                >
+                  <Skeleton className="h-4 w-20" />
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: TableStyles.SKELETON_ROWS as number }, (_, index) =>
+              renderSkeletonRow(visibleColumns, index),
+            )}
+          </TableBody>
+        </Table>
+      </div>
     );
   }
 
   return (
-    <Table className={className}>
-      <TableHeader>
-        {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id}>
-            {headerGroup.headers.map((header) => {
-              return (
-                <TableHead key={header.id} className={header.id === 'select' ? 'w-10' : undefined}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              );
-            })}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows?.length ? (
-          table.getRowModel().rows.map((row) => (
-            <TableRow
-              key={row.id}
-              className={`cursor-pointer hover:bg-muted/50 ${onRowClick ? '' : 'cursor-default'}`}
-              data-state={row.getIsSelected() && 'selected'}
-            >
-              {row.getVisibleCells().map((cell) => {
-                try {
-                  const cellContent = flexRender(cell.column.columnDef.cell, cell.getContext());
-                  return (
-                    <TableCell
-                      key={cell.id}
-                      className="leading-8 py-4"
-                      onClick={() => {
-                        if (cell.column.id !== 'select' && onRowClick) {
-                          onRowClick(row.original);
-                        }
-                      }}
-                    >
-                      {cellContent}
-                    </TableCell>
-                  );
-                } catch (error) {
-                  console.error('Error rendering cell:', cell.id, error);
-                  return (
-                    <TableCell key={cell.id} className="leading-8 py-4">
-                      <span className="text-red-500">Error</span>
-                    </TableCell>
-                  );
-                }
+    <div className="overflow-x-auto">
+      <Table className={`min-w-2xl ${className ?? ''}`}>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+                return (
+                  <TableHead
+                    key={header.id}
+                    className={header.id === 'select' ? 'w-10' : undefined}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                );
               })}
             </TableRow>
-          ))
-        ) : (
-          <TableRow>
-            <TableCell colSpan={columns.length} className="h-24 text-center">
-              <EmptyPlaceholder name={emptyMessage} description={emptyDescription}>
-                <div />
-              </EmptyPlaceholder>
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                className={`cursor-pointer hover:bg-muted/50 ${onRowClick ? '' : 'cursor-default'}`}
+                data-state={row.getIsSelected() && 'selected'}
+              >
+                {row.getVisibleCells().map((cell) => {
+                  try {
+                    const cellContent = flexRender(cell.column.columnDef.cell, cell.getContext());
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className="leading-8 py-4"
+                        onClick={() => {
+                          if (cell.column.id !== 'select' && onRowClick) {
+                            onRowClick(row.original);
+                          }
+                        }}
+                      >
+                        {cellContent}
+                      </TableCell>
+                    );
+                  } catch (error) {
+                    console.error('Error rendering cell:', cell.id, error);
+                    return (
+                      <TableCell key={cell.id} className="leading-8 py-4">
+                        <span className="text-red-500">Error</span>
+                      </TableCell>
+                    );
+                  }
+                })}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="h-24 text-center">
+                <EmptyPlaceholder name={emptyMessage} description={emptyDescription}>
+                  <div />
+                </EmptyPlaceholder>
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

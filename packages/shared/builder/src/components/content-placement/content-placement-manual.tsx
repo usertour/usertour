@@ -50,7 +50,12 @@ export const ContentPlacementManual = () => {
               Usertour will select an element containing the text you write here.
             </QuestionTooltip>
           </div>
-          <Input id="element-text" value={target?.content ?? ''} onChange={handleContentChange} />
+          <Input
+            className="bg-background"
+            id="element-text"
+            value={target?.content ?? ''}
+            onChange={handleContentChange}
+          />
           <div className="flex justify-start items-center space-x-1	">
             <Label htmlFor="css-selector">CSS selector</Label>
             <QuestionTooltip>
@@ -63,6 +68,7 @@ export const ContentPlacementManual = () => {
 
           <ContentErrorAnchor>
             <Input
+              className="bg-background"
               id="css-selector"
               value={target?.customSelector ?? ''}
               onChange={handleSelectorChange}

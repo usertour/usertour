@@ -4,6 +4,7 @@ import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import {
+  EXTENSION_CONTENT_POPPER,
   EXTENSION_CONTENT_SIDEBAR,
   MESSAGE_CRX_OPEN_NEW_TARGET,
 } from '@usertour-packages/constants';
@@ -15,11 +16,14 @@ import {
   ContentAlignmentData,
   ContentModalPlacementData,
   Side,
-  Theme,
+  StepContentType,
 } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
-import { ChangeEvent, Ref, useCallback, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getThemeWidthByStepType } from '@usertour-packages/widget';
 import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useCurrentTheme } from '../../hooks/use-current-theme';
+import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
 import { ContentAlignment } from '../../components/content-alignment';
 import { ContentModal } from '../../components/content-modal';
 import { ContentModalPlacement } from '../../components/content-modal-placement';
@@ -44,6 +48,7 @@ import {
   useAddContentStepMutation,
   useUpdateContentStepMutation,
 } from '@usertour-packages/shared-hooks';
+import { ContentBubble } from '../../components/content-bubble';
 
 const FlowBuilderDetailHeader = () => {
   const { setCurrentMode, currentStep, currentContent, updateCurrentStep } = useBuilderContext();
@@ -88,6 +93,15 @@ const FlowBuilderDetailBody = () => {
     useBuilderContext();
   const { themeList } = useThemeListContext();
 
+  // Get the effective theme for the current step (step > version > default)
+  const effectiveTheme = useCurrentTheme({ fallbackToDefault: true });
+
+  // Get the default width from theme based on step type
+  const defaultWidth = useMemo(() => {
+    if (!currentStep) return 300;
+    return getThemeWidthByStepType(currentStep.type, effectiveTheme?.settings);
+  }, [currentStep?.type, effectiveTheme?.settings]);
+
   const handleEditTheme = useCallback(() => {
     if (!currentStep || !currentTheme) {
       return false;
@@ -130,12 +144,15 @@ const FlowBuilderDetailBody = () => {
     }));
   };
 
-  const handleWidthChange = (width: number) => {
-    updateCurrentStep((pre) => ({
-      ...pre,
-      setting: { ...pre.setting, width },
-    }));
-  };
+  const handleWidthChange = useCallback(
+    (width: number | undefined) => {
+      updateCurrentStep((pre) => ({
+        ...pre,
+        setting: { ...pre.setting, width },
+      }));
+    },
+    [updateCurrentStep],
+  );
 
   const handleContentTypeChange = (type: string) => {
     updateCurrentStep((pre) => ({
@@ -158,7 +175,7 @@ const FlowBuilderDetailBody = () => {
               zIndex={zIndex}
               onChange={handleContentTypeChange}
             />
-            {currentStep.type !== 'hidden' && (
+            {currentStep.type !== StepContentType.HIDDEN && (
               <>
                 <ContentTheme
                   themeList={themeList}
@@ -169,14 +186,15 @@ const FlowBuilderDetailBody = () => {
                 />
                 <Separator />
                 <ContentWidth
-                  type={currentStep.type as 'tooltip' | 'modal'}
+                  type={currentStep.type as 'tooltip' | 'modal' | 'bubble'}
                   width={currentStep.setting.width}
+                  defaultWidth={defaultWidth}
                   onChange={handleWidthChange}
                 />
               </>
             )}
-            {currentStep.type === 'tooltip' && <FlowPlacement />}
-            {currentStep.type === 'tooltip' && (
+            {currentStep.type === StepContentType.TOOLTIP && <FlowPlacement />}
+            {currentStep.type === StepContentType.TOOLTIP && (
               <ContentAlignment
                 initialValue={{
                   side: currentStep.setting.side as Side,
@@ -188,7 +206,7 @@ const FlowBuilderDetailBody = () => {
                 onChange={handleAlignmentChange}
               />
             )}
-            {currentStep.type === 'modal' && (
+            {currentStep.type === StepContentType.MODAL && (
               <ContentModalPlacement
                 data={
                   {
@@ -200,7 +218,7 @@ const FlowBuilderDetailBody = () => {
                 onChange={handlePositionChange}
               />
             )}
-            {currentStep.type !== 'hidden' && (
+            {currentStep.type !== StepContentType.HIDDEN && (
               <>
                 <Separator />
                 <ContentSettings
@@ -242,11 +260,11 @@ const FlowBuilderDetailFooter = () => {
     if (!currentStep || !backupStepData) {
       return;
     }
-    if (currentStep.type !== 'hidden' && hasMissingRequiredData(currentStep.data)) {
+    if (currentStep.type !== StepContentType.HIDDEN && hasMissingRequiredData(currentStep.data)) {
       return;
     }
     if (
-      currentStep.type === 'tooltip' &&
+      currentStep.type === StepContentType.TOOLTIP &&
       ((currentStep.target?.type === 'auto' && !currentStep.target?.selectors) ||
         (currentStep.target?.type === 'manual' && !currentStep.target?.customSelector))
     ) {
@@ -336,28 +354,10 @@ const FlowBuilderDetailEmbed = () => {
     projectId,
     createNewStep,
   } = useBuilderContext();
-  const { themeList } = useThemeListContext();
   const { contents } = useContentListContext();
   const { attributeList } = useAttributeListContext();
-  const [theme, setTheme] = useState<Theme>();
+  const theme = useCurrentTheme({ fallbackToDefault: true });
   const triggerRef = useRef<SVGSVGElement>(null);
-
-  useEffect(() => {
-    if (!themeList) {
-      return;
-    }
-    if (themeList.length > 0) {
-      let theme: Theme | undefined;
-      if (currentStep?.themeId) {
-        theme = themeList.find((item) => item.id === currentStep.themeId);
-      } else if (currentVersion?.themeId) {
-        theme = themeList.find((item) => item.id === currentVersion.themeId);
-      }
-      if (theme) {
-        setTheme(theme);
-      }
-    }
-  }, [currentStep, themeList, currentVersion]);
 
   const handleContentChange = (value: ContentEditorRoot[]) => {
     updateCurrentStep((pre) => ({ ...pre, data: value }));
@@ -386,7 +386,7 @@ const FlowBuilderDetailEmbed = () => {
     return <></>;
   }
 
-  if (currentStep.type === 'tooltip') {
+  if (currentStep.type === StepContentType.TOOLTIP) {
     return (
       <>
         <PlusIcon width={24} height={24} ref={triggerRef} className={cn('fixed', centerClasses)} />
@@ -398,7 +398,7 @@ const FlowBuilderDetailEmbed = () => {
           currentContent={currentContent}
           contents={contents}
           triggerRef={triggerRef}
-          zIndex={zIndex}
+          zIndex={zIndex + EXTENSION_CONTENT_POPPER}
           projectId={projectId}
           currentStep={currentStep}
           currentVersion={currentVersion}
@@ -409,24 +409,41 @@ const FlowBuilderDetailEmbed = () => {
     );
   }
 
-  if (currentStep.type === 'modal') {
+  if (currentStep.type === StepContentType.MODAL) {
     return (
-      <>
-        <ContentModal
-          theme={theme}
-          ref={contentRef as Ref<HTMLDivElement> | undefined}
-          attributeList={attributeList}
-          projectId={projectId}
-          contents={contents}
-          zIndex={zIndex}
-          currentIndex={currentIndex}
-          currentStep={currentStep}
-          currentVersion={currentVersion}
-          onChange={handleContentChange}
-          createStep={createNewStep}
-          currentContent={currentContent}
-        />
-      </>
+      <ContentModal
+        theme={theme}
+        ref={contentRef as Ref<HTMLDivElement> | undefined}
+        attributeList={attributeList}
+        projectId={projectId}
+        contents={contents}
+        zIndex={zIndex}
+        currentIndex={currentIndex}
+        currentStep={currentStep}
+        currentVersion={currentVersion}
+        onChange={handleContentChange}
+        createStep={createNewStep}
+        currentContent={currentContent}
+      />
+    );
+  }
+
+  if (currentStep.type === StepContentType.BUBBLE) {
+    return (
+      <ContentBubble
+        theme={theme}
+        ref={contentRef as Ref<HTMLDivElement> | undefined}
+        attributeList={attributeList}
+        projectId={projectId}
+        contents={contents}
+        zIndex={zIndex}
+        currentIndex={currentIndex}
+        currentStep={currentStep}
+        currentVersion={currentVersion}
+        onChange={handleContentChange}
+        createStep={createNewStep}
+        currentContent={currentContent}
+      />
     );
   }
 
@@ -436,6 +453,9 @@ const FlowBuilderDetailEmbed = () => {
 export const FlowBuilderDetail = () => {
   const ref = useRef<HTMLDivElement>(null);
   const { zIndex, position } = useBuilderContext();
+
+  // Auto-adjust sidebar position when content position overlaps
+  useAutoSidebarPosition();
 
   return (
     <>

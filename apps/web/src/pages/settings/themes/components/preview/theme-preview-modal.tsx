@@ -1,6 +1,15 @@
-import * as SharedPopper from '@usertour-packages/sdk';
-import { ContentEditorRoot, ContentEditorSerialize } from '@usertour-packages/shared-editor';
+import {
+  ContentEditorSerialize,
+  Popper,
+  PopperClose,
+  PopperContent,
+  PopperMadeWith,
+  PopperModalContentPotal,
+  PopperProgress,
+} from '@usertour-packages/widget';
+import type { ContentEditorRoot } from '@usertour/types';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
+
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface ThemePreviewModalProps {
@@ -25,16 +34,16 @@ export const ThemePreviewModal = (props: ThemePreviewModalProps) => {
 
   return (
     <div className="h-full w-full scale-100">
-      <SharedPopper.Popper open={true} zIndex={1111} globalStyle={customStyle}>
-        <SharedPopper.PopperModalContentPotal
+      <Popper open={true} zIndex={1111} globalStyle={customStyle}>
+        <PopperModalContentPotal
           position={'center'}
           enabledBackdrop={true}
           width={`${settings?.modal.width}px`}
         >
-          <SharedPopper.PopperContent>
-            <SharedPopper.PopperClose />
+          <PopperContent>
+            <PopperClose />
             {showTopProgress && (
-              <SharedPopper.PopperProgress
+              <PopperProgress
                 type={progressType}
                 currentStepIndex={2}
                 position={progressPosition}
@@ -42,18 +51,18 @@ export const ThemePreviewModal = (props: ThemePreviewModalProps) => {
               />
             )}
             <ContentEditorSerialize contents={contents} />
-            {shouldShowMadeWith && <SharedPopper.PopperMadeWith />}
+            {shouldShowMadeWith && <PopperMadeWith />}
             {showBottomProgress && (
-              <SharedPopper.PopperProgress
+              <PopperProgress
                 type={progressType}
                 currentStepIndex={2}
                 totalSteps={4}
                 position={progressPosition}
               />
             )}
-          </SharedPopper.PopperContent>
-        </SharedPopper.PopperModalContentPotal>
-      </SharedPopper.Popper>
+          </PopperContent>
+        </PopperModalContentPotal>
+      </Popper>
     </div>
   );
 };

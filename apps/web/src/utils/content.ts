@@ -1,5 +1,20 @@
-import { ContentVersion, Environment } from '@usertour/types';
-import { Content } from '@usertour/types';
+import { Content, ContentDataType, ContentVersion, Environment } from '@usertour/types';
+
+/**
+ * Convert content list type (plural) to ContentDataType enum
+ * e.g., 'flows' -> ContentDataType.FLOW, 'launchers' -> ContentDataType.LAUNCHER
+ */
+export const getQueryType = (contentType: string): ContentDataType => {
+  const typeMap: Record<string, ContentDataType> = {
+    flows: ContentDataType.FLOW,
+    launchers: ContentDataType.LAUNCHER,
+    banners: ContentDataType.BANNER,
+    checklists: ContentDataType.CHECKLIST,
+    surveys: ContentDataType.SURVEY,
+    nps: ContentDataType.NPS,
+  };
+  return typeMap[contentType] ?? ContentDataType.FLOW;
+};
 
 export const isPublishedInAllEnvironments = (
   content: Content | null,

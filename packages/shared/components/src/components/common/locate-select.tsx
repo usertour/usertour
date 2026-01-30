@@ -1,6 +1,4 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { PopoverProps } from '@radix-ui/react-popover';
-import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { useState } from 'react';
 
 import { Button } from '@usertour-packages/button';
@@ -12,6 +10,8 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { locates } from '@usertour-packages/constants';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import type { PopoverProps } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { cn } from '@usertour-packages/tailwind';
 
@@ -43,8 +43,8 @@ export const LocateSelect = ({
   };
 
   return (
-    <PopoverPrimitive.Popover open={open} onOpenChange={setOpen} {...props}>
-      <PopoverPrimitive.Trigger asChild>
+    <Popover open={open} onOpenChange={setOpen} {...props}>
+      <PopoverTrigger asChild>
         <Button
           variant="outline"
           aria-label="Load a locate..."
@@ -54,14 +54,8 @@ export const LocateSelect = ({
           {selectedItem ? selectedItem.language.name : 'Load a locate...'}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
-      </PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Content
-        align={'start'}
-        className={cn(
-          'z-50 p-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
-          popperContentClass,
-        )}
-      >
+      </PopoverTrigger>
+      <PopoverContent align={'start'} className={cn('p-0', popperContentClass)}>
         <Command>
           <CommandInput placeholder="Search locate..." />
           <CommandEmpty>No items found.</CommandEmpty>
@@ -86,8 +80,8 @@ export const LocateSelect = ({
             </ScrollArea>
           </CommandGroup>
         </Command>
-      </PopoverPrimitive.Content>
-    </PopoverPrimitive.Popover>
+      </PopoverContent>
+    </Popover>
   );
 };
 

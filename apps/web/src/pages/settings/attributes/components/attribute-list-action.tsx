@@ -74,7 +74,7 @@ export const AttributeListAction = (props: AttributeListActionProps) => {
               <DotsHorizontalIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[200px]">
+          <DropdownMenuContent align="end" className="w-[200px]">
             <DropdownMenuItem onClick={handleOpen}>
               <EditIcon className="w-6" width={12} height={12} />
               Edit attribute

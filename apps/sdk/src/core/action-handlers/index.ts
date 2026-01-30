@@ -3,6 +3,7 @@ export type {
   BaseActionHandler,
   ActionHandlerContext,
 } from './action-handler.interface';
+export { ActionSource } from './action-handler.interface';
 export {
   CommonActionHandler,
   LauncherActionHandler,

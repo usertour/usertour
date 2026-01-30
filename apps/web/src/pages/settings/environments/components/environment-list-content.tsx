@@ -46,7 +46,9 @@ const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowPro
           </Button>
         </div>
       </TableCell>
-      <TableCell>{format(new Date(environment.createdAt), 'PPpp')}</TableCell>
+      <TableCell className="hidden lg:table-cell">
+        {format(new Date(environment.createdAt), 'PPpp')}
+      </TableCell>
       <TableCell>
         <EnvironmentListAction environment={environment} environmentCount={environmentCount} />
       </TableCell>
@@ -61,39 +63,41 @@ export const EnvironmentListContent = () => {
     return <ListSkeleton />;
   }
   return (
-    <Table className="table-fixed">
-      <TableHeader>
-        <TableRow>
-          <TableHead>Environment name</TableHead>
-          <TableHead>
-            Usertour.js Token
-            <QuestionTooltip className="inline ml-1 mb-1">
-              You need this when installing Usertour.js in your web app. See
-              https://docs.usertour.io for more details.
-            </QuestionTooltip>
-          </TableHead>
-          <TableHead className="w-60">CreatedAt</TableHead>
-          <TableHead className="w-24" />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {environmentList ? (
-          environmentList?.map((environment: Environment) => (
-            <EnvironmentListContentTableRow
-              environment={environment}
-              environmentCount={environmentList.length}
-              key={environment.id}
-            />
-          ))
-        ) : (
+    <div className="overflow-x-auto">
+      <Table className="table-fixed min-w-2xl">
+        <TableHeader>
           <TableRow>
-            <TableCell colSpan={4} className="h-24 text-center">
-              No results.
-            </TableCell>
+            <TableHead>Environment name</TableHead>
+            <TableHead>
+              Usertour.js Token
+              <QuestionTooltip className="inline ml-1 mb-1">
+                You need this when installing Usertour.js in your web app. See
+                https://docs.usertour.io for more details.
+              </QuestionTooltip>
+            </TableHead>
+            <TableHead className="w-48 hidden lg:table-cell">CreatedAt</TableHead>
+            <TableHead className="w-20" />
           </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {environmentList ? (
+            environmentList?.map((environment: Environment) => (
+              <EnvironmentListContentTableRow
+                environment={environment}
+                environmentCount={environmentList.length}
+                key={environment.id}
+              />
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={4} className="h-24 text-center">
+                No results.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

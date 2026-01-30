@@ -1,4 +1,6 @@
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
+import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
+import { ModalBackdropClickBehavior } from '@usertour/types';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsModal = () => {
@@ -30,6 +32,23 @@ export const ThemeSettingsModal = () => {
             update({ padding: Number(value) });
           }}
           disabled={isViewOnly}
+        />
+        <ThemeSettingSelect
+          text="Modal backdrop click behavior"
+          name="modal-backdrop-click-behavior"
+          defaultValue={
+            settings.modal?.backdropClickBehavior ?? ModalBackdropClickBehavior.DO_NOTHING
+          }
+          items={[
+            { value: ModalBackdropClickBehavior.DO_NOTHING, name: 'Do nothing' },
+            { value: ModalBackdropClickBehavior.DISMISS_FLOW, name: 'Dismiss flow' },
+          ]}
+          onValueChange={(value: string) => {
+            update({ backdropClickBehavior: value as ModalBackdropClickBehavior });
+          }}
+          disabled={isViewOnly}
+          vertical
+          tooltip="Controls the action when users click the backdrop area outside the modal."
         />
       </div>
     </div>

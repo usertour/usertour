@@ -1,21 +1,19 @@
+import { Descendant, Editor, Element as SlateElement, Range, Text, Transforms } from 'slate';
 import {
-  Descendant,
-  Editor,
-  Element as SlateElement,
-  Node,
-  Path,
-  Range,
-  Text,
-  Transforms,
-} from 'slate';
-import { NodeInsertNodesOptions } from 'slate/dist/interfaces/transforms/node';
-import {
-  ColumnElementType,
   CustomEditor,
   CustomElementStrings,
   CustomMarkupStrings,
   LinkElementType,
 } from '../types/slate';
+
+/* Text Helpers */
+
+/**
+ * Check if a Slate node is a text node
+ */
+export const isText = (node: Descendant) => {
+  return Text.isText(node);
+};
 
 /* Block Helpers */
 
@@ -53,116 +51,16 @@ export const toggleMark = (editor: Editor, type: CustomMarkupStrings) => {
   );
 };
 
-export const inertImageBlock = (editor: CustomEditor) => {
-  Transforms.insertNodes(editor, {
-    type: 'image',
-    url: '',
-    width: { type: 'percent', value: 100 },
-    children: [{ text: '' }],
-  });
-};
-
-export const inertEmbedBlock = (editor: CustomEditor) => {
-  Transforms.insertNodes(editor, {
-    type: 'embed',
-    url: '',
-    width: { type: 'percent', value: 100 },
-    children: [{ text: '' }],
-  });
-};
-
-export const inertColumnBlock = (
-  editor: CustomEditor,
-  columnProps: Partial<ColumnElementType>,
-  children: Descendant[],
-  options?: NodeInsertNodesOptions<Node>,
-) => {
-  Transforms.insertNodes(
-    editor,
-    {
-      ...columnProps,
-      type: 'column',
-      children,
-    },
-    options,
-  );
-};
-
-export const inertGroupBlockV2 = (
-  editor: CustomEditor,
-  children: Descendant[],
-  options?: NodeInsertNodesOptions<Node>,
-) => {
-  Transforms.insertNodes(
-    editor,
-    {
-      type: 'group',
-      isFirst: false,
-      isLast: false,
-      children: [
-        {
-          type: 'column',
-          width: { type: 'fill', value: 50 },
-          style: { justifyContent: 'start', marginRight: '30' },
-          children,
-        },
-      ],
-    },
-    options,
-  );
-};
-
-export const inertGroupBlock = (editor: CustomEditor, options?: NodeInsertNodesOptions<Node>) => {
-  Transforms.insertNodes(
-    editor,
-    {
-      type: 'group',
-      isFirst: false,
-      isLast: false,
-      children: [
-        {
-          type: 'column',
-          width: { type: 'fill', value: 50 },
-          style: { justifyContent: 'start', marginRight: '30' },
-          children: [
-            {
-              type: 'paragraph',
-              children: [{ text: 'Write text here' }],
-            },
-          ],
-        },
-      ],
-    },
-    options,
-  );
-};
-
-export const inertButtonBlock = (editor: CustomEditor) => {
-  Transforms.insertNodes(editor, {
-    type: 'button',
-    data: { text: 'Button', type: 'default', action: 'goto' },
-    children: [{ text: '' }],
-  });
-};
-
-export const inertUserAttributeBlock = (editor: CustomEditor) => {
+/**
+ * Insert a user attribute block at the current selection
+ */
+export const insertUserAttributeBlock = (editor: CustomEditor) => {
   Transforms.insertNodes(editor, {
     type: 'user-attribute',
     fallback: '',
     attrCode: '',
     children: [{ text: '' }],
   });
-};
-
-export const updateNodeStatus = (editor: CustomEditor) => {
-  let lastPath: Path | undefined = undefined;
-  for (const [, path] of Node.children(editor, [])) {
-    Transforms.setNodes(editor, { isFirst: path[0] === 0, isLast: false }, { at: path });
-    lastPath = path;
-  }
-  if (lastPath) {
-    Transforms.setNodes(editor, { isFirst: lastPath[0] === 0, isLast: true }, { at: lastPath });
-  }
 };
 
 export const isLinkActive = (editor: CustomEditor) => {

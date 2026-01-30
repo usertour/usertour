@@ -1,6 +1,12 @@
 import { AssetAttributes } from '@usertour-packages/frame';
 import { ThemeTypesSetting, SessionTheme } from '@usertour/types';
-import { convertSettings, convertToCssVars, isConditionsActived } from '@usertour/helpers';
+import {
+  buildGoogleFontUrl,
+  convertSettings,
+  convertToCssVars,
+  isConditionsActived,
+  shouldLoadGoogleFont,
+} from '@usertour/helpers';
 import { getUserTourCss } from '@/core/usertour-env';
 import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 import { logger } from '@/utils/logger';
@@ -21,7 +27,7 @@ const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
       type: 'text/css',
     },
   ];
-  if (fontFamily === 'System font' || fontFamily === 'Custom font') {
+  if (!shouldLoadGoogleFont(fontFamily)) {
     return [...assets];
   }
 
@@ -30,7 +36,7 @@ const getAssets = (themeSettings: ThemeTypesSetting): AssetAttributes[] => {
     {
       tagName: 'link',
       isCheckLoaded: false,
-      href: `https://fonts.googleapis.com/css2?family=${fontFamily}`,
+      href: buildGoogleFontUrl(fontFamily),
       rel: 'stylesheet',
       type: 'text/css',
     },
