@@ -16,8 +16,6 @@ const CONTENT_TYPE_LOADING_MESSAGES: Record<ContentTypeName, string> = {
   [ContentTypeName.LAUNCHERS]: 'Loading launcher details...',
   [ContentTypeName.CHECKLISTS]: 'Loading checklist details...',
   [ContentTypeName.BANNERS]: 'Loading banner details...',
-  [ContentTypeName.NPS]: 'Loading content details...',
-  [ContentTypeName.SURVEYS]: 'Loading content details...',
   [ContentTypeName.TRACKERS]: 'Loading content details...',
   [ContentTypeName.EVENTS]: 'Loading content details...',
 };

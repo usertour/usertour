@@ -25,8 +25,6 @@ export enum ContentDataType {
   FLOW = 'flow',
   LAUNCHER = 'launcher',
   BANNER = 'banner',
-  NPS = 'nps',
-  SURVEY = 'survey',
   TRACKER = 'tracker',
   EVENT = 'event',
 }
@@ -37,8 +35,6 @@ export enum ContentTypeName {
   LAUNCHERS = 'launchers',
   // RESOURCE_CENTERS = "resource-centers",
   BANNERS = 'banners',
-  NPS = 'nps',
-  SURVEYS = 'surveys',
   TRACKERS = 'trackers',
   EVENTS = 'events',
 }

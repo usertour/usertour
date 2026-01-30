@@ -113,13 +113,7 @@ const ContentPreview = ({
     return <ContentPreviewSkeleton />;
   }
 
-  if (
-    (type === ContentDataType.FLOW ||
-      type === ContentDataType.NPS ||
-      type === ContentDataType.SURVEY) &&
-    currentTheme &&
-    currentStep
-  ) {
+  if (type === ContentDataType.FLOW && currentTheme && currentStep) {
     // Find the index of currentStep in the steps array
     const stepIndex = currentVersion?.steps?.findIndex((step) => step.id === currentStep.id);
     const currentStepIndex = stepIndex !== undefined && stepIndex >= 0 ? stepIndex : 0;
