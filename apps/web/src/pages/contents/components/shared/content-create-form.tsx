@@ -22,59 +22,81 @@ import {
 } from '@usertour-packages/form';
 import { createContent } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { useOpenSelector } from '@usertour-packages/shared-hooks';
-import { getAuthToken, getErrorMessage } from '@usertour/helpers';
-import { BuilderType, Content, ContentDataType } from '@usertour/types';
+import { getErrorMessage } from '@usertour/helpers';
+import { Content, ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
-import { useCallback, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
+export type ContentCreateFormContentType = 'flow' | 'checklist' | 'launcher' | 'banner';
+
 interface ContentCreateFormProps {
   isOpen: boolean;
   onClose: (contentId?: string) => void;
+  contentType: ContentCreateFormContentType;
 }
 
 const formSchema = z.object({
   name: z
     .string({
-      required_error: 'Please enter your flow name.',
+      required_error: 'Please enter the name.',
     })
     .max(30)
     .min(1),
-  buildUrl: z
-    .string({
-      required_error: 'Please enter the URL you want to add an experience to',
-    })
-    // .min(1)
-    // .url()
-    .optional(),
-  type: z.string(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const defaultValues: Partial<FormValues> = {
-  name: '',
-  buildUrl: '',
-  type: BuilderType.WEB,
+const CONTENT_TYPE_CONFIG: Record<
+  ContentCreateFormContentType,
+  {
+    contentDataType: ContentDataType;
+    builderPathSegment: string;
+    initialData?: unknown;
+  }
+> = {
+  flow: {
+    contentDataType: ContentDataType.FLOW,
+    builderPathSegment: 'flows',
+  },
+  checklist: {
+    contentDataType: ContentDataType.CHECKLIST,
+    builderPathSegment: 'checklists',
+    initialData: DEFAULT_CHECKLIST_DATA,
+  },
+  launcher: {
+    contentDataType: ContentDataType.LAUNCHER,
+    builderPathSegment: 'launchers',
+  },
+  banner: {
+    contentDataType: ContentDataType.BANNER,
+    builderPathSegment: 'banners',
+  },
 };
 
-export const ContentCreateForm = ({ onClose, isOpen }: ContentCreateFormProps) => {
+const defaultValues: Partial<FormValues> = {
+  name: '',
+};
+
+export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreateFormProps) => {
   const [createContentMutation] = useMutation(createContent);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const token = getAuthToken();
-  const [currentContent, setCurrentContent] = useState<Content | undefined>();
-  const { project, environment } = useAppContext();
+  const { environment } = useAppContext();
   const navigate = useNavigate();
-  const onOpenedBuilder = useCallback(() => {
-    if (currentContent) {
-      navigate(`/env/${currentContent?.environmentId}/flows/${currentContent?.id}/detail`);
-    }
-  }, [currentContent]);
-  const openTarget = useOpenSelector(token, onOpenedBuilder);
   const { toast } = useToast();
+
+  const config = useMemo(() => CONTENT_TYPE_CONFIG[contentType], [contentType]);
+
+  const copy = useMemo(
+    () => ({
+      dialogTitle: `Create ${contentType}`,
+      namePlaceholder: `Enter ${contentType} name`,
+      createErrorMessage: `Create ${contentType} failed.`,
+    }),
+    [contentType],
+  );
 
   const showError = (title: string) => {
     toast({
@@ -92,50 +114,37 @@ export const ContentCreateForm = ({ onClose, isOpen }: ContentCreateFormProps) =
   const nameValue = form.watch('name');
   const isNameEmpty = !nameValue?.trim();
 
-  async function handleOnSubmit(formValues: FormValues) {
-    const { buildUrl, type, name } = formValues;
+  const handleOnSubmit = async (formValues: FormValues) => {
+    const { name } = formValues;
     setIsLoading(true);
     try {
-      const data = {
+      const variables = {
         name,
-        buildUrl,
         environmentId: environment?.id,
-        type: ContentDataType.FLOW,
+        type: config.contentDataType,
+        ...(config.initialData != null && { data: config.initialData }),
       };
-      const ret = await createContentMutation({ variables: data });
+      const ret = await createContentMutation({ variables });
       if (!ret.data?.createContent?.id) {
-        showError('Create flow failed.');
+        showError(copy.createErrorMessage);
         return;
       }
       const content = ret.data?.createContent as Content;
-      setCurrentContent(content);
-      if (type === BuilderType.WEB) {
-        navigate(
-          `/env/${content?.environmentId}/flows/${content?.id}/builder/${content.editedVersionId}`,
-        );
+      if (!content?.editedVersionId) {
+        showError(copy.createErrorMessage);
         return;
       }
-      if (!buildUrl) {
-        showError('Please enter the URL you want to add an experience to.');
-        return;
-      }
-      const initParams = {
-        environmentId: environment?.id,
-        contentId: content.id,
-        action: 'editContent',
-        projectId: project?.id,
-        versionId: content.editedVersionId,
-        envToken: environment?.token,
-      };
-      openTarget.open(buildUrl, initParams);
-      // onClose(content.id);
-      // navigate(`/env/${content?.environmentId}/flows/${content?.id}/detail`);
+      const path = `/env/${content.environmentId ?? ''}/${config.builderPathSegment}/${content.id}/builder/${content.editedVersionId}`;
+      navigate(path);
     } catch (error) {
       showError(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
-  }
+  };
+
+  const submitButtonId = contentType === 'flow' ? 'create-flow-submit' : undefined;
+  const nameInputId = contentType === 'flow' ? 'flow-name-input' : undefined;
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
@@ -143,7 +152,7 @@ export const ContentCreateForm = ({ onClose, isOpen }: ContentCreateFormProps) =
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Create flow</DialogTitle>
+              <DialogTitle>{copy.dialogTitle}</DialogTitle>
             </DialogHeader>
             <div className="space-y-2 py-4 pt-6">
               <FormField
@@ -154,39 +163,19 @@ export const ContentCreateForm = ({ onClose, isOpen }: ContentCreateFormProps) =
                     <FormLabel>Name</FormLabel>
                     <FormControl>
                       <div className="w-full">
-                        <Input placeholder="Enter flow  name" {...field} id="flow-name-input" />
+                        <Input placeholder={copy.namePlaceholder} {...field} id={nameInputId} />
                         <FormMessage />
                       </div>
                     </FormControl>
                   </FormItem>
                 )}
               />
-              {form.getValues('type') === BuilderType.EXTENSION && (
-                <FormField
-                  control={form.control}
-                  name="buildUrl"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                      <FormLabel className="w-32 flex-none">Build Url</FormLabel>
-                      <FormControl>
-                        <div className="flex flex-col space-x-1 w-full grow">
-                          <Input
-                            placeholder="Enter the URL you want to add an experience to"
-                            {...field}
-                          />
-                          <FormMessage />
-                        </div>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              )}
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onClose()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading || isNameEmpty} id="create-flow-submit">
+              <Button type="submit" disabled={isLoading || isNameEmpty} id={submitButtonId}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
               </Button>
