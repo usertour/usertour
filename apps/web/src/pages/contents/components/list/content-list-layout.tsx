@@ -59,11 +59,13 @@ export const ContentListLayout = memo(
     filteredEmptyDescription,
   }: ContentListLayoutProps) => {
     const [open, setOpen] = useState(false);
-    const [, setSearchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { isViewOnly, environment } = useAppContext();
-    const { contents, refetch, isLoading, query, contentType } = useContentListContext();
+    const { contents, refetch, isLoading, contentType } = useContentListContext();
 
-    const isPublishedView = query?.published === true;
+    // Derive from URL so draft count is fetched on first paint when visiting ?published=1
+    // (context query may sync from URL in useEffect, causing one render where query.published is stale)
+    const isPublishedView = searchParams.get('published') === '1';
 
     // Only fetch draft count when in Published view to check if draft content exists
     const { totalCount: draftCount } = useContentCount({
