@@ -1,4 +1,4 @@
-import { ComboBox } from '@usertour-packages/combo-box';
+import { SelectPopover } from '../common/select-popover';
 import { TextInputIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { getTextInputError } from '@usertour/helpers';
@@ -85,7 +85,7 @@ const RulesTextInputCondition = () => {
   const { combobox: zIndex } = useRulesZIndex();
 
   return (
-    <ComboBox
+    <SelectPopover
       options={conditions}
       value={conditionValue}
       onValueChange={setConditionValue}

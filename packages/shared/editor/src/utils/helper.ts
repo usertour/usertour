@@ -42,7 +42,7 @@ export const EmptyEmbed = {
 export const EmptyText = {
   element: {
     type: 'text',
-    data: [{ type: 'paragraph', children: [{ text: 'Write text here' }] }],
+    data: [{ type: 'paragraph', children: [{ text: '' }] }],
   },
 } as ContentEditorRootElement;
 
@@ -65,6 +65,14 @@ export const createNewColumn = (children: ContentEditorRootElement[]) => {
     ...EmptyColumn,
     id: uuidV4(),
     children: [...children],
+  };
+};
+
+export const createGroupFromColumn = (column: ContentEditorRootColumn) => {
+  return {
+    ...EmptyGroup,
+    id: uuidV4(),
+    children: [column],
   };
 };
 
@@ -112,38 +120,3 @@ export const defaultInitialValue = [
     ],
   },
 ] as ContentEditorRoot[];
-
-export const groupData = [
-  {
-    type: 'group',
-    isFirst: true,
-    isLast: true,
-    children: [
-      {
-        type: 'column',
-        width: { type: 'fill', value: 50 },
-
-        justifyContent: 'justify-center',
-        style: { marginRight: '30' },
-        children: [
-          {
-            type: 'paragraph',
-            children: [{ text: 'Write text here' }],
-          },
-        ],
-      },
-      {
-        type: 'column',
-        width: { type: 'fill', value: 50 },
-        justifyContent: 'justify-center',
-        style: { marginRight: '30' },
-        children: [
-          {
-            type: 'paragraph',
-            children: [{ text: 'Write text here' }],
-          },
-        ],
-      },
-    ],
-  },
-];

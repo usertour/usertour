@@ -1,4 +1,4 @@
-import { DEFAULT_LAUNCHER_DATA, LauncherData } from '@usertour/types';
+import { LauncherData } from '@usertour/types';
 import { isEqual } from 'lodash';
 import {
   ReactNode,
@@ -15,6 +15,7 @@ import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { deepClone } from '@usertour/helpers';
+import { defaultLauncherData } from '../utils/default-data';
 
 export interface LauncherProviderProps {
   children: ReactNode;
@@ -184,7 +185,7 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
       return;
     }
 
-    const serverData = currentVersion.data || DEFAULT_LAUNCHER_DATA;
+    const serverData = currentVersion.data || defaultLauncherData;
 
     if (!isEqual(serverData, lastSavedDataRef.current)) {
       setLocalData(serverData);

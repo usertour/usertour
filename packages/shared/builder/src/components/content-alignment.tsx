@@ -30,12 +30,12 @@ export const ContentAlignment = (props: ContentAlignmentProps) => {
     handleDataChange({ alignType: value as AlignType });
   };
 
-  const handleSideOffsetChange = (value: number) => {
-    handleDataChange({ sideOffset: Number(value) });
+  const handleSideOffsetChange = (value: number | undefined) => {
+    handleDataChange({ sideOffset: value ?? 0 });
   };
 
-  const handleAlignOffsetChange = (value: number) => {
-    handleDataChange({ alignOffset: Number(value) });
+  const handleAlignOffsetChange = (value: number | undefined) => {
+    handleDataChange({ alignOffset: value ?? 0 });
   };
 
   return (

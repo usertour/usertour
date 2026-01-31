@@ -1,5 +1,4 @@
 import { CaretSortIcon, CheckIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import * as Popover from '@radix-ui/react-popover';
 import { Button } from '@usertour-packages/button';
 import {
   Command,
@@ -9,10 +8,12 @@ import {
   CommandItem,
 } from '@usertour-packages/command';
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
+import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-packages/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
+import { cn } from '@usertour-packages/tailwind';
 import { getContentError } from '@usertour/helpers';
 import { Content, ContentDataType, Step } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
 import {
   Dispatch,
   SetStateAction,
@@ -23,6 +24,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
 import {
@@ -37,7 +39,6 @@ import {
 } from './actions-popper';
 import { ContentActionsRemove } from './actions-remove';
 import { ActionsConditionRightContent, ContentActionsConditionIcon } from './actions-template';
-import { EyeNoneIcon, ModelIcon, TooltipIcon } from '@usertour-packages/icons';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 
 export interface SelectItemType {
@@ -134,15 +135,15 @@ const PopoverWrapper = ({
   children: React.ReactNode;
   zIndex: number;
 }) => (
-  <Popover.Popover open={open} onOpenChange={onOpenChange}>
-    <Popover.PopoverTrigger asChild>{trigger}</Popover.PopoverTrigger>
-    <Popover.PopoverContent
+  <Popover open={open} onOpenChange={onOpenChange}>
+    <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+    <PopoverContent
       className="w-[350px] p-0"
       style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT + 1 }}
     >
       {children}
-    </Popover.PopoverContent>
-  </Popover.Popover>
+    </PopoverContent>
+  </Popover>
 );
 
 const ContentActionsContentsName = () => {
@@ -184,14 +185,16 @@ const ContentActionsContentsName = () => {
   }, [contents]);
 
   const trigger = (
-    <Button variant="outline" className="flex-1 justify-between">
-      {selectedPreset?.name || 'Select content...'}
+    <Button variant="outline" className="flex-1 justify-between min-w-0 overflow-hidden">
+      <span className="truncate min-w-0" title={selectedPreset?.name}>
+        {selectedPreset?.name || 'Select content...'}
+      </span>
       <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
     </Button>
   );
 
   return (
-    <div className="flex flex-row">
+    <div className="flex flex-row w-full">
       <PopoverWrapper open={open} onOpenChange={setOpen} trigger={trigger} zIndex={zIndex}>
         <Command filter={handleFilter}>
           <CommandInput placeholder="Search flow/checklist..." />
@@ -211,7 +214,9 @@ const ContentActionsContentsName = () => {
                     }
                     isSelected={selectedPreset?.id === item.id}
                   >
-                    {item.name}
+                    <span className="truncate" title={item.name}>
+                      {item.name}
+                    </span>
                   </CommandItemWithCheck>
                 ))}
               </CommandGroup>
@@ -230,7 +235,9 @@ const ContentActionsContentsName = () => {
                     }
                     isSelected={selectedPreset?.id === item.id}
                   >
-                    {item.name}
+                    <span className="truncate" title={item.name}>
+                      {item.name}
+                    </span>
                   </CommandItemWithCheck>
                 ))}
               </CommandGroup>
@@ -272,10 +279,10 @@ const ContentActionsStep = ({ content }: { content: Content }) => {
   const displayText = useMemo(() => getDisplayText(steps, stepCvid), [steps, stepCvid]);
 
   const trigger = (
-    <Button variant="outline" className="flex-1 justify-between">
-      <div className="max-w-[240px] truncate flex items-center">
-        <span className="truncate">{displayText || 'Select step...'}</span>
-      </div>
+    <Button variant="outline" className="flex-1 justify-between min-w-0 overflow-hidden">
+      <span className="truncate min-w-0" title={displayText}>
+        {displayText || 'Select step...'}
+      </span>
       <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
     </Button>
   );
@@ -430,11 +437,13 @@ export const ContentActionsContents = (props: ContentActionsContentsProps) => {
           <ContentActionsErrorAnchor>
             <ActionsConditionRightContent>
               <ContentActionsPopover onOpenChange={handleOnOpenChange} open={open}>
-                <ContentActionsPopoverTrigger className="flex flex-row w-fit">
+                <ContentActionsPopoverTrigger className="flex flex-row items-center min-w-0 overflow-hidden">
                   <ContentActionsConditionIcon>
                     <OpenInNewWindowIcon width={16} height={16} />
                   </ContentActionsConditionIcon>
-                  {displayText}
+                  <span className="truncate" title={displayText}>
+                    {displayText}
+                  </span>
                 </ContentActionsPopoverTrigger>
                 <ContentActionsPopoverContent
                   style={{ zIndex: zIndex + EDITOR_RICH_ACTION_CONTENT }}

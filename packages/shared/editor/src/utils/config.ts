@@ -26,7 +26,7 @@ export const contentTypesConfig = [
       data: [
         {
           type: 'paragraph',
-          children: [{ text: 'Write text here' }],
+          children: [{ text: '' }],
         },
       ],
     },

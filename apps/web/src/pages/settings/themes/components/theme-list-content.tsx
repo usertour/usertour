@@ -11,7 +11,7 @@ export const ThemeListContent = () => {
   }
 
   return (
-    <div className="flex flex-wrap gap-4 ">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
       {themeList?.map((theme: Theme) => (
         <ThemeListPreview theme={theme} key={theme.id} />
       ))}

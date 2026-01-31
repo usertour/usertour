@@ -3,6 +3,7 @@ import { useContentListQuery } from '@usertour-packages/shared-hooks';
 import { Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { getQueryType } from '@/utils/content';
 
 interface ContentQuery {
   environmentId?: string;
@@ -40,31 +41,6 @@ export interface ContentListContextValue {
 }
 
 export const ContentListContext = createContext<ContentListContextValue | undefined>(undefined);
-
-// const defaultPagination = {
-//   pageIndex: 0,
-//   pageSize: 10,
-// }
-
-const getQueryType = (contentType: string) => {
-  if (contentType === 'launchers') {
-    return 'launcher';
-  }
-  if (contentType === 'banners') {
-    return 'banner';
-  }
-  if (contentType === 'checklists') {
-    return 'checklist';
-  }
-  if (contentType === 'surveys') {
-    return 'survey';
-  }
-  if (contentType === 'nps') {
-    return 'nps';
-  }
-
-  return 'flow';
-};
 
 export function ContentListProvider(props: ContentListProviderProps): JSX.Element {
   const {

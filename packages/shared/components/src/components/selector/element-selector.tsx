@@ -3,7 +3,7 @@ import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Content, ElementSelectorPropsData } from '@usertour/types';
-import { ComboBox } from '@usertour-packages/combo-box';
+import { SelectPopover } from '../common/select-popover';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 
@@ -118,7 +118,7 @@ export const ElementSelector = (props: ElementSelectorProps) => {
                 </p>
               </QuestionTooltip>
             </div>
-            <ComboBox
+            <SelectPopover
               options={sequenceOptions}
               value={innerData.sequence}
               onValueChange={handleSequenceValueChange}

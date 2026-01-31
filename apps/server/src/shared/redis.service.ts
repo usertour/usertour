@@ -1,25 +1,20 @@
+import { once } from 'node:events';
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
 export type LockReleaseFn = () => Promise<boolean>;
 
+/** Max time to wait for initial connection (ioredis retries by default) */
+const INIT_CONNECT_TIMEOUT_MS = 60000;
+
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
-  private readonly INIT_TIMEOUT = 10000; // 10 seconds timeout
 
   private client: Redis | null = null;
 
-  constructor(private configService: ConfigService) {
-    this.logger.log('Initializing Redis client');
-    this.client = new Redis({
-      host: configService.getOrThrow('redis.host'),
-      port: configService.getOrThrow('redis.port'),
-      username: configService.get('redis.username'),
-      password: configService.get('redis.password'),
-    });
-  }
+  constructor(private configService: ConfigService) {}
 
   getClient(): Redis {
     if (!this.client) {
@@ -29,22 +24,36 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
-    if (!this.client) {
-      this.logger.log('Skip redis initialization in desktop mode');
+    this.logger.log('Initializing Redis client');
+    this.client = new Redis({
+      host: this.configService.getOrThrow('redis.host'),
+      port: this.configService.getOrThrow('redis.port'),
+      username: this.configService.get('redis.username'),
+      password: this.configService.get('redis.password'),
+      family: 0,
+    });
+
+    this.client.on('error', (err) => {
+      this.logger.error(`Redis connection error: ${err.message}`);
+    });
+
+    if (this.client.status === 'ready') {
+      this.logger.log('Redis connection established');
       return;
     }
 
-    const initPromise = this.client.ping();
-    const timeoutPromise = new Promise((_, reject) => {
+    const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        reject(`Redis connection timed out after ${this.INIT_TIMEOUT}ms`);
-      }, this.INIT_TIMEOUT);
+        reject(new Error(`Redis connection timed out after ${INIT_CONNECT_TIMEOUT_MS}ms`));
+      }, INIT_CONNECT_TIMEOUT_MS);
     });
 
     try {
-      await Promise.race([initPromise, timeoutPromise]);
+      await Promise.race([once(this.client, 'ready'), timeoutPromise]);
       this.logger.log('Redis connection established');
     } catch (error) {
+      this.client?.disconnect();
+      this.client = null;
       this.logger.error(`Failed to establish Redis connection: ${error}`);
       throw error;
     }
@@ -105,7 +114,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       return false;
     } catch (err) {
       this.logger.error('Error releasing lock:', err);
-      throw false;
+      return false;
     }
   }
 

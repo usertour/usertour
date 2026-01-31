@@ -20,49 +20,51 @@ export const EventListContent = () => {
   }
 
   return (
-    <>
-      <div className="rounded-md border-none">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Display name</TableHead>
-              <TableHead>Code name</TableHead>
-              <TableHead className="w-60">CreatedAt</TableHead>
-              <TableHead className="w-24" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {eventList ? (
-              eventList?.map((event: Event) => (
-                <TableRow className="cursor-pointer" key={event.id} onClick={() => {}}>
-                  <TableCell className="truncate">
-                    {event.description ? (
-                      <div className="flex flex-col">
-                        <span className="truncate">{event.displayName}</span>
-                        <span className="text-xs text-muted-foreground truncate">
-                          {event.description}
-                        </span>
-                      </div>
-                    ) : (
-                      event.displayName
-                    )}
-                  </TableCell>
-                  <TableCell className="truncate">{event.codeName}</TableCell>
-                  <TableCell>{format(new Date(event.createdAt), 'PPpp')}</TableCell>
-                  <TableCell>
-                    <EventListAction event={event} />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell className="h-24 text-center">No results.</TableCell>
+    <div className="overflow-x-auto">
+      <Table className="table-fixed min-w-2xl">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Display name</TableHead>
+            <TableHead>Code name</TableHead>
+            <TableHead className="w-48 hidden lg:table-cell">CreatedAt</TableHead>
+            <TableHead className="w-20" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {eventList ? (
+            eventList?.map((event: Event) => (
+              <TableRow className="cursor-pointer" key={event.id} onClick={() => {}}>
+                <TableCell className="truncate">
+                  {event.description ? (
+                    <div className="flex flex-col">
+                      <span className="truncate">{event.displayName}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {event.description}
+                      </span>
+                    </div>
+                  ) : (
+                    event.displayName
+                  )}
+                </TableCell>
+                <TableCell className="truncate">{event.codeName}</TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  {format(new Date(event.createdAt), 'PPpp')}
+                </TableCell>
+                <TableCell>
+                  <EventListAction event={event} />
+                </TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={4} className="h-24 text-center">
+                No results.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

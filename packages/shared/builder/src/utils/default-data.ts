@@ -1,4 +1,55 @@
-import { ContentEditorRoot } from '@usertour/types';
+import {
+  ContentEditorRoot,
+  LauncherActionType,
+  LauncherData,
+  LauncherDataType,
+  LauncherIconSource,
+  LauncherPositionType,
+  LauncherTriggerElement,
+  LauncherTriggerEvent,
+} from '@usertour/types';
+import { EmptyGroup, EmptyColumn, EmptyText } from '@usertour-packages/shared-editor';
+
+export const defaultLauncherData: LauncherData = {
+  type: LauncherDataType.ICON,
+  iconType: 'user',
+  iconSource: LauncherIconSource.BUILTIN,
+  target: {
+    element: undefined,
+    screenshot: undefined,
+    alignment: {
+      side: 'top',
+      align: 'center',
+      alignType: 'auto',
+      sideOffset: 0,
+      alignOffset: 0,
+    },
+  },
+  tooltip: {
+    reference: LauncherPositionType.TARGET,
+    element: undefined,
+    alignment: {
+      side: 'top',
+      align: 'center',
+      alignType: 'auto',
+      sideOffset: 0,
+      alignOffset: 0,
+    },
+    content: [],
+    width: 250,
+    settings: {
+      dismissAfterFirstActivation: false,
+      keepTooltipOpenWhenHovered: false,
+      hideLauncherWhenTooltipIsDisplayed: false,
+    },
+  },
+  behavior: {
+    triggerElement: LauncherTriggerElement.LAUNCHER,
+    actionType: LauncherActionType.SHOW_TOOLTIP,
+    triggerEvent: LauncherTriggerEvent.CLICKED,
+    actions: [],
+  },
+};
 
 const defaultTooltipContent = [
   {
@@ -268,7 +319,28 @@ export const getDefaultDataForType = (type: string) => {
       return defaultModalContent; // Use defaultModalContent for modal (has image and buttons)
     case 'hidden':
       return defaultHiddenContent; // Use defaultHiddenContent for hidden (has buttons)
+    case 'bubble':
+      return defaultTooltipContent; // Use defaultTooltipContent for bubble (simple text like tooltip)
     default:
       return defaultTooltipContent; // Use defaultTooltipContent for tooltip (simple text)
   }
+};
+
+// Create empty step data based on type (using EmptyText)
+export const getEmptyDataForType = (): ContentEditorRoot[] => {
+  return [
+    {
+      ...EmptyGroup,
+      children: [
+        {
+          ...EmptyColumn,
+          children: [
+            {
+              ...EmptyText,
+            },
+          ],
+        },
+      ],
+    },
+  ];
 };

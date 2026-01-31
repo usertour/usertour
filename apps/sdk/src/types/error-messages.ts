@@ -15,7 +15,6 @@ export enum ErrorMessages {
   INVALID_CONTENT_ID = "An error occurred in usertour.start(): first argument must be a non-empty string representing the content's ID. Value received: {value}",
   TARGET_MISSING_TIME_EXCEEDED = 'Target missing time cannot exceed 10 seconds',
   SHOW_STEP_BY_CVID_NOT_AVAILABLE = 'The showStepByCvid method is not available in this context',
-  HANDLE_DISMISS_NOT_AVAILABLE = 'The handleDismiss method is not available in this context',
   FAILED_TO_LOAD_CSS = 'Unable to load CSS stylesheet after maximum retries. Please check your network connection and ensure the CSS file is accessible.',
   FAILED_TO_CREATE_CONTAINER = 'Unable to create UI container element. This may be due to a conflict with existing DOM elements or insufficient permissions.',
   FAILED_TO_CREATE_REACT_ROOT = 'Unable to create React root for rendering. This may indicate a React version compatibility issue or a problem with the DOM structure.',

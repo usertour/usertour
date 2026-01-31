@@ -761,7 +761,7 @@ export class ContentDataService {
    * Process a single theme with condition evaluation
    */
   private async processTheme(theme: Theme, context: ConditionEvaluationContext): Promise<Theme> {
-    if (!isArray(theme.variations) || theme.variations.length === 0) {
+    if (!isArray(theme.variations) || (theme.variations as any[]).length === 0) {
       return theme;
     }
     const variations = theme.variations as ThemeVariation[];

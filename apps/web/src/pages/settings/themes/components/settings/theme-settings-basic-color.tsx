@@ -1,4 +1,4 @@
-import { ThemeColorPicker } from '@/components/molecules/theme/theme-color-picker';
+import { ColorPicker } from '@usertour-packages/shared-components';
 import { ThemeTypesSettingsColor } from '@usertour/types';
 import { Separator } from '@usertour-packages/separator';
 import { generateStateColors } from '@usertour/helpers';
@@ -49,7 +49,7 @@ export const ThemeSettingsBasicColor = () => {
         <div className="space-y-1">
           <div className="text-sm">Text</div>
           <div className="flex">
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.brandColor.color}
               onChange={(color: string) => {
                 updateBrandColor({ color });
@@ -61,7 +61,7 @@ export const ThemeSettingsBasicColor = () => {
         <div className="flex flex-row w-full">
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Background</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.brandColor.background}
               className="rounded-r-none"
               onChange={(color: string) => {
@@ -72,7 +72,7 @@ export const ThemeSettingsBasicColor = () => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Hover</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.brandColor.hover}
               className="rounded-none border-x-0"
               showAutoButton={true}
@@ -86,7 +86,7 @@ export const ThemeSettingsBasicColor = () => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Click</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.brandColor.active}
               className="rounded-l-none"
               showAutoButton={true}
@@ -106,7 +106,7 @@ export const ThemeSettingsBasicColor = () => {
         <div className="space-y-1">
           <div className="text-sm">Text</div>
           <div className="flex">
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.mainColor.color}
               onChange={(color: string) => {
                 updateMainColor({ color });
@@ -118,7 +118,7 @@ export const ThemeSettingsBasicColor = () => {
         <div className="flex flex-row w-full">
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Background</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.mainColor.background}
               onChange={(color: string) => {
                 updateMainColor({ background: color });
@@ -129,7 +129,7 @@ export const ThemeSettingsBasicColor = () => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Hover</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.mainColor.hover}
               showAutoButton={true}
               isAutoColor={settings.mainColor.hover === 'Auto'}
@@ -143,7 +143,7 @@ export const ThemeSettingsBasicColor = () => {
           </div>
           <div className="flex flex-col space-y-1 basis-1/3">
             <div className="text-sm">Click</div>
-            <ThemeColorPicker
+            <ColorPicker
               defaultColor={settings.mainColor.active}
               showAutoButton={true}
               isAutoColor={settings.mainColor.active === 'Auto'}

@@ -1,38 +1,74 @@
-import { useState } from 'react';
+import { Input } from '@usertour-packages/input';
+import { useState, useEffect, memo, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 
-export const InputNumber = (props: {
-  defaultNumber: number;
-  onValueChange: (num: number) => void;
-}) => {
-  const { defaultNumber = 0, onValueChange } = props;
-  const [num, setNum] = useState<number>(defaultNumber);
-  const handleIncrement = () => {
-    const newValue = num + 1;
-    setNum(newValue);
+export interface InputNumberProps {
+  defaultNumber: number | undefined;
+  onValueChange: (num: number | undefined) => void;
+  placeholder?: string;
+  allowEmpty?: boolean;
+}
+
+export const InputNumber = memo((props: InputNumberProps) => {
+  const { defaultNumber, onValueChange, placeholder = '', allowEmpty = false } = props;
+  const [inputValue, setInputValue] = useState<string>(
+    defaultNumber !== undefined ? String(defaultNumber) : '',
+  );
+
+  // Sync with external defaultNumber changes
+  useEffect(() => {
+    setInputValue(defaultNumber !== undefined ? String(defaultNumber) : '');
+  }, [defaultNumber]);
+
+  const handleIncrement = useCallback(() => {
+    const currentNum = inputValue === '' ? 0 : Number(inputValue);
+    const newValue = currentNum + 1;
+    setInputValue(String(newValue));
     onValueChange(newValue);
-  };
-  const handleDecrement = () => {
-    const newValue = num - 1;
-    setNum(newValue);
+  }, [inputValue, onValueChange]);
+
+  const handleDecrement = useCallback(() => {
+    const currentNum = inputValue === '' ? 0 : Number(inputValue);
+    const newValue = currentNum - 1;
+    setInputValue(String(newValue));
     onValueChange(newValue);
-  };
-  const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value) {
-      const value = Number(e.target.value);
-      setNum(value);
-      onValueChange(value);
-    }
-  };
+  }, [inputValue, onValueChange]);
+
+  const handleOnChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+
+      // Allow empty value if allowEmpty is true
+      if (value === '') {
+        setInputValue('');
+        if (allowEmpty) {
+          onValueChange(undefined);
+        }
+        return;
+      }
+
+      // Only allow numeric input
+      if (/^-?\d*$/.test(value)) {
+        setInputValue(value);
+        const numValue = Number(value);
+        if (!Number.isNaN(numValue)) {
+          onValueChange(numValue);
+        }
+      }
+    },
+    [allowEmpty, onValueChange],
+  );
+
   return (
-    <div className="px-3 py-1  rounded-lg bg-background-700">
+    <div className="px-3 py-1 rounded-lg bg-background-700">
       <div className="w-full flex justify-between items-center gap-x-5">
         <div className="grow">
-          <input
-            className="h-8 w-full rounded-md border-0	 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 bg-transparent"
+          <Input
+            className="px-0 h-8 w-full rounded-md border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 bg-transparent"
             type="text"
             onChange={handleOnChange}
-            value={num}
+            value={inputValue}
+            placeholder={placeholder}
           />
         </div>
         <div className="flex justify-end items-center gap-x-1.5">
@@ -81,6 +117,6 @@ export const InputNumber = (props: {
       </div>
     </div>
   );
-};
+});
 
 InputNumber.displayName = 'InputNumber';

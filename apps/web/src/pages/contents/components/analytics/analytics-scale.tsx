@@ -214,7 +214,6 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
           <ScaleDistribution
             averageByDay={selectedDay ?? lastDay}
             question={questionAnalytics.question}
-            className="w-1/2"
           />
         </div>
       </CardContent>
@@ -250,45 +249,54 @@ export const ScaleDistribution = ({
   const scaleLength = highRange - lowRange + 1;
 
   return (
-    <div className={cn('w-full', className)}>
-      <div className="flex flex-row gap-4 ">
-        {/* Detractors Section - 7 columns */}
-        {distribution.map((item) => {
-          const score = Number(item.answer);
-          return (
-            <div key={item.answer} className="flex-1 flex flex-col items-center">
-              <div className="text-sm text-gray-600 mb-1">{item.count}</div>
-              <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
-                {/* Light background bar with rounded corners */}
-                <div className={'absolute bottom-0 w-full h-full rounded-sm bg-blue-100'} />
-                {/* Dark data bar with rounded corners */}
-                <div
-                  className={
-                    'absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out bg-blue-700'
-                  }
-                  style={{
-                    height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
-                  }}
-                />
+    <div className={cn('w-full overflow-x-auto', className)}>
+      <div className="w-fit mx-auto">
+        <div className="flex flex-row gap-4">
+          {/* Distribution bars for each score */}
+          {distribution.map((item) => {
+            const score = Number(item.answer);
+            return (
+              <div
+                key={item.answer}
+                className="flex-1 max-w-28 min-w-20 flex flex-col items-center"
+              >
+                <div className="text-sm text-gray-600 mb-1">{item.count}</div>
+                <div className="w-full relative" style={{ height: `${BAR_HEIGHT}px` }}>
+                  {/* Light background bar with rounded corners */}
+                  <div className={'absolute bottom-0 w-full h-full rounded-sm bg-blue-100'} />
+                  {/* Dark data bar with rounded corners */}
+                  <div
+                    className={
+                      'absolute bottom-0 w-full rounded-b-sm transition-[height] duration-500 ease-in-out bg-blue-700'
+                    }
+                    style={{
+                      height: `${(item.percentage / 100) * BAR_HEIGHT}px`,
+                    }}
+                  />
+                </div>
+                <div className="text-sm text-gray-600 mt-1 flex flex-row gap-1">
+                  {isStarRating ? (
+                    <QuestionStarRating maxLength={scaleLength} score={score} />
+                  ) : (
+                    <div className="flex flex-row gap-1">
+                      <span>{score}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="text-sm text-gray-600 mt-1 flex flex-row gap-1">
-                {isStarRating ? (
-                  <QuestionStarRating maxLength={scaleLength} score={score} />
-                ) : (
-                  <div className="flex flex-row gap-1">
-                    <span>{score}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      {/* Score labels */}
-      <div className="flex justify-between mt-4">
-        <div className="text-sm text-gray-600">{question.data.lowLabel || 'Not at all likely'}</div>
-        <div className="text-sm text-gray-600">{question.data.highLabel || 'Extremely likely'}</div>
+        {/* Score labels */}
+        <div className="flex justify-between mt-4">
+          <div className="text-sm text-gray-600">
+            {question.data.lowLabel || 'Not at all likely'}
+          </div>
+          <div className="text-sm text-gray-600">
+            {question.data.highLabel || 'Extremely likely'}
+          </div>
+        </div>
       </div>
     </div>
   );

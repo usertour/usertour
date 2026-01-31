@@ -478,15 +478,19 @@ export class AnalyticsService {
       data.push({
         date: currentDate,
         uniqueViews:
-          uniqueViewsByDay.find((views) => lightFormat(views.day, 'yyyy-MM-dd') === dd)?.count || 0,
+          uniqueViewsByDay.find((views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd)
+            ?.count || 0,
         totalViews:
-          totalViewsByDay.find((views) => lightFormat(views.day, 'yyyy-MM-dd') === dd)?.count || 0,
+          totalViewsByDay.find((views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd)
+            ?.count || 0,
         uniqueCompletions:
-          uniqueCompletionByDay.find((views) => lightFormat(views.day, 'yyyy-MM-dd') === dd)
-            ?.count || 0,
+          uniqueCompletionByDay.find(
+            (views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd,
+          )?.count || 0,
         totalCompletions:
-          totalCompletionByDay.find((views) => lightFormat(views.day, 'yyyy-MM-dd') === dd)
-            ?.count || 0,
+          totalCompletionByDay.find(
+            (views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd,
+          )?.count || 0,
       });
 
       // Move to next day

@@ -8,6 +8,7 @@ module.exports = {
     '../../packages/components/**/src/*.{js,ts,jsx,tsx}',
     '../../packages/shared/**/src/**/*.{js,ts,jsx,tsx}',
     '../../packages/shared/**/src/**/**/*.{js,ts,jsx,tsx}',
+    '../../packages/widget/src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     container: {

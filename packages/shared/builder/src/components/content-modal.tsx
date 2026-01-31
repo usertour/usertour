@@ -8,8 +8,9 @@ import {
   PopperMadeWith,
   PopperModalContentPotal,
   PopperProgress,
-  useThemeStyles,
-} from '@usertour-packages/sdk';
+  useSettingsStyles,
+  useStepWidth,
+} from '@usertour-packages/widget';
 import {
   ContentEditor,
   ContentEditorElementType,
@@ -66,7 +67,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
     const [data, setData] = useState<any>(currentStep.data);
     const { upload } = useAws();
     const [queryOembed] = useLazyQuery(queryOembedInfo);
-    const { globalStyle, themeSetting } = useThemeStyles(theme as Theme, 'modal');
+    const { globalStyle, themeSetting } = useSettingsStyles(theme?.settings, { type: 'modal' });
     const { shouldShowMadeWith = true } = useBuilderContext();
 
     const handleEditorValueChange = (value: any) => {
@@ -95,6 +96,9 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
 
     const totalSteps = currentVersion?.steps?.length ?? 0;
 
+    // Get width with theme fallback if undefined
+    const { width } = useStepWidth({ step: currentStep, themeSetting });
+
     const progressType = themeSetting?.progress.type;
     const progressPosition = themeSetting?.progress.position;
     const progressEnabled = themeSetting?.progress.enabled;
@@ -115,7 +119,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
             positionOffsetX={currentStep.setting.positionOffsetX}
             positionOffsetY={currentStep.setting.positionOffsetY}
             enabledBackdrop={currentStep.setting.enabledBackdrop}
-            width={`${currentStep.setting.width}px`}
+            width={`${width}px`}
             ref={ref}
           >
             <PopperContent>

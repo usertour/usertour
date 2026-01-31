@@ -1,56 +1,41 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
 import { useThemeListContext } from '@usertour-packages/contexts';
+import { useSettingsStyles } from '@usertour-packages/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
-import { getDefaultDataForType } from '../../../utils/default-data';
-import { convertSettings, convertToCssVars } from '@usertour/helpers';
-import { Theme, ThemeTypesSetting } from '@usertour/types';
-import { useEffect, useRef, useState } from 'react';
-import { useAws } from '../../../hooks/use-aws';
+import { Theme } from '@usertour/types';
+import { useEffect, useMemo, useRef } from 'react';
+
 import { useBuilderContext } from '../../../contexts';
+import { useAws } from '../../../hooks/use-aws';
+import { getDefaultDataForType } from '../../../utils/default-data';
 
 export const BannerEmbed = () => {
-  const [globalStyle, setGlobalStyle] = useState<string>('');
-  const [themeSetting, setThemeSetting] = useState<ThemeTypesSetting>();
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const [theme, setTheme] = useState<Theme | undefined>();
   const { themeList } = useThemeListContext();
   const { projectId } = useBuilderContext();
   const { upload } = useAws();
+
   const handleCustomUploadRequest = (file: File): Promise<string> => {
     return upload(file);
   };
 
-  useEffect(() => {
-    if (!themeList) {
-      return;
+  // Find default theme from theme list
+  const theme = useMemo<Theme | undefined>(() => {
+    if (!themeList || themeList.length === 0) {
+      return undefined;
     }
-    if (themeList.length > 0) {
-      let theme: Theme | undefined;
-      theme = themeList.find((item) => item.isDefault);
-      if (theme) {
-        setTheme(theme);
-      }
-    }
+    return themeList.find((item) => item.isDefault);
   }, [themeList]);
 
-  useEffect(() => {
-    if (theme) {
-      setThemeSetting(theme.settings);
-    }
-  }, [theme]);
+  // Use unified settings hook for CSS vars generation
+  const { globalStyle } = useSettingsStyles(theme?.settings);
 
-  useEffect(() => {
-    if (themeSetting) {
-      setGlobalStyle(convertToCssVars(convertSettings(themeSetting)));
-    }
-  }, [themeSetting]);
-
+  // Apply CSS variables to container
   useEffect(() => {
     if (containerRef.current && globalStyle) {
       containerRef.current.style.cssText = globalStyle;
     }
-  }, [containerRef.current, globalStyle]);
+  }, [globalStyle]);
 
   return (
     <>

@@ -1,16 +1,14 @@
-import { PopperMadeWith } from '@usertour-packages/sdk';
 import {
+  ContentEditorSerialize,
+  PopperMadeWith,
   LauncherContentWrapper,
   LauncherPopper,
   LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
-} from '@usertour-packages/sdk/src/launcher';
+} from '@usertour-packages/widget';
 import {
   ContentEditorClickableElement,
-  ContentEditorSerialize,
-} from '@usertour-packages/shared-editor';
-import {
   LauncherActionType,
   LauncherData,
   LauncherPositionType,

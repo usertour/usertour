@@ -1,4 +1,5 @@
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour-packages/constants';
+import { Input } from '@usertour-packages/input';
 import { LauncherDataType } from '@usertour/types';
 import { LauncherContentType, LauncherIconType } from '../../../components/';
 import { useLauncherContext } from '../../../contexts';
@@ -28,9 +29,21 @@ export const LauncherType = () => {
       {localData.type === LauncherDataType.ICON && (
         <LauncherIconType
           type={localData.iconType}
+          iconSource={localData.iconSource}
+          iconUrl={localData.iconUrl}
           zIndex={sidebarZIndex}
-          onChange={(value) => {
-            updateLocalData({ iconType: value });
+          onChange={(updates) => {
+            updateLocalData(updates);
+          }}
+        />
+      )}
+
+      {localData.type === LauncherDataType.BUTTON && (
+        <Input
+          value={localData.buttonText ?? ''}
+          placeholder="Button text"
+          onChange={(e) => {
+            updateLocalData({ buttonText: e.target.value || undefined });
           }}
         />
       )}
