@@ -7,9 +7,10 @@ import {
 } from '@usertour-packages/contexts';
 import { ContentListProvider } from '@usertour-packages/contexts';
 import { ThemeListProvider } from '@usertour-packages/contexts';
+import { BannerProvider } from './banner-context';
 import { BuilderProvider } from './builder-context';
-import { LauncherProvider } from './launcher-context';
 import { ChecklistProvider } from './checklist-context';
+import { LauncherProvider } from './launcher-context';
 
 export interface WebBuilderProviderProps {
   children: ReactNode;
@@ -56,26 +57,28 @@ export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element 
       usertourjsUrl={usertourjsUrl}
       shouldShowMadeWith={shouldShowMadeWith}
     >
-      <LauncherProvider>
-        <ChecklistProvider>
-          <ThemeListProvider projectId={projectId}>
-            <AttributeListProvider projectId={projectId}>
-              <ContentListProvider
-                environmentId={environmentId}
-                key={'environmentId'}
-                contentType={undefined}
-                defaultQuery={{}}
-                defaultPagination={{
-                  pageSize: 1000,
-                  pageIndex: 0,
-                }}
-              >
-                <WebBuilderContent>{children}</WebBuilderContent>
-              </ContentListProvider>
-            </AttributeListProvider>
-          </ThemeListProvider>
-        </ChecklistProvider>
-      </LauncherProvider>
+      <BannerProvider>
+        <LauncherProvider>
+          <ChecklistProvider>
+            <ThemeListProvider projectId={projectId}>
+              <AttributeListProvider projectId={projectId}>
+                <ContentListProvider
+                  environmentId={environmentId}
+                  key={'environmentId'}
+                  contentType={undefined}
+                  defaultQuery={{}}
+                  defaultPagination={{
+                    pageSize: 1000,
+                    pageIndex: 0,
+                  }}
+                >
+                  <WebBuilderContent>{children}</WebBuilderContent>
+                </ContentListProvider>
+              </AttributeListProvider>
+            </ThemeListProvider>
+          </ChecklistProvider>
+        </LauncherProvider>
+      </BannerProvider>
     </BuilderProvider>
   );
 }
