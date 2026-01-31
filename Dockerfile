@@ -92,6 +92,12 @@ ENV NODE_ENV=production
 ENV PORT=80
 ENV NEST_SERVER_PORT=3000
 
+# License admin configuration
+# Set LICENSE_ADMIN_ENABLED=true to enable license generation endpoints
+# Set LICENSE_PRIVATE_KEY to base64-encoded RSA private key for license generation
+# Set LICENSE_ADMIN_EMAILS to comma-separated list of allowed admin emails (optional)
+ENV LICENSE_ADMIN_ENABLED=false
+
 EXPOSE 80
 
 # Use shell form for proper stdout/stderr log flushing
