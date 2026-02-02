@@ -262,7 +262,7 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.brandColor.autoActive as string,
   );
 
-  // Checklist launcher color auto values
+  // Checklist launcher color auto values (use resolved brandColor hover/active so manual brand choices apply)
   data.checklistLauncher.color.color = resolveAutoValue(
     data.checklistLauncher.color.color,
     data.brandColor.color,
@@ -273,11 +273,11 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   );
   data.checklistLauncher.color.hover = resolveAutoValue(
     data.checklistLauncher.color.hover,
-    data.brandColor.autoHover as string,
+    data.brandColor.hover,
   );
   data.checklistLauncher.color.active = resolveAutoValue(
     data.checklistLauncher.color.active,
-    data.brandColor.autoActive as string,
+    data.brandColor.active,
   );
 
   // Checklist launcher counter auto values

@@ -1,4 +1,9 @@
-import { ThemeTypesSetting, defaultSettings } from '@usertour/types';
+import {
+  MissingTooltipTargetBehavior,
+  ModalBackdropClickBehavior,
+  ThemeTypesSetting,
+  defaultSettings,
+} from '@usertour/types';
 import { convertSettings, convertToCssVars, mergeThemeDefaultSettings } from '../convert-settings';
 
 // Store original defaultSettings values for reference mutation tests
@@ -197,10 +202,13 @@ describe('convert-settings', () => {
     tooltip: {
       width: 300,
       notchSize: 20,
+      missingTargetTolerance: 3,
+      missingTargetBehavior: MissingTooltipTargetBehavior.AUTO_DISMISS,
     },
     modal: {
       width: 600,
       padding: 40,
+      backdropClickBehavior: ModalBackdropClickBehavior.DO_NOTHING,
     },
     backdrop: {
       color: '#000000',
@@ -212,6 +220,24 @@ describe('convert-settings', () => {
         color: '#ffffff',
         opacity: 50,
       },
+    },
+    banner: {
+      backgroundColor: {
+        background: 'Auto',
+        color: '#FFFFFF',
+        hover: 'Auto',
+        active: 'Auto',
+      },
+      textColor: {
+        background: '#FFFFFF',
+        color: 'Auto',
+        hover: 'Auto',
+        active: 'Auto',
+      },
+    },
+    focusHighlight: {
+      color: 'Auto',
+      opacity: 100,
     },
     bubble: {
       width: 300,
@@ -428,8 +454,9 @@ describe('convert-settings', () => {
         expect(result.checklistLauncher.color.background).toBe(
           completeSettings.brandColor.background,
         );
-        expect(result.checklistLauncher.color.hover).toBe(completeSettings.brandColor.autoHover);
-        expect(result.checklistLauncher.color.active).toBe(completeSettings.brandColor.autoActive);
+        // Hover/active follow resolved brandColor so manual brand hover/active apply to launcher
+        expect(result.checklistLauncher.color.hover).toBe(result.brandColor.hover);
+        expect(result.checklistLauncher.color.active).toBe(result.brandColor.active);
       });
 
       it('should resolve checklistLauncher.counter values from brandColor when set to Auto', () => {
