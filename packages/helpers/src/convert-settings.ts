@@ -346,11 +346,11 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   );
   data.launcherButtons.primary.backgroundColor.hover = resolveAutoValue(
     data.launcherButtons.primary.backgroundColor.hover,
-    data.brandColor.autoHover as string,
+    data.brandColor.hover,
   );
   data.launcherButtons.primary.backgroundColor.active = resolveAutoValue(
     data.launcherButtons.primary.backgroundColor.active,
-    data.brandColor.autoActive as string,
+    data.brandColor.active,
   );
 
   // Launcher button primary border color auto values
@@ -360,11 +360,11 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   );
   data.launcherButtons.primary.border.color.hover = resolveAutoValue(
     data.launcherButtons.primary.border.color.hover,
-    data.brandColor.autoHover as string,
+    data.brandColor.hover,
   );
   data.launcherButtons.primary.border.color.active = resolveAutoValue(
     data.launcherButtons.primary.border.color.active,
-    data.brandColor.autoActive as string,
+    data.brandColor.active,
   );
 
   // Font family handling
