@@ -245,6 +245,32 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.brandColor.color,
   );
 
+  // Banner color auto values (same resolution logic as primary button, from brandColor only)
+  data.banner.textColor.color = resolveAutoValue(
+    data.banner.textColor.color,
+    data.brandColor.color,
+  );
+  data.banner.textColor.hover = resolveAutoValue(
+    data.banner.textColor.hover,
+    data.brandColor.color,
+  );
+  data.banner.textColor.active = resolveAutoValue(
+    data.banner.textColor.active,
+    data.brandColor.color,
+  );
+  data.banner.backgroundColor.background = resolveAutoValue(
+    data.banner.backgroundColor.background,
+    data.brandColor.background,
+  );
+  data.banner.backgroundColor.hover = resolveAutoValue(
+    data.banner.backgroundColor.hover,
+    data.brandColor.autoHover as string,
+  );
+  data.banner.backgroundColor.active = resolveAutoValue(
+    data.banner.backgroundColor.active,
+    data.brandColor.autoActive as string,
+  );
+
   // Survey auto values
   data.survey.color = resolveAutoValue(data.survey.color, data.brandColor.background);
 
@@ -399,6 +425,12 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     ),
     '--usertour-checklist-trigger-font-weight': settings.checklistLauncher.fontWeight,
     '--usertour-checkmark-background-color': settings.checklist.checkmarkColor,
+    '--usertour-banner-foreground-color': settings.banner.textColor.color,
+    '--usertour-banner-background-color': settings.banner.backgroundColor.background,
+    '--usertour-banner-hover-background-color': settings.banner.backgroundColor.hover,
+    '--usertour-banner-active-background-color': settings.banner.backgroundColor.active,
+    '--usertour-banner-hover-foreground-color': settings.banner.textColor.hover,
+    '--usertour-banner-active-foreground-color': settings.banner.textColor.active,
     '--usertour-checklist-trigger-height': `${settings.checklistLauncher.height}px`,
     '--usertour-checklist-trigger-hover-background-color': settings.checklistLauncher.color.hover,
     '--usertour-question-color': hexToHSLString(settings.survey.color),

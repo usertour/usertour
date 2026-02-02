@@ -109,6 +109,10 @@ export type ThemeTypesSetting = {
     zIndex?: number;
     completedTaskTextDecoration?: string;
   };
+  banner: {
+    backgroundColor: ThemeTypesSettingsColor;
+    textColor: ThemeTypesSettingsColor;
+  };
   checklistLauncher: {
     borderRadius: number;
     height: number;
@@ -292,6 +296,20 @@ export const defaultSettings: ThemeTypesSetting = {
     },
     checkmarkColor: '#4ade80',
     completedTaskTextDecoration: 'line-through',
+  },
+  banner: {
+    backgroundColor: {
+      background: 'Auto',
+      color: '#FFFFFF',
+      hover: 'Auto',
+      active: 'Auto',
+    },
+    textColor: {
+      background: '#FFFFFF',
+      color: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+    },
   },
   mainColor: {
     color: '#0f172a',
@@ -515,6 +533,20 @@ export const standardDarkSettings: ThemeTypesSetting = {
     },
     checkmarkColor: '#4ade80',
     completedTaskTextDecoration: 'line-through',
+  },
+  banner: {
+    backgroundColor: {
+      background: 'Auto',
+      color: '#FFFFFF',
+      hover: 'Auto',
+      active: 'Auto',
+    },
+    textColor: {
+      background: '#FFFFFF',
+      color: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+    },
   },
   mainColor: {
     color: '#ffffff',
