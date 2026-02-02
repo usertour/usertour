@@ -255,11 +255,11 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   );
   data.launcherIcon.color.hover = resolveAutoValue(
     data.launcherIcon.color.hover,
-    data.brandColor.autoHover as string,
+    data.brandColor.hover,
   );
   data.launcherIcon.color.active = resolveAutoValue(
     data.launcherIcon.color.active,
-    data.brandColor.autoActive as string,
+    data.brandColor.active,
   );
 
   // Checklist launcher color auto values (use resolved brandColor hover/active so manual brand choices apply)
