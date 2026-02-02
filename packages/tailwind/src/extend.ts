@@ -25,6 +25,14 @@ export const extendSdk = {
         'trigger-hover-background': 'var(--usertour-checklist-trigger-hover-background-color)',
         checkmark: 'var(--usertour-checkmark-background-color)',
       },
+      banner: {
+        DEFAULT: 'hsl(var(--usertour-banner-background-color))',
+        foreground: 'hsl(var(--usertour-banner-foreground-color))',
+        hover: 'hsl(var(--usertour-banner-hover-background-color))',
+        active: 'hsl(var(--usertour-banner-active-background-color))',
+        'foreground-hover': 'hsl(var(--usertour-banner-hover-foreground-color))',
+        'foreground-active': 'hsl(var(--usertour-banner-active-foreground-color))',
+      },
       // Button colors (border colors are in borderColor extension)
       btn: {
         primary: {
