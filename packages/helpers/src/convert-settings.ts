@@ -320,10 +320,7 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   data.survey.color = resolveAutoValue(data.survey.color, data.brandColor.background);
 
   // Focus highlight auto values
-  data.focusHighlight.color = resolveAutoValue(
-    data.focusHighlight.color,
-    data.mainColor.autoActive as string,
-  );
+  data.focusHighlight.color = resolveAutoValue(data.focusHighlight.color, data.mainColor.active);
 
   // Launcher button primary text color auto values
   data.launcherButtons.primary.textColor.color = resolveAutoValue(
