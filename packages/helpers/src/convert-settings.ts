@@ -290,31 +290,25 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.brandColor.color,
   );
 
-  // Banner color auto values (same resolution logic as primary button, from brandColor only)
+  // Banner color: resolve base from brandColor, then derive hover/active via generateStateColors
   data.banner.textColor.color = resolveAutoValue(
     data.banner.textColor.color,
-    data.brandColor.color,
-  );
-  data.banner.textColor.hover = resolveAutoValue(
-    data.banner.textColor.hover,
-    data.brandColor.color,
-  );
-  data.banner.textColor.active = resolveAutoValue(
-    data.banner.textColor.active,
     data.brandColor.color,
   );
   data.banner.backgroundColor.background = resolveAutoValue(
     data.banner.backgroundColor.background,
     data.brandColor.background,
   );
-  data.banner.backgroundColor.hover = resolveAutoValue(
-    data.banner.backgroundColor.hover,
-    data.brandColor.autoHover as string,
-  );
-  data.banner.backgroundColor.active = resolveAutoValue(
-    data.banner.backgroundColor.active,
-    data.brandColor.autoActive as string,
-  );
+  const bannerBackground = data.banner.backgroundColor.background;
+  const bannerForeground = data.banner.textColor.color;
+  if (bannerBackground != null && bannerForeground != null) {
+    const bgStates = generateStateColors(bannerBackground, bannerForeground);
+    const fgStates = generateStateColors(bannerForeground, bannerBackground);
+    data.banner.backgroundColor.hover = bgStates.hover;
+    data.banner.backgroundColor.active = bgStates.active;
+    data.banner.textColor.hover = fgStates.hover;
+    data.banner.textColor.active = fgStates.active;
+  }
 
   // Survey auto values
   data.survey.color = resolveAutoValue(data.survey.color, data.brandColor.background);
