@@ -5,6 +5,7 @@ import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { Switch } from '@usertour-packages/switch';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import { generateStateColors } from '@usertour/helpers';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 type ThemeSettingsButtonProps = {
@@ -67,7 +68,22 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
             isAutoColor={data.textColor.color === 'Auto'}
             autoColor={finalSettings?.buttons[name].textColor.color}
             onChange={(value: string) => {
-              update({ textColor: { ...data.textColor, color: value } });
+              const resolvedTextColor =
+                value !== 'Auto'
+                  ? value
+                  : name === 'primary'
+                    ? finalSettings?.brandColor.color
+                    : finalSettings?.brandColor.background;
+              update({
+                textColor: {
+                  ...data.textColor,
+                  color: value,
+                  ...(resolvedTextColor != null && {
+                    autoHover: resolvedTextColor,
+                    autoActive: resolvedTextColor,
+                  }),
+                },
+              });
             }}
             className="rounded-r-none"
             disabled={isViewOnly}
@@ -93,9 +109,7 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
             defaultColor={data.textColor.active}
             showAutoButton={true}
             isAutoColor={data.textColor.active === 'Auto'}
-            autoColor={
-              name === 'primary' ? settings.brandColor.color : settings.brandColor.background
-            }
+            autoColor={finalSettings?.buttons[name].textColor.active}
             onChange={(value: string) => {
               update({ textColor: { ...data.textColor, active: value } });
             }}
@@ -113,8 +127,29 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
             isAutoColor={data.backgroundColor.background === 'Auto'}
             autoColor={finalSettings?.buttons[name].backgroundColor.background}
             onChange={(value: string) => {
+              const resolvedBg =
+                value !== 'Auto'
+                  ? value
+                  : name === 'primary'
+                    ? finalSettings?.brandColor.background
+                    : finalSettings?.mainColor.background;
+              const accent =
+                name === 'primary'
+                  ? finalSettings?.brandColor.color
+                  : finalSettings?.brandColor.background;
+              const stateColors =
+                resolvedBg != null && accent != null
+                  ? generateStateColors(resolvedBg, accent)
+                  : null;
               update({
-                backgroundColor: { ...data.backgroundColor, background: value },
+                backgroundColor: {
+                  ...data.backgroundColor,
+                  background: value,
+                  ...(stateColors != null && {
+                    autoHover: stateColors.hover,
+                    autoActive: stateColors.active,
+                  }),
+                },
               });
             }}
             className="rounded-r-none"
@@ -200,12 +235,45 @@ export const ThemeSettingsButton = (props: ThemeSettingsButtonProps) => {
               isAutoColor={data.border.color.color === 'Auto'}
               autoColor={finalSettings?.buttons[name].border.color.color}
               onChange={(value: string) => {
-                update({
-                  border: {
-                    ...data.border,
-                    color: { ...data.border.color, color: value },
-                  },
-                });
+                const resolvedBorderColor =
+                  value !== 'Auto'
+                    ? value
+                    : (finalSettings?.buttons[name].border.color.color ??
+                      finalSettings?.brandColor.background);
+                if (name === 'primary') {
+                  const accent = finalSettings?.brandColor.color;
+                  const stateColors =
+                    resolvedBorderColor != null && accent != null
+                      ? generateStateColors(resolvedBorderColor, accent)
+                      : null;
+                  update({
+                    border: {
+                      ...data.border,
+                      color: {
+                        ...data.border.color,
+                        color: value,
+                        ...(stateColors != null && {
+                          autoHover: stateColors.hover,
+                          autoActive: stateColors.active,
+                        }),
+                      },
+                    },
+                  });
+                } else {
+                  update({
+                    border: {
+                      ...data.border,
+                      color: {
+                        ...data.border.color,
+                        color: value,
+                        ...(resolvedBorderColor != null && {
+                          autoHover: resolvedBorderColor,
+                          autoActive: resolvedBorderColor,
+                        }),
+                      },
+                    },
+                  });
+                }
               }}
               className="rounded-r-none"
               disabled={isViewOnly}
