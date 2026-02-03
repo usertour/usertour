@@ -302,7 +302,7 @@ const BannerInline = memo(
     return (
       <BannerWrapper ref={ref} {...restProps}>
         <div
-          className="h-full w-full flex items-center justify-center bg-sdk-banner text-sdk-banner-foreground"
+          className="h-full w-full relative flex items-center justify-center bg-sdk-banner text-sdk-banner-foreground"
           ref={contentContainerRef}
           style={contentStyle}
         >
