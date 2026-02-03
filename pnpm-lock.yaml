@@ -3328,6 +3328,9 @@ importers:
       '@usertour-packages/react-compose-refs':
         specifier: workspace:^
         version: link:../../radix/compose-refs
+      '@usertour-packages/react-use-size':
+        specifier: workspace:^
+        version: link:../../radix/use-size
       '@usertour-packages/scroll-area':
         specifier: workspace:^
         version: link:../../components/scroll-area

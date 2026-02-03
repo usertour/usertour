@@ -1,93 +1,113 @@
-'use client';
-
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
-import { useThemeListContext } from '@usertour-packages/contexts';
-import { useSettingsStyles } from '@usertour-packages/widget';
-import { ContentEditor, type ContentEditorRoot } from '@usertour-packages/shared-editor';
-import type { Theme } from '@usertour/types';
-import { useEffect, useMemo, useRef } from 'react';
+import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
+import { useSize } from '@usertour-packages/react-use-size';
+import { BannerContainer, BannerInline, BannerRoot } from '@usertour-packages/widget';
+import { ContentEditor } from '@usertour-packages/shared-editor';
+import type { ContentEditorRoot } from '@usertour/types';
+import {
+  DEFAULT_BANNER_DATA,
+  defaultSettings,
+  ContentEditorElementType,
+  type Theme,
+} from '@usertour/types';
+import { isEqual } from 'lodash';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useBuilderContext, useBannerContext } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
 import { getDefaultDataForType } from '../../../utils/default-data';
 
-export const BannerEmbed = () => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const { themeList } = useThemeListContext();
-  const { projectId } = useBuilderContext();
-  const { localData } = useBannerContext();
-  const { upload } = useAws();
+const DEFAULT_BANNER_CONTENTS = getDefaultDataForType('tooltip') as ContentEditorRoot[];
 
-  const handleCustomUploadRequest = (file: File): Promise<string> => {
-    return upload(file);
-  };
+export const BannerEmbed = () => {
+  const [contentContainerEl, setContentContainerEl] = useState<HTMLDivElement | null>(null);
+  const { localData, updateLocalData } = useBannerContext();
+  const { upload } = useAws();
+  const { themeList } = useThemeListContext();
+  const { currentVersion, projectId } = useBuilderContext();
+  const { attributeList } = useAttributeListContext();
+
+  const contentRect = useSize(contentContainerEl);
+
+  useEffect(() => {
+    if (contentRect?.height != null && contentRect.height > 0) {
+      updateLocalData({ height: contentRect.height });
+    }
+  }, [contentRect?.height, updateLocalData]);
+
+  const handleContentChange = useCallback(
+    (value: ContentEditorRoot[]) => {
+      if (localData && !isEqual(value, localData.contents)) {
+        updateLocalData({ contents: value });
+      }
+    },
+    [localData, updateLocalData],
+  );
+
+  const handleCustomUploadRequest = useCallback(
+    (file: File): Promise<string> => upload(file),
+    [upload],
+  );
 
   const theme = useMemo<Theme | undefined>(() => {
     if (!themeList?.length) {
       return undefined;
     }
+    if (currentVersion?.themeId) {
+      return themeList.find((item) => item.id === currentVersion.themeId);
+    }
     return themeList.find((item) => item.isDefault);
-  }, [themeList]);
+  }, [themeList, currentVersion]);
 
-  const { globalStyle } = useSettingsStyles(theme?.settings);
+  const themeSettings = theme?.settings ?? defaultSettings;
 
-  useEffect(() => {
-    if (containerRef.current && globalStyle) {
-      containerRef.current.style.cssText = globalStyle;
-    }
-  }, [globalStyle]);
+  const data = useMemo(
+    () => ({
+      ...DEFAULT_BANNER_DATA,
+      ...localData,
+      zIndex: localData?.zIndex ?? 11111 + EXTENSION_CONTENT_POPPER,
+    }),
+    [localData],
+  );
 
-  const data = localData;
-  const animate = data?.animateWhenEmbedAppears ?? true;
-  const overlay = data?.overlayEmbedOverAppContent ?? false;
-  const sticky = data?.stickToTopOfViewport ?? false;
-  const embedModeClass = data?.embedPlacement
-    ? `usertour-banner--embed-mode-${data.embedPlacement.replace(/-/g, '_').toUpperCase()}`
-    : 'usertour-banner--embed-mode-BODY_FIRST';
-  const zIndex = data?.zIndex ?? 11111 + EXTENSION_CONTENT_POPPER;
-  const contentStyle = useMemo(() => {
-    const style: React.CSSProperties = {
-      background: 'var(--usertour-banner-background-color)',
-      color: 'var(--usertour-banner-foreground-color)',
-    };
-    if (data?.maxContentWidth != null) {
-      style.maxWidth = `${data.maxContentWidth}px`;
-    }
-    if (data?.borderRadius != null) {
-      style.borderRadius = `${data.borderRadius}px`;
-    }
-    return style;
-  }, [data?.maxContentWidth, data?.borderRadius]);
+  const contents = useMemo(
+    () => localData?.contents ?? DEFAULT_BANNER_CONTENTS,
+    [localData?.contents],
+  );
 
-  const wrapperStyle = useMemo(() => {
-    const style: React.CSSProperties = { zIndex };
-    if (data?.maxEmbedWidth != null) {
-      style.maxWidth = `${data.maxEmbedWidth}px`;
-    }
-    if (data?.outerMargin) {
-      const { top, right, bottom, left } = data.outerMargin;
-      style.margin = `${top}px ${right}px ${bottom}px ${left}px`;
-    }
-    return style;
-  }, [zIndex, data?.maxEmbedWidth, data?.outerMargin]);
+  const zIndex = data.zIndex ?? 11111 + EXTENSION_CONTENT_POPPER;
+
+  const enabledElementTypes = [
+    ContentEditorElementType.IMAGE,
+    ContentEditorElementType.EMBED,
+    ContentEditorElementType.TEXT,
+  ];
+
+  if (!theme || !localData) {
+    return null;
+  }
 
   return (
-    <div ref={containerRef}>
-      <div
-        className={`usertour-banner usertour-banner--animate-${String(animate)} ${embedModeClass} usertour-banner--sticky-${String(sticky)} usertour-banner--overlay-${String(overlay)}`}
-        style={wrapperStyle}
-      >
-        <div className="w-full" style={contentStyle}>
+    <BannerRoot
+      themeSettings={themeSettings}
+      data={data}
+      zIndex={zIndex}
+      contentContainerRef={setContentContainerEl}
+    >
+      <BannerContainer>
+        <BannerInline>
           <ContentEditor
-            projectId={projectId}
             zIndex={zIndex + EXTENSION_CONTENT_POPPER}
             customUploadRequest={handleCustomUploadRequest}
-            initialValue={getDefaultDataForType('tooltip') as ContentEditorRoot[]}
-            onValueChange={() => {}}
+            initialValue={contents}
+            onValueChange={handleContentChange}
+            projectId={projectId}
+            attributes={attributeList}
+            enabledElementTypes={enabledElementTypes}
           />
-        </div>
-      </div>
-    </div>
+        </BannerInline>
+      </BannerContainer>
+    </BannerRoot>
   );
 };
 

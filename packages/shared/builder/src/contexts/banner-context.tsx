@@ -1,5 +1,6 @@
 import { BannerData, DEFAULT_BANNER_DATA } from '@usertour/types';
-import { isEqual } from 'lodash';
+import type { ContentEditorRoot } from '@usertour/types';
+import { isEqual, isUndefined } from 'lodash';
 import {
   ReactNode,
   createContext,
@@ -17,6 +18,7 @@ import { useToast } from '@usertour-packages/use-toast';
 
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
+import { getDefaultDataForType } from '../utils/default-data';
 
 export interface BannerProviderProps {
   children: ReactNode;
@@ -102,7 +104,10 @@ export function BannerProvider(props: BannerProviderProps): JSX.Element {
     }
 
     const serverData = (currentVersion.data as BannerData | undefined) ?? DEFAULT_BANNER_DATA;
-    const merged = { ...DEFAULT_BANNER_DATA, ...serverData };
+    const merged: BannerData = { ...DEFAULT_BANNER_DATA, ...serverData };
+    if (serverData?.contents?.length === 0 || isUndefined(serverData?.contents)) {
+      merged.contents = getDefaultDataForType('tooltip') as ContentEditorRoot[];
+    }
 
     if (!isEqual(merged, lastSavedDataRef.current)) {
       setLocalData(merged);

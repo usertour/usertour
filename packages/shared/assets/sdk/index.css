@@ -277,6 +277,11 @@ _:future,
   animation-duration: 400ms;
   animation-timing-function: ease-in-out;
 }
+.usertour-widget-banner-frame {
+  display: block;
+  min-width: 0;
+  flex: 1 1 0%;
+}
 
 @keyframes usertour-widget-chrome-visible {
   0% {

@@ -1,3 +1,4 @@
+import type { ContentEditorRoot } from './editor';
 import type { ElementSelectorPropsData } from './contents';
 
 export enum BannerEmbedPlacement {
@@ -39,6 +40,10 @@ export interface BannerData {
   /** Target element when embed placement is container- or element-relative. */
   containerElement?: ElementSelectorPropsData;
   zIndex?: number;
+  /** Measured content height in pixels, computed when saving in the builder. */
+  height?: number;
+  /** Rich content blocks for the banner (builder only; persisted with version data). */
+  contents?: ContentEditorRoot[];
   maxContentWidth?: number;
   maxEmbedWidth?: number;
   borderRadius?: number;
