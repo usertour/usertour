@@ -69,7 +69,11 @@ export const PRIORITIES = [
  * Content types that follow singleton pattern - only one active session per type at a time
  * Unlike LAUNCHER which can have multiple concurrent sessions
  */
-export const SINGLETON_CONTENT_TYPES = [ContentDataType.FLOW, ContentDataType.CHECKLIST];
+export const SINGLETON_CONTENT_TYPES = [
+  ContentDataType.FLOW,
+  ContentDataType.CHECKLIST,
+  ContentDataType.BANNER,
+];
 
 /**
  * All content types including checklist, flow, and launcher
@@ -77,6 +81,7 @@ export const SINGLETON_CONTENT_TYPES = [ContentDataType.FLOW, ContentDataType.CH
 export const ALL_CONTENT_TYPES: ContentDataType[] = [
   ContentDataType.CHECKLIST,
   ContentDataType.FLOW,
+  ContentDataType.BANNER,
   ContentDataType.LAUNCHER,
 ];
 
@@ -1225,6 +1230,18 @@ export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
     }
   }
   return attrCodes;
+};
+
+/**
+ * Extracts all user attribute codes from banner contents
+ * @param contents - Banner content editor roots
+ * @returns Array of unique user attribute codes found in the banner contents
+ */
+export const extractBannerAttrCodes = (contents: ContentEditorRoot[] | undefined): string[] => {
+  if (!contents) {
+    return [];
+  }
+  return extractUserAttrCodes(contents);
 };
 
 /**

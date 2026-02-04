@@ -25,7 +25,12 @@ import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditForm } from '../shared/content-edit-form';
-import { ChecklistPreview, FlowPreview, LauncherPreview } from '../shared/content-preview';
+import {
+  BannerPreviewContent,
+  ChecklistPreview,
+  FlowPreview,
+  LauncherPreview,
+} from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
 
@@ -357,6 +362,85 @@ const ChecklistContentPreview = ({
   );
 };
 
+interface BannerContentPreviewProps {
+  currentVersion: ContentVersion;
+  content: Content;
+  onEdit: () => void;
+  disabled: boolean;
+}
+
+const BannerContentPreview = ({
+  currentVersion,
+  content,
+  onEdit,
+  disabled,
+}: BannerContentPreviewProps) => {
+  const currentTheme = useThemeHandler(currentVersion);
+  const [contentRect, setContentRect] = useState<DOMRect | null>(null);
+  const [scale, setScale] = useState<number>(1);
+  const height =
+    contentRect?.height && contentRect?.width && contentRect?.height > contentRect?.width
+      ? contentRect?.height * scale
+      : undefined;
+
+  if (!currentVersion || !currentTheme) return null;
+
+  return (
+    <>
+      <GoogleFontCss settings={currentTheme.settings} />
+      <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8">
+        <div
+          className="w-40 h-32 flex flex-none items-center"
+          style={{ height: height ? `${height}px` : undefined }}
+        >
+          <ScaledPreviewContainer
+            className="origin-[left_center]"
+            maxWidth={160}
+            maxHeight={600}
+            onContentRectChange={(contentRect, scale) => {
+              setContentRect(contentRect);
+              setScale(scale);
+            }}
+          >
+            <BannerPreviewContent
+              currentTheme={currentTheme}
+              currentVersion={currentVersion}
+              previewWidth={360}
+              previewClassName="justify-start"
+            />
+          </ScaledPreviewContainer>
+        </div>
+        <div className="grow flex flex-col relative space-y-1 min-w-80">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={'ghost'}
+                  size={'icon'}
+                  onClick={onEdit}
+                  disabled={disabled}
+                  className="right-0 top-0 absolute"
+                >
+                  <EditIcon className="w-4 h-4 cursor-pointer" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Edit</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <div className="font-bold max-w-80 truncate">{content.name ?? ''}</div>
+          <div className="text-sm flex flex-row flex-wrap gap-1">
+            <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
+          </div>
+          <div className="text-xs absolute right-0 bottom-0 text-muted-foreground">
+            Last edited{' '}
+            {currentVersion.updatedAt && format(new Date(currentVersion.updatedAt), 'PPpp')}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 export const ContentDetailContent = () => {
   const { version } = useContentVersionContext();
   const { content, contentType } = useContentDetailContext();
@@ -396,6 +480,14 @@ export const ContentDetailContent = () => {
         )}
         {contentType === ContentTypeName.CHECKLISTS && content && version.data && (
           <ChecklistContentPreview
+            currentVersion={version}
+            content={content}
+            onEdit={() => openBuilder(content, contentType)}
+            disabled={isViewOnly}
+          />
+        )}
+        {contentType === ContentTypeName.BANNERS && content && version.data && (
+          <BannerContentPreview
             currentVersion={version}
             content={content}
             onEdit={() => openBuilder(content, contentType)}

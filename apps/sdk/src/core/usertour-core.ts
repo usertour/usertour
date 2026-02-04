@@ -48,6 +48,7 @@ import { ErrorMessages } from '@/types';
 import { formatErrorMessage } from '@/types/error-messages';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
+import { UsertourBanner } from './usertour-banner';
 import {
   ServerMessageHandlerManager,
   ServerMessageHandlerContext,
@@ -72,8 +73,10 @@ export class UsertourCore extends Evented {
   toursStore = new ExternalStore<UsertourTour[]>([]);
   checklistsStore = new ExternalStore<UsertourChecklist[]>([]);
   launchersStore = new ExternalStore<UsertourLauncher[]>([]);
+  bannersStore = new ExternalStore<UsertourBanner[]>([]);
   activatedTour: UsertourTour | null = null;
   activatedChecklist: UsertourChecklist | null = null;
+  activatedBanner: UsertourBanner | null = null;
   launchers: UsertourLauncher[] = [];
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
@@ -518,6 +521,7 @@ export class UsertourCore extends Evented {
       toursStore: this.toursStore,
       checklistsStore: this.checklistsStore,
       launchersStore: this.launchersStore,
+      bannersStore: this.bannersStore,
     });
 
     if (!initialized) {
@@ -534,6 +538,7 @@ export class UsertourCore extends Evented {
     return (
       this.activatedChecklist?.getContentId() === contentId ||
       this.activatedTour?.getContentId() === contentId ||
+      this.activatedBanner?.getContentId() === contentId ||
       this.launchers.some((launcher) => launcher.getContentId() === contentId)
     );
   }
@@ -601,6 +606,8 @@ export class UsertourCore extends Evented {
     this.cleanupActivatedTour();
     // Cleanup activated checklist
     this.cleanupActivatedChecklist();
+    // Cleanup activated banner
+    this.cleanupActivatedBanner();
     // Cleanup launchers
     this.cleanupLaunchers();
     // Clear all unacked tasks
@@ -781,7 +788,7 @@ export class UsertourCore extends Evented {
    * @param onDismissed - Optional callback when component is dismissed
    */
   private setupComponentDismissHandler(
-    component: UsertourTour | UsertourChecklist | UsertourLauncher,
+    component: UsertourTour | UsertourChecklist | UsertourLauncher | UsertourBanner,
     onDismissed?: (sessionId: string) => void | Promise<void>,
   ): void {
     component.on(SDKClientEvents.COMPONENT_CLOSED, (eventData: unknown) => {
@@ -911,6 +918,37 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Sets the banner session and manages banner lifecycle
+   * @param session - The SDK content session to set
+   */
+  private async setBannerSession(session: CustomContentSession): Promise<boolean> {
+    if (this.isSessionDismissed(session.id)) {
+      logger.info(`Ignoring setBannerSession for dismissed session: ${session.id}`);
+      return false;
+    }
+
+    if (this.activatedBanner) {
+      if (this.activatedBanner.getSessionId() === session.id) {
+        await this.activatedBanner.update(session);
+        await this.activatedBanner.refreshStoreData();
+        await this.activatedBanner.show();
+        return true;
+      }
+      this.cleanupActivatedBanner();
+    }
+
+    this.activatedBanner = new UsertourBanner(this, new UsertourSession(session));
+    this.setupComponentDismissHandler(this.activatedBanner, (sessionId) => {
+      if (this.activatedBanner?.getSessionId() === sessionId) {
+        this.cleanupActivatedBanner();
+      }
+    });
+    this.syncBannersStore([this.activatedBanner]);
+    await this.activatedBanner.show();
+    return true;
+  }
+
+  /**
    * Unsets the checklist session and destroys the checklist
    * @param sessionId - The session ID to unset
    */
@@ -923,6 +961,18 @@ export class UsertourCore extends Evented {
     this.cleanupActivatedChecklist();
     // Note: We don't clear unacked tasks here because they might be needed
     // if ChecklistTaskCompleted messages arrive after unsetChecklistSession
+    return true;
+  }
+
+  /**
+   * Unsets the banner session and destroys the banner
+   * @param sessionId - The session ID to unset
+   */
+  private async unsetBannerSession(sessionId: string): Promise<boolean> {
+    if (!this.activatedBanner || this.activatedBanner.getSessionId() !== sessionId) {
+      return false;
+    }
+    this.cleanupActivatedBanner();
     return true;
   }
 
@@ -1021,6 +1071,13 @@ export class UsertourCore extends Evented {
     this.launchersStore.setData([...launchers]);
   }
 
+  /**
+   * Synchronizes banners store
+   */
+  private syncBannersStore(banners: UsertourBanner[]) {
+    this.bannersStore.setData([...banners]);
+  }
+
   // === Server Message Handler Context Initialization ===
   /**
    * Initializes the server message handler context
@@ -1033,6 +1090,8 @@ export class UsertourCore extends Evented {
       unsetFlowSession: this.unsetFlowSession,
       setChecklistSession: this.setChecklistSession,
       unsetChecklistSession: this.unsetChecklistSession,
+      setBannerSession: this.setBannerSession,
+      unsetBannerSession: this.unsetBannerSession,
       addLauncher: this.addLauncher,
       removeLauncher: this.removeLauncher,
       trackClientCondition: this.trackClientCondition,
@@ -1192,6 +1251,7 @@ export class UsertourCore extends Evented {
     const token = this.startOptions.token;
     const flowSessionId = this.activatedTour?.getSessionId();
     const checklistSessionId = this.activatedChecklist?.getSessionId();
+    const bannerSessionId = this.activatedBanner?.getSessionId();
     const launchers = this.launchers.map((l) => l.getContentId());
     this.socketService.updateCredentials({
       clientConditions,
@@ -1201,6 +1261,7 @@ export class UsertourCore extends Evented {
       token,
       flowSessionId,
       checklistSessionId,
+      bannerSessionId,
       launchers,
     });
   }
@@ -1238,6 +1299,15 @@ export class UsertourCore extends Evented {
     // if ChecklistTaskCompleted messages arrive after unsetChecklistSession.
     // Unacked tasks will be cleared when the checklist is expanded or when
     // a new checklist session is set for the same sessionId.
+  }
+
+  /**
+   * Cleans up the activated banner
+   */
+  private cleanupActivatedBanner() {
+    this.activatedBanner?.destroy();
+    this.activatedBanner = null;
+    this.bannersStore.setData(undefined);
   }
 
   // === Unacked Tasks Management ===

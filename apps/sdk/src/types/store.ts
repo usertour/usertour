@@ -1,5 +1,6 @@
 import { AssetAttributes } from '@usertour-packages/frame';
 import {
+  BannerData,
   ChecklistData,
   LauncherData,
   Step,
@@ -38,4 +39,10 @@ export type ChecklistStore = BaseStore & {
 export type LauncherStore = BaseStore & {
   launcherData?: LauncherData;
   triggerRef?: any;
+};
+
+// Banner store type
+export type BannerStore = BaseStore & {
+  bannerData?: BannerData;
+  targetElement?: Element | null;
 };

@@ -51,6 +51,17 @@ export class SetChecklistSessionHandler implements ServerMessageHandler {
 }
 
 /**
+ * Handler for SetBannerSession message
+ */
+export class SetBannerSessionHandler implements ServerMessageHandler {
+  readonly messageKind = 'SetBannerSession';
+
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    return await context.setBannerSession(payload as CustomContentSession);
+  }
+}
+
+/**
  * Handler for UnsetChecklistSession message
  */
 export class UnsetChecklistSessionHandler implements ServerMessageHandler {
@@ -59,6 +70,18 @@ export class UnsetChecklistSessionHandler implements ServerMessageHandler {
   async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
     const { sessionId } = payload as { sessionId: string };
     return await context.unsetChecklistSession(sessionId);
+  }
+}
+
+/**
+ * Handler for UnsetBannerSession message
+ */
+export class UnsetBannerSessionHandler implements ServerMessageHandler {
+  readonly messageKind = 'UnsetBannerSession';
+
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    const { sessionId } = payload as { sessionId: string };
+    return await context.unsetBannerSession(sessionId);
   }
 }
 

@@ -2,6 +2,9 @@ import { memo } from 'react';
 import { EyeNoneIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import {
+  BannerContainer,
+  BannerPreview,
+  BannerRoot,
   ChecklistContainer,
   ChecklistDismiss,
   ChecklistDropdown,
@@ -25,8 +28,10 @@ import {
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import {
   AvatarType,
+  BannerData,
   ChecklistData,
   ContentVersion,
+  DEFAULT_BANNER_DATA,
   LauncherData,
   ProgressBarPosition,
   ProgressBarType,
@@ -226,10 +231,37 @@ const ChecklistPreview = (props: {
   );
 };
 
+const BannerPreviewContent = ({
+  currentTheme,
+  currentVersion,
+  previewWidth,
+  previewClassName,
+}: {
+  currentTheme: Theme;
+  currentVersion: ContentVersion;
+  previewWidth?: number;
+  previewClassName?: string;
+}) => {
+  const data = (currentVersion.data as BannerData | undefined) ?? DEFAULT_BANNER_DATA;
+  const themeSettings = currentTheme.settings;
+  const width = previewWidth ?? data.maxEmbedWidth ?? 720;
+
+  return (
+    <BannerRoot themeSettings={themeSettings} data={data}>
+      <BannerContainer>
+        <BannerPreview previewMode className={previewClassName} style={{ width, maxWidth: '100%' }}>
+          <ContentEditorSerialize contents={data.contents ?? []} />
+        </BannerPreview>
+      </BannerContainer>
+    </BannerRoot>
+  );
+};
+
 export {
   FlowPreview,
   LauncherPreview,
   ChecklistPreview,
+  BannerPreviewContent,
   EmptyContentPreview,
   ScaledPreviewContainer,
 };

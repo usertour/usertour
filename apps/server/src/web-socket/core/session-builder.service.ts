@@ -2,6 +2,7 @@ import { AttributeBizType, Attribute } from '@/attributes/models/attribute.model
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
+  BannerData,
   ChecklistData,
   ContentDataType,
   LauncherData,
@@ -17,6 +18,7 @@ import {
   extractLauncherAttrCodes,
   isExpandPending,
   extractChecklistAttrCodes,
+  extractBannerAttrCodes,
 } from '@/utils/content-utils';
 import { CustomContentSession, SessionTheme, SessionStep, SessionAttribute } from '@usertour/types';
 import {
@@ -187,6 +189,9 @@ export class SessionBuilderService {
     if (contentType === ContentDataType.LAUNCHER) {
       return await this.processLauncherSession(session, customContentVersion, socketData);
     }
+    if (contentType === ContentDataType.BANNER) {
+      return await this.processBannerSession(session, customContentVersion, socketData);
+    }
     return session;
   }
 
@@ -328,6 +333,34 @@ export class SessionBuilderService {
 
     session.expandPending = isExpandPending(customContentVersion);
     session.version.checklist = { ...checklistData, items };
+    return session;
+  }
+
+  /**
+   * Process BANNER content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The client data
+   * @returns The processed session
+   */
+  private async processBannerSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId } = socketData;
+    const bannerData = customContentVersion.data as unknown as BannerData;
+    const attrCodes = extractBannerAttrCodes(bannerData?.contents);
+
+    const attributes = await this.extractAttributes(
+      [],
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    session.attributes = attributes;
+    session.version.banner = bannerData;
     return session;
   }
 

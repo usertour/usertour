@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import { AutoScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
+  BannerPreviewContent,
   ChecklistPreview,
   EmptyContentPreview,
   FlowPreview,
@@ -147,6 +148,18 @@ const ContentPreview = ({
     return (
       <AutoScaledPreviewContainer padding={16}>
         <ChecklistPreview currentTheme={currentTheme} currentVersion={currentVersion} />
+      </AutoScaledPreviewContainer>
+    );
+  }
+
+  if (type === ContentDataType.BANNER && currentTheme && currentVersion) {
+    return (
+      <AutoScaledPreviewContainer padding={16}>
+        <BannerPreviewContent
+          currentTheme={currentTheme}
+          currentVersion={currentVersion}
+          previewClassName="justify-start"
+        />
       </AutoScaledPreviewContainer>
     );
   }

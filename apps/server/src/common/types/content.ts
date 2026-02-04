@@ -48,9 +48,11 @@ export interface SocketData {
   waitTimers?: ConditionWaitTimer[];
   flowSession?: CustomContentSession;
   checklistSession?: CustomContentSession;
+  bannerSession?: CustomContentSession;
   launcherSessions?: CustomContentSession[];
   lastDismissedFlowId?: string;
   lastDismissedChecklistId?: string;
+  lastDismissedBannerId?: string;
 }
 
 export interface ContentStartContext {

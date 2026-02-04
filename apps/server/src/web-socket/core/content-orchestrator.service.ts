@@ -123,7 +123,7 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Cancel content (FLOW, CHECKLIST, or LAUNCHER)
+   * Cancel content (FLOW, CHECKLIST, BANNER, or LAUNCHER)
    * No longer needs distributed lock as message queue ensures ordered execution
    * @param context - The content cancel context
    * @returns True if the content was canceled successfully
@@ -148,7 +148,7 @@ export class ContentOrchestratorService {
     const contentType = bizSession.content.type as ContentDataType;
     const contentId = bizSession.content.id;
 
-    // Track content ended event (supports FLOW, CHECKLIST, LAUNCHER)
+    // Track content ended event (supports FLOW, CHECKLIST, BANNER, LAUNCHER)
     const isEventTracked = await this.trackContentEndedEvent(
       sessionId,
       contentType,
@@ -225,7 +225,7 @@ export class ContentOrchestratorService {
   /**
    * Start content batch (for multi-instance content types like LAUNCHER)
    * Supports multiple concurrent sessions for the same content type
-   * Note: Singleton content types (FLOW, CHECKLIST) should use startContent instead
+   * Note: Singleton content types (FLOW, CHECKLIST, BANNER) should use startContent instead
    * @param context - The content start context
    * @returns True if the content batch was started successfully
    */
@@ -296,15 +296,16 @@ export class ContentOrchestratorService {
    * Toggle contents for the socket
    * This method will start content types specified by the caller, handling session cleanup and restart
    * @param context - The web socket context containing server, socket, and socket data
-   * @param types - Optional array of content types to toggle. If not provided, uses all content types in order: CHECKLIST, FLOW, LAUNCHER
+   * @param types - Optional array of content types to toggle. If not provided, uses all content types in order: CHECKLIST, BANNER, FLOW, LAUNCHER
    * @returns True if the contents were toggled successfully
    */
   async toggleContents(context: WebSocketContext, types?: ContentDataType[]): Promise<boolean> {
     const { server, socket } = context;
 
-    // Use default content types if not provided, maintaining the order: CHECKLIST, FLOW, LAUNCHER
+    // Use default content types if not provided, maintaining the order: CHECKLIST, BANNER, FLOW, LAUNCHER
     const contentTypes = types ?? [
       ContentDataType.CHECKLIST,
+      ContentDataType.BANNER,
       ContentDataType.FLOW,
       ContentDataType.LAUNCHER,
     ];
@@ -1144,6 +1145,9 @@ export class ContentOrchestratorService {
     if (contentType === ContentDataType.CHECKLIST) {
       return await this.activateChecklistSession(params);
     }
+    if (contentType === ContentDataType.BANNER) {
+      return await this.activateBannerSession(params);
+    }
     return false;
   }
 
@@ -1188,6 +1192,26 @@ export class ContentOrchestratorService {
       };
     }
     return await this.socketOperationService.activateChecklistSession(
+      socket as unknown as Socket,
+      socketData,
+      session,
+      options,
+    );
+  }
+
+  /**
+   * Activate banner session
+   * @param params - The activate session parameters
+   * @returns True if the session was activated successfully
+   */
+  private async activateBannerSession(params: ActivateSessionParams) {
+    const { socket, session, trackConditions, socketData } = params;
+    const options = {
+      trackConditions,
+      cleanupContentTypes: [ContentDataType.BANNER],
+    };
+
+    return await this.socketOperationService.activateBannerSession(
       socket as unknown as Socket,
       socketData,
       session,

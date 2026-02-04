@@ -42,10 +42,17 @@ interface ActivateChecklistSessionOptions {
   cleanupContentTypes?: ContentDataType[];
 }
 
+interface ActivateBannerSessionOptions {
+  /** The conditions to track */
+  trackConditions?: TrackCondition[];
+  /** Optional array of content types to cleanup client conditions for */
+  cleanupContentTypes?: ContentDataType[];
+}
+
 interface CleanupSocketSessionOptions {
   /** Whether to execute unsetSocketSession, defaults to true */
   unsetSession?: boolean;
-  /** Whether to set lastDismissedFlowId and lastDismissedChecklistId, defaults to false */
+  /** Whether to set lastDismissedFlowId/lastDismissedChecklistId/lastDismissedBannerId, defaults to false */
   setLastDismissedId?: boolean;
   trackConditions?: TrackCondition[];
 }
@@ -221,6 +228,46 @@ export class SocketOperationService {
   }
 
   /**
+   * Activate Banner session
+   * @param socket - The socket
+   * @param socketData - The socket client data
+   * @param session - The Banner session to activate
+   * @param options - Options for Banner activation behavior
+   * @returns Promise<boolean> - True if the session was activated successfully
+   */
+  async activateBannerSession(
+    socket: Socket,
+    socketData: SocketData,
+    session: CustomContentSession,
+    options: ActivateBannerSessionOptions = {},
+  ): Promise<boolean> {
+    const { trackConditions = [], cleanupContentTypes } = options;
+
+    const isSetSession = await this.socketEmitterService.setBannerSessionWithAck(socket, session);
+    if (!isSetSession) {
+      return false;
+    }
+
+    const conditionChanges = await this.emitConditions(
+      socket,
+      socketData,
+      trackConditions,
+      cleanupContentTypes,
+    );
+    if (!conditionChanges) {
+      return false;
+    }
+
+    const updatedSocketData: Partial<SocketData> = {
+      ...conditionChanges,
+      bannerSession: session,
+      lastDismissedBannerId: undefined,
+    };
+
+    return await this.socketDataService.set(socket, updatedSocketData, true);
+  }
+
+  /**
    * Cleanup socket session and associated conditions
    * @param socket - The socket instance
    * @param socketData - The socket client data
@@ -264,6 +311,10 @@ export class SocketOperationService {
         ...(setLastDismissedId && { lastDismissedChecklistId: session.content.id }),
         checklistSession: undefined,
       }),
+      ...(contentType === ContentDataType.BANNER && {
+        ...(setLastDismissedId && { lastDismissedBannerId: session.content.id }),
+        bannerSession: undefined,
+      }),
     };
 
     return await this.socketDataService.set(socket, updatedSocketData, true);
@@ -276,7 +327,7 @@ export class SocketOperationService {
   /**
    * Activate multiple sessions (for non-singleton content types like LAUNCHER)
    * Supports multiple concurrent sessions for the same content type
-   * Note: Singleton content types (FLOW, CHECKLIST) should use activateFlowSession/activateChecklistSession instead
+   * Note: Singleton content types (FLOW, CHECKLIST, BANNER) should use activateFlowSession/activateChecklistSession/activateBannerSession instead
    * @param socket - The socket
    * @param socketData - The socket client data
    * @param sessions - Target sessions to activate
@@ -567,7 +618,7 @@ export class SocketOperationService {
 
   /**
    * Emit unset socket session event with acknowledgment
-   * Supports both singleton (FLOW, CHECKLIST) and batch (LAUNCHER) content types
+   * Supports both singleton (FLOW, CHECKLIST, BANNER) and batch (LAUNCHER) content types
    * @param socket - The socket instance
    * @param session - The session to unset
    * @returns Promise<boolean> - True if the session was unset and acknowledged by client
@@ -582,6 +633,9 @@ export class SocketOperationService {
     }
     if (contentType === ContentDataType.CHECKLIST) {
       return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, session.id);
+    }
+    if (contentType === ContentDataType.BANNER) {
+      return await this.socketEmitterService.unsetBannerSessionWithAck(socket, session.id);
     }
 
     if (contentType === ContentDataType.LAUNCHER) {

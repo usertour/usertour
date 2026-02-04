@@ -81,6 +81,10 @@ const EVENT_TYPE_MAPPING = {
     start: BizEvents.CHECKLIST_STARTED,
     complete: BizEvents.CHECKLIST_COMPLETED,
   },
+  [ContentType.BANNER]: {
+    start: BizEvents.BANNER_SEEN,
+    complete: BizEvents.BANNER_DISMISSED,
+  },
 };
 
 const EVENTS = [
@@ -92,6 +96,8 @@ const EVENTS = [
   BizEvents.CHECKLIST_STARTED,
   BizEvents.CHECKLIST_COMPLETED,
   BizEvents.TOOLTIP_TARGET_MISSING,
+  BizEvents.BANNER_SEEN,
+  BizEvents.BANNER_DISMISSED,
 ];
 
 export interface ChecklistData {
@@ -192,10 +198,14 @@ export class AnalyticsService {
       },
     });
 
-    const startEventFilter = (ev: Event) => ev.codeName === EVENT_TYPE_MAPPING[content.type].start;
+    const eventTypeMapping = EVENT_TYPE_MAPPING[content.type];
+    if (!eventTypeMapping) {
+      return false;
+    }
 
-    const completeEventFilter = (ev: Event) =>
-      ev.codeName === EVENT_TYPE_MAPPING[content.type].complete;
+    const startEventFilter = (ev: Event) => ev.codeName === eventTypeMapping.start;
+
+    const completeEventFilter = (ev: Event) => ev.codeName === eventTypeMapping.complete;
 
     const stepSeenEventFilter = (ev: Event) => ev.codeName === BizEvents.FLOW_STEP_SEEN;
 
@@ -207,7 +217,8 @@ export class AnalyticsService {
     const stepSeenEvent = events.find(stepSeenEventFilter);
     const tooltipTargetMissingEvent = events.find(tooltipTargetMissingEventFilter);
 
-    if (!startEvent || !completeEvent || !stepSeenEvent) {
+    const isFlow = content.type === ContentType.FLOW;
+    if (!startEvent || !completeEvent || (isFlow && !stepSeenEvent)) {
       return false;
     }
     const condition = {
@@ -236,12 +247,14 @@ export class AnalyticsService {
           eventId: completeEvent.id,
           isDistinct: false,
         });
-    const viewsByStep = await this.aggregationStepsByContent(
-      condition,
-      stepSeenEvent,
-      completeEvent,
-      tooltipTargetMissingEvent,
-    );
+    const viewsByStep = isFlow
+      ? await this.aggregationStepsByContent(
+          condition,
+          stepSeenEvent!,
+          completeEvent,
+          tooltipTargetMissingEvent,
+        )
+      : false;
     const viewsByTask = await this.aggregationTasksByContent(condition, projectId);
     const viewsByDay = await this.aggregationViewsByDay(
       { ...condition },

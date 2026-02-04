@@ -8,6 +8,7 @@ import { UsertourTheme } from '@/core/usertour-theme';
 import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 import { autoBind } from '@/utils';
 import {
+  BannerData,
   ChecklistData,
   contentEndReason,
   contentStartReason,
@@ -470,6 +471,13 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected getLauncherData(): LauncherData | undefined {
     return this.session.getLauncherData();
+  }
+
+  /**
+   * Gets the banner data from session
+   */
+  protected getBannerData(): BannerData | undefined {
+    return this.session.getBannerData();
   }
 
   /**

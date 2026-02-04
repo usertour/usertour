@@ -1,7 +1,14 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
 import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
 import { useSize } from '@usertour-packages/react-use-size';
-import { BannerContainer, BannerInline, BannerRoot } from '@usertour-packages/widget';
+import {
+  BannerContainer,
+  BannerContentContainer,
+  BannerDismissButton,
+  BannerRoot,
+  BannerWrapper,
+  getBannerContentWrapperStyle,
+} from '@usertour-packages/widget';
 import { ContentEditor } from '@usertour-packages/shared-editor';
 import type { ContentEditorRoot } from '@usertour/types';
 import {
@@ -18,22 +25,23 @@ import { useAws } from '../../../hooks/use-aws';
 import { getDefaultDataForType } from '../../../utils/default-data';
 
 const DEFAULT_BANNER_CONTENTS = getDefaultDataForType('tooltip') as ContentEditorRoot[];
+const DEFAULT_BANNER_PREVIEW_WIDTH = 720;
 
 export const BannerEmbed = () => {
-  const [contentContainerEl, setContentContainerEl] = useState<HTMLDivElement | null>(null);
+  const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null);
   const { localData, updateLocalData } = useBannerContext();
   const { upload } = useAws();
   const { themeList } = useThemeListContext();
   const { currentVersion, projectId } = useBuilderContext();
   const { attributeList } = useAttributeListContext();
 
-  const contentRect = useSize(contentContainerEl);
+  const wrapperRect = useSize(wrapperEl);
 
   useEffect(() => {
-    if (contentRect?.height != null && contentRect.height > 0) {
-      updateLocalData({ height: contentRect.height });
+    if (wrapperRect?.height != null && wrapperRect.height > 0) {
+      updateLocalData({ height: wrapperRect.height });
     }
-  }, [contentRect?.height, updateLocalData]);
+  }, [wrapperRect?.height, updateLocalData]);
 
   const handleContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
@@ -83,30 +91,40 @@ export const BannerEmbed = () => {
     ContentEditorElementType.TEXT,
   ];
 
+  const previewWidth = data.maxEmbedWidth ?? DEFAULT_BANNER_PREVIEW_WIDTH;
+  const contentStyle = useMemo(() => getBannerContentWrapperStyle(data), [data]);
+  const showDismiss = data?.allowUsersToDismissEmbed ?? false;
+
+  const bannerPreview = (
+    <BannerWrapper previewMode ref={setWrapperEl} style={{ width: previewWidth, maxWidth: '100%' }}>
+      <BannerContentContainer style={contentStyle}>
+        <ContentEditor
+          zIndex={zIndex + EXTENSION_CONTENT_POPPER}
+          customUploadRequest={handleCustomUploadRequest}
+          initialValue={contents}
+          onValueChange={handleContentChange}
+          projectId={projectId}
+          attributes={attributeList}
+          enabledElementTypes={enabledElementTypes}
+        />
+        {showDismiss && <BannerDismissButton onClick={() => {}} />}
+      </BannerContentContainer>
+    </BannerWrapper>
+  );
+
+  const renderPreviewLayout = () => (
+    <div className="flex items-center justify-center h-full min-h-[240px] w-full">
+      {bannerPreview}
+    </div>
+  );
+
   if (!theme || !localData) {
     return null;
   }
 
   return (
-    <BannerRoot
-      themeSettings={themeSettings}
-      data={data}
-      zIndex={zIndex}
-      contentContainerRef={setContentContainerEl}
-    >
-      <BannerContainer>
-        <BannerInline>
-          <ContentEditor
-            zIndex={zIndex + EXTENSION_CONTENT_POPPER}
-            customUploadRequest={handleCustomUploadRequest}
-            initialValue={contents}
-            onValueChange={handleContentChange}
-            projectId={projectId}
-            attributes={attributeList}
-            enabledElementTypes={enabledElementTypes}
-          />
-        </BannerInline>
-      </BannerContainer>
+    <BannerRoot themeSettings={themeSettings} data={data} zIndex={zIndex}>
+      <BannerContainer>{renderPreviewLayout()}</BannerContainer>
     </BannerRoot>
   );
 };

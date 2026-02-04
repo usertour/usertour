@@ -30,8 +30,6 @@ interface BannerRootContextValue {
   zIndex: number;
   assets?: AssetAttributes[];
   onDismiss?: () => void;
-  /** Optional ref/callback for the content wrapper div (e.g. for height measurement in builder). */
-  contentContainerRef?: React.Ref<HTMLDivElement>;
 }
 
 const BannerRootContext = createContext<BannerRootContextValue | null>(null);
@@ -55,24 +53,9 @@ export function getBannerWrapperStyle(data: BannerData): CSSProperties {
   const sticky = data?.stickToTopOfViewport ?? false;
 
   const style: CSSProperties = {
-    left: 0,
-    right: 0,
     zIndex,
-    height: `${heightPx}px`,
     ['--usertour-widget-banner-height' as string]: `${heightPx}px`,
   };
-
-  // top vs bottom from embedPlacement
-  const placement = data?.embedPlacement ?? BannerEmbedPlacement.TOP_OF_PAGE;
-  const isTop =
-    placement === BannerEmbedPlacement.TOP_OF_PAGE ||
-    placement === BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT ||
-    placement === BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT;
-  if (isTop) {
-    style.top = 0;
-  } else {
-    style.bottom = 0;
-  }
 
   // position from overlay + sticky
   if (!overlay && sticky) {
@@ -83,6 +66,23 @@ export function getBannerWrapperStyle(data: BannerData): CSSProperties {
     style.position = 'fixed';
   } else {
     style.position = 'relative';
+  }
+
+  if (style.position !== 'relative') {
+    style.left = 0;
+    style.right = 0;
+
+    // top vs bottom from embedPlacement
+    const placement = data?.embedPlacement ?? BannerEmbedPlacement.TOP_OF_PAGE;
+    const isTop =
+      placement === BannerEmbedPlacement.TOP_OF_PAGE ||
+      placement === BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT ||
+      placement === BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT;
+    if (isTop) {
+      style.top = 0;
+    } else {
+      style.bottom = 0;
+    }
   }
 
   if (data?.animateWhenEmbedAppears) {
@@ -139,6 +139,28 @@ const BannerDismissButton = memo((props: BannerDismissButtonProps) => {
 
 BannerDismissButton.displayName = 'BannerDismissButton';
 
+interface BannerContentContainerProps {
+  children?: React.ReactNode;
+  style?: CSSProperties;
+  className?: string;
+}
+
+const BannerContentContainer = memo((props: BannerContentContainerProps) => {
+  const { children, style, className } = props;
+  const containerClassName = cn(
+    'h-full w-full relative flex items-center justify-center bg-sdk-banner text-sdk-banner-foreground',
+    className,
+  );
+
+  return (
+    <div className={containerClassName} style={style}>
+      {children}
+    </div>
+  );
+});
+
+BannerContentContainer.displayName = 'BannerContentContainer';
+
 interface BannerRootProps {
   themeSettings: ThemeTypesSetting;
   data: BannerData;
@@ -147,20 +169,10 @@ interface BannerRootProps {
   globalStyle?: string;
   onDismiss?: () => void;
   children?: React.ReactNode;
-  /** Optional ref/callback for the content wrapper div (e.g. for height measurement in builder). */
-  contentContainerRef?: React.Ref<HTMLDivElement>;
 }
 
 const BannerRoot = memo((props: BannerRootProps) => {
-  const {
-    data,
-    zIndex: zIndexProp,
-    assets,
-    onDismiss,
-    themeSettings,
-    children,
-    contentContainerRef,
-  } = props;
+  const { data, zIndex: zIndexProp, assets, onDismiss, themeSettings, children } = props;
   const { globalStyle: derivedGlobalStyle, themeSetting } = useSettingsStyles(themeSettings, {
     type: 'banner',
   });
@@ -175,9 +187,8 @@ const BannerRoot = memo((props: BannerRootProps) => {
       zIndex,
       assets,
       onDismiss,
-      contentContainerRef,
     }),
-    [globalStyle, themeSetting, data, zIndex, assets, onDismiss, contentContainerRef],
+    [globalStyle, themeSetting, data, zIndex, assets, onDismiss],
   );
 
   return <BannerRootContext.Provider value={contextValue}>{children}</BannerRootContext.Provider>;
@@ -204,14 +215,24 @@ BannerContainer.displayName = 'BannerContainer';
 
 interface BannerWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode;
+  /** Force a static, non-sticky/non-overlay wrapper style for previews. */
+  previewMode?: boolean;
 }
 
 /** Shared outer container (usertour-widget-banner + wrapper style) for both Frame and Inline. */
 const BannerWrapper = memo(
   forwardRef<HTMLDivElement, BannerWrapperProps>((props, ref) => {
-    const { children, ...restProps } = props;
+    const { children, previewMode, ...restProps } = props;
     const { data } = useBannerRootContext();
-    const wrapperStyle = useMemo(() => getBannerWrapperStyle(data), [data]);
+    const wrapperStyle = useMemo(() => {
+      if (previewMode) {
+        return {
+          position: 'relative',
+          ['--usertour-widget-banner-height' as string]: 'auto',
+        } as CSSProperties;
+      }
+      return getBannerWrapperStyle(data);
+    }, [data, previewMode]);
     return (
       <div ref={ref} className="usertour-widget-banner" style={wrapperStyle} {...restProps}>
         {children}
@@ -222,27 +243,25 @@ const BannerWrapper = memo(
 
 BannerWrapper.displayName = 'BannerWrapper';
 
-interface BannerFrameProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Content to render inside the banner (e.g. ContentEditorSerialize in runtime). */
-  children?: React.ReactNode;
-}
+type BannerFrameProps = React.ComponentProps<typeof Frame>;
 
 const BannerFrame = memo(
-  forwardRef<HTMLDivElement, BannerFrameProps>((props, ref) => {
-    const { children, ...restProps } = props;
+  forwardRef<HTMLIFrameElement, BannerFrameProps>((props, ref) => {
+    const { children, className, ...restProps } = props;
     const { data, globalStyle, assets } = useBannerRootContext();
     const contentWrapperStyle = useMemo(() => getBannerContentWrapperStyle(data), [data]);
+    const frameClassName = cn('usertour-widget-banner-frame', className);
 
     return (
-      <BannerWrapper ref={ref} {...restProps}>
-        <Frame
-          assets={assets ?? []}
-          className="usertour-widget-banner-frame"
-          defaultStyle={contentWrapperStyle}
-        >
-          <BannerInFrame globalStyle={globalStyle}>{children}</BannerInFrame>
-        </Frame>
-      </BannerWrapper>
+      <Frame
+        ref={ref}
+        assets={assets ?? []}
+        className={frameClassName}
+        defaultStyle={contentWrapperStyle}
+        {...restProps}
+      >
+        <BannerInFrame globalStyle={globalStyle}>{children}</BannerInFrame>
+      </Frame>
     );
   }),
 );
@@ -262,7 +281,12 @@ const BannerInFrame = memo((props: BannerInFrameProps) => {
 
   useEffect(() => {
     if (document?.body) {
+      document.documentElement.style.height = '100%';
+      document.documentElement.style.width = '100%';
       document.body.style.cssText = globalStyle;
+      document.body.style.height = '100%';
+      document.body.style.width = '100%';
+      document.body.style.margin = '0';
       document.body.className = 'usertour-widget-root';
     }
   }, [globalStyle, document]);
@@ -274,24 +298,26 @@ const BannerInFrame = memo((props: BannerInFrameProps) => {
   }, [onDismiss]);
 
   return (
-    <div className="h-full w-full flex items-center justify-center bg-sdk-banner-background text-sdk-banner-foreground">
+    <BannerContentContainer>
       {children}
       {showDismiss && <BannerDismissButton onClick={handleDismiss} />}
-    </div>
+    </BannerContentContainer>
   );
 });
 
 BannerInFrame.displayName = 'BannerInFrame';
 
-interface BannerInlineProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Content to render inside the banner (e.g. ContentEditor in builder, ContentEditorSerialize in runtime). */
+interface BannerPreviewProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Content to render inside the banner (e.g. ContentEditor in builder preview). */
   children?: React.ReactNode;
+  /** Force a static, non-sticky/non-overlay wrapper style for previews. */
+  previewMode?: boolean;
 }
 
-const BannerInline = memo(
-  forwardRef<HTMLDivElement, BannerInlineProps>((props, ref) => {
-    const { children, ...restProps } = props;
-    const { data, onDismiss, contentContainerRef } = useBannerRootContext();
+const BannerPreview = memo(
+  forwardRef<HTMLDivElement, BannerPreviewProps>((props, ref) => {
+    const { children, previewMode, ...restProps } = props;
+    const { data, onDismiss } = useBannerRootContext();
     const contentStyle = useMemo(() => getBannerContentWrapperStyle(data), [data]);
     const showDismiss = data?.allowUsersToDismissEmbed ?? false;
 
@@ -300,20 +326,26 @@ const BannerInline = memo(
     }, [onDismiss]);
 
     return (
-      <BannerWrapper ref={ref} {...restProps}>
-        <div
-          className="h-full w-full relative flex items-center justify-center bg-sdk-banner text-sdk-banner-foreground"
-          ref={contentContainerRef}
-          style={contentStyle}
-        >
+      <BannerWrapper ref={ref} previewMode={previewMode} {...restProps}>
+        <BannerContentContainer style={contentStyle}>
           {children}
           {showDismiss && <BannerDismissButton onClick={handleDismiss} />}
-        </div>
+        </BannerContentContainer>
       </BannerWrapper>
     );
   }),
 );
 
-BannerInline.displayName = 'BannerInline';
+BannerPreview.displayName = 'BannerPreview';
 
-export { BannerRoot, BannerContainer, BannerFrame, BannerInFrame, BannerInline };
+export {
+  BannerRoot,
+  BannerContainer,
+  BannerWrapper,
+  BannerFrame,
+  BannerInFrame,
+  BannerPreview,
+  BannerDismissButton,
+  BannerContentContainer,
+  getBannerContentWrapperStyle,
+};

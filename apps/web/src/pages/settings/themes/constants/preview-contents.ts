@@ -98,6 +98,47 @@ export const LIST_PREVIEW_CONTENT = [
 ] as ContentEditorRoot[];
 
 /**
+ * Preview content for banner theme preview
+ */
+export const BANNER_PREVIEW_CONTENT = [
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          justifyContent: 'justify-center',
+          width: {
+            type: 'fill',
+          },
+          style: {},
+        },
+        children: [
+          {
+            element: {
+              type: 'text',
+              data: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      text: 'This is a banner preview.',
+                    },
+                  ],
+                  align: 'center',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  },
+] as ContentEditorRoot[];
+
+/**
  * Preview content for tooltip theme preview
  */
 export const TOOLTIP_PREVIEW_CONTENT = [

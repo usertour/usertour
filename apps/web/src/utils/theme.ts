@@ -60,6 +60,10 @@ export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
     type: ThemeDetailPreviewType.BUBBLE,
   },
   {
+    name: 'Banner',
+    type: ThemeDetailPreviewType.BANNER,
+  },
+  {
     name: 'Launcher icon',
     type: ThemeDetailPreviewType.LAUNCHER_ICON,
   },

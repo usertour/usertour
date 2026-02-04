@@ -16,6 +16,8 @@ import {
   buildChecklistTaskEventData,
   buildFlowEndedEventData,
   buildQuestionAnsweredEventData,
+  buildBannerSeenEventData,
+  buildBannerDismissedEventData,
   getAnswer,
   assignClientContext,
 } from '@/utils/event-v2';
@@ -829,6 +831,17 @@ export class EventTrackingService {
     register({
       eventName: BizEvents.LAUNCHER_DISMISSED,
       buildEventData: (session, params) => buildLauncherDismissedEventData(session, params),
+    });
+
+    // Banner events
+    register({
+      eventName: BizEvents.BANNER_SEEN,
+      buildEventData: (session) => buildBannerSeenEventData(session),
+    });
+
+    register({
+      eventName: BizEvents.BANNER_DISMISSED,
+      buildEventData: (session) => buildBannerDismissedEventData(session),
     });
 
     // Flow step seen event with conditional FLOW_COMPLETED
