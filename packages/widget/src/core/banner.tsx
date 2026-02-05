@@ -96,8 +96,8 @@ export function getBannerWrapperStyle(data: BannerData): CSSProperties {
 
 function getBannerContentWrapperStyle(data: BannerData): CSSProperties {
   const style: CSSProperties = {};
-  if (data?.maxContentWidth != null) {
-    style.maxWidth = `${data.maxContentWidth}px`;
+  if (data?.maxEmbedWidth != null) {
+    style.maxWidth = `${data.maxEmbedWidth}px`;
   }
   if (data?.borderRadius != null) {
     style.borderRadius = `${data.borderRadius}px`;
