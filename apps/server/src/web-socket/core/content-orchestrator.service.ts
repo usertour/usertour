@@ -15,6 +15,7 @@ import {
   findLatestActivatedCustomContentVersions,
   filterAvailableAutoStartContentVersions,
   isActivedHideRules,
+  isActivedAutoStartRules,
   extractClientTrackConditions,
   evaluateCustomContentVersion,
   extractClientConditionWaitTimers,
@@ -26,6 +27,7 @@ import {
   evaluateChecklistItemsWithContext,
   isSingletonContentType,
   filterSingleSessionContentVersions,
+  isShowOnlyContentType,
   CONTENT_SEEN_EVENTS,
   isVersionMismatchWithActiveSession,
   unsetActiveSessionOnVersionMismatch,
@@ -514,7 +516,7 @@ export class ContentOrchestratorService {
     const customContentVersion = unsetActiveSessionOnVersionMismatch(evaluatedContentVersion);
 
     if (
-      contentType === ContentDataType.BANNER &&
+      isShowOnlyContentType(contentType) &&
       !customContentVersion.session.activeSession &&
       customContentVersion.session.totalSessions > 0
     ) {
@@ -558,6 +560,20 @@ export class ContentOrchestratorService {
       return { success: false, reason: 'No custom content version found' };
     }
 
+    if (isShowOnlyContentType(contentType) && !isActivedAutoStartRules(customContentVersion)) {
+      const retrackConditions = extractClientTrackConditions(
+        [customContentVersion],
+        ConditionExtractionMode.AUTO_START_ONLY,
+      );
+      return {
+        success: true,
+        session,
+        cancelSession: true,
+        retrackConditions,
+        reason: 'Banner show rules not active',
+      };
+    }
+
     const result = await this.handleContentVersion(context, customContentVersion);
     if (!result.success) {
       return result;
@@ -590,10 +606,9 @@ export class ContentOrchestratorService {
       contentType,
     );
 
-    const availableEvaluatedVersions =
-      contentType === ContentDataType.BANNER
-        ? filterSingleSessionContentVersions(evaluatedContentVersions)
-        : evaluatedContentVersions;
+    const availableEvaluatedVersions = isShowOnlyContentType(contentType)
+      ? filterSingleSessionContentVersions(evaluatedContentVersions)
+      : evaluatedContentVersions;
 
     // Early return if no content versions available
     if (availableEvaluatedVersions.length === 0) {
@@ -664,14 +679,16 @@ export class ContentOrchestratorService {
           )
         : evaluatedContentVersions;
 
-    // Strategy 1: Try to start by latest activated content version
-    const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
-      context,
-      availableVersions,
-    );
-    this.logger.debug(`Latest version strategy result: ${latestVersionResult.reason}`);
-    if (latestVersionResult.success) {
-      return latestVersionResult;
+    // Strategy 1: Try to start by latest activated content version (skip for show-only types)
+    if (!isShowOnlyContentType(contentType)) {
+      const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
+        context,
+        availableVersions,
+      );
+      this.logger.debug(`Latest version strategy result: ${latestVersionResult.reason}`);
+      if (latestVersionResult.success) {
+        return latestVersionResult;
+      }
     }
 
     // Strategy 2: Try to start by auto-start conditions
@@ -855,7 +872,7 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { success, preTracks, waitTimers, session, hideRulesActivated } = result;
+    const { success, preTracks, waitTimers, session, cancelSession } = result;
     const { socket, contentType } = context;
     const socketData = await this.getSocketData(socket);
 
@@ -885,7 +902,7 @@ export class ContentOrchestratorService {
     const currentSession = extractSessionByContentType(socketData, contentType);
 
     // If session should be hidden, cancel it directly
-    if (currentSession?.id === session?.id && hideRulesActivated) {
+    if (currentSession?.id === session?.id && cancelSession) {
       return await this.handleSessionCancellation({ ...context, socketData }, result);
     }
 
@@ -897,7 +914,7 @@ export class ContentOrchestratorService {
 
     // After activation, check if cancellation is needed
     // This handles the case where activation changes the session state
-    if (hideRulesActivated) {
+    if (cancelSession) {
       return await this.handleSessionCancellation({ ...context, socketData }, result);
     }
 
@@ -1041,16 +1058,14 @@ export class ContentOrchestratorService {
     );
     // Extract tracking conditions for checklist conditions
     const checklistConditions = extractChecklistTrackConditions(session);
-
-    // Check if hide rules are activated
-    const hideRulesActivated = isActivedHideRules(customContentVersion);
+    const cancelSession = isActivedHideRules(customContentVersion);
 
     return {
       success: true,
       session,
       hideConditions,
       checklistConditions,
-      hideRulesActivated,
+      cancelSession,
       reason: 'Content session created successfully',
     };
   }
@@ -1114,7 +1129,7 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { session, hideConditions = [] } = result;
+    const { session, hideConditions = [], retrackConditions = [] } = result;
     if (!session) {
       return false;
     }
@@ -1123,15 +1138,17 @@ export class ContentOrchestratorService {
     const { environment, externalUserId } = socketData;
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     const sessionId = session.id;
+    const trackConditions =
+      hideConditions.length > 0 ? [...hideConditions] : [...retrackConditions];
 
-    this.logger.debug(`Hide rules are activated, canceling session, sessionId: ${sessionId}`);
+    this.logger.debug(`Canceling session, sessionId: ${sessionId}`);
     const cancelSessionParams: CancelSessionParams = {
       server,
       socket,
       socketData,
       sessionId,
       contentType,
-      trackConditions: [...hideConditions],
+      trackConditions,
     };
     return await this.cancelSessionInRoom(cancelSessionParams, roomId);
   }
