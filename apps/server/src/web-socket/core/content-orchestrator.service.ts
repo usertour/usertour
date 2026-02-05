@@ -25,6 +25,7 @@ import {
   canSendChecklistCompletedEvent,
   evaluateChecklistItemsWithContext,
   isSingletonContentType,
+  filterSingleSessionContentVersions,
   CONTENT_SEEN_EVENTS,
   isVersionMismatchWithActiveSession,
   unsetActiveSessionOnVersionMismatch,
@@ -512,6 +513,17 @@ export class ContentOrchestratorService {
     // If version mismatches, clear activeSession
     const customContentVersion = unsetActiveSessionOnVersionMismatch(evaluatedContentVersion);
 
+    if (
+      contentType === ContentDataType.BANNER &&
+      !customContentVersion.session.activeSession &&
+      customContentVersion.session.totalSessions > 0
+    ) {
+      return {
+        success: false,
+        reason: 'Banner already has a completed session',
+      };
+    }
+
     const steps = customContentVersion?.steps ?? [];
     const stepCvid = options?.stepCvid ?? (!options?.continue ? steps?.[0]?.cvid : undefined);
 
@@ -578,8 +590,13 @@ export class ContentOrchestratorService {
       contentType,
     );
 
+    const availableEvaluatedVersions =
+      contentType === ContentDataType.BANNER
+        ? filterSingleSessionContentVersions(evaluatedContentVersions)
+        : evaluatedContentVersions;
+
     // Early return if no content versions available
-    if (evaluatedContentVersions.length === 0) {
+    if (availableEvaluatedVersions.length === 0) {
       return {
         success: false,
         reason: 'No content versions available',
@@ -591,7 +608,7 @@ export class ContentOrchestratorService {
       const excludedResult = await this.executeContentStartStrategies(
         context,
         contentType,
-        evaluatedContentVersions,
+        availableEvaluatedVersions,
         excludeContentIds,
       );
 
@@ -615,7 +632,11 @@ export class ContentOrchestratorService {
     }
 
     // Second attempt: Try with all content versions (no exclusions)
-    return await this.executeContentStartStrategies(context, contentType, evaluatedContentVersions);
+    return await this.executeContentStartStrategies(
+      context,
+      contentType,
+      availableEvaluatedVersions,
+    );
   }
 
   /**
@@ -1636,10 +1657,7 @@ export class ContentOrchestratorService {
 
     // Keep versions that have active session OR have total sessions = 0
     // Filter out versions that have neither active session nor total sessions = 0
-    const activeEvaluatedVersions = evaluatedVersions.filter(
-      (contentVersion) =>
-        contentVersion.session.activeSession || contentVersion.session.totalSessions === 0,
-    );
+    const activeEvaluatedVersions = filterSingleSessionContentVersions(evaluatedVersions);
 
     const availableVersions = filterAvailableAutoStartContentVersions(
       activeEvaluatedVersions,

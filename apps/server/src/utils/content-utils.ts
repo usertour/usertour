@@ -678,6 +678,18 @@ export const isSingletonContentType = (contentType: ContentDataType): boolean =>
 };
 
 /**
+ * Filters content versions to those that are either active or have never had a session.
+ * This enforces "one session per content" behavior (used by Launcher and Banner).
+ */
+export const filterSingleSessionContentVersions = (
+  customContentVersions: CustomContentVersion[],
+): CustomContentVersion[] =>
+  customContentVersions.filter(
+    (contentVersion) =>
+      contentVersion.session.activeSession || contentVersion.session.totalSessions === 0,
+  );
+
+/**
  * Checks if the content version ID doesn't match the active session's version ID
  * This happens when the content type is FLOW, there's an active session,
  * and the current version ID doesn't match the active session's version ID
