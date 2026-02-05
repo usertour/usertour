@@ -1,9 +1,9 @@
 import { AssetAttributes } from '@usertour-packages/frame';
 import {
-  BannerFrame,
   BannerRoot,
-  BannerWrapper,
   ContentEditorSerialize,
+  BannerFrame,
+  getBannerWrapperStyle,
 } from '@usertour-packages/widget';
 import {
   BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
@@ -13,7 +13,16 @@ import {
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
-import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+  useEffect,
+  useState,
+  CSSProperties,
+} from 'react';
+import { createPortal } from 'react-dom';
 
 import { document } from '@/utils';
 
@@ -44,6 +53,26 @@ type BannerMountPlacement = {
   parent: HTMLElement;
   insertMode: 'append' | 'prepend' | 'before' | 'after';
   anchor?: Element;
+};
+
+/**
+ * Applies React CSSProperties to an HTMLElement's inline style.
+ * Uses the DOM's native style assignment so the browser normalizes values
+ * (e.g. numbers for dimensions become "px", unitless props like zIndex stay numeric).
+ * Custom properties (--*) use setProperty for correct handling.
+ */
+const applyStyleObject = (el: HTMLElement, style: CSSProperties) => {
+  el.style.cssText = '';
+  for (const [key, value] of Object.entries(style)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+    if (key.startsWith('--')) {
+      el.style.setProperty(key, String(value));
+      continue;
+    }
+    (el.style as unknown as Record<string, string | number>)[key] = value;
+  }
 };
 
 const resolveBannerPlacement = (
@@ -131,7 +160,8 @@ const useBannerStore = (banner: BannerWidgetInstance) => {
 
 export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   const store = useBannerStore(banner);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const mountElRef = useRef<HTMLDivElement | null>(null);
+  const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
 
   const { bannerData, themeSettings, assets, userAttributes, targetElement, zIndex, globalStyle } =
     store ?? {};
@@ -141,13 +171,25 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
 
   const contents = useMemo(() => bannerData?.contents ?? [], [bannerData?.contents]);
 
-  useLayoutEffect(() => {
-    if (!store || !bannerData) {
-      return;
+  useEffect(() => {
+    if (!mountElRef.current && document?.createElement) {
+      const el = document.createElement('div');
+      el.className = 'usertour-widget-banner';
+      mountElRef.current = el;
+      setPortalEl(el);
     }
 
-    const wrapperEl = wrapperRef.current;
-    if (!wrapperEl) {
+    return () => {
+      const mountEl = mountElRef.current;
+      if (mountEl?.parentNode) {
+        mountEl.parentNode.removeChild(mountEl);
+      }
+      mountElRef.current = null;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!store || !bannerData) {
       return;
     }
 
@@ -155,17 +197,22 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
       return;
     }
 
+    const mountEl = mountElRef.current;
+    if (!mountEl) {
+      return;
+    }
+
+    const wrapperStyle = getBannerWrapperStyle(bannerData);
+    mountEl.className = 'usertour-widget-banner';
+    applyStyleObject(mountEl, wrapperStyle);
+
     const resolved = resolveBannerPlacement(placement, targetElement);
     if (!resolved) {
       return;
     }
 
-    insertMountEl(wrapperEl, resolved);
-
-    return () => {
-      wrapperEl.remove();
-    };
-  }, [store, bannerData, placement, targetElement, requiresElement]);
+    insertMountEl(mountEl, resolved);
+  }, [store, bannerData, placement, targetElement, requiresElement, portalEl]);
 
   if (!store || !bannerData || !themeSettings) {
     return null;
@@ -175,7 +222,12 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
     return null;
   }
 
-  return (
+  const mountEl = portalEl;
+  if (!mountEl) {
+    return null;
+  }
+
+  return createPortal(
     <BannerRoot
       themeSettings={themeSettings}
       data={bannerData}
@@ -184,16 +236,15 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
       globalStyle={globalStyle}
       onDismiss={banner.handleDismiss}
     >
-      <BannerWrapper ref={wrapperRef}>
-        <BannerFrame>
-          <ContentEditorSerialize
-            contents={contents}
-            userAttributes={userAttributes}
-            onClick={banner.handleOnClick}
-          />
-        </BannerFrame>
-      </BannerWrapper>
-    </BannerRoot>
+      <BannerFrame>
+        <ContentEditorSerialize
+          contents={contents}
+          userAttributes={userAttributes}
+          onClick={banner.handleOnClick}
+        />
+      </BannerFrame>
+    </BannerRoot>,
+    mountEl,
   );
 };
 
