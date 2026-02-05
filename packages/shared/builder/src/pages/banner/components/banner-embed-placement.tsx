@@ -46,8 +46,19 @@ export const BannerEmbedPlacementSelect = () => {
 
   const handleTargetChange = useCallback(
     (value: Partial<ElementSelectorPropsData>) => {
+      const nextContainer = { ...localData?.containerElement, ...value };
+      let nextType = nextContainer.type;
+
+      if (!nextType) {
+        if (value.customSelector) {
+          nextType = 'manual';
+        } else if (value.selectors) {
+          nextType = 'auto';
+        }
+      }
+
       updateLocalData({
-        containerElement: { ...localData?.containerElement, ...value },
+        containerElement: nextType ? { ...nextContainer, type: nextType } : nextContainer,
       });
     },
     [localData?.containerElement, updateLocalData],

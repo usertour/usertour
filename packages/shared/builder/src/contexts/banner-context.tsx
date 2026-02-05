@@ -104,7 +104,10 @@ export function BannerProvider(props: BannerProviderProps): JSX.Element {
     }
 
     const serverData = (currentVersion.data as BannerData | undefined) ?? DEFAULT_BANNER_DATA;
-    const merged: BannerData = { ...DEFAULT_BANNER_DATA, ...serverData };
+    const merged: BannerData = {
+      ...DEFAULT_BANNER_DATA,
+      ...serverData,
+    };
     if (serverData?.contents?.length === 0 || isUndefined(serverData?.contents)) {
       merged.contents = getDefaultDataForType('tooltip') as ContentEditorRoot[];
     }
