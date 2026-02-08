@@ -6,12 +6,13 @@ import {
   offset,
   shift,
   limitShift,
-  hide,
   arrow as floatingUIarrow,
   flip,
   size,
 } from '@floating-ui/react-dom';
-import type { Rect, Placement, Middleware, SideObject } from '@floating-ui/dom';
+import type { Rect, Placement, SideObject } from '@floating-ui/dom';
+import { createPlatformWithDetachedReferenceFallback } from '../utils/floating-ui-platform';
+import { createCustomHideMiddleware } from '../utils/floating-ui-middleware';
 import { getSideAndAlignFromPlacement, transformOrigin } from '../utils/position';
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
@@ -86,7 +87,15 @@ export const usePopperContent = (
   const { triggerRef, zIndex, setReferenceHidden, setRect, setOverflow } = context;
 
   const arrowRef = useRef(null);
+  const lastReferenceRectRef = useRef<Rect | null>(null);
   const referenceEl = triggerRef?.current as ReferenceElement;
+
+  // Clear cached rect when the reference element changes (e.g. step change) so we never use a
+  // previous step's rect for a new target.
+  useEffect(() => {
+    lastReferenceRectRef.current = null;
+  }, [referenceEl]);
+
   const arrowRectSize = useSize(arrowRef.current);
   const arrowWidth = arrowRectSize?.width ?? 0;
   const arrowHeight = arrowRectSize?.height ?? 0;
@@ -105,35 +114,12 @@ export const usePopperContent = (
     altBoundary: hasExplicitBoundaries,
   };
 
-  // Custom middleware that extends the original hide logic
-  const customHideMiddleware = (options: {
-    strategy?: 'referenceHidden' | 'escaped';
-    padding?: number | Partial<Record<Side, number>>;
-    boundary?: Boundary | Boundary[];
-  }): Middleware => ({
-    name: 'customHide',
-    options,
-    async fn(state) {
-      const { rects } = state;
-      const originalHide = hide({ strategy: 'referenceHidden', ...detectOverflowOptions });
-      const originalResult = await originalHide.fn(state);
-      const { width, height, x, y } = rects.reference;
-      const isInvalid =
-        width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
-      const referenceHidden = originalResult.data?.referenceHidden || isInvalid;
-      const escaped = originalResult.data?.escaped || false;
-
-      return {
-        data: {
-          referenceHidden,
-          escaped,
-        },
-      };
-    },
-  });
-
-  // Only execute useFloating when enabled
-  const { refs, floatingStyles, placement, middlewareData } = useFloating({
+  // Source fix: override platform.getElementRects so that when the reference is detached from the
+  // DOM we supply the last known reference rect instead of reading getBoundingClientRect (which
+  // returns 0,0). This prevents (0,0) from ever being fed into the position pipeline and avoids
+  // the top-left flash. We always pass the reference so autoUpdate and middleware run normally.
+  const { refs, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
+    open: enabled,
     strategy: 'fixed',
     placement: desiredPlacement,
     whileElementsMounted: (...args) => {
@@ -146,7 +132,7 @@ export const usePopperContent = (
       reference: enabled ? referenceEl : null,
     },
     platform: {
-      ...platform,
+      ...createPlatformWithDetachedReferenceFallback(lastReferenceRectRef),
       convertOffsetParentRelativeRectToViewportRelativeRect(...args) {
         const rect = platform.convertOffsetParentRelativeRectToViewportRelativeRect(
           ...args,
@@ -173,12 +159,7 @@ export const usePopperContent = (
       }),
       arrowRef && floatingUIarrow({ element: arrowRef, padding: arrowPadding }),
       transformOrigin({ arrowWidth, arrowHeight }),
-      hideWhenDetached &&
-        customHideMiddleware({
-          strategy: 'referenceHidden',
-          padding: detectOverflowOptions.padding,
-          boundary: detectOverflowOptions.boundary,
-        }),
+      hideWhenDetached && createCustomHideMiddleware(detectOverflowOptions),
       {
         name: 'overflowState',
         async fn(state) {
@@ -213,11 +194,17 @@ export const usePopperContent = (
 
   const composedRefs = useComposedRefs((node: any) => refs.setFloating(node));
 
+  const referenceHiddenByMiddleware = middlewareData.customHide?.referenceHidden === true;
+  const applyOffScreenWhenNotPositioned = isPositioned === false || referenceHiddenByMiddleware;
+
   const inlineStyle: React.CSSProperties = {
     ...finalStyles,
     width: width,
     zIndex: zIndex + 1,
-    ...(middlewareData.customHide?.referenceHidden ? hiddenStyle : { opacity: 1 }),
+    ...(referenceHiddenByMiddleware ? hiddenStyle : { opacity: 1 }),
+    ...(applyOffScreenWhenNotPositioned
+      ? { transform: 'translate(0, -200%)', transition: 'none' }
+      : {}),
   };
 
   return {

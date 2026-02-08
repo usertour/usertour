@@ -1,8 +1,11 @@
-import { forwardRef, useRef, createContext, useContext } from 'react';
+import { forwardRef, useRef, createContext, useContext, useEffect } from 'react';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { autoUpdate, ReferenceElement } from '@floating-ui/dom';
-import { useFloating, offset, shift, limitShift, hide, flip, size } from '@floating-ui/react-dom';
-import type { Middleware, Placement } from '@floating-ui/dom';
+import { useFloating, offset, shift, limitShift, flip, size } from '@floating-ui/react-dom';
+import type { Placement } from '@floating-ui/dom';
+import { createCustomHideMiddleware } from './utils/floating-ui-middleware';
+import { createPlatformWithDetachedReferenceFallback } from './utils/floating-ui-platform';
+import type { Rect } from '@floating-ui/dom';
 import { getRegisteredIconNames, getIcon } from '@usertour-packages/icons';
 import {
   Align,
@@ -290,6 +293,13 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
   } = props;
 
   const referenceEl = referenceRef?.current as ReferenceElement;
+  const lastReferenceRectRef = useRef<Rect | null>(null);
+
+  // Clear cached rect when the reference element changes so we never use a previous rect.
+  useEffect(() => {
+    lastReferenceRectRef.current = null;
+  }, [referenceEl]);
+
   const { globalStyle } = useLauncherContext();
 
   const desiredPlacement = `${side}${align !== 'center' ? `-${align}` : ''}` as Placement;
@@ -308,33 +318,6 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
     altBoundary: hasExplicitBoundaries,
   };
 
-  // Custom middleware that extends the original hide logic
-  const customHideMiddleware = (options: {
-    strategy?: 'referenceHidden' | 'escaped';
-    padding?: number | Partial<Record<Side, number>>;
-    boundary?: Boundary | Boundary[];
-  }): Middleware => ({
-    name: 'customHide',
-    options,
-    async fn(state) {
-      const { rects } = state;
-      const originalHide = hide({ strategy: 'referenceHidden', ...detectOverflowOptions });
-      const originalResult = await originalHide.fn(state);
-      const { width, height, x, y } = rects.reference;
-      const isInvalid =
-        width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
-      const referenceHidden = originalResult.data?.referenceHidden || isInvalid;
-      const escaped = originalResult.data?.escaped || false;
-
-      return {
-        data: {
-          referenceHidden,
-          escaped,
-        },
-      };
-    },
-  });
-
   const { refs, floatingStyles, isPositioned, middlewareData } = useFloating({
     // default to `fixed` strategy so users don't have to pick and we also avoid focus scroll issues
     strategy: 'fixed',
@@ -348,6 +331,7 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
     elements: {
       reference: referenceEl,
     },
+    platform: createPlatformWithDetachedReferenceFallback(lastReferenceRectRef),
     middleware: [
       offset({
         mainAxis: sideOffset,
@@ -364,12 +348,7 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
       size({
         ...detectOverflowOptions,
       }),
-      hideWhenDetached &&
-        customHideMiddleware({
-          strategy: 'referenceHidden',
-          padding: detectOverflowOptions.padding,
-          boundary: detectOverflowOptions.boundary,
-        }),
+      hideWhenDetached && createCustomHideMiddleware(detectOverflowOptions),
     ],
   });
 

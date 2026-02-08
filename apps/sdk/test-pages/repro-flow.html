@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SDK Flow Repro - Popper Flash</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        padding: 40px;
+      }
+      .stage {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+      }
+      .card {
+        padding: 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fafafa;
+      }
+      .target {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 120px;
+        min-height: 40px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: 1px solid #999;
+        background: white;
+      }
+      .test-1 { margin-top: 20px; }
+      .test-3 { margin-top: 140px; }
+      .test-4 { margin-top: 260px; }
+
+      /* Step 3 target: change size on hover to trigger reflow and reproduce first-frame flash */
+      .card-repro-step3:hover .target.test-4 {
+        padding: 12px 24px;
+        transition: padding 0.15s ease;
+      }
+
+      /* Clear "move from" zone to simulate customer scenario (mouse passes over target) */
+      .repro-move-from {
+        margin-bottom: 12px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: #d1fae5;
+        border: 1px solid #10b981;
+        font-size: 13px;
+        color: #065f46;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SDK Flow Repro – Popper first-frame flash</h1>
+    <p><strong>Prerequisite:</strong> The flow <code>cm76brgn0000899t48qc7jz5o</code> must have Step 1 target <code>.test-1</code>, Step 2 target <code>.test-3</code>, Step 3 target <code>.test-4</code>. Otherwise steps will not align with the DOM below.</p>
+    <p>Flow: Step 1 → <code>.test-1</code>, Step 2 → <code>.test-3</code>, Step 3 → <code>.test-4</code>.</p>
+    <p><strong>Reproduce / verify:</strong> Start the tour, go to Step 3 (tooltip on .test-4). Move the mouse from a button toward the step's button so that it <strong>passes over the target</strong> (.test-4). The target's hover can trigger reflow; the fix keeps the popper at the last good position (no flash from top-left).</p>
+    <p><strong>Simulate (no customer env):</strong> Go to Step 3, then move the mouse <strong>from the green area below</strong> toward the step's "Next" so the cursor <strong>passes over the highlighted .test-4</strong> – on enter, the target is briefly detached ~100ms then re-inserted. With the fix, the popper should not flash to the left. Move the cursor away then enter again to retry (~1s cooldown).</p>
+
+    <div class="stage">
+      <div class="card">
+        <div class="target test-1">.test-1 target</div>
+      </div>
+      <div class="card card-repro-step3">
+        <!-- Simulate "other button": move from here toward step's Next so path crosses .test-4 -->
+        <div class="repro-move-from" title="Move from here toward the step Next button">
+          Simulate: move from here → toward Next (pass over .test-4)
+        </div>
+        <div class="target test-3">.test-3 target</div>
+        <div class="target test-4">.test-4 target</div>
+      </div>
+    </div>
+
+    <script>
+      window.USERTOURJS_ENV_VARS = {
+        WS_URI: "http://localhost:3000/",
+      };
+      window.__UT_POPPER_DEBUG = true;
+    </script>
+    <script type="module" src="/src/usertour.ts"></script>
+    <script>
+      window.onload = async function () {
+        if (window.usertour) {
+          usertour.init("cm76brgn0000899t48qc7jz5o");
+
+          usertour.setTargetMissingSeconds(10);
+
+          await usertour.identify("user-3333333333336", {
+            name: "Iric L",
+            email: "iric-123@usertour.com",
+            male: true,
+            sdsdd: 13,
+            registerAt: "2024-03-29T10:05:45-06:00",
+            device_type: window.innerWidth > 800 ? "desktop" : "mobile",
+          });
+          await usertour.updateUser({
+            website_lead: true,
+            loginName: "222222222222",
+            like: ["123", "456"],
+          });
+          await usertour.group(
+            "group-" + new Date().getTime().toString(),
+            {
+              name: "Iric L",
+              isGirl: true,
+            },
+            { membership: { isBook: true, Content: "ccccjjjjj", isMan: true } }
+          );
+          // usertour.identifyAnonymous({
+          //   website_lead: true,
+          // });
+        }
+      };
+    </script>
+    <script>
+      (function setupTargetDetachOnEnter() {
+        var inFlight = false;
+        var cooldown = 0;
+        // Placeholder must NOT match the step target selector (e.g. no .test-4), so the tour
+        // keeps triggerRef pointing at the detached node instead of finding the placeholder.
+        function detachThenReattach() {
+          if (inFlight) return;
+          var now = Date.now();
+          if (now < cooldown) return;
+          var target = document.querySelector('.target.test-4');
+          if (!target || !target.parentElement) return;
+          inFlight = true;
+          cooldown = now + 1000;
+          var parent = target.parentElement;
+          var placeholder = document.createElement('div');
+          placeholder.className = 'ut-repro-placeholder';
+          placeholder.setAttribute('aria-hidden', 'true');
+          placeholder.style.cssText = 'min-width:120px;min-height:40px;visibility:hidden;pointer-events:none;';
+          parent.replaceChild(placeholder, target);
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              setTimeout(function () {
+                if (placeholder.parentElement) placeholder.parentElement.replaceChild(target, placeholder);
+                inFlight = false;
+              }, 120);
+            });
+          });
+        }
+        function bind(el) {
+          if (el.dataset.reproDetachBound) return;
+          el.dataset.reproDetachBound = '1';
+          el.addEventListener('mouseenter', detachThenReattach);
+        }
+        function tryBind() {
+          var el = document.querySelector('.target.test-4');
+          if (el) bind(el);
+        }
+        tryBind();
+        document.body.addEventListener('click', tryBind);
+      })();
+
+      (function trackPopperFlash() {
+        const logs = [];
+        window.__UT_FLASH_LOGS = logs;
+
+        function parseTransform(transform) {
+          if (!transform || transform === "none") {
+            return { x: 0, y: 0 };
+          }
+          const match = transform.match(/matrix\\(([^)]+)\\)/);
+          if (match) {
+            const parts = match[1].split(",").map((v) => parseFloat(v.trim()));
+            if (parts.length >= 6) {
+              return { x: parts[4], y: parts[5] };
+            }
+          }
+          const translateMatch = transform.match(/translate\\(([^,]+),\\s*([^)]+)\\)/);
+          if (translateMatch) {
+            return {
+              x: parseFloat(translateMatch[1]),
+              y: parseFloat(translateMatch[2]),
+            };
+          }
+          return { x: 0, y: 0 };
+        }
+
+        function trackElement(el) {
+          if (el.dataset.usertourTracked) return;
+          el.dataset.usertourTracked = "1";
+
+          const start = performance.now();
+          let sawZero = false;
+          let lastPos = null;
+          let lastTop = null;
+          let lastLeft = null;
+          let lastRect = null;
+          let frames = 0;
+
+          function tick() {
+            const style = window.getComputedStyle(el);
+            const pos = parseTransform(style.transform);
+            const top = Number.isNaN(parseFloat(style.top)) ? null : parseFloat(style.top);
+            const left = Number.isNaN(parseFloat(style.left)) ? null : parseFloat(style.left);
+            const rect = el.getBoundingClientRect();
+            const rectSnapshot = {
+              x: Math.round(rect.x),
+              y: Math.round(rect.y),
+              width: Math.round(rect.width),
+              height: Math.round(rect.height),
+            };
+
+            if (
+              !lastPos ||
+              pos.x !== lastPos.x ||
+              pos.y !== lastPos.y ||
+              top !== lastTop ||
+              left !== lastLeft ||
+              !lastRect ||
+              rectSnapshot.x !== lastRect.x ||
+              rectSnapshot.y !== lastRect.y
+            ) {
+              logs.push({
+                t: Math.round(performance.now() - start),
+                pos,
+                transform: style.transform,
+                top,
+                left,
+                rect: rectSnapshot,
+              });
+            }
+
+            const atOrigin =
+              (Math.abs(rectSnapshot.x) <= 1 && Math.abs(rectSnapshot.y) <= 1) ||
+              (pos.x === 0 && pos.y === 0 && (top === null || Math.abs(top) <= 1) && (left === null || Math.abs(left) <= 1));
+
+            if (atOrigin) {
+              sawZero = true;
+            } else if (sawZero) {
+              console.log("[UT Flash Detected]", { fromZero: true, pos, top, left, rect: rectSnapshot });
+              sawZero = false;
+            }
+
+            lastPos = pos;
+            lastTop = top;
+            lastLeft = left;
+            lastRect = rectSnapshot;
+            frames += 1;
+            if (frames < 120) {
+              requestAnimationFrame(tick);
+            } else {
+              console.log("[UT Flash Log]", logs);
+            }
+          }
+
+          requestAnimationFrame(tick);
+        }
+
+        const observer = new MutationObserver(() => {
+          const nodes = document.querySelectorAll("[data-usertour-popper-content-wrapper]");
+          nodes.forEach((node) => trackElement(node));
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+      })();
+    </script>
+  </body>
+</html>
