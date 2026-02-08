@@ -41,7 +41,7 @@
         transition: padding 0.15s ease;
       }
 
-      /* Clear “move from” zone to simulate customer scenario (mouse passes over target) */
+      /* Clear "move from" zone to simulate customer scenario (mouse passes over target) */
       .repro-move-from {
         margin-bottom: 12px;
         padding: 8px 12px;
@@ -57,8 +57,8 @@
     <h1>SDK Flow Repro – Popper first-frame flash</h1>
     <p><strong>Prerequisite:</strong> The flow <code>cm76brgn0000899t48qc7jz5o</code> must have Step 1 target <code>.test-1</code>, Step 2 target <code>.test-3</code>, Step 3 target <code>.test-4</code>. Otherwise steps will not align with the DOM below.</p>
     <p>Flow: Step 1 → <code>.test-1</code>, Step 2 → <code>.test-3</code>, Step 3 → <code>.test-4</code>.</p>
-    <p><strong>Reproduce / verify:</strong> Start the tour, go to Step 3 (tooltip on .test-4). Move the mouse from a button toward the step’s button so that it <strong>passes over the target</strong> (.test-4). The target’s hover can trigger reflow; the fix keeps the popper at the last good position (no flash from top-left).</p>
-    <p><strong>Simulate (no customer env):</strong> Go to Step 3, then move the mouse <strong>from the green area below</strong> toward the step’s “Next” so the cursor <strong>passes over the highlighted .test-4</strong> – on enter, the target is briefly detached ~100ms then re-inserted. With the fix, the popper should not flash to the left. Move the cursor away then enter again to retry (~1s cooldown).</p>
+    <p><strong>Reproduce / verify:</strong> Start the tour, go to Step 3 (tooltip on .test-4). Move the mouse from a button toward the step's button so that it <strong>passes over the target</strong> (.test-4). The target's hover can trigger reflow; the fix keeps the popper at the last good position (no flash from top-left).</p>
+    <p><strong>Simulate (no customer env):</strong> Go to Step 3, then move the mouse <strong>from the green area below</strong> toward the step's "Next" so the cursor <strong>passes over the highlighted .test-4</strong> – on enter, the target is briefly detached ~100ms then re-inserted. With the fix, the popper should not flash to the left. Move the cursor away then enter again to retry (~1s cooldown).</p>
 
     <div class="stage">
       <div class="card">
