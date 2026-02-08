@@ -6,12 +6,13 @@ import {
   offset,
   shift,
   limitShift,
-  hide,
   arrow as floatingUIarrow,
   flip,
   size,
 } from '@floating-ui/react-dom';
-import type { Rect, Placement, Middleware, SideObject } from '@floating-ui/dom';
+import type { Rect, Placement, SideObject } from '@floating-ui/dom';
+import { createPlatformWithDetachedReferenceFallback } from '../utils/floating-ui-platform';
+import { createCustomHideMiddleware } from '../utils/floating-ui-middleware';
 import { getSideAndAlignFromPlacement, transformOrigin } from '../utils/position';
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
@@ -113,33 +114,6 @@ export const usePopperContent = (
     altBoundary: hasExplicitBoundaries,
   };
 
-  // Custom middleware that extends the original hide logic
-  const customHideMiddleware = (options: {
-    strategy?: 'referenceHidden' | 'escaped';
-    padding?: number | Partial<Record<Side, number>>;
-    boundary?: Boundary | Boundary[];
-  }): Middleware => ({
-    name: 'customHide',
-    options,
-    async fn(state) {
-      const { rects } = state;
-      const originalHide = hide({ strategy: 'referenceHidden', ...detectOverflowOptions });
-      const originalResult = await originalHide.fn(state);
-      const { width, height, x, y } = rects.reference;
-      const isInvalid =
-        width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
-      const referenceHidden = originalResult.data?.referenceHidden || isInvalid;
-      const escaped = originalResult.data?.escaped || false;
-
-      return {
-        data: {
-          referenceHidden,
-          escaped,
-        },
-      };
-    },
-  });
-
   // Source fix: override platform.getElementRects so that when the reference is detached from the
   // DOM we supply the last known reference rect instead of reading getBoundingClientRect (which
   // returns 0,0). This prevents (0,0) from ever being fed into the position pipeline and avoids
@@ -158,19 +132,7 @@ export const usePopperContent = (
       reference: enabled ? referenceEl : null,
     },
     platform: {
-      ...platform,
-      async getElementRects(args) {
-        const result = await platform.getElementRects(args);
-        const ref = args.reference;
-        if (ref instanceof Element) {
-          if (ref.isConnected) {
-            lastReferenceRectRef.current = result.reference;
-          } else if (lastReferenceRectRef.current != null) {
-            return { ...result, reference: lastReferenceRectRef.current };
-          }
-        }
-        return result;
-      },
+      ...createPlatformWithDetachedReferenceFallback(lastReferenceRectRef),
       convertOffsetParentRelativeRectToViewportRelativeRect(...args) {
         const rect = platform.convertOffsetParentRelativeRectToViewportRelativeRect(
           ...args,
@@ -197,12 +159,7 @@ export const usePopperContent = (
       }),
       arrowRef && floatingUIarrow({ element: arrowRef, padding: arrowPadding }),
       transformOrigin({ arrowWidth, arrowHeight }),
-      hideWhenDetached &&
-        customHideMiddleware({
-          strategy: 'referenceHidden',
-          padding: detectOverflowOptions.padding,
-          boundary: detectOverflowOptions.boundary,
-        }),
+      hideWhenDetached && createCustomHideMiddleware(detectOverflowOptions),
       {
         name: 'overflowState',
         async fn(state) {
