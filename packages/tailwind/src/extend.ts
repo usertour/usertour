@@ -121,8 +121,8 @@ export const extendSdk = {
   fontWeight: {
     'sdk-normal': 'var(--usertour-font-weight)',
     'sdk-bold': 'var(--usertour-font-weight-bold)',
-    'sdk-primary': 'var(--usertour-font-weight-primary)',
-    'sdk-secondary': 'var(--usertour-font-weight-secondary)',
+    'sdk-primary': 'var(--usertour-primary-font-weight)',
+    'sdk-secondary': 'var(--usertour-secondary-font-weight)',
     'sdk-checklist-trigger': 'var(--usertour-checklist-trigger-font-weight)',
   },
   keyframes: {
