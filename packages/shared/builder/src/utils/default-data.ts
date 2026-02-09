@@ -172,7 +172,7 @@ const defaultHiddenContent = [
               data: {
                 action: 'goto',
                 text: 'Next',
-                type: 'default',
+                type: 'primary',
               },
               margin: {
                 top: 0,
@@ -290,7 +290,7 @@ const defaultModalContent = [
             element: {
               data: {
                 text: "Let's create a flow",
-                type: 'default',
+                type: 'primary',
                 action: 'goto',
                 actions: [
                   {

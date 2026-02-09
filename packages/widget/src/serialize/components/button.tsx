@@ -1,23 +1,14 @@
 // Button serialize component for SDK rendering
 
 import type { ContentEditorButtonElement } from '@usertour/types';
+import { ButtonSemanticType, DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/types';
 import { memo, useCallback, useMemo, useState } from 'react';
 
 import { Button } from '../../primitives';
+import { useButtonContext } from '../../core/banner';
+import { resolveButtonVariant } from '../../utils/button';
 import type { MarginStyleProps } from '../types';
 import { transformMarginStyle } from '../utils';
-
-// Valid button variants for widget Button component
-type ValidButtonVariant = 'default' | 'secondary' | undefined;
-
-// Map element type to valid button variant
-const mapButtonVariant = (type?: string): ValidButtonVariant => {
-  if (type === 'default' || type === 'secondary') {
-    return type;
-  }
-  // 'link' and other types default to 'default'
-  return undefined;
-};
 
 // Utility function for transforming element to style
 const transformsStyle = (element: ContentEditorButtonElement): MarginStyleProps => {
@@ -45,8 +36,21 @@ export const ButtonSerialize = memo((props: ButtonSerializeProps) => {
     }
   }, [onClick, element]);
 
+  // Detect rendering context (default or banner)
+  const buttonContext = useButtonContext();
+
+  // Get semantic type from element, ensure it's valid
+  const semanticType: ButtonSemanticType =
+    (element.data?.type as ButtonSemanticType) || DEFAULT_BUTTON_SEMANTIC_TYPE;
+
+  // Memoize variant resolution
+  const buttonVariant = useMemo(
+    () => resolveButtonVariant(semanticType, buttonContext),
+    [semanticType, buttonContext],
+  );
+
+  // Memoize style transformation
   const buttonStyle = useMemo(() => transformsStyle(element), [element.margin]);
-  const buttonVariant = useMemo(() => mapButtonVariant(element.data?.type), [element.data?.type]);
 
   return (
     <Button

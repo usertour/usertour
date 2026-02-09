@@ -13,7 +13,10 @@ import {
 import { ReactNode } from 'react';
 import { UseMeasureRect } from 'react-use/lib/useMeasure';
 import { Descendant } from 'slate';
-export { ContentEditorElementType, ContentEditorSideBarType } from '@usertour/types';
+export {
+  ContentEditorElementType,
+  ContentEditorSideBarType,
+} from '@usertour/types';
 export type {
   ContentEditorUploadRequestOption,
   ContentEditorUploadFunc,

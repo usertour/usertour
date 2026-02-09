@@ -89,6 +89,7 @@ export const BannerEmbed = () => {
     ContentEditorElementType.IMAGE,
     ContentEditorElementType.EMBED,
     ContentEditorElementType.TEXT,
+    ContentEditorElementType.BUTTON,
   ];
 
   const previewWidth = data.maxEmbedWidth ?? DEFAULT_BANNER_PREVIEW_WIDTH;

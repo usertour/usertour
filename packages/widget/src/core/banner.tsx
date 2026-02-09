@@ -42,6 +42,17 @@ const useBannerRootContext = () => {
   return context;
 };
 
+/** Returns Banner context when inside BannerRoot, null otherwise. Use for optional Banner-aware behavior (e.g. CTA button variants). */
+const useOptionalBannerRootContext = (): BannerRootContextValue | null => {
+  return useContext(BannerRootContext);
+};
+
+/** Detects the rendering context: 'banner' if inside BannerRoot, 'default' otherwise */
+function useButtonContext(): 'banner' | 'default' {
+  const bannerContext = useOptionalBannerRootContext();
+  return bannerContext != null ? 'banner' : 'default';
+}
+
 /**
  * Computes inline style for the banner wrapper. All position/top/bottom/zIndex/height
  * are set via inline style (no modifier classes).
@@ -348,4 +359,6 @@ export {
   BannerDismissButton,
   BannerContentContainer,
   getBannerContentWrapperStyle,
+  useOptionalBannerRootContext,
+  useButtonContext,
 };

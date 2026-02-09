@@ -26,7 +26,7 @@ export const DEFAULT_ALIGN_ITEMS = ALIGN_ITEMS_OPTIONS.START;
 
 // Button style options
 export const BUTTON_STYLES = {
-  DEFAULT: 'default',
+  DEFAULT: 'primary',
   SECONDARY: 'secondary',
 } as const;
 

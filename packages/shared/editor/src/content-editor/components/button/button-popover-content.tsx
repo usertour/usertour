@@ -5,7 +5,7 @@ import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import type { Attribute, Content, ContentVersion, Step } from '@usertour/types';
-import { RulesCondition } from '@usertour/types';
+import { RulesCondition, ButtonSemanticType } from '@usertour/types';
 import { memo } from 'react';
 
 import { ContentActions } from '../../..';
@@ -24,7 +24,7 @@ export interface ButtonPopoverContentProps {
   element: ContentEditorButtonElement;
   zIndex: number;
   onButtonTextChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onButtonStyleChange: (type: string) => void;
+  onButtonStyleChange: (type: ButtonSemanticType) => void;
   onMarginChange: (position: MarginPosition, value: string) => void;
   onMarginEnabledChange: (enabled: boolean) => void;
   onActionChange: (actions: RulesCondition[]) => void;
@@ -63,56 +63,63 @@ export const ButtonPopoverContent = memo(
     actionItems,
     contentList,
     createStep,
-  }: ButtonPopoverContentProps) => (
-    <div className="flex flex-col gap-2.5">
-      <Label htmlFor="button-text">Button text</Label>
-      <Input
-        type="text"
-        className="bg-background"
-        id="button-text"
-        value={element.data.text}
-        placeholder="Enter button text"
-        onChange={onButtonTextChange}
-      />
+  }: ButtonPopoverContentProps) => {
+    // Wrapper to handle SelectPopover's string return value
+    const handleStyleChange = (value: string) => {
+      onButtonStyleChange(value as ButtonSemanticType);
+    };
 
-      <Label>Button style</Label>
-      <SelectPopover
-        options={BUTTON_STYLE_OPTIONS}
-        value={element.data.type}
-        onValueChange={onButtonStyleChange}
-        placeholder="Select a style"
-        contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
-      />
+    return (
+      <div className="flex flex-col gap-2.5">
+        <Label htmlFor="button-text">Button text</Label>
+        <Input
+          type="text"
+          className="bg-background"
+          id="button-text"
+          value={element.data.text}
+          placeholder="Enter button text"
+          onChange={onButtonTextChange}
+        />
 
-      <MarginControls
-        margin={element.margin}
-        onMarginChange={onMarginChange}
-        onMarginEnabledChange={onMarginEnabledChange}
-      />
+        <Label>Button style</Label>
+        <SelectPopover
+          options={BUTTON_STYLE_OPTIONS}
+          value={element.data.type}
+          onValueChange={handleStyleChange}
+          placeholder="Select a style"
+          contentStyle={{ zIndex: zIndex + EDITOR_SELECT }}
+        />
 
-      <Label>When button is clicked</Label>
-      <ContentActions
-        zIndex={zIndex}
-        isShowIf={false}
-        isShowLogic={false}
-        currentStep={currentStep}
-        currentVersion={currentVersion}
-        onDataChange={onActionChange}
-        defaultConditions={element?.data?.actions ?? []}
-        attributes={attributes}
-        filterItems={actionItems}
-        contents={contentList}
-        createStep={createStep}
-      />
+        <MarginControls
+          margin={element.margin}
+          onMarginChange={onMarginChange}
+          onMarginEnabledChange={onMarginEnabledChange}
+        />
 
-      <ActionButtonsBase
-        entityName="button"
-        onDelete={onDelete}
-        onAddLeft={onAddLeft}
-        onAddRight={onAddRight}
-      />
-    </div>
-  ),
+        <Label>When button is clicked</Label>
+        <ContentActions
+          zIndex={zIndex}
+          isShowIf={false}
+          isShowLogic={false}
+          currentStep={currentStep}
+          currentVersion={currentVersion}
+          onDataChange={onActionChange}
+          defaultConditions={element?.data?.actions ?? []}
+          attributes={attributes}
+          filterItems={actionItems}
+          contents={contentList}
+          createStep={createStep}
+        />
+
+        <ActionButtonsBase
+          entityName="button"
+          onDelete={onDelete}
+          onAddLeft={onAddLeft}
+          onAddRight={onAddRight}
+        />
+      </div>
+    );
+  },
 );
 
 ButtonPopoverContent.displayName = 'ButtonPopoverContent';

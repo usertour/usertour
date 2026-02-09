@@ -1,5 +1,6 @@
 import { ContentOmbedInfo } from './contents';
 import { RulesCondition } from './config';
+import { ButtonSemanticType } from './button';
 
 type ContentEditorElementWidth = {
   type?: string;
@@ -45,7 +46,7 @@ export interface ContentEditorUploadRequestOption {
 export type ContentEditorUploadFunc = (options: ContentEditorUploadRequestOption) => void;
 
 export type ContentEditorButtonData = {
-  type: string;
+  type?: ButtonSemanticType;
   text: string;
   action?: string;
   actions: RulesCondition[];

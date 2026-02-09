@@ -26,7 +26,7 @@ export const EmptyButton = {
     data: {
       action: 'next',
       text: 'Next',
-      type: 'default',
+      type: 'primary',
     },
   },
 } as ContentEditorRootElement;

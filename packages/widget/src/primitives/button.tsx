@@ -36,6 +36,19 @@ const buttonVariants = cva(buttonBase, {
         'active:bg-sdk-btn-secondary-active active:text-sdk-btn-secondary-foreground-active active:border-sdk-btn-secondary-active',
         'usertour-btn--secondary', // For calc() padding in CSS
       ),
+      'banner-primary': cn(
+        'bg-sdk-banner-foreground text-sdk-banner',
+        'hover:bg-sdk-banner-foreground-hover hover:text-sdk-banner-hover',
+        'active:bg-sdk-banner-foreground-active active:text-sdk-banner-active',
+        'usertour-btn--banner-primary', // For calc() padding in CSS
+      ),
+      'banner-secondary': cn(
+        'bg-sdk-banner text-sdk-banner-foreground',
+        'border border-solid border-sdk-banner-foreground',
+        'hover:bg-sdk-banner-hover hover:text-sdk-banner-foreground-hover hover:border-sdk-banner-foreground-hover',
+        'active:bg-sdk-banner-active active:text-sdk-banner-foreground-active active:border-sdk-banner-foreground-active',
+        'usertour-btn--banner-secondary', // For calc() padding in CSS
+      ),
     },
     size: {
       default: '',
@@ -68,8 +81,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       if (variant === 'custom') {
         return customVariantBase;
       }
-      // Only allow 'default' and 'secondary', undefined will use defaultVariants
-      const validVariant = variant === 'default' || variant === 'secondary' ? variant : undefined;
+      const validVariant =
+        variant === 'default' ||
+        variant === 'secondary' ||
+        variant === 'banner-primary' ||
+        variant === 'banner-secondary'
+          ? variant
+          : undefined;
       return buttonVariants({
         variant: validVariant,
         size,

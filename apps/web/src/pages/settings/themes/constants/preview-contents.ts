@@ -79,7 +79,7 @@ export const LIST_PREVIEW_CONTENT = [
               data: {
                 action: 'goto',
                 text: 'Next',
-                type: 'default',
+                type: 'primary',
               },
               margin: {
                 top: 0,
@@ -341,7 +341,7 @@ export const MODAL_PREVIEW_CONTENT = [
             element: {
               data: {
                 text: 'Primary',
-                type: 'default',
+                type: 'primary',
                 action: 'goto',
                 actions: [
                   {
