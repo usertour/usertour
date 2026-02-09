@@ -34,8 +34,7 @@
       (var(--usertour-button-height) - var(--usertour-font-size)) / 2 - 1px
     );
     padding-bottom: calc(
-      (var(--usertour-button-height) - var(--usertour-font-size)) / 2 -
-        var(--usertour-secondary-border-width)
+      (var(--usertour-button-height) - var(--usertour-font-size)) / 2 - 1px
     );
   }
 }
