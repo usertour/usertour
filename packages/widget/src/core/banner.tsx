@@ -64,7 +64,6 @@ export function getBannerWrapperStyle(data: BannerData): CSSProperties {
   const sticky = data?.stickToTopOfViewport ?? false;
 
   const style: CSSProperties = {
-    zIndex,
     ['--usertour-widget-banner-height' as string]: `${heightPx}px`,
   };
 
@@ -80,6 +79,8 @@ export function getBannerWrapperStyle(data: BannerData): CSSProperties {
   }
 
   if (style.position !== 'relative') {
+    // Only set zIndex when position is not relative (sticky/absolute/fixed)
+    style.zIndex = zIndex;
     style.left = 0;
     style.right = 0;
 
