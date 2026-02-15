@@ -23,7 +23,7 @@ export const ContentEditor = (props: ContentEditorProps) => {
       initialValue={initialValue}
       enabledElementTypes={enabledElementTypes}
     >
-      <Editor />
+      <Editor className={props.className} style={props.style} />
     </ContentEditorContextProvider>
   );
 };

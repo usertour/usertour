@@ -122,7 +122,7 @@ function getBannerContentWrapperStyle(data: BannerData): CSSProperties {
 }
 
 const BANNER_DISMISS_BUTTON_CLASS = cn(
-  'absolute top-1/2 -translate-y-1/2 right-2 size-6 rounded',
+  'size-8 rounded',
   'inline-flex items-center justify-center',
   'text-sdk-banner-foreground',
   'hover:bg-sdk-banner-hover',
@@ -131,15 +131,16 @@ const BANNER_DISMISS_BUTTON_CLASS = cn(
 
 interface BannerDismissButtonProps {
   onClick: () => void;
+  className?: string;
 }
 
 const BannerDismissButton = memo((props: BannerDismissButtonProps) => {
-  const { onClick } = props;
+  const { onClick, className } = props;
   return (
     <Button
       variant="custom"
       type="button"
-      className={BANNER_DISMISS_BUTTON_CLASS}
+      className={cn(BANNER_DISMISS_BUTTON_CLASS, className)}
       onClick={onClick}
       aria-label="Dismiss banner"
     >
@@ -159,7 +160,7 @@ interface BannerContentContainerProps {
 const BannerContentContainer = memo((props: BannerContentContainerProps) => {
   const { children, style, className } = props;
   const containerClassName = cn(
-    'h-full w-full relative flex items-center justify-center bg-sdk-banner text-sdk-banner-foreground',
+    'h-full w-full relative flex justify-between gap-x-2 bg-sdk-banner text-sdk-banner-foreground',
     className,
   );
 
@@ -304,14 +305,24 @@ const BannerInFrame = memo((props: BannerInFrameProps) => {
 
   const showDismiss = data?.allowUsersToDismissEmbed ?? false;
 
+  const contentMaxWidth = useMemo(
+    () =>
+      data?.maxContentWidth
+        ? ({ maxWidth: `${data.maxContentWidth}px` } as CSSProperties)
+        : undefined,
+    [data?.maxContentWidth],
+  );
+
   const handleDismiss = useCallback(() => {
     onDismiss?.();
   }, [onDismiss]);
 
   return (
     <BannerContentContainer>
-      {children}
-      {showDismiss && <BannerDismissButton onClick={handleDismiss} />}
+      <div className="min-w-0 flex-1 w-full mx-auto" style={contentMaxWidth}>
+        {children}
+      </div>
+      {showDismiss && <BannerDismissButton className="flex-none" onClick={handleDismiss} />}
     </BannerContentContainer>
   );
 });
@@ -332,6 +343,14 @@ const BannerPreview = memo(
     const contentStyle = useMemo(() => getBannerContentWrapperStyle(data), [data]);
     const showDismiss = data?.allowUsersToDismissEmbed ?? false;
 
+    const contentMaxWidth = useMemo(
+      () =>
+        data?.maxContentWidth
+          ? ({ maxWidth: `${data.maxContentWidth}px` } as CSSProperties)
+          : undefined,
+      [data?.maxContentWidth],
+    );
+
     const handleDismiss = useCallback(() => {
       onDismiss?.();
     }, [onDismiss]);
@@ -339,8 +358,10 @@ const BannerPreview = memo(
     return (
       <BannerWrapper ref={ref} previewMode={previewMode} {...restProps}>
         <BannerContentContainer style={contentStyle}>
-          {children}
-          {showDismiss && <BannerDismissButton onClick={handleDismiss} />}
+          <div className="min-w-0 flex-1 w-full mx-auto" style={contentMaxWidth}>
+            {children}
+          </div>
+          {showDismiss && <BannerDismissButton className="flex-none" onClick={handleDismiss} />}
         </BannerContentContainer>
       </BannerWrapper>
     );

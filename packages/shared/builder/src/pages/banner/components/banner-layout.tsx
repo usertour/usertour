@@ -20,17 +20,18 @@ export const BannerLayout = () => {
   const { localData, updateLocalData } = useBannerContext();
 
   const handleNumberChange = useCallback(
-    (key: 'maxEmbedWidth' | 'borderRadius') => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      if (value === '') {
-        updateLocalData({ [key]: undefined });
-        return;
-      }
-      const parsed = Number.parseInt(value, 10);
-      if (!Number.isNaN(parsed)) {
-        updateLocalData({ [key]: parsed });
-      }
-    },
+    (key: 'maxEmbedWidth' | 'maxContentWidth' | 'borderRadius') =>
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        if (value === '') {
+          updateLocalData({ [key]: undefined });
+          return;
+        }
+        const parsed = Number.parseInt(value, 10);
+        if (!Number.isNaN(parsed)) {
+          updateLocalData({ [key]: parsed });
+        }
+      },
     [updateLocalData],
   );
 
@@ -72,6 +73,30 @@ export const BannerLayout = () => {
               value={localData.maxEmbedWidth ?? ''}
               placeholder="None"
               onChange={handleNumberChange('maxEmbedWidth')}
+              className="h-10 w-full rounded-lg border-0 bg-background px-4 pe-10 text-sm"
+            />
+            <span className="absolute inset-y-0 end-0 flex items-center pe-4 text-muted-foreground text-sm">
+              px
+            </span>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-1">
+            <Label htmlFor="max-content-width" className="font-normal text-sm">
+              Max. content width
+            </Label>
+            <QuestionTooltip>
+              Maximum width of the banner content in pixels. Leave empty for no limit.
+            </QuestionTooltip>
+          </div>
+          <div className="relative">
+            <Input
+              id="max-content-width"
+              type="text"
+              inputMode="numeric"
+              value={localData.maxContentWidth ?? ''}
+              placeholder="None"
+              onChange={handleNumberChange('maxContentWidth')}
               className="h-10 w-full rounded-lg border-0 bg-background px-4 pe-10 text-sm"
             />
             <span className="absolute inset-y-0 end-0 flex items-center pe-4 text-muted-foreground text-sm">

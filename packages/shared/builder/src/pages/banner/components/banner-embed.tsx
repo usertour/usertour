@@ -1,14 +1,7 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
 import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
 import { useSize } from '@usertour-packages/react-use-size';
-import {
-  BannerContainer,
-  BannerContentContainer,
-  BannerDismissButton,
-  BannerRoot,
-  BannerWrapper,
-  getBannerContentWrapperStyle,
-} from '@usertour-packages/widget';
+import { BannerContainer, BannerPreview, BannerRoot } from '@usertour-packages/widget';
 import { ContentEditor } from '@usertour-packages/shared-editor';
 import type { ContentEditorRoot } from '@usertour/types';
 import {
@@ -93,24 +86,19 @@ export const BannerEmbed = () => {
   ];
 
   const previewWidth = data.maxEmbedWidth ?? DEFAULT_BANNER_PREVIEW_WIDTH;
-  const contentStyle = useMemo(() => getBannerContentWrapperStyle(data), [data]);
-  const showDismiss = data?.allowUsersToDismissEmbed ?? false;
 
   const bannerPreview = (
-    <BannerWrapper previewMode ref={setWrapperEl} style={{ width: previewWidth, maxWidth: '100%' }}>
-      <BannerContentContainer style={contentStyle}>
-        <ContentEditor
-          zIndex={zIndex + EXTENSION_CONTENT_POPPER}
-          customUploadRequest={handleCustomUploadRequest}
-          initialValue={contents}
-          onValueChange={handleContentChange}
-          projectId={projectId}
-          attributes={attributeList}
-          enabledElementTypes={enabledElementTypes}
-        />
-        {showDismiss && <BannerDismissButton onClick={() => {}} />}
-      </BannerContentContainer>
-    </BannerWrapper>
+    <BannerPreview previewMode ref={setWrapperEl} style={{ width: previewWidth, maxWidth: '100%' }}>
+      <ContentEditor
+        zIndex={zIndex + EXTENSION_CONTENT_POPPER}
+        customUploadRequest={handleCustomUploadRequest}
+        initialValue={contents}
+        onValueChange={handleContentChange}
+        projectId={projectId}
+        attributes={attributeList}
+        enabledElementTypes={enabledElementTypes}
+      />
+    </BannerPreview>
   );
 
   const renderPreviewLayout = () => (

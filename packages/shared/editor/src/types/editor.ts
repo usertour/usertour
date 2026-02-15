@@ -48,6 +48,8 @@ export type {
 export interface ContentEditorProps {
   zIndex: number;
   projectId: string;
+  className?: string;
+  style?: React.CSSProperties;
   customUploadRequest?: (file: File) => Promise<string>;
   onValueChange?: (value: ContentEditorRoot[]) => void;
   getOembedInfo?: (url: string) => Promise<ContentOmbedInfo>;
