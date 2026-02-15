@@ -23,7 +23,6 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
 
   async check(): Promise<void> {
     try {
-      await this.checkTargetVisibility();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
       logger.error('Error in banner checking:', error);
@@ -118,32 +117,5 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     });
 
     this.watcher.findElement();
-  }
-
-  private async checkTargetVisibility(): Promise<void> {
-    const store = this.getStoreData();
-    if (!store || !this.watcher) {
-      return;
-    }
-
-    const placement = store.bannerData?.embedPlacement ?? BannerEmbedPlacement.TOP_OF_PAGE;
-    const requiresElement = BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT.includes(placement);
-    if (!requiresElement) {
-      return;
-    }
-
-    const { openState } = store;
-    const { isHidden } = await this.watcher.checkVisibility();
-
-    if (!isHidden) {
-      if (!openState) {
-        this.open();
-      }
-      return;
-    }
-
-    if (openState) {
-      this.hide();
-    }
   }
 }
