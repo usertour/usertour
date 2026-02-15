@@ -27,7 +27,7 @@ export const UserEditDropdownMenu = (props: UserEditDropdownMenuProps) => {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild disabled={disabled}>
           {children}
         </DropdownMenuTrigger>
