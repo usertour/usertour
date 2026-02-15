@@ -59,7 +59,12 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
           }}
           disabled={isViewOnly}
         >
-          <Button variant="ghost" size="icon" className="flex-none">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="flex-none"
+            onClick={(e) => e.stopPropagation()}
+          >
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </ContentEditDropdownMenu>

@@ -98,7 +98,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
   }
 
   return (
-    <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
