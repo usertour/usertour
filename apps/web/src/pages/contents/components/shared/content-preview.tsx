@@ -40,6 +40,7 @@ import {
   Theme,
 } from '@usertour/types';
 
+import { PREVIEW_BASIC } from '@usertour-packages/constants';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface EmptyContentPreviewProps {
@@ -105,7 +106,7 @@ const FlowPreview = ({
     const showAvatar = avatarSettings?.type !== AvatarType.NONE;
 
     return (
-      <Popper open={true} zIndex={1} globalStyle={globalStyle}>
+      <Popper open={true} zIndex={PREVIEW_BASIC} globalStyle={globalStyle}>
         <PopperStaticBubble
           position={bubbleSettings?.placement?.position ?? 'leftBottom'}
           width={`${width}px`}
@@ -142,7 +143,7 @@ const FlowPreview = ({
 
   // Handle tooltip/modal step (default)
   return (
-    <Popper open={true} zIndex={1} globalStyle={globalStyle}>
+    <Popper open={true} zIndex={PREVIEW_BASIC} globalStyle={globalStyle}>
       <PopperStaticContent
         arrowSize={{
           width: themeSetting?.tooltip.notchSize ?? 20,
