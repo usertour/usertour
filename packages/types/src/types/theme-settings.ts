@@ -112,6 +112,7 @@ export type ThemeTypesSetting = {
   banner: {
     backgroundColor: ThemeTypesSettingsColor;
     textColor: ThemeTypesSettingsColor;
+    padding: number;
   };
   checklistLauncher: {
     borderRadius: number;
@@ -310,6 +311,7 @@ export const defaultSettings: ThemeTypesSetting = {
       hover: 'Auto',
       active: 'Auto',
     },
+    padding: 8,
   },
   mainColor: {
     color: '#0f172a',
@@ -547,6 +549,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
       hover: 'Auto',
       active: 'Auto',
     },
+    padding: 8,
   },
   mainColor: {
     color: '#ffffff',

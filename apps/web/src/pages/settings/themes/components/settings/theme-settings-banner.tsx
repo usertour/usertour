@@ -1,4 +1,5 @@
 import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
+import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { useThemeSettingsContext } from '../theme-settings-panel';
 
 export const ThemeSettingsBanner = () => {
@@ -50,6 +51,15 @@ export const ThemeSettingsBanner = () => {
                 color: value,
               },
             });
+          }}
+          disabled={isViewOnly}
+        />
+        <ThemeSettingInput
+          text="Padding"
+          name="banner-padding"
+          defaultValue={String(prevBanner.padding)}
+          onChange={(value: string) => {
+            update({ padding: Number(value) });
           }}
           disabled={isViewOnly}
         />

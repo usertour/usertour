@@ -85,6 +85,7 @@ export const extendSdk = {
   },
   padding: {
     'sdk-button-x': 'var(--usertour-button-px)',
+    'sdk-banner': 'var(--usertour-banner-padding, 8px)',
   },
   height: {
     'sdk-font-size': 'var(--usertour-font-size)',

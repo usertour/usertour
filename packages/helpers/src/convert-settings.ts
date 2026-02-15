@@ -473,6 +473,7 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     ),
     '--usertour-banner-hover-foreground-color': hexToHSLString(settings.banner.textColor.hover),
     '--usertour-banner-active-foreground-color': hexToHSLString(settings.banner.textColor.active),
+    '--usertour-banner-padding': `${settings.banner.padding}px`,
     '--usertour-checklist-trigger-height': `${settings.checklistLauncher.height}px`,
     '--usertour-checklist-trigger-hover-background-color': settings.checklistLauncher.color.hover,
     '--usertour-question-color': hexToHSLString(settings.survey.color),

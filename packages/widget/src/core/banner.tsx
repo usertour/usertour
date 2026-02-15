@@ -160,7 +160,7 @@ interface BannerContentContainerProps {
 const BannerContentContainer = memo((props: BannerContentContainerProps) => {
   const { children, style, className } = props;
   const containerClassName = cn(
-    'h-full w-full relative flex justify-between gap-x-2 bg-sdk-banner text-sdk-banner-foreground',
+    'h-full w-full relative flex justify-between gap-x-2 p-sdk-banner bg-sdk-banner text-sdk-banner-foreground',
     className,
   );
 
