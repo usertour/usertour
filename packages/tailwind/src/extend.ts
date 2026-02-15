@@ -86,6 +86,16 @@ export const extendSdk = {
   padding: {
     'sdk-button-x': 'var(--usertour-button-px)',
     'sdk-banner': 'var(--usertour-banner-padding, 8px)',
+    // Button vertical padding: centers text within button height accounting for borders
+    // Formula: (button-height - font-size) / 2 - border-width
+    'sdk-btn-primary-y':
+      'calc((var(--usertour-button-height) - var(--usertour-font-size)) / 2 - var(--usertour-primary-border-width))',
+    'sdk-btn-secondary-y':
+      'calc((var(--usertour-button-height) - var(--usertour-font-size)) / 2 - var(--usertour-secondary-border-width))',
+    'sdk-btn-banner-primary-y':
+      'calc((var(--usertour-button-height) - var(--usertour-font-size)) / 2)',
+    'sdk-btn-banner-secondary-y':
+      'calc((var(--usertour-button-height) - var(--usertour-font-size)) / 2 - 1px)',
   },
   height: {
     'sdk-font-size': 'var(--usertour-font-size)',
