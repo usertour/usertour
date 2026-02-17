@@ -1,6 +1,6 @@
 {
   "name": "@usertour/sdk",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "type": "module",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc.",
@@ -8,10 +8,10 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "build:iife": "tsc && vite build -- --iife",
-    "build:dev": "tsc && vite build --mode development",
-    "build:dev:iife": "tsc && vite build --mode development -- --iife",
+    "build": "tsc && BROWSERSLIST_ENV=production vite build",
+    "build:iife": "tsc && BROWSERSLIST_ENV=legacy vite build",
+    "build:dev": "tsc && BROWSERSLIST_ENV=production vite build --mode development",
+    "build:dev:iife": "tsc && BROWSERSLIST_ENV=legacy vite build --mode development",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -44,6 +44,7 @@
     "ws": "8.13.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.22.0",
     "@rollup/plugin-babel": "^6.0.3",
     "@rollup/plugin-commonjs": "^25.0.2",
     "@rollup/plugin-node-resolve": "^13.0.6",
