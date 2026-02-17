@@ -154,6 +154,23 @@ const replaceUserAttr = (
                 },
               };
             }
+
+            if (element.element.type === ContentEditorElementType.IMAGE) {
+              const link = element.element.link;
+              if (link?.data) {
+                return {
+                  ...element,
+                  element: {
+                    ...element.element,
+                    link: {
+                      ...link,
+                      url: extractLinkUrl(link.data, userAttributes),
+                    },
+                  },
+                };
+              }
+            }
+
             return { ...element };
           }),
         };

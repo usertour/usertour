@@ -3,6 +3,7 @@
 import type { ContentEditorImageElement } from '@usertour/types';
 import { memo } from 'react';
 
+import { Link } from '../../typography';
 import { DEFAULT_WIDTH, WIDTH_TYPES } from '../constants';
 import type { MarginStyleProps } from '../types';
 import { ensureDimensionWithDefaults, getWidthStyle, transformMarginStyle } from '../utils';
@@ -45,9 +46,24 @@ export const ImageSerialize = memo<ImageSerializeProps>((props) => {
     return null;
   }
 
-  return (
+  const image = (
     <img src={element.url} style={transformsStyle(element)} className={className} alt="Content" />
   );
+
+  if (element.link?.url) {
+    const isNewTab = element.link.openType === 'new';
+    return (
+      <Link
+        href={element.link.url}
+        target={isNewTab ? '_blank' : '_parent'}
+        rel={isNewTab ? 'noreferrer' : undefined}
+      >
+        {image}
+      </Link>
+    );
+  }
+
+  return image;
 });
 
 ImageSerialize.displayName = 'ImageSerialize';

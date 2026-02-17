@@ -24,6 +24,7 @@ export type {
   ContentEditorWidth,
   ContentEditorHeight,
   ContentEditorMargin,
+  ContentEditorLinkData,
   ContentEditorImageElement,
   ContentEditorButtonElement,
   ContentEditorTextElement,

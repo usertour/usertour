@@ -52,6 +52,12 @@ export type ContentEditorButtonData = {
   actions: RulesCondition[];
 };
 
+export type ContentEditorLinkData = {
+  data?: any[];
+  url?: string;
+  openType?: string;
+};
+
 export type ContentEditorWidth = {
   type?: string;
   value?: number;
@@ -82,6 +88,7 @@ export type ContentEditorPadding = {
 export type ContentEditorImageElement = {
   type: ContentEditorElementType.IMAGE;
   url: string;
+  link?: ContentEditorLinkData;
   width?: ContentEditorElementWidth;
   margin?: ContentEditorElementMargin;
 };
