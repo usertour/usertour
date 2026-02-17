@@ -15,6 +15,8 @@ interface URLMonitorOptions {
   autoStart?: boolean;
   /** Monitoring interval in milliseconds for SPA detection (default: 500) */
   interval?: number;
+  /** URL filter function to apply when getting current URL */
+  urlFilter?: ((url: string) => string) | null;
 }
 
 /**
@@ -99,10 +101,27 @@ export class UsertourURLMonitor extends Evented {
   }
 
   /**
-   * Gets the current URL
+   * Gets the current URL (with filter applied if set)
    */
   getCurrentUrl(): string {
-    return this.currentUrl;
+    const url = this.currentUrl;
+    if (this.options.urlFilter) {
+      try {
+        return this.options.urlFilter(url);
+      } catch (error) {
+        console.error('Error in urlFilter function:', error);
+        return url;
+      }
+    }
+    return url;
+  }
+
+  /**
+   * Sets the URL filter function
+   * @param urlFilter - Function to filter URLs, or null to disable filtering
+   */
+  setUrlFilter(urlFilter: ((url: string) => string) | null): void {
+    this.options.urlFilter = urlFilter;
   }
 
   /**

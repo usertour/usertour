@@ -88,6 +88,7 @@ export class UsertourCore extends Evented {
   private targetMissingSeconds: number | undefined = undefined;
   private customNavigate: ((url: string) => void) | null = null;
   private customScrollIntoView: ((el: Element) => void) | null = null;
+  private urlFilter: ((url: string) => string) | null = null;
   private evalJsDisabled = false;
   private readonly id: string;
   private attributeManager: UsertourAttributeManager;
@@ -467,6 +468,38 @@ export class UsertourCore extends Evented {
    */
   disableEvalJs(): void {
     this.evalJsDisabled = true;
+  }
+
+  /**
+   * Sets a URL filter function to sanitize URLs before they are used for conditions and page tracking
+   * @param urlFilter - Function taking a URL string and returning a filtered URL string, or null to use default behavior
+   * @example
+   * // Remove all query parameters
+   * usertour.setUrlFilter(url => {
+   *   const parsed = new URL(url);
+   *   parsed.search = '';
+   *   return parsed.toString();
+   * });
+   * @example
+   * // Remove specific query parameter
+   * usertour.setUrlFilter(url => {
+   *   const parsed = new URL(url);
+   *   parsed.searchParams.delete('token');
+   *   return parsed.toString();
+   * });
+   */
+  setUrlFilter(urlFilter: ((url: string) => string) | null): void {
+    this.urlFilter = urlFilter;
+    // Update URL monitor with new filter
+    this.urlMonitor?.setUrlFilter(urlFilter);
+  }
+
+  /**
+   * Gets the current URL filter function
+   * @returns The current URL filter function or null if not set
+   */
+  getUrlFilter(): ((url: string) => string) | null {
+    return this.urlFilter;
   }
 
   /**

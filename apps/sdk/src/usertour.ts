@@ -157,6 +157,10 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       app.setCustomScrollIntoView(customScrollIntoView);
     },
 
+    setUrlFilter: (urlFilter: ((url: string) => string) | null) => {
+      app.setUrlFilter(urlFilter);
+    },
+
     disableEvalJs: () => {
       app.disableEvalJs();
     },

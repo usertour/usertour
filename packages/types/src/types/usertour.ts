@@ -39,7 +39,7 @@ export interface Usertour {
 
   setCustomNavigate(customNavigate: ((url: string) => void) | null): void;
 
-  // setUrlFilter(urlFilter: ((url: string) => string) | null): void;
+  setUrlFilter(urlFilter: ((url: string) => string) | null): void;
 
   // setLinkUrlDecorator(linkUrlDecorator: ((url: string) => string) | null): void;
 
