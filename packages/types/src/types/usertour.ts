@@ -35,12 +35,7 @@ export interface Usertour {
   // eslint-disable-next-line es5/no-rest-parameters
   off(eventName: string, listener: (...args: any[]) => void): void;
 
-  // setCustomInputSelector(customInputSelector: string | null): void;
-
-  // registerCustomInput(
-  //   cssSelector: string,
-  //   getValue?: (el: Element) => string
-  // ): void;
+  registerCustomInput(cssSelector: string, getValue?: (el: Element) => string): void;
 
   setCustomNavigate(customNavigate: ((url: string) => void) | null): void;
 

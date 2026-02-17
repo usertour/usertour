@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Input Test - registerCustomInput()</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        padding: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin-bottom: 10px;
+      }
+      .description {
+        color: #666;
+        margin-bottom: 30px;
+      }
+      .section {
+        margin-bottom: 40px;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background: #fafafa;
+      }
+      .section h2 {
+        margin-top: 0;
+        color: #333;
+      }
+
+      /* Custom Combo Box */
+      .combo-box {
+        position: relative;
+        display: inline-block;
+        min-width: 200px;
+      }
+      .combo-box-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        user-select: none;
+      }
+      .combo-box-trigger:hover {
+        border-color: #999;
+      }
+      .combo-box-value {
+        flex: 1;
+      }
+      .combo-box-arrow {
+        margin-left: 8px;
+        color: #666;
+      }
+      .combo-box-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 4px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+      }
+      .combo-box.open .combo-box-dropdown {
+        display: block;
+      }
+      .combo-box-option {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+      .combo-box-option:hover {
+        background: #f0f0f0;
+      }
+
+      /* Custom Dropdown with data attribute */
+      .custom-dropdown {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        color: #2196f3;
+      }
+      .custom-dropdown:hover {
+        background: #e3f2fd;
+      }
+
+      /* Custom Widget */
+      .my-widget {
+        display: inline-block;
+        padding: 12px 20px;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+        background: #e8f5e9;
+        font-weight: 500;
+      }
+
+      /* Native inputs for comparison */
+      .native-input {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 200px;
+      }
+
+      /* Status indicators */
+      .status {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .status.info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+
+      .test-button {
+        margin-top: 10px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        background: #2196f3;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .test-button:hover {
+        background: #1976d2;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>registerCustomInput() Test Page</h1>
+    <p class="description">
+      This page demonstrates the <code>registerCustomInput()</code> API for
+      supporting custom input components in Usertour SDK. Open DevTools console
+      to see registration logs and test results.
+    </p>
+
+    <!-- Section 1: Combo Box with textContent -->
+    <div class="section">
+      <h2>1. Combo Box (textContent)</h2>
+      <p>
+        Custom combo box component that stores its value in
+        <code>.combo-box-value</code> element's textContent.
+      </p>
+
+      <div class="combo-box" id="combo-fruit">
+        <div class="combo-box-trigger">
+          <span class="combo-box-value">Select a fruit...</span>
+          <span class="combo-box-arrow">▼</span>
+        </div>
+        <div class="combo-box-dropdown">
+          <div class="combo-box-option" data-value="apple">🍎 Apple</div>
+          <div class="combo-box-option" data-value="banana">🍌 Banana</div>
+          <div class="combo-box-option" data-value="orange">🍊 Orange</div>
+          <div class="combo-box-option" data-value="grape">🍇 Grape</div>
+        </div>
+      </div>
+
+      <div class="status info">
+        <strong>Registration:</strong><br />
+        <code>usertour.registerCustomInput('.combo-box-value')</code><br />
+        <em>Uses default textContent reading</em>
+      </div>
+
+      <button class="test-button" onclick="testComboBox()">
+        Test getValue()
+      </button>
+      <div id="combo-result" class="status" style="display: none"></div>
+    </div>
+
+    <!-- Section 2: Dropdown with data-value attribute -->
+    <div class="section">
+      <h2>2. Custom Dropdown (data-value)</h2>
+      <p>
+        Custom dropdown that stores its value in a
+        <code>data-value</code> attribute.
+      </p>
+
+      <div
+        class="custom-dropdown"
+        data-value="pending"
+        onclick="cycleStatus(this)"
+      >
+        <span>Status: Pending</span>
+      </div>
+
+      <div class="status info">
+        <strong>Registration:</strong><br />
+        <code
+          >usertour.registerCustomInput('.custom-dropdown', el =>
+          el.dataset.value)</code
+        ><br />
+        <em>Uses custom getValue to read data-value attribute</em>
+      </div>
+
+      <button class="test-button" onclick="testDropdown()">
+        Test getValue()
+      </button>
+      <div id="dropdown-result" class="status" style="display: none"></div>
+    </div>
+
+    <!-- Section 3: Simple Widget -->
+    <div class="section">
+      <h2>3. Simple Widget (default textContent)</h2>
+      <p>A simple custom widget with inline text content.</p>
+
+      <div class="my-widget">Widget Value: 42</div>
+
+      <div class="status info">
+        <strong>Registration:</strong><br />
+        <code>usertour.registerCustomInput('.my-widget')</code><br />
+        <em>Uses default textContent reading</em>
+      </div>
+
+      <button class="test-button" onclick="testWidget()">
+        Test getValue()
+      </button>
+      <div id="widget-result" class="status" style="display: none"></div>
+    </div>
+
+    <!-- Section 4: Native Input (for comparison) -->
+    <div class="section">
+      <h2>4. Native Input (comparison)</h2>
+      <p>A standard HTML input for comparison - works without registration.</p>
+
+      <input
+        type="text"
+        class="native-input"
+        value="Native input value"
+        placeholder="Type something..."
+      />
+
+      <div class="status info">
+        <strong>No registration needed</strong><br />
+        <em>Native inputs work automatically</em>
+      </div>
+
+      <button class="test-button" onclick="testNativeInput()">
+        Test getValue()
+      </button>
+      <div id="native-result" class="status" style="display: none"></div>
+    </div>
+
+    <!-- SDK Integration Instructions -->
+    <div class="section">
+      <h2>Testing with Usertour SDK</h2>
+      <div class="status success">
+        <strong>✓ Custom inputs registered</strong><br />
+        All custom inputs on this page are now recognized by the SDK.<br /><br />
+
+        <strong>Next steps:</strong>
+        <ol style="margin: 10px 0 0 20px">
+          <li>Create a flow in Usertour dashboard</li>
+          <li>
+            Add a condition to check custom input values:
+            <ul style="margin-top: 5px">
+              <li>
+                <strong>TEXT_INPUT condition:</strong> "When .combo-box-value
+                equals 'Banana'"
+              </li>
+              <li>
+                <strong>TEXT_FILL condition:</strong> "When user fills
+                .custom-dropdown"
+              </li>
+            </ul>
+          </li>
+          <li>Test by selecting values in the custom inputs above</li>
+        </ol>
+      </div>
+    </div>
+
+    <script>
+      window.USERTOURJS_ENV_VARS = {
+        WS_URI: "http://localhost:3000/",
+      };
+    </script>
+    <script type="module" src="/src/usertour.ts"></script>
+
+    <script>
+      // Helper: Simple combo box behavior
+      document
+        .getElementById("combo-fruit")
+        .addEventListener("click", function (e) {
+          if (e.target.classList.contains("combo-box-option")) {
+            const value = e.target.textContent.trim();
+            const valueEl = this.querySelector(".combo-box-value");
+            valueEl.textContent = value;
+            this.classList.remove("open");
+            console.log("Combo box value changed to:", value);
+          } else {
+            this.classList.toggle("open");
+          }
+        });
+
+      // Close combo box when clicking outside
+      document.addEventListener("click", function (e) {
+        if (!e.target.closest(".combo-box")) {
+          document
+            .querySelectorAll(".combo-box")
+            .forEach((cb) => cb.classList.remove("open"));
+        }
+      });
+
+      // Helper: Cycle through statuses
+      function cycleStatus(el) {
+        const statuses = ["pending", "approved", "rejected"];
+        const current = el.dataset.value;
+        const currentIndex = statuses.indexOf(current);
+        const nextIndex = (currentIndex + 1) % statuses.length;
+        const next = statuses[nextIndex];
+
+        el.dataset.value = next;
+        el.querySelector("span").textContent =
+          "Status: " + next.charAt(0).toUpperCase() + next.slice(1);
+        console.log("Dropdown value changed to:", next);
+      }
+
+      // Test functions
+      function testComboBox() {
+        const el = document.querySelector(".combo-box-value");
+        const registry =
+          window.usertour.__customInputRegistry || window.customInputRegistry;
+        if (!registry) {
+          alert("Custom input registry not found!");
+          return;
+        }
+
+        const value = registry.getValue(el);
+        const resultDiv = document.getElementById("combo-result");
+        resultDiv.style.display = "block";
+        resultDiv.className = "status success";
+        resultDiv.innerHTML = `<strong>✓ getValue() result:</strong> "${value}"`;
+        console.log("Combo box getValue():", value);
+      }
+
+      function testDropdown() {
+        const el = document.querySelector(".custom-dropdown");
+        const registry =
+          window.usertour.__customInputRegistry || window.customInputRegistry;
+        if (!registry) {
+          alert("Custom input registry not found!");
+          return;
+        }
+
+        const value = registry.getValue(el);
+        const resultDiv = document.getElementById("dropdown-result");
+        resultDiv.style.display = "block";
+        resultDiv.className = "status success";
+        resultDiv.innerHTML = `<strong>✓ getValue() result:</strong> "${value}"`;
+        console.log("Dropdown getValue():", value);
+      }
+
+      function testWidget() {
+        const el = document.querySelector(".my-widget");
+        const registry =
+          window.usertour.__customInputRegistry || window.customInputRegistry;
+        if (!registry) {
+          alert("Custom input registry not found!");
+          return;
+        }
+
+        const value = registry.getValue(el);
+        const resultDiv = document.getElementById("widget-result");
+        resultDiv.style.display = "block";
+        resultDiv.className = "status success";
+        resultDiv.innerHTML = `<strong>✓ getValue() result:</strong> "${value}"`;
+        console.log("Widget getValue():", value);
+      }
+
+      function testNativeInput() {
+        const el = document.querySelector(".native-input");
+        const value = el.value;
+        const resultDiv = document.getElementById("native-result");
+        resultDiv.style.display = "block";
+        resultDiv.className = "status success";
+        resultDiv.innerHTML = `<strong>✓ Native input value:</strong> "${value}"`;
+        console.log("Native input value:", value);
+      }
+
+      // Initialize SDK when loaded
+      window.onload = async function () {
+        console.log(
+          "%c=== Custom Input Test Page ===",
+          "color: #2196F3; font-size: 16px; font-weight: bold;",
+        );
+
+        if (!window.usertour) {
+          console.error("Usertour SDK not loaded!");
+          return;
+        }
+
+        console.log("Registering custom inputs...");
+
+        // Register custom combo box (uses textContent)
+        usertour.registerCustomInput(".combo-box-value");
+        console.log("✓ Registered: .combo-box-value (default textContent)");
+
+        // Register custom dropdown (uses data-value attribute)
+        usertour.registerCustomInput(".custom-dropdown", (el) => {
+          return el.dataset.value || "";
+        });
+        console.log("✓ Registered: .custom-dropdown (data-value attribute)");
+
+        // Register simple widget (uses textContent)
+        usertour.registerCustomInput(".my-widget");
+        console.log("✓ Registered: .my-widget (default textContent)");
+
+        // Expose registry for testing
+        const core = usertour._core || window.usertourCore;
+        if (core && core.customInputRegistry) {
+          window.customInputRegistry = core.customInputRegistry;
+        }
+
+        console.log(
+          "\n%cCustom inputs registered successfully!",
+          "color: #4CAF50; font-weight: bold;",
+        );
+        console.log("You can now:");
+        console.log(
+          '1. Click "Test getValue()" buttons to verify registration',
+        );
+        console.log(
+          "2. Create flows with TEXT_INPUT/TEXT_FILL conditions targeting these elements",
+        );
+        console.log("3. Change values and see SDK detect the changes\n");
+
+        // Initialize SDK
+        try {
+          usertour.init("cm76brgn0000899t48qc7jz5o");
+          await usertour.identify("test-user-" + Date.now(), {
+            name: "Test User",
+            email: "test@example.com",
+          });
+          console.log("✓ SDK initialized and user identified");
+        } catch (error) {
+          console.error("Failed to initialize SDK:", error);
+        }
+      };
+    </script>
+  </body>
+</html>

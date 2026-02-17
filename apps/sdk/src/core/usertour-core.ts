@@ -49,6 +49,7 @@ import { formatErrorMessage } from '@/types/error-messages';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
 import { UsertourBanner } from './usertour-banner';
+import { customInputRegistry } from './registries/custom-input-registry';
 import {
   ServerMessageHandlerManager,
   ServerMessageHandlerContext,
@@ -449,6 +450,15 @@ export class UsertourCore extends Evented {
    */
   disableEvalJs(): void {
     this.evalJsDisabled = true;
+  }
+
+  /**
+   * Registers a custom input element with optional getValue function
+   * @param cssSelector - CSS selector to match custom input elements
+   * @param getValue - Optional function to extract value from element
+   */
+  registerCustomInput(cssSelector: string, getValue?: (el: Element) => string): void {
+    customInputRegistry.register(cssSelector, getValue);
   }
 
   /**

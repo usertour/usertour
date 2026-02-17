@@ -157,6 +157,10 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       app.disableEvalJs();
     },
 
+    registerCustomInput: (cssSelector: string, getValue?: (el: Element) => string) => {
+      app.registerCustomInput(cssSelector, getValue);
+    },
+
     on: (eventName: string, _listener: (...args: any[]) => void) => {
       // Intentionally empty - reserved for future event system
       logger.warn('on method is not yet implemented', { eventName });
