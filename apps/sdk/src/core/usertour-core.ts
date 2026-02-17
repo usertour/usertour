@@ -87,6 +87,7 @@ export class UsertourCore extends Evented {
   private baseZIndex = WidgetZIndex.BASE;
   private targetMissingSeconds: number | undefined = undefined;
   private customNavigate: ((url: string) => void) | null = null;
+  private customScrollIntoView: ((el: Element) => void) | null = null;
   private evalJsDisabled = false;
   private readonly id: string;
   private attributeManager: UsertourAttributeManager;
@@ -442,6 +443,22 @@ export class UsertourCore extends Evented {
    */
   getCustomNavigate(): ((url: string) => void) | null {
     return this.customNavigate;
+  }
+
+  /**
+   * Sets a custom function to handle scrolling elements into view
+   * @param customScrollIntoView - Function taking an Element, or null to use default behavior
+   */
+  setCustomScrollIntoView(customScrollIntoView: ((el: Element) => void) | null) {
+    this.customScrollIntoView = customScrollIntoView;
+  }
+
+  /**
+   * Gets the custom scroll into view function if set
+   * @returns The custom scroll into view function or null if using default behavior
+   */
+  getCustomScrollIntoView(): ((el: Element) => void) | null {
+    return this.customScrollIntoView;
   }
 
   /**

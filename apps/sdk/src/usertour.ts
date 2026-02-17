@@ -153,6 +153,10 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       app.setCustomNavigate(customNavigate);
     },
 
+    setCustomScrollIntoView: (customScrollIntoView: ((el: Element) => void) | null) => {
+      app.setCustomScrollIntoView(customScrollIntoView);
+    },
+
     disableEvalJs: () => {
       app.disableEvalJs();
     },

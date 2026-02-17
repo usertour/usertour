@@ -54,7 +54,7 @@ export interface Usertour {
 
   // setScrollPadding(scrollPadding: ScrollPadding | null): void;
 
-  // setCustomScrollIntoView(scrollIntoView: ((el: Element) => void) | null): void;
+  setCustomScrollIntoView(scrollIntoView: ((el: Element) => void) | null): void;
 
   // _setTargetEnv(targetEnv: unknown): void;
 

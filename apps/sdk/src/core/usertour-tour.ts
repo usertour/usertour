@@ -449,7 +449,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const stepInfo = this.getStepInfo(step);
 
     // Scroll element into view if tour is visible
-    smoothScroll(el, { block: 'center' });
+    const customScrollIntoView = this.instance.getCustomScrollIntoView();
+    if (customScrollIntoView) {
+      customScrollIntoView(el);
+    } else {
+      smoothScroll(el, { block: 'center' });
+    }
 
     // Update store
     this.setStoreData({
