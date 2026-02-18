@@ -352,6 +352,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     const themeData = UsertourTheme.createThemeData(themeSettings);
     const userAttributes = this.getUserAttributes();
     const removeBranding = this.isRemoveBranding();
+    const linkUrlDecorator = this.getLinkUrlDecorator();
 
     // Calculate final zIndex using subclass implementation
     const zIndex = this.getZIndex(themeSettings);
@@ -362,6 +363,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       userAttributes,
       openState: false,
       zIndex,
+      linkUrlDecorator,
     };
   }
 
@@ -496,6 +498,14 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Gets the link URL decorator from the core instance
+   * @protected
+   */
+  protected getLinkUrlDecorator(): ((url: string) => string) | null {
+    return this.instance.getLinkUrlDecorator();
+  }
+
+  /**
    * Checks if the component has any steps
    */
   protected hasSteps(): boolean {
@@ -602,7 +612,13 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   handleNavigate(data: any): void {
     const userAttributes = this.getUserAttributes();
-    const url = extractLinkUrl(data.value, userAttributes);
+    let url = extractLinkUrl(data.value, userAttributes);
+
+    // Apply link URL decorator if available
+    const linkUrlDecorator = this.getLinkUrlDecorator();
+    if (linkUrlDecorator) {
+      url = linkUrlDecorator(url);
+    }
 
     // Only use customNavigate for same-window navigation (SPA routing)
     // For other open types, use default browser navigation

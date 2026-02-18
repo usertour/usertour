@@ -41,7 +41,7 @@ export interface Usertour {
 
   setUrlFilter(urlFilter: ((url: string) => string) | null): void;
 
-  // setLinkUrlDecorator(linkUrlDecorator: ((url: string) => string) | null): void;
+  setLinkUrlDecorator(linkUrlDecorator: ((url: string) => string) | null): void;
 
   // setInferenceAttributeNames(attributeNames: string[]): void;
 

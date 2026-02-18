@@ -4,6 +4,7 @@ import {
   ContentEditorSerialize,
   BannerFrame,
   getBannerWrapperStyle,
+  LinkDecoratorContext,
 } from '@usertour-packages/widget';
 import {
   BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
@@ -36,6 +37,7 @@ type BannerWidgetStore = {
   userAttributes?: UserTourTypes.Attributes;
   bannerData?: BannerData;
   targetElement?: Element | null;
+  linkUrlDecorator?: ((url: string) => string) | null;
 };
 
 type BannerWidgetInstance = {
@@ -228,22 +230,24 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   }
 
   return createPortal(
-    <BannerRoot
-      themeSettings={themeSettings}
-      data={bannerData}
-      zIndex={zIndex}
-      assets={assets}
-      globalStyle={globalStyle}
-      onDismiss={banner.handleDismiss}
-    >
-      <BannerFrame>
-        <ContentEditorSerialize
-          contents={contents}
-          userAttributes={userAttributes}
-          onClick={banner.handleOnClick}
-        />
-      </BannerFrame>
-    </BannerRoot>,
+    <LinkDecoratorContext.Provider value={store.linkUrlDecorator || null}>
+      <BannerRoot
+        themeSettings={themeSettings}
+        data={bannerData}
+        zIndex={zIndex}
+        assets={assets}
+        globalStyle={globalStyle}
+        onDismiss={banner.handleDismiss}
+      >
+        <BannerFrame>
+          <ContentEditorSerialize
+            contents={contents}
+            userAttributes={userAttributes}
+            onClick={banner.handleOnClick}
+          />
+        </BannerFrame>
+      </BannerRoot>
+    </LinkDecoratorContext.Provider>,
     mountEl,
   );
 };

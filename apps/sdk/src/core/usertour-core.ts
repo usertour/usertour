@@ -89,6 +89,7 @@ export class UsertourCore extends Evented {
   private customNavigate: ((url: string) => void) | null = null;
   private customScrollIntoView: ((el: Element) => void) | null = null;
   private urlFilter: ((url: string) => string) | null = null;
+  private linkUrlDecorator: ((url: string) => string) | null = null;
   private evalJsDisabled = false;
   private readonly id: string;
   private attributeManager: UsertourAttributeManager;
@@ -500,6 +501,28 @@ export class UsertourCore extends Evented {
    */
   getUrlFilter(): ((url: string) => string) | null {
     return this.urlFilter;
+  }
+
+  /**
+   * Sets a link URL decorator function to modify link URLs before rendering
+   * This is applied to all clickable URLs in the content (images, buttons, richtext links)
+   * Useful for adding authentication tokens or other query parameters to external links
+   * @param linkUrlDecorator - Function to decorate link URLs, or null to disable decoration
+   * @example
+   * usertour.setLinkUrlDecorator(url => {
+   *   return url + '?token=abc123';
+   * });
+   */
+  setLinkUrlDecorator(linkUrlDecorator: ((url: string) => string) | null): void {
+    this.linkUrlDecorator = linkUrlDecorator;
+  }
+
+  /**
+   * Gets the current link URL decorator function
+   * @returns The current link URL decorator or null if not set
+   */
+  getLinkUrlDecorator(): ((url: string) => string) | null {
+    return this.linkUrlDecorator;
   }
 
   /**

@@ -17,6 +17,7 @@ export interface BaseStore {
   userAttributes?: UserTourTypes.Attributes;
   removeBranding: boolean;
   themeSettings: ThemeTypesSetting;
+  linkUrlDecorator?: ((url: string) => string) | null;
 }
 
 // Tour store type

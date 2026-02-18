@@ -161,6 +161,10 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       app.setUrlFilter(urlFilter);
     },
 
+    setLinkUrlDecorator: (linkUrlDecorator: ((url: string) => string) | null) => {
+      app.setLinkUrlDecorator(linkUrlDecorator);
+    },
+
     disableEvalJs: () => {
       app.disableEvalJs();
     },
