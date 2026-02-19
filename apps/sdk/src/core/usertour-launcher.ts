@@ -3,6 +3,7 @@ import {
   ElementSelectorPropsData,
   contentEndReason,
   contentStartReason,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { LauncherStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
@@ -112,10 +113,26 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    * @param _context - Context object (unused in launcher)
    * @protected
    */
-  protected getCustomStoreData(_context: CustomStoreDataContext): Partial<LauncherStore> {
+  protected async getCustomStoreData(
+    _context: CustomStoreDataContext,
+  ): Promise<Partial<LauncherStore>> {
     const launcherData = this.getLauncherData();
+    const evaluatedContent = launcherData?.tooltip?.content
+      ? await this.evaluateButtonConditionsInData(
+          launcherData.tooltip.content as ContentEditorRoot[],
+        )
+      : launcherData?.tooltip?.content;
+    const evaluatedLauncherData = launcherData
+      ? {
+          ...launcherData,
+          tooltip: {
+            ...launcherData.tooltip,
+            content: evaluatedContent,
+          },
+        }
+      : launcherData;
     return {
-      launcherData,
+      launcherData: evaluatedLauncherData,
     };
   }
 

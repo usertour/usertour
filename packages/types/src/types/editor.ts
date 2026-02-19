@@ -50,6 +50,11 @@ export type ContentEditorButtonData = {
   text: string;
   action?: string;
   actions: RulesCondition[];
+  // Button condition settings
+  disableButton?: boolean;
+  disableButtonConditions?: RulesCondition[];
+  hideButton?: boolean;
+  hideButtonConditions?: RulesCondition[];
 };
 
 export type ContentEditorLinkData = {

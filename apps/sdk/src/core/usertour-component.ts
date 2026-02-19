@@ -22,6 +22,7 @@ import {
   SessionAttribute,
   SessionStep,
   SessionTheme,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { uuidV4, isEqual, extractLinkUrl } from '@usertour/helpers';
 import {
@@ -32,7 +33,10 @@ import {
 } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
 import { SDKClientEvents } from '@usertour-packages/constants';
-import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
+import {
+  convertToAttributeEvaluationOptions,
+  evaluateButtonConditionsInRoots,
+} from '@/core/usertour-helper';
 import { window } from '@/utils';
 
 /**
@@ -201,7 +205,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       return null;
     }
 
-    const customData = this.getCustomStoreData({ baseData, options });
+    const customData = await this.getCustomStoreData({ baseData, options });
 
     return {
       ...baseData,
@@ -227,7 +231,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       globalStyle,
       themeSettings,
     };
-    const customData = this.getCustomStoreData({ baseData });
+    const customData = await this.getCustomStoreData({ baseData });
 
     // Update store with common and specific data
     this.updateStore({
@@ -336,7 +340,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    * @param context - Context object containing baseData and optional options
    * @protected
    */
-  protected abstract getCustomStoreData(context: CustomStoreDataContext): Partial<TStore>;
+  protected abstract getCustomStoreData(context: CustomStoreDataContext): Promise<Partial<TStore>>;
 
   /**
    * Builds the base store data common to all components
@@ -420,6 +424,24 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected getSessionAttributes(): SessionAttribute[] {
     return this.session.getAttributes();
+  }
+
+  /**
+   * Recursively evaluates button conditions in data using RulesEvaluator
+   * @param data - Data object to process (can be any JSON value)
+   * @returns Data with evaluated button conditions
+   * @protected
+   */
+  protected async evaluateButtonConditionsInData(
+    roots: ContentEditorRoot[] | undefined,
+  ): Promise<ContentEditorRoot[] | undefined> {
+    if (!roots || roots.length === 0) {
+      return roots;
+    }
+
+    const evaluator = rulesEvaluatorManager.getEvaluator(this.getContentId());
+    const sessionAttributes = this.getSessionAttributes();
+    return await evaluateButtonConditionsInRoots(roots, evaluator, sessionAttributes);
   }
 
   /**

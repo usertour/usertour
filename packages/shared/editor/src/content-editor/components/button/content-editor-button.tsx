@@ -129,6 +129,58 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
     [element, id, updateElement],
   );
 
+  const handleDisableButtonChange = useCallback(
+    (enabled: boolean) => {
+      updateElement(
+        {
+          ...element,
+          data: { ...element.data, disableButton: enabled },
+        },
+        id,
+      );
+    },
+    [element, id, updateElement],
+  );
+
+  const handleDisableConditionsChange = useCallback(
+    (conditions: RulesCondition[]) => {
+      updateElement(
+        {
+          ...element,
+          data: { ...element.data, disableButtonConditions: conditions },
+        },
+        id,
+      );
+    },
+    [element, id, updateElement],
+  );
+
+  const handleHideButtonChange = useCallback(
+    (enabled: boolean) => {
+      updateElement(
+        {
+          ...element,
+          data: { ...element.data, hideButton: enabled },
+        },
+        id,
+      );
+    },
+    [element, id, updateElement],
+  );
+
+  const handleHideConditionsChange = useCallback(
+    (conditions: RulesCondition[]) => {
+      updateElement(
+        {
+          ...element,
+          data: { ...element.data, hideButtonConditions: conditions },
+        },
+        id,
+      );
+    },
+    [element, id, updateElement],
+  );
+
   // Error state effect
   useEffect(() => {
     const isEmptyActions = !element?.data?.actions || element?.data?.actions.length === 0;
@@ -165,6 +217,10 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
             onMarginChange={handleMarginValueChange}
             onMarginEnabledChange={handleMarginCheckedChange}
             onActionChange={handleActionChange}
+            onDisableButtonChange={handleDisableButtonChange}
+            onDisableConditionsChange={handleDisableConditionsChange}
+            onHideButtonChange={handleHideButtonChange}
+            onHideConditionsChange={handleHideConditionsChange}
             onDelete={handleDelete}
             onAddLeft={handleAddLeft}
             onAddRight={handleAddRight}

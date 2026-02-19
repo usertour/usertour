@@ -80,9 +80,17 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     return this.getBaseZIndex();
   }
 
-  protected getCustomStoreData(_context: CustomStoreDataContext): Partial<BannerStore> {
+  protected async getCustomStoreData(
+    _context: CustomStoreDataContext,
+  ): Promise<Partial<BannerStore>> {
     const bannerData = this.getBannerData();
-    return { bannerData };
+    const evaluatedContents = bannerData?.contents
+      ? await this.evaluateButtonConditionsInData(bannerData.contents)
+      : bannerData?.contents;
+    const evaluatedBannerData = bannerData
+      ? { ...bannerData, contents: evaluatedContents }
+      : bannerData;
+    return { bannerData: evaluatedBannerData };
   }
 
   private setupElementWatcher(store: BannerStore): void {

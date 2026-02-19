@@ -1060,6 +1060,47 @@ export const extractAttributeIdsFromConditions = (conditions: RulesCondition[]):
 };
 
 /**
+ * Recursively extracts attribute IDs from button conditions in content
+ * @param content - Content to search (can be array, object, or primitive)
+ * @returns Array of unique attribute IDs from button conditions
+ */
+export const extractButtonConditionAttributeIds = (content: any): string[] => {
+  const attrIds: string[] = [];
+
+  if (!content) {
+    return attrIds;
+  }
+
+  // Handle arrays
+  if (Array.isArray(content)) {
+    for (const item of content) {
+      attrIds.push(...extractButtonConditionAttributeIds(item));
+    }
+    return attrIds;
+  }
+
+  // Handle objects
+  if (typeof content === 'object') {
+    // Check if it's a button element with conditions
+    if (content.type === 'button' && content.data) {
+      if (content.data.disableButtonConditions) {
+        attrIds.push(...extractAttributeIdsFromConditions(content.data.disableButtonConditions));
+      }
+      if (content.data.hideButtonConditions) {
+        attrIds.push(...extractAttributeIdsFromConditions(content.data.hideButtonConditions));
+      }
+    }
+
+    // Recursively check all properties
+    for (const value of Object.values(content)) {
+      attrIds.push(...extractButtonConditionAttributeIds(value));
+    }
+  }
+
+  return attrIds;
+};
+
+/**
  * Get attribute value from data object using attribute code name
  * @param data - Data object containing attribute values
  * @param codeName - Attribute code name

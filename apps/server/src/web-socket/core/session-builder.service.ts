@@ -19,6 +19,7 @@ import {
   isExpandPending,
   extractChecklistAttrCodes,
   extractBannerAttrCodes,
+  extractButtonConditionAttributeIds,
 } from '@/utils/content-utils';
 import { CustomContentSession, SessionTheme, SessionStep, SessionAttribute } from '@usertour/types';
 import {
@@ -314,9 +315,10 @@ export class SessionBuilderService {
       socketData;
     const checklistData = customContentVersion.data as unknown as ChecklistData;
     const attrCodes = extractChecklistAttrCodes(checklistData);
+    const buttonAttrIds = extractButtonConditionAttributeIds(checklistData);
 
     const attributes = await this.extractAttributes(
-      [],
+      buttonAttrIds,
       environment,
       externalUserId,
       externalCompanyId,
@@ -351,9 +353,10 @@ export class SessionBuilderService {
     const { environment, externalUserId, externalCompanyId } = socketData;
     const bannerData = customContentVersion.data as unknown as BannerData;
     const attrCodes = extractBannerAttrCodes(bannerData?.contents);
+    const buttonAttrIds = extractButtonConditionAttributeIds(bannerData);
 
     const attributes = await this.extractAttributes(
-      [],
+      buttonAttrIds,
       environment,
       externalUserId,
       externalCompanyId,
@@ -431,9 +434,10 @@ export class SessionBuilderService {
     const { environment, externalUserId, externalCompanyId } = socketData;
     const launcher = customContentVersion.data as unknown as LauncherData;
     const attrCodes = extractLauncherAttrCodes(launcher);
+    const buttonAttrIds = extractButtonConditionAttributeIds(launcher);
 
     const attributes = await this.extractAttributes(
-      [],
+      buttonAttrIds,
       environment,
       externalUserId,
       externalCompanyId,
@@ -583,9 +587,10 @@ export class SessionBuilderService {
 
     const attrIds = extractStepTriggerAttributeIds(steps);
     const attrCodes = extractStepContentAttrCodes(steps);
+    const buttonAttrIds = extractButtonConditionAttributeIds(steps);
 
     return await this.extractAttributes(
-      attrIds,
+      [...attrIds, ...buttonAttrIds],
       environment,
       externalUserId,
       externalCompanyId,

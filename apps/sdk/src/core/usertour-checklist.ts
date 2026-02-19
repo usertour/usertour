@@ -5,6 +5,7 @@ import {
   RulesType,
   ThemeTypesSetting,
   contentEndReason,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { ChecklistStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
@@ -209,11 +210,19 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * @param _context - Context object (unused in checklist)
    * @protected
    */
-  protected getCustomStoreData(_context: CustomStoreDataContext): Partial<ChecklistStore> {
+  protected async getCustomStoreData(
+    _context: CustomStoreDataContext,
+  ): Promise<Partial<ChecklistStore>> {
     const checklistData = this.getChecklistData();
+    const evaluatedContent = checklistData?.content
+      ? await this.evaluateButtonConditionsInData(checklistData.content as ContentEditorRoot[])
+      : checklistData?.content;
+    const evaluatedChecklistData = checklistData
+      ? { ...checklistData, content: evaluatedContent }
+      : checklistData;
     const expanded = this.getExpandedStateStorage(this.getSessionId());
     return {
-      checklistData,
+      checklistData: evaluatedChecklistData,
       expanded,
     };
   }

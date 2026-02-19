@@ -9,6 +9,8 @@ import {
   RulesEvaluationOptions,
   ContentEditorQuestionElement,
   ContentEditorElementType,
+  ContentEditorRoot,
+  ContentEditorButtonElement,
 } from '@usertour/types';
 import { document, location, window } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
@@ -65,6 +67,81 @@ export const convertToAttributeEvaluationOptions = (sessionAttributes: SessionAt
   }
 
   return { attributes, userAttributes, companyAttributes, membershipAttributes };
+};
+
+type ContentEditorChild = ContentEditorRoot['children'][number]['children'][number];
+
+type RulesEvaluatorLike = {
+  evaluate: (
+    conditions: RulesCondition[],
+    sessionAttributes: SessionAttribute[],
+  ) => Promise<RulesCondition[]>;
+};
+
+export const evaluateButtonConditionsInRoots = async (
+  roots: ContentEditorRoot[],
+  evaluator: RulesEvaluatorLike,
+  sessionAttributes: SessionAttribute[],
+): Promise<ContentEditorRoot[]> => {
+  const mappedRoots: ContentEditorRoot[] = [];
+
+  for (const root of roots) {
+    const mappedColumns = [] as ContentEditorRoot['children'];
+
+    for (const column of root.children) {
+      const mappedChildren = [] as ContentEditorChild[];
+
+      for (const child of column.children) {
+        mappedChildren.push(
+          await evaluateButtonConditionsInChild(child, evaluator, sessionAttributes),
+        );
+      }
+
+      mappedColumns.push({
+        ...column,
+        children: mappedChildren,
+      });
+    }
+
+    mappedRoots.push({
+      ...root,
+      children: mappedColumns,
+    });
+  }
+
+  return mappedRoots;
+};
+
+const evaluateButtonConditionsInChild = async (
+  child: ContentEditorChild,
+  evaluator: RulesEvaluatorLike,
+  sessionAttributes: SessionAttribute[],
+): Promise<ContentEditorChild> => {
+  const element = child.element;
+  if (element.type !== ContentEditorElementType.BUTTON) {
+    return child;
+  }
+
+  const buttonElement = element as ContentEditorButtonElement;
+  const buttonData = buttonElement.data;
+  const disableButtonConditions = Array.isArray(buttonData.disableButtonConditions)
+    ? await evaluator.evaluate(buttonData.disableButtonConditions, sessionAttributes)
+    : buttonData.disableButtonConditions;
+  const hideButtonConditions = Array.isArray(buttonData.hideButtonConditions)
+    ? await evaluator.evaluate(buttonData.hideButtonConditions, sessionAttributes)
+    : buttonData.hideButtonConditions;
+
+  return {
+    ...child,
+    element: {
+      ...buttonElement,
+      data: {
+        ...buttonData,
+        disableButtonConditions,
+        hideButtonConditions,
+      },
+    },
+  };
 };
 
 // ============================================================================

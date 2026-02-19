@@ -3,6 +3,7 @@
 import type { ContentEditorButtonElement } from '@usertour/types';
 import { ButtonSemanticType, DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/types';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { isConditionsActived } from '@usertour/helpers';
 
 import { Button } from '../../primitives';
 import { useButtonContext } from '../../core/banner';
@@ -25,8 +26,15 @@ export const ButtonSerialize = memo((props: ButtonSerializeProps) => {
 
   const [loading, setLoading] = useState(false);
 
+  const shouldDisable =
+    Boolean(element.data?.disableButton) &&
+    isConditionsActived(element.data?.disableButtonConditions || []);
+  const shouldHide =
+    Boolean(element.data?.hideButton) &&
+    isConditionsActived(element.data?.hideButtonConditions || []);
+
   const handleOnClick = useCallback(async () => {
-    if (onClick) {
+    if (onClick && !shouldDisable) {
       setLoading(true);
       try {
         await onClick(element);
@@ -34,7 +42,7 @@ export const ButtonSerialize = memo((props: ButtonSerializeProps) => {
         setLoading(false);
       }
     }
-  }, [onClick, element]);
+  }, [onClick, element, shouldDisable]);
 
   // Detect rendering context (default or banner)
   const buttonContext = useButtonContext();
@@ -52,13 +60,18 @@ export const ButtonSerialize = memo((props: ButtonSerializeProps) => {
   // Memoize style transformation
   const buttonStyle = useMemo(() => transformsStyle(element), [element.margin]);
 
+  // If button should be hidden, don't render it
+  if (shouldHide) {
+    return null;
+  }
+
   return (
     <Button
       variant={buttonVariant}
       onClick={handleOnClick}
       className="h-fit"
       style={buttonStyle}
-      disabled={loading}
+      disabled={loading || shouldDisable}
     >
       <span>{element.data?.text}</span>
     </Button>
