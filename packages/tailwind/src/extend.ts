@@ -112,6 +112,9 @@ export const extendSdk = {
     'sdk-squared-progress': 'calc(var(--usertour-squared-progress-bar-height) * 3)',
     'sdk-dotted-progress': 'var(--usertour-dotted-progress-bar-height)',
   },
+  size: {
+    'sdk-button': 'var(--usertour-button-height)',
+  },
   minWidth: {
     'sdk-button': 'var(--usertour-button-min-width)',
   },

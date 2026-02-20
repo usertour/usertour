@@ -25,7 +25,7 @@ export const ThemePreviewBanner = (props: ThemePreviewBannerProps) => {
 
   const data = {
     ...DEFAULT_BANNER_DATA,
-    allowUsersToDismissEmbed: false,
+    allowUsersToDismissEmbed: true,
     embedPlacement: BannerEmbedPlacement.TOP_OF_PAGE,
     overlayEmbedOverAppContent: false,
     stickToTopOfViewport: false,

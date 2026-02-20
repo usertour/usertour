@@ -79,6 +79,9 @@ const customTwMerge = extendTailwindMerge({
       // width group - matches w-* classes
       w: ['w-sdk-rounded-progress', 'w-sdk-squared-progress', 'w-sdk-dotted-progress'],
 
+      // size group - matches size-* classes
+      size: ['size-sdk-button'],
+
       // borderRadius group - matches rounded-* classes
       rounded: [
         'rounded-sdk-checklist-trigger',

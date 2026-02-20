@@ -123,7 +123,7 @@ function getBannerContentWrapperStyle(data: BannerData): CSSProperties {
 }
 
 const BANNER_DISMISS_BUTTON_CLASS = cn(
-  'size-8 rounded',
+  'rounded size-sdk-button',
   'inline-flex items-center justify-center',
   'text-sdk-banner-foreground',
   'hover:bg-sdk-banner-hover',
