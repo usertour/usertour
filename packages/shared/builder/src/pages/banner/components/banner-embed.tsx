@@ -6,8 +6,9 @@ import { ContentEditor } from '@usertour-packages/shared-editor';
 import type { ContentEditorRoot } from '@usertour/types';
 import {
   DEFAULT_BANNER_DATA,
-  defaultSettings,
   ContentEditorElementType,
+  BannerEmbedPlacement,
+  BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
   type Theme,
 } from '@usertour/types';
 import { isEqual } from 'lodash';
@@ -16,9 +17,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderContext, useBannerContext } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
 import { getDefaultDataForType } from '../../../utils/default-data';
+import { BrowserPreview } from './browser-preview';
 
 const DEFAULT_BANNER_CONTENTS = getDefaultDataForType('tooltip') as ContentEditorRoot[];
-const DEFAULT_BANNER_PREVIEW_WIDTH = 720;
 
 export const BannerEmbed = () => {
   const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null);
@@ -60,8 +61,6 @@ export const BannerEmbed = () => {
     return themeList.find((item) => item.isDefault);
   }, [themeList, currentVersion]);
 
-  const themeSettings = theme?.settings ?? defaultSettings;
-
   const data = useMemo(
     () => ({
       ...DEFAULT_BANNER_DATA,
@@ -76,6 +75,10 @@ export const BannerEmbed = () => {
     [localData?.contents],
   );
 
+  if (!theme || !localData) {
+    return null;
+  }
+
   const zIndex = data.zIndex ?? 11111 + EXTENSION_CONTENT_POPPER;
 
   const enabledElementTypes = [
@@ -85,10 +88,10 @@ export const BannerEmbed = () => {
     ContentEditorElementType.BUTTON,
   ];
 
-  const previewWidth = data.maxEmbedWidth ?? DEFAULT_BANNER_PREVIEW_WIDTH;
+  const browserWidth = Math.max(data.maxEmbedWidth ? data.maxEmbedWidth + 400 : 960, 960);
 
   const bannerPreview = (
-    <BannerPreview previewMode ref={setWrapperEl} style={{ width: previewWidth, maxWidth: '100%' }}>
+    <BannerPreview previewMode ref={setWrapperEl}>
       <ContentEditor
         zIndex={zIndex + EXTENSION_CONTENT_POPPER}
         customUploadRequest={handleCustomUploadRequest}
@@ -101,19 +104,40 @@ export const BannerEmbed = () => {
     </BannerPreview>
   );
 
-  const renderPreviewLayout = () => (
-    <div className="flex items-center justify-center h-full min-h-[240px] w-full">
-      {bannerPreview}
+  const embedPlacement = data.embedPlacement ?? BannerEmbedPlacement.TOP_OF_PAGE;
+  const requiresElement = BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT.includes(embedPlacement);
+
+  const browserContent = !requiresElement ? (
+    <div className="h-full flex flex-col relative bg-white">
+      {embedPlacement === BannerEmbedPlacement.TOP_OF_PAGE && (
+        <div className="flex-shrink-0">{bannerPreview}</div>
+      )}
+
+      <div className="flex-1 overflow-y-auto bg-white" />
+
+      {embedPlacement === BannerEmbedPlacement.BOTTOM_OF_PAGE && (
+        <div className="flex-shrink-0">{bannerPreview}</div>
+      )}
+    </div>
+  ) : (
+    <div className="h-full flex flex-col relative bg-white">
+      <div className="flex-1 overflow-y-auto p-12 pt-20">
+        {embedPlacement === BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT && bannerPreview}
+        <div className="border-2 border-dashed border-blue-400 bg-blue-50 rounded min-h-[80px] flex flex-col justify-center">
+          {embedPlacement === BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT && bannerPreview}
+          <p className="text-sm font-semibold text-blue-600 p-6 text-center">Target Element</p>
+          {embedPlacement === BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT && bannerPreview}
+        </div>
+        {embedPlacement === BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT && bannerPreview}
+      </div>
     </div>
   );
 
-  if (!theme || !localData) {
-    return null;
-  }
-
   return (
-    <BannerRoot themeSettings={themeSettings} data={data} zIndex={zIndex}>
-      <BannerContainer>{renderPreviewLayout()}</BannerContainer>
+    <BannerRoot themeSettings={theme.settings} data={data} zIndex={zIndex}>
+      <BannerContainer>
+        <BrowserPreview width={browserWidth}>{browserContent}</BrowserPreview>
+      </BannerContainer>
     </BannerRoot>
   );
 };
