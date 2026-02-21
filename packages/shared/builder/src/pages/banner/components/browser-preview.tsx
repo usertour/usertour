@@ -56,7 +56,7 @@ export const PageContentMock = () => (
 
 export const BrowserPreview = ({ children, width = 1200 }: BrowserPreviewProps) => {
   return (
-    <div className="mx-auto pt-6" style={{ width: `${width}px` }}>
+    <div className="mx-auto pt-10" style={{ width: `${width}px` }}>
       <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
         {/* macOS Style Window Controls */}
         <div className="px-4 py-3 flex items-center justify-between gap-3 h-11">
