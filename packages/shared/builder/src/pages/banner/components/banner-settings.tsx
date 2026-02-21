@@ -18,22 +18,23 @@ const SETTINGS_ITEMS: readonly {
   {
     key: 'overlayEmbedOverAppContent',
     label: 'Overlay over content',
-    tooltip: 'Whether the banner overlays page content or pushes it down.',
+    tooltip:
+      'Controls whether the banner floats above page content or takes up space and pushes it down.',
   },
   {
     key: 'stickToTopOfViewport',
     label: 'Stick to top',
-    tooltip: 'Keep the banner fixed at the top when scrolling.',
+    tooltip: 'Makes the banner stay visible at the top while scrolling instead of scrolling away.',
   },
   {
     key: 'allowUsersToDismissEmbed',
     label: 'Allow dismiss',
-    tooltip: 'Whether users can close or hide the banner.',
+    tooltip: 'Adds an X button so users can permanently dismiss the banner.',
   },
   {
     key: 'animateWhenEmbedAppears',
     label: 'Animate on appear',
-    tooltip: 'Play an animation when the banner becomes visible.',
+    tooltip: 'Slides the banner in with an animation instead of appearing instantly.',
   },
 ];
 
