@@ -59,7 +59,7 @@ export const BrowserPreview = ({ children, width = 1200 }: BrowserPreviewProps) 
     <div className="mx-auto pt-10" style={{ width: `${width}px` }}>
       <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
         {/* macOS Style Window Controls */}
-        <div className="px-4 py-3 flex items-center justify-between gap-3 h-11">
+        <div className="px-4 py-3 flex items-center justify-between gap-3 h-11 border-b border-gray-200">
           <div className="flex items-center gap-2.5">
             <div className="w-3 h-3 rounded-full bg-red-500" />
             <div className="w-3 h-3 rounded-full bg-yellow-500" />
@@ -73,7 +73,7 @@ export const BrowserPreview = ({ children, width = 1200 }: BrowserPreviewProps) 
             <div className="p-1 rounded text-gray-400">
               <RiArrowRightSLine size={18} />
             </div>
-            <div className="flex-1 bg-gray-100 rounded px-3 py-1.5 text-sm text-gray-600 text-center">
+            <div className="flex-1 bg-gray-100 rounded px-3 py-1 text-sm text-gray-600 text-center">
               example.com
             </div>
           </div>
