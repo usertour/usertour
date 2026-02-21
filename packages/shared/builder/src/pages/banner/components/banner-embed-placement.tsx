@@ -77,7 +77,8 @@ export const BannerEmbedPlacementSelect = () => {
       <div className={labelStyles}>
         <span className="text-sm">Embed placement</span>
         <QuestionTooltip>
-          Where the banner is inserted on the page or relative to a container element.
+          Choose where to display the banner: at the top or bottom of the page, or relative to a
+          specific element (inside, before, or after).
         </QuestionTooltip>
       </div>
       <Select
