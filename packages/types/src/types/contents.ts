@@ -15,6 +15,7 @@ export enum ContentActionsItemType {
   FLOW_DISMIS = 'flow-dismis',
   LAUNCHER_DISMIS = 'launcher-dismis',
   CHECKLIST_DISMIS = 'checklist-dismis',
+  BANNER_DISMIS = 'banner-dismis',
   FLOW_START = 'flow-start',
   PAGE_NAVIGATE = 'page-navigate',
   JAVASCRIPT_EVALUATE = 'javascript-evaluate',

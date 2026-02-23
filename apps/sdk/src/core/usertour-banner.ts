@@ -11,14 +11,14 @@ import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-compo
 import { logger } from '@/utils';
 import { ActionSource } from '@/core/action-handlers';
 import { UsertourElementWatcher } from './usertour-element-watcher';
-import { CommonActionHandler } from '@/core/action-handlers';
+import { CommonActionHandler, BannerActionHandler } from '@/core/action-handlers';
 import { SDKClientEvents } from '@usertour-packages/constants';
 
 export class UsertourBanner extends UsertourComponent<BannerStore> {
   private watcher: UsertourElementWatcher | null = null;
 
   protected initializeActionHandlers(): void {
-    this.registerActionHandlers([new CommonActionHandler()]);
+    this.registerActionHandlers([new CommonActionHandler(), new BannerActionHandler()]);
   }
 
   async check(): Promise<void> {

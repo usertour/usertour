@@ -7,6 +7,7 @@ import type { ContentEditorRoot } from '@usertour/types';
 import {
   DEFAULT_BANNER_DATA,
   ContentEditorElementType,
+  ContentActionsItemType,
   BannerEmbedPlacement,
   BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
   type Theme,
@@ -88,6 +89,13 @@ export const BannerEmbed = () => {
     ContentEditorElementType.BUTTON,
   ];
 
+  const bannerActionItems = [
+    ContentActionsItemType.BANNER_DISMIS,
+    ContentActionsItemType.FLOW_START,
+    ContentActionsItemType.PAGE_NAVIGATE,
+    ContentActionsItemType.JAVASCRIPT_EVALUATE,
+  ];
+
   const browserWidth = Math.max(data.maxEmbedWidth ? data.maxEmbedWidth + 400 : 960, 960);
 
   const bannerPreview = (
@@ -100,6 +108,7 @@ export const BannerEmbed = () => {
         projectId={projectId}
         attributes={attributeList}
         enabledElementTypes={enabledElementTypes}
+        actionItems={bannerActionItems}
       />
     </BannerPreview>
   );
