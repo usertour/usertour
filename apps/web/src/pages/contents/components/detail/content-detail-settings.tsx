@@ -95,6 +95,7 @@ export const ContentDetailSettings = () => {
 
   const isLauncherLike =
     contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER;
+  const isLauncher = contentType === ContentDataType.LAUNCHER;
   const enabledAutoStartRules = !isLauncherLike;
 
   return (
@@ -111,7 +112,7 @@ export const ContentDetailSettings = () => {
         showFrequency={!isLauncherLike}
         showAtLeast={contentType !== ContentDataType.CHECKLIST}
         showWait={!isLauncherLike}
-        showPriority={!isLauncherLike}
+        showPriority={!isLauncher}
         disabled={isViewOnly}
         featureTooltip={AutoStartTooltips(contentType)}
       />
