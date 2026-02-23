@@ -245,7 +245,7 @@ const BannerPreviewContent = ({
 }) => {
   const data = (currentVersion.data as BannerData | undefined) ?? DEFAULT_BANNER_DATA;
   const themeSettings = currentTheme.settings;
-  const width = previewWidth ?? data.maxEmbedWidth ?? 720;
+  const width = previewWidth ?? data.maxEmbedWidth ?? 960;
 
   return (
     <BannerRoot themeSettings={themeSettings} data={data}>
