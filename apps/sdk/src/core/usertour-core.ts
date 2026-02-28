@@ -42,7 +42,7 @@ import {
   sendPreviewSuccessMessage,
   timerManager,
 } from '@/utils';
-import { getClientContext } from '@/core/usertour-helper';
+import { getClientContext, setUrlFilterFn } from '@/core/usertour-helper';
 import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 import { ErrorMessages } from '@/types';
 import { formatErrorMessage } from '@/types/error-messages';
@@ -491,8 +491,17 @@ export class UsertourCore extends Evented {
    */
   setUrlFilter(urlFilter: ((url: string) => string) | null): void {
     this.urlFilter = urlFilter;
-    // Update URL monitor with new filter
+    // Sync module-level helper so getClientContext() returns filtered URL everywhere
+    setUrlFilterFn(urlFilter);
+    // Sync URL monitor so checkUrlChange() compares filtered URLs
     this.urlMonitor?.setUrlFilter(urlFilter);
+    // Immediately push updated clientContext to server (don't wait for next URL change)
+    if (this.socketService.isConnected()) {
+      const clientContext = getClientContext();
+      this.socketService.updateClientContext(clientContext).catch((err) => {
+        logger.error('Failed to sync clientContext after setUrlFilter:', err);
+      });
+    }
   }
 
   /**
@@ -1261,6 +1270,7 @@ export class UsertourCore extends Evented {
     this.urlMonitor = new UsertourURLMonitor({
       autoStart: true,
       interval: 500,
+      urlFilter: this.urlFilter ?? undefined,
     });
 
     // Listen for URL change events

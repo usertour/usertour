@@ -126,4 +126,14 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
 
     this.watcher.findElement();
   }
+
+  /**
+   * Banner-specific cleanup: destroy the element watcher to prevent timer/listener leaks.
+   */
+  protected onDestroy(): void {
+    if (this.watcher) {
+      this.watcher.destroy();
+      this.watcher = null;
+    }
+  }
 }
