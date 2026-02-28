@@ -1022,8 +1022,6 @@ export class UsertourCore extends Evented {
     if (this.activatedBanner) {
       if (this.activatedBanner.getSessionId() === session.id) {
         await this.activatedBanner.update(session);
-        await this.activatedBanner.refreshStoreData();
-        await this.activatedBanner.show();
         return true;
       }
       this.cleanupActivatedBanner();
