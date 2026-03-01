@@ -27,7 +27,8 @@ const AutoStartTooltips = (contentType: ContentDataType) => {
       <>
         Show the {contentLabel} if the user matches the given condition. If the user doesn't match
         the condition, the {contentLabel} will not be displayed. Example: Show the {contentLabel} if
-        the user is a new user. <br />
+        the user is a new user, or set current page condition matches /* to display on all pages.{' '}
+        <br />
       </>
     );
   }
