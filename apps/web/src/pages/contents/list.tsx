@@ -96,7 +96,11 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
   banners: {
     title: 'Banners',
     description: (
-      <ContentDescription text="Banners are great for announcements, promotions, and important messages that need to be displayed prominently to users." />
+      <ContentDescription
+        text="Banners are great for announcements, promotions, and important messages that need to be displayed prominently to users."
+        docUrl="https://docs.usertour.io/how-to-guides/banners"
+        linkText="Read more in our Embed Banner guide"
+      />
     ),
     emptyTitle: 'No banners added',
     emptyDescription: 'You have not added any banners. Add one below.',
