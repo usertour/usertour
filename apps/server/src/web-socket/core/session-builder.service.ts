@@ -32,6 +32,8 @@ import {
 } from '@/common/types';
 import { ContentDataService } from './content-data.service';
 import { ProjectsService } from '@/projects/projects.service';
+import { DistributedLockService } from './distributed-lock.service';
+import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
 
 @Injectable()
 export class SessionBuilderService {
@@ -41,11 +43,62 @@ export class SessionBuilderService {
     private readonly prisma: PrismaService,
     private readonly contentDataService: ContentDataService,
     private readonly projectsService: ProjectsService,
+    private readonly distributedLockService: DistributedLockService,
   ) {}
 
   // ============================================================================
   // Public API Methods
   // ============================================================================
+
+  /**
+   * Create a biz session
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @param versionId - The version ID
+   * @returns The created session
+   */
+  /**
+   * Idempotently find or create a biz session for singleton content types (FLOW, CHECKLIST).
+   * Uses a per-user per-content distributed lock + DB double-check to prevent duplicate
+   * sessions when the same user has multiple concurrent sockets (e.g. two browser tabs).
+   * @returns `{ session, isNew }` — `isNew` tells the caller whether to track a start event
+   */
+  async findOrCreateBizSession(
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId: string,
+    versionId: string,
+    bizUserId: string,
+    contentId: string,
+  ): Promise<{ session: BizSession; isNew: boolean } | null> {
+    const lockKey = buildSessionCreateLockKey(environment.id, externalUserId, contentId);
+    const result = await this.distributedLockService.withRetryLock(
+      lockKey,
+      async () => {
+        // Double-check: another socket may have created the session while we waited for the lock
+        const existing = await this.contentDataService.findActiveSessionByContentId(
+          contentId,
+          bizUserId,
+        );
+        if (existing) {
+          this.logger.debug(`Reusing session created by concurrent socket: ${existing.id}`);
+          return { session: existing, isNew: false };
+        }
+        const session = await this.createBizSession(
+          environment,
+          externalUserId,
+          externalCompanyId,
+          versionId,
+        );
+        return session ? { session, isNew: true } : null;
+      },
+      5, // retry attempts
+      300, // retry interval ms
+      5000, // lock timeout ms
+    );
+    return result ?? null;
+  }
 
   /**
    * Create a biz session

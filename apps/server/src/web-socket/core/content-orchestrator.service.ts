@@ -978,58 +978,51 @@ export class ContentOrchestratorService {
     socketData: SocketData,
     startOptions?: StartContentOptions,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
-    const { environment, externalUserId, externalCompanyId, clientContext } = socketData;
-    const startReason = startOptions?.startReason ?? contentStartReason.START_FROM_CONDITION;
+    const { environment, externalUserId, externalCompanyId, clientContext, bizUserId } = socketData;
+    const contentId = customContentVersion.contentId;
     const versionId = customContentVersion.id;
-
-    const session = customContentVersion.session;
     const contentType = customContentVersion.content.type as ContentDataType;
+    const startReason = startOptions?.startReason ?? contentStartReason.START_FROM_CONDITION;
     const currentStepCvid = findCurrentStepCvid(customContentVersion, startOptions);
 
-    if (session.activeSession) {
+    // Fast-path: cached data already shows an active session — no lock needed
+    if (customContentVersion.session.activeSession) {
       return {
         success: true,
-        sessionId: session.activeSession.id,
+        sessionId: customContentVersion.session.activeSession.id,
         currentStepCvid,
       };
     }
-    const bizSession = await this.sessionBuilderService.createBizSession(
+
+    const result = await this.sessionBuilderService.findOrCreateBizSession(
       environment,
       externalUserId,
       externalCompanyId,
       versionId,
+      bizUserId,
+      contentId,
     );
-
-    if (!bizSession) {
-      return {
-        success: false,
-        reason: 'Failed to create business session',
-      };
-    }
-    const steps = customContentVersion?.steps ?? [];
-    const stepId = steps.find((step) => step.cvid === currentStepCvid)?.id ?? null;
-
-    const result = await this.trackAutoStartEvent(
-      bizSession.id,
-      contentType,
-      environment,
-      startReason,
-      stepId,
-      clientContext,
-    );
-
     if (!result) {
-      return {
-        success: false,
-        reason: 'Failed to track auto start event',
-      };
+      return { success: false, reason: 'Failed to create business session' };
     }
 
-    return {
-      success: true,
-      sessionId: bizSession.id,
-      currentStepCvid,
-    };
+    if (result.isNew) {
+      const stepId =
+        customContentVersion.steps?.find((s) => s.cvid === currentStepCvid)?.id ?? null;
+      const tracked = await this.trackAutoStartEvent(
+        result.session.id,
+        contentType,
+        environment,
+        startReason,
+        stepId,
+        clientContext,
+      );
+      if (!tracked) {
+        return { success: false, reason: 'Failed to track auto start event' };
+      }
+    }
+
+    return { success: true, sessionId: result.session.id, currentStepCvid };
   }
 
   /**

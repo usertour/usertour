@@ -46,6 +46,23 @@ export const buildSocketLockKey = (socket: Socket): string => {
 };
 
 /**
+ * Build a per-user, per-content session creation lock key.
+ * Used to prevent duplicate sessions when the same user has multiple sockets
+ * (e.g. two browser tabs) that both attempt to create a session simultaneously.
+ * @param environmentId - The environment ID
+ * @param externalUserId - The external user ID
+ * @param contentId - The content ID
+ * @returns The session creation lock key
+ */
+export const buildSessionCreateLockKey = (
+  environmentId: string,
+  externalUserId: string,
+  contentId: string,
+): string => {
+  return `session-create:{${environmentId}:${externalUserId}}:${contentId}`;
+};
+
+/**
  * Build the external user room ID
  * @param environmentId - The environment id
  * @param externalUserId - The external user id
