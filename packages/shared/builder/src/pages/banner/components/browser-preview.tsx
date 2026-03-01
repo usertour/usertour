@@ -58,7 +58,12 @@ export const BrowserPreview = ({ children, width = 1200 }: BrowserPreviewProps) 
   return (
     <div
       className="mx-auto py-8"
-      style={{ width: `${width}px`, height: '100dvh', minHeight: '720px' }}
+      style={{
+        width: `${width}px`,
+        maxWidth: 'calc(100vw - 32px)',
+        height: '100dvh',
+        minHeight: '720px',
+      }}
     >
       <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 h-full flex flex-col">
         {/* macOS Style Window Controls */}
