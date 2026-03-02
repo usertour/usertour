@@ -10,6 +10,8 @@ import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import {
+  BannerData,
+  BannerEmbedPlacement,
   ChecklistData,
   ChecklistInitialDisplay,
   Content,
@@ -34,6 +36,7 @@ import {
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
+import { cn } from '@usertour-packages/tailwind';
 
 interface ContentDetailContentStepProps {
   currentStep: Step;
@@ -46,13 +49,17 @@ interface ContentDetailContentStepProps {
 const ContentBadge = ({
   children,
   className,
+  textClassName,
 }: {
   children: React.ReactNode;
   className?: string;
+  textClassName?: string;
 }) => {
   return (
     <Badge variant={'secondary'} className={className}>
-      <span className="first-letter:uppercase max-w-40 truncate inline-block">{children}</span>
+      <span className={cn('first-letter:uppercase max-w-40 truncate inline-block', textClassName)}>
+        {children}
+      </span>
     </Badge>
   );
 };
@@ -403,6 +410,7 @@ const BannerContentPreview = ({
   disabled,
 }: BannerContentPreviewProps) => {
   const currentTheme = useThemeHandler(currentVersion);
+  const data = currentVersion.data as BannerData;
   const { height, setContentRect, setScale } = useScaledPreview();
 
   if (!currentVersion || !currentTheme) return null;
@@ -423,7 +431,55 @@ const BannerContentPreview = ({
     </ScaledPreviewWrapper>
   );
 
-  const badges = <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>;
+  const placementRequiresElement =
+    data.embedPlacement === BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT ||
+    data.embedPlacement === BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT ||
+    data.embedPlacement === BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT ||
+    data.embedPlacement === BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT;
+  const placementLabelMap: Record<BannerEmbedPlacement, string> = {
+    [BannerEmbedPlacement.TOP_OF_PAGE]: 'Top of page',
+    [BannerEmbedPlacement.BOTTOM_OF_PAGE]: 'Bottom of page',
+    [BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT]: 'Top of container element',
+    [BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT]: 'Bottom of container element',
+    [BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT]: 'Immediately before element',
+    [BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT]: 'Immediately after element',
+  };
+  const bannerBadgeTextClassName = 'max-w-64';
+
+  const badges = (
+    <>
+      <ContentBadge textClassName={bannerBadgeTextClassName}>
+        Show banner at {placementLabelMap[data.embedPlacement] ?? data.embedPlacement}
+      </ContentBadge>
+      {placementRequiresElement && (
+        <ContentBadge textClassName={bannerBadgeTextClassName}>
+          Target element:{' '}
+          {data.containerElement?.customSelector ? data.containerElement.customSelector : 'Not set'}
+        </ContentBadge>
+      )}
+      {data.stickToTopOfViewport && (
+        <ContentBadge textClassName={bannerBadgeTextClassName}>
+          Stick to top of viewport
+        </ContentBadge>
+      )}
+      <ContentBadge textClassName={bannerBadgeTextClassName}>
+        {data.allowUsersToDismissEmbed
+          ? 'Allow users to dismiss banner'
+          : 'Prevent users from dismissing banner'}
+      </ContentBadge>
+      <ContentBadge textClassName={bannerBadgeTextClassName}>
+        {data.animateWhenEmbedAppears ? 'Animate when banner appears' : 'No enter animation'}
+      </ContentBadge>
+      {data.overlayEmbedOverAppContent && (
+        <ContentBadge textClassName={bannerBadgeTextClassName}>
+          Overlay over app content
+        </ContentBadge>
+      )}
+      <ContentBadge textClassName={bannerBadgeTextClassName}>
+        Theme: {currentTheme.name ?? ''}
+      </ContentBadge>
+    </>
+  );
 
   return (
     <ContentPreviewCard
