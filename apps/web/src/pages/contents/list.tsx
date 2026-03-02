@@ -99,7 +99,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
       <ContentDescription
         text="Banners are great for announcements, promotions, and important messages that need to be displayed prominently to users."
         docUrl="https://docs.usertour.io/how-to-guides/banners"
-        linkText="Read more in our Embed Banner guide"
+        linkText="Read more in our Banners guide"
       />
     ),
     emptyTitle: 'No banners added',
