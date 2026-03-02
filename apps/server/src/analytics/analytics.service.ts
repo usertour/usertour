@@ -997,6 +997,7 @@ export class AnalyticsService {
               bizUser: true,
               bizCompany: true,
               bizEvent: { include: { event: true } },
+              content: true,
               version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
             },
             orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
