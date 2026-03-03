@@ -66,7 +66,7 @@ export const BannerEmbed = () => {
     () => ({
       ...DEFAULT_BANNER_DATA,
       ...localData,
-      zIndex: localData?.zIndex ?? 11111 + EXTENSION_CONTENT_POPPER,
+      zIndex: localData?.zIndex ?? 10000 + EXTENSION_CONTENT_POPPER,
     }),
     [localData],
   );
@@ -80,7 +80,7 @@ export const BannerEmbed = () => {
     return null;
   }
 
-  const zIndex = data.zIndex ?? 11111 + EXTENSION_CONTENT_POPPER;
+  const zIndex = data.zIndex ?? 10000 + EXTENSION_CONTENT_POPPER;
 
   const enabledElementTypes = [
     ContentEditorElementType.IMAGE,
