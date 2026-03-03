@@ -40,7 +40,7 @@ export interface BannerData {
   /** Target element when embed placement is container- or element-relative. */
   containerElement?: ElementSelectorPropsData;
   zIndex?: number;
-  /** Measured content height in pixels, computed when saving in the builder. */
+  /** Content height in pixels (excluding padding), computed when saving in the builder. */
   height?: number;
   /** Rich content blocks for the banner (builder only; persisted with version data). */
   contents?: ContentEditorRoot[];

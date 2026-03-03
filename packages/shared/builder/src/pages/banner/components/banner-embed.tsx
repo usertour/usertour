@@ -1,5 +1,5 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
-import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
+import { useAttributeListContext } from '@usertour-packages/contexts';
 import { useSize } from '@usertour-packages/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour-packages/widget';
 import { ContentEditor } from '@usertour-packages/shared-editor';
@@ -10,12 +10,12 @@ import {
   ContentActionsItemType,
   BannerEmbedPlacement,
   BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
-  type Theme,
 } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useBuilderContext, useBannerContext } from '../../../contexts';
+import { useCurrentTheme } from '../../../hooks/use-current-theme';
 import { useAws } from '../../../hooks/use-aws';
 import { getDefaultDataForType } from '../../../utils/default-data';
 import { BrowserPreview } from './browser-preview';
@@ -26,17 +26,22 @@ export const BannerEmbed = () => {
   const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null);
   const { localData, updateLocalData } = useBannerContext();
   const { upload } = useAws();
-  const { themeList } = useThemeListContext();
-  const { currentVersion, projectId } = useBuilderContext();
+  const { projectId } = useBuilderContext();
   const { attributeList } = useAttributeListContext();
 
   const wrapperRect = useSize(wrapperEl);
 
+  const theme = useCurrentTheme({ fallbackToDefault: true });
+
   useEffect(() => {
-    if (wrapperRect?.height != null && wrapperRect.height > 0) {
-      updateLocalData({ height: wrapperRect.height });
+    if (wrapperRect?.height != null && wrapperRect.height > 0 && theme) {
+      // Subtract padding from measured height to store only content height
+      // This way, if theme padding changes, the height remains accurate
+      const bannerPadding = theme.settings.banner.padding;
+      const contentHeight = Math.max(0, wrapperRect.height - bannerPadding * 2);
+      updateLocalData({ height: contentHeight });
     }
-  }, [wrapperRect?.height, updateLocalData]);
+  }, [wrapperRect?.height, theme, updateLocalData]);
 
   const handleContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
@@ -51,16 +56,6 @@ export const BannerEmbed = () => {
     (file: File): Promise<string> => upload(file),
     [upload],
   );
-
-  const theme = useMemo<Theme | undefined>(() => {
-    if (!themeList?.length) {
-      return undefined;
-    }
-    if (currentVersion?.themeId) {
-      return themeList.find((item) => item.id === currentVersion.themeId);
-    }
-    return themeList.find((item) => item.isDefault);
-  }, [themeList, currentVersion]);
 
   const data = useMemo(
     () => ({

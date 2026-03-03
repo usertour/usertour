@@ -57,8 +57,15 @@ function useButtonContext(): 'banner' | 'default' {
  * Computes inline style for the banner wrapper. All position/top/bottom/zIndex/height
  * are set via inline style (no modifier classes).
  */
-export function getBannerWrapperStyle(data: BannerData): CSSProperties {
-  const heightPx = data?.height ?? BANNER_DEFAULT_HEIGHT_PX;
+export function getBannerWrapperStyle(
+  data: BannerData,
+  themeSetting?: ThemeTypesSetting,
+): CSSProperties {
+  // Note: data.height stores content height (without padding)
+  // Add current theme's padding to get the actual wrapper height
+  const bannerPadding = themeSetting?.banner?.padding ?? 8; // default padding is 8px
+  const contentHeight = data?.height ?? BANNER_DEFAULT_HEIGHT_PX;
+  const heightPx = contentHeight + bannerPadding * 2;
   const zIndex = data?.zIndex ?? BANNER_DEFAULT_Z_INDEX;
   const overlay = data?.overlayEmbedOverAppContent ?? false;
   const sticky = data?.stickToTopOfViewport ?? false;
@@ -236,7 +243,7 @@ interface BannerWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
 const BannerWrapper = memo(
   forwardRef<HTMLDivElement, BannerWrapperProps>((props, ref) => {
     const { children, previewMode, ...restProps } = props;
-    const { data } = useBannerRootContext();
+    const { data, themeSetting } = useBannerRootContext();
     const wrapperStyle = useMemo(() => {
       if (previewMode) {
         return {
@@ -244,8 +251,8 @@ const BannerWrapper = memo(
           ['--usertour-widget-banner-height' as string]: 'auto',
         } as CSSProperties;
       }
-      return getBannerWrapperStyle(data);
-    }, [data, previewMode]);
+      return getBannerWrapperStyle(data, themeSetting);
+    }, [data, previewMode, themeSetting]);
     return (
       <div ref={ref} className="usertour-widget-banner" style={wrapperStyle} {...restProps}>
         {children}
