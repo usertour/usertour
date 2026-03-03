@@ -21,13 +21,12 @@ import { useSettingsStyles } from './hooks/use-settings-styles';
 import { cn } from '@usertour-packages/tailwind';
 
 const BANNER_DEFAULT_HEIGHT_PX = 56;
-const BANNER_DEFAULT_Z_INDEX = 1234500;
 
 interface BannerRootContextValue {
   globalStyle: string;
   themeSetting?: ThemeTypesSetting;
   data: BannerData;
-  zIndex: number;
+  zIndex?: number;
   assets?: AssetAttributes[];
   onDismiss?: () => void;
 }
@@ -60,13 +59,13 @@ function useButtonContext(): 'banner' | 'default' {
 export function getBannerWrapperStyle(
   data: BannerData,
   themeSetting?: ThemeTypesSetting,
+  zIndex?: number,
 ): CSSProperties {
   // Note: data.height stores content height (without padding)
   // Add current theme's padding to get the actual wrapper height
   const bannerPadding = themeSetting?.banner?.padding ?? 8; // default padding is 8px
   const contentHeight = data?.height ?? BANNER_DEFAULT_HEIGHT_PX;
   const heightPx = contentHeight + bannerPadding * 2;
-  const zIndex = data?.zIndex ?? BANNER_DEFAULT_Z_INDEX;
   const overlay = data?.overlayEmbedOverAppContent ?? false;
   const sticky = data?.stickToTopOfViewport ?? false;
 
@@ -87,7 +86,7 @@ export function getBannerWrapperStyle(
 
   if (style.position !== 'relative') {
     // Only set zIndex when position is not relative (sticky/absolute/fixed)
-    style.zIndex = zIndex;
+    if (zIndex !== undefined) style.zIndex = zIndex;
     style.left = 0;
     style.right = 0;
 
@@ -192,12 +191,11 @@ interface BannerRootProps {
 }
 
 const BannerRoot = memo((props: BannerRootProps) => {
-  const { data, zIndex: zIndexProp, assets, onDismiss, themeSettings, children } = props;
+  const { data, zIndex, assets, onDismiss, themeSettings, children } = props;
   const { globalStyle: derivedGlobalStyle, themeSetting } = useSettingsStyles(themeSettings, {
     type: 'banner',
   });
   const globalStyle = props.globalStyle ?? derivedGlobalStyle;
-  const zIndex = zIndexProp ?? data?.zIndex ?? BANNER_DEFAULT_Z_INDEX;
 
   const contextValue = useMemo<BannerRootContextValue>(
     () => ({
@@ -243,7 +241,7 @@ interface BannerWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
 const BannerWrapper = memo(
   forwardRef<HTMLDivElement, BannerWrapperProps>((props, ref) => {
     const { children, previewMode, ...restProps } = props;
-    const { data, themeSetting } = useBannerRootContext();
+    const { data, themeSetting, zIndex } = useBannerRootContext();
     const wrapperStyle = useMemo(() => {
       if (previewMode) {
         return {
@@ -251,8 +249,8 @@ const BannerWrapper = memo(
           ['--usertour-widget-banner-height' as string]: 'auto',
         } as CSSProperties;
       }
-      return getBannerWrapperStyle(data, themeSetting);
-    }, [data, previewMode, themeSetting]);
+      return getBannerWrapperStyle(data, themeSetting, zIndex);
+    }, [data, previewMode, themeSetting, zIndex]);
     return (
       <div ref={ref} className="usertour-widget-banner" style={wrapperStyle} {...restProps}>
         {children}

@@ -204,7 +204,7 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
       return;
     }
 
-    const wrapperStyle = getBannerWrapperStyle(bannerData, themeSettings);
+    const wrapperStyle = getBannerWrapperStyle(bannerData, themeSettings, zIndex);
     mountEl.className = 'usertour-widget-banner';
     applyStyleObject(mountEl, wrapperStyle);
 
