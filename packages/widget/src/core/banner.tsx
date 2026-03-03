@@ -320,7 +320,10 @@ const BannerInFrame = memo((props: BannerInFrameProps) => {
 
   return (
     <BannerContentContainer>
-      <div className="min-w-0 flex-1 w-full mx-auto" style={contentMaxWidth}>
+      <div
+        className="min-w-0 flex-1 w-full mx-auto flex flex-col justify-center"
+        style={contentMaxWidth}
+      >
         {children}
       </div>
       {showDismiss && <BannerDismissButton className="flex-none" onClick={handleDismiss} />}
@@ -359,7 +362,10 @@ const BannerPreview = memo(
     return (
       <BannerWrapper ref={ref} previewMode={previewMode} {...restProps}>
         <BannerContentContainer style={contentStyle}>
-          <div className="min-w-0 flex-1 w-full mx-auto" style={contentMaxWidth}>
+          <div
+            className="min-w-0 flex-1 w-full mx-auto flex flex-col justify-center"
+            style={contentMaxWidth}
+          >
             {children}
           </div>
           {showDismiss && <BannerDismissButton className="flex-none" onClick={handleDismiss} />}

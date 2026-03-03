@@ -1,5 +1,4 @@
 import { BannerData, DEFAULT_BANNER_DATA } from '@usertour/types';
-import type { ContentEditorRoot } from '@usertour/types';
 import { isEqual, isUndefined } from 'lodash';
 import {
   ReactNode,
@@ -18,7 +17,7 @@ import { useToast } from '@usertour-packages/use-toast';
 
 import { BuilderMode, useBuilderContext } from './builder-context';
 import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
-import { getDefaultDataForType } from '../utils/default-data';
+import { getEmptyDataForType } from '../utils/default-data';
 
 export interface BannerProviderProps {
   children: ReactNode;
@@ -109,7 +108,7 @@ export function BannerProvider(props: BannerProviderProps): JSX.Element {
       ...serverData,
     };
     if (serverData?.contents?.length === 0 || isUndefined(serverData?.contents)) {
-      merged.contents = getDefaultDataForType('tooltip') as ContentEditorRoot[];
+      merged.contents = getEmptyDataForType();
     }
 
     if (!isEqual(merged, lastSavedDataRef.current)) {
