@@ -1,5 +1,6 @@
 import { useThemeListContext } from '@usertour-packages/contexts';
 import { Theme } from '@usertour/types';
+import { mergeThemeDefaultSettings } from '@usertour/helpers';
 import { useMemo } from 'react';
 import { useBuilderContext } from '../contexts';
 
@@ -22,15 +23,23 @@ export function useCurrentTheme(options: UseCurrentThemeOptions = {}): Theme | u
     if (!themeList || themeList.length === 0) return undefined;
 
     // Priority: currentStep.themeId > currentVersion.themeId > default (if enabled)
+    let theme: Theme | undefined;
     if (currentStep?.themeId) {
-      return themeList.find((item) => item.id === currentStep.themeId);
+      theme = themeList.find((item) => item.id === currentStep.themeId);
+    } else if (currentVersion?.themeId) {
+      theme = themeList.find((item) => item.id === currentVersion.themeId);
+    } else if (fallbackToDefault) {
+      theme = themeList.find((item) => item.isDefault);
     }
-    if (currentVersion?.themeId) {
-      return themeList.find((item) => item.id === currentVersion.themeId);
+
+    // If theme is found, merge its settings with defaultSettings to ensure completeness
+    if (theme) {
+      return {
+        ...theme,
+        settings: mergeThemeDefaultSettings(theme.settings),
+      };
     }
-    if (fallbackToDefault) {
-      return themeList.find((item) => item.isDefault);
-    }
+
     return undefined;
   }, [themeList, currentStep?.themeId, currentVersion?.themeId, fallbackToDefault]);
 }
