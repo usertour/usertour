@@ -132,13 +132,16 @@ export class WebSocketV2Service {
     socketData: SocketData,
     auth: SocketAuthData,
   ): Promise<SocketData> {
-    const { flowSessionId, checklistSessionId, launchers = [] } = auth;
+    const { flowSessionId, checklistSessionId, bannerSessionId, launchers = [] } = auth;
 
-    // Initialize sessions in parallel (flow and checklist can be initialized concurrently)
-    const [flowSession, checklistSession, launcherSessions] = await Promise.all([
+    // Initialize sessions in parallel (singleton sessions and launchers can be initialized concurrently)
+    const [flowSession, checklistSession, bannerSession, launcherSessions] = await Promise.all([
       flowSessionId ? this.initializeSessionById(socketData, flowSessionId) : Promise.resolve(null),
       checklistSessionId
         ? this.initializeSessionById(socketData, checklistSessionId)
+        : Promise.resolve(null),
+      bannerSessionId
+        ? this.initializeSessionById(socketData, bannerSessionId)
         : Promise.resolve(null),
       launchers.length > 0
         ? this.initializeLauncherSessions(socketData, launchers)
@@ -151,6 +154,9 @@ export class WebSocketV2Service {
     }
     if (checklistSession) {
       socketData.checklistSession = checklistSession;
+    }
+    if (bannerSession) {
+      socketData.bannerSession = bannerSession;
     }
     if (launcherSessions.length > 0) {
       socketData.launcherSessions = launcherSessions;

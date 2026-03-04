@@ -234,6 +234,7 @@ describe('convert-settings', () => {
         hover: 'Auto',
         active: 'Auto',
       },
+      padding: 8,
     },
     focusHighlight: {
       color: 'Auto',
