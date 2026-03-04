@@ -48,9 +48,6 @@ export const ColorButton = memo(({ config }: ColorButtonProps) => {
     [editor],
   );
 
-  // Icon style with current color
-  const iconStyle = useMemo(() => ({ color: currentColor }), [currentColor]);
-
   const Icon = config.icon;
 
   // Popover content with color picker panel
@@ -73,7 +70,10 @@ export const ColorButton = memo(({ config }: ColorButtonProps) => {
       popoverZIndex={zIndex + EDITOR_RICH_ACTION_CONTENT}
       popoverContent={popoverContent}
     >
-      <Icon size={ICON_SIZE.DEFAULT} style={iconStyle} />
+      <div className="flex flex-col items-center justify-center h-full">
+        <Icon size={ICON_SIZE.COLOR} />
+        <div className="w-4 h-0.5 rounded-sm" style={{ backgroundColor: currentColor }} />
+      </div>
     </ToolbarPopoverItem>
   );
 });

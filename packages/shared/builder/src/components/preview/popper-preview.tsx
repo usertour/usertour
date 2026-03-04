@@ -9,6 +9,7 @@ import {
 } from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { AvatarType, defaultSettings, StepContentType } from '@usertour/types';
+import { PREVIEW_BASIC } from '@usertour-packages/constants';
 import { memo, useCallback, useMemo, useRef } from 'react';
 
 type PopperPreviewProps = {
@@ -43,7 +44,7 @@ export const PopperPreview = memo((props: PopperPreviewProps) => {
     const showAvatar = avatarSettings?.type !== AvatarType.NONE;
 
     return (
-      <Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={globalStyle}>
+      <Popper triggerRef={ref} open={true} zIndex={PREVIEW_BASIC} globalStyle={globalStyle}>
         <PopperStaticBubble
           position={bubbleSettings?.placement?.position ?? 'leftBottom'}
           width={width}
@@ -64,7 +65,7 @@ export const PopperPreview = memo((props: PopperPreviewProps) => {
   // Memoized tooltip/modal type preview
   const popperPreview = useMemo(
     () => (
-      <Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={globalStyle}>
+      <Popper triggerRef={ref} open={true} zIndex={PREVIEW_BASIC} globalStyle={globalStyle}>
         <PopperStaticContent
           arrowSize={{
             width: 20,

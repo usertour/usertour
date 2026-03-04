@@ -9,6 +9,7 @@ import { useContentEditorContext } from '../../../contexts/content-editor-contex
 import {
   ContentEditorElementInsertDirection,
   ContentEditorImageElement,
+  ContentEditorLinkData,
 } from '../../../types/editor';
 import {
   DEFAULT_IMAGE_SIZE,
@@ -17,7 +18,7 @@ import {
   WIDTH_TYPES,
 } from '../../constants';
 import { useImageUpload } from '../../hooks';
-import { LoadingSpinner, MarginControls, WidthControls } from '../../shared';
+import { LinkControls, LoadingSpinner, MarginControls, WidthControls } from '../../shared';
 import type { DimensionType, MarginPosition, MarginStyleProps } from '../../types';
 import { ensureDimensionWithDefaults, getWidthStyle, transformMarginStyle } from '../../utils';
 import { ImageActionButtons } from './image-action-buttons';
@@ -64,6 +65,7 @@ export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
     insertElementInColumn,
     deleteElementInColumn,
     updateElement,
+    attributes,
   } = useContentEditorContext();
   const { toast } = useToast();
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
@@ -160,6 +162,13 @@ export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
     toast({ variant: 'destructive', title: 'Failed to load image' });
   }, [toast]);
 
+  const handleLinkChange = useCallback(
+    (link: ContentEditorLinkData | undefined) => {
+      updateElement({ ...element, link }, id);
+    },
+    [element, id, updateElement],
+  );
+
   // Render loading state
   if (isLoading && element.url) {
     return <LoadingSpinner size={DEFAULT_IMAGE_SIZE} />;
@@ -203,6 +212,13 @@ export const ContentEditorImage = memo((props: ContentEditorImageProps) => {
             margin={element.margin}
             onMarginChange={handleMarginValueChange}
             onMarginEnabledChange={handleMarginCheckedChange}
+          />
+
+          <LinkControls
+            link={element.link}
+            onLinkChange={handleLinkChange}
+            zIndex={zIndex}
+            attributes={attributes}
           />
 
           <ImageActionButtons

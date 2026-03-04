@@ -265,30 +265,24 @@ _:future,
   box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(47, 105, 238, 0.35);
 }
 
-@-moz-keyframes usertour-widget-chrome-visible {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+.usertour-widget-banner {
+  left: 0;
+  right: 0;
+  height: var(--usertour-widget-banner-height);
+  display: flex;
+  justify-content: center;
 }
-@-webkit-keyframes usertour-widget-chrome-visible {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+.usertour-widget-banner--animate {
+  animation-name: usertour-widget-banner-animate-in;
+  animation-duration: 400ms;
+  animation-timing-function: ease-in-out;
 }
-@-o-keyframes usertour-widget-chrome-visible {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+.usertour-widget-banner-frame {
+  display: block;
+  min-width: 0;
+  flex: 1 1 0%;
 }
+
 @keyframes usertour-widget-chrome-visible {
   0% {
     opacity: 0;
@@ -297,7 +291,6 @@ _:future,
     opacity: 1;
   }
 }
-
 @keyframes usertour-ping {
   75%,
   to {
@@ -305,24 +298,23 @@ _:future,
     opacity: 0;
   }
 }
-@-moz-keyframes usertour-ping {
-  75%,
-  to {
-    transform: scale(2);
-    opacity: 0;
+
+@keyframes usertour-widget-banner-animate-in {
+  0% {
+    height: 0;
+  }
+  100% {
+    height: var(--usertour-widget-banner-height);
   }
 }
-@-webkit-keyframes usertour-ping {
-  75%,
-  to {
-    transform: scale(2);
+@keyframes usertour-widget-embed-animate-in {
+  0% {
+    height: 0;
     opacity: 0;
   }
-}
-@-o-keyframes usertour-ping {
-  75%,
-  to {
-    transform: scale(2);
-    opacity: 0;
+  100% {
+    height: var(--usertour-widget-banner-height);
+    opacity: 1;
   }
 }
+

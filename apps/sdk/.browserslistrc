@@ -1,0 +1,25 @@
+# Modern browsers (ES2020 build)
+# Based on detect-browser-target.ts from usertour.js loader
+# These support: dynamic imports, nullish coalescing, optional chaining,
+# BigInt, Promise.allSettled, globalThis, String.matchAll
+[production]
+Chrome >= 80
+Edge >= 80
+Opera >= 67
+Safari >= 14
+Firefox >= 74
+iOS >= 14
+ChromeAndroid >= 80
+
+# Legacy browsers (IIFE build)
+# For older browsers that need additional polyfills and transpilation
+[legacy]
+Chrome >= 60
+Edge >= 18
+Firefox >= 60
+Safari >= 12
+iOS >= 12
+Opera >= 54
+ChromeAndroid >= 60
+and_chr >= 60
+not dead

@@ -55,6 +55,7 @@
     "@usertour-packages/popover": "workspace:^",
     "@usertour-packages/radio-group": "workspace:^",
     "@usertour-packages/react-compose-refs": "workspace:^",
+    "@usertour-packages/react-use-size": "workspace:^",
     "@usertour-packages/scroll-area": "workspace:^",
     "@usertour-packages/widget": "workspace:^",
     "@usertour-packages/select": "workspace:^",

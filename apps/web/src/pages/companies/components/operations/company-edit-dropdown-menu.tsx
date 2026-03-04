@@ -27,7 +27,7 @@ export const CompanyEditDropdownMenu = (props: CompanyEditDropdownMenuProps) => 
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild disabled={disabled}>
           {children}
         </DropdownMenuTrigger>

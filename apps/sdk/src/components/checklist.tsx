@@ -1,6 +1,7 @@
 import { AssetAttributes } from '@usertour-packages/frame';
 import {
   ContentEditorSerialize,
+  LinkDecoratorContext,
   PopperMadeWith,
   ChecklistProgress,
   ChecklistDismiss,
@@ -38,6 +39,7 @@ type ChecklistWidgetCoreProps = {
   removeBranding: boolean;
   zIndex: number;
   expanded: boolean;
+  linkUrlDecorator?: ((url: string) => string) | null;
 };
 
 // Custom hook to extract store state
@@ -58,6 +60,7 @@ const useChecklistStore = (checklist: UsertourChecklist) => {
     themeSettings,
     assets,
     removeBranding,
+    linkUrlDecorator,
   } = store;
 
   if (!checklistData || !openState) {
@@ -74,6 +77,7 @@ const useChecklistStore = (checklist: UsertourChecklist) => {
     themeSettings,
     assets,
     removeBranding,
+    linkUrlDecorator,
   };
 };
 
@@ -113,29 +117,32 @@ const ChecklistWidgetCore = ({
   zIndex,
   expanded,
   handleAutoDismiss,
+  linkUrlDecorator,
 }: ChecklistWidgetCoreProps) => (
-  <ChecklistRoot
-    data={data}
-    themeSettings={themeSettings}
-    expanded={expanded}
-    onDismiss={handleDismiss}
-    onExpandedChange={handleExpandedChange}
-    zIndex={zIndex}
-  >
-    <ChecklistPopperUseIframe zIndex={zIndex} assets={assets}>
-      <ChecklistDropdown />
-      <ChecklistPopperContentBody>
-        <ChecklistContent
-          data={data}
-          userAttributes={userAttributes}
-          handleOnClick={handleOnClick}
-          handleItemClick={handleItemClick}
-          handleAutoDismiss={handleAutoDismiss}
-        />
-      </ChecklistPopperContentBody>
-      {!removeBranding && <PopperMadeWith />}
-    </ChecklistPopperUseIframe>
-  </ChecklistRoot>
+  <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
+    <ChecklistRoot
+      data={data}
+      themeSettings={themeSettings}
+      expanded={expanded}
+      onDismiss={handleDismiss}
+      onExpandedChange={handleExpandedChange}
+      zIndex={zIndex}
+    >
+      <ChecklistPopperUseIframe zIndex={zIndex} assets={assets}>
+        <ChecklistDropdown />
+        <ChecklistPopperContentBody>
+          <ChecklistContent
+            data={data}
+            userAttributes={userAttributes}
+            handleOnClick={handleOnClick}
+            handleItemClick={handleItemClick}
+            handleAutoDismiss={handleAutoDismiss}
+          />
+        </ChecklistPopperContentBody>
+        {!removeBranding && <PopperMadeWith />}
+      </ChecklistPopperUseIframe>
+    </ChecklistRoot>
+  </LinkDecoratorContext.Provider>
 );
 
 export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
@@ -154,6 +161,7 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
     zIndex,
     expanded,
     removeBranding,
+    linkUrlDecorator,
   } = store;
 
   if (!themeSettings || !checklistData || !openState || !userAttributes) {
@@ -174,6 +182,7 @@ export const ChecklistWidget = ({ checklist }: ChecklistWidgetProps) => {
       zIndex={zIndex}
       expanded={expanded}
       handleAutoDismiss={checklist.handleAutoDismiss}
+      linkUrlDecorator={linkUrlDecorator}
     />
   );
 };

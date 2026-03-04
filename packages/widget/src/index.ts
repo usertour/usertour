@@ -123,6 +123,9 @@ export * from './core';
 // Serialize - Content editor serialization for SDK rendering
 export {
   ContentEditorSerialize,
+  // Link decorator context
+  LinkDecoratorContext,
+  useLinkDecorator,
   // Style transformation utilities
   transformMarginStyle,
   transformPaddingStyle,
@@ -134,3 +137,6 @@ export {
   // Types
   type PaddingStyleProps,
 } from './serialize';
+
+// Utils - Button utilities
+export { resolveButtonVariant, isValidButtonSemanticType } from './utils/button';

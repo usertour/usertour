@@ -59,6 +59,7 @@ export const createContent = gql`
     $name: String!
     $environmentId: String!
     $buildUrl: String
+    $data: JSON
     $steps: [StepInput!]
   ) {
     createContent(
@@ -67,6 +68,7 @@ export const createContent = gql`
         name: $name
         environmentId: $environmentId
         buildUrl: $buildUrl
+        data: $data
         steps: $steps
       }
     ) {

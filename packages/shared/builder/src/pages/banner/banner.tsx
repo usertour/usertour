@@ -1,23 +1,29 @@
 'use client';
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
-import { EXTENSION_SIDEBAR_MAIN } from '@usertour-packages/constants';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour-packages/tailwind';
-import { useRef } from 'react';
-import { useBuilderContext } from '../../contexts';
+
+import { useBuilderContext, useBannerContext } from '../../contexts';
+import { SidebarContainer } from '../sidebar/sidebar-container';
 import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
-import { SidebarMini } from '../sidebar/sidebar-mini';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
+import { BannerEmbed } from './components/banner-embed';
+import { BannerEmbedPlacementSelect } from './components/banner-embed-placement';
+import { BannerSettings } from './components/banner-settings';
+import { BannerLayout } from './components/banner-layout';
+import { BannerZIndex } from './components/banner-zindex';
 
 const BannerBuilderBody = () => {
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full ">
-        <div className="flex-col space-y-3 p-4">
+        <div className="flex flex-col space-y-3 p-4">
           <SidebarTheme />
-          Banner
+          <BannerEmbedPlacementSelect />
+          <BannerZIndex />
+          <BannerLayout />
+          <BannerSettings />
         </div>
       </ScrollArea>
     </CardContent>
@@ -28,7 +34,7 @@ const BannerBuilderHeader = () => {
   const { currentContent } = useBuilderContext();
   return (
     <CardHeader className="flex-none p-4 space-y-3">
-      <CardTitle className="flex h-8	">
+      <CardTitle className="flex h-8">
         <SidebarHeader title={currentContent?.name ?? ''} />
       </CardTitle>
     </CardHeader>
@@ -36,10 +42,11 @@ const BannerBuilderHeader = () => {
 };
 
 const BannerBuilderFooter = () => {
-  const { saveContent, isLoading, onSaved } = useBuilderContext();
+  const { isLoading, onSaved } = useBuilderContext();
+  const { flushSave } = useBannerContext();
 
   const handleSave = async () => {
-    await saveContent();
+    await flushSave();
     await onSaved?.();
   };
 
@@ -51,22 +58,14 @@ const BannerBuilderFooter = () => {
 };
 
 export const BannerBuilder = () => {
-  const { position, zIndex } = useBuilderContext();
-  const sidbarRef = useRef<HTMLDivElement | null>(null);
   return (
     <>
-      <div
-        style={{ zIndex: zIndex + EXTENSION_SIDEBAR_MAIN }}
-        className={cn('w-80 h-screen p-2 fixed top-0', position === 'left' ? 'left-0' : 'right-0')}
-        ref={sidbarRef}
-      >
-        <SidebarMini container={sidbarRef} />
-        <Card className="h-full flex flex-col bg-background-800">
-          <BannerBuilderHeader />
-          <BannerBuilderBody />
-          <BannerBuilderFooter />
-        </Card>
-      </div>
+      <SidebarContainer>
+        <BannerBuilderHeader />
+        <BannerBuilderBody />
+        <BannerBuilderFooter />
+      </SidebarContainer>
+      <BannerEmbed />
     </>
   );
 };

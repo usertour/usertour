@@ -1,20 +1,24 @@
 // Main editable button component
 
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import * as Widget from '@usertour-packages/widget';
-import { RulesCondition } from '@usertour/types';
+import {
+  Button as WidgetButton,
+  useButtonContext,
+  resolveButtonVariant,
+} from '@usertour-packages/widget';
+import { RulesCondition, ButtonSemanticType, DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/types';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
-import {
-  EditorErrorTooltip,
-  EditorErrorTooltipTrigger,
-  EditorErrorTooltipContent,
-} from '../../shared/editor-error-tooltip';
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
   ContentEditorButtonElement,
   ContentEditorElementInsertDirection,
 } from '../../../types/editor';
+import {
+  EditorErrorTooltip,
+  EditorErrorTooltipContent,
+  EditorErrorTooltipTrigger,
+} from '../../shared/editor-error-tooltip';
 import type { MarginPosition, MarginStyleProps } from '../../types';
 import { transformMarginStyle } from '../../utils';
 import { ButtonPopoverContent } from './button-popover-content';
@@ -47,7 +51,19 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
   const [isShowError, setIsShowError] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean | undefined>();
 
-  // Memoized style calculation
+  // Detect rendering context (editor preview or banner context)
+  const buttonContext = useButtonContext();
+
+  // Get semantic type from element, ensure it's valid
+  const semanticType: ButtonSemanticType =
+    (element.data?.type as ButtonSemanticType) || DEFAULT_BUTTON_SEMANTIC_TYPE;
+
+  // Memoize variant resolution
+  const buttonVariant = useMemo(
+    () => resolveButtonVariant(semanticType, buttonContext),
+    [semanticType, buttonContext],
+  );
+
   const buttonStyle = useMemo(() => transformsStyle(element), [element.margin]);
 
   // Event handlers
@@ -64,7 +80,7 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
   }, [insertElementInColumn, element, path]);
 
   const handleButtonStyleChange = useCallback(
-    (type: string) => {
+    (type: ButtonSemanticType) => {
       updateElement({ ...element, data: { ...element.data, type } }, id);
     },
     [element, id, updateElement],
@@ -113,6 +129,58 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
     [element, id, updateElement],
   );
 
+  const handleDisableButtonChange = useCallback(
+    (enabled: boolean) => {
+      updateElement(
+        {
+          ...element,
+          data: { ...element.data, disableButton: enabled },
+        },
+        id,
+      );
+    },
+    [element, id, updateElement],
+  );
+
+  const handleDisableConditionsChange = useCallback(
+    (conditions: RulesCondition[]) => {
+      updateElement(
+        {
+          ...element,
+          data: { ...element.data, disableButtonConditions: conditions },
+        },
+        id,
+      );
+    },
+    [element, id, updateElement],
+  );
+
+  const handleHideButtonChange = useCallback(
+    (enabled: boolean) => {
+      updateElement(
+        {
+          ...element,
+          data: { ...element.data, hideButton: enabled },
+        },
+        id,
+      );
+    },
+    [element, id, updateElement],
+  );
+
+  const handleHideConditionsChange = useCallback(
+    (conditions: RulesCondition[]) => {
+      updateElement(
+        {
+          ...element,
+          data: { ...element.data, hideButtonConditions: conditions },
+        },
+        id,
+      );
+    },
+    [element, id, updateElement],
+  );
+
   // Error state effect
   useEffect(() => {
     const isEmptyActions = !element?.data?.actions || element?.data?.actions.length === 0;
@@ -124,18 +192,18 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
       <Popover onOpenChange={setIsOpen} open={isOpen}>
         <EditorErrorTooltipTrigger>
           <PopoverTrigger asChild>
-            <Widget.Button
-              variant={element.data.type as any}
+            <WidgetButton
+              variant={buttonVariant}
               contentEditable={false}
               className="h-fit"
               style={buttonStyle}
             >
               <span>{element.data.text}</span>
-            </Widget.Button>
+            </WidgetButton>
           </PopoverTrigger>
         </EditorErrorTooltipTrigger>
         <PopoverContent
-          className="bg-background"
+          className="bg-background max-h-[480px] overflow-y-auto"
           side="right"
           style={{ zIndex: zIndex }}
           sideOffset={10}
@@ -149,6 +217,10 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
             onMarginChange={handleMarginValueChange}
             onMarginEnabledChange={handleMarginCheckedChange}
             onActionChange={handleActionChange}
+            onDisableButtonChange={handleDisableButtonChange}
+            onDisableConditionsChange={handleDisableConditionsChange}
+            onHideButtonChange={handleHideButtonChange}
+            onHideConditionsChange={handleHideConditionsChange}
             onDelete={handleDelete}
             onAddLeft={handleAddLeft}
             onAddRight={handleAddRight}

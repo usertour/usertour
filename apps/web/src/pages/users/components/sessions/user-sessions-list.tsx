@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import {
+  BannerProgressColumn,
   LauncherProgressColumn,
   ChecklistProgressColumn,
   FlowProgressColumn,
@@ -19,7 +20,13 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { cn } from '@usertour-packages/tailwind';
-import { FlowIcon, LauncherIcon, ChecklistIcon, SpinnerIcon } from '@usertour-packages/icons';
+import {
+  BannerIcon,
+  FlowIcon,
+  LauncherIcon,
+  ChecklistIcon,
+  SpinnerIcon,
+} from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import {
@@ -53,6 +60,10 @@ const ProgressColumn = ({ session, eventList }: { session: BizSession; eventList
 
   if (contentType === ContentDataType.LAUNCHER) {
     return <LauncherProgressColumn original={session} eventList={eventList} />;
+  }
+
+  if (contentType === ContentDataType.BANNER) {
+    return <BannerProgressColumn original={session} eventList={eventList} />;
   }
 
   return <div className="text-muted-foreground">Unknown content type</div>;
@@ -100,6 +111,8 @@ const ContentColumn = ({
         return <LauncherIcon className={iconClassName} />;
       case ContentDataType.CHECKLIST:
         return <ChecklistIcon className={iconClassName} />;
+      case ContentDataType.BANNER:
+        return <BannerIcon className={iconClassName} />;
       default:
         return null;
     }

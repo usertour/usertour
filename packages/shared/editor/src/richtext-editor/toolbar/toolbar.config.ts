@@ -4,7 +4,7 @@ import {
   RiAlignRight,
   RiBold,
   RiCodeSSlashFill,
-  RiFontColor,
+  RiFontFamily,
   RiH1,
   RiH2,
   RiItalic,
@@ -51,7 +51,7 @@ export const TOOLBAR_ITEMS: ToolbarItemConfig[] = [
     type: 'color',
     tooltip: 'Font color',
     ariaLabel: 'Choose font color',
-    icon: RiFontColor,
+    icon: RiFontFamily,
   },
   {
     id: 'code',

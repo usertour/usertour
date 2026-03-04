@@ -46,6 +46,23 @@ export const buildSocketLockKey = (socket: Socket): string => {
 };
 
 /**
+ * Build a per-user, per-content session creation lock key.
+ * Used to prevent duplicate sessions when the same user has multiple sockets
+ * (e.g. two browser tabs) that both attempt to create a session simultaneously.
+ * @param environmentId - The environment ID
+ * @param externalUserId - The external user ID
+ * @param contentId - The content ID
+ * @returns The session creation lock key
+ */
+export const buildSessionCreateLockKey = (
+  environmentId: string,
+  externalUserId: string,
+  contentId: string,
+): string => {
+  return `session-create:{${environmentId}:${externalUserId}}:${contentId}`;
+};
+
+/**
  * Build the external user room ID
  * @param environmentId - The environment id
  * @param externalUserId - The external user id
@@ -61,7 +78,7 @@ export const buildExternalUserRoomId = (environmentId: string, externalUserId: s
 
 /**
  * Extract content session from socket client data by content type
- * For singleton types (FLOW, CHECKLIST) only
+ * For singleton types (FLOW, CHECKLIST, BANNER) only
  * @param socketData - The socket client data
  * @param contentType - The content type
  * @returns The content session or null
@@ -70,12 +87,14 @@ export const extractSessionByContentType = (
   socketData: SocketData,
   contentType: ContentDataType,
 ): CustomContentSession | null => {
-  const { flowSession, checklistSession } = socketData;
+  const { flowSession, checklistSession, bannerSession } = socketData;
   switch (contentType) {
     case ContentDataType.FLOW:
       return flowSession ?? null;
     case ContentDataType.CHECKLIST:
       return checklistSession ?? null;
+    case ContentDataType.BANNER:
+      return bannerSession ?? null;
     default:
       return null;
   }
@@ -108,12 +127,15 @@ export const extractContentTypeBySessionId = (
   socketData: SocketData,
   sessionId: string,
 ): ContentDataType | null => {
-  const { flowSession, checklistSession } = socketData;
+  const { flowSession, checklistSession, bannerSession } = socketData;
   if (flowSession?.id === sessionId) {
     return ContentDataType.FLOW;
   }
   if (checklistSession?.id === sessionId) {
     return ContentDataType.CHECKLIST;
+  }
+  if (bannerSession?.id === sessionId) {
+    return ContentDataType.BANNER;
   }
   return null;
 };
@@ -129,11 +151,12 @@ export const extractExcludedContentIds = (
   socketData: SocketData,
   contentType: ContentDataType,
 ): string[] => {
-  const { lastDismissedFlowId, lastDismissedChecklistId } = socketData;
+  const { lastDismissedFlowId, lastDismissedChecklistId, lastDismissedBannerId } = socketData;
 
   return [
     contentType === ContentDataType.FLOW && lastDismissedFlowId,
     contentType === ContentDataType.CHECKLIST && lastDismissedChecklistId,
+    contentType === ContentDataType.BANNER && lastDismissedBannerId,
   ].filter(Boolean) as string[];
 };
 

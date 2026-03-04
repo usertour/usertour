@@ -153,8 +153,24 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       app.setCustomNavigate(customNavigate);
     },
 
+    setCustomScrollIntoView: (customScrollIntoView: ((el: Element) => void) | null) => {
+      app.setCustomScrollIntoView(customScrollIntoView);
+    },
+
+    setUrlFilter: (urlFilter: ((url: string) => string) | null) => {
+      app.setUrlFilter(urlFilter);
+    },
+
+    setLinkUrlDecorator: (linkUrlDecorator: ((url: string) => string) | null) => {
+      app.setLinkUrlDecorator(linkUrlDecorator);
+    },
+
     disableEvalJs: () => {
       app.disableEvalJs();
+    },
+
+    registerCustomInput: (cssSelector: string, getValue?: (el: Element) => string) => {
+      app.registerCustomInput(cssSelector, getValue);
     },
 
     on: (eventName: string, _listener: (...args: any[]) => void) => {

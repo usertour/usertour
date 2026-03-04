@@ -279,6 +279,9 @@ export const getStartReasonTitle = (
   if (contentType === ContentDataType.LAUNCHER) {
     return 'Launcher seen';
   }
+  if (contentType === ContentDataType.BANNER) {
+    return 'Banner seen';
+  }
   try {
     const reason =
       startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||
@@ -303,6 +306,9 @@ export const getEndReasonTitle = (
 ): string => {
   if (contentType === ContentDataType.LAUNCHER) {
     return 'Launcher deactivated';
+  }
+  if (contentType === ContentDataType.BANNER) {
+    return 'Banner dismissed';
   }
   try {
     const reason =
@@ -338,6 +344,9 @@ export const getFieldValue = (key: string, value: any): string | number => {
     return value !== undefined && value !== null ? Number(value) + 1 : value;
   }
   if (key === EventAttributes.FLOW_VERSION_NUMBER) {
+    return value !== undefined && value !== null ? Number(value) + 1 : value;
+  }
+  if (key === EventAttributes.BANNER_VERSION_NUMBER) {
     return value !== undefined && value !== null ? Number(value) + 1 : value;
   }
   return key === 'question_type'

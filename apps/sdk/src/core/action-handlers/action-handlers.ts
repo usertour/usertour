@@ -92,3 +92,18 @@ export class TourActionHandler extends BaseActionHandler {
     }
   }
 }
+
+/**
+ * Handler for banner-specific actions
+ */
+export class BannerActionHandler extends BaseActionHandler {
+  protected readonly supportedActionTypes = [ContentActionsItemType.BANNER_DISMIS] as const;
+
+  async handle(action: RulesCondition, context: ActionHandlerContext): Promise<void> {
+    switch (action.type) {
+      case ContentActionsItemType.BANNER_DISMIS:
+        await context.close(contentEndReason.ACTION_DISMISS);
+        break;
+    }
+  }
+}

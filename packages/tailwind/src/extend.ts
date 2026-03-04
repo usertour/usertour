@@ -25,6 +25,14 @@ export const extendSdk = {
         'trigger-hover-background': 'var(--usertour-checklist-trigger-hover-background-color)',
         checkmark: 'var(--usertour-checkmark-background-color)',
       },
+      banner: {
+        DEFAULT: 'hsl(var(--usertour-banner-background-color))',
+        foreground: 'hsl(var(--usertour-banner-foreground-color))',
+        hover: 'hsl(var(--usertour-banner-hover-background-color))',
+        active: 'hsl(var(--usertour-banner-active-background-color))',
+        'foreground-hover': 'hsl(var(--usertour-banner-hover-foreground-color))',
+        'foreground-active': 'hsl(var(--usertour-banner-active-foreground-color))',
+      },
       // Button colors (border colors are in borderColor extension)
       btn: {
         primary: {
@@ -77,6 +85,17 @@ export const extendSdk = {
   },
   padding: {
     'sdk-button-x': 'var(--usertour-button-px)',
+    'sdk-banner': 'var(--usertour-banner-padding, 8px)',
+    // Button vertical padding: centers text within button height accounting for borders
+    // Formula: (button-height - font-size) / 2 - border-width
+    'sdk-btn-primary-y':
+      'calc((var(--usertour-button-height) - var(--usertour-font-size)) / 2 - var(--usertour-primary-border-width))',
+    'sdk-btn-secondary-y':
+      'calc((var(--usertour-button-height) - var(--usertour-font-size)) / 2 - var(--usertour-secondary-border-width))',
+    'sdk-btn-banner-primary-y':
+      'calc((var(--usertour-button-height) - var(--usertour-font-size)) / 2)',
+    'sdk-btn-banner-secondary-y':
+      'calc((var(--usertour-button-height) - var(--usertour-font-size)) / 2 - 1px)',
   },
   height: {
     'sdk-font-size': 'var(--usertour-font-size)',
@@ -92,6 +111,9 @@ export const extendSdk = {
     'sdk-rounded-progress': 'calc(var(--usertour-rounded-progress-bar-height) * 2)',
     'sdk-squared-progress': 'calc(var(--usertour-squared-progress-bar-height) * 3)',
     'sdk-dotted-progress': 'var(--usertour-dotted-progress-bar-height)',
+  },
+  size: {
+    'sdk-button': 'var(--usertour-button-height)',
   },
   minWidth: {
     'sdk-button': 'var(--usertour-button-min-width)',

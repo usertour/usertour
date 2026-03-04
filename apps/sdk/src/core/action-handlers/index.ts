@@ -9,5 +9,6 @@ export {
   LauncherActionHandler,
   ChecklistActionHandler,
   TourActionHandler,
+  BannerActionHandler,
 } from './action-handlers';
 export { ActionManager } from './action-manager';

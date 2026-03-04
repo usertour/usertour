@@ -83,6 +83,53 @@ const LauncherProgressColumn = ({
 };
 LauncherProgressColumn.displayName = 'LauncherProgressColumn';
 
+const BannerProgressColumn = ({
+  original,
+  eventList,
+}: { original: BizSession; eventList: Event[] }) => {
+  const { bizEvent } = original;
+  if (!eventList || !bizEvent || bizEvent.length === 0) {
+    return <></>;
+  }
+
+  const isSeen = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.BANNER_SEEN);
+  const isDismissed = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.BANNER_DISMISSED);
+
+  if (!isSeen && !isDismissed) {
+    return <></>;
+  }
+
+  return (
+    <div className="flex flex-row items-center space-x-3">
+      {!isDismissed && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-default">
+              <PlayIcon className="text-success h-5 w-5" />
+            </TooltipTrigger>
+            <TooltipContent>Active</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {isDismissed && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-default">
+              <CancelIcon className="text-foreground/60 h-5 w-5" />
+            </TooltipTrigger>
+            <TooltipContent>Dismissed</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      <div className="flex flex-col">
+        {!isDismissed && <div className="text-muted-foreground">Seen</div>}
+        {isDismissed && <div className="text-foreground/60">Dismissed</div>}
+      </div>
+    </div>
+  );
+};
+BannerProgressColumn.displayName = 'BannerProgressColumn';
+
 const ChecklistProgressColumn = ({
   original,
   eventList,
@@ -278,6 +325,7 @@ const FlowProgressColumn = ({
 FlowProgressColumn.displayName = 'FlowProgressColumn';
 
 export {
+  BannerProgressColumn,
   LauncherProgressColumn,
   ChecklistProgressColumn,
   FlowProgressColumn,

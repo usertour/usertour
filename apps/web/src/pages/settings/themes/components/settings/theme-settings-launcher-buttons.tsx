@@ -145,7 +145,7 @@ export const ThemeSettingsLauncherButtons = () => {
               defaultColor={buttonData.textColor.active}
               showAutoButton={true}
               isAutoColor={buttonData.textColor.active === 'Auto'}
-              autoColor={settings.brandColor.color}
+              autoColor={finalSettings?.launcherButtons?.primary.textColor.active}
               onChange={(value: string) => {
                 updateButton({ textColor: { ...buttonData.textColor, active: value } });
               }}

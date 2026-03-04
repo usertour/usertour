@@ -24,6 +24,7 @@ export enum ThemeDetailPreviewType {
   TOOLTIP = 'tooltip',
   MODAL = 'modal',
   BUBBLE = 'bubble',
+  BANNER = 'banner',
   LAUNCHER_ICON = 'launcher-icon',
   LAUNCHER_BEACON = 'launcher-beacon',
   LAUNCHER_BUTTON = 'launcher-button',

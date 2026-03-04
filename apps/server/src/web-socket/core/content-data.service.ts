@@ -13,6 +13,7 @@ import {
   BizSessionWithEvents,
   BizSessionWithContentAndVersion,
   BizEventWithEvent,
+  BizSession,
 } from '@/common/types/schema';
 import {
   BizEvents,
@@ -252,6 +253,24 @@ export class ContentDataService {
         content: true,
         version: true,
       },
+    });
+  }
+
+  /**
+   * Find the most recent active (state=0) session for a given content and user.
+   * Used for the double-check inside the session-creation distributed lock to
+   * prevent duplicate sessions when multiple sockets for the same user race.
+   * @param contentId - The content ID
+   * @param bizUserId - The business user ID
+   * @returns The active BizSession or null if none exists
+   */
+  async findActiveSessionByContentId(
+    contentId: string,
+    bizUserId: string,
+  ): Promise<BizSession | null> {
+    return await this.prisma.bizSession.findFirst({
+      where: { contentId, bizUserId, state: 0, deleted: false },
+      orderBy: { createdAt: 'desc' },
     });
   }
 

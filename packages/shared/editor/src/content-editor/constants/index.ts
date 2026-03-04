@@ -1,6 +1,7 @@
 // Re-export all constants
 export * from './column';
 export * from './embed';
+export * from './link';
 export * from './margin';
 export * from './sidebar';
 export * from './styles';

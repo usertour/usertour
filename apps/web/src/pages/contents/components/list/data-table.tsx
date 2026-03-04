@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import { AutoScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
+  BannerPreviewContent,
   ChecklistPreview,
   EmptyContentPreview,
   FlowPreview,
@@ -58,7 +59,12 @@ const ContentPreviewFooter = ({ content }: { content: Content }) => {
           }}
           disabled={isViewOnly}
         >
-          <Button variant="ghost" size="icon" className="flex-none">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="flex-none"
+            onClick={(e) => e.stopPropagation()}
+          >
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </ContentEditDropdownMenu>
@@ -113,13 +119,7 @@ const ContentPreview = ({
     return <ContentPreviewSkeleton />;
   }
 
-  if (
-    (type === ContentDataType.FLOW ||
-      type === ContentDataType.NPS ||
-      type === ContentDataType.SURVEY) &&
-    currentTheme &&
-    currentStep
-  ) {
+  if (type === ContentDataType.FLOW && currentTheme && currentStep) {
     // Find the index of currentStep in the steps array
     const stepIndex = currentVersion?.steps?.findIndex((step) => step.id === currentStep.id);
     const currentStepIndex = stepIndex !== undefined && stepIndex >= 0 ? stepIndex : 0;
@@ -153,6 +153,18 @@ const ContentPreview = ({
     return (
       <AutoScaledPreviewContainer padding={16}>
         <ChecklistPreview currentTheme={currentTheme} currentVersion={currentVersion} />
+      </AutoScaledPreviewContainer>
+    );
+  }
+
+  if (type === ContentDataType.BANNER && currentTheme && currentVersion) {
+    return (
+      <AutoScaledPreviewContainer padding={16}>
+        <BannerPreviewContent
+          currentTheme={currentTheme}
+          currentVersion={currentVersion}
+          previewClassName="justify-start"
+        />
       </AutoScaledPreviewContainer>
     );
   }

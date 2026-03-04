@@ -5,6 +5,7 @@ import { ExternalStore } from '../utils/store';
 import { UsertourTour } from '../core/usertour-tour';
 import { UsertourChecklist } from '../core/usertour-checklist';
 import { UsertourLauncher } from '@/core/usertour-launcher';
+import { UsertourBanner } from '@/core/usertour-banner';
 import { logger } from '@/utils';
 import '../index.css';
 
@@ -33,16 +34,22 @@ const WIDGETS = {
       default: module.LauncherWidget,
     })),
   ),
+  Banner: React.lazy(() =>
+    import('./banner').then((module) => ({
+      default: module.BannerWidget,
+    })),
+  ),
 };
 
 interface AppProps {
   toursStore: ExternalStore<UsertourTour[]>;
   checklistsStore: ExternalStore<UsertourChecklist[]>;
   launchersStore: ExternalStore<UsertourLauncher[]>;
+  bannersStore: ExternalStore<UsertourBanner[]>;
 }
 
 // App component with error boundaries to prevent crashes on customer sites
-const App = ({ toursStore, checklistsStore, launchersStore }: AppProps) => {
+const App = ({ toursStore, checklistsStore, launchersStore, bannersStore }: AppProps) => {
   // Use custom hook to reduce repetition
   const useStore = <T,>(store: ExternalStore<T>) =>
     useSyncExternalStore(store.subscribe, store.getSnapshot);
@@ -50,6 +57,7 @@ const App = ({ toursStore, checklistsStore, launchersStore }: AppProps) => {
   const tours = useStore(toursStore);
   const checklists = useStore(checklistsStore);
   const launchers = useStore(launchersStore);
+  const banners = useStore(bannersStore);
 
   return (
     <React.StrictMode>
@@ -80,6 +88,15 @@ const App = ({ toursStore, checklistsStore, launchersStore }: AppProps) => {
               onError={handleWidgetError}
             >
               <WIDGETS.Launcher launcher={launcher} />
+            </ErrorBoundary>
+          ))}
+          {banners?.map((banner) => (
+            <ErrorBoundary
+              key={banner.getId()}
+              fallbackRender={() => null}
+              onError={handleWidgetError}
+            >
+              <WIDGETS.Banner banner={banner} />
             </ErrorBoundary>
           ))}
         </React.Suspense>

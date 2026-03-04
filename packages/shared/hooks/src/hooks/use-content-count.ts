@@ -24,14 +24,16 @@ export const useContentCount = ({
   skip = false,
   options,
 }: UseContentCountOptions) => {
+  const effectiveSkip = skip || !environmentId;
   const { data, loading, error, refetch } = useQuery(queryContent, {
     variables: {
       first: 1, // Minimal fetch, we only need totalCount
       query: { environmentId, type, published },
       orderBy: DEFAULT_ORDER_BY,
     },
-    skip: skip || !environmentId,
-    fetchPolicy: 'cache-first',
+    skip: effectiveSkip,
+    // Use cache-and-network so draft count is always fresh when e.g. in Published view
+    fetchPolicy: 'cache-and-network',
     ...options,
   });
 

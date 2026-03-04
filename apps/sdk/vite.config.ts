@@ -51,6 +51,17 @@ const createBuildPlugins = (env: 'development' | 'production') => [
   babel({
     extensions: ['.ts', '.mts', '.tsx'],
     babelHelpers: 'bundled',
+    presets: [
+      [
+        '@babel/preset-env',
+        {
+          // browserslist config will be read from .browserslistrc
+          // BROWSERSLIST_ENV environment variable determines which section to use
+          modules: false,
+          bugfixes: true,
+        },
+      ],
+    ],
   }),
   postcss({
     plugins: [tailwindcss, autoprefixer, cssnano],
@@ -177,7 +188,10 @@ const baseConfig = {
 } as const;
 
 export default defineConfig(({ command, mode }) => {
-  const isIffeBundle = process.argv.includes('--iife');
+  // Use BROWSERSLIST_ENV to determine build format
+  // legacy browsers don't support ES modules, so legacy environment uses IIFE format
+  const browserslistEnv = process.env.BROWSERSLIST_ENV || 'production';
+  const isIffeBundle = browserslistEnv === 'legacy';
   const version = pkg.version;
   const folderName = isIffeBundle ? 'legacy' : 'es2020';
   const isBuild = command === 'build';

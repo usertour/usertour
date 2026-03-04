@@ -10,6 +10,8 @@ export interface ServerMessageHandlerContext {
   unsetFlowSession: (sessionId: string) => Promise<boolean>;
   setChecklistSession: (session: CustomContentSession) => Promise<boolean>;
   unsetChecklistSession: (sessionId: string) => Promise<boolean>;
+  setBannerSession: (session: CustomContentSession) => Promise<boolean>;
+  unsetBannerSession: (sessionId: string) => Promise<boolean>;
   addLauncher: (session: CustomContentSession) => Promise<boolean>;
   removeLauncher: (contentId: string) => Promise<boolean>;
   trackClientCondition: (condition: TrackCondition) => Promise<boolean>;

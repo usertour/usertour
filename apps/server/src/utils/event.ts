@@ -32,6 +32,9 @@ export const getEventState = (eventName: string) => {
   if (eventName === BizEvents.LAUNCHER_DISMISSED) {
     return 1;
   }
+  if (eventName === BizEvents.BANNER_DISMISSED) {
+    return 1;
+  }
   return 0;
 };
 

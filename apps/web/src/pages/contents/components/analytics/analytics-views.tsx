@@ -115,6 +115,23 @@ const LauncherAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
   </div>
 );
 
+const BannerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
+  <div className="grid gap-4 md:grid-cols-2">
+    <AnalyticsCard
+      title="Views"
+      tooltip="Views count unique users who saw the banner."
+      value={analyticsData?.uniqueViews || 0}
+      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+    <AnalyticsCard
+      title="Dismissed"
+      tooltip="Dismissed counts unique users who closed the banner."
+      value={analyticsData?.uniqueCompletions || 0}
+      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+  </div>
+);
+
 const FlowAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
   <AnalyticsViewsGrid
     analyticsData={analyticsData}
@@ -161,6 +178,9 @@ export const AnalyticsViews = () => {
   }
   if (contentType === ContentDataType.LAUNCHER) {
     return <LauncherAnalyticsViews analyticsData={analyticsData} />;
+  }
+  if (contentType === ContentDataType.BANNER) {
+    return <BannerAnalyticsViews analyticsData={analyticsData} />;
   }
   if (contentType === ContentDataType.FLOW) {
     return <FlowAnalyticsViews analyticsData={analyticsData} />;

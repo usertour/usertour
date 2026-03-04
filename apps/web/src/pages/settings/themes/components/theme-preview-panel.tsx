@@ -10,8 +10,10 @@ import { ThemePreviewLauncher } from './preview/theme-preview-launcher';
 import { ThemePreviewModal } from './preview/theme-preview-modal';
 import { ThemePreviewPopper } from './preview/theme-preview-popper';
 import { ThemePreviewBubble } from './preview/theme-preview-bubble';
+import { ThemePreviewBanner } from './preview/theme-preview-banner';
 import { ThemePreviewSelector } from './preview/theme-preview-selector';
 import {
+  BANNER_PREVIEW_CONTENT,
   BUBBLE_PREVIEW_CONTENT,
   MODAL_PREVIEW_CONTENT,
   NPS_PREVIEW_CONTENT,
@@ -96,6 +98,13 @@ export const ThemePreviewPanel = ({
         {selectedType?.type === ThemeDetailPreviewType.BUBBLE && (
           <ThemePreviewBubble
             contents={BUBBLE_PREVIEW_CONTENT}
+            settings={settings}
+            customStyle={customStyle}
+          />
+        )}
+        {selectedType?.type === ThemeDetailPreviewType.BANNER && (
+          <ThemePreviewBanner
+            contents={BANNER_PREVIEW_CONTENT}
             settings={settings}
             customStyle={customStyle}
           />

@@ -15,6 +15,8 @@ interface URLMonitorOptions {
   autoStart?: boolean;
   /** Monitoring interval in milliseconds for SPA detection (default: 500) */
   interval?: number;
+  /** URL filter function to apply when getting current URL */
+  urlFilter?: ((url: string) => string) | null;
 }
 
 /**
@@ -99,10 +101,18 @@ export class UsertourURLMonitor extends Evented {
   }
 
   /**
-   * Gets the current URL
+   * Gets the current URL (with filter applied if set)
    */
   getCurrentUrl(): string {
-    return this.currentUrl;
+    return this.applyFilter(this.currentUrl);
+  }
+
+  /**
+   * Sets the URL filter function
+   * @param urlFilter - Function to filter URLs, or null to disable filtering
+   */
+  setUrlFilter(urlFilter: ((url: string) => string) | null): void {
+    this.options.urlFilter = urlFilter;
   }
 
   /**
@@ -130,14 +140,35 @@ export class UsertourURLMonitor extends Evented {
   };
 
   // === URL Checking ===
+  /**
+   * Applies the configured URL filter to a raw URL.
+   * Falls back to the raw URL if no filter is set or throws.
+   */
+  private applyFilter(url: string): string {
+    if (!this.options.urlFilter) return url;
+    try {
+      return this.options.urlFilter(url);
+    } catch (error) {
+      console.error('Error in urlFilter function:', error);
+      return url;
+    }
+  }
+
   private checkUrlChange(): void {
     if (!window) return;
 
-    const newUrl = window.location.href;
-    if (newUrl !== this.currentUrl) {
-      const oldUrl = this.currentUrl;
-      this.currentUrl = newUrl;
+    const newRawUrl = window.location.href;
+    if (newRawUrl === this.currentUrl) return;
 
+    // Always advance the raw tracking cursor so future ticks compare correctly
+    const oldRawUrl = this.currentUrl;
+    this.currentUrl = newRawUrl;
+
+    // Only fire the event when the *filtered* URLs differ.
+    // e.g. if the filter strips query params, ?token=a → ?token=b is the same page.
+    const newUrl = this.applyFilter(newRawUrl);
+    const oldUrl = this.applyFilter(oldRawUrl);
+    if (newUrl !== oldUrl) {
       this.trigger(SDKClientEvents.URL_CHANGED, {
         oldUrl,
         newUrl,

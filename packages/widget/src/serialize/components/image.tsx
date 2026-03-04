@@ -3,9 +3,11 @@
 import type { ContentEditorImageElement } from '@usertour/types';
 import { memo } from 'react';
 
+import { Link } from '../../typography';
 import { DEFAULT_WIDTH, WIDTH_TYPES } from '../constants';
 import type { MarginStyleProps } from '../types';
 import { ensureDimensionWithDefaults, getWidthStyle, transformMarginStyle } from '../utils';
+import { useLinkDecorator } from '../link-decorator-context';
 
 // Types
 interface ImageStyle extends MarginStyleProps {
@@ -40,14 +42,34 @@ export interface ImageSerializeProps {
 
 export const ImageSerialize = memo<ImageSerializeProps>((props) => {
   const { element, className } = props;
+  const linkDecorator = useLinkDecorator();
 
   if (!element.url) {
     return null;
   }
 
-  return (
+  const image = (
     <img src={element.url} style={transformsStyle(element)} className={className} alt="Content" />
   );
+
+  // Check if element has link with URL (already processed by replaceUserAttr)
+  if (element.link?.url) {
+    const url = element.link.url;
+    // Apply decorator if available
+    const decoratedUrl = linkDecorator ? linkDecorator(url) : url;
+    const isNewTab = element.link.openType === 'new';
+    return (
+      <Link
+        href={decoratedUrl}
+        target={isNewTab ? '_blank' : '_parent'}
+        rel={isNewTab ? 'noreferrer' : undefined}
+      >
+        {image}
+      </Link>
+    );
+  }
+
+  return image;
 });
 
 ImageSerialize.displayName = 'ImageSerialize';

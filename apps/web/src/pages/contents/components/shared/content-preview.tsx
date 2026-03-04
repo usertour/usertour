@@ -2,6 +2,9 @@ import { memo } from 'react';
 import { EyeNoneIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import {
+  BannerContainer,
+  BannerPreview,
+  BannerRoot,
   ChecklistContainer,
   ChecklistDismiss,
   ChecklistDropdown,
@@ -25,8 +28,10 @@ import {
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import {
   AvatarType,
+  BannerData,
   ChecklistData,
   ContentVersion,
+  DEFAULT_BANNER_DATA,
   LauncherData,
   ProgressBarPosition,
   ProgressBarType,
@@ -35,6 +40,7 @@ import {
   Theme,
 } from '@usertour/types';
 
+import { PREVIEW_BASIC } from '@usertour-packages/constants';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface EmptyContentPreviewProps {
@@ -100,7 +106,7 @@ const FlowPreview = ({
     const showAvatar = avatarSettings?.type !== AvatarType.NONE;
 
     return (
-      <Popper open={true} zIndex={1} globalStyle={globalStyle}>
+      <Popper open={true} zIndex={PREVIEW_BASIC} globalStyle={globalStyle}>
         <PopperStaticBubble
           position={bubbleSettings?.placement?.position ?? 'leftBottom'}
           width={`${width}px`}
@@ -137,7 +143,7 @@ const FlowPreview = ({
 
   // Handle tooltip/modal step (default)
   return (
-    <Popper open={true} zIndex={1} globalStyle={globalStyle}>
+    <Popper open={true} zIndex={PREVIEW_BASIC} globalStyle={globalStyle}>
       <PopperStaticContent
         arrowSize={{
           width: themeSetting?.tooltip.notchSize ?? 20,
@@ -226,10 +232,37 @@ const ChecklistPreview = (props: {
   );
 };
 
+const BannerPreviewContent = ({
+  currentTheme,
+  currentVersion,
+  previewWidth,
+  previewClassName,
+}: {
+  currentTheme: Theme;
+  currentVersion: ContentVersion;
+  previewWidth?: number;
+  previewClassName?: string;
+}) => {
+  const data = (currentVersion.data as BannerData | undefined) ?? DEFAULT_BANNER_DATA;
+  const themeSettings = currentTheme.settings;
+  const width = previewWidth ?? data.maxEmbedWidth ?? 960;
+
+  return (
+    <BannerRoot themeSettings={themeSettings} data={data}>
+      <BannerContainer>
+        <BannerPreview previewMode className={previewClassName} style={{ width, maxWidth: '100%' }}>
+          <ContentEditorSerialize contents={data.contents ?? []} />
+        </BannerPreview>
+      </BannerContainer>
+    </BannerRoot>
+  );
+};
+
 export {
   FlowPreview,
   LauncherPreview,
   ChecklistPreview,
+  BannerPreviewContent,
   EmptyContentPreview,
   ScaledPreviewContainer,
 };

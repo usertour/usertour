@@ -9,6 +9,7 @@ import {
 } from '@usertour-packages/widget';
 import type { ContentEditorRoot } from '@usertour/types';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
+import { PREVIEW_BASIC } from '@usertour-packages/constants';
 
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
@@ -34,7 +35,7 @@ export const ThemePreviewModal = (props: ThemePreviewModalProps) => {
 
   return (
     <div className="h-full w-full scale-100">
-      <Popper open={true} zIndex={1111} globalStyle={customStyle}>
+      <Popper open={true} zIndex={PREVIEW_BASIC} globalStyle={customStyle}>
         <PopperModalContentPotal
           position={'center'}
           enabledBackdrop={true}
