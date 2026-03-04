@@ -11,7 +11,11 @@ import { BizEvent, BizEvents, ContentDataType, EventAttributes } from '@usertour
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { ChecklistItemsColumn, LauncherProgressColumn } from '@/components/molecules/session';
+import {
+  BannerProgressColumn,
+  ChecklistItemsColumn,
+  LauncherProgressColumn,
+} from '@/components/molecules/session';
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
@@ -94,14 +98,16 @@ const SessionDetailContentInner = ({
     (bizEvent: BizEvent) =>
       bizEvent.event?.codeName === BizEvents.FLOW_STARTED ||
       bizEvent.event?.codeName === BizEvents.LAUNCHER_SEEN ||
-      bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED,
+      bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED ||
+      bizEvent.event?.codeName === BizEvents.BANNER_SEEN,
   );
 
   const endEvent = session?.bizEvent?.find(
     (bizEvent: BizEvent) =>
       bizEvent.event?.codeName === BizEvents.FLOW_ENDED ||
       bizEvent.event?.codeName === BizEvents.CHECKLIST_DISMISSED ||
-      bizEvent.event?.codeName === BizEvents.LAUNCHER_DISMISSED,
+      bizEvent.event?.codeName === BizEvents.LAUNCHER_DISMISSED ||
+      bizEvent.event?.codeName === BizEvents.BANNER_DISMISSED,
   );
 
   if (!eventList || !content || !version) {
@@ -221,6 +227,9 @@ const SessionDetailContentInner = ({
           )}
           {contentType === ContentDataType.LAUNCHER && (
             <LauncherProgressColumn original={session} eventList={eventList} />
+          )}
+          {contentType === ContentDataType.BANNER && (
+            <BannerProgressColumn original={session} eventList={eventList} />
           )}
         </SessionItemContainer>
 

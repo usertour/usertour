@@ -15,6 +15,8 @@ export const EDITOR_RICH_TOOLBAR_MORE = 10905;
 export const EDITOR_RICH_ACTION = 10906;
 export const EDITOR_RICH_ACTION_CONTENT = 10907;
 
+export const PREVIEW_BASIC = 1;
+
 /**
  * Widget z-index offsets relative to base z-index
  */

@@ -8,6 +8,7 @@ import { UsertourTheme } from '@/core/usertour-theme';
 import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 import { autoBind } from '@/utils';
 import {
+  BannerData,
   ChecklistData,
   contentEndReason,
   contentStartReason,
@@ -21,6 +22,7 @@ import {
   SessionAttribute,
   SessionStep,
   SessionTheme,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { uuidV4, isEqual, extractLinkUrl } from '@usertour/helpers';
 import {
@@ -31,7 +33,10 @@ import {
 } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
 import { SDKClientEvents } from '@usertour-packages/constants';
-import { convertToAttributeEvaluationOptions } from '@/core/usertour-helper';
+import {
+  convertToAttributeEvaluationOptions,
+  evaluateButtonConditionsInRoots,
+} from '@/core/usertour-helper';
 import { window } from '@/utils';
 
 /**
@@ -200,7 +205,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       return null;
     }
 
-    const customData = this.getCustomStoreData({ baseData, options });
+    const customData = await this.getCustomStoreData({ baseData, options });
 
     return {
       ...baseData,
@@ -226,7 +231,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       globalStyle,
       themeSettings,
     };
-    const customData = this.getCustomStoreData({ baseData });
+    const customData = await this.getCustomStoreData({ baseData });
 
     // Update store with common and specific data
     this.updateStore({
@@ -335,7 +340,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    * @param context - Context object containing baseData and optional options
    * @protected
    */
-  protected abstract getCustomStoreData(context: CustomStoreDataContext): Partial<TStore>;
+  protected abstract getCustomStoreData(context: CustomStoreDataContext): Promise<Partial<TStore>>;
 
   /**
    * Builds the base store data common to all components
@@ -351,6 +356,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
     const themeData = UsertourTheme.createThemeData(themeSettings);
     const userAttributes = this.getUserAttributes();
     const removeBranding = this.isRemoveBranding();
+    const linkUrlDecorator = this.getLinkUrlDecorator();
 
     // Calculate final zIndex using subclass implementation
     const zIndex = this.getZIndex(themeSettings);
@@ -361,6 +367,7 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       userAttributes,
       openState: false,
       zIndex,
+      linkUrlDecorator,
     };
   }
 
@@ -420,6 +427,24 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Recursively evaluates button conditions in data using RulesEvaluator
+   * @param data - Data object to process (can be any JSON value)
+   * @returns Data with evaluated button conditions
+   * @protected
+   */
+  protected async evaluateButtonConditionsInData(
+    roots: ContentEditorRoot[] | undefined,
+  ): Promise<ContentEditorRoot[] | undefined> {
+    if (!roots || roots.length === 0) {
+      return roots;
+    }
+
+    const evaluator = rulesEvaluatorManager.getEvaluator(this.getContentId());
+    const sessionAttributes = this.getSessionAttributes();
+    return await evaluateButtonConditionsInRoots(roots, evaluator, sessionAttributes);
+  }
+
+  /**
    * Gets user attributes from session attributes
    * Converts session attributes to user attributes format for evaluation
    * @returns User attributes object
@@ -473,6 +498,13 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Gets the banner data from session
+   */
+  protected getBannerData(): BannerData | undefined {
+    return this.session.getBannerData();
+  }
+
+  /**
    * Gets the unacked tasks for the current session
    * @returns Set of unacked task IDs for the current session, or undefined if no unacked tasks exist
    */
@@ -485,6 +517,14 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected clearUnackedTasks(): void {
     this.instance.clearUnackedTasks(this.getSessionId());
+  }
+
+  /**
+   * Gets the link URL decorator from the core instance
+   * @protected
+   */
+  protected getLinkUrlDecorator(): ((url: string) => string) | null {
+    return this.instance.getLinkUrlDecorator();
   }
 
   /**
@@ -594,7 +634,13 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   handleNavigate(data: any): void {
     const userAttributes = this.getUserAttributes();
-    const url = extractLinkUrl(data.value, userAttributes);
+    let url = extractLinkUrl(data.value, userAttributes);
+
+    // Apply link URL decorator if available
+    const linkUrlDecorator = this.getLinkUrlDecorator();
+    if (linkUrlDecorator) {
+      url = linkUrlDecorator(url);
+    }
 
     // Only use customNavigate for same-window navigation (SPA routing)
     // For other open types, use default browser navigation

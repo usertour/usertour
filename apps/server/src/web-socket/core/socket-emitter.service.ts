@@ -102,6 +102,16 @@ export class SocketEmitterService {
   }
 
   /**
+   * Set the banner session
+   * @param socket - The socket
+   * @param session - The session to set
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async setBannerSessionWithAck(socket: Socket, session: CustomContentSession): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.SET_BANNER_SESSION, session);
+  }
+
+  /**
    * Unset the checklist session
    * @param socket - The socket
    * @param sessionId - The session id to unset
@@ -109,6 +119,18 @@ export class SocketEmitterService {
    */
   async unsetChecklistSessionWithAck(socket: Socket, sessionId: string): Promise<boolean> {
     return await this.emitWithAck(socket, ServerMessageKind.UNSET_CHECKLIST_SESSION, {
+      sessionId,
+    });
+  }
+
+  /**
+   * Unset the banner session
+   * @param socket - The socket
+   * @param sessionId - The session id to unset
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async unsetBannerSessionWithAck(socket: Socket, sessionId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.UNSET_BANNER_SESSION, {
       sessionId,
     });
   }

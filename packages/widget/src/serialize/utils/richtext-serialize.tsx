@@ -17,7 +17,7 @@ import { ALIGN_MAPPING } from '../constants';
 import type { DescendantNode, ElementNode } from '../types';
 import { isTextNode } from '../types';
 import { getTextStyles } from './text-styles';
-
+import { useLinkDecorator } from '../link-decorator-context';
 // Non-breaking space for empty paragraphs
 const NBSP = '\u00A0';
 
@@ -149,11 +149,14 @@ interface LinkSerializeProps {
 }
 
 const LinkSerialize = memo(({ children, element }: LinkSerializeProps) => {
+  const linkDecorator = useLinkDecorator();
+  const url = element.url || '';
+  const decoratedUrl = linkDecorator ? linkDecorator(url) : url;
   const isNewTab = element.openType === OPEN_TYPE.NEW;
 
   return (
     <Link
-      href={element.url}
+      href={decoratedUrl}
       target={isNewTab ? '_blank' : '_parent'}
       rel={isNewTab ? 'noreferrer' : undefined}
     >

@@ -1,5 +1,5 @@
 import { ThemeTypesSetting, defaultSettings } from '@usertour/types';
-import { hexToHSLAString, hexToHSLString, hexToRGBStr } from './color';
+import { generateStateColors, hexToHSLAString, hexToHSLString, hexToRGBStr } from './color';
 import { deepmergeCustom } from 'deepmerge-ts';
 import { isUndefined } from './type-utils';
 import { deepClone } from './utils';
@@ -104,88 +104,133 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   // Border auto values
   data.border.borderColor = resolveAutoValue(data.border.borderColor, data.mainColor.color);
 
-  // Primary button text color auto values
+  // Primary button text color
+  const primaryTextColorBaseAuto = data.buttons.primary.textColor.color === 'Auto';
   data.buttons.primary.textColor.color = resolveAutoValue(
     data.buttons.primary.textColor.color,
     data.brandColor.color,
   );
+  const primaryTextColorResolved = data.buttons.primary.textColor.color;
   data.buttons.primary.textColor.hover = resolveAutoValue(
     data.buttons.primary.textColor.hover,
-    data.brandColor.color,
+    primaryTextColorBaseAuto
+      ? primaryTextColorResolved
+      : ((data.buttons.primary.textColor.autoHover as string) ?? data.brandColor.color),
   );
   data.buttons.primary.textColor.active = resolveAutoValue(
     data.buttons.primary.textColor.active,
-    data.brandColor.color,
+    primaryTextColorBaseAuto
+      ? primaryTextColorResolved
+      : ((data.buttons.primary.textColor.autoActive as string) ?? data.brandColor.color),
   );
 
-  // Primary button background color auto values
+  // Primary button background
+  const primaryBgBaseAuto = data.buttons.primary.backgroundColor.background === 'Auto';
   data.buttons.primary.backgroundColor.background = resolveAutoValue(
     data.buttons.primary.backgroundColor.background,
     data.brandColor.background,
   );
+  const primaryBgResolved = data.buttons.primary.backgroundColor.background;
+  const primaryBgStates = generateStateColors(primaryBgResolved, data.brandColor.color);
   data.buttons.primary.backgroundColor.hover = resolveAutoValue(
     data.buttons.primary.backgroundColor.hover,
-    data.brandColor.autoHover as string,
+    primaryBgBaseAuto
+      ? primaryBgStates.hover
+      : ((data.buttons.primary.backgroundColor.autoHover as string) ??
+          (data.brandColor.autoHover as string)),
   );
   data.buttons.primary.backgroundColor.active = resolveAutoValue(
     data.buttons.primary.backgroundColor.active,
-    data.brandColor.autoActive as string,
+    primaryBgBaseAuto
+      ? primaryBgStates.active
+      : ((data.buttons.primary.backgroundColor.autoActive as string) ??
+          (data.brandColor.autoActive as string)),
   );
 
-  // Primary button border color auto values
+  // Primary button border
+  const primaryBorderBaseAuto = data.buttons.primary.border.color.color === 'Auto';
   data.buttons.primary.border.color.color = resolveAutoValue(
     data.buttons.primary.border.color.color,
     data.brandColor.background,
   );
+  const primaryBorderResolved = data.buttons.primary.border.color.color;
+  const primaryBorderStates = generateStateColors(primaryBorderResolved, data.brandColor.color);
   data.buttons.primary.border.color.hover = resolveAutoValue(
     data.buttons.primary.border.color.hover,
-    data.brandColor.autoHover as string,
+    primaryBorderBaseAuto
+      ? primaryBorderStates.hover
+      : ((data.buttons.primary.border.color.autoHover as string) ??
+          (data.brandColor.autoHover as string)),
   );
   data.buttons.primary.border.color.active = resolveAutoValue(
     data.buttons.primary.border.color.active,
-    data.brandColor.autoActive as string,
+    primaryBorderBaseAuto
+      ? primaryBorderStates.active
+      : ((data.buttons.primary.border.color.autoActive as string) ??
+          (data.brandColor.autoActive as string)),
   );
 
-  // Secondary button text color auto values
+  // Secondary button text color
+  const secondaryTextColorBaseAuto = data.buttons.secondary.textColor.color === 'Auto';
   data.buttons.secondary.textColor.color = resolveAutoValue(
     data.buttons.secondary.textColor.color,
     data.brandColor.background,
   );
+  const secondaryTextColorResolved = data.buttons.secondary.textColor.color;
   data.buttons.secondary.textColor.hover = resolveAutoValue(
     data.buttons.secondary.textColor.hover,
-    data.brandColor.background,
+    secondaryTextColorBaseAuto
+      ? secondaryTextColorResolved
+      : ((data.buttons.secondary.textColor.autoHover as string) ?? data.brandColor.background),
   );
   data.buttons.secondary.textColor.active = resolveAutoValue(
     data.buttons.secondary.textColor.active,
-    data.brandColor.background,
+    secondaryTextColorBaseAuto
+      ? secondaryTextColorResolved
+      : ((data.buttons.secondary.textColor.autoActive as string) ?? data.brandColor.background),
   );
 
-  // Secondary button background color auto values
+  // Secondary button background
+  const secondaryBgBaseAuto = data.buttons.secondary.backgroundColor.background === 'Auto';
   data.buttons.secondary.backgroundColor.background = resolveAutoValue(
     data.buttons.secondary.backgroundColor.background,
     data.mainColor.background,
   );
+  const secondaryBgResolved = data.buttons.secondary.backgroundColor.background;
+  const secondaryBgStates = generateStateColors(secondaryBgResolved, data.brandColor.background);
   data.buttons.secondary.backgroundColor.hover = resolveAutoValue(
     data.buttons.secondary.backgroundColor.hover,
-    data.mainColor.autoHover as string,
+    secondaryBgBaseAuto
+      ? secondaryBgStates.hover
+      : ((data.buttons.secondary.backgroundColor.autoHover as string) ??
+          (data.mainColor.autoHover as string)),
   );
   data.buttons.secondary.backgroundColor.active = resolveAutoValue(
     data.buttons.secondary.backgroundColor.active,
-    data.mainColor.autoActive as string,
+    secondaryBgBaseAuto
+      ? secondaryBgStates.active
+      : ((data.buttons.secondary.backgroundColor.autoActive as string) ??
+          (data.mainColor.autoActive as string)),
   );
 
-  // Secondary button border color auto values
+  // Secondary button border
+  const secondaryBorderBaseAuto = data.buttons.secondary.border.color.color === 'Auto';
   data.buttons.secondary.border.color.color = resolveAutoValue(
     data.buttons.secondary.border.color.color,
     data.brandColor.background,
   );
+  const secondaryBorderResolved = data.buttons.secondary.border.color.color;
   data.buttons.secondary.border.color.hover = resolveAutoValue(
     data.buttons.secondary.border.color.hover,
-    data.brandColor.background,
+    secondaryBorderBaseAuto
+      ? secondaryBorderResolved
+      : ((data.buttons.secondary.border.color.autoHover as string) ?? data.brandColor.background),
   );
   data.buttons.secondary.border.color.active = resolveAutoValue(
     data.buttons.secondary.border.color.active,
-    data.brandColor.background,
+    secondaryBorderBaseAuto
+      ? secondaryBorderResolved
+      : ((data.buttons.secondary.border.color.autoActive as string) ?? data.brandColor.background),
   );
 
   // Font auto values
@@ -210,14 +255,14 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   );
   data.launcherIcon.color.hover = resolveAutoValue(
     data.launcherIcon.color.hover,
-    data.brandColor.autoHover as string,
+    data.brandColor.hover,
   );
   data.launcherIcon.color.active = resolveAutoValue(
     data.launcherIcon.color.active,
-    data.brandColor.autoActive as string,
+    data.brandColor.active,
   );
 
-  // Checklist launcher color auto values
+  // Checklist launcher color auto values (use resolved brandColor hover/active so manual brand choices apply)
   data.checklistLauncher.color.color = resolveAutoValue(
     data.checklistLauncher.color.color,
     data.brandColor.color,
@@ -228,11 +273,11 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   );
   data.checklistLauncher.color.hover = resolveAutoValue(
     data.checklistLauncher.color.hover,
-    data.brandColor.autoHover as string,
+    data.brandColor.hover,
   );
   data.checklistLauncher.color.active = resolveAutoValue(
     data.checklistLauncher.color.active,
-    data.brandColor.autoActive as string,
+    data.brandColor.active,
   );
 
   // Checklist launcher counter auto values
@@ -245,14 +290,31 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.brandColor.color,
   );
 
+  // Banner color: resolve base from brandColor, then derive hover/active via generateStateColors
+  data.banner.textColor.color = resolveAutoValue(
+    data.banner.textColor.color,
+    data.brandColor.color,
+  );
+  data.banner.backgroundColor.background = resolveAutoValue(
+    data.banner.backgroundColor.background,
+    data.brandColor.background,
+  );
+  const bannerBackground = data.banner.backgroundColor.background;
+  const bannerForeground = data.banner.textColor.color;
+  if (bannerBackground != null && bannerForeground != null) {
+    const bgStates = generateStateColors(bannerBackground, bannerForeground);
+    const fgStates = generateStateColors(bannerForeground, bannerBackground);
+    data.banner.backgroundColor.hover = bgStates.hover;
+    data.banner.backgroundColor.active = bgStates.active;
+    data.banner.textColor.hover = fgStates.hover;
+    data.banner.textColor.active = fgStates.active;
+  }
+
   // Survey auto values
   data.survey.color = resolveAutoValue(data.survey.color, data.brandColor.background);
 
   // Focus highlight auto values
-  data.focusHighlight.color = resolveAutoValue(
-    data.focusHighlight.color,
-    data.mainColor.autoActive as string,
-  );
+  data.focusHighlight.color = resolveAutoValue(data.focusHighlight.color, data.mainColor.active);
 
   // Launcher button primary text color auto values
   data.launcherButtons.primary.textColor.color = resolveAutoValue(
@@ -275,11 +337,11 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   );
   data.launcherButtons.primary.backgroundColor.hover = resolveAutoValue(
     data.launcherButtons.primary.backgroundColor.hover,
-    data.brandColor.autoHover as string,
+    data.brandColor.hover,
   );
   data.launcherButtons.primary.backgroundColor.active = resolveAutoValue(
     data.launcherButtons.primary.backgroundColor.active,
-    data.brandColor.autoActive as string,
+    data.brandColor.active,
   );
 
   // Launcher button primary border color auto values
@@ -289,11 +351,11 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   );
   data.launcherButtons.primary.border.color.hover = resolveAutoValue(
     data.launcherButtons.primary.border.color.hover,
-    data.brandColor.autoHover as string,
+    data.brandColor.hover,
   );
   data.launcherButtons.primary.border.color.active = resolveAutoValue(
     data.launcherButtons.primary.border.color.active,
-    data.brandColor.autoActive as string,
+    data.brandColor.active,
   );
 
   // Font family handling
@@ -399,6 +461,19 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     ),
     '--usertour-checklist-trigger-font-weight': settings.checklistLauncher.fontWeight,
     '--usertour-checkmark-background-color': settings.checklist.checkmarkColor,
+    '--usertour-banner-foreground-color': hexToHSLString(settings.banner.textColor.color),
+    '--usertour-banner-background-color': hexToHSLString(
+      settings.banner.backgroundColor.background,
+    ),
+    '--usertour-banner-hover-background-color': hexToHSLString(
+      settings.banner.backgroundColor.hover,
+    ),
+    '--usertour-banner-active-background-color': hexToHSLString(
+      settings.banner.backgroundColor.active,
+    ),
+    '--usertour-banner-hover-foreground-color': hexToHSLString(settings.banner.textColor.hover),
+    '--usertour-banner-active-foreground-color': hexToHSLString(settings.banner.textColor.active),
+    '--usertour-banner-padding': `${settings.banner.padding}px`,
     '--usertour-checklist-trigger-height': `${settings.checklistLauncher.height}px`,
     '--usertour-checklist-trigger-hover-background-color': settings.checklistLauncher.color.hover,
     '--usertour-question-color': hexToHSLString(settings.survey.color),

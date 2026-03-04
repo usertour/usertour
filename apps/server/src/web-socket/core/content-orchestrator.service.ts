@@ -15,6 +15,7 @@ import {
   findLatestActivatedCustomContentVersions,
   filterAvailableAutoStartContentVersions,
   isActivedHideRules,
+  isActivedAutoStartRules,
   extractClientTrackConditions,
   evaluateCustomContentVersion,
   extractClientConditionWaitTimers,
@@ -25,6 +26,8 @@ import {
   canSendChecklistCompletedEvent,
   evaluateChecklistItemsWithContext,
   isSingletonContentType,
+  filterSingleSessionContentVersions,
+  isShowOnlyContentType,
   CONTENT_SEEN_EVENTS,
   isVersionMismatchWithActiveSession,
   unsetActiveSessionOnVersionMismatch,
@@ -123,7 +126,7 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Cancel content (FLOW, CHECKLIST, or LAUNCHER)
+   * Cancel content (FLOW, CHECKLIST, BANNER, or LAUNCHER)
    * No longer needs distributed lock as message queue ensures ordered execution
    * @param context - The content cancel context
    * @returns True if the content was canceled successfully
@@ -148,7 +151,7 @@ export class ContentOrchestratorService {
     const contentType = bizSession.content.type as ContentDataType;
     const contentId = bizSession.content.id;
 
-    // Track content ended event (supports FLOW, CHECKLIST, LAUNCHER)
+    // Track content ended event (supports FLOW, CHECKLIST, BANNER, LAUNCHER)
     const isEventTracked = await this.trackContentEndedEvent(
       sessionId,
       contentType,
@@ -225,7 +228,7 @@ export class ContentOrchestratorService {
   /**
    * Start content batch (for multi-instance content types like LAUNCHER)
    * Supports multiple concurrent sessions for the same content type
-   * Note: Singleton content types (FLOW, CHECKLIST) should use startContent instead
+   * Note: Singleton content types (FLOW, CHECKLIST, BANNER) should use startContent instead
    * @param context - The content start context
    * @returns True if the content batch was started successfully
    */
@@ -296,15 +299,16 @@ export class ContentOrchestratorService {
    * Toggle contents for the socket
    * This method will start content types specified by the caller, handling session cleanup and restart
    * @param context - The web socket context containing server, socket, and socket data
-   * @param types - Optional array of content types to toggle. If not provided, uses all content types in order: CHECKLIST, FLOW, LAUNCHER
+   * @param types - Optional array of content types to toggle. If not provided, uses all content types in order: CHECKLIST, BANNER, FLOW, LAUNCHER
    * @returns True if the contents were toggled successfully
    */
   async toggleContents(context: WebSocketContext, types?: ContentDataType[]): Promise<boolean> {
     const { server, socket } = context;
 
-    // Use default content types if not provided, maintaining the order: CHECKLIST, FLOW, LAUNCHER
+    // Use default content types if not provided, maintaining the order: CHECKLIST, BANNER, FLOW, LAUNCHER
     const contentTypes = types ?? [
       ContentDataType.CHECKLIST,
+      ContentDataType.BANNER,
       ContentDataType.FLOW,
       ContentDataType.LAUNCHER,
     ];
@@ -511,6 +515,17 @@ export class ContentOrchestratorService {
     // If version mismatches, clear activeSession
     const customContentVersion = unsetActiveSessionOnVersionMismatch(evaluatedContentVersion);
 
+    if (
+      isShowOnlyContentType(contentType) &&
+      !customContentVersion.session.activeSession &&
+      customContentVersion.session.totalSessions > 0
+    ) {
+      return {
+        success: false,
+        reason: 'Banner already has a completed session',
+      };
+    }
+
     const steps = customContentVersion?.steps ?? [];
     const stepCvid = options?.stepCvid ?? (!options?.continue ? steps?.[0]?.cvid : undefined);
 
@@ -545,6 +560,20 @@ export class ContentOrchestratorService {
       return { success: false, reason: 'No custom content version found' };
     }
 
+    if (isShowOnlyContentType(contentType) && !isActivedAutoStartRules(customContentVersion)) {
+      const retrackConditions = extractClientTrackConditions(
+        [customContentVersion],
+        ConditionExtractionMode.AUTO_START_ONLY,
+      );
+      return {
+        success: true,
+        session,
+        cancelSession: true,
+        retrackConditions,
+        reason: 'Banner show rules not active',
+      };
+    }
+
     const result = await this.handleContentVersion(context, customContentVersion);
     if (!result.success) {
       return result;
@@ -577,8 +606,12 @@ export class ContentOrchestratorService {
       contentType,
     );
 
+    const availableEvaluatedVersions = isShowOnlyContentType(contentType)
+      ? filterSingleSessionContentVersions(evaluatedContentVersions)
+      : evaluatedContentVersions;
+
     // Early return if no content versions available
-    if (evaluatedContentVersions.length === 0) {
+    if (availableEvaluatedVersions.length === 0) {
       return {
         success: false,
         reason: 'No content versions available',
@@ -590,7 +623,7 @@ export class ContentOrchestratorService {
       const excludedResult = await this.executeContentStartStrategies(
         context,
         contentType,
-        evaluatedContentVersions,
+        availableEvaluatedVersions,
         excludeContentIds,
       );
 
@@ -614,7 +647,11 @@ export class ContentOrchestratorService {
     }
 
     // Second attempt: Try with all content versions (no exclusions)
-    return await this.executeContentStartStrategies(context, contentType, evaluatedContentVersions);
+    return await this.executeContentStartStrategies(
+      context,
+      contentType,
+      availableEvaluatedVersions,
+    );
   }
 
   /**
@@ -642,14 +679,16 @@ export class ContentOrchestratorService {
           )
         : evaluatedContentVersions;
 
-    // Strategy 1: Try to start by latest activated content version
-    const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
-      context,
-      availableVersions,
-    );
-    this.logger.debug(`Latest version strategy result: ${latestVersionResult.reason}`);
-    if (latestVersionResult.success) {
-      return latestVersionResult;
+    // Strategy 1: Try to start by latest activated content version (skip for show-only types)
+    if (!isShowOnlyContentType(contentType)) {
+      const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
+        context,
+        availableVersions,
+      );
+      this.logger.debug(`Latest version strategy result: ${latestVersionResult.reason}`);
+      if (latestVersionResult.success) {
+        return latestVersionResult;
+      }
     }
 
     // Strategy 2: Try to start by auto-start conditions
@@ -833,7 +872,7 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { success, preTracks, waitTimers, session, hideRulesActivated } = result;
+    const { success, preTracks, waitTimers, session, cancelSession } = result;
     const { socket, contentType } = context;
     const socketData = await this.getSocketData(socket);
 
@@ -863,7 +902,7 @@ export class ContentOrchestratorService {
     const currentSession = extractSessionByContentType(socketData, contentType);
 
     // If session should be hidden, cancel it directly
-    if (currentSession?.id === session?.id && hideRulesActivated) {
+    if (currentSession?.id === session?.id && cancelSession) {
       return await this.handleSessionCancellation({ ...context, socketData }, result);
     }
 
@@ -875,7 +914,7 @@ export class ContentOrchestratorService {
 
     // After activation, check if cancellation is needed
     // This handles the case where activation changes the session state
-    if (hideRulesActivated) {
+    if (cancelSession) {
       return await this.handleSessionCancellation({ ...context, socketData }, result);
     }
 
@@ -939,58 +978,51 @@ export class ContentOrchestratorService {
     socketData: SocketData,
     startOptions?: StartContentOptions,
   ): Promise<ContentStartResult & { sessionId?: string; currentStepCvid?: string }> {
-    const { environment, externalUserId, externalCompanyId, clientContext } = socketData;
-    const startReason = startOptions?.startReason ?? contentStartReason.START_FROM_CONDITION;
+    const { environment, externalUserId, externalCompanyId, clientContext, bizUserId } = socketData;
+    const contentId = customContentVersion.contentId;
     const versionId = customContentVersion.id;
-
-    const session = customContentVersion.session;
     const contentType = customContentVersion.content.type as ContentDataType;
+    const startReason = startOptions?.startReason ?? contentStartReason.START_FROM_CONDITION;
     const currentStepCvid = findCurrentStepCvid(customContentVersion, startOptions);
 
-    if (session.activeSession) {
+    // Fast-path: cached data already shows an active session — no lock needed
+    if (customContentVersion.session.activeSession) {
       return {
         success: true,
-        sessionId: session.activeSession.id,
+        sessionId: customContentVersion.session.activeSession.id,
         currentStepCvid,
       };
     }
-    const bizSession = await this.sessionBuilderService.createBizSession(
+
+    const result = await this.sessionBuilderService.findOrCreateBizSession(
       environment,
       externalUserId,
       externalCompanyId,
       versionId,
+      bizUserId,
+      contentId,
     );
-
-    if (!bizSession) {
-      return {
-        success: false,
-        reason: 'Failed to create business session',
-      };
-    }
-    const steps = customContentVersion?.steps ?? [];
-    const stepId = steps.find((step) => step.cvid === currentStepCvid)?.id ?? null;
-
-    const result = await this.trackAutoStartEvent(
-      bizSession.id,
-      contentType,
-      environment,
-      startReason,
-      stepId,
-      clientContext,
-    );
-
     if (!result) {
-      return {
-        success: false,
-        reason: 'Failed to track auto start event',
-      };
+      return { success: false, reason: 'Failed to create business session' };
     }
 
-    return {
-      success: true,
-      sessionId: bizSession.id,
-      currentStepCvid,
-    };
+    if (result.isNew) {
+      const stepId =
+        customContentVersion.steps?.find((s) => s.cvid === currentStepCvid)?.id ?? null;
+      const tracked = await this.trackAutoStartEvent(
+        result.session.id,
+        contentType,
+        environment,
+        startReason,
+        stepId,
+        clientContext,
+      );
+      if (!tracked) {
+        return { success: false, reason: 'Failed to track auto start event' };
+      }
+    }
+
+    return { success: true, sessionId: result.session.id, currentStepCvid };
   }
 
   /**
@@ -1019,16 +1051,14 @@ export class ContentOrchestratorService {
     );
     // Extract tracking conditions for checklist conditions
     const checklistConditions = extractChecklistTrackConditions(session);
-
-    // Check if hide rules are activated
-    const hideRulesActivated = isActivedHideRules(customContentVersion);
+    const cancelSession = isActivedHideRules(customContentVersion);
 
     return {
       success: true,
       session,
       hideConditions,
       checklistConditions,
-      hideRulesActivated,
+      cancelSession,
       reason: 'Content session created successfully',
     };
   }
@@ -1092,7 +1122,7 @@ export class ContentOrchestratorService {
     context: ContentStartContext,
     result: ContentStartResult,
   ): Promise<boolean> {
-    const { session, hideConditions = [] } = result;
+    const { session, hideConditions = [], retrackConditions = [] } = result;
     if (!session) {
       return false;
     }
@@ -1101,15 +1131,17 @@ export class ContentOrchestratorService {
     const { environment, externalUserId } = socketData;
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     const sessionId = session.id;
+    const trackConditions =
+      hideConditions.length > 0 ? [...hideConditions] : [...retrackConditions];
 
-    this.logger.debug(`Hide rules are activated, canceling session, sessionId: ${sessionId}`);
+    this.logger.debug(`Canceling session, sessionId: ${sessionId}`);
     const cancelSessionParams: CancelSessionParams = {
       server,
       socket,
       socketData,
       sessionId,
       contentType,
-      trackConditions: [...hideConditions],
+      trackConditions,
     };
     return await this.cancelSessionInRoom(cancelSessionParams, roomId);
   }
@@ -1143,6 +1175,9 @@ export class ContentOrchestratorService {
     }
     if (contentType === ContentDataType.CHECKLIST) {
       return await this.activateChecklistSession(params);
+    }
+    if (contentType === ContentDataType.BANNER) {
+      return await this.activateBannerSession(params);
     }
     return false;
   }
@@ -1188,6 +1223,26 @@ export class ContentOrchestratorService {
       };
     }
     return await this.socketOperationService.activateChecklistSession(
+      socket as unknown as Socket,
+      socketData,
+      session,
+      options,
+    );
+  }
+
+  /**
+   * Activate banner session
+   * @param params - The activate session parameters
+   * @returns True if the session was activated successfully
+   */
+  private async activateBannerSession(params: ActivateSessionParams) {
+    const { socket, session, trackConditions, socketData } = params;
+    const options = {
+      trackConditions,
+      cleanupContentTypes: [ContentDataType.BANNER],
+    };
+
+    return await this.socketOperationService.activateBannerSession(
       socket as unknown as Socket,
       socketData,
       session,
@@ -1612,10 +1667,7 @@ export class ContentOrchestratorService {
 
     // Keep versions that have active session OR have total sessions = 0
     // Filter out versions that have neither active session nor total sessions = 0
-    const activeEvaluatedVersions = evaluatedVersions.filter(
-      (contentVersion) =>
-        contentVersion.session.activeSession || contentVersion.session.totalSessions === 0,
-    );
+    const activeEvaluatedVersions = filterSingleSessionContentVersions(evaluatedVersions);
 
     const availableVersions = filterAvailableAutoStartContentVersions(
       activeEvaluatedVersions,

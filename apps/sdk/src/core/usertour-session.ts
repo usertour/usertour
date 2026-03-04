@@ -1,5 +1,6 @@
 import {
   AttributeBizTypes,
+  BannerData,
   LauncherData,
   CustomContentSession,
   SessionStep,
@@ -142,6 +143,13 @@ export class UsertourSession {
    */
   getLauncherData(): LauncherData | undefined {
     return this.session.version.launcher;
+  }
+
+  /**
+   * Gets the banner data from session
+   */
+  getBannerData(): BannerData | undefined {
+    return this.session.version.banner;
   }
 
   // === Attributes ===

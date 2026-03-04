@@ -15,6 +15,7 @@ import {
   ProgressBarType,
   ThemeTypesSetting,
 } from '@usertour/types';
+import { PREVIEW_BASIC } from '@usertour-packages/constants';
 
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
@@ -53,7 +54,7 @@ export const ThemePreviewBubble = (props: ThemePreviewBubbleProps) => {
 
   return (
     <div className="h-full w-full scale-100">
-      <Popper open={true} zIndex={1111} globalStyle={globalStyle}>
+      <Popper open={true} zIndex={PREVIEW_BASIC} globalStyle={globalStyle}>
         <PopperBubblePortal
           position={bubbleSettings?.placement?.position ?? 'leftBottom'}
           positionOffsetX={bubbleSettings?.placement?.positionOffsetX ?? 20}

@@ -6,49 +6,15 @@ import type { RenderElementProps } from 'slate-react';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 
 import type { Attribute } from '@usertour/types';
-import { Button } from '@usertour-packages/button';
-import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
-import { DeleteIcon } from '@usertour-packages/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
 import { Link, getLinkClassName } from '@usertour-packages/widget';
 
+import { INITIAL_LINK_URL_VALUE, LINK_OPEN_TYPE } from '../../content-editor/constants';
+import { LinkEditorPanel } from '../../content-editor/shared';
 import type { LinkElementType } from '../../types/slate';
-import { PopperEditorMini, usePopperEditorContext } from '../editor';
-
-// Constants
-const INITIAL_URL_VALUE: Descendant[] = [
-  {
-    type: 'paragraph',
-    children: [{ text: 'https://' }],
-  },
-];
-
-const OPEN_TYPE = {
-  SAME: 'same',
-  NEW: 'new',
-} as const;
-
-// Style constants
-const TAB_TRIGGER_CLASS =
-  'w-1/2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground';
+import { usePopperEditorContext } from '../editor';
 
 // Component props types
-interface DeleteLinkButtonProps {
-  onDelete: () => void;
-}
-
-interface OpenTypeTabsProps {
-  defaultValue: string;
-  onValueChange: (value: string) => void;
-}
-
 interface LinkPopoverContentProps {
   zIndex: number;
   attributes?: Attribute[];
@@ -65,57 +31,8 @@ interface LinkElementSerializeProps {
 }
 
 /**
- * Delete link button with tooltip
- * Provides a button to remove link formatting from selected text
- */
-const DeleteLinkButton = memo(({ onDelete }: DeleteLinkButtonProps) => {
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            className="flex-none hover:bg-destructive/20"
-            variant="ghost"
-            size="icon"
-            onClick={onDelete}
-          >
-            <DeleteIcon className="fill-destructive" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">
-          <p>Remove link</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-});
-
-DeleteLinkButton.displayName = 'DeleteLinkButton';
-
-/**
- * Tabs for selecting link open behavior
- * Allows user to choose between opening link in same tab or new tab
- */
-const OpenTypeTabs = memo(({ defaultValue, onValueChange }: OpenTypeTabsProps) => {
-  return (
-    <Tabs className="w-full" defaultValue={defaultValue} onValueChange={onValueChange}>
-      <TabsList className="h-auto w-full">
-        <TabsTrigger value={OPEN_TYPE.SAME} className={TAB_TRIGGER_CLASS}>
-          Same tab
-        </TabsTrigger>
-        <TabsTrigger value={OPEN_TYPE.NEW} className={TAB_TRIGGER_CLASS}>
-          New tab
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
-  );
-});
-
-OpenTypeTabs.displayName = 'OpenTypeTabs';
-
-/**
- * Popover content for editing link properties
- * Contains URL editor, delete button, and open type tabs
+ * Popover content for editing link properties in richtext
+ * Uses the shared LinkEditorPanel component
  */
 const LinkPopoverContent = memo(
   ({
@@ -127,8 +44,6 @@ const LinkPopoverContent = memo(
     onOpenTypeChange,
     onDelete,
   }: LinkPopoverContentProps) => {
-    const editorZIndex = zIndex + EDITOR_RICH_ACTION_CONTENT + 1;
-
     return (
       <PopoverContent
         className="w-80"
@@ -138,19 +53,15 @@ const LinkPopoverContent = memo(
         sideOffset={5}
         alignOffset={-2}
       >
-        <div className="flex flex-col space-y-2">
-          <div className="flex flex-row space-x-1">
-            <PopperEditorMini
-              zIndex={editorZIndex}
-              attributes={attributes}
-              onValueChange={onDataChange}
-              className="grow"
-              initialValue={data}
-            />
-            <DeleteLinkButton onDelete={onDelete} />
-          </div>
-          <OpenTypeTabs defaultValue={openType} onValueChange={onOpenTypeChange} />
-        </div>
+        <LinkEditorPanel
+          zIndex={zIndex}
+          attributes={attributes}
+          data={data}
+          openType={openType}
+          onDataChange={onDataChange}
+          onOpenTypeChange={onOpenTypeChange}
+          onDelete={onDelete}
+        />
       </PopoverContent>
     );
   },
@@ -169,8 +80,8 @@ export const LinkElement = memo((props: RenderElementProps) => {
   const editor = useSlateStatic();
 
   const [open, setOpen] = useState(false);
-  const [data, setData] = useState<Descendant[]>(element.data ?? INITIAL_URL_VALUE);
-  const [openType, setOpenType] = useState<string>(element.openType ?? OPEN_TYPE.SAME);
+  const [data, setData] = useState<Descendant[]>(element.data ?? INITIAL_LINK_URL_VALUE);
+  const [openType, setOpenType] = useState<string>(element.openType ?? LINK_OPEN_TYPE.SAME);
 
   // Handle popover open/close and save changes on close
   // Note: url field is not saved here as SDK will regenerate it from data field
@@ -242,7 +153,7 @@ LinkElement.displayName = 'LinkElement';
  * Note: SDK content is rendered inside an iframe, so we need to use _parent for same tab
  */
 export const LinkElementSerialize = memo(({ element, children }: LinkElementSerializeProps) => {
-  const isNewTab = element.openType === OPEN_TYPE.NEW;
+  const isNewTab = element.openType === LINK_OPEN_TYPE.NEW;
 
   return (
     <Link

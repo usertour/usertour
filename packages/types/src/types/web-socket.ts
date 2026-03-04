@@ -1,4 +1,5 @@
 import { AttributeBizTypes, BizAttributeTypes } from './attribute';
+import { BannerData } from './banner';
 import { ChecklistData } from './checklist';
 import { Content, ContentDataType, Step } from './contents';
 import { RulesCondition } from './config';
@@ -23,6 +24,7 @@ export interface SocketAuthData {
   token?: string;
   flowSessionId?: string;
   checklistSessionId?: string;
+  bannerSessionId?: string;
 }
 
 /**
@@ -73,8 +75,10 @@ export enum ClientMessageKind {
 export enum ServerMessageKind {
   SET_FLOW_SESSION = 'SetFlowSession',
   SET_CHECKLIST_SESSION = 'SetChecklistSession',
+  SET_BANNER_SESSION = 'SetBannerSession',
   UNSET_FLOW_SESSION = 'UnsetFlowSession',
   UNSET_CHECKLIST_SESSION = 'UnsetChecklistSession',
+  UNSET_BANNER_SESSION = 'UnsetBannerSession',
   ADD_LAUNCHER = 'AddLauncher',
   REMOVE_LAUNCHER = 'RemoveLauncher',
   FORCE_GO_TO_STEP = 'ForceGoToStep',
@@ -295,6 +299,7 @@ export type CustomContentSession = {
     theme?: SessionTheme;
     checklist?: ChecklistData;
     launcher?: LauncherData;
+    banner?: BannerData;
   };
 };
 

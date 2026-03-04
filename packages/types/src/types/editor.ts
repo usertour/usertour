@@ -1,5 +1,6 @@
 import { ContentOmbedInfo } from './contents';
 import { RulesCondition } from './config';
+import { ButtonSemanticType } from './button';
 
 type ContentEditorElementWidth = {
   type?: string;
@@ -45,10 +46,21 @@ export interface ContentEditorUploadRequestOption {
 export type ContentEditorUploadFunc = (options: ContentEditorUploadRequestOption) => void;
 
 export type ContentEditorButtonData = {
-  type: string;
+  type?: ButtonSemanticType;
   text: string;
   action?: string;
   actions: RulesCondition[];
+  // Button condition settings
+  disableButton?: boolean;
+  disableButtonConditions?: RulesCondition[];
+  hideButton?: boolean;
+  hideButtonConditions?: RulesCondition[];
+};
+
+export type ContentEditorLinkData = {
+  data?: any[];
+  url?: string;
+  openType?: string;
 };
 
 export type ContentEditorWidth = {
@@ -81,6 +93,7 @@ export type ContentEditorPadding = {
 export type ContentEditorImageElement = {
   type: ContentEditorElementType.IMAGE;
   url: string;
+  link?: ContentEditorLinkData;
   width?: ContentEditorElementWidth;
   margin?: ContentEditorElementMargin;
 };

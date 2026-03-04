@@ -85,6 +85,9 @@ export const queryBizSession = gql`
               data
             }
           }
+          content {
+            type
+          }
         }
       }
       pageInfo {

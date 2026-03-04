@@ -11,6 +11,7 @@ import {
 } from '@usertour-packages/widget';
 import type { ContentEditorRoot } from '@usertour/types';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
+import { PREVIEW_BASIC } from '@usertour-packages/constants';
 import { useRef } from 'react';
 import { Rect } from '../theme-editor';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
@@ -50,7 +51,7 @@ export const ThemePreviewPopper = ({
       <Button className="ml-8 mt-16 w-36 rounded-xl h-10" ref={ref}>
         Tooltip target
       </Button>
-      <Popper triggerRef={ref} open={true} zIndex={1111} globalStyle={customStyle}>
+      <Popper triggerRef={ref} open={true} zIndex={PREVIEW_BASIC} globalStyle={customStyle}>
         <PopperOverlay blockTarget={true} viewportRect={viewRect} />
         <PopperContentPotal
           sideOffset={10}

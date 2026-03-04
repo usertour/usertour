@@ -15,6 +15,7 @@ import {
   convertToAttributeEvaluationOptions,
   isVisible,
 } from '@/core/usertour-helper';
+import { customInputRegistry } from './registries/custom-input-registry';
 
 // ============================================================================
 // Types
@@ -22,8 +23,9 @@ import {
 
 /**
  * Text input element types that support text fill detection
+ * Includes native input/textarea and custom input elements
  */
-type TextInputElement = HTMLInputElement | HTMLTextAreaElement;
+type TextInputElement = HTMLInputElement | HTMLTextAreaElement | Element;
 
 /**
  * Click cache entry for tracking element click state
@@ -54,6 +56,47 @@ interface FillCacheEntry {
  * User must stop typing for this duration before fill is considered complete.
  */
 const TEXT_FILL_DEBOUNCE_MS = 1000;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Gets the value of an input element (native or custom)
+ * @param el - The input element
+ * @returns The current value as a string
+ */
+function getElementValue(el: Element): string {
+  // Check if it's a registered custom input
+  if (customInputRegistry.isCustomInput(el)) {
+    return customInputRegistry.getValue(el);
+  }
+
+  // Check if it's a native input/textarea with value property
+  if ('value' in el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+    return el.value ?? '';
+  }
+
+  // Fallback to textContent for other elements
+  return el.textContent?.trim() ?? '';
+}
+
+/**
+ * Checks if an element is a valid text input (native or custom)
+ * @param el - The element to check
+ * @returns true if element can be treated as text input
+ */
+function isTextInputElement(el: Element | null): el is TextInputElement {
+  if (!el) {
+    return false;
+  }
+  // Native input/textarea
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+    return true;
+  }
+  // Registered custom input
+  return customInputRegistry.isCustomInput(el);
+}
 
 // ============================================================================
 // RulesEvaluator Class
@@ -129,8 +172,9 @@ export class RulesEvaluator extends Evented {
     // Clear fill cache and remove event listeners
     for (const { element, isActive, handler } of this.fillCache.values()) {
       if (!isActive) {
-        // Only remove listener if not yet active (listener was already removed on activation)
+        // Only remove listeners if not yet active (listeners were already removed on activation)
         off(element, 'input', handler);
+        off(element, 'change', handler);
       }
     }
     this.fillCache.clear();
@@ -249,11 +293,11 @@ export class RulesEvaluator extends Evented {
       return false;
     }
     const { elementData, logic, value } = data;
-    const el = finderV2(elementData, document) as TextInputElement;
-    if (!el) {
+    const el = finderV2(elementData, document);
+    if (!el || !isTextInputElement(el)) {
       return false;
     }
-    const elValue = el.value ?? '';
+    const elValue = getElementValue(el);
     const compareValue = value ?? '';
 
     switch (logic) {
@@ -291,8 +335,8 @@ export class RulesEvaluator extends Evented {
       return false;
     }
 
-    const el = finderV2(data.elementData, document) as TextInputElement;
-    if (!el) {
+    const el = finderV2(data.elementData, document);
+    if (!el || !isTextInputElement(el)) {
       return false;
     }
 
@@ -301,11 +345,13 @@ export class RulesEvaluator extends Evented {
     // First call: initialize cache
     if (!cached) {
       const handler = this.createFillInputHandler(ruleId);
+      // Listen to both 'input' and 'change' events for better compatibility
       on(el, 'input', handler);
+      on(el, 'change', handler);
       this.fillCache.set(ruleId, {
-        element: el,
+        element: el as TextInputElement,
         timestamp: -1,
-        value: el.value,
+        value: getElementValue(el),
         isActive: false,
         handler,
       });
@@ -319,12 +365,14 @@ export class RulesEvaluator extends Evented {
     // Handle element re-rendering: reset state like debounce clearTimeout
     if (cached.element !== el) {
       off(cached.element, 'input', cached.handler);
+      off(cached.element, 'change', cached.handler);
       const handler = this.createFillInputHandler(ruleId);
       on(el, 'input', handler);
+      on(el, 'change', handler);
       this.fillCache.set(ruleId, {
-        element: el,
+        element: el as TextInputElement,
         timestamp: -1,
-        value: el.value,
+        value: getElementValue(el),
         isActive: false,
         handler,
       });
@@ -333,15 +381,23 @@ export class RulesEvaluator extends Evented {
 
     // Check if fill is complete
     const { timestamp, value, handler } = this.fillCache.get(ruleId)!;
+    const currentValue = getElementValue(el);
     const hasValidInput =
       timestamp !== -1 &&
       Date.now() - timestamp > TEXT_FILL_DEBOUNCE_MS &&
-      value !== el.value &&
-      !isEmptyString(el.value);
+      value !== currentValue &&
+      !isEmptyString(currentValue);
 
     if (hasValidInput) {
       off(el, 'input', handler);
-      this.fillCache.set(ruleId, { element: el, timestamp, value, isActive: true, handler });
+      off(el, 'change', handler);
+      this.fillCache.set(ruleId, {
+        element: el as TextInputElement,
+        timestamp,
+        value,
+        isActive: true,
+        handler,
+      });
       return true;
     }
 

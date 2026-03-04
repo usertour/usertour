@@ -8,11 +8,14 @@ import {
 } from '@/components/templates/admin-sidebar-template';
 import { useContentListContext } from '@/contexts/content-list-context';
 import { FileEditLineIcon, BaseStationLineIcon } from '@usertour-packages/icons';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
-export function ContentListSidebar() {
+interface ContentListSidebarProps {
+  title: string;
+}
+
+export function ContentListSidebar({ title }: ContentListSidebarProps) {
   const { query } = useContentListContext();
-  const { contentType } = useParams();
   const [, setSearchParams] = useSearchParams();
 
   // Extract common styles and logic
@@ -27,12 +30,7 @@ export function ContentListSidebar() {
   return (
     <AdminSidebarContainerTemplate>
       <AdminSidebarHeaderTemplate>
-        <h2 className="text-2xl font-semibold">
-          {contentType === 'flows' && 'Flows'}
-          {contentType === 'launchers' && 'Launchers'}
-          {contentType === 'checklists' && 'Checklists'}
-          {contentType === 'nps' && 'NPS'}
-        </h2>
+        <h2 className="text-2xl font-semibold">{title}</h2>
       </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
         <AdminSidebarBodyTitleTemplate>Status</AdminSidebarBodyTitleTemplate>

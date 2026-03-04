@@ -64,4 +64,5 @@ export const RESPONSIVE = {
 // Icon sizes (use even numbers for pixel-perfect rendering)
 export const ICON_SIZE = {
   DEFAULT: 16,
+  COLOR: 14, // Smaller size for color button to accommodate color indicator bar
 } as const;

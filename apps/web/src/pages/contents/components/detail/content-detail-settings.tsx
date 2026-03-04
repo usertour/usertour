@@ -11,19 +11,24 @@ import { useAppContext } from '@/contexts/app-context';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 
 const getAutoStartRulesName = (contentType: ContentDataType) => {
-  if (contentType === ContentDataType.LAUNCHER) {
+  if (contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER) {
+    if (contentType === ContentDataType.BANNER) {
+      return 'Show banner if...';
+    }
     return 'Show launcher if...';
   }
   return `Auto-start ${contentType} if...`;
 };
 
 const AutoStartTooltips = (contentType: ContentDataType) => {
-  if (contentType === ContentDataType.LAUNCHER) {
+  if (contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER) {
+    const contentLabel = contentType === ContentDataType.BANNER ? 'banner' : 'launcher';
     return (
       <>
-        Show the launcher if the user matches the given condition. If the user doesn't match the
-        condition, the launcher will not be displayed. Example: Show the launcher if the user is a
-        new user. <br />
+        Show the {contentLabel} if the user matches the given condition. If the user doesn't match
+        the condition, the {contentLabel} will not be displayed. Example: Show the {contentLabel} if
+        the user is a new user, or set current page condition matches /* to display on all pages.{' '}
+        <br />
       </>
     );
   }
@@ -89,7 +94,10 @@ export const ContentDetailSettings = () => {
     return null;
   }
 
-  const enabledAutoStartRules = contentType !== ContentDataType.LAUNCHER;
+  const isLauncherLike =
+    contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER;
+  const isLauncher = contentType === ContentDataType.LAUNCHER;
+  const enabledAutoStartRules = !isLauncherLike;
 
   return (
     <div className="flex flex-col space-y-6 flex-none w-[420px]">
@@ -101,11 +109,11 @@ export const ContentDetailSettings = () => {
         onDataChange={handleAutoStartRulesDataChange}
         content={content}
         type={ContentDetailAutoStartRulesType.START_RULES}
-        showIfCompleted={contentType !== ContentDataType.LAUNCHER}
-        showFrequency={contentType !== ContentDataType.LAUNCHER}
+        showIfCompleted={!isLauncherLike}
+        showFrequency={!isLauncherLike}
         showAtLeast={contentType !== ContentDataType.CHECKLIST}
-        showWait={contentType !== ContentDataType.LAUNCHER}
-        showPriority={contentType !== ContentDataType.LAUNCHER}
+        showWait={!isLauncherLike}
+        showPriority={!isLauncher}
         disabled={isViewOnly}
         featureTooltip={AutoStartTooltips(contentType)}
       />

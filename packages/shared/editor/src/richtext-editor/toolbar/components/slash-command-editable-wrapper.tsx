@@ -21,7 +21,7 @@ interface SlashCommandEditableWrapperProps {
  */
 const renderPlaceholder = ({ attributes, children }: RenderPlaceholderProps) => {
   return (
-    <span {...attributes} className="italic text-muted-foreground pointer-events-none">
+    <span {...attributes} className="italic pointer-events-none">
       {children}
     </span>
   );

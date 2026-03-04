@@ -69,7 +69,11 @@ export const PRIORITIES = [
  * Content types that follow singleton pattern - only one active session per type at a time
  * Unlike LAUNCHER which can have multiple concurrent sessions
  */
-export const SINGLETON_CONTENT_TYPES = [ContentDataType.FLOW, ContentDataType.CHECKLIST];
+export const SINGLETON_CONTENT_TYPES = [
+  ContentDataType.FLOW,
+  ContentDataType.CHECKLIST,
+  ContentDataType.BANNER,
+];
 
 /**
  * All content types including checklist, flow, and launcher
@@ -77,6 +81,7 @@ export const SINGLETON_CONTENT_TYPES = [ContentDataType.FLOW, ContentDataType.CH
 export const ALL_CONTENT_TYPES: ContentDataType[] = [
   ContentDataType.CHECKLIST,
   ContentDataType.FLOW,
+  ContentDataType.BANNER,
   ContentDataType.LAUNCHER,
 ];
 
@@ -672,6 +677,23 @@ export const isSingletonContentType = (contentType: ContentDataType): boolean =>
   return SINGLETON_CONTENT_TYPES.includes(contentType);
 };
 
+const SHOW_ONLY_CONTENT_TYPES: ContentDataType[] = [ContentDataType.BANNER];
+
+export const isShowOnlyContentType = (contentType: ContentDataType): boolean =>
+  SHOW_ONLY_CONTENT_TYPES.includes(contentType);
+
+/**
+ * Filters content versions to those that are either active or have never had a session.
+ * This enforces "one session per content" behavior (used by Launcher and Banner).
+ */
+export const filterSingleSessionContentVersions = (
+  customContentVersions: CustomContentVersion[],
+): CustomContentVersion[] =>
+  customContentVersions.filter(
+    (contentVersion) =>
+      contentVersion.session.activeSession || contentVersion.session.totalSessions === 0,
+  );
+
 /**
  * Checks if the content version ID doesn't match the active session's version ID
  * This happens when the content type is FLOW, there's an active session,
@@ -1038,6 +1060,47 @@ export const extractAttributeIdsFromConditions = (conditions: RulesCondition[]):
 };
 
 /**
+ * Recursively extracts attribute IDs from button conditions in content
+ * @param content - Content to search (can be array, object, or primitive)
+ * @returns Array of unique attribute IDs from button conditions
+ */
+export const extractButtonConditionAttributeIds = (content: any): string[] => {
+  const attrIds: string[] = [];
+
+  if (!content) {
+    return attrIds;
+  }
+
+  // Handle arrays
+  if (Array.isArray(content)) {
+    for (const item of content) {
+      attrIds.push(...extractButtonConditionAttributeIds(item));
+    }
+    return attrIds;
+  }
+
+  // Handle objects
+  if (typeof content === 'object') {
+    // Check if it's a button element with conditions
+    if (content.type === 'button' && content.data) {
+      if (content.data.disableButtonConditions) {
+        attrIds.push(...extractAttributeIdsFromConditions(content.data.disableButtonConditions));
+      }
+      if (content.data.hideButtonConditions) {
+        attrIds.push(...extractAttributeIdsFromConditions(content.data.hideButtonConditions));
+      }
+    }
+
+    // Recursively check all properties
+    for (const value of Object.values(content)) {
+      attrIds.push(...extractButtonConditionAttributeIds(value));
+    }
+  }
+
+  return attrIds;
+};
+
+/**
  * Get attribute value from data object using attribute code name
  * @param data - Data object containing attribute values
  * @param codeName - Attribute code name
@@ -1225,6 +1288,18 @@ export const extractStepContentAttrCodes = (steps: Step[]): string[] => {
     }
   }
   return attrCodes;
+};
+
+/**
+ * Extracts all user attribute codes from banner contents
+ * @param contents - Banner content editor roots
+ * @returns Array of unique user attribute codes found in the banner contents
+ */
+export const extractBannerAttrCodes = (contents: ContentEditorRoot[] | undefined): string[] => {
+  if (!contents) {
+    return [];
+  }
+  return extractUserAttrCodes(contents);
 };
 
 /**

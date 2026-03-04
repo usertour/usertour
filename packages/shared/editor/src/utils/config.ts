@@ -39,7 +39,7 @@ export const contentTypesConfig = [
       data: {
         action: 'goto',
         text: 'Next',
-        type: 'default',
+        type: 'primary',
       },
     },
   },

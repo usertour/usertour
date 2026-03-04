@@ -15,6 +15,7 @@ export enum ContentActionsItemType {
   FLOW_DISMIS = 'flow-dismis',
   LAUNCHER_DISMIS = 'launcher-dismis',
   CHECKLIST_DISMIS = 'checklist-dismis',
+  BANNER_DISMIS = 'banner-dismis',
   FLOW_START = 'flow-start',
   PAGE_NAVIGATE = 'page-navigate',
   JAVASCRIPT_EVALUATE = 'javascript-evaluate',
@@ -25,8 +26,6 @@ export enum ContentDataType {
   FLOW = 'flow',
   LAUNCHER = 'launcher',
   BANNER = 'banner',
-  NPS = 'nps',
-  SURVEY = 'survey',
   TRACKER = 'tracker',
   EVENT = 'event',
 }
@@ -37,8 +36,6 @@ export enum ContentTypeName {
   LAUNCHERS = 'launchers',
   // RESOURCE_CENTERS = "resource-centers",
   BANNERS = 'banners',
-  NPS = 'nps',
-  SURVEYS = 'surveys',
   TRACKERS = 'trackers',
   EVENTS = 'events',
 }

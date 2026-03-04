@@ -1,5 +1,6 @@
 import { AssetAttributes } from '@usertour-packages/frame';
 import {
+  BannerData,
   ChecklistData,
   LauncherData,
   Step,
@@ -16,6 +17,7 @@ export interface BaseStore {
   userAttributes?: UserTourTypes.Attributes;
   removeBranding: boolean;
   themeSettings: ThemeTypesSetting;
+  linkUrlDecorator?: ((url: string) => string) | null;
 }
 
 // Tour store type
@@ -38,4 +40,10 @@ export type ChecklistStore = BaseStore & {
 export type LauncherStore = BaseStore & {
   launcherData?: LauncherData;
   triggerRef?: any;
+};
+
+// Banner store type
+export type BannerStore = BaseStore & {
+  bannerData?: BannerData;
+  targetElement?: Element | null;
 };

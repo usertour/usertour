@@ -1,23 +1,15 @@
 // Button serialize component for SDK rendering
 
 import type { ContentEditorButtonElement } from '@usertour/types';
+import { ButtonSemanticType, DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/types';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { isConditionsActived } from '@usertour/helpers';
 
 import { Button } from '../../primitives';
+import { useButtonContext } from '../../core/banner';
+import { resolveButtonVariant } from '../../utils/button';
 import type { MarginStyleProps } from '../types';
 import { transformMarginStyle } from '../utils';
-
-// Valid button variants for widget Button component
-type ValidButtonVariant = 'default' | 'secondary' | undefined;
-
-// Map element type to valid button variant
-const mapButtonVariant = (type?: string): ValidButtonVariant => {
-  if (type === 'default' || type === 'secondary') {
-    return type;
-  }
-  // 'link' and other types default to 'default'
-  return undefined;
-};
 
 // Utility function for transforming element to style
 const transformsStyle = (element: ContentEditorButtonElement): MarginStyleProps => {
@@ -34,8 +26,15 @@ export const ButtonSerialize = memo((props: ButtonSerializeProps) => {
 
   const [loading, setLoading] = useState(false);
 
+  const shouldDisable =
+    Boolean(element.data?.disableButton) &&
+    isConditionsActived(element.data?.disableButtonConditions || []);
+  const shouldHide =
+    Boolean(element.data?.hideButton) &&
+    isConditionsActived(element.data?.hideButtonConditions || []);
+
   const handleOnClick = useCallback(async () => {
-    if (onClick) {
+    if (onClick && !shouldDisable) {
       setLoading(true);
       try {
         await onClick(element);
@@ -43,10 +42,28 @@ export const ButtonSerialize = memo((props: ButtonSerializeProps) => {
         setLoading(false);
       }
     }
-  }, [onClick, element]);
+  }, [onClick, element, shouldDisable]);
 
+  // Detect rendering context (default or banner)
+  const buttonContext = useButtonContext();
+
+  // Get semantic type from element, ensure it's valid
+  const semanticType: ButtonSemanticType =
+    (element.data?.type as ButtonSemanticType) || DEFAULT_BUTTON_SEMANTIC_TYPE;
+
+  // Memoize variant resolution
+  const buttonVariant = useMemo(
+    () => resolveButtonVariant(semanticType, buttonContext),
+    [semanticType, buttonContext],
+  );
+
+  // Memoize style transformation
   const buttonStyle = useMemo(() => transformsStyle(element), [element.margin]);
-  const buttonVariant = useMemo(() => mapButtonVariant(element.data?.type), [element.data?.type]);
+
+  // If button should be hidden, don't render it
+  if (shouldHide) {
+    return null;
+  }
 
   return (
     <Button
@@ -54,7 +71,7 @@ export const ButtonSerialize = memo((props: ButtonSerializeProps) => {
       onClick={handleOnClick}
       className="h-fit"
       style={buttonStyle}
-      disabled={loading}
+      disabled={loading || shouldDisable}
     >
       <span>{element.data?.text}</span>
     </Button>

@@ -8,7 +8,9 @@ import {
   ForceGoToStepHandler,
   UnsetFlowSessionHandler,
   SetChecklistSessionHandler,
+  SetBannerSessionHandler,
   UnsetChecklistSessionHandler,
+  UnsetBannerSessionHandler,
   ChecklistTaskCompletedHandler,
   AddLauncherHandler,
   RemoveLauncherHandler,
@@ -36,7 +38,9 @@ export class ServerMessageHandlerManager {
     this.registerHandler(new ForceGoToStepHandler());
     this.registerHandler(new UnsetFlowSessionHandler());
     this.registerHandler(new SetChecklistSessionHandler());
+    this.registerHandler(new SetBannerSessionHandler());
     this.registerHandler(new UnsetChecklistSessionHandler());
+    this.registerHandler(new UnsetBannerSessionHandler());
     this.registerHandler(new ChecklistTaskCompletedHandler());
     this.registerHandler(new AddLauncherHandler());
     this.registerHandler(new RemoveLauncherHandler());

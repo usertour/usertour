@@ -48,9 +48,11 @@ export interface SocketData {
   waitTimers?: ConditionWaitTimer[];
   flowSession?: CustomContentSession;
   checklistSession?: CustomContentSession;
+  bannerSession?: CustomContentSession;
   launcherSessions?: CustomContentSession[];
   lastDismissedFlowId?: string;
   lastDismissedChecklistId?: string;
+  lastDismissedBannerId?: string;
 }
 
 export interface ContentStartContext {
@@ -75,12 +77,13 @@ export interface ContentStartResult {
   session?: CustomContentSession;
   preTracks?: TrackCondition[];
   hideConditions?: TrackCondition[];
+  retrackConditions?: TrackCondition[];
   checklistConditions?: TrackCondition[];
   waitTimers?: ConditionWaitTimer[];
   reason?: string;
   forceGoToStep?: boolean;
   isActivateOtherSockets?: boolean;
-  hideRulesActivated?: boolean;
+  cancelSession?: boolean;
 }
 
 export interface CancelSessionParams {

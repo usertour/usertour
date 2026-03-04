@@ -42,12 +42,14 @@ import {
   sendPreviewSuccessMessage,
   timerManager,
 } from '@/utils';
-import { getClientContext } from '@/core/usertour-helper';
+import { getClientContext, setUrlFilterFn } from '@/core/usertour-helper';
 import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 import { ErrorMessages } from '@/types';
 import { formatErrorMessage } from '@/types/error-messages';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
+import { UsertourBanner } from './usertour-banner';
+import { customInputRegistry } from './registries/custom-input-registry';
 import {
   ServerMessageHandlerManager,
   ServerMessageHandlerContext,
@@ -72,8 +74,10 @@ export class UsertourCore extends Evented {
   toursStore = new ExternalStore<UsertourTour[]>([]);
   checklistsStore = new ExternalStore<UsertourChecklist[]>([]);
   launchersStore = new ExternalStore<UsertourLauncher[]>([]);
+  bannersStore = new ExternalStore<UsertourBanner[]>([]);
   activatedTour: UsertourTour | null = null;
   activatedChecklist: UsertourChecklist | null = null;
+  activatedBanner: UsertourBanner | null = null;
   launchers: UsertourLauncher[] = [];
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
@@ -83,6 +87,9 @@ export class UsertourCore extends Evented {
   private baseZIndex = WidgetZIndex.BASE;
   private targetMissingSeconds: number | undefined = undefined;
   private customNavigate: ((url: string) => void) | null = null;
+  private customScrollIntoView: ((el: Element) => void) | null = null;
+  private urlFilter: ((url: string) => string) | null = null;
+  private linkUrlDecorator: ((url: string) => string) | null = null;
   private evalJsDisabled = false;
   private readonly id: string;
   private attributeManager: UsertourAttributeManager;
@@ -441,11 +448,99 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Sets a custom function to handle scrolling elements into view
+   * @param customScrollIntoView - Function taking an Element, or null to use default behavior
+   */
+  setCustomScrollIntoView(customScrollIntoView: ((el: Element) => void) | null) {
+    this.customScrollIntoView = customScrollIntoView;
+  }
+
+  /**
+   * Gets the custom scroll into view function if set
+   * @returns The custom scroll into view function or null if using default behavior
+   */
+  getCustomScrollIntoView(): ((el: Element) => void) | null {
+    return this.customScrollIntoView;
+  }
+
+  /**
    * Disables JavaScript evaluation via eval
    * When disabled, JAVASCRIPT_EVALUATE actions will be skipped
    */
   disableEvalJs(): void {
     this.evalJsDisabled = true;
+  }
+
+  /**
+   * Sets a URL filter function to sanitize URLs before they are used for conditions and page tracking
+   * @param urlFilter - Function taking a URL string and returning a filtered URL string, or null to use default behavior
+   * @example
+   * // Remove all query parameters
+   * usertour.setUrlFilter(url => {
+   *   const parsed = new URL(url);
+   *   parsed.search = '';
+   *   return parsed.toString();
+   * });
+   * @example
+   * // Remove specific query parameter
+   * usertour.setUrlFilter(url => {
+   *   const parsed = new URL(url);
+   *   parsed.searchParams.delete('token');
+   *   return parsed.toString();
+   * });
+   */
+  setUrlFilter(urlFilter: ((url: string) => string) | null): void {
+    this.urlFilter = urlFilter;
+    // Sync module-level helper so getClientContext() returns filtered URL everywhere
+    setUrlFilterFn(urlFilter);
+    // Sync URL monitor so checkUrlChange() compares filtered URLs
+    this.urlMonitor?.setUrlFilter(urlFilter);
+    // Immediately push updated clientContext to server (don't wait for next URL change)
+    if (this.socketService.isConnected()) {
+      const clientContext = getClientContext();
+      this.socketService.updateClientContext(clientContext).catch((err) => {
+        logger.error('Failed to sync clientContext after setUrlFilter:', err);
+      });
+    }
+  }
+
+  /**
+   * Gets the current URL filter function
+   * @returns The current URL filter function or null if not set
+   */
+  getUrlFilter(): ((url: string) => string) | null {
+    return this.urlFilter;
+  }
+
+  /**
+   * Sets a link URL decorator function to modify link URLs before rendering
+   * This is applied to all clickable URLs in the content (images, buttons, richtext links)
+   * Useful for adding authentication tokens or other query parameters to external links
+   * @param linkUrlDecorator - Function to decorate link URLs, or null to disable decoration
+   * @example
+   * usertour.setLinkUrlDecorator(url => {
+   *   return url + '?token=abc123';
+   * });
+   */
+  setLinkUrlDecorator(linkUrlDecorator: ((url: string) => string) | null): void {
+    this.linkUrlDecorator = linkUrlDecorator;
+  }
+
+  /**
+   * Gets the current link URL decorator function
+   * @returns The current link URL decorator or null if not set
+   */
+  getLinkUrlDecorator(): ((url: string) => string) | null {
+    return this.linkUrlDecorator;
+  }
+
+  /**
+   * Registers a custom input element with optional getValue function
+   * @param cssSelector - CSS selector to match custom input elements
+   * @param getValue - Optional function to extract value from element
+   */
+  registerCustomInput(cssSelector: string, getValue?: (el: Element) => string): void {
+    customInputRegistry.register(cssSelector, getValue);
   }
 
   /**
@@ -518,6 +613,7 @@ export class UsertourCore extends Evented {
       toursStore: this.toursStore,
       checklistsStore: this.checklistsStore,
       launchersStore: this.launchersStore,
+      bannersStore: this.bannersStore,
     });
 
     if (!initialized) {
@@ -534,6 +630,7 @@ export class UsertourCore extends Evented {
     return (
       this.activatedChecklist?.getContentId() === contentId ||
       this.activatedTour?.getContentId() === contentId ||
+      this.activatedBanner?.getContentId() === contentId ||
       this.launchers.some((launcher) => launcher.getContentId() === contentId)
     );
   }
@@ -601,6 +698,8 @@ export class UsertourCore extends Evented {
     this.cleanupActivatedTour();
     // Cleanup activated checklist
     this.cleanupActivatedChecklist();
+    // Cleanup activated banner
+    this.cleanupActivatedBanner();
     // Cleanup launchers
     this.cleanupLaunchers();
     // Clear all unacked tasks
@@ -781,7 +880,7 @@ export class UsertourCore extends Evented {
    * @param onDismissed - Optional callback when component is dismissed
    */
   private setupComponentDismissHandler(
-    component: UsertourTour | UsertourChecklist | UsertourLauncher,
+    component: UsertourTour | UsertourChecklist | UsertourLauncher | UsertourBanner,
     onDismissed?: (sessionId: string) => void | Promise<void>,
   ): void {
     component.on(SDKClientEvents.COMPONENT_CLOSED, (eventData: unknown) => {
@@ -911,6 +1010,35 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Sets the banner session and manages banner lifecycle
+   * @param session - The SDK content session to set
+   */
+  private async setBannerSession(session: CustomContentSession): Promise<boolean> {
+    if (this.isSessionDismissed(session.id)) {
+      logger.info(`Ignoring setBannerSession for dismissed session: ${session.id}`);
+      return false;
+    }
+
+    if (this.activatedBanner) {
+      if (this.activatedBanner.getSessionId() === session.id) {
+        await this.activatedBanner.update(session);
+        return true;
+      }
+      this.cleanupActivatedBanner();
+    }
+
+    this.activatedBanner = new UsertourBanner(this, new UsertourSession(session));
+    this.setupComponentDismissHandler(this.activatedBanner, (sessionId) => {
+      if (this.activatedBanner?.getSessionId() === sessionId) {
+        this.cleanupActivatedBanner();
+      }
+    });
+    this.syncBannersStore([this.activatedBanner]);
+    await this.activatedBanner.show();
+    return true;
+  }
+
+  /**
    * Unsets the checklist session and destroys the checklist
    * @param sessionId - The session ID to unset
    */
@@ -923,6 +1051,18 @@ export class UsertourCore extends Evented {
     this.cleanupActivatedChecklist();
     // Note: We don't clear unacked tasks here because they might be needed
     // if ChecklistTaskCompleted messages arrive after unsetChecklistSession
+    return true;
+  }
+
+  /**
+   * Unsets the banner session and destroys the banner
+   * @param sessionId - The session ID to unset
+   */
+  private async unsetBannerSession(sessionId: string): Promise<boolean> {
+    if (!this.activatedBanner || this.activatedBanner.getSessionId() !== sessionId) {
+      return false;
+    }
+    this.cleanupActivatedBanner();
     return true;
   }
 
@@ -1021,6 +1161,13 @@ export class UsertourCore extends Evented {
     this.launchersStore.setData([...launchers]);
   }
 
+  /**
+   * Synchronizes banners store
+   */
+  private syncBannersStore(banners: UsertourBanner[]) {
+    this.bannersStore.setData([...banners]);
+  }
+
   // === Server Message Handler Context Initialization ===
   /**
    * Initializes the server message handler context
@@ -1033,6 +1180,8 @@ export class UsertourCore extends Evented {
       unsetFlowSession: this.unsetFlowSession,
       setChecklistSession: this.setChecklistSession,
       unsetChecklistSession: this.unsetChecklistSession,
+      setBannerSession: this.setBannerSession,
+      unsetBannerSession: this.unsetBannerSession,
       addLauncher: this.addLauncher,
       removeLauncher: this.removeLauncher,
       trackClientCondition: this.trackClientCondition,
@@ -1119,6 +1268,7 @@ export class UsertourCore extends Evented {
     this.urlMonitor = new UsertourURLMonitor({
       autoStart: true,
       interval: 500,
+      urlFilter: this.urlFilter ?? undefined,
     });
 
     // Listen for URL change events
@@ -1192,6 +1342,7 @@ export class UsertourCore extends Evented {
     const token = this.startOptions.token;
     const flowSessionId = this.activatedTour?.getSessionId();
     const checklistSessionId = this.activatedChecklist?.getSessionId();
+    const bannerSessionId = this.activatedBanner?.getSessionId();
     const launchers = this.launchers.map((l) => l.getContentId());
     this.socketService.updateCredentials({
       clientConditions,
@@ -1201,6 +1352,7 @@ export class UsertourCore extends Evented {
       token,
       flowSessionId,
       checklistSessionId,
+      bannerSessionId,
       launchers,
     });
   }
@@ -1238,6 +1390,15 @@ export class UsertourCore extends Evented {
     // if ChecklistTaskCompleted messages arrive after unsetChecklistSession.
     // Unacked tasks will be cleared when the checklist is expanded or when
     // a new checklist session is set for the same sessionId.
+  }
+
+  /**
+   * Cleans up the activated banner
+   */
+  private cleanupActivatedBanner() {
+    this.activatedBanner?.destroy();
+    this.activatedBanner = null;
+    this.bannersStore.setData(undefined);
   }
 
   // === Unacked Tasks Management ===

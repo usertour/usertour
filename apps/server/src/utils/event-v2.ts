@@ -39,6 +39,8 @@ const SINGLE_OCCURRENCE_EVENTS = [
   BizEvents.CHECKLIST_DISMISSED,
   BizEvents.LAUNCHER_SEEN,
   BizEvents.LAUNCHER_DISMISSED,
+  BizEvents.BANNER_SEEN,
+  BizEvents.BANNER_DISMISSED,
 ] as const;
 
 // Events that should invalidate subsequent events
@@ -46,6 +48,7 @@ const DISMISSED_EVENTS = [
   BizEvents.CHECKLIST_DISMISSED,
   BizEvents.LAUNCHER_DISMISSED,
   BizEvents.FLOW_ENDED,
+  BizEvents.BANNER_DISMISSED,
 ] as const;
 
 // ============================================================================
@@ -315,6 +318,21 @@ export const buildLauncherBaseEventData = (
   };
 };
 
+/**
+ * Build base event data for banner events
+ * @param session - The business session with content and version
+ * @returns Base banner event data
+ */
+export const buildBannerBaseEventData = (session: BizSessionWithRelations): Record<string, any> => {
+  return {
+    [EventAttributes.BANNER_ID]: session.content.id,
+    [EventAttributes.BANNER_NAME]: session.content.name,
+    [EventAttributes.BANNER_SESSION_ID]: session.id,
+    [EventAttributes.BANNER_VERSION_ID]: session.version.id,
+    [EventAttributes.BANNER_VERSION_NUMBER]: session.version.sequence,
+  };
+};
+
 // ============================================================================
 // Flow Event Data Builders
 // ============================================================================
@@ -580,6 +598,32 @@ export const buildLauncherDismissedEventData = (
 };
 
 // ============================================================================
+// Banner Event Data Builders
+// ============================================================================
+
+/**
+ * Build event data for banner seen events
+ * @param session - The business session with content and version
+ * @returns Banner seen event data
+ */
+export const buildBannerSeenEventData = (
+  session: BizSessionWithRelations,
+): Record<string, any> | null => {
+  return buildBannerBaseEventData(session);
+};
+
+/**
+ * Build event data for banner dismissed events
+ * @param session - The business session with content and version
+ * @returns Banner dismissed event data
+ */
+export const buildBannerDismissedEventData = (
+  session: BizSessionWithRelations,
+): Record<string, any> | null => {
+  return buildBannerBaseEventData(session);
+};
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 
@@ -631,6 +675,9 @@ export const getStartEventType = (contentType: ContentDataType): BizEvents | nul
   if (contentType === ContentDataType.LAUNCHER) {
     return BizEvents.LAUNCHER_SEEN;
   }
+  if (contentType === ContentDataType.BANNER) {
+    return BizEvents.BANNER_SEEN;
+  }
   return null;
 };
 
@@ -648,6 +695,9 @@ export const getEndEventType = (contentType: ContentDataType): BizEvents | null 
   }
   if (contentType === ContentDataType.LAUNCHER) {
     return BizEvents.LAUNCHER_DISMISSED;
+  }
+  if (contentType === ContentDataType.BANNER) {
+    return BizEvents.BANNER_DISMISSED;
   }
   return null;
 };

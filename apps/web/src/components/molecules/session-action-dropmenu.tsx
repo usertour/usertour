@@ -234,7 +234,7 @@ const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFor
   };
 
   return (
-    <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Confirm</AlertDialogTitle>
@@ -299,7 +299,7 @@ export const SessionActionDropdownMenu = (props: SessionActionDropdownMenuProps)
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild disabled={disabled}>
           {children}
         </DropdownMenuTrigger>

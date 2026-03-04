@@ -4,6 +4,9 @@
 // Main serialize component
 export { ContentEditorSerialize } from './content-editor-serialize';
 
+// Link decorator context
+export { LinkDecoratorContext, useLinkDecorator } from './link-decorator-context';
+
 // Style transformation utilities - shared with editor package
 export {
   transformMarginStyle,

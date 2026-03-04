@@ -18,7 +18,7 @@ export const ThemeSettingsFocusHighlight = () => {
             name="focus-highlight-color"
             text="Color"
             defaultColor={settings.focusHighlight?.color ?? 'Auto'}
-            autoColor={finalSettings?.mainColor?.autoActive}
+            autoColor={finalSettings?.mainColor?.active}
             isAutoColor={settings.focusHighlight?.color === 'Auto'}
             showAutoButton={true}
             onChange={(value: string) => {

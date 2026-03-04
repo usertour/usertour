@@ -79,7 +79,88 @@ export const LIST_PREVIEW_CONTENT = [
               data: {
                 action: 'goto',
                 text: 'Next',
-                type: 'default',
+                type: 'primary',
+              },
+              margin: {
+                top: 0,
+                left: 10,
+                bottom: 0,
+                right: 0,
+                enabled: true,
+              },
+            },
+            children: null,
+          },
+        ],
+      },
+    ],
+  },
+] as ContentEditorRoot[];
+
+/**
+ * Preview content for banner theme preview
+ */
+export const BANNER_PREVIEW_CONTENT = [
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          justifyContent: 'justify-center',
+          alignItems: 'items-center',
+          width: {
+            type: 'fill',
+          },
+          style: {},
+        },
+        children: [
+          {
+            element: {
+              type: 'text',
+              data: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      text: '🧭 New this week: smarter banners and a 2-minute guided tour.',
+                    },
+                  ],
+                  align: 'left',
+                },
+              ],
+            },
+          },
+        ],
+      },
+      {
+        element: {
+          type: 'column',
+          justifyContent: 'justify-end',
+          alignItems: 'items-center',
+          style: {},
+        },
+        children: [
+          {
+            element: {
+              type: 'button',
+              data: {
+                action: 'goto',
+                text: 'View release notes',
+                type: 'secondary',
+              },
+            },
+            children: null,
+          },
+          {
+            element: {
+              type: 'button',
+              data: {
+                action: 'goto',
+                text: 'Start quick tour',
+                type: 'primary',
               },
               margin: {
                 top: 0,
@@ -300,7 +381,7 @@ export const MODAL_PREVIEW_CONTENT = [
             element: {
               data: {
                 text: 'Primary',
-                type: 'default',
+                type: 'primary',
                 action: 'goto',
                 actions: [
                   {

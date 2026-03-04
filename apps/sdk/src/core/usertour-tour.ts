@@ -1,6 +1,7 @@
 import { smoothScroll } from '@usertour-packages/dom';
 import {
   AttributeBizTypes,
+  ContentEditorRoot,
   ContentEditorClickableElement,
   ContentEditorQuestionElement,
   MissingTooltipTargetBehavior,
@@ -174,15 +175,19 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    * @param context - Context containing baseData and optional options with stepOverride
    * @protected
    */
-  protected getCustomStoreData(
+  protected async getCustomStoreData(
     context: CustomStoreDataContext<TourBuildOptions>,
-  ): Partial<TourStore> {
+  ): Promise<Partial<TourStore>> {
     const { baseData, options } = context;
     const currentStep = options?.stepOverride ?? this.getCurrentStep();
+    const evaluatedData = currentStep?.data
+      ? await this.evaluateButtonConditionsInData(currentStep.data as ContentEditorRoot[])
+      : currentStep?.data;
+    const evaluatedStep = currentStep ? { ...currentStep, data: evaluatedData } : currentStep;
 
     return {
-      currentStep,
-      ...this.getStepStyle(currentStep, baseData),
+      currentStep: evaluatedStep,
+      ...this.getStepStyle(evaluatedStep as SessionStep | undefined, baseData),
     };
   }
 
@@ -449,7 +454,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const stepInfo = this.getStepInfo(step);
 
     // Scroll element into view if tour is visible
-    smoothScroll(el, { block: 'center' });
+    const customScrollIntoView = this.instance.getCustomScrollIntoView();
+    if (customScrollIntoView) {
+      customScrollIntoView(el);
+    } else {
+      smoothScroll(el, { block: 'center' });
+    }
 
     // Update store
     this.setStoreData({

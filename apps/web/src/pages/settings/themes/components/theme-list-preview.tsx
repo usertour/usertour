@@ -5,6 +5,7 @@ import * as SharedPopper from '@usertour-packages/widget';
 import { ContentEditorSerialize, useSettingsStyles } from '@usertour-packages/widget';
 import { GoogleFontCss, ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { Theme } from '@usertour/types';
+import { PREVIEW_BASIC } from '@usertour-packages/constants';
 import { memo, MouseEvent, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -68,7 +69,7 @@ export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
           {...({ inert: '' } as any)}
         >
           <ScaledPreviewContainer className="origin-[center_center]" maxWidth={260} maxHeight={140}>
-            <SharedPopper.Popper open={true} zIndex={1} globalStyle={globalStyle}>
+            <SharedPopper.Popper open={true} zIndex={PREVIEW_BASIC} globalStyle={globalStyle}>
               <SharedPopper.PopperStaticContent
                 arrowSize={{
                   width: 20,

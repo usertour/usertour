@@ -9,6 +9,8 @@ import {
   RulesEvaluationOptions,
   ContentEditorQuestionElement,
   ContentEditorElementType,
+  ContentEditorRoot,
+  ContentEditorButtonElement,
 } from '@usertour/types';
 import { document, location, window } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
@@ -65,6 +67,81 @@ export const convertToAttributeEvaluationOptions = (sessionAttributes: SessionAt
   }
 
   return { attributes, userAttributes, companyAttributes, membershipAttributes };
+};
+
+type ContentEditorChild = ContentEditorRoot['children'][number]['children'][number];
+
+type RulesEvaluatorLike = {
+  evaluate: (
+    conditions: RulesCondition[],
+    sessionAttributes: SessionAttribute[],
+  ) => Promise<RulesCondition[]>;
+};
+
+export const evaluateButtonConditionsInRoots = async (
+  roots: ContentEditorRoot[],
+  evaluator: RulesEvaluatorLike,
+  sessionAttributes: SessionAttribute[],
+): Promise<ContentEditorRoot[]> => {
+  const mappedRoots: ContentEditorRoot[] = [];
+
+  for (const root of roots) {
+    const mappedColumns = [] as ContentEditorRoot['children'];
+
+    for (const column of root.children) {
+      const mappedChildren = [] as ContentEditorChild[];
+
+      for (const child of column.children) {
+        mappedChildren.push(
+          await evaluateButtonConditionsInChild(child, evaluator, sessionAttributes),
+        );
+      }
+
+      mappedColumns.push({
+        ...column,
+        children: mappedChildren,
+      });
+    }
+
+    mappedRoots.push({
+      ...root,
+      children: mappedColumns,
+    });
+  }
+
+  return mappedRoots;
+};
+
+const evaluateButtonConditionsInChild = async (
+  child: ContentEditorChild,
+  evaluator: RulesEvaluatorLike,
+  sessionAttributes: SessionAttribute[],
+): Promise<ContentEditorChild> => {
+  const element = child.element;
+  if (element.type !== ContentEditorElementType.BUTTON) {
+    return child;
+  }
+
+  const buttonElement = element as ContentEditorButtonElement;
+  const buttonData = buttonElement.data;
+  const disableButtonConditions = Array.isArray(buttonData.disableButtonConditions)
+    ? await evaluator.evaluate(buttonData.disableButtonConditions, sessionAttributes)
+    : buttonData.disableButtonConditions;
+  const hideButtonConditions = Array.isArray(buttonData.hideButtonConditions)
+    ? await evaluator.evaluate(buttonData.hideButtonConditions, sessionAttributes)
+    : buttonData.hideButtonConditions;
+
+  return {
+    ...child,
+    element: {
+      ...buttonElement,
+      data: {
+        ...buttonData,
+        disableButtonConditions,
+        hideButtonConditions,
+      },
+    },
+  };
 };
 
 // ============================================================================
@@ -186,13 +263,40 @@ export const createQuestionAnswerEventData = (
   return eventData;
 };
 
+// Module-level URL filter set by UsertourCore.setUrlFilter.
+// Since UsertourCore is a singleton, there is no multi-instance concern.
+let _urlFilter: ((url: string) => string) | null = null;
+
+/**
+ * Sets the module-level URL filter used by getClientContext.
+ * Should be kept in sync with UsertourCore.urlFilter.
+ */
+export const setUrlFilterFn = (filter: ((url: string) => string) | null): void => {
+  _urlFilter = filter;
+};
+
+/**
+ * Applies the current URL filter to a raw URL.
+ * Falls back to the raw URL if no filter is set or if the filter throws.
+ */
+export const applyUrlFilter = (url: string): string => {
+  if (!_urlFilter) return url;
+  try {
+    return _urlFilter(url);
+  } catch (error) {
+    console.error('Error in urlFilter function:', error);
+    return url;
+  }
+};
+
 /**
  * Get client context
+ * The pageUrl is automatically filtered via _urlFilter when set.
  * @returns Client context
  */
 export const getClientContext = () => {
   return {
-    pageUrl: location?.href ?? '',
+    pageUrl: applyUrlFilter(location?.href ?? ''),
     viewportWidth: window?.innerWidth ?? 0,
     viewportHeight: window?.innerHeight ?? 0,
   };

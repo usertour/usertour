@@ -10,6 +10,8 @@ import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import {
+  BannerData,
+  BannerEmbedPlacement,
   ChecklistData,
   ChecklistInitialDisplay,
   Content,
@@ -20,14 +22,21 @@ import {
   LauncherDataType,
   Step,
   Theme,
+  ThemeTypesSetting,
 } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import { ContentEditForm } from '../shared/content-edit-form';
-import { ChecklistPreview, FlowPreview, LauncherPreview } from '../shared/content-preview';
+import {
+  BannerPreviewContent,
+  ChecklistPreview,
+  FlowPreview,
+  LauncherPreview,
+} from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
+import { cn } from '@usertour-packages/tailwind';
 
 interface ContentDetailContentStepProps {
   currentStep: Step;
@@ -40,18 +49,22 @@ interface ContentDetailContentStepProps {
 const ContentBadge = ({
   children,
   className,
+  textClassName,
 }: {
   children: React.ReactNode;
   className?: string;
+  textClassName?: string;
 }) => {
   return (
     <Badge variant={'secondary'} className={className}>
-      <span className="first-letter:uppercase max-w-40 truncate inline-block">{children}</span>
+      <span className={cn('first-letter:uppercase max-w-40 truncate inline-block', textClassName)}>
+        {children}
+      </span>
     </Badge>
   );
 };
 
-// Create a custom hook for theme handling
+// Custom hook for theme handling
 const useThemeHandler = (version: ContentVersion, themeId?: string) => {
   const { themeList } = useThemeListContext();
   const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
@@ -72,15 +85,8 @@ const useThemeHandler = (version: ContentVersion, themeId?: string) => {
   return currentTheme;
 };
 
-// Simplified ContentDetailContentStep
-const ContentDetailContentStep = ({
-  currentStep,
-  index,
-  currentVersion,
-  onEdit,
-  disabled,
-}: ContentDetailContentStepProps) => {
-  const currentTheme = useThemeHandler(currentVersion, currentStep.themeId);
+// Custom hook for scaled preview state management
+const useScaledPreview = () => {
   const [contentRect, setContentRect] = useState<DOMRect | null>(null);
   const [scale, setScale] = useState<number>(1);
   const height =
@@ -88,46 +94,68 @@ const ContentDetailContentStep = ({
       ? contentRect?.height * scale
       : undefined;
 
-  if (!currentStep || !currentTheme) return null;
+  return { contentRect, scale, height, setContentRect, setScale };
+};
 
-  const isHiddenStep = currentStep.type === 'hidden';
+// Reusable scaled preview wrapper component
+interface ScaledPreviewWrapperProps {
+  children: React.ReactNode;
+  height?: number;
+  onContentRectChange: (contentRect: DOMRect, scale: number) => void;
+}
 
+const ScaledPreviewWrapper = ({
+  children,
+  height,
+  onContentRectChange,
+}: ScaledPreviewWrapperProps) => {
+  return (
+    <div
+      className="w-40 h-32 flex flex-none items-center [&_*]:pointer-events-none pointer-events-none"
+      {...({ inert: '' } as any)}
+      style={{ height: height ? `${height}px` : undefined }}
+    >
+      <ScaledPreviewContainer
+        className="origin-[left_center]"
+        maxWidth={160}
+        maxHeight={600}
+        onContentRectChange={onContentRectChange}
+      >
+        {children}
+      </ScaledPreviewContainer>
+    </div>
+  );
+};
+
+// Reusable content preview card component
+interface ContentPreviewCardProps {
+  themeSettings: ThemeTypesSetting;
+  title: string;
+  badges: React.ReactNode;
+  updatedAt?: string;
+  onEdit: () => void;
+  disabled: boolean;
+  leftContent: React.ReactNode;
+  warning?: React.ReactNode;
+}
+
+const ContentPreviewCard = ({
+  themeSettings,
+  title,
+  badges,
+  updatedAt,
+  onEdit,
+  disabled,
+  leftContent,
+  warning,
+}: ContentPreviewCardProps) => {
   return (
     <>
-      <GoogleFontCss settings={currentTheme.settings} />
-      <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8" key={index}>
-        {!isHiddenStep && (
-          <div
-            className="w-40 h-32 flex flex-none items-center [&_*]:pointer-events-none pointer-events-none"
-            {...({ inert: '' } as any)}
-            style={{
-              height: height ? `${height}px` : undefined,
-            }}
-          >
-            <ScaledPreviewContainer
-              className="origin-[left_center]"
-              maxWidth={160}
-              maxHeight={600}
-              onContentRectChange={(contentRect, scale) => {
-                setContentRect(contentRect);
-                setScale(scale);
-              }}
-            >
-              <FlowPreview
-                currentTheme={currentTheme}
-                currentStep={currentStep}
-                currentVersion={currentVersion}
-                currentStepIndex={index}
-              />
-            </ScaledPreviewContainer>
-          </div>
-        )}
-        {isHiddenStep && (
-          <div className="w-40 h-32 flex  flex-none items-center justify-center">
-            <EyeNoneIcon className="w-8 h-8" />
-          </div>
-        )}
-        <div className="grow flex flex-col relative space-y-1 min-w-80	">
+      <GoogleFontCss settings={themeSettings} />
+      <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8">
+        {leftContent}
+
+        <div className="grow flex flex-col relative space-y-1 min-w-80">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -144,53 +172,105 @@ const ContentDetailContentStep = ({
               <TooltipContent>Edit</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <div className="font-bold max-w-80 truncate">
-            {index + 1}. {currentStep.name ?? ''}
-          </div>
-          <div className="text-sm flex flex-row flex-wrap gap-1">
-            <ContentBadge>{currentStep.type}</ContentBadge>
-            {!isHiddenStep && (
-              <>
-                <ContentBadge>
-                  Width:{' '}
-                  {currentStep.setting.width !== undefined
-                    ? `${currentStep.setting.width}px`
-                    : 'Auto'}
-                </ContentBadge>
-                <ContentBadge>Height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
-                <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
-              </>
-            )}
-            {!isHiddenStep && (
-              <>
-                <ContentBadge>
-                  {!currentStep.setting.skippable && 'Not skippable'}
-                  {currentStep.setting.skippable && 'Skippable'}
-                </ContentBadge>
-                {currentStep.setting.enabledBackdrop && (
-                  <ContentBadge>Backdrop enabled</ContentBadge>
-                )}
-                {!currentStep.setting.enabledBackdrop && (
-                  <ContentBadge>Backdrop disabled</ContentBadge>
-                )}
-              </>
-            )}
-          </div>
-          {!stepIsReachable(currentVersion.steps as Step[], currentStep) && (
-            <div className="text-xs flex flex-row items-center text-warning space-x-1 pt-2">
-              <ExclamationTriangleIcon className="h-3 w-3" />
-              <span>
-                This step is not reachable from the start step. Add a button or trigger that links
-                to this step, or delete it in the builder.
-              </span>
+
+          <div className="font-bold max-w-80 truncate">{title}</div>
+
+          <div className="text-sm flex flex-row flex-wrap gap-1">{badges}</div>
+
+          {warning}
+
+          {updatedAt && (
+            <div className="text-xs absolute right-0 bottom-0 text-muted-foreground">
+              Last edited {format(new Date(updatedAt), 'PPpp')}
             </div>
           )}
-          <div className="text-xs	 absolute right-0 bottom-0 text-muted-foreground">
-            Last edited {currentStep.updatedAt && format(new Date(currentStep.updatedAt), 'PPpp')}
-          </div>
         </div>
       </div>
     </>
+  );
+};
+
+// Simplified ContentDetailContentStep
+const ContentDetailContentStep = ({
+  currentStep,
+  index,
+  currentVersion,
+  onEdit,
+  disabled,
+}: ContentDetailContentStepProps) => {
+  const currentTheme = useThemeHandler(currentVersion, currentStep.themeId);
+  const { height, setContentRect, setScale } = useScaledPreview();
+
+  if (!currentStep || !currentTheme) return null;
+
+  const isHiddenStep = currentStep.type === 'hidden';
+
+  const leftContent = isHiddenStep ? (
+    <div className="w-40 h-32 flex flex-none items-center justify-center">
+      <EyeNoneIcon className="w-8 h-8" />
+    </div>
+  ) : (
+    <ScaledPreviewWrapper
+      height={height}
+      onContentRectChange={(rect, scale) => {
+        setContentRect(rect);
+        setScale(scale);
+      }}
+    >
+      <FlowPreview
+        currentTheme={currentTheme}
+        currentStep={currentStep}
+        currentVersion={currentVersion}
+        currentStepIndex={index}
+      />
+    </ScaledPreviewWrapper>
+  );
+
+  const badges = (
+    <>
+      <ContentBadge>{currentStep.type}</ContentBadge>
+      {!isHiddenStep && (
+        <>
+          <ContentBadge>
+            Width:{' '}
+            {currentStep.setting.width !== undefined ? `${currentStep.setting.width}px` : 'Auto'}
+          </ContentBadge>
+          <ContentBadge>Height: {Math.floor(currentStep.setting.height)}px</ContentBadge>
+          <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
+          <ContentBadge>
+            {!currentStep.setting.skippable && 'Not skippable'}
+            {currentStep.setting.skippable && 'Skippable'}
+          </ContentBadge>
+          {currentStep.setting.enabledBackdrop && <ContentBadge>Backdrop enabled</ContentBadge>}
+          {!currentStep.setting.enabledBackdrop && <ContentBadge>Backdrop disabled</ContentBadge>}
+        </>
+      )}
+    </>
+  );
+
+  const warning = !stepIsReachable(currentVersion.steps as Step[], currentStep) ? (
+    <div className="text-xs flex flex-row items-center text-warning space-x-1 pt-2">
+      <ExclamationTriangleIcon className="h-3 w-3" />
+      <span>
+        This step is not reachable from the start step. Add a button or trigger that links to this
+        step, or delete it in the builder.
+      </span>
+    </div>
+  ) : undefined;
+
+  return (
+    <div key={index}>
+      <ContentPreviewCard
+        themeSettings={currentTheme.settings}
+        title={`${index + 1}. ${currentStep.name ?? ''}`}
+        badges={badges}
+        updatedAt={currentStep.updatedAt}
+        onEdit={onEdit}
+        disabled={disabled}
+        leftContent={leftContent}
+        warning={warning}
+      />
+    </div>
   );
 };
 
@@ -213,55 +293,42 @@ const LauncherContentPreview = ({
 
   if (!currentVersion || !currentTheme) return null;
 
-  return (
+  const leftContent = (
+    <div className="w-40 h-32 flex flex-none items-center justify-center">
+      <LauncherPreview currentTheme={currentTheme} currentVersion={currentVersion} />
+    </div>
+  );
+
+  const badges = (
     <>
-      <GoogleFontCss settings={currentTheme.settings} />
-      <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8">
-        <div className="w-40 h-32 flex  flex-none items-center justify-center">
-          <LauncherPreview currentTheme={currentTheme} currentVersion={currentVersion} />
-        </div>
-        <div className="grow flex flex-col relative space-y-1 min-w-80	">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={'ghost'}
-                  size={'icon'}
-                  onClick={onEdit}
-                  disabled={disabled}
-                  className="right-0 top-0 absolute"
-                >
-                  <EditIcon className="w-4 h-4 cursor-pointer" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edit</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <div className="font-bold max-w-80 truncate">{content.name ?? ''}</div>
-          <div className="text-sm flex flex-row flex-wrap gap-1">
-            <ContentBadge>{data.type}</ContentBadge>
-            <ContentBadge>
-              Target element:{' '}
-              {data.target.element?.customSelector ? data.target.element.customSelector : 'Not set'}
-            </ContentBadge>
-            <ContentBadge>Target alignment: {data.target.alignment.alignType}</ContentBadge>
-            <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
-            {data.type === LauncherDataType.ICON && data.iconType && (
-              <ContentBadge>Icon type: {data.iconType}</ContentBadge>
-            )}
-            <ContentBadge>
-              {data.behavior.actionType === LauncherActionType.PERFORM_ACTION
-                ? 'Perform action'
-                : 'Show tooltip'}
-            </ContentBadge>
-          </div>
-          <div className="text-xs	 absolute right-0 bottom-0 text-muted-foreground">
-            Last edited{' '}
-            {currentVersion.updatedAt && format(new Date(currentVersion.updatedAt), 'PPpp')}
-          </div>
-        </div>
-      </div>
+      <ContentBadge>{data.type}</ContentBadge>
+      <ContentBadge>
+        Target element:{' '}
+        {data.target.element?.customSelector ? data.target.element.customSelector : 'Not set'}
+      </ContentBadge>
+      <ContentBadge>Target alignment: {data.target.alignment.alignType}</ContentBadge>
+      <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
+      {data.type === LauncherDataType.ICON && data.iconType && (
+        <ContentBadge>Icon type: {data.iconType}</ContentBadge>
+      )}
+      <ContentBadge>
+        {data.behavior.actionType === LauncherActionType.PERFORM_ACTION
+          ? 'Perform action'
+          : 'Show tooltip'}
+      </ContentBadge>
     </>
+  );
+
+  return (
+    <ContentPreviewCard
+      themeSettings={currentTheme.settings}
+      title={content.name ?? ''}
+      badges={badges}
+      updatedAt={currentVersion.updatedAt}
+      onEdit={onEdit}
+      disabled={disabled}
+      leftContent={leftContent}
+    />
   );
 };
 
@@ -281,79 +348,149 @@ const ChecklistContentPreview = ({
 }: ChecklistContentPreviewProps) => {
   const currentTheme = useThemeHandler(currentVersion);
   const data = currentVersion.data as ChecklistData;
-  const [contentRect, setContentRect] = useState<DOMRect | null>(null);
-  const [scale, setScale] = useState<number>(1);
-  const height =
-    contentRect?.height && contentRect?.width && contentRect?.height > contentRect?.width
-      ? contentRect?.height * scale
-      : undefined;
+  const { height, setContentRect, setScale } = useScaledPreview();
 
   if (!currentVersion || !currentTheme) return null;
 
-  return (
+  const leftContent = (
+    <ScaledPreviewWrapper
+      height={height}
+      onContentRectChange={(rect, scale) => {
+        setContentRect(rect);
+        setScale(scale);
+      }}
+    >
+      <ChecklistPreview currentTheme={currentTheme} currentVersion={currentVersion} />
+    </ScaledPreviewWrapper>
+  );
+
+  const badges = (
     <>
-      <GoogleFontCss settings={currentTheme.settings} />
-      <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8">
-        <div
-          className="w-40 h-32 flex flex-none items-center [&_*]:pointer-events-none pointer-events-none"
-          {...({ inert: '' } as any)}
-          style={{
-            height: height ? `${height}px` : undefined,
-          }}
-        >
-          <ScaledPreviewContainer
-            className="origin-[left_center]"
-            maxWidth={160}
-            maxHeight={600}
-            onContentRectChange={(contentRect, scale) => {
-              setContentRect(contentRect);
-              setScale(scale);
-            }}
-          >
-            <ChecklistPreview currentTheme={currentTheme} currentVersion={currentVersion} />
-          </ScaledPreviewContainer>
-        </div>
-        <div className="grow flex flex-col relative space-y-1 min-w-80	">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={'ghost'}
-                  size={'icon'}
-                  onClick={onEdit}
-                  disabled={disabled}
-                  className="right-0 top-0 absolute"
-                >
-                  <EditIcon className="w-4 h-4 cursor-pointer" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edit</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <div className="font-bold max-w-80 truncate">{content.name ?? ''}</div>
-          <div className="text-sm flex flex-row flex-wrap gap-1">
-            <ContentBadge>Launcher button text: {data.buttonText ?? ''}</ContentBadge>
-            <ContentBadge>
-              Initial display: {data.initialDisplay === ChecklistInitialDisplay.BUTTON && 'Button'}
-              {data.initialDisplay === ChecklistInitialDisplay.EXPANDED && 'Expanded'}
-            </ContentBadge>
-            <ContentBadge>Task completion order: {data.completionOrder}</ContentBadge>
-            {data.preventDismissChecklist && (
-              <ContentBadge>Prevent users from dismissing checklist</ContentBadge>
-            )}
-            {!data.preventDismissChecklist && (
-              <ContentBadge>Allow users to dismiss checklist</ContentBadge>
-            )}
-            <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
-            <ContentBadge>Items: {data.items.length}</ContentBadge>
-          </div>
-          <div className="text-xs	 absolute right-0 bottom-0 text-muted-foreground">
-            Last edited{' '}
-            {currentVersion.updatedAt && format(new Date(currentVersion.updatedAt), 'PPpp')}
-          </div>
-        </div>
-      </div>
+      <ContentBadge>Launcher button text: {data.buttonText ?? ''}</ContentBadge>
+      <ContentBadge>
+        Initial display: {data.initialDisplay === ChecklistInitialDisplay.BUTTON && 'Button'}
+        {data.initialDisplay === ChecklistInitialDisplay.EXPANDED && 'Expanded'}
+      </ContentBadge>
+      <ContentBadge>Task completion order: {data.completionOrder}</ContentBadge>
+      {data.preventDismissChecklist && (
+        <ContentBadge>Prevent users from dismissing checklist</ContentBadge>
+      )}
+      {!data.preventDismissChecklist && (
+        <ContentBadge>Allow users to dismiss checklist</ContentBadge>
+      )}
+      <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
+      <ContentBadge>Items: {data.items.length}</ContentBadge>
     </>
+  );
+
+  return (
+    <ContentPreviewCard
+      themeSettings={currentTheme.settings}
+      title={content.name ?? ''}
+      badges={badges}
+      updatedAt={currentVersion.updatedAt}
+      onEdit={onEdit}
+      disabled={disabled}
+      leftContent={leftContent}
+    />
+  );
+};
+
+interface BannerContentPreviewProps {
+  currentVersion: ContentVersion;
+  content: Content;
+  onEdit: () => void;
+  disabled: boolean;
+}
+
+const BannerContentPreview = ({
+  currentVersion,
+  content,
+  onEdit,
+  disabled,
+}: BannerContentPreviewProps) => {
+  const currentTheme = useThemeHandler(currentVersion);
+  const data = currentVersion.data as BannerData;
+  const { height, setContentRect, setScale } = useScaledPreview();
+
+  if (!currentVersion || !currentTheme) return null;
+
+  const leftContent = (
+    <ScaledPreviewWrapper
+      height={height}
+      onContentRectChange={(rect, scale) => {
+        setContentRect(rect);
+        setScale(scale);
+      }}
+    >
+      <BannerPreviewContent
+        currentTheme={currentTheme}
+        currentVersion={currentVersion}
+        previewClassName="justify-start"
+      />
+    </ScaledPreviewWrapper>
+  );
+
+  const placementRequiresElement =
+    data.embedPlacement === BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT ||
+    data.embedPlacement === BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT ||
+    data.embedPlacement === BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT ||
+    data.embedPlacement === BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT;
+  const placementLabelMap: Record<BannerEmbedPlacement, string> = {
+    [BannerEmbedPlacement.TOP_OF_PAGE]: 'Top of page',
+    [BannerEmbedPlacement.BOTTOM_OF_PAGE]: 'Bottom of page',
+    [BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT]: 'Top of container element',
+    [BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT]: 'Bottom of container element',
+    [BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT]: 'Immediately before element',
+    [BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT]: 'Immediately after element',
+  };
+  const bannerBadgeTextClassName = 'max-w-64';
+
+  const badges = (
+    <>
+      <ContentBadge textClassName={bannerBadgeTextClassName}>
+        Show banner at {placementLabelMap[data.embedPlacement] ?? data.embedPlacement}
+      </ContentBadge>
+      {placementRequiresElement && (
+        <ContentBadge textClassName={bannerBadgeTextClassName}>
+          Target element:{' '}
+          {data.containerElement?.customSelector ? data.containerElement.customSelector : 'Not set'}
+        </ContentBadge>
+      )}
+      {data.stickToTopOfViewport && (
+        <ContentBadge textClassName={bannerBadgeTextClassName}>
+          Stick to top of viewport
+        </ContentBadge>
+      )}
+      <ContentBadge textClassName={bannerBadgeTextClassName}>
+        {data.allowUsersToDismissEmbed
+          ? 'Allow users to dismiss banner'
+          : 'Prevent users from dismissing banner'}
+      </ContentBadge>
+      <ContentBadge textClassName={bannerBadgeTextClassName}>
+        {data.animateWhenEmbedAppears ? 'Animate when banner appears' : 'No enter animation'}
+      </ContentBadge>
+      {data.overlayEmbedOverAppContent && (
+        <ContentBadge textClassName={bannerBadgeTextClassName}>
+          Overlay over app content
+        </ContentBadge>
+      )}
+      <ContentBadge textClassName={bannerBadgeTextClassName}>
+        Theme: {currentTheme.name ?? ''}
+      </ContentBadge>
+    </>
+  );
+
+  return (
+    <ContentPreviewCard
+      themeSettings={currentTheme.settings}
+      title={content.name ?? ''}
+      badges={badges}
+      updatedAt={currentVersion.updatedAt}
+      onEdit={onEdit}
+      disabled={disabled}
+      leftContent={leftContent}
+    />
   );
 };
 
@@ -396,6 +533,14 @@ export const ContentDetailContent = () => {
         )}
         {contentType === ContentTypeName.CHECKLISTS && content && version.data && (
           <ChecklistContentPreview
+            currentVersion={version}
+            content={content}
+            onEdit={() => openBuilder(content, contentType)}
+            disabled={isViewOnly}
+          />
+        )}
+        {contentType === ContentTypeName.BANNERS && content && version.data && (
+          <BannerContentPreview
             currentVersion={version}
             content={content}
             onEdit={() => openBuilder(content, contentType)}

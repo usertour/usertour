@@ -48,7 +48,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-[101]">
           <DropdownMenuItem

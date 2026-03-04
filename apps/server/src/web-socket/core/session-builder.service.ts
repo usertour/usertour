@@ -2,6 +2,7 @@ import { AttributeBizType, Attribute } from '@/attributes/models/attribute.model
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
+  BannerData,
   ChecklistData,
   ContentDataType,
   LauncherData,
@@ -17,6 +18,8 @@ import {
   extractLauncherAttrCodes,
   isExpandPending,
   extractChecklistAttrCodes,
+  extractBannerAttrCodes,
+  extractButtonConditionAttributeIds,
 } from '@/utils/content-utils';
 import { CustomContentSession, SessionTheme, SessionStep, SessionAttribute } from '@usertour/types';
 import {
@@ -29,6 +32,8 @@ import {
 } from '@/common/types';
 import { ContentDataService } from './content-data.service';
 import { ProjectsService } from '@/projects/projects.service';
+import { DistributedLockService } from './distributed-lock.service';
+import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
 
 @Injectable()
 export class SessionBuilderService {
@@ -38,11 +43,62 @@ export class SessionBuilderService {
     private readonly prisma: PrismaService,
     private readonly contentDataService: ContentDataService,
     private readonly projectsService: ProjectsService,
+    private readonly distributedLockService: DistributedLockService,
   ) {}
 
   // ============================================================================
   // Public API Methods
   // ============================================================================
+
+  /**
+   * Create a biz session
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @param versionId - The version ID
+   * @returns The created session
+   */
+  /**
+   * Idempotently find or create a biz session for singleton content types (FLOW, CHECKLIST).
+   * Uses a per-user per-content distributed lock + DB double-check to prevent duplicate
+   * sessions when the same user has multiple concurrent sockets (e.g. two browser tabs).
+   * @returns `{ session, isNew }` — `isNew` tells the caller whether to track a start event
+   */
+  async findOrCreateBizSession(
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId: string,
+    versionId: string,
+    bizUserId: string,
+    contentId: string,
+  ): Promise<{ session: BizSession; isNew: boolean } | null> {
+    const lockKey = buildSessionCreateLockKey(environment.id, externalUserId, contentId);
+    const result = await this.distributedLockService.withRetryLock(
+      lockKey,
+      async () => {
+        // Double-check: another socket may have created the session while we waited for the lock
+        const existing = await this.contentDataService.findActiveSessionByContentId(
+          contentId,
+          bizUserId,
+        );
+        if (existing) {
+          this.logger.debug(`Reusing session created by concurrent socket: ${existing.id}`);
+          return { session: existing, isNew: false };
+        }
+        const session = await this.createBizSession(
+          environment,
+          externalUserId,
+          externalCompanyId,
+          versionId,
+        );
+        return session ? { session, isNew: true } : null;
+      },
+      5, // retry attempts
+      300, // retry interval ms
+      5000, // lock timeout ms
+    );
+    return result ?? null;
+  }
 
   /**
    * Create a biz session
@@ -187,6 +243,9 @@ export class SessionBuilderService {
     if (contentType === ContentDataType.LAUNCHER) {
       return await this.processLauncherSession(session, customContentVersion, socketData);
     }
+    if (contentType === ContentDataType.BANNER) {
+      return await this.processBannerSession(session, customContentVersion, socketData);
+    }
     return session;
   }
 
@@ -309,9 +368,10 @@ export class SessionBuilderService {
       socketData;
     const checklistData = customContentVersion.data as unknown as ChecklistData;
     const attrCodes = extractChecklistAttrCodes(checklistData);
+    const buttonAttrIds = extractButtonConditionAttributeIds(checklistData);
 
     const attributes = await this.extractAttributes(
-      [],
+      buttonAttrIds,
       environment,
       externalUserId,
       externalCompanyId,
@@ -328,6 +388,35 @@ export class SessionBuilderService {
 
     session.expandPending = isExpandPending(customContentVersion);
     session.version.checklist = { ...checklistData, items };
+    return session;
+  }
+
+  /**
+   * Process BANNER content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The client data
+   * @returns The processed session
+   */
+  private async processBannerSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId } = socketData;
+    const bannerData = customContentVersion.data as unknown as BannerData;
+    const attrCodes = extractBannerAttrCodes(bannerData?.contents);
+    const buttonAttrIds = extractButtonConditionAttributeIds(bannerData);
+
+    const attributes = await this.extractAttributes(
+      buttonAttrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    session.attributes = attributes;
+    session.version.banner = bannerData;
     return session;
   }
 
@@ -398,9 +487,10 @@ export class SessionBuilderService {
     const { environment, externalUserId, externalCompanyId } = socketData;
     const launcher = customContentVersion.data as unknown as LauncherData;
     const attrCodes = extractLauncherAttrCodes(launcher);
+    const buttonAttrIds = extractButtonConditionAttributeIds(launcher);
 
     const attributes = await this.extractAttributes(
-      [],
+      buttonAttrIds,
       environment,
       externalUserId,
       externalCompanyId,
@@ -550,9 +640,10 @@ export class SessionBuilderService {
 
     const attrIds = extractStepTriggerAttributeIds(steps);
     const attrCodes = extractStepContentAttrCodes(steps);
+    const buttonAttrIds = extractButtonConditionAttributeIds(steps);
 
     return await this.extractAttributes(
-      attrIds,
+      [...attrIds, ...buttonAttrIds],
       environment,
       externalUserId,
       externalCompanyId,

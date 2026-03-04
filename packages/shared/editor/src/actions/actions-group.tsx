@@ -44,6 +44,12 @@ const contentActionsItem = [
     RulesElement: ContentActionsDismiss,
   },
   {
+    type: ContentActionsItemType.BANNER_DISMIS,
+    text: 'Dismiss banner',
+    IconElement: CloseCircleIcon,
+    RulesElement: ContentActionsDismiss,
+  },
+  {
     type: ContentActionsItemType.FLOW_START,
     text: 'Start new flow/checklist',
     IconElement: OpenInNewWindowIcon,
@@ -120,7 +126,8 @@ export const ContentActionsGroup = () => {
       }
       return (
         item.type !== ContentActionsItemType.LAUNCHER_DISMIS &&
-        item.type !== ContentActionsItemType.CHECKLIST_DISMIS
+        item.type !== ContentActionsItemType.CHECKLIST_DISMIS &&
+        item.type !== ContentActionsItemType.BANNER_DISMIS
       );
     }),
   );
@@ -239,7 +246,8 @@ export const ContentActionsGroup = () => {
           if (rulesItem?.RulesElement) {
             if (
               rulesItem.type === ContentActionsItemType.LAUNCHER_DISMIS ||
-              rulesItem.type === ContentActionsItemType.CHECKLIST_DISMIS
+              rulesItem.type === ContentActionsItemType.CHECKLIST_DISMIS ||
+              rulesItem.type === ContentActionsItemType.BANNER_DISMIS
             ) {
               return (
                 <rulesItem.RulesElement

@@ -9,6 +9,7 @@ import { BizSession, ContentDataType } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { DataTableColumnHeader } from './data-table-column-header';
 import {
+  BannerProgressColumn,
   ChecklistProgressColumn,
   FlowProgressColumn,
   LauncherProgressColumn,
@@ -37,6 +38,9 @@ const ProgressColumn = (props: Row<BizSession>) => {
   }
   if (contentType === ContentDataType.LAUNCHER) {
     return <LauncherProgressColumn original={props.original} eventList={eventList} />;
+  }
+  if (contentType === ContentDataType.BANNER) {
+    return <BannerProgressColumn original={props.original} eventList={eventList} />;
   }
 
   return <></>;

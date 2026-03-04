@@ -1,5 +1,6 @@
 import {
   ContentEditorSerialize,
+  LinkDecoratorContext,
   PopperMadeWith,
   LauncherContentWrapper,
   LauncherPopper,
@@ -38,6 +39,7 @@ type LauncherWidgetCoreProps = {
   handleActivate: () => void;
   onTooltipClose: () => void;
   removeBranding: boolean;
+  linkUrlDecorator?: ((url: string) => string) | null;
 };
 
 type LauncherHandlers = {
@@ -150,6 +152,7 @@ const useLauncherStore = (launcher: UsertourLauncher) => {
     assets,
     removeBranding,
     triggerRef,
+    linkUrlDecorator,
   } = store;
 
   if (!launcherData || !openState || !triggerRef) {
@@ -166,6 +169,7 @@ const useLauncherStore = (launcher: UsertourLauncher) => {
     assets,
     removeBranding,
     triggerRef,
+    linkUrlDecorator,
   };
 };
 
@@ -206,6 +210,7 @@ const LauncherWidgetCore = ({
   handleActivate,
   onTooltipClose,
   removeBranding,
+  linkUrlDecorator,
 }: LauncherWidgetCoreProps) => {
   const actionType = data?.behavior?.actionType;
   const [open, setOpen] = useState(false);
@@ -242,29 +247,31 @@ const LauncherWidgetCore = ({
   usePopperMouseLeave(popperRef, actionType, setOpen);
 
   return (
-    <LauncherRoot themeSettings={themeSettings} data={data}>
-      <LauncherPopper
-        triggerRef={
-          data.tooltip.reference === LauncherPositionType.LAUNCHER ? launcherRef : triggerRef
-        }
-        zIndex={zIndex}
-        open={open}
-      >
-        <LauncherTooltip
-          data={data}
-          userAttributes={userAttributes}
-          handleOnClick={handleOnClick}
-          removeBranding={removeBranding}
-          popperRef={popperRef}
+    <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
+      <LauncherRoot themeSettings={themeSettings} data={data}>
+        <LauncherPopper
+          triggerRef={
+            data.tooltip.reference === LauncherPositionType.LAUNCHER ? launcherRef : triggerRef
+          }
+          zIndex={zIndex}
+          open={open}
+        >
+          <LauncherTooltip
+            data={data}
+            userAttributes={userAttributes}
+            handleOnClick={handleOnClick}
+            removeBranding={removeBranding}
+            popperRef={popperRef}
+          />
+        </LauncherPopper>
+        <LauncherContentWrapper
+          zIndex={zIndex}
+          referenceRef={triggerRef}
+          ref={launcherRef}
+          hideWhenDetached={true}
         />
-      </LauncherPopper>
-      <LauncherContentWrapper
-        zIndex={zIndex}
-        referenceRef={triggerRef}
-        ref={launcherRef}
-        hideWhenDetached={true}
-      />
-    </LauncherRoot>
+      </LauncherRoot>
+    </LinkDecoratorContext.Provider>
   );
 };
 
@@ -283,6 +290,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
     zIndex,
     removeBranding,
     triggerRef,
+    linkUrlDecorator,
   } = store;
 
   if (!themeSettings || !launcherData || !openState || !userAttributes) {
@@ -301,6 +309,7 @@ export const LauncherWidget = ({ launcher }: LauncherWidgetProps) => {
       onTooltipClose={launcher.onTooltipClose}
       el={triggerRef}
       removeBranding={removeBranding}
+      linkUrlDecorator={linkUrlDecorator}
     />
   );
 };

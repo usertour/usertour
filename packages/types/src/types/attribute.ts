@@ -101,6 +101,8 @@ export enum BizEvents {
   CHECKLIST_STARTED = 'checklist_started',
   CHECKLIST_TASK_CLICKED = 'checklist_task_clicked',
   CHECKLIST_TASK_COMPLETED = 'checklist_task_completed',
+  BANNER_SEEN = 'banner_seen',
+  BANNER_DISMISSED = 'banner_dismissed',
   EVENT_TRACKER_COMPLETED = 'event_tracker_completed',
   QUESTION_ANSWERED = 'question_answered',
 }
@@ -138,6 +140,12 @@ export enum EventAttributes {
   CHECKLIST_TASK_CVID = 'checklist_task_cvid',
   CHECKLIST_TASK_ID = 'checklist_task_id',
   CHECKLIST_TASK_NAME = 'checklist_task_name',
+  // Banner attributes
+  BANNER_ID = 'banner_id',
+  BANNER_NAME = 'banner_name',
+  BANNER_SESSION_ID = 'banner_session_id',
+  BANNER_VERSION_ID = 'banner_version_id',
+  BANNER_VERSION_NUMBER = 'banner_version_number',
   // Event tracker attributes
   EVENT_TRACKER_ID = 'event_tracker_id',
   EVENT_TRACKER_NAME = 'event_tracker_name',

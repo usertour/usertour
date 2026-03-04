@@ -34,6 +34,18 @@ const generateChartConfig = (
         },
       };
     }
+    if (contentType === ContentDataType.BANNER) {
+      return {
+        uniqueViews: {
+          label: 'Views',
+          color: 'hsl(var(--chart-1))',
+        },
+        uniqueCompletions: {
+          label: 'Dismissed',
+          color: 'hsl(var(--chart-2))',
+        },
+      };
+    }
     return {
       uniqueViews: {
         label: 'Unique Views',
@@ -257,12 +269,14 @@ export const AnalyticsDays = () => {
           <CardHeader>
             <CardTitle className="space-between flex flex-row  items-center">
               <div className="grow	">Performance</div>
-              <TabsList className="flex-none">
-                <TabsTrigger value="views" className="relative">
-                  Views
-                </TabsTrigger>
-                <TabsTrigger value="rate">Rate</TabsTrigger>
-              </TabsList>
+              {contentType !== ContentDataType.BANNER && (
+                <TabsList className="flex-none">
+                  <TabsTrigger value="views" className="relative">
+                    Views
+                  </TabsTrigger>
+                  <TabsTrigger value="rate">Rate</TabsTrigger>
+                </TabsList>
+              )}
             </CardTitle>
             {/* <CardDescription>
               {dateRange && dateRange.from && format(new Date(dateRange?.from), "PP")} - {dateRange && dateRange.to && format(new Date(dateRange?.to), "PP")}
@@ -274,13 +288,15 @@ export const AnalyticsDays = () => {
               chartData={viewData}
             />
           </TabsContent>
-          <TabsContent value="rate" className="border-none p-0 outline-none">
-            {/* <AnalyticsChart chartConfig={totalChartConfig} chartData={totalData} /> */}
-            <AnalyticsRateChart
-              chartConfig={generateChartConfig('rate', contentType)}
-              chartData={rateData}
-            />
-          </TabsContent>
+          {contentType !== ContentDataType.BANNER && (
+            <TabsContent value="rate" className="border-none p-0 outline-none">
+              {/* <AnalyticsChart chartConfig={totalChartConfig} chartData={totalData} /> */}
+              <AnalyticsRateChart
+                chartConfig={generateChartConfig('rate', contentType)}
+                chartData={rateData}
+              />
+            </TabsContent>
+          )}
         </Card>
       </Tabs>
     </>

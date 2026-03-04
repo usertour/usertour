@@ -148,6 +148,7 @@ export class ConditionEvaluationService {
         };
       }),
     );
+
     return { ...data, items };
   }
 
@@ -160,22 +161,20 @@ export class ConditionEvaluationService {
   async evaluateStepTriggers(steps: Step[], context: ConditionEvaluationContext): Promise<Step[]> {
     return await Promise.all(
       steps.map(async (step) => {
-        // Skip if no triggers
-        if (!step.trigger || !isArray(step.trigger)) {
-          return step;
+        // Evaluate triggers if present
+        let triggers = step.trigger;
+        if (triggers && isArray(triggers)) {
+          const triggerArray = triggers as StepTrigger[];
+          triggers = await Promise.all(
+            triggerArray.map(async (triggerItem: StepTrigger) =>
+              this.evaluateSingleTrigger(triggerItem, context),
+            ),
+          );
         }
-
-        // Evaluate all triggers in parallel
-        const triggers = step.trigger as StepTrigger[];
-        const evaluatedTriggers = await Promise.all(
-          triggers.map(async (triggerItem: StepTrigger) =>
-            this.evaluateSingleTrigger(triggerItem, context),
-          ),
-        );
 
         return {
           ...step,
-          trigger: evaluatedTriggers,
+          trigger: triggers,
         };
       }),
     );

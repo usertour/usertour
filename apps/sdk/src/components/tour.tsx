@@ -1,5 +1,6 @@
 import {
   ContentEditorSerialize,
+  LinkDecoratorContext,
   Popper,
   PopperBubblePortal,
   PopperClose,
@@ -86,6 +87,7 @@ const useTourStore = (tour: UsertourTour) => {
     removeBranding,
     currentStepIndex,
     totalSteps,
+    linkUrlDecorator,
   } = store;
 
   if (!currentStep || !openState) {
@@ -104,6 +106,7 @@ const useTourStore = (tour: UsertourTour) => {
     removeBranding,
     currentStepIndex: currentStepIndex || 0,
     totalSteps: totalSteps || 0,
+    linkUrlDecorator,
   };
 };
 
@@ -414,17 +417,19 @@ export const TourWidget = (props: { tour: UsertourTour }) => {
   const stepType = storeData.currentStep.type;
   const triggerRef = storeData.triggerRef;
 
+  let content = null;
+
   if (stepType === StepContentType.TOOLTIP && triggerRef) {
-    return <TourPopper {...commonProps} triggerRef={triggerRef} handleActions={handleActions} />;
+    content = <TourPopper {...commonProps} triggerRef={triggerRef} handleActions={handleActions} />;
+  } else if (stepType === StepContentType.MODAL) {
+    content = <TourModal {...commonProps} />;
+  } else if (stepType === StepContentType.BUBBLE) {
+    content = <TourBubble {...commonProps} />;
   }
 
-  if (stepType === StepContentType.MODAL) {
-    return <TourModal {...commonProps} />;
-  }
-
-  if (stepType === StepContentType.BUBBLE) {
-    return <TourBubble {...commonProps} />;
-  }
-
-  return null;
+  return (
+    <LinkDecoratorContext.Provider value={storeData.linkUrlDecorator || null}>
+      {content}
+    </LinkDecoratorContext.Provider>
+  );
 };

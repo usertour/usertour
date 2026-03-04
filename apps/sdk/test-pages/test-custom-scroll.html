@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Scroll Test - setCustomScrollIntoView()</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        padding: 20px;
+        padding-top: 30px;
+        background: linear-gradient(to bottom, #f0f0f0 0%, #ffffff 100%);
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      /* Header */
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 40px;
+      }
+
+      h1 {
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      .description {
+        color: #666;
+        margin-bottom: 20px;
+        line-height: 1.5;
+      }
+
+      /* Control Panel */
+      .control-panel {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 15px;
+        background: #f5f5f5;
+        border-radius: 6px;
+        margin-bottom: 10px;
+      }
+
+      .control-button {
+        padding: 10px 20px;
+        border: 2px solid #2196f3;
+        border-radius: 6px;
+        background: white;
+        color: #2196f3;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .control-button:hover {
+        background: #2196f3;
+        color: white;
+      }
+
+      .control-button.active {
+        background: #2196f3;
+        color: white;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+      }
+
+      .control-button.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #f5f5f5;
+        border-color: #ccc;
+        color: #999;
+      }
+
+      /* Current Mode Display */
+      .current-mode {
+        padding: 12px;
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        border-radius: 4px;
+        margin-top: 10px;
+        font-family: monospace;
+        font-size: 13px;
+      }
+
+      .current-mode strong {
+        color: #1976d2;
+      }
+
+      /* Content Sections */
+      .spacer {
+        height: 800px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 24px;
+        border-top: 1px dashed #ddd;
+        border-bottom: 1px dashed #ddd;
+      }
+
+      .target-section {
+        margin: 60px 0 40px 0;
+        padding: 30px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        position: relative;
+      }
+
+      .target-section::before {
+        content: attr(data-position);
+        position: absolute;
+        top: -30px;
+        left: 20px;
+        background: #ff9800;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .target-section h2 {
+        color: #333;
+        margin-bottom: 15px;
+      }
+
+      .target-section p {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 15px;
+      }
+
+      .tooltip-target {
+        display: inline-block;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .tooltip-target:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+      }
+
+      /* Scroll Indicator */
+      .scroll-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: monospace;
+        backdrop-filter: blur(10px);
+        z-index: 1000;
+      }
+
+      /* Console Log */
+      .console-log {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        width: 300px;
+        max-height: 200px;
+        overflow-y: auto;
+        background: rgba(0, 0, 0, 0.9);
+        color: #0f0;
+        border-radius: 8px;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 11px;
+        backdrop-filter: blur(10px);
+        z-index: 999;
+        line-height: 1.4;
+      }
+
+      .console-log div {
+        padding: 2px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .console-log div:last-child {
+        border-bottom: none;
+      }
+
+      .console-log .timestamp {
+        color: #888;
+        margin-right: 5px;
+      }
+
+      /* Accessibility */
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Sticky Header -->
+      <div class="header">
+        <h1>🎯 setCustomScrollIntoView() Test Page</h1>
+        <p class="description">
+          This page demonstrates the <code>setCustomScrollIntoView()</code> API
+          for customizing scroll behavior when showing tooltips. Scroll down to
+          see multiple tooltip targets at different positions, then test
+          different scroll modes.
+        </p>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+          <button
+            class="control-button active"
+            onclick="setScrollMode('default')"
+            data-mode="default"
+          >
+            🎯 Default (Center)
+          </button>
+          <button
+            class="control-button"
+            onclick="setScrollMode('start')"
+            data-mode="start"
+          >
+            ⬆️ Scroll to Top
+          </button>
+          <button
+            class="control-button"
+            onclick="setScrollMode('end')"
+            data-mode="end"
+          >
+            ⬇️ Scroll to Bottom
+          </button>
+          <button
+            class="control-button"
+            onclick="setScrollMode('nearest')"
+            data-mode="nearest"
+          >
+            📍 Nearest
+          </button>
+          <button
+            class="control-button"
+            onclick="setScrollMode('disabled')"
+            data-mode="disabled"
+          >
+            🚫 No Scroll
+          </button>
+          <button
+            class="control-button"
+            onclick="setScrollMode('custom-smooth')"
+            data-mode="custom-smooth"
+          >
+            ✨ Custom Smooth
+          </button>
+        </div>
+
+        <div class="current-mode" id="current-mode">
+          <strong>Current Mode:</strong> Default (using smoothScroll with block:
+          'center')
+        </div>
+      </div>
+
+      <!-- Target Section 1 (Top) -->
+      <div class="target-section" data-position="TOP OF PAGE">
+        <h2>Target 1: Near Top</h2>
+        <p>
+          This target is near the top of the page. When a tooltip targets this
+          element, you can observe how different scroll modes behave.
+        </p>
+        <div class="tooltip-target" data-target="target-1">
+          🎯 Tooltip Target #1
+        </div>
+      </div>
+
+      <!-- Spacer -->
+      <div class="spacer">↓ Scroll down ↓</div>
+
+      <!-- Target Section 2 (Middle) -->
+      <div class="target-section" data-position="MIDDLE OF PAGE">
+        <h2>Target 2: Middle of Page</h2>
+        <p>
+          This target is in the middle of the page. Test how scroll modes handle
+          centering vs. minimal scrolling.
+        </p>
+        <div class="tooltip-target" data-target="target-2">
+          🎯 Tooltip Target #2
+        </div>
+      </div>
+
+      <!-- Spacer -->
+      <div class="spacer">↓ Keep scrolling ↓</div>
+
+      <!-- Target Section 3 (Bottom) -->
+      <div class="target-section" data-position="BOTTOM OF PAGE">
+        <h2>Target 3: Near Bottom</h2>
+        <p>
+          This target is near the bottom of the page. Perfect for testing edge
+          cases.
+        </p>
+        <div class="tooltip-target" data-target="target-3">
+          🎯 Tooltip Target #3
+        </div>
+      </div>
+
+      <!-- More spacer for bottom target -->
+      <div class="spacer">↓ More content ↓</div>
+
+      <!-- Target Section 4 (Very Bottom) -->
+      <div class="target-section" data-position="VERY BOTTOM">
+        <h2>Target 4: Very Bottom</h2>
+        <p>The last target on this page. How does scrolling behave here?</p>
+        <div class="tooltip-target" data-target="target-4">
+          🎯 Tooltip Target #4
+        </div>
+      </div>
+
+      <!-- End spacer -->
+      <div
+        style="
+          height: 500px;
+          text-align: center;
+          padding-top: 200px;
+          color: #999;
+        "
+      >
+        <p>🎉 End of page</p>
+        <p style="margin-top: 10px">Scroll back up to test more targets</p>
+      </div>
+    </div>
+
+    <!-- Scroll Position Indicator -->
+    <div class="scroll-indicator" id="scroll-indicator">Scroll: 0px</div>
+
+    <!-- Console Log -->
+    <div class="console-log" id="console-log"></div>
+
+    <!-- Usertour SDK Environment -->
+    <script>
+      window.USERTOURJS_ENV_VARS = {
+        WS_URI: "http://localhost:3000/",
+      };
+    </script>
+    <script type="module" src="/src/usertour.ts"></script>
+
+    <script>
+      // Console logging utility
+      function addLog(message) {
+        const logDiv = document.getElementById("console-log");
+        const time = new Date().toLocaleTimeString();
+        const entry = document.createElement("div");
+        entry.innerHTML = `<span class="timestamp">[${time}]</span>${message}`;
+        logDiv.appendChild(entry);
+
+        // Keep only last 10 entries
+        while (logDiv.children.length > 10) {
+          logDiv.removeChild(logDiv.firstChild);
+        }
+
+        // Auto scroll to bottom
+        logDiv.scrollTop = logDiv.scrollHeight;
+
+        // Also log to console
+        console.log(`[CustomScroll] ${message}`);
+      }
+
+      // Scroll position tracker
+      let scrollUpdateTimer;
+      window.addEventListener("scroll", () => {
+        clearTimeout(scrollUpdateTimer);
+        scrollUpdateTimer = setTimeout(() => {
+          const scrollY = Math.round(window.scrollY);
+          const scrollHeight = document.documentElement.scrollHeight;
+          const clientHeight = document.documentElement.clientHeight;
+          const maxScroll = scrollHeight - clientHeight;
+          const percentage = Math.round((scrollY / maxScroll) * 100);
+
+          document.getElementById(
+            "scroll-indicator",
+          ).textContent = `Scroll: ${scrollY}px (${percentage}%)`;
+        }, 50);
+      });
+
+      // Current scroll mode
+      let currentMode = "default";
+
+      // Set scroll mode
+      function setScrollMode(mode) {
+        currentMode = mode;
+
+        // Update button states
+        document.querySelectorAll(".control-button").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.mode === mode);
+        });
+
+        // Apply scroll mode
+        const modeDescriptions = {
+          default: "Default (using smoothScroll with block: 'center')",
+          start:
+            "Custom: scrollIntoView({ behavior: 'smooth', block: 'start' })",
+          end: "Custom: scrollIntoView({ behavior: 'smooth', block: 'end' })",
+          nearest:
+            "Custom: scrollIntoView({ behavior: 'smooth', block: 'nearest' })",
+          disabled: "Custom: Empty function (no scrolling)",
+          "custom-smooth": "Custom: Smooth scroll with 200ms delay animation",
+        };
+
+        document.getElementById(
+          "current-mode",
+        ).innerHTML = `<strong>Current Mode:</strong> ${modeDescriptions[mode]}`;
+
+        // Configure SDK
+        if (!window.usertour) {
+          addLog("❌ Usertour SDK not loaded yet");
+          return;
+        }
+
+        switch (mode) {
+          case "default":
+            usertour.setCustomScrollIntoView(null);
+            addLog("✓ Reset to default scroll behavior");
+            break;
+
+          case "start":
+            usertour.setCustomScrollIntoView((el) => {
+              el.scrollIntoView({ behavior: "smooth", block: "start" });
+              addLog(`📜 Scrolled ${el.dataset.target} to START`);
+            });
+            addLog("✓ Custom scroll: block='start'");
+            break;
+
+          case "end":
+            usertour.setCustomScrollIntoView((el) => {
+              el.scrollIntoView({ behavior: "smooth", block: "end" });
+              addLog(`📜 Scrolled ${el.dataset.target} to END`);
+            });
+            addLog("✓ Custom scroll: block='end'");
+            break;
+
+          case "nearest":
+            usertour.setCustomScrollIntoView((el) => {
+              el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              addLog(`📜 Scrolled ${el.dataset.target} to NEAREST`);
+            });
+            addLog("✓ Custom scroll: block='nearest'");
+            break;
+
+          case "disabled":
+            usertour.setCustomScrollIntoView(() => {
+              addLog("🚫 Scroll disabled (no action)");
+            });
+            addLog("✓ Scroll disabled");
+            break;
+
+          case "custom-smooth":
+            usertour.setCustomScrollIntoView((el) => {
+              addLog(`✨ Custom smooth scroll for ${el.dataset.target}...`);
+              // Custom animation: fade in indicator
+              const indicator = document.createElement("div");
+              indicator.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(33, 150, 243, 0.9);
+                color: white;
+                padding: 20px 40px;
+                border-radius: 8px;
+                font-size: 18px;
+                z-index: 10000;
+                animation: fadeInOut 1s ease-in-out;
+              `;
+              indicator.textContent = `Scrolling to ${el.dataset.target}...`;
+              document.body.appendChild(indicator);
+
+              setTimeout(() => {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                setTimeout(() => {
+                  indicator.remove();
+                  addLog(`✓ Completed scroll to ${el.dataset.target}`);
+                }, 1000);
+              }, 200);
+            });
+            addLog("✓ Custom smooth scroll with animation");
+            break;
+        }
+      }
+
+      // Add fadeInOut animation
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+          50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Initialize SDK
+      window.onload = async function () {
+        addLog("🚀 Initializing Custom Scroll Test Page...");
+
+        if (!window.usertour) {
+          addLog("❌ Usertour SDK not loaded!");
+          return;
+        }
+
+        addLog("✓ Usertour SDK loaded");
+
+        try {
+          usertour.init("cm76brgn0000899t48qc7jz5o");
+          addLog("✓ SDK initialized");
+
+          await usertour.identify("test-user-scroll-" + Date.now(), {
+            name: "Scroll Test User",
+            email: "scroll-test@example.com",
+          });
+          addLog("✓ User identified");
+
+          // Set default mode
+          setScrollMode("default");
+
+          addLog("🎉 Ready for testing!");
+          addLog("💡 Create a tooltip targeting .tooltip-target");
+        } catch (error) {
+          addLog(`❌ Failed to initialize: ${error.message}`);
+          console.error("Failed to initialize SDK:", error);
+        }
+      };
+
+      // Make targets clickable for manual testing
+      document.querySelectorAll(".tooltip-target").forEach((target) => {
+        target.addEventListener("click", function () {
+          const targetName = this.dataset.target;
+          addLog(`👆 Clicked ${targetName}`);
+
+          // Scroll to this element using current mode (for visual feedback)
+          this.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -23,6 +23,8 @@ interface ContentListLayoutProps {
   // Optional: custom filtered empty state messages
   filteredEmptyTitle?: string;
   filteredEmptyDescription?: string;
+  filteredEmptyDraftTitle?: string;
+  filteredEmptyDraftDescription?: string;
 }
 
 // Separate CreateButton component to avoid inline function recreation
@@ -44,7 +46,7 @@ const CreateButton = memo(({ onClick, disabled, text, id, className }: CreateBut
 CreateButton.displayName = 'CreateButton';
 
 // Content state type for switch-based rendering
-type ContentState = 'loading' | 'empty' | 'filteredEmpty' | 'data';
+type ContentState = 'loading' | 'empty' | 'filteredEmpty' | 'filteredEmptyDraft' | 'data';
 
 export const ContentListLayout = memo(
   ({
@@ -57,13 +59,17 @@ export const ContentListLayout = memo(
     buttonId,
     filteredEmptyTitle,
     filteredEmptyDescription,
+    filteredEmptyDraftTitle,
+    filteredEmptyDraftDescription,
   }: ContentListLayoutProps) => {
     const [open, setOpen] = useState(false);
-    const [, setSearchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { isViewOnly, environment } = useAppContext();
-    const { contents, refetch, isLoading, query, contentType } = useContentListContext();
+    const { contents, refetch, isLoading, contentType } = useContentListContext();
 
-    const isPublishedView = query?.published === true;
+    // Derive from URL so draft count is fetched on first paint when visiting ?published=1
+    // (context query may sync from URL in useEffect, causing one render where query.published is stale)
+    const isPublishedView = searchParams.get('published') === '1';
 
     // Only fetch draft count when in Published view to check if draft content exists
     const { totalCount: draftCount } = useContentCount({
@@ -71,6 +77,13 @@ export const ContentListLayout = memo(
       type: getQueryType(contentType),
       published: false,
       skip: !isPublishedView, // Skip if not in Published view
+    });
+
+    const { totalCount: publishedCount } = useContentCount({
+      environmentId: environment?.id,
+      type: getQueryType(contentType),
+      published: true,
+      skip: isPublishedView, // Skip if in Published view
     });
 
     const openCreateFormHandler = useCallback(() => {
@@ -93,10 +106,11 @@ export const ContentListLayout = memo(
       if (contentLength === 0) {
         // In Published view with draft content = filtered empty
         if (isPublishedView && draftCount > 0) return 'filteredEmpty';
+        if (!isPublishedView && publishedCount > 0) return 'filteredEmptyDraft';
         return 'empty';
       }
       return 'data';
-    }, [isLoading, contentLength, isPublishedView, draftCount]);
+    }, [isLoading, contentLength, isPublishedView, draftCount, publishedCount]);
 
     const hasContent = contentState === 'data';
 
@@ -104,8 +118,16 @@ export const ContentListLayout = memo(
     const actualFilteredEmptyTitle = filteredEmptyTitle ?? `No published ${title.toLowerCase()}`;
     const actualFilteredEmptyDescription =
       filteredEmptyDescription ?? 'Content exists but none are published yet.';
+    const actualFilteredEmptyDraftTitle =
+      filteredEmptyDraftTitle ?? `No draft ${title.toLowerCase()}`;
+    const actualFilteredEmptyDraftDescription =
+      filteredEmptyDraftDescription ?? 'Content exists but no drafts are available.';
 
     // Render main content based on state using switch
+    const handleGoToPublished = useCallback(() => {
+      setSearchParams({ published: '1' }, { replace: false });
+    }, [setSearchParams]);
+
     const renderContent = useMemo(() => {
       switch (contentState) {
         case 'loading':
@@ -132,6 +154,18 @@ export const ContentListLayout = memo(
               </Button>
             </EmptyPlaceholder>
           );
+        case 'filteredEmptyDraft':
+          return (
+            <EmptyPlaceholder
+              name={actualFilteredEmptyDraftTitle}
+              description={actualFilteredEmptyDraftDescription}
+            >
+              <Button onClick={handleGoToPublished} variant="outline">
+                Go to Published
+                <ArrowRightIcon className="ml-2 h-4 w-4" />
+              </Button>
+            </EmptyPlaceholder>
+          );
         case 'data':
           return <DataTable />;
       }
@@ -144,7 +178,10 @@ export const ContentListLayout = memo(
       createButtonText,
       actualFilteredEmptyTitle,
       actualFilteredEmptyDescription,
+      actualFilteredEmptyDraftTitle,
+      actualFilteredEmptyDraftDescription,
       handleGoToDraft,
+      handleGoToPublished,
     ]);
 
     return (

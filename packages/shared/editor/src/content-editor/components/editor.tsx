@@ -30,6 +30,7 @@ import { ContentEditorGroup } from './group';
 import { GroupDropZone } from './group-drop-zone';
 import { ContentEditorRenderColumn } from './render-column';
 import { ContentEditorSideBar } from './sidebar';
+import { cn } from '@usertour-packages/tailwind';
 
 // DndContext measuring config - constant outside component to avoid recreation
 const MEASURING_CONFIG = {
@@ -38,7 +39,13 @@ const MEASURING_CONFIG = {
   },
 };
 
-export const Editor = () => {
+interface EditorProps {
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export const Editor = (props: EditorProps) => {
+  const { className, style } = props;
   const [containerNode, setContainerNode] = useState<HTMLElement>();
   const [isOpenTop, setIsOpenTop] = useState(false);
   const [isOpenBottom, setIsOpenBottom] = useState(false);
@@ -107,7 +114,8 @@ export const Editor = () => {
 
   return (
     <div
-      className="relative"
+      className={cn('relative', className)}
+      style={style}
       ref={containerRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

@@ -3,6 +3,7 @@
 import { ContentEditorContextProvider } from '../contexts/content-editor-context';
 import { ContentEditorElementType, type ContentEditorProps } from '../types/editor';
 import { defaultInitialValue } from '../utils/helper';
+
 import { Editor } from './components/editor';
 
 export const ContentEditor = (props: ContentEditorProps) => {
@@ -22,7 +23,7 @@ export const ContentEditor = (props: ContentEditorProps) => {
       initialValue={initialValue}
       enabledElementTypes={enabledElementTypes}
     >
-      <Editor />
+      <Editor className={props.className} style={props.style} />
     </ContentEditorContextProvider>
   );
 };

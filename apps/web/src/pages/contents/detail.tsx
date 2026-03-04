@@ -1,32 +1,35 @@
+import { ContentDetailView } from './components/detail/content-detail-view';
 import { ContentTypeName } from '@usertour/types';
 import { useParams } from 'react-router-dom';
-import { BannerDetail } from './banner/detail';
-import { ChecklistDetail } from './checklist/detail';
-import { FlowDetail } from './components/detail/flow-detail';
-import { LauncherDetail } from './launcher/launcher-detail';
+
+const SUPPORTED_CONTENT_TYPES = [
+  ContentTypeName.FLOWS,
+  ContentTypeName.LAUNCHERS,
+  ContentTypeName.CHECKLISTS,
+  ContentTypeName.BANNERS,
+] as const;
 
 export const ContentDetail = () => {
   const { contentId = '', contentType, type } = useParams();
 
-  if (!type) {
+  if (!contentId || !type) {
     return <></>;
   }
 
-  if (contentType === ContentTypeName.FLOWS) {
-    return <FlowDetail contentId={contentId} type={type} />;
+  if (
+    !contentType ||
+    !SUPPORTED_CONTENT_TYPES.includes(contentType as (typeof SUPPORTED_CONTENT_TYPES)[number])
+  ) {
+    return <></>;
   }
 
-  if (contentType === ContentTypeName.LAUNCHERS) {
-    return <LauncherDetail contentId={contentId} type={type} />;
-  }
-
-  if (contentType === ContentTypeName.CHECKLISTS) {
-    return <ChecklistDetail contentId={contentId} type={type} />;
-  }
-
-  if (contentType === ContentTypeName.BANNERS) {
-    return <BannerDetail contentId={contentId} type={type} />;
-  }
+  return (
+    <ContentDetailView
+      contentId={contentId}
+      type={type}
+      contentType={contentType as ContentTypeName}
+    />
+  );
 };
 
 ContentDetail.displayName = 'ContentDetail';

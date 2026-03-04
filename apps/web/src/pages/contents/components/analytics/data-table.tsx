@@ -31,6 +31,7 @@ import { SessionActionDropdownMenu } from '@/components/molecules/session-action
 import { Button } from '@usertour-packages/button';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { ListSkeleton } from '@/components/molecules/skeleton';
+import { ContentDataType } from '@usertour/types';
 
 export const BizSessionsDataTable = () => {
   const [rowSelection, setRowSelection] = useState({});
@@ -118,6 +119,7 @@ export const BizSessionsDataTable = () => {
                   <TableCell key={`action-${row.id || Math.random()}`}>
                     <SessionActionDropdownMenu
                       session={row.original}
+                      showViewResponse={row.original.content?.type === ContentDataType.FLOW}
                       onDeleteSuccess={() => {
                         refetch();
                       }}
