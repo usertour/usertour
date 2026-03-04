@@ -3,7 +3,6 @@
 import type { ContentEditorImageElement } from '@usertour/types';
 import { memo } from 'react';
 
-import { Link } from '../../typography';
 import { DEFAULT_WIDTH, WIDTH_TYPES } from '../constants';
 import type { MarginStyleProps } from '../types';
 import { ensureDimensionWithDefaults, getWidthStyle, transformMarginStyle } from '../utils';
@@ -59,13 +58,14 @@ export const ImageSerialize = memo<ImageSerializeProps>((props) => {
     const decoratedUrl = linkDecorator ? linkDecorator(url) : url;
     const isNewTab = element.link.openType === 'new';
     return (
-      <Link
+      <a
         href={decoratedUrl}
         target={isNewTab ? '_blank' : '_parent'}
         rel={isNewTab ? 'noreferrer' : undefined}
+        className="contents"
       >
         {image}
-      </Link>
+      </a>
     );
   }
 
