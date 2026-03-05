@@ -14,6 +14,7 @@ import type {
   BizSession,
   BizEvent,
   ContentVersion,
+  ChecklistData,
   contentStartReason,
   contentEndReason,
 } from '@usertour/types';
@@ -96,6 +97,9 @@ const getCompletedAt = (session: BizSession, contentType?: ContentDataType) => {
 const getState = (session: BizSession, contentType?: ContentDataType) => {
   const { bizEvent } = session;
   if (!bizEvent || bizEvent.length === 0) {
+    if (contentType === ContentDataType.CHECKLIST) {
+      return 'Active';
+    }
     return 'In Progress';
   }
 
@@ -136,7 +140,7 @@ const getState = (session: BizSession, contentType?: ContentDataType) => {
     if (isDismissed) {
       return 'Dismissed';
     }
-    return 'In Progress';
+    return 'Active';
   }
 
   const isComplete = !!bizEvent.find((e) => e.event?.codeName === BizEvents.FLOW_COMPLETED);
@@ -295,6 +299,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       // Get all unique question names from version steps
       const questionHeaders = new Map<string, string>(); // cvid -> name
       const stepHeaders = new Map<string, string>(); // step number -> name
+      const checklistTaskHeaders = new Map<string, string>(); // task id -> task name
       if (version?.steps) {
         for (const step of version.steps) {
           // Collect questions
@@ -318,6 +323,13 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         }
       }
 
+      const checklistData = version?.data as ChecklistData | undefined;
+      if (content?.type === ContentDataType.CHECKLIST && checklistData?.items?.length) {
+        for (const [index, item] of checklistData.items.entries()) {
+          checklistTaskHeaders.set(item.id, `Task ${index + 1}. ${item.name}`);
+        }
+      }
+
       // Convert to CSV format
       const baseHeaders = ['User: ID', 'User: Name', 'User: Email'];
 
@@ -335,6 +347,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
       const isBannerContent = content?.type === ContentDataType.BANNER;
       const isLauncherContent = content?.type === ContentDataType.LAUNCHER;
+      const isChecklistContent = content?.type === ContentDataType.CHECKLIST;
       const isSimpleExport = isBannerContent || isLauncherContent;
 
       // Find max number of companies across all sessions
@@ -373,8 +386,12 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         ...userAttributeHeaders,
         ...companyHeaders,
         ...otherHeaders,
-        ...(isSimpleExport ? [] : Array.from(questionHeaders.values())),
-        ...(isSimpleExport ? [] : Array.from(stepHeaders.values())),
+        ...(isSimpleExport || isChecklistContent ? [] : Array.from(questionHeaders.values())),
+        ...(isSimpleExport
+          ? []
+          : isChecklistContent
+            ? Array.from(checklistTaskHeaders.values())
+            : Array.from(stepHeaders.values())),
       ];
 
       const rows = allSessions.map((session) => {
@@ -462,14 +479,25 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
             ];
 
         // Add question answers in the same order as headers
-        const questionAnswersRow = isSimpleExport
-          ? []
-          : Array.from(questionHeaders.keys()).map((cvid) => questionAnswers.get(cvid) || '');
+        const questionAnswersRow =
+          isSimpleExport || isChecklistContent
+            ? []
+            : Array.from(questionHeaders.keys()).map((cvid) => questionAnswers.get(cvid) || '');
 
         // Add step view counts in the same order as headers
+        const checklistCompletedTaskIds = new Set(
+          events
+            .filter((event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED)
+            .map((event) => String(event.data?.[EventAttributes.CHECKLIST_TASK_ID] ?? '')),
+        );
+
         const stepViewsRow = isSimpleExport
           ? []
-          : Array.from(stepHeaders.keys()).map((stepNumber) => stepViews.get(stepNumber) || 0);
+          : isChecklistContent
+            ? Array.from(checklistTaskHeaders.keys()).map((taskId) =>
+                checklistCompletedTaskIds.has(taskId) ? '✔' : '',
+              )
+            : Array.from(stepHeaders.keys()).map((stepNumber) => stepViews.get(stepNumber) || 0);
 
         return [
           ...baseRow,
