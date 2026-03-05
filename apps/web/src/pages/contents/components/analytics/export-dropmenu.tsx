@@ -357,9 +357,8 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       );
 
       // Generate company headers based on max companies
-      const companyHeaders = isSimpleExport
-        ? []
-        : maxCompanies <= 1
+      const companyHeaders =
+        maxCompanies <= 1
           ? ['Company: ID', 'Company: Name']
           : Array.from({ length: maxCompanies }, (_, i) => [
               `Company(${i + 1}): ID`,
@@ -451,12 +450,10 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
         // Get company info
         const companies = session.bizUser?.bizUsersOnCompany || [];
-        const companyValues = isSimpleExport
-          ? []
-          : Array.from({ length: maxCompanies }, (_, i) => {
-              const company = companies[i];
-              return [company?.bizCompany?.externalId || '', company?.bizCompany?.data?.name || ''];
-            }).flat();
+        const companyValues = Array.from({ length: maxCompanies }, (_, i) => {
+          const company = companies[i];
+          return [company?.bizCompany?.externalId || '', company?.bizCompany?.data?.name || ''];
+        }).flat();
 
         // Get common info
         const activatedCount = events.filter(
