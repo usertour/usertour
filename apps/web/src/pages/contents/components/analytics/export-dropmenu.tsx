@@ -45,6 +45,14 @@ const formatDate = (date: string | null | undefined) => {
   }
 };
 
+const formatLocalDateForFilename = (date: Date) => {
+  const pad = (value: number) => value.toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  return `${year}-${month}-${day}`;
+};
+
 const getLastActivityAt = (session: BizSession) => {
   if (!session.bizEvent || session.bizEvent.length === 0) {
     return session.createdAt;
@@ -172,17 +180,36 @@ const getQuestionAnswer = (answerEvent: BizEvent) => {
   }
 };
 
-const getFlowReasons = (events: BizEvent[]) => {
-  const startEvent = events.find((event) => event.event?.codeName === BizEvents.FLOW_STARTED);
-  const endEvent = events.find((event) => event.event?.codeName === BizEvents.FLOW_ENDED);
+const getSessionReasons = (events: BizEvent[], contentType?: ContentDataType) => {
+  if (contentType !== ContentDataType.FLOW && contentType !== ContentDataType.CHECKLIST) {
+    return {
+      startReason: '',
+      endReason: '',
+    };
+  }
+
+  const isFlow = contentType === ContentDataType.FLOW;
+  const startEvent = events.find((event) =>
+    isFlow
+      ? event.event?.codeName === BizEvents.FLOW_STARTED
+      : event.event?.codeName === BizEvents.CHECKLIST_STARTED,
+  );
+  const endEvent = events.find((event) =>
+    isFlow
+      ? event.event?.codeName === BizEvents.FLOW_ENDED
+      : event.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
+  );
+
+  const startReasonKey = isFlow
+    ? (startEvent?.data?.[EventAttributes.FLOW_START_REASON] as contentStartReason)
+    : (startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON] as contentStartReason);
+  const endReasonKey = isFlow
+    ? (endEvent?.data?.[EventAttributes.FLOW_END_REASON] as contentEndReason)
+    : (endEvent?.data?.[EventAttributes.CHECKLIST_END_REASON] as contentEndReason);
 
   return {
-    startReason:
-      flowReasonTitleMap[
-        startEvent?.data?.[EventAttributes.FLOW_START_REASON] as contentStartReason
-      ] || '',
-    endReason:
-      flowReasonTitleMap[endEvent?.data?.[EventAttributes.FLOW_END_REASON] as contentEndReason],
+    startReason: flowReasonTitleMap[startReasonKey] || startReasonKey || '',
+    endReason: flowReasonTitleMap[endReasonKey] || endReasonKey || '',
   };
 };
 
@@ -306,6 +333,10 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
             .map((attr) => `User: ${attr.displayName}`) || []
         : [];
 
+      const isBannerContent = content?.type === ContentDataType.BANNER;
+      const isLauncherContent = content?.type === ContentDataType.LAUNCHER;
+      const isSimpleExport = isBannerContent || isLauncherContent;
+
       // Find max number of companies across all sessions
       const maxCompanies = Math.max(
         ...allSessions.map((session) => session.bizUser?.bizUsersOnCompany?.length || 0),
@@ -313,32 +344,37 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       );
 
       // Generate company headers based on max companies
-      const companyHeaders =
-        maxCompanies <= 1
+      const companyHeaders = isSimpleExport
+        ? []
+        : maxCompanies <= 1
           ? ['Company: ID', 'Company: Name']
           : Array.from({ length: maxCompanies }, (_, i) => [
               `Company(${i + 1}): ID`,
               `Company(${i + 1}): Name`,
             ]).flat();
 
-      const otherHeaders = [
-        'Version',
-        'Started at (UTC)',
-        'Last activity at (UTC)',
-        'Completed at (UTC)',
-        'Progress',
-        'State',
-        'Start reason',
-        'End reason',
-      ];
+      const otherHeaders = isSimpleExport
+        ? ['Version', 'Started at (UTC)', ...(isLauncherContent ? ['Activated'] : [])]
+        : [
+            'Version',
+            'Started at (UTC)',
+            'Last activity at (UTC)',
+            'Completed at (UTC)',
+            'Progress',
+            'State',
+            ...((content?.type === ContentDataType.FLOW ||
+            content?.type === ContentDataType.CHECKLIST
+              ? ['Start reason', 'End reason']
+              : []) as string[]),
+          ];
 
       const headers = [
         ...baseHeaders,
         ...userAttributeHeaders,
         ...companyHeaders,
         ...otherHeaders,
-        ...Array.from(questionHeaders.values()),
-        ...Array.from(stepHeaders.values()),
+        ...(isSimpleExport ? [] : Array.from(questionHeaders.values())),
+        ...(isSimpleExport ? [] : Array.from(stepHeaders.values())),
       ];
 
       const rows = allSessions.map((session) => {
@@ -348,8 +384,10 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         const questionAnswers = new Map<string, string>(); // cvid -> answer
         const stepViews = new Map<string, number>(); // step number -> view count
 
-        // Get flow reasons
-        const { startReason, endReason } = getFlowReasons(events);
+        // Get content-type specific reasons (Flow/Checklist only)
+        const { startReason, endReason } = getSessionReasons(events, content?.type);
+        const includeReasonColumns =
+          content?.type === ContentDataType.FLOW || content?.type === ContentDataType.CHECKLIST;
 
         // Process events
         for (const event of events) {
@@ -396,32 +434,42 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
         // Get company info
         const companies = session.bizUser?.bizUsersOnCompany || [];
-        const companyValues = Array.from({ length: maxCompanies }, (_, i) => {
-          const company = companies[i];
-          return [company?.bizCompany?.externalId || '', company?.bizCompany?.data?.name || ''];
-        }).flat();
+        const companyValues = isSimpleExport
+          ? []
+          : Array.from({ length: maxCompanies }, (_, i) => {
+              const company = companies[i];
+              return [company?.bizCompany?.externalId || '', company?.bizCompany?.data?.name || ''];
+            }).flat();
 
         // Get common info
-        const commonInfo = [
-          `v${session.version?.sequence}`,
-          formatDate(session.createdAt),
-          formatDate(getLastActivityAt(session)),
-          formatDate(getCompletedAt(session, content?.type)),
-          `${session.progress}%`,
-          getState(session, content?.type),
-          startReason,
-          endReason,
-        ];
+        const activatedCount = events.filter(
+          (event) => event.event?.codeName === BizEvents.LAUNCHER_ACTIVATED,
+        ).length;
+        const commonInfo = isSimpleExport
+          ? [
+              `v${session.version?.sequence}`,
+              formatDate(session.createdAt),
+              ...(isLauncherContent ? [activatedCount] : []),
+            ]
+          : [
+              `v${session.version?.sequence}`,
+              formatDate(session.createdAt),
+              formatDate(getLastActivityAt(session)),
+              formatDate(getCompletedAt(session, content?.type)),
+              `${session.progress}%`,
+              getState(session, content?.type),
+              ...(includeReasonColumns ? [startReason, endReason] : []),
+            ];
 
         // Add question answers in the same order as headers
-        const questionAnswersRow = Array.from(questionHeaders.keys()).map(
-          (cvid) => questionAnswers.get(cvid) || '',
-        );
+        const questionAnswersRow = isSimpleExport
+          ? []
+          : Array.from(questionHeaders.keys()).map((cvid) => questionAnswers.get(cvid) || '');
 
         // Add step view counts in the same order as headers
-        const stepViewsRow = Array.from(stepHeaders.keys()).map(
-          (stepNumber) => stepViews.get(stepNumber) || 0,
-        );
+        const stepViewsRow = isSimpleExport
+          ? []
+          : Array.from(stepHeaders.keys()).map((stepNumber) => stepViews.get(stepNumber) || 0);
 
         return [
           ...baseRow,
@@ -442,12 +490,20 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
+      const safeContentName = Array.from((content?.name || 'content').trim())
+        .filter((char) => char.charCodeAt(0) >= 32)
+        .join('')
+        .trim()
+        .replace(/[<>:"/\\|?*]/g, '-')
+        .replace(/\s+/g, '-')
+        .slice(0, 40)
+        .replace(/-+$/g, '');
+      const fromDate = dateRange?.from ? formatLocalDateForFilename(dateRange.from) : 'all';
+      const toDate = dateRange?.to ? formatLocalDateForFilename(dateRange.to) : 'all';
       link.setAttribute('href', url);
       link.setAttribute(
         'download',
-        `sessions_${dateRange?.from?.toISOString().split('T')[0]}_${
-          dateRange?.to?.toISOString().split('T')[0]
-        }.csv`,
+        `Usertour-${safeContentName}-sessions-${fromDate}_to_${toDate}.csv`,
       );
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
