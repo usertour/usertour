@@ -20,7 +20,6 @@ import type {
 import { AttributeBizTypes, BizEvents, EventAttributes, flowReasonTitleMap } from '@usertour/types';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
 import { useToast } from '@usertour-packages/use-toast';
-import { format } from 'date-fns';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useAppContext } from '@/contexts/app-context';
@@ -32,7 +31,14 @@ const formatDate = (date: string | null | undefined) => {
   try {
     const parsedDate = new Date(date);
     if (Number.isNaN(parsedDate.getTime())) return '';
-    return format(parsedDate, 'yyyy-MM-dd HH:mm:ss');
+    const pad = (value: number) => value.toString().padStart(2, '0');
+    const year = parsedDate.getUTCFullYear();
+    const month = pad(parsedDate.getUTCMonth() + 1);
+    const day = pad(parsedDate.getUTCDate());
+    const hours = pad(parsedDate.getUTCHours());
+    const minutes = pad(parsedDate.getUTCMinutes());
+    const seconds = pad(parsedDate.getUTCSeconds());
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   } catch (error) {
     console.error('Error formatting date:', error);
     return '';
