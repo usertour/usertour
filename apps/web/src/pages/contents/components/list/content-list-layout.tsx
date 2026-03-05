@@ -9,7 +9,7 @@ import { ArrowRightIcon } from '@usertour-packages/icons';
 import { useContentCount } from '@usertour-packages/shared-hooks';
 import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
-import { useState, useCallback, useMemo, ReactNode, memo } from 'react';
+import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface ContentListLayoutProps {
@@ -72,14 +72,14 @@ export const ContentListLayout = memo(
     const isPublishedView = searchParams.get('published') === '1';
 
     // Only fetch draft count when in Published view to check if draft content exists
-    const { totalCount: draftCount } = useContentCount({
+    const { totalCount: draftCount, refetch: refetchDraftCount } = useContentCount({
       environmentId: environment?.id,
       type: getQueryType(contentType),
       published: false,
       skip: !isPublishedView, // Skip if not in Published view
     });
 
-    const { totalCount: publishedCount } = useContentCount({
+    const { totalCount: publishedCount, refetch: refetchPublishedCount } = useContentCount({
       environmentId: environment?.id,
       type: getQueryType(contentType),
       published: true,
@@ -111,6 +111,17 @@ export const ContentListLayout = memo(
       }
       return 'data';
     }, [isLoading, contentLength, isPublishedView, draftCount, publishedCount]);
+
+    // Refetch counts when content list length changes to ensure UI state is in sync
+    // This fixes the issue where unpublishing the last content shows Create button instead of Go to Draft
+    // Using contentLength instead of contents to avoid unnecessary refetches when only the array reference changes
+    useEffect(() => {
+      if (isPublishedView) {
+        refetchDraftCount();
+      } else {
+        refetchPublishedCount();
+      }
+    }, [contentLength, isPublishedView, refetchDraftCount, refetchPublishedCount]);
 
     const hasContent = contentState === 'data';
 
