@@ -60,6 +60,7 @@ const isCompletedEvent = (eventCodeName: string) => {
     BizEvents.FLOW_COMPLETED,
     BizEvents.CHECKLIST_COMPLETED,
     BizEvents.LAUNCHER_ACTIVATED,
+    BizEvents.BANNER_DISMISSED,
   ].includes(eventCodeName as BizEvents);
 };
 

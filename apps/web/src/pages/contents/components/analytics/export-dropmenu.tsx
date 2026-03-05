@@ -20,12 +20,12 @@ import type {
 import { AttributeBizTypes, BizEvents, EventAttributes, flowReasonTitleMap } from '@usertour/types';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
 import { useToast } from '@usertour-packages/use-toast';
-import { useEventListContext } from '@/contexts/event-list-context';
 import { format } from 'date-fns';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useAppContext } from '@/contexts/app-context';
 import { extractQuestionData } from '@usertour/helpers';
+import { ContentDataType } from '@usertour/types';
 // Utility functions
 const formatDate = (date: string | null | undefined) => {
   if (!date) return '';
@@ -48,39 +48,85 @@ const getLastActivityAt = (session: BizSession) => {
   }, session.createdAt);
 };
 
-const getCompletedAt = (session: BizSession, eventList: any[] | undefined) => {
-  const { bizEvent } = session;
-  if (!bizEvent || bizEvent.length === 0 || !eventList) {
+const getLatestEventCreatedAt = (events: BizEvent[], codeNames: BizEvents[]) => {
+  const matchedEvents = events.filter((event) =>
+    codeNames.includes(event.event?.codeName as BizEvents),
+  );
+  if (matchedEvents.length === 0) {
     return '';
   }
 
-  const completeEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_COMPLETED);
-  const completeBizEvent = bizEvent.find((e) => e.eventId === completeEvent?.id);
-
-  if (!completeBizEvent) {
-    return '';
-  }
-
-  return completeBizEvent.createdAt;
+  return matchedEvents.reduce((latest, event) => {
+    return new Date(event.createdAt) > new Date(latest) ? event.createdAt : latest;
+  }, matchedEvents[0].createdAt);
 };
 
-const getState = (session: BizSession, eventList: any[] | undefined) => {
+const getCompletedAt = (session: BizSession, contentType?: ContentDataType) => {
   const { bizEvent } = session;
-  if (!bizEvent || bizEvent.length === 0 || !eventList || eventList.length === 0) {
+  if (!bizEvent || bizEvent.length === 0) {
+    return '';
+  }
+
+  if (contentType === ContentDataType.CHECKLIST) {
+    return getLatestEventCreatedAt(bizEvent, [BizEvents.CHECKLIST_COMPLETED]);
+  }
+  if (contentType === ContentDataType.LAUNCHER) {
+    return getLatestEventCreatedAt(bizEvent, [BizEvents.LAUNCHER_ACTIVATED]);
+  }
+  if (contentType === ContentDataType.BANNER) {
+    return getLatestEventCreatedAt(bizEvent, [BizEvents.BANNER_DISMISSED]);
+  }
+  return getLatestEventCreatedAt(bizEvent, [BizEvents.FLOW_COMPLETED]);
+};
+
+const getState = (session: BizSession, contentType?: ContentDataType) => {
+  const { bizEvent } = session;
+  if (!bizEvent || bizEvent.length === 0) {
     return 'In Progress';
   }
 
-  const completeEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_COMPLETED);
-  const endedEvent = eventList.find((e) => e.codeName === BizEvents.FLOW_ENDED);
-
-  if (!completeEvent || !endedEvent) {
+  if (contentType === ContentDataType.BANNER) {
+    const isDismissed = !!bizEvent.find((e) => e.event?.codeName === BizEvents.BANNER_DISMISSED);
+    const isSeen = !!bizEvent.find((e) => e.event?.codeName === BizEvents.BANNER_SEEN);
+    if (isDismissed) {
+      return 'Dismissed';
+    }
+    if (isSeen) {
+      return 'Seen';
+    }
     return 'In Progress';
   }
-  const completeBizEvent = bizEvent.find((e) => e.eventId === completeEvent.id);
-  const endedBizEvent = bizEvent.find((e) => e.eventId === endedEvent.id);
 
-  const isComplete = !!completeBizEvent;
-  const isDismissed = !!endedBizEvent;
+  if (contentType === ContentDataType.LAUNCHER) {
+    const isDismissed = !!bizEvent.find((e) => e.event?.codeName === BizEvents.LAUNCHER_DISMISSED);
+    const isActivated = !!bizEvent.find((e) => e.event?.codeName === BizEvents.LAUNCHER_ACTIVATED);
+    const isSeen = !!bizEvent.find((e) => e.event?.codeName === BizEvents.LAUNCHER_SEEN);
+    if (isDismissed) {
+      return 'Dismissed';
+    }
+    if (isActivated) {
+      return 'Activated';
+    }
+    if (isSeen) {
+      return 'Seen';
+    }
+    return 'In Progress';
+  }
+
+  if (contentType === ContentDataType.CHECKLIST) {
+    const isComplete = !!bizEvent.find((e) => e.event?.codeName === BizEvents.CHECKLIST_COMPLETED);
+    const isDismissed = !!bizEvent.find((e) => e.event?.codeName === BizEvents.CHECKLIST_DISMISSED);
+    if (isComplete) {
+      return 'Completed';
+    }
+    if (isDismissed) {
+      return 'Dismissed';
+    }
+    return 'In Progress';
+  }
+
+  const isComplete = !!bizEvent.find((e) => e.event?.codeName === BizEvents.FLOW_COMPLETED);
+  const isDismissed = !!bizEvent.find((e) => e.event?.codeName === BizEvents.FLOW_ENDED);
 
   if (isComplete) {
     return 'Completed';
@@ -89,6 +135,18 @@ const getState = (session: BizSession, eventList: any[] | undefined) => {
     return 'Dismissed';
   }
   return 'In Progress';
+};
+
+const toCSVCell = (value: unknown) => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const normalizedValue = String(value).replace(/\r?\n/g, ' ');
+  if (/[",]/.test(normalizedValue)) {
+    return `"${normalizedValue.replace(/"/g, '""')}"`;
+  }
+  return normalizedValue;
 };
 
 const getQuestionAnswer = (answerEvent: BizEvent) => {
@@ -132,7 +190,6 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   const { totalCount } = useBizSessionContext();
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
-  const { eventList } = useEventListContext();
   const { content } = useContentDetailContext();
   const { attributeList } = useAttributeListContext();
   const { environment } = useAppContext();
@@ -187,7 +244,9 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           orderBy,
         });
 
-        const sessions = result.data?.listSessionsDetail?.edges?.map((e: any) => e.node) || [];
+        const sessions =
+          result.data?.listSessionsDetail?.edges?.map((edge: { node: BizSession }) => edge.node) ||
+          [];
         allSessions = [...allSessions, ...sessions];
 
         // Get the cursor for the next page
@@ -341,9 +400,9 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           `v${session.version?.sequence}`,
           formatDate(session.createdAt),
           formatDate(getLastActivityAt(session)),
-          formatDate(getCompletedAt(session, eventList)),
+          formatDate(getCompletedAt(session, content?.type)),
           `${session.progress}%`,
-          getState(session, eventList),
+          getState(session, content?.type),
           startReason,
           endReason,
         ];
@@ -368,7 +427,10 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         ];
       });
 
-      const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+      const csvContent = [
+        headers.map(toCSVCell).join(','),
+        ...rows.map((row) => row.map(toCSVCell).join(',')),
+      ].join('\n');
 
       // Create a Blob and download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -385,6 +447,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       toast({
         title: 'Export completed',
