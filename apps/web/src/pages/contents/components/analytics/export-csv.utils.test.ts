@@ -10,8 +10,9 @@ import {
   contentStartReason,
 } from '@usertour/types';
 
+const mockExtractQuestionData = jest.fn(() => [] as unknown[]);
 jest.mock('@usertour/helpers', () => ({
-  extractQuestionData: jest.fn(() => []),
+  extractQuestionData: () => mockExtractQuestionData(),
 }));
 
 jest.mock('@usertour-packages/shared-editor', () => ({
@@ -56,6 +57,11 @@ const createSession = (overrides: Partial<BizSession> = {}): BizSession =>
   }) as BizSession;
 
 describe('buildExportPayload', () => {
+  beforeEach(() => {
+    mockExtractQuestionData.mockReset();
+    mockExtractQuestionData.mockReturnValue([]);
+  });
+
   it('exports checklist task columns from CHECKLIST_TASK_COMPLETED and state as Active', () => {
     const checklistVersion = {
       sequence: 1,
@@ -188,5 +194,206 @@ describe('buildExportPayload', () => {
     expect(payload.headers).toContain('User: Role');
     const roleIndex = payload.headers.indexOf('User: Role');
     expect(payload.rows[0][roleIndex]).toBe('admin');
+  });
+
+  it('exports flow question columns and step seen counts', () => {
+    mockExtractQuestionData.mockReturnValue([
+      {
+        type: 'single-line-text',
+        data: {
+          cvid: 'q-1',
+          name: 'What is your role?',
+        },
+      },
+    ] as unknown[]);
+
+    const flowVersion = {
+      sequence: 4,
+      steps: [
+        { sequence: 0, name: 'Intro', data: {} },
+        { sequence: 1, name: 'Details', data: {} },
+      ],
+    } as unknown as ContentVersion;
+
+    const session = createSession({
+      bizEvent: [
+        createEvent(BizEvents.FLOW_STARTED, {
+          [EventAttributes.FLOW_START_REASON]: contentStartReason.START_FROM_PROGRAM,
+        }),
+        createEvent(BizEvents.QUESTION_ANSWERED, {
+          [EventAttributes.QUESTION_CVID]: 'q-1',
+          question_type: 'single-line-text',
+          text_answer: 'Admin',
+        }),
+        createEvent(BizEvents.FLOW_STEP_SEEN, {
+          [EventAttributes.FLOW_STEP_NUMBER]: 0,
+        }),
+        createEvent(BizEvents.FLOW_STEP_SEEN, {
+          [EventAttributes.FLOW_STEP_NUMBER]: 0,
+        }),
+        createEvent(BizEvents.FLOW_STEP_SEEN, {
+          [EventAttributes.FLOW_STEP_NUMBER]: 1,
+        }),
+      ],
+    });
+
+    const payload = buildExportPayload({
+      sessions: [session],
+      contentType: ContentDataType.FLOW,
+      contentName: 'Flow',
+      includeAllAttributes: false,
+      version: flowVersion,
+    });
+
+    const questionIndex = payload.headers.indexOf(
+      'Question (single-line-text): What is your role?',
+    );
+    const step1Index = payload.headers.indexOf('Step 1. Intro');
+    const step2Index = payload.headers.indexOf('Step 2. Details');
+
+    expect(questionIndex).toBeGreaterThan(-1);
+    expect(step1Index).toBeGreaterThan(-1);
+    expect(step2Index).toBeGreaterThan(-1);
+    expect(payload.rows[0][questionIndex]).toBe('Admin');
+    expect(payload.rows[0][step1Index]).toBe(2);
+    expect(payload.rows[0][step2Index]).toBe(1);
+  });
+
+  it('exports checklist state as Completed and Dismissed for corresponding events', () => {
+    const version = {
+      sequence: 1,
+      data: { items: [] },
+      steps: [],
+    } as unknown as ContentVersion;
+
+    const completedSession = createSession({
+      bizEvent: [createEvent(BizEvents.CHECKLIST_COMPLETED)],
+    });
+    const dismissedSession = createSession({
+      bizEvent: [createEvent(BizEvents.CHECKLIST_DISMISSED)],
+    });
+
+    const payload = buildExportPayload({
+      sessions: [completedSession, dismissedSession],
+      contentType: ContentDataType.CHECKLIST,
+      contentName: 'Checklist',
+      includeAllAttributes: false,
+      version,
+    });
+
+    const stateIndex = payload.headers.indexOf('State');
+    expect(payload.rows[0][stateIndex]).toBe('Completed');
+    expect(payload.rows[1][stateIndex]).toBe('Dismissed');
+  });
+
+  it('expands company columns when sessions contain multiple companies', () => {
+    const session = createSession({
+      bizUser: {
+        id: 'biz-user-2',
+        environmentId: 'env-1',
+        createdAt: '2026-03-05T10:27:41.000Z',
+        externalId: 'user-2',
+        data: { name: 'Bob', email: 'bob@example.com' },
+        bizUsersOnCompany: [
+          {
+            id: 'uoc-1',
+            bizCompanyId: 'company-1-id',
+            bizUserId: 'user-2',
+            data: {},
+            bizCompany: {
+              id: 'company-1-id',
+              environmentId: 'env-1',
+              createdAt: '2026-03-05T10:27:41.000Z',
+              externalId: 'company-1',
+              data: { name: 'ACME' },
+            },
+          },
+          {
+            id: 'uoc-2',
+            bizCompanyId: 'company-2-id',
+            bizUserId: 'user-2',
+            data: {},
+            bizCompany: {
+              id: 'company-2-id',
+              environmentId: 'env-1',
+              createdAt: '2026-03-05T10:27:41.000Z',
+              externalId: 'company-2',
+              data: { name: 'Globex' },
+            },
+          },
+        ],
+      },
+    });
+
+    const payload = buildExportPayload({
+      sessions: [session],
+      contentType: ContentDataType.BANNER,
+      contentName: 'Banner',
+      includeAllAttributes: false,
+      version: { sequence: 1, steps: [] } as unknown as ContentVersion,
+    });
+
+    expect(payload.headers).toContain('Company(1): ID');
+    expect(payload.headers).toContain('Company(1): Name');
+    expect(payload.headers).toContain('Company(2): ID');
+    expect(payload.headers).toContain('Company(2): Name');
+  });
+
+  it('formats exported timestamps in UTC', () => {
+    const session = createSession({
+      createdAt: '2026-03-05T02:03:04.000Z',
+      bizEvent: [createEvent(BizEvents.FLOW_COMPLETED)],
+    });
+
+    const payload = buildExportPayload({
+      sessions: [session],
+      contentType: ContentDataType.FLOW,
+      contentName: 'Flow',
+      includeAllAttributes: false,
+      version: { sequence: 1, steps: [] } as unknown as ContentVersion,
+    });
+
+    const startedAtIndex = payload.headers.indexOf('Started at (UTC)');
+    expect(payload.rows[0][startedAtIndex]).toBe('2026-03-05 02:03:04');
+  });
+
+  it('escapes csv special characters (comma, quote, newline)', () => {
+    const session = createSession({
+      bizUser: {
+        id: 'biz-user-3',
+        environmentId: 'env-1',
+        createdAt: '2026-03-05T10:27:41.000Z',
+        externalId: 'user-3',
+        data: {
+          name: 'Alice, "Ops"',
+          email: 'alice@example.com\nsecond-line',
+        },
+        bizUsersOnCompany: [],
+      },
+    });
+
+    const payload = buildExportPayload({
+      sessions: [session],
+      contentType: ContentDataType.BANNER,
+      contentName: 'Banner',
+      includeAllAttributes: false,
+      version: { sequence: 1, steps: [] } as unknown as ContentVersion,
+    });
+
+    expect(payload.csvContent).toContain('"Alice, ""Ops"""');
+    expect(payload.csvContent).toContain('alice@example.com second-line');
+  });
+
+  it('keeps header and row shape stable when version data is missing', () => {
+    const session = createSession();
+    const payload = buildExportPayload({
+      sessions: [session],
+      contentType: ContentDataType.FLOW,
+      contentName: 'Flow',
+      includeAllAttributes: false,
+      version: undefined,
+    });
+
+    expect(payload.headers.length).toBe(payload.rows[0].length);
   });
 });
