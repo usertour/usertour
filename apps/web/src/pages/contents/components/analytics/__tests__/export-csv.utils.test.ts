@@ -26,7 +26,7 @@ jest.mock('@usertour-packages/shared-editor', () => ({
   contentTypesConfig: [],
 }));
 
-import { buildExportPayload } from './export-csv.utils';
+import { buildExportPayload } from '../export-csv.utils';
 
 const createEvent = (codeName: BizEvents, data: Record<string, unknown> = {}): BizEvent =>
   ({
