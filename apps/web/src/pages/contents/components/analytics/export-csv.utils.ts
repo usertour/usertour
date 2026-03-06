@@ -37,22 +37,65 @@ type ExportPayload = {
   filename: string;
 };
 
+type ExportMode = {
+  isBannerContent: boolean;
+  isLauncherContent: boolean;
+  isChecklistContent: boolean;
+  isSimpleExport: boolean;
+};
+
+type HeaderContext = {
+  questionHeaders: Map<string, string>;
+  stepHeaders: Map<string, string>;
+  checklistTaskHeaders: Map<string, string>;
+};
+
+const BASE_HEADERS = ['User: ID', 'User: Name', 'User: Email'];
+const BASIC_COMPANY_HEADERS = ['Company: ID', 'Company: Name'];
+
+const getExportMode = (contentType?: ContentDataType): ExportMode => {
+  const isBannerContent = contentType === ContentDataType.BANNER;
+  const isLauncherContent = contentType === ContentDataType.LAUNCHER;
+  const isChecklistContent = contentType === ContentDataType.CHECKLIST;
+
+  return {
+    isBannerContent,
+    isLauncherContent,
+    isChecklistContent,
+    isSimpleExport: isBannerContent || isLauncherContent,
+  };
+};
+
+const getUserAttributes = (includeAllAttributes: boolean, attributeList?: Attribute[]) => {
+  if (!includeAllAttributes) {
+    return [];
+  }
+
+  return (
+    attributeList?.filter(
+      (attr) =>
+        attr.bizType === AttributeBizTypes.User &&
+        attr.codeName !== 'name' &&
+        attr.codeName !== 'email',
+    ) || []
+  );
+};
+
 const formatUTCDate = (date: string | null | undefined) => {
   if (!date) return '';
-  try {
-    const parsedDate = new Date(date);
-    if (Number.isNaN(parsedDate.getTime())) return '';
-    const pad = (value: number) => value.toString().padStart(2, '0');
-    const year = parsedDate.getUTCFullYear();
-    const month = pad(parsedDate.getUTCMonth() + 1);
-    const day = pad(parsedDate.getUTCDate());
-    const hours = pad(parsedDate.getUTCHours());
-    const minutes = pad(parsedDate.getUTCMinutes());
-    const seconds = pad(parsedDate.getUTCSeconds());
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  } catch (_) {
-    return '';
-  }
+
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) return '';
+
+  const pad = (value: number) => value.toString().padStart(2, '0');
+  const year = parsedDate.getUTCFullYear();
+  const month = pad(parsedDate.getUTCMonth() + 1);
+  const day = pad(parsedDate.getUTCDate());
+  const hours = pad(parsedDate.getUTCHours());
+  const minutes = pad(parsedDate.getUTCMinutes());
+  const seconds = pad(parsedDate.getUTCSeconds());
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
 const formatLocalDateForFilename = (date: Date) => {
@@ -60,6 +103,7 @@ const formatLocalDateForFilename = (date: Date) => {
   const year = date.getFullYear();
   const month = pad(date.getMonth() + 1);
   const day = pad(date.getDate());
+
   return `${year}-${month}-${day}`;
 };
 
@@ -74,10 +118,24 @@ const sanitizeContentName = (contentName?: string) => {
     .replace(/-+$/g, '');
 };
 
+const toCSVCell = (value: unknown) => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const normalizedValue = String(value).replace(/\r?\n/g, ' ');
+  if (/[",]/.test(normalizedValue)) {
+    return `"${normalizedValue.replace(/"/g, '""')}"`;
+  }
+
+  return normalizedValue;
+};
+
 const getLastActivityAt = (session: BizSession) => {
   if (!session.bizEvent || session.bizEvent.length === 0) {
     return session.createdAt;
   }
+
   return session.bizEvent.reduce((latest, event) => {
     return new Date(event.createdAt) > new Date(latest) ? event.createdAt : latest;
   }, session.createdAt);
@@ -87,53 +145,55 @@ const getLatestEventCreatedAt = (events: BizEvent[], codeNames: BizEvents[]) => 
   const matchedEvents = events.filter((event) =>
     codeNames.includes(event.event?.codeName as BizEvents),
   );
+
   if (matchedEvents.length === 0) {
     return '';
   }
+
   return matchedEvents.reduce((latest, event) => {
     return new Date(event.createdAt) > new Date(latest) ? event.createdAt : latest;
   }, matchedEvents[0].createdAt);
 };
 
 const getCompletedAt = (session: BizSession, contentType?: ContentDataType) => {
-  const { bizEvent } = session;
-  if (!bizEvent || bizEvent.length === 0) {
+  const events = session.bizEvent || [];
+  if (events.length === 0) {
     return '';
   }
 
   if (contentType === ContentDataType.CHECKLIST) {
-    return getLatestEventCreatedAt(bizEvent, [BizEvents.CHECKLIST_COMPLETED]);
+    return getLatestEventCreatedAt(events, [BizEvents.CHECKLIST_COMPLETED]);
   }
+
   if (contentType === ContentDataType.LAUNCHER) {
-    return getLatestEventCreatedAt(bizEvent, [BizEvents.LAUNCHER_ACTIVATED]);
+    return getLatestEventCreatedAt(events, [BizEvents.LAUNCHER_ACTIVATED]);
   }
+
   if (contentType === ContentDataType.BANNER) {
-    return getLatestEventCreatedAt(bizEvent, [BizEvents.BANNER_DISMISSED]);
+    return getLatestEventCreatedAt(events, [BizEvents.BANNER_DISMISSED]);
   }
-  return getLatestEventCreatedAt(bizEvent, [BizEvents.FLOW_COMPLETED]);
+
+  return getLatestEventCreatedAt(events, [BizEvents.FLOW_COMPLETED]);
 };
 
 const getState = (session: BizSession, contentType?: ContentDataType) => {
-  const { bizEvent } = session;
-  if (!bizEvent || bizEvent.length === 0) {
-    if (contentType === ContentDataType.CHECKLIST) {
-      return 'Active';
-    }
-    return 'In Progress';
+  const events = session.bizEvent || [];
+  if (events.length === 0) {
+    return contentType === ContentDataType.CHECKLIST ? 'Active' : 'In Progress';
   }
 
   if (contentType === ContentDataType.BANNER) {
-    const isDismissed = !!bizEvent.find((e) => e.event?.codeName === BizEvents.BANNER_DISMISSED);
-    const isSeen = !!bizEvent.find((e) => e.event?.codeName === BizEvents.BANNER_SEEN);
+    const isDismissed = !!events.find((e) => e.event?.codeName === BizEvents.BANNER_DISMISSED);
+    const isSeen = !!events.find((e) => e.event?.codeName === BizEvents.BANNER_SEEN);
     if (isDismissed) return 'Dismissed';
     if (isSeen) return 'Seen';
     return 'In Progress';
   }
 
   if (contentType === ContentDataType.LAUNCHER) {
-    const isDismissed = !!bizEvent.find((e) => e.event?.codeName === BizEvents.LAUNCHER_DISMISSED);
-    const isActivated = !!bizEvent.find((e) => e.event?.codeName === BizEvents.LAUNCHER_ACTIVATED);
-    const isSeen = !!bizEvent.find((e) => e.event?.codeName === BizEvents.LAUNCHER_SEEN);
+    const isDismissed = !!events.find((e) => e.event?.codeName === BizEvents.LAUNCHER_DISMISSED);
+    const isActivated = !!events.find((e) => e.event?.codeName === BizEvents.LAUNCHER_ACTIVATED);
+    const isSeen = !!events.find((e) => e.event?.codeName === BizEvents.LAUNCHER_SEEN);
     if (isDismissed) return 'Dismissed';
     if (isActivated) return 'Activated';
     if (isSeen) return 'Seen';
@@ -141,15 +201,15 @@ const getState = (session: BizSession, contentType?: ContentDataType) => {
   }
 
   if (contentType === ContentDataType.CHECKLIST) {
-    const isComplete = !!bizEvent.find((e) => e.event?.codeName === BizEvents.CHECKLIST_COMPLETED);
-    const isDismissed = !!bizEvent.find((e) => e.event?.codeName === BizEvents.CHECKLIST_DISMISSED);
+    const isComplete = !!events.find((e) => e.event?.codeName === BizEvents.CHECKLIST_COMPLETED);
+    const isDismissed = !!events.find((e) => e.event?.codeName === BizEvents.CHECKLIST_DISMISSED);
     if (isComplete) return 'Completed';
     if (isDismissed) return 'Dismissed';
     return 'Active';
   }
 
-  const isComplete = !!bizEvent.find((e) => e.event?.codeName === BizEvents.FLOW_COMPLETED);
-  const isDismissed = !!bizEvent.find((e) => e.event?.codeName === BizEvents.FLOW_ENDED);
+  const isComplete = !!events.find((e) => e.event?.codeName === BizEvents.FLOW_COMPLETED);
+  const isDismissed = !!events.find((e) => e.event?.codeName === BizEvents.FLOW_ENDED);
   if (isComplete) return 'Completed';
   if (isDismissed) return 'Dismissed';
   return 'In Progress';
@@ -202,32 +262,13 @@ const getSessionReasons = (events: BizEvent[], contentType?: ContentDataType) =>
   };
 };
 
-const toCSVCell = (value: unknown) => {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  const normalizedValue = String(value).replace(/\r?\n/g, ' ');
-  if (/[",]/.test(normalizedValue)) {
-    return `"${normalizedValue.replace(/"/g, '""')}"`;
-  }
-  return normalizedValue;
-};
-
-export const buildExportPayload = (args: BuildExportPayloadArgs): ExportPayload => {
-  const {
-    sessions,
-    contentType,
-    contentName,
-    includeAllAttributes,
-    attributeList,
-    version,
-    dateRange,
-  } = args;
-
-  const questionHeaders = new Map<string, string>(); // cvid -> name
-  const stepHeaders = new Map<string, string>(); // step number -> name
-  const checklistTaskHeaders = new Map<string, string>(); // task id -> task name
+const collectHeaderContext = (
+  contentType: ContentDataType | undefined,
+  version?: ContentVersion,
+) => {
+  const questionHeaders = new Map<string, string>();
+  const stepHeaders = new Map<string, string>();
+  const checklistTaskHeaders = new Map<string, string>();
 
   if (version?.steps) {
     for (const step of version.steps) {
@@ -257,84 +298,137 @@ export const buildExportPayload = (args: BuildExportPayloadArgs): ExportPayload 
     }
   }
 
-  const baseHeaders = ['User: ID', 'User: Name', 'User: Email'];
-  const userAttributeHeaders = includeAllAttributes
-    ? attributeList
-        ?.filter(
-          (attr) =>
-            attr.bizType === AttributeBizTypes.User &&
-            attr.codeName !== 'name' &&
-            attr.codeName !== 'email',
-        )
-        .map((attr) => `User: ${attr.displayName}`) || []
-    : [];
+  return {
+    questionHeaders,
+    stepHeaders,
+    checklistTaskHeaders,
+  };
+};
 
-  const isBannerContent = contentType === ContentDataType.BANNER;
-  const isLauncherContent = contentType === ContentDataType.LAUNCHER;
-  const isChecklistContent = contentType === ContentDataType.CHECKLIST;
-  const isSimpleExport = isBannerContent || isLauncherContent;
+const buildCompanyHeaders = (maxCompanies: number) => {
+  if (maxCompanies <= 1) {
+    return BASIC_COMPANY_HEADERS;
+  }
 
-  const maxCompanies = Math.max(
-    ...sessions.map((session) => session.bizUser?.bizUsersOnCompany?.length || 0),
-    1,
-  );
-  const companyHeaders =
-    maxCompanies <= 1
-      ? ['Company: ID', 'Company: Name']
-      : Array.from({ length: maxCompanies }, (_, i) => [
-          `Company(${i + 1}): ID`,
-          `Company(${i + 1}): Name`,
-        ]).flat();
+  return Array.from({ length: maxCompanies }, (_, i) => [
+    `Company(${i + 1}): ID`,
+    `Company(${i + 1}): Name`,
+  ]).flat();
+};
 
-  const otherHeaders = isSimpleExport
-    ? ['Version', 'Started at (UTC)', ...(isLauncherContent ? ['Activated'] : [])]
-    : [
-        'Version',
-        'Started at (UTC)',
-        'Last activity at (UTC)',
-        'Completed at (UTC)',
-        'Progress',
-        'State',
-        ...((contentType === ContentDataType.FLOW || contentType === ContentDataType.CHECKLIST
-          ? ['Start reason', 'End reason']
-          : []) as string[]),
-      ];
+const buildOtherHeaders = (contentType: ContentDataType | undefined, mode: ExportMode) => {
+  if (mode.isSimpleExport) {
+    return ['Version', 'Started at (UTC)', ...(mode.isLauncherContent ? ['Activated'] : [])];
+  }
 
-  const headers = [
-    ...baseHeaders,
+  return [
+    'Version',
+    'Started at (UTC)',
+    'Last activity at (UTC)',
+    'Completed at (UTC)',
+    'Progress',
+    'State',
+    ...((contentType === ContentDataType.FLOW || contentType === ContentDataType.CHECKLIST
+      ? ['Start reason', 'End reason']
+      : []) as string[]),
+  ];
+};
+
+const buildHeaders = (
+  userAttributes: Attribute[],
+  companyHeaders: string[],
+  otherHeaders: string[],
+  headerContext: HeaderContext,
+  mode: ExportMode,
+) => {
+  const userAttributeHeaders = userAttributes.map((attr) => `User: ${attr.displayName}`);
+
+  const questionColumns = mode.isSimpleExport
+    ? []
+    : mode.isChecklistContent
+      ? []
+      : Array.from(headerContext.questionHeaders.values());
+
+  const trailingColumns = mode.isSimpleExport
+    ? []
+    : mode.isChecklistContent
+      ? Array.from(headerContext.checklistTaskHeaders.values())
+      : Array.from(headerContext.stepHeaders.values());
+
+  return [
+    ...BASE_HEADERS,
     ...userAttributeHeaders,
     ...companyHeaders,
     ...otherHeaders,
-    ...(isSimpleExport || isChecklistContent ? [] : Array.from(questionHeaders.values())),
-    ...(isSimpleExport
-      ? []
-      : isChecklistContent
-        ? Array.from(checklistTaskHeaders.values())
-        : Array.from(stepHeaders.values())),
+    ...questionColumns,
+    ...trailingColumns,
   ];
+};
 
-  const rows = sessions.map((session) => {
+const buildQuestionAnswers = (events: BizEvent[]) => {
+  const questionAnswers = new Map<string, string>();
+
+  for (const event of events) {
+    if (event.data?.[EventAttributes.QUESTION_CVID]) {
+      questionAnswers.set(event.data[EventAttributes.QUESTION_CVID], getQuestionAnswer(event));
+    }
+  }
+
+  return questionAnswers;
+};
+
+const buildStepViews = (events: BizEvent[], stepHeaders: Map<string, string>) => {
+  const stepViews = new Map<string, number>();
+
+  for (const stepNumber of stepHeaders.keys()) {
+    const stepIndex = Number.parseInt(stepNumber, 10);
+    const viewCount = events.filter(
+      (event) =>
+        event.event?.codeName === BizEvents.FLOW_STEP_SEEN &&
+        event.data?.[EventAttributes.FLOW_STEP_NUMBER] === stepIndex,
+    ).length;
+
+    stepViews.set(stepNumber, viewCount);
+  }
+
+  return stepViews;
+};
+
+const buildChecklistCompletedTaskIds = (events: BizEvent[]) => {
+  return new Set(
+    events
+      .filter((event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED)
+      .map((event) => String(event.data?.[EventAttributes.CHECKLIST_TASK_ID] ?? '')),
+  );
+};
+
+const buildFilename = (contentName: string | undefined, dateRange?: DateRange) => {
+  const safeContentName = sanitizeContentName(contentName);
+  const fromDate = dateRange?.from ? formatLocalDateForFilename(dateRange.from) : 'all';
+  const toDate = dateRange?.to ? formatLocalDateForFilename(dateRange.to) : 'all';
+
+  return `Usertour-${safeContentName}-sessions-${fromDate}_to_${toDate}.csv`;
+};
+
+const buildRows = (args: {
+  sessions: BizSession[];
+  contentType?: ContentDataType;
+  userAttributes: Attribute[];
+  maxCompanies: number;
+  mode: ExportMode;
+  headerContext: HeaderContext;
+}) => {
+  const { sessions, contentType, userAttributes, maxCompanies, mode, headerContext } = args;
+
+  return sessions.map((session) => {
     const events = session.bizEvent || [];
-    const questionAnswers = new Map<string, string>();
-    const stepViews = new Map<string, number>();
     const { startReason, endReason } = getSessionReasons(events, contentType);
     const includeReasonColumns =
       contentType === ContentDataType.FLOW || contentType === ContentDataType.CHECKLIST;
 
-    for (const event of events) {
-      if (event.data?.[EventAttributes.QUESTION_CVID]) {
-        questionAnswers.set(event.data[EventAttributes.QUESTION_CVID], getQuestionAnswer(event));
-      }
-    }
-
-    for (const stepNumber of stepHeaders.keys()) {
-      const viewCount = events.filter(
-        (event) =>
-          event.event?.codeName === BizEvents.FLOW_STEP_SEEN &&
-          event.data?.[EventAttributes.FLOW_STEP_NUMBER] === Number.parseInt(stepNumber),
-      ).length;
-      stepViews.set(stepNumber, viewCount);
-    }
+    const questionAnswers = buildQuestionAnswers(events);
+    const stepViews = buildStepViews(events, headerContext.stepHeaders);
+    const checklistCompletedTaskIds = buildChecklistCompletedTaskIds(events);
 
     const baseRow = [
       session.bizUser?.externalId || '',
@@ -342,19 +436,10 @@ export const buildExportPayload = (args: BuildExportPayloadArgs): ExportPayload 
       session.bizUser?.data?.email || '',
     ];
 
-    const userAttributeValues = includeAllAttributes
-      ? attributeList
-          ?.filter(
-            (attr) =>
-              attr.bizType === AttributeBizTypes.User &&
-              attr.codeName !== 'name' &&
-              attr.codeName !== 'email',
-          )
-          .map((attr) => {
-            const value = session.bizUser?.data?.[attr.codeName];
-            return typeof value === 'string' ? value : JSON.stringify(value || '');
-          }) || []
-      : [];
+    const userAttributeValues = userAttributes.map((attr) => {
+      const value = session.bizUser?.data?.[attr.codeName];
+      return typeof value === 'string' ? value : JSON.stringify(value || '');
+    });
 
     const companies = session.bizUser?.bizUsersOnCompany || [];
     const companyValues = Array.from({ length: maxCompanies }, (_, i) => {
@@ -366,11 +451,11 @@ export const buildExportPayload = (args: BuildExportPayloadArgs): ExportPayload 
       (event) => event.event?.codeName === BizEvents.LAUNCHER_ACTIVATED,
     ).length;
 
-    const commonInfo = isSimpleExport
+    const commonInfo = mode.isSimpleExport
       ? [
           `v${session.version?.sequence}`,
           formatUTCDate(session.createdAt),
-          ...(isLauncherContent ? [activatedCount] : []),
+          ...(mode.isLauncherContent ? [activatedCount] : []),
         ]
       : [
           `v${session.version?.sequence}`,
@@ -382,24 +467,23 @@ export const buildExportPayload = (args: BuildExportPayloadArgs): ExportPayload 
           ...(includeReasonColumns ? [startReason, endReason] : []),
         ];
 
-    const questionAnswersRow =
-      isSimpleExport || isChecklistContent
-        ? []
-        : Array.from(questionHeaders.keys()).map((cvid) => questionAnswers.get(cvid) || '');
-
-    const checklistCompletedTaskIds = new Set(
-      events
-        .filter((event) => event.event?.codeName === BizEvents.CHECKLIST_TASK_COMPLETED)
-        .map((event) => String(event.data?.[EventAttributes.CHECKLIST_TASK_ID] ?? '')),
-    );
-
-    const stepViewsRow = isSimpleExport
+    const questionAnswersRow = mode.isSimpleExport
       ? []
-      : isChecklistContent
-        ? Array.from(checklistTaskHeaders.keys()).map((taskId) =>
+      : mode.isChecklistContent
+        ? []
+        : Array.from(headerContext.questionHeaders.keys()).map(
+            (cvid) => questionAnswers.get(cvid) || '',
+          );
+
+    const checklistOrStepRow = mode.isSimpleExport
+      ? []
+      : mode.isChecklistContent
+        ? Array.from(headerContext.checklistTaskHeaders.keys()).map((taskId) =>
             checklistCompletedTaskIds.has(taskId) ? '✔' : '',
           )
-        : Array.from(stepHeaders.keys()).map((stepNumber) => stepViews.get(stepNumber) || 0);
+        : Array.from(headerContext.stepHeaders.keys()).map(
+            (stepNumber) => stepViews.get(stepNumber) || 0,
+          );
 
     return [
       ...baseRow,
@@ -407,8 +491,42 @@ export const buildExportPayload = (args: BuildExportPayloadArgs): ExportPayload 
       ...companyValues,
       ...commonInfo,
       ...questionAnswersRow,
-      ...stepViewsRow,
+      ...checklistOrStepRow,
     ];
+  });
+};
+
+export const buildExportPayload = (args: BuildExportPayloadArgs): ExportPayload => {
+  const {
+    sessions,
+    contentType,
+    contentName,
+    includeAllAttributes,
+    attributeList,
+    version,
+    dateRange,
+  } = args;
+
+  const mode = getExportMode(contentType);
+  const userAttributes = getUserAttributes(includeAllAttributes, attributeList);
+  const headerContext = collectHeaderContext(contentType, version);
+
+  const maxCompanies = Math.max(
+    ...sessions.map((session) => session.bizUser?.bizUsersOnCompany?.length || 0),
+    1,
+  );
+
+  const companyHeaders = buildCompanyHeaders(maxCompanies);
+  const otherHeaders = buildOtherHeaders(contentType, mode);
+  const headers = buildHeaders(userAttributes, companyHeaders, otherHeaders, headerContext, mode);
+
+  const rows = buildRows({
+    sessions,
+    contentType,
+    userAttributes,
+    maxCompanies,
+    mode,
+    headerContext,
   });
 
   const csvContent = [
@@ -416,10 +534,7 @@ export const buildExportPayload = (args: BuildExportPayloadArgs): ExportPayload 
     ...rows.map((row) => row.map(toCSVCell).join(',')),
   ].join('\n');
 
-  const safeContentName = sanitizeContentName(contentName);
-  const fromDate = dateRange?.from ? formatLocalDateForFilename(dateRange.from) : 'all';
-  const toDate = dateRange?.to ? formatLocalDateForFilename(dateRange.to) : 'all';
-  const filename = `Usertour-${safeContentName}-sessions-${fromDate}_to_${toDate}.csv`;
+  const filename = buildFilename(contentName, dateRange);
 
   return {
     headers,
