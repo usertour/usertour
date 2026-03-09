@@ -93,8 +93,10 @@ import { Logger } from '@nestjs/common';
         connection: {
           host: configService.get('redis.host'),
           port: configService.get('redis.port'),
+          username: configService.get('redis.username') || undefined,
           family: 0,
           password: configService.get('redis.password') || undefined,
+          tls: configService.get('redis.tls') ? {} : undefined,
         },
       }),
       inject: [ConfigService],
