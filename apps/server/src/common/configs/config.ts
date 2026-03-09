@@ -40,6 +40,7 @@ const config: Config = {
     port: process.env.Redis_PORT ? Number.parseInt(process.env.Redis_PORT) : 6379,
     username: process.env.Redis_USER,
     password: process.env.Redis_PASS,
+    tls: process.env.Redis_TLS === 'true',
   },
   app: {
     homepageUrl: process.env.APP_HOMEPAGE_URL || '',
