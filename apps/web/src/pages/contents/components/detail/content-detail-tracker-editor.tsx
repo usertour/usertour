@@ -2,6 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useEventListContext } from '@/contexts/event-list-context';
+import { EventCreateDialog } from '@/components/events/event-create-dialog';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 import { useMutation } from '@apollo/client';
 import { updateContentVersion } from '@usertour-packages/gql';
@@ -37,9 +38,10 @@ const TrackerEventSelector = ({
   onEventSelect,
   disabled = false,
 }: TrackerEventSelectorProps) => {
-  const { eventList } = useEventListContext();
+  const { eventList, refetch } = useEventListContext();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
 
   const events: Event[] = eventList ?? [];
 
@@ -54,6 +56,14 @@ const TrackerEventSelector = ({
   const selectedEvent = useMemo(
     () => events.find((e) => e.id === selectedEventId),
     [events, selectedEventId],
+  );
+
+  const handleCreated = useCallback(
+    async (createdEvent: { id: string }) => {
+      await refetch();
+      onEventSelect(createdEvent.id);
+    },
+    [onEventSelect, refetch],
   );
 
   // If an event is selected, show the summary card
@@ -102,40 +112,56 @@ const TrackerEventSelector = ({
       <div className="relative">
         <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search events..."
+          placeholder="Find or create an event..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-8"
           disabled={disabled}
         />
       </div>
-      <div className="max-h-48 overflow-y-auto border rounded-md">
-        {filteredEvents.length === 0 ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            {events.length === 0 ? 'No events defined yet.' : 'No matching events found.'}
-          </div>
-        ) : (
-          filteredEvents.map((event) => (
-            <button
-              type="button"
-              key={event.id}
-              disabled={disabled}
-              className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground text-sm border-b last:border-b-0 flex items-center justify-between"
-              onClick={() => onEventSelect(event.id)}
-            >
-              <div className="min-w-0">
-                <div className="font-medium truncate">{event.displayName}</div>
-                <div className="text-xs text-muted-foreground font-mono truncate">
-                  {event.codeName}
+      <div className="border rounded-md overflow-hidden">
+        <div className="max-h-48 overflow-y-auto">
+          {filteredEvents.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              {events.length === 0 ? 'No events defined yet.' : 'No matching events found.'}
+            </div>
+          ) : (
+            filteredEvents.map((event) => (
+              <button
+                type="button"
+                key={event.id}
+                disabled={disabled}
+                className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground text-sm border-b last:border-b-0 flex items-center justify-between"
+                onClick={() => onEventSelect(event.id)}
+              >
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{event.displayName}</div>
+                  <div className="text-xs text-muted-foreground font-mono truncate">
+                    {event.codeName}
+                  </div>
                 </div>
-              </div>
-              {event.id === selectedEventId && (
-                <CheckIcon className="h-4 w-4 text-primary flex-none" />
-              )}
-            </button>
-          ))
+                {event.id === selectedEventId && (
+                  <CheckIcon className="h-4 w-4 text-primary flex-none" />
+                )}
+              </button>
+            ))
+          )}
+        </div>
+        {!disabled && (
+          <button
+            type="button"
+            className="w-full px-3 py-2 text-left text-sm border-t hover:bg-accent hover:text-accent-foreground flex items-center gap-2 cursor-pointer"
+            onClick={() => setOpenCreateDialog(true)}
+          >
+            <span className="font-medium">+ Create new event</span>
+          </button>
         )}
       </div>
+      <EventCreateDialog
+        isOpen={openCreateDialog}
+        onClose={() => setOpenCreateDialog(false)}
+        onCreated={handleCreated}
+      />
     </div>
   );
 };

@@ -1,8 +1,8 @@
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useAppContext } from '@/contexts/app-context';
+import { EventCreateDialog } from '@/components/events/event-create-dialog';
 import { Button } from '@usertour-packages/button';
 import { useState } from 'react';
-import { EventCreateForm } from './event-create-form';
 import { PlusIcon } from 'lucide-react';
 
 export const EventListHeader = () => {
@@ -29,7 +29,7 @@ export const EventListHeader = () => {
           </div>
         </div>
       </div>
-      <EventCreateForm isOpen={open} onClose={handleOnClose} />
+      <EventCreateDialog isOpen={open} onClose={handleOnClose} />
     </>
   );
 };
