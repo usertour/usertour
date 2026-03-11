@@ -17,15 +17,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { getContentVersion } from '@usertour-packages/gql';
-import { CircleIcon, RiFlashlightFill } from '@usertour-packages/icons';
-import {
-  Content,
-  ContentDataType,
-  ContentVersion,
-  RulesCondition,
-  Step,
-  Theme,
-} from '@usertour/types';
+import { CircleIcon } from '@usertour-packages/icons';
+import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -37,6 +30,7 @@ import {
   EmptyContentPreview,
   FlowPreview,
   LauncherPreview,
+  TrackerPreview,
 } from '../shared/content-preview';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
@@ -177,31 +171,7 @@ const ContentPreview = ({
   }
 
   if (type === ContentDataType.TRACKER && currentVersion) {
-    const versionData =
-      typeof currentVersion.data === 'string'
-        ? JSON.parse(currentVersion.data)
-        : currentVersion.data;
-    const hasEvent = !!versionData?.eventId;
-    const config = currentVersion.config as { autoStartRules?: RulesCondition[] } | undefined;
-    const conditionCount = config?.autoStartRules?.length ?? 0;
-
-    return (
-      <div className="flex flex-col items-center justify-center h-full w-full gap-3 px-6">
-        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-          <RiFlashlightFill className="w-5 h-5 text-primary" />
-        </div>
-        <div className="flex flex-col items-center gap-1 text-center">
-          <span className="text-sm font-medium text-foreground">
-            {hasEvent ? 'Event configured' : 'No event selected'}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {conditionCount > 0
-              ? `${conditionCount} trigger condition${conditionCount > 1 ? 's' : ''}`
-              : 'No trigger conditions'}
-          </span>
-        </div>
-      </div>
-    );
+    return <TrackerPreview currentVersion={currentVersion} />;
   }
 
   // Only show empty state when not loading and truly no data

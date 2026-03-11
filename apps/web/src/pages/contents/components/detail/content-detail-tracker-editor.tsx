@@ -1,9 +1,10 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
+import { useEventListContext } from '@/contexts/event-list-context';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
-import { useMutation, useQuery } from '@apollo/client';
-import { listEvents, updateContentVersion } from '@usertour-packages/gql';
+import { useMutation } from '@apollo/client';
+import { updateContentVersion } from '@usertour-packages/gql';
 import { isVersionPublished } from '@/utils/content';
 import { createContentVersion } from '@usertour-packages/gql';
 import { buildConfig, getErrorMessage } from '@usertour/helpers';
@@ -36,15 +37,11 @@ const TrackerEventSelector = ({
   onEventSelect,
   disabled = false,
 }: TrackerEventSelectorProps) => {
-  const { project } = useAppContext();
-  const { data } = useQuery(listEvents, {
-    variables: { projectId: project?.id },
-    skip: !project?.id,
-  });
+  const { eventList } = useEventListContext();
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  const events: Event[] = data?.listEvents ?? [];
+  const events: Event[] = eventList ?? [];
 
   const filteredEvents = useMemo(() => {
     if (!searchQuery) return events;
@@ -228,9 +225,9 @@ export const ContentDetailTrackerEditor = () => {
   if (!version || !content) return null;
 
   return (
-    <div className="flex flex-row space-x-8 justify-center max-w-6xl mx-auto w-full">
+    <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto w-full items-start">
       {/* Left panel: Conditions */}
-      <div className="flex flex-col space-y-6 flex-1 min-w-0">
+      <div className="flex flex-col space-y-6 flex-none w-[420px]">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-1">
@@ -279,7 +276,7 @@ export const ContentDetailTrackerEditor = () => {
       </div>
 
       {/* Right panel: Event Selection */}
-      <div className="flex flex-col space-y-6 flex-1 min-w-0">
+      <div className="flex flex-col space-y-6 flex-1 min-w-0 max-w-[560px]">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-1">

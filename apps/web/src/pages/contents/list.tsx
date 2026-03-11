@@ -1,5 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
 import { ContentListProvider } from '@/contexts/content-list-context';
+import { EventListProvider } from '@/contexts/event-list-context';
 import { ThemeListProvider } from '@/contexts/theme-list-context';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
@@ -146,12 +147,14 @@ export const ContentList = () => {
       contentType={contentType}
     >
       <ThemeListProvider projectId={project?.id}>
-        <ContentListSidebar title={config.title} />
-        <ScrollArea className="h-full w-full">
-          <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
-            <ContentListLayout {...config} />
-          </div>
-        </ScrollArea>
+        <EventListProvider projectId={project?.id}>
+          <ContentListSidebar title={config.title} />
+          <ScrollArea className="h-full w-full">
+            <div className="flex space-y-4 p-8 lg:pt-0 lg:pl-0">
+              <ContentListLayout {...config} />
+            </div>
+          </ScrollArea>
+        </EventListProvider>
       </ThemeListProvider>
     </ContentListProvider>
   );
