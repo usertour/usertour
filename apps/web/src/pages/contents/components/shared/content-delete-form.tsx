@@ -13,13 +13,13 @@ import { Content, ContentDataType } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useCallback } from 'react';
+import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentDeleteFormProps {
   content: Content;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
-  name: string;
 }
 
 export const ContentDeleteForm = ({
@@ -27,11 +27,10 @@ export const ContentDeleteForm = ({
   open,
   onOpenChange,
   onSubmit,
-  name,
 }: ContentDeleteFormProps) => {
   const { invoke: deleteContent, loading } = useDeleteContentMutation();
   const { toast } = useToast();
-  const contentType = content.type || ContentDataType.FLOW;
+  const contentType = getContentTypeMeta(content.type || ContentDataType.FLOW).singular;
   const contentName = content.name;
 
   const handleDeleteSubmit = useCallback(async () => {
@@ -67,7 +66,7 @@ export const ContentDeleteForm = ({
       });
       onSubmit(false);
     }
-  }, [content?.id, contentType, name, deleteContent, toast, onSubmit, onOpenChange]);
+  }, [content?.id, contentType, deleteContent, toast, onSubmit, onOpenChange]);
 
   return (
     <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>

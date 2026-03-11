@@ -18,7 +18,6 @@ const CONTENT_TYPE_LOADING_MESSAGES: Record<ContentTypeName, string> = {
   [ContentTypeName.CHECKLISTS]: 'Loading checklist details...',
   [ContentTypeName.BANNERS]: 'Loading banner details...',
   [ContentTypeName.TRACKERS]: 'Loading content details...',
-  [ContentTypeName.EVENTS]: 'Loading content details...',
 };
 
 function getContentTypeDetailLoadingMessage(contentType: ContentTypeName): string {

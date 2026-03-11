@@ -6,6 +6,7 @@ import { ScrollArea } from '@usertour-packages/scroll-area';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
+import { ContentDataType } from '@usertour/types';
 import { ContentListLayout } from './components/list/content-list-layout';
 import { ContentListSidebar } from './components/shared/content-list-sidebar';
 import { ContentCreateForm } from './components/shared/content-create-form';
@@ -58,7 +59,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyDescription: 'You have not added any flows. Add one below.',
     createButtonText: 'Create Flow',
     createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm contentType="flow" isOpen={isOpen} onClose={onClose} />
+      <ContentCreateForm contentType={ContentDataType.FLOW} isOpen={isOpen} onClose={onClose} />
     ),
     buttonId: 'create-flow-button',
   },
@@ -75,7 +76,11 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyDescription: 'You have not added any checklists. Add one below.',
     createButtonText: 'Create Checklist',
     createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm contentType="checklist" isOpen={isOpen} onClose={onClose} />
+      <ContentCreateForm
+        contentType={ContentDataType.CHECKLIST}
+        isOpen={isOpen}
+        onClose={onClose}
+      />
     ),
   },
   launchers: {
@@ -91,7 +96,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyDescription: 'You have not added any launchers. Add one below.',
     createButtonText: 'Create Launcher',
     createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm contentType="launcher" isOpen={isOpen} onClose={onClose} />
+      <ContentCreateForm contentType={ContentDataType.LAUNCHER} isOpen={isOpen} onClose={onClose} />
     ),
   },
   banners: {
@@ -107,19 +112,19 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     emptyDescription: 'You have not added any banners. Add one below.',
     createButtonText: 'Create Banner',
     createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm contentType="banner" isOpen={isOpen} onClose={onClose} />
+      <ContentCreateForm contentType={ContentDataType.BANNER} isOpen={isOpen} onClose={onClose} />
     ),
   },
   trackers: {
-    title: 'Trackers',
+    title: 'Event trackers',
     description: (
       <ContentDescription text="Event trackers let you track business events when configured conditions are met. Perfect for monitoring user behavior and triggering analytics events." />
     ),
-    emptyTitle: 'No trackers added',
-    emptyDescription: 'You have not added any trackers. Add one below.',
-    createButtonText: 'Create Tracker',
+    emptyTitle: 'No event trackers added',
+    emptyDescription: 'You have not added any event trackers. Add one below.',
+    createButtonText: 'Create event tracker',
     createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm contentType="tracker" isOpen={isOpen} onClose={onClose} />
+      <ContentCreateForm contentType={ContentDataType.TRACKER} isOpen={isOpen} onClose={onClose} />
     ),
   },
 };

@@ -29,13 +29,12 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-
-export type ContentCreateFormContentType = 'flow' | 'checklist' | 'launcher' | 'banner' | 'tracker';
+import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentCreateFormProps {
   isOpen: boolean;
   onClose: (contentId?: string) => void;
-  contentType: ContentCreateFormContentType;
+  contentType: ContentDataType;
 }
 
 const formSchema = z.object({
@@ -49,35 +48,8 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CONTENT_TYPE_CONFIG: Record<
-  ContentCreateFormContentType,
-  {
-    contentDataType: ContentDataType;
-    builderPathSegment: string;
-    initialData?: unknown;
-  }
-> = {
-  flow: {
-    contentDataType: ContentDataType.FLOW,
-    builderPathSegment: 'flows',
-  },
-  checklist: {
-    contentDataType: ContentDataType.CHECKLIST,
-    builderPathSegment: 'checklists',
-    initialData: DEFAULT_CHECKLIST_DATA,
-  },
-  launcher: {
-    contentDataType: ContentDataType.LAUNCHER,
-    builderPathSegment: 'launchers',
-  },
-  banner: {
-    contentDataType: ContentDataType.BANNER,
-    builderPathSegment: 'banners',
-  },
-  tracker: {
-    contentDataType: ContentDataType.TRACKER,
-    builderPathSegment: 'trackers',
-  },
+const CONTENT_TYPE_INITIAL_DATA: Partial<Record<ContentDataType, unknown>> = {
+  [ContentDataType.CHECKLIST]: DEFAULT_CHECKLIST_DATA,
 };
 
 const defaultValues: Partial<FormValues> = {
@@ -91,15 +63,16 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const config = useMemo(() => CONTENT_TYPE_CONFIG[contentType], [contentType]);
+  const contentTypeMeta = useMemo(() => getContentTypeMeta(contentType), [contentType]);
+  const initialData = useMemo(() => CONTENT_TYPE_INITIAL_DATA[contentType], [contentType]);
 
   const copy = useMemo(
     () => ({
-      dialogTitle: `Create ${contentType}`,
-      namePlaceholder: `Enter ${contentType} name`,
-      createErrorMessage: `Create ${contentType} failed.`,
+      dialogTitle: `Create ${contentTypeMeta.singular}`,
+      namePlaceholder: `Enter ${contentTypeMeta.singular} name`,
+      createErrorMessage: `Create ${contentTypeMeta.singular} failed.`,
     }),
-    [contentType],
+    [contentTypeMeta],
   );
 
   const showError = (title: string) => {
@@ -125,8 +98,8 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
       const variables = {
         name,
         environmentId: environment?.id,
-        type: config.contentDataType,
-        ...(config.initialData != null && { data: config.initialData }),
+        type: contentTypeMeta.dataType,
+        ...(initialData != null && { data: initialData }),
       };
       const ret = await createContentMutation({ variables });
       if (!ret.data?.createContent?.id) {
@@ -138,12 +111,11 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
         showError(copy.createErrorMessage);
         return;
       }
-      // Tracker has no builder - navigate to detail page instead
-      if (contentType === 'tracker') {
-        const path = `/env/${content.environmentId ?? ''}/${config.builderPathSegment}/${content.id}/detail`;
+      if (!contentTypeMeta.hasBuilder) {
+        const path = `/env/${content.environmentId ?? ''}/${contentTypeMeta.builderPathSegment}/${content.id}/detail`;
         navigate(path);
       } else {
-        const path = `/env/${content.environmentId ?? ''}/${config.builderPathSegment}/${content.id}/builder/${content.editedVersionId}`;
+        const path = `/env/${content.environmentId ?? ''}/${contentTypeMeta.builderPathSegment}/${content.id}/builder/${content.editedVersionId}`;
         navigate(path);
       }
     } catch (error) {
@@ -153,8 +125,8 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
     }
   };
 
-  const submitButtonId = contentType === 'flow' ? 'create-flow-submit' : undefined;
-  const nameInputId = contentType === 'flow' ? 'flow-name-input' : undefined;
+  const submitButtonId = contentType === ContentDataType.FLOW ? 'create-flow-submit' : undefined;
+  const nameInputId = contentType === ContentDataType.FLOW ? 'flow-name-input' : undefined;
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>

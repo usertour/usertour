@@ -56,7 +56,7 @@ const navigations = [
     icon: BannerIcon,
   },
   {
-    name: 'Trackers',
+    name: 'Event trackers',
     href: '/trackers',
     contentType: 'trackers',
     routeIds: ['trackers'],
