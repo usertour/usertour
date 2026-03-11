@@ -17,7 +17,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { getContentVersion } from '@usertour-packages/gql';
-import { CircleIcon, FlashlightIcon } from '@usertour-packages/icons';
+import { CircleIcon, RiFlashlightFill } from '@usertour-packages/icons';
 import {
   Content,
   ContentDataType,
@@ -188,7 +188,7 @@ const ContentPreview = ({
     return (
       <div className="flex flex-col items-center justify-center h-full w-full gap-3 px-6">
         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-          <FlashlightIcon className="w-5 h-5 text-primary" />
+          <RiFlashlightFill className="w-5 h-5 text-primary" />
         </div>
         <div className="flex flex-col items-center gap-1 text-center">
           <span className="text-sm font-medium text-foreground">
