@@ -14,6 +14,8 @@ import {
   ChecklistTaskCompletedHandler,
   AddLauncherHandler,
   RemoveLauncherHandler,
+  AddTrackerHandler,
+  RemoveTrackerHandler,
   TrackClientConditionHandler,
   UntrackClientConditionHandler,
   StartConditionWaitTimerHandler,
@@ -44,6 +46,8 @@ export class ServerMessageHandlerManager {
     this.registerHandler(new ChecklistTaskCompletedHandler());
     this.registerHandler(new AddLauncherHandler());
     this.registerHandler(new RemoveLauncherHandler());
+    this.registerHandler(new AddTrackerHandler());
+    this.registerHandler(new RemoveTrackerHandler());
     this.registerHandler(new TrackClientConditionHandler());
     this.registerHandler(new UntrackClientConditionHandler());
     this.registerHandler(new StartConditionWaitTimerHandler());

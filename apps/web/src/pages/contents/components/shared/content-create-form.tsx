@@ -30,7 +30,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
-export type ContentCreateFormContentType = 'flow' | 'checklist' | 'launcher' | 'banner';
+export type ContentCreateFormContentType = 'flow' | 'checklist' | 'launcher' | 'banner' | 'tracker';
 
 interface ContentCreateFormProps {
   isOpen: boolean;
@@ -73,6 +73,10 @@ const CONTENT_TYPE_CONFIG: Record<
   banner: {
     contentDataType: ContentDataType.BANNER,
     builderPathSegment: 'banners',
+  },
+  tracker: {
+    contentDataType: ContentDataType.TRACKER,
+    builderPathSegment: 'trackers',
   },
 };
 
@@ -134,8 +138,14 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
         showError(copy.createErrorMessage);
         return;
       }
-      const path = `/env/${content.environmentId ?? ''}/${config.builderPathSegment}/${content.id}/builder/${content.editedVersionId}`;
-      navigate(path);
+      // Tracker has no builder - navigate to detail page instead
+      if (contentType === 'tracker') {
+        const path = `/env/${content.environmentId ?? ''}/${config.builderPathSegment}/${content.id}/detail`;
+        navigate(path);
+      } else {
+        const path = `/env/${content.environmentId ?? ''}/${config.builderPathSegment}/${content.id}/builder/${content.editedVersionId}`;
+        navigate(path);
+      }
     } catch (error) {
       showError(getErrorMessage(error));
     } finally {

@@ -109,6 +109,18 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
       <ContentCreateForm contentType="banner" isOpen={isOpen} onClose={onClose} />
     ),
   },
+  trackers: {
+    title: 'Trackers',
+    description: (
+      <ContentDescription text="Event trackers let you track business events when configured conditions are met. Perfect for monitoring user behavior and triggering analytics events." />
+    ),
+    emptyTitle: 'No trackers added',
+    emptyDescription: 'You have not added any trackers. Add one below.',
+    createButtonText: 'Create Tracker',
+    createForm: ({ isOpen, onClose }) => (
+      <ContentCreateForm contentType="tracker" isOpen={isOpen} onClose={onClose} />
+    ),
+  },
 };
 
 // Support 'content' as alias for 'flows'

@@ -361,7 +361,11 @@ export class SocketOperationService {
 
     // Update socket data
     const updateData: Partial<SocketData> =
-      contentType === ContentDataType.LAUNCHER ? { launcherSessions: updatedSessions } : {};
+      contentType === ContentDataType.LAUNCHER
+        ? { launcherSessions: updatedSessions }
+        : contentType === ContentDataType.TRACKER
+          ? { trackerSessions: updatedSessions }
+          : {};
 
     return await this.socketDataService.set(
       socket,
@@ -410,7 +414,11 @@ export class SocketOperationService {
 
     // Update socket data with processed sessions and conditions
     const updateData: Partial<SocketData> =
-      contentType === ContentDataType.LAUNCHER ? { launcherSessions: updatedSessions } : {};
+      contentType === ContentDataType.LAUNCHER
+        ? { launcherSessions: updatedSessions }
+        : contentType === ContentDataType.TRACKER
+          ? { trackerSessions: updatedSessions }
+          : {};
 
     return await this.socketDataService.set(
       socket,
@@ -606,6 +614,13 @@ export class SocketOperationService {
         ]);
         return { addedSessions, removedContentIds };
       }
+      case ContentDataType.TRACKER: {
+        const [addedSessions, removedContentIds] = await Promise.all([
+          this.socketParallelService.addTrackers(socket, sessionsToAdd),
+          this.socketParallelService.removeTrackers(socket, contentIdsToRemove),
+        ]);
+        return { addedSessions, removedContentIds };
+      }
       default:
         this.logger.warn(`Unsupported content type for emitBatchSessions: ${contentType}`);
         return { addedSessions: [], removedContentIds: [] };
@@ -640,6 +655,10 @@ export class SocketOperationService {
 
     if (contentType === ContentDataType.LAUNCHER) {
       return await this.socketEmitterService.removeLauncherWithAck(socket, session.content.id);
+    }
+
+    if (contentType === ContentDataType.TRACKER) {
+      return await this.socketEmitterService.removeTrackerWithAck(socket, session.content.id);
     }
 
     this.logger.warn(`Unsupported content type: ${contentType}`);

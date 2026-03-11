@@ -10,6 +10,7 @@ import { ContentLocalizationList } from '../version/content-localization-list';
 import { ContentDetailContent } from './content-detail-content';
 import { ContentDetailHeader } from './content-detail-header';
 import { ContentDetailSettings } from './content-detail-settings';
+import { ContentDetailTrackerEditor } from './content-detail-tracker-editor';
 
 const CONTENT_TYPE_LOADING_MESSAGES: Record<ContentTypeName, string> = {
   [ContentTypeName.FLOWS]: 'Loading flow details...',
@@ -42,7 +43,12 @@ function ContentDetailViewInner(props: ContentDetailViewProps) {
   return (
     <>
       <ContentDetailHeader />
-      {type === 'detail' && (
+      {type === 'detail' && contentType === ContentTypeName.TRACKERS && (
+        <div className="p-14 mt-12">
+          <ContentDetailTrackerEditor />
+        </div>
+      )}
+      {type === 'detail' && contentType !== ContentTypeName.TRACKERS && (
         <div className="p-14 mt-12 ">
           <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto">
             <ContentDetailSettings />

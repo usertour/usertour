@@ -83,6 +83,7 @@ export const ALL_CONTENT_TYPES: ContentDataType[] = [
   ContentDataType.FLOW,
   ContentDataType.BANNER,
   ContentDataType.LAUNCHER,
+  ContentDataType.TRACKER,
 ];
 
 /**

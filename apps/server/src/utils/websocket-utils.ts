@@ -114,6 +114,9 @@ export const extractSessionsByContentType = (
   if (contentType === ContentDataType.LAUNCHER) {
     return socketData.launcherSessions ?? [];
   }
+  if (contentType === ContentDataType.TRACKER) {
+    return socketData.trackerSessions ?? [];
+  }
   return [];
 };
 

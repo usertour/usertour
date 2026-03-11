@@ -17,6 +17,7 @@ import {
   SocketAuthData,
   ActivateLauncherDto,
   DismissLauncherDto,
+  TrackTrackerEventDto,
   ContentDataType,
   ClientContext,
   contentEndReason,
@@ -528,6 +529,28 @@ export class WebSocketV2Service {
     };
     // Use cancelContent which now supports all content types including LAUNCHER
     return await this.contentOrchestratorService.cancelContent(dismissLauncherContext);
+  }
+
+  /**
+   * Track a tracker event
+   * Tracker does not use BizSession — directly writes BizEvent with contentId/versionId.
+   * @param context - The web socket context
+   * @param params - The tracker event parameters (contentId, versionId)
+   * @returns True if the event was tracked successfully
+   */
+  async trackTrackerEvent(
+    context: WebSocketContext,
+    params: TrackTrackerEventDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, externalUserId, clientContext } = socketData;
+    return await this.eventTrackingService.trackTrackerEvent({
+      environment,
+      externalUserId,
+      clientContext,
+      contentId: params.contentId,
+      versionId: params.versionId,
+    });
   }
 
   // ============================================================================

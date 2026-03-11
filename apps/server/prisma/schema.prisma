@@ -499,9 +499,12 @@ model BizEvent {
   bizUserId    String
   bizSession   BizSession? @relation(fields: [bizSessionId], references: [id])
   bizSessionId String?
+  contentId    String?
+  versionId    String?
 
   @@index([bizUserId])
   @@index([bizSessionId])
+  @@index([contentId])
 }
 
 model BizAnswer {

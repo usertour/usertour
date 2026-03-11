@@ -7,6 +7,7 @@ const SUPPORTED_CONTENT_TYPES = [
   ContentTypeName.LAUNCHERS,
   ContentTypeName.CHECKLISTS,
   ContentTypeName.BANNERS,
+  ContentTypeName.TRACKERS,
 ] as const;
 
 export const ContentDetail = () => {

@@ -122,6 +122,11 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
+      ClientMessageKind.TRACK_TRACKER_EVENT,
+      async (context, payload) => await this.service.trackTrackerEvent(context, payload),
+    );
+
+    register(
       ClientMessageKind.END_BATCH,
       async (context, _payload) => await this.service.endBatch(context),
     );

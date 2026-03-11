@@ -157,6 +157,28 @@ export class SocketEmitterService {
     });
   }
 
+  /**
+   * Add a tracker session
+   * @param socket - The socket
+   * @param session - The session to add
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async addTrackerWithAck(socket: Socket, session: CustomContentSession): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.ADD_TRACKER, session);
+  }
+
+  /**
+   * Remove a tracker
+   * @param socket - The socket
+   * @param contentId - The content id to remove
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async removeTrackerWithAck(socket: Socket, contentId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.REMOVE_TRACKER, {
+      contentId,
+    });
+  }
+
   // ============================================================================
   // Public API Methods - Flow Control
   // ============================================================================

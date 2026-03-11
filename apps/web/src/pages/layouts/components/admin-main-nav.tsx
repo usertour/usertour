@@ -8,6 +8,7 @@ import {
   LauncherIcon,
   SettingsIcon,
   BannerIcon,
+  FlashlightIcon,
 } from '@usertour-packages/icons';
 import { TooltipContent } from '@usertour-packages/tooltip';
 import { TooltipTrigger } from '@usertour-packages/tooltip';
@@ -53,6 +54,13 @@ const navigations = [
     contentType: 'banners',
     routeIds: ['banners'],
     icon: BannerIcon,
+  },
+  {
+    name: 'Trackers',
+    href: '/trackers',
+    contentType: 'trackers',
+    routeIds: ['trackers'],
+    icon: FlashlightIcon,
   },
   {
     name: 'Users',

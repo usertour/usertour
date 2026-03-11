@@ -101,39 +101,43 @@ export const ContentDetailSettings = () => {
 
   return (
     <div className="flex flex-col space-y-6 flex-none w-[420px]">
-      <ContentDetailAutoStartRules
-        defaultConditions={config.autoStartRules}
-        defaultEnabled={config.enabledAutoStartRules}
-        setting={config.autoStartRulesSetting}
-        name={getAutoStartRulesName(contentType)}
-        onDataChange={handleAutoStartRulesDataChange}
-        content={content}
-        type={ContentDetailAutoStartRulesType.START_RULES}
-        showIfCompleted={!isLauncherLike}
-        showFrequency={!isLauncherLike}
-        showAtLeast={contentType !== ContentDataType.CHECKLIST}
-        showWait={!isLauncherLike}
-        showPriority={!isLauncher}
-        disabled={isViewOnly}
-        featureTooltip={AutoStartTooltips(contentType)}
-      />
+      <div className="px-4 py-6 space-y-3 shadow bg-white rounded-lg">
+        <ContentDetailAutoStartRules
+          defaultConditions={config.autoStartRules}
+          defaultEnabled={config.enabledAutoStartRules}
+          setting={config.autoStartRulesSetting}
+          name={getAutoStartRulesName(contentType)}
+          onDataChange={handleAutoStartRulesDataChange}
+          content={content}
+          type={ContentDetailAutoStartRulesType.START_RULES}
+          showIfCompleted={!isLauncherLike}
+          showFrequency={!isLauncherLike}
+          showAtLeast={contentType !== ContentDataType.CHECKLIST}
+          showWait={!isLauncherLike}
+          showPriority={!isLauncher}
+          disabled={isViewOnly}
+          featureTooltip={AutoStartTooltips(contentType)}
+        />
+      </div>
 
       {enabledAutoStartRules && (
-        <ContentDetailAutoStartRules
-          defaultConditions={config.hideRules}
-          defaultEnabled={config.enabledHideRules}
-          setting={config.hideRulesSetting}
-          name={`Temporarily hide ${contentType} if...`}
-          onDataChange={handleHideRulesDataChange}
-          content={content}
-          type={ContentDetailAutoStartRulesType.HIDE_RULES}
-          showWait={false}
-          showFrequency={false}
-          showIfCompleted={false}
-          showPriority={false}
-          disabled={isViewOnly}
-          featureTooltip={HideRulesTooltips(contentType)}
-        />
+        <div className="px-4 py-6 space-y-3 shadow bg-white rounded-lg">
+          <ContentDetailAutoStartRules
+            defaultConditions={config.hideRules}
+            defaultEnabled={config.enabledHideRules}
+            setting={config.hideRulesSetting}
+            name={`Temporarily hide ${contentType} if...`}
+            onDataChange={handleHideRulesDataChange}
+            content={content}
+            type={ContentDetailAutoStartRulesType.HIDE_RULES}
+            showWait={false}
+            showFrequency={false}
+            showIfCompleted={false}
+            showPriority={false}
+            disabled={isViewOnly}
+            featureTooltip={HideRulesTooltips(contentType)}
+          />
+        </div>
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import { AnalyticsSteps } from '../analytics/analytics-steps';
 import { AnalyticsTasks } from '../analytics/analytics-tasks';
 import { AnalyticsViews } from '../analytics/analytics-views';
 import { AnalyticsQuestion } from '../analytics/analytics-question';
+import { AnalyticsTrackerUsers } from '../analytics/analytics-tracker-users';
 
 export const ContentDetailAnalytics = (props: { contentId: string }) => {
   const { contentId } = props;
@@ -20,6 +21,8 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
   if (!contentType) {
     return null;
   }
+
+  const isTracker = contentType === ContentDataType.TRACKER;
 
   return (
     <>
@@ -36,7 +39,8 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
                   <AnalyticsQuestion contentId={contentId} />
                 )}
                 {contentType === ContentDataType.CHECKLIST && <AnalyticsTasks />}
-                <AnalyticsSessions />
+                {isTracker && <AnalyticsTrackerUsers contentId={contentId} />}
+                {!isTracker && <AnalyticsSessions />}
               </div>
             </div>
           </EventListProvider>

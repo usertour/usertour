@@ -43,6 +43,8 @@ interface ContentDetailAutoStartRulesProps {
   showPriority?: boolean;
   showAtLeast?: boolean;
   disabled?: boolean;
+  filterItems?: string[];
+  showEnabledSwitch?: boolean;
 }
 
 export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesProps) => {
@@ -60,10 +62,13 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     showAtLeast = true,
     disabled = false,
     featureTooltip,
+    filterItems,
+    showEnabledSwitch = true,
   } = props;
 
   const [enabled, setEnabled] = useState(defaultEnabled);
   const [conditions, setConditions] = useState<RulesCondition[]>(deepClone(defaultConditions));
+  const effectiveEnabled = showEnabledSwitch ? enabled : true;
 
   // Sync internal state with props when they change
   useEffect(() => {
@@ -76,9 +81,9 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
 
   const updateSettings = useCallback(
     (updates: Partial<autoStartRulesSetting>) => {
-      onDataChange(enabled, conditions, { ...setting, ...updates });
+      onDataChange(effectiveEnabled, conditions, { ...setting, ...updates });
     },
-    [enabled, conditions, setting, onDataChange],
+    [effectiveEnabled, conditions, setting, onDataChange],
   );
 
   const handleDataChange = useCallback(
@@ -87,9 +92,9 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
 
       const newConditions = deepClone(conds);
       setConditions(newConditions);
-      onDataChange(enabled, newConditions, setting);
+      onDataChange(effectiveEnabled, newConditions, setting);
     },
-    [conditions, enabled, setting, onDataChange],
+    [conditions, effectiveEnabled, setting, onDataChange],
   );
 
   const handleEnabledChange = useCallback(
@@ -115,8 +120,8 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
   if (!environmentId) return null;
 
   return (
-    <div className="flex flex-col space-y-8">
-      <div className="flex-1 px-4 py-6 space-y-3 grow shadow bg-white rounded-lg">
+    <div className="space-y-3">
+      {showEnabledSwitch && (
         <div className="items-center flex flex-row space-x-1">
           <Switch
             id={id}
@@ -132,55 +137,54 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
             {featureTooltip}
           </QuestionTooltip>
         </div>
-        <div className="space-y-3">
-          {enabled && (
-            <Rules
-              onDataChange={handleDataChange}
-              defaultConditions={defaultConditions}
-              attributes={attributeList}
-              segments={segmentList}
-              contents={contents}
-              currentContent={content}
-              token={getAuthToken()}
-              disabled={disabled}
-              baseZIndex={WebZIndex.RULES}
-            />
-          )}
+      )}
+      {(showEnabledSwitch ? enabled : true) && (
+        <Rules
+          onDataChange={handleDataChange}
+          defaultConditions={defaultConditions}
+          attributes={attributeList}
+          segments={segmentList}
+          contents={contents}
+          currentContent={content}
+          token={getAuthToken()}
+          disabled={disabled}
+          baseZIndex={WebZIndex.RULES}
+          {...(filterItems ? { filterItems } : {})}
+        />
+      )}
 
-          {showWait && (
-            <RulesWait
-              defaultValue={setting.wait ?? 0}
-              onValueChange={(value) => updateSettings({ wait: value })}
-              disabled={disabled}
-              baseZIndex={WebZIndex.RULES}
-            />
-          )}
-          {showFrequency && (
-            <RulesFrequency
-              onChange={(frequency) => updateSettings({ frequency })}
-              defaultValue={setting.frequency}
-              contentType={contentType}
-              showAtLeast={showAtLeast}
-              disabled={disabled}
-            />
-          )}
-          {showIfCompleted && setting.frequency?.frequency !== Frequency.ONCE && (
-            <RulesIfCompleted
-              defaultValue={setting.startIfNotComplete ?? false}
-              contentType={contentType}
-              onCheckedChange={(checked) => updateSettings({ startIfNotComplete: checked })}
-              disabled={disabled}
-            />
-          )}
-          {showPriority && (
-            <RulesPriority
-              onChange={(priority) => updateSettings({ priority: priority as ContentPriority })}
-              defaltValue={setting.priority ?? ContentPriority.MEDIUM}
-              disabled={disabled}
-            />
-          )}
-        </div>
-      </div>
+      {showWait && (
+        <RulesWait
+          defaultValue={setting.wait ?? 0}
+          onValueChange={(value) => updateSettings({ wait: value })}
+          disabled={disabled}
+          baseZIndex={WebZIndex.RULES}
+        />
+      )}
+      {showFrequency && (
+        <RulesFrequency
+          onChange={(frequency) => updateSettings({ frequency })}
+          defaultValue={setting.frequency}
+          contentType={contentType}
+          showAtLeast={showAtLeast}
+          disabled={disabled}
+        />
+      )}
+      {showIfCompleted && setting.frequency?.frequency !== Frequency.ONCE && (
+        <RulesIfCompleted
+          defaultValue={setting.startIfNotComplete ?? false}
+          contentType={contentType}
+          onCheckedChange={(checked) => updateSettings({ startIfNotComplete: checked })}
+          disabled={disabled}
+        />
+      )}
+      {showPriority && (
+        <RulesPriority
+          onChange={(priority) => updateSettings({ priority: priority as ContentPriority })}
+          defaltValue={setting.priority ?? ContentPriority.MEDIUM}
+          disabled={disabled}
+        />
+      )}
     </div>
   );
 };

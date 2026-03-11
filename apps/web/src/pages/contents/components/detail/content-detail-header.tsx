@@ -16,6 +16,7 @@ import { ContentRenameForm } from '../shared/content-rename-form';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { isPublishedInAllEnvironments } from '@/utils/content';
 import { ContentDetailHeaderSkeleton } from './content-detail-header-skeleton';
+import { ContentDataType } from '@usertour/types';
 
 const navigations = [
   {
@@ -134,16 +135,18 @@ export const ContentDetailHeader = () => {
               </div>
             )}
             {/* <ContentOpenBuilder content={content} /> */}
-            <Button
-              type="button"
-              variant={'outline'}
-              onClick={() => openBuilder(content, contentType)}
-              className="flex-none"
-              disabled={isViewOnly || isSaving}
-            >
-              <EnterIcon className="mr-2" />
-              Edit In Builder
-            </Button>
+            {content.type !== ContentDataType.TRACKER && (
+              <Button
+                type="button"
+                variant={'outline'}
+                onClick={() => openBuilder(content, contentType)}
+                className="flex-none"
+                disabled={isViewOnly || isSaving}
+              >
+                <EnterIcon className="mr-2" />
+                Edit In Builder
+              </Button>
+            )}
             <Button
               disabled={isDisabled || isViewOnly || isSaving}
               onClick={() => {

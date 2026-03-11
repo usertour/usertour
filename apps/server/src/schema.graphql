@@ -830,6 +830,7 @@ type Query {
   querySessionDetail(sessionId: String!): BizSession!
   querySessionsByExternalId(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: SessionQuery!, skip: Int): BizSessionConnection!
   queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): TooltipTargetMissingResponse!
+  queryTrackerUsers(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): TrackerUserConnection!
   userEnvironments(projectId: String!): [Environment!]!
 }
 
@@ -1049,6 +1050,26 @@ input TooltipTargetMissingQuery {
 type TooltipTargetMissingResponse {
   sessions: BizSessionConnection!
   stepAnalytics: StepAnalytics!
+}
+
+type TrackerUser {
+  bizCompany: BizModel
+  bizUser: BizUser!
+  eventsCount: Int!
+  firstTrackedAt: DateTime!
+  id: String!
+  lastTrackedAt: DateTime!
+}
+
+type TrackerUserConnection {
+  edges: [TrackerUserEdge!]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type TrackerUserEdge {
+  cursor: String!
+  node: TrackerUser!
 }
 
 input UpdateAttributeInput {

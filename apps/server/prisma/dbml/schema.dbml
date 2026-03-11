@@ -478,6 +478,8 @@ Table BizEvent {
   bizUserId String [not null]
   bizSession BizSession
   bizSessionId String
+  contentId String
+  versionId String
 }
 
 Table BizAnswer {

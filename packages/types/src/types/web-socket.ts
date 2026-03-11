@@ -2,7 +2,7 @@ import { AttributeBizTypes, BizAttributeTypes } from './attribute';
 import { BannerData } from './banner';
 import { ChecklistData } from './checklist';
 import { Content, ContentDataType, Step } from './contents';
-import { RulesCondition } from './config';
+import { ContentConfigObject, RulesCondition } from './config';
 import { LauncherData } from './launcher';
 import { ClientContext, contentStartReason } from './sdk';
 import { Theme } from './theme';
@@ -63,6 +63,7 @@ export enum ClientMessageKind {
   FIRE_CONDITION_WAIT_TIMER = 'FireConditionWaitTimer',
   ACTIVATE_LAUNCHER = 'ActivateLauncher',
   DISMISS_LAUNCHER = 'DismissLauncher',
+  TRACK_TRACKER_EVENT = 'TrackTrackerEvent',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
   END_ALL_CONTENT = 'EndAllContent',
@@ -81,6 +82,8 @@ export enum ServerMessageKind {
   UNSET_BANNER_SESSION = 'UnsetBannerSession',
   ADD_LAUNCHER = 'AddLauncher',
   REMOVE_LAUNCHER = 'RemoveLauncher',
+  ADD_TRACKER = 'AddTracker',
+  REMOVE_TRACKER = 'RemoveTracker',
   FORCE_GO_TO_STEP = 'ForceGoToStep',
   TRACK_CLIENT_CONDITION = 'TrackClientCondition',
   UNTRACK_CLIENT_CONDITION = 'UntrackClientCondition',
@@ -234,6 +237,14 @@ export type FireConditionWaitTimerDto = {
 };
 
 /**
+ * Track tracker event request
+ */
+export type TrackTrackerEventDto = {
+  contentId: string;
+  versionId: string;
+};
+
+/**
  * Activate launcher request
  */
 export type ActivateLauncherDto = {
@@ -295,11 +306,13 @@ export type CustomContentSession = {
   currentStep?: Pick<Step, 'id' | 'cvid'>;
   version: {
     id: string;
+    config?: ContentConfigObject;
     steps?: SessionStep[];
     theme?: SessionTheme;
     checklist?: ChecklistData;
     launcher?: LauncherData;
     banner?: BannerData;
+    tracker?: { eventId: string };
   };
 };
 

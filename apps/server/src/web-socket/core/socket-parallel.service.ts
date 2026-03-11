@@ -199,4 +199,33 @@ export class SocketParallelService {
 
     return await this.executeParallelOperations(socket, operations, contentIds, 'removeLaunchers');
   }
+
+  // ============================================================================
+  // Public API Methods - Tracker Operations
+  // ============================================================================
+
+  /**
+   * Add multiple tracker sessions in parallel with acknowledgment
+   */
+  async addTrackers(
+    socket: Socket,
+    trackerSessions: CustomContentSession[],
+  ): Promise<CustomContentSession[]> {
+    const operations = trackerSessions.map(
+      (session) => () => this.socketEmitterService.addTrackerWithAck(socket, session),
+    );
+
+    return await this.executeParallelOperations(socket, operations, trackerSessions, 'addTrackers');
+  }
+
+  /**
+   * Remove multiple tracker sessions in parallel with acknowledgment
+   */
+  async removeTrackers(socket: Socket, contentIds: string[]): Promise<string[]> {
+    const operations = contentIds.map(
+      (contentId) => () => this.socketEmitterService.removeTrackerWithAck(socket, contentId),
+    );
+
+    return await this.executeParallelOperations(socket, operations, contentIds, 'removeTrackers');
+  }
 }
