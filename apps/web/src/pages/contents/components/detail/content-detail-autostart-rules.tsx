@@ -1,4 +1,5 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
+import { useEventListContext } from '@/contexts/event-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { WebZIndex } from '@usertour-packages/constants';
 import { Label } from '@usertour-packages/label';
@@ -112,6 +113,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
   const id = useId();
   const { attributeList } = useAttributeListContext();
   const { segmentList } = useSegmentListContext();
+  const { eventList } = useEventListContext();
   const { contents } = useContentListQuery({
     query: { environmentId },
     options: { skip: !environmentId },
@@ -149,6 +151,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
           token={getAuthToken()}
           disabled={disabled}
           baseZIndex={WebZIndex.RULES}
+          events={eventList}
           {...(filterItems ? { filterItems } : {})}
         />
       )}

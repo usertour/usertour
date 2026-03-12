@@ -9,6 +9,7 @@ import { PlusIcon, TaskClickedIcon } from '@usertour-packages/icons';
 import {
   ContentIcon,
   ElementIcon,
+  RiFlashlightFill,
   GroupIcon,
   PagesIcon,
   SegmentIcon,
@@ -25,6 +26,7 @@ import { RulesGroupContext } from '../contexts/rules-group-context';
 import { RulesContent } from './rules-content';
 import { RulesCurrentTime } from './rules-current-time';
 import { RulesElement } from './rules-element';
+import { RulesEvent } from './rules-event';
 import { RulesLogic } from './rules-logic';
 import { RulesRemove } from './rules-remove';
 import { RulesSegment } from './rules-segment';
@@ -47,6 +49,12 @@ export const RULES_ITEMS = [
     text: 'Current page(Url)',
     IconElement: PagesIcon,
     RulesElement: RulesUrlPattern,
+  },
+  {
+    type: RulesType.EVENT,
+    text: 'Event',
+    IconElement: RiFlashlightFill,
+    RulesElement: RulesEvent,
   },
   {
     type: RulesType.SEGMENT,

@@ -70,6 +70,7 @@ import {
   resetUserPasswordByCode,
   deleteEvent,
   listEvents,
+  listAttributeOnEvents,
   deleteTheme,
   listThemes,
   deleteBizUser,
@@ -125,7 +126,6 @@ export const useContentListQuery = ({
     },
     ...options,
   });
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const contentList = data?.queryContent?.edges.map((e: any) => e.node);
   const pageInfo = data?.queryContent?.pageInfo;
   const totalCount = data?.queryContent?.totalCount;
@@ -225,7 +225,6 @@ export const useQueryTeamMemberListQuery = (projectId: string) => {
     variables: { projectId },
   });
 
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const teamMembers: TeamMember[] =
     data?.getTeamMembers?.map((item: any) => ({
       userId: item.user.id,
@@ -245,7 +244,6 @@ export const useQueryInviteListQuery = (projectId: string) => {
     variables: { projectId },
   });
 
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const invites: TeamMember[] =
     data?.getInvites?.map((item: any) => ({
       inviteId: item.id,
@@ -872,6 +870,17 @@ export const useListEventsQuery = (projectId: string | undefined) => {
   const isRefetching = networkStatus === NetworkStatus.refetch;
   const eventList = data?.listEvents as Event[] | undefined;
   return { eventList, refetch, loading, error, isRefetching };
+};
+
+export const useListAttributeOnEventsQuery = (eventId: string | undefined) => {
+  const { data, loading, error } = useQuery(listAttributeOnEvents, {
+    variables: { eventId },
+    skip: !eventId,
+  });
+  const attributeOnEvents = data?.listAttributeOnEvents as
+    | { id: string; eventId: string; attributeId: string }[]
+    | undefined;
+  return { attributeOnEvents, loading, error };
 };
 
 export const useDeleteThemeMutation = () => {

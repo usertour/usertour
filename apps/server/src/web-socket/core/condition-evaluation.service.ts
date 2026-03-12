@@ -16,6 +16,11 @@ import {
   SimpleAttribute,
   AttributeBizTypes,
   BizAttributeTypes,
+  EventConditionData,
+  EventCountLogic,
+  EventTimeLogic,
+  EventTimeUnit,
+  EventScope,
 } from '@usertour/types';
 
 // ============================================================================
@@ -203,6 +208,9 @@ export class ConditionEvaluationService {
       }
       case RulesType.CONTENT: {
         return await this.evaluateContentCondition(rules, context);
+      }
+      case RulesType.EVENT: {
+        return await this.evaluateEventCondition(rules, context);
       }
       default: {
         return false;
@@ -716,5 +724,220 @@ export class ConditionEvaluationService {
       },
     });
     return count > 0;
+  }
+
+  // ============================================================================
+  // Private: Event Condition Evaluation
+  // ============================================================================
+
+  /**
+   * Evaluate event condition
+   * Counts matching BizEvent records based on scope, time window, and where conditions,
+   * then applies count logic (at least, at most, exactly, between).
+   */
+  private async evaluateEventCondition(
+    rules: RulesCondition,
+    context: ConditionEvaluationContext,
+  ): Promise<boolean> {
+    const data = rules.data as EventConditionData & { whereConditions?: RulesCondition[] };
+    if (!data?.eventId) {
+      return false;
+    }
+
+    // Build the base where clause for BizEvent
+    const whereClause: any = {
+      eventId: data.eventId,
+    };
+
+    // Apply scope filter
+    const scopeFilter = this.buildEventScopeFilter(data.scope, context);
+    if (scopeFilter === null) {
+      // Scope requires company context but none is available
+      return false;
+    }
+    Object.assign(whereClause, scopeFilter);
+
+    // Apply time window filter
+    const timeFilter = this.buildEventTimeFilter(data);
+    if (timeFilter) {
+      whereClause.createdAt = timeFilter;
+    }
+
+    // Apply where conditions (event attribute filters)
+    if (data.whereConditions && data.whereConditions.length > 0) {
+      const attrFilter = this.buildEventAttributeFilter(data.whereConditions, context);
+      if (attrFilter) {
+        Object.assign(whereClause, attrFilter);
+      }
+    }
+
+    // Count matching events
+    const eventCount = await this.prisma.bizEvent.count({
+      where: whereClause,
+    });
+
+    // Apply count logic
+    return this.applyEventCountLogic(data, eventCount);
+  }
+
+  /**
+   * Build scope filter for event condition query
+   * Returns null if scope requires company context but none is available
+   */
+  private buildEventScopeFilter(
+    scope: EventScope | undefined,
+    context: ConditionEvaluationContext,
+  ): Record<string, any> | null {
+    switch (scope) {
+      case EventScope.BY_CURRENT_USER_IN_CURRENT_COMPANY: {
+        if (!context.externalCompanyId) {
+          return null;
+        }
+        return {
+          bizUserId: context.bizUser.id,
+          bizSession: {
+            bizUser: {
+              bizUsersOnCompany: {
+                some: {
+                  bizCompany: {
+                    externalId: String(context.externalCompanyId),
+                    environmentId: context.environment.id,
+                  },
+                },
+              },
+            },
+          },
+        };
+      }
+      case EventScope.BY_ANY_USER_IN_CURRENT_COMPANY: {
+        if (!context.externalCompanyId) {
+          return null;
+        }
+        return {
+          bizUser: {
+            bizUsersOnCompany: {
+              some: {
+                bizCompany: {
+                  externalId: String(context.externalCompanyId),
+                  environmentId: context.environment.id,
+                },
+              },
+            },
+          },
+        };
+      }
+      default: {
+        return {
+          bizUserId: context.bizUser.id,
+        };
+      }
+    }
+  }
+
+  /**
+   * Build time filter for event condition query
+   */
+  private buildEventTimeFilter(data: EventConditionData): Record<string, Date> | undefined {
+    const now = new Date();
+
+    switch (data.timeLogic) {
+      case EventTimeLogic.IN_THE_LAST: {
+        if (data.windowValue === undefined || data.windowValue === null) return undefined;
+        const startDate = new Date(
+          now.getTime() - this.toMilliseconds(data.windowValue, data.timeUnit),
+        );
+        return { gte: startDate };
+      }
+      case EventTimeLogic.MORE_THAN: {
+        if (data.windowValue === undefined || data.windowValue === null) return undefined;
+        const cutoff = new Date(
+          now.getTime() - this.toMilliseconds(data.windowValue, data.timeUnit),
+        );
+        return { lte: cutoff };
+      }
+      case EventTimeLogic.BETWEEN: {
+        if (
+          data.windowValue === undefined ||
+          data.windowValue === null ||
+          data.windowValue2 === undefined ||
+          data.windowValue2 === null
+        ) {
+          return undefined;
+        }
+        const start = new Date(
+          now.getTime() -
+            this.toMilliseconds(Math.max(data.windowValue, data.windowValue2), data.timeUnit),
+        );
+        const end = new Date(
+          now.getTime() -
+            this.toMilliseconds(Math.min(data.windowValue, data.windowValue2), data.timeUnit),
+        );
+        return { gte: start, lte: end };
+      }
+      default: {
+        return undefined;
+      }
+    }
+  }
+
+  /**
+   * Convert a value + unit to milliseconds
+   */
+  private toMilliseconds(value: number, unit: EventTimeUnit | undefined): number {
+    switch (unit) {
+      case EventTimeUnit.SECONDS:
+        return value * 1000;
+      case EventTimeUnit.MINUTES:
+        return value * 60 * 1000;
+      case EventTimeUnit.HOURS:
+        return value * 60 * 60 * 1000;
+      case EventTimeUnit.DAYS:
+        return value * 24 * 60 * 60 * 1000;
+      default:
+        return value * 24 * 60 * 60 * 1000; // Default to days
+    }
+  }
+
+  /**
+   * Apply count logic to compare event count against the condition criteria
+   */
+  private applyEventCountLogic(data: EventConditionData, eventCount: number): boolean {
+    const count = data.count ?? 0;
+    const count2 = data.count2 ?? 0;
+
+    switch (data.countLogic) {
+      case EventCountLogic.AT_LEAST:
+        return eventCount >= count;
+      case EventCountLogic.AT_MOST:
+        return eventCount <= count;
+      case EventCountLogic.EXACTLY:
+        return eventCount === count;
+      case EventCountLogic.BETWEEN:
+        return eventCount >= Math.min(count, count2) && eventCount <= Math.max(count, count2);
+      default:
+        return eventCount >= count;
+    }
+  }
+
+  /**
+   * Build Prisma JSON filter for event attribute conditions.
+   * Reuses createConditionsFilter from @/common/attribute/filter which already
+   * handles all data types (String, Number, Boolean, List, DateTime) including
+   * DateTime-specific logics: lessThan, exactly, moreThan, before, on, after.
+   */
+  private buildEventAttributeFilter(
+    whereConditions: RulesCondition[],
+    context: ConditionEvaluationContext,
+  ): Record<string, any> | undefined {
+    if (!whereConditions || whereConditions.length === 0) {
+      return undefined;
+    }
+
+    const filter = createConditionsFilter(whereConditions, context.attributes);
+    if (!filter || (typeof filter === 'object' && Object.keys(filter).length === 0)) {
+      return undefined;
+    }
+
+    return filter as Record<string, any>;
   }
 }

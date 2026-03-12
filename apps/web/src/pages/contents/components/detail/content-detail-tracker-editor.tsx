@@ -283,7 +283,6 @@ export const ContentDetailTrackerEditor = () => {
               filterItems={[
                 'user-attr',
                 'current-page',
-                'event',
                 'element',
                 'text-input',
                 'text-fill',
