@@ -27,6 +27,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -47,6 +48,7 @@ import { RulesConditionRightContent } from './rules-template';
 import { RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 import { RulesEventWhereGroup } from './rules-event-where';
+import isEqual from 'fast-deep-equal';
 
 // ============================================================================
 // Constants
@@ -483,6 +485,13 @@ export const RulesEvent = (props: RulesEventProps) => {
     () => data?.whereConditions ?? [],
   );
 
+  // Track the last-committed data to avoid saving when nothing changed
+  const lastCommittedRef = useRef<Record<string, unknown>>({
+    ...DEFAULT_EVENT_DATA,
+    ...data,
+    whereConditions: data?.whereConditions?.length ? data.whereConditions : undefined,
+  });
+
   const selectedEvent = useMemo(
     () => events.find((e) => e.id === localData.eventId),
     [events, localData.eventId],
@@ -520,10 +529,15 @@ export const RulesEvent = (props: RulesEventProps) => {
         setOpenError(true);
         return;
       }
-      updateConditionData(index, {
+      const newData = {
         ...localData,
         whereConditions: whereConditions.length > 0 ? whereConditions : undefined,
-      });
+      };
+      // Only propagate if data actually changed from what was last committed
+      if (!isEqual(newData, lastCommittedRef.current)) {
+        lastCommittedRef.current = newData;
+        updateConditionData(index, newData);
+      }
     },
     [localData, whereConditions, index, updateConditionData],
   );

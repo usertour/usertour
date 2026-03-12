@@ -355,6 +355,7 @@ Table BizCompany {
   bizUsers BizUser [not null]
   bizCompaniesOnSegment BizCompanyOnSegment [not null]
   BizSession BizSession [not null]
+  BizEvent BizEvent [not null]
 
   indexes {
     (environmentId, externalId) [unique]
@@ -478,6 +479,8 @@ Table BizEvent {
   bizUserId String [not null]
   bizSession BizSession
   bizSessionId String
+  bizCompany BizCompany
+  bizCompanyId String
   contentId String
   versionId String
 }
@@ -722,6 +725,8 @@ Ref: BizEvent.eventId > Event.id
 Ref: BizEvent.bizUserId > BizUser.id
 
 Ref: BizEvent.bizSessionId > BizSession.id
+
+Ref: BizEvent.bizCompanyId > BizCompany.id
 
 Ref: RefreshToken.userId > User.id
 

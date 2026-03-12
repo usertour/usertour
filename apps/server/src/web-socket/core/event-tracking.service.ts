@@ -186,8 +186,10 @@ export class EventTrackingService {
     clientContext: ClientContext;
     contentId: string;
     versionId: string;
+    bizCompanyId?: string;
   }): Promise<boolean> {
-    const { environment, externalUserId, clientContext, contentId, versionId } = params;
+    const { environment, externalUserId, clientContext, contentId, versionId, bizCompanyId } =
+      params;
     const { id: environmentId } = environment;
 
     return await this.prisma.$transaction(async (tx) => {
@@ -291,6 +293,7 @@ export class EventTrackingService {
           data: filteredData,
           contentId,
           versionId,
+          bizCompanyId: bizCompanyId ?? null,
         },
       });
 

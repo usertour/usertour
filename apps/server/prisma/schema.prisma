@@ -377,6 +377,7 @@ model BizCompany {
   bizUsers              BizUser[]
   bizCompaniesOnSegment BizCompanyOnSegment[]
   BizSession            BizSession[]
+  BizEvent              BizEvent[]
 
   @@unique([environmentId, externalId])
   @@index([externalId])
@@ -499,11 +500,14 @@ model BizEvent {
   bizUserId    String
   bizSession   BizSession? @relation(fields: [bizSessionId], references: [id])
   bizSessionId String?
+  bizCompany   BizCompany? @relation(fields: [bizCompanyId], references: [id])
+  bizCompanyId String?
   contentId    String?
   versionId    String?
 
   @@index([bizUserId])
   @@index([bizSessionId])
+  @@index([bizCompanyId])
   @@index([contentId])
 }
 

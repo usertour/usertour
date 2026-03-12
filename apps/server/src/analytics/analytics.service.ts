@@ -237,31 +237,11 @@ export class AnalyticsService {
     timezone: string,
   ) {
     const emptyAnalytics = this.buildEmptyAnalytics();
-    const contentWithEnvironments = await this.prisma.content.findUnique({
+    const content = await this.prisma.content.findUnique({
       where: { id: contentId },
-      include: { contentOnEnvironments: true },
+      select: { id: true },
     });
-    if (!contentWithEnvironments) {
-      return emptyAnalytics;
-    }
-
-    const publishedVersionId =
-      contentWithEnvironments.contentOnEnvironments.find(
-        (item) => item.environmentId === environmentId,
-      )?.publishedVersionId ||
-      contentWithEnvironments.publishedVersionId ||
-      contentWithEnvironments.editedVersionId;
-    if (!publishedVersionId) {
-      return emptyAnalytics;
-    }
-
-    const version = await this.prisma.version.findUnique({
-      where: { id: publishedVersionId },
-      select: { data: true },
-    });
-    const versionData = version?.data as Record<string, any> | null;
-    const targetEventId = versionData?.eventId as string | undefined;
-    if (!targetEventId) {
+    if (!content) {
       return emptyAnalytics;
     }
 
@@ -269,7 +249,6 @@ export class AnalyticsService {
     const endDateObj = new Date(endDate);
     const eventWhere: Prisma.BizEventWhereInput = {
       contentId,
-      eventId: targetEventId,
       createdAt: { gte: startDateObj, lte: endDateObj },
       bizUser: { environmentId },
     };
@@ -2028,8 +2007,8 @@ export class AnalyticsService {
   }
 
   /**
-   * Query tracker users: aggregate BizEvent by bizUserId for a given content's current eventId.
-   * Semantics: grouped by contentId (cross-version), count only the currently selected eventId.
+   * Query tracker users: aggregate BizEvent by bizUserId for a given content.
+   * Semantics: grouped by contentId (cross-version), independent of tracker eventId changes.
    */
   async queryTrackerUsers(
     query: AnalyticsQuery,
@@ -2052,12 +2031,8 @@ export class AnalyticsService {
       totalCount: 0,
     };
 
-    const targetEventId = await this.resolveTrackerTargetEventId(contentId, environmentId);
-    if (!targetEventId) return emptyResult;
-
     const totalCount = await this.countTrackerUsersDistinct(
       contentId,
-      targetEventId,
       environmentId,
       startDateObj,
       endDateObj,
@@ -2073,7 +2048,6 @@ export class AnalyticsService {
 
     const groupedRows = await this.queryTrackerUserAggregatePage({
       contentId,
-      eventId: targetEventId,
       environmentId,
       startDate: startDateObj,
       endDate: endDateObj,
@@ -2152,34 +2126,8 @@ export class AnalyticsService {
     ).toString('base64');
   }
 
-  private async resolveTrackerTargetEventId(
-    contentId: string,
-    environmentId: string,
-  ): Promise<string | null> {
-    const content = await this.prisma.content.findUnique({
-      where: { id: contentId },
-      include: { contentOnEnvironments: true },
-    });
-    if (!content) return null;
-
-    const publishedVersionId =
-      content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
-        ?.publishedVersionId ||
-      content.publishedVersionId ||
-      content.editedVersionId;
-    if (!publishedVersionId) return null;
-
-    const version = await this.prisma.version.findUnique({
-      where: { id: publishedVersionId },
-      select: { data: true },
-    });
-    const versionData = version?.data as Record<string, any> | null;
-    return (versionData?.eventId as string | undefined) ?? null;
-  }
-
   private async countTrackerUsersDistinct(
     contentId: string,
-    eventId: string,
     environmentId: string,
     startDate: Date,
     endDate: Date,
@@ -2189,7 +2137,6 @@ export class AnalyticsService {
       FROM "BizEvent" be
       INNER JOIN "BizUser" bu ON bu.id = be."bizUserId"
       WHERE be."contentId" = ${contentId}
-        AND be."eventId" = ${eventId}
         AND be."createdAt" >= ${startDate}
         AND be."createdAt" <= ${endDate}
         AND bu."environmentId" = ${environmentId}
@@ -2199,7 +2146,6 @@ export class AnalyticsService {
 
   private async queryTrackerUserAggregatePage(params: {
     contentId: string;
-    eventId: string;
     environmentId: string;
     startDate: Date;
     endDate: Date;
@@ -2207,7 +2153,7 @@ export class AnalyticsService {
     asc: boolean;
     cursor: TrackerCursor | null;
   }): Promise<TrackerUserAggregateRow[]> {
-    const { contentId, eventId, environmentId, startDate, endDate, pageSize, asc, cursor } = params;
+    const { contentId, environmentId, startDate, endDate, pageSize, asc, cursor } = params;
     const comparatorSql = Prisma.raw(asc ? '>' : '<');
     const directionSql = Prisma.raw(asc ? 'ASC' : 'DESC');
     const havingSql = cursor
@@ -2232,7 +2178,6 @@ export class AnalyticsService {
         FROM "BizEvent" be
         INNER JOIN "BizUser" bu ON bu.id = be."bizUserId"
         WHERE be."contentId" = ${contentId}
-          AND be."eventId" = ${eventId}
           AND be."createdAt" >= ${startDate}
           AND be."createdAt" <= ${endDate}
           AND bu."environmentId" = ${environmentId}

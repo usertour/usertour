@@ -170,8 +170,19 @@ export const RulesEventWhereGroup = ({
   onChange,
   isSubGroup = false,
 }: RulesEventWhereGroupProps) => {
-  const [conditionType, setConditionType] = useState<'and' | 'or'>(
+  const [conditionType, setConditionTypeRaw] = useState<'and' | 'or'>(
     conditions.length > 0 && conditions[0].operators ? conditions[0].operators : 'and',
+  );
+
+  const setConditionType = useCallback(
+    (newType: 'and' | 'or') => {
+      setConditionTypeRaw(newType);
+      if (conditions.length > 0) {
+        const updated = conditions.map((c) => ({ ...c, operators: newType }));
+        onChange(updated);
+      }
+    },
+    [conditions, onChange],
   );
 
   const newlyAddedIdRef = useRef<string | null>(null);

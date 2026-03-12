@@ -543,13 +543,14 @@ export class WebSocketV2Service {
     params: TrackTrackerEventDto,
   ): Promise<boolean> {
     const { socketData } = context;
-    const { environment, externalUserId, clientContext } = socketData;
+    const { environment, externalUserId, clientContext, bizCompanyId } = socketData;
     return await this.eventTrackingService.trackTrackerEvent({
       environment,
       externalUserId,
       clientContext,
       contentId: params.contentId,
       versionId: params.versionId,
+      bizCompanyId,
     });
   }
 
