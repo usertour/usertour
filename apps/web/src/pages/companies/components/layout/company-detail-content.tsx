@@ -7,6 +7,7 @@ import {
   AttributeBizTypes,
   AttributeDataType,
   BizCompany,
+  PageInfo,
   BizUser,
   BizUserOnCompany,
 } from '@usertour/types';
@@ -79,6 +80,10 @@ interface CompanyUserListProviderProps {
   companyId: string;
 }
 
+interface CompanyUserEdge {
+  node: BizUser;
+}
+
 const CompanyUserListProvider = ({
   children,
   environmentId,
@@ -87,13 +92,15 @@ const CompanyUserListProvider = ({
   const [contents, setContents] = useState<BizUser[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const [pageInfo, setPageInfo] = useState<any>();
+  const [, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+  const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
+  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
+  const pageSize = 10;
 
   const { data, refetch, loading } = useQuery(queryBizUser, {
     variables: {
-      first: pagination.pageSize,
-      after: pagination.pageIndex === 0 ? undefined : pageInfo?.endCursor,
+      first: pageSize,
+      after: afterCursor,
       query: { environmentId, companyId },
       orderBy: { field: 'createdAt', direction: 'desc' },
     },
@@ -111,44 +118,62 @@ const CompanyUserListProvider = ({
     }
 
     setPageInfo(newPageInfo);
-    const newContents = edges.map((e: any) => {
+    const newContents: BizUser[] = edges.map((edge: CompanyUserEdge) => {
+      const e = edge;
       return { ...e.node, ...e.node.data };
     });
 
-    // Always accumulate data for proper pagination
     setContents((prev) => {
-      // Create a Set of existing content IDs to avoid duplicates
-      const existingIds = new Set(prev.map((content: any) => content.id));
-      const uniqueNewContents = newContents.filter((content: any) => !existingIds.has(content.id));
+      if (!afterCursor) {
+        return newContents;
+      }
+
+      const existingIds = new Set(prev.map((content) => content.id));
+      const uniqueNewContents = newContents.filter((content) => !existingIds.has(content.id));
       return [...prev, ...uniqueNewContents];
     });
 
     setTotalCount(totalCount);
     setIsLoadingMore(false);
-  }, [bizUserList, pagination.pageIndex]);
+  }, [afterCursor, bizUserList]);
 
   const loadMore = () => {
     if (!isLoadingMore && pageInfo?.hasNextPage) {
       setIsLoadingMore(true);
-      setPagination((prev) => ({
-        ...prev,
-        pageIndex: prev.pageIndex + 1,
-      }));
+      setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 }));
+      setAfterCursor(pageInfo.endCursor);
     }
   };
 
   const reset = () => {
     setContents([]);
     setPagination({ pageIndex: 0, pageSize: 10 });
+    setTotalCount(0);
+    setIsLoadingMore(false);
     setPageInfo(null);
+    setAfterCursor(undefined);
   };
+
+  useEffect(() => {
+    reset();
+  }, [companyId, environmentId]);
+
+  const handleRefetch = useCallback(() => {
+    reset();
+    refetch({
+      first: pageSize,
+      after: undefined,
+      query: { environmentId, companyId },
+      orderBy: { field: 'createdAt', direction: 'desc' },
+    });
+  }, [companyId, environmentId, refetch]);
 
   const value: CompanyUserListContextValue = {
     contents,
     loading: loading || isLoadingMore,
     totalCount,
     loadMore,
-    refetch,
+    refetch: handleRefetch,
     companyId,
     hasNextPage: pageInfo?.hasNextPage || false,
     setPagination,
@@ -264,8 +289,7 @@ const LoadMoreButton = () => {
 const CompanyUserList = () => {
   const { t } = useTranslation();
   // biome-ignore lint/correctness/noUnusedVariables: reset is used in handleRefresh function
-  const { contents, loading, refetch, totalCount, setPagination, companyId, reset } =
-    useCompanyUserListContext();
+  const { contents, loading, refetch, totalCount, companyId, reset } = useCompanyUserListContext();
   const { attributeList } = useAttributeListContext();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const copyWithToast = useCopyWithToast();

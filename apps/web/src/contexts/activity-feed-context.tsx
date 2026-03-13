@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
-import { PaginationState } from '@tanstack/react-table';
 import { queryBizUserEvents, queryBizCompanyEvents } from '@usertour-packages/gql';
 import { BizEvent } from '@usertour/types';
+import { PageInfo } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { DocumentNode } from '@apollo/client';
 
@@ -35,6 +35,10 @@ interface ActivityFeedProviderProps {
   };
 }
 
+interface ActivityFeedEdge {
+  node: BizEvent;
+}
+
 export const ActivityFeedProvider = ({
   children,
   gqlQuery,
@@ -44,13 +48,14 @@ export const ActivityFeedProvider = ({
   const [events, setEvents] = useState<BizEvent[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
-  const [pageInfo, setPageInfo] = useState<any>();
+  const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
+  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
+  const pageSize = 20;
 
   const { data, refetch, loading } = useQuery(gqlQuery, {
     variables: {
-      first: pagination.pageSize,
-      after: pagination.pageIndex === 0 ? undefined : pageInfo?.endCursor,
+      first: pageSize,
+      after: afterCursor,
       query: variables,
       orderBy: { field: 'createdAt', direction: 'desc' },
     },
@@ -64,30 +69,49 @@ export const ActivityFeedProvider = ({
     if (!edges || !newPageInfo) return;
 
     setPageInfo(newPageInfo);
-    const newEvents: BizEvent[] = edges.map((e: any) => e.node);
+    const newEvents: BizEvent[] = edges.map((edge: ActivityFeedEdge) => edge.node);
 
     setEvents((prev) => {
+      if (!afterCursor) {
+        return newEvents;
+      }
+
       const existingIds = new Set(prev.map((ev) => ev.id));
       const unique = newEvents.filter((ev) => !existingIds.has(ev.id));
       return [...prev, ...unique];
     });
     setTotalCount(newTotalCount);
     setIsLoadingMore(false);
-  }, [resultData]);
+  }, [afterCursor, resultData]);
 
   const loadMore = useCallback(() => {
     if (!isLoadingMore && pageInfo?.hasNextPage) {
       setIsLoadingMore(true);
-      setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 }));
+      setAfterCursor(pageInfo.endCursor);
     }
   }, [isLoadingMore, pageInfo]);
 
   const handleRefetch = useCallback(() => {
     setEvents([]);
-    setPagination({ pageIndex: 0, pageSize: 20 });
+    setTotalCount(0);
+    setIsLoadingMore(false);
     setPageInfo(null);
-    refetch();
-  }, [refetch]);
+    setAfterCursor(undefined);
+    refetch({
+      first: pageSize,
+      after: undefined,
+      query: variables,
+      orderBy: { field: 'createdAt', direction: 'desc' },
+    });
+  }, [refetch, variables]);
+
+  useEffect(() => {
+    setEvents([]);
+    setTotalCount(0);
+    setIsLoadingMore(false);
+    setPageInfo(null);
+    setAfterCursor(undefined);
+  }, [gqlQuery, queryKey, variables.companyId, variables.environmentId, variables.userId]);
 
   const value: ActivityFeedContextValue = {
     events,
