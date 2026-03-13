@@ -66,6 +66,42 @@ function getEventContext(event: BizEvent): string | null {
   return null;
 }
 
+function getFallbackSessionAttributeKey(event: BizEvent): string | null {
+  const dataKeys = Object.keys(event.data || {});
+
+  if (
+    dataKeys.some((key) => key.startsWith('checklist_')) ||
+    event.event?.codeName?.startsWith('CHECKLIST_')
+  ) {
+    return EventAttributes.CHECKLIST_SESSION_ID;
+  }
+
+  if (
+    dataKeys.some((key) => key.startsWith('flow_')) ||
+    event.event?.codeName?.startsWith('FLOW_')
+  ) {
+    return EventAttributes.FLOW_SESSION_ID;
+  }
+
+  if (
+    dataKeys.some((key) => key.startsWith('launcher_')) ||
+    event.event?.codeName?.startsWith('LAUNCHER_')
+  ) {
+    return EventAttributes.LAUNCHER_SESSION_ID;
+  }
+
+  if (
+    dataKeys.some((key) => key.startsWith('banner_')) ||
+    event.event?.codeName?.startsWith('BANNER_')
+  ) {
+    return EventAttributes.BANNER_SESSION_ID;
+  }
+
+  return null;
+}
+
+const SESSION_LINK_LABEL = 'Session';
+
 interface ActivityFeedRowProps {
   event: BizEvent;
   environmentId?: string;
@@ -93,7 +129,9 @@ const ActivityFeedRow = ({
   const context = getEventContext(event);
   const colorClass = getEventColor(event);
   const hasEventData = !!(event.data && Object.keys(event.data).length > 0);
-  const hasSessionLink = !!(environmentId && event.bizSessionId);
+  const fallbackSessionAttributeKey =
+    environmentId && event.bizSessionId ? getFallbackSessionAttributeKey(event) : null;
+  const hasSessionLink = !!fallbackSessionAttributeKey;
   const hasDetails = hasEventData || hasSessionLink;
   const { attributeList } = useAttributeListContext();
   const copyWithToast = useCopyWithToast();
@@ -101,7 +139,7 @@ const ActivityFeedRow = ({
   return (
     <Fragment>
       <div
-        className="flex items-center py-2.5 px-2 border-b gap-3 text-sm hover:bg-muted/30 cursor-pointer group"
+        className="flex min-w-0 items-center py-2.5 px-2 border-b gap-3 text-sm hover:bg-muted/30 cursor-pointer group"
         onClick={onToggle}
       >
         <div className="w-20 flex-none text-muted-foreground text-xs">{time}</div>
@@ -122,21 +160,7 @@ const ActivityFeedRow = ({
           ))}
       </div>
       {isExpanded && hasDetails && (
-        <div className="bg-muted/50 border-b text-sm">
-          {hasSessionLink && (
-            <div className="flex border-b last:border-b-0">
-              <span className="w-1/4 p-2 flex-none font-medium truncate">Session</span>
-              <div className="flex-1 min-w-0 p-2">
-                <Link
-                  to={`/env/${environmentId}/session/${event.bizSessionId}`}
-                  className="text-primary hover:underline underline-offset-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  View session
-                </Link>
-              </div>
-            </div>
-          )}
+        <div className="w-full min-w-0 overflow-hidden bg-muted/50 border-b text-sm">
           {hasEventData &&
             sortEventDataEntries(event.data || {}, attributeList || []).map(([key, value]) => {
               const displayValue = getFieldValue(key, value);
@@ -147,26 +171,28 @@ const ActivityFeedRow = ({
                 value;
 
               return (
-                <div key={key} className="flex border-b last:border-b-0">
-                  <span className="w-1/4 p-2 flex-none font-medium truncate">
+                <div key={key} className="flex min-w-0 border-b last:border-b-0">
+                  <span className="w-1/4 min-w-0 p-2 flex-none font-medium truncate">
                     {attributeList?.find((attr) => attr.codeName === key)?.displayName || key}
                   </span>
-                  <div className="flex-1 min-w-0 p-2">
+                  <div className="flex-1 min-w-0 overflow-hidden p-2">
                     {key === EventAttributes.LIST_ANSWER ? (
-                      <div className="overflow-hidden">
+                      <div className="min-w-0 overflow-hidden break-words">
                         <QuestionAnswer answerEvent={event} />
                       </div>
                     ) : isSessionIdLink ? (
                       <Link
                         to={`/env/${environmentId}/session/${value}`}
-                        className="text-primary hover:underline underline-offset-2"
+                        className="inline-block max-w-full truncate text-primary hover:underline underline-offset-2"
                         onClick={(e) => e.stopPropagation()}
                       >
                         View session
                       </Link>
                     ) : (
                       <div className="group flex items-start min-w-0 gap-2">
-                        <span className="block truncate flex-1">{displayValue}</span>
+                        <span className="block min-w-0 flex-1 break-all whitespace-pre-wrap">
+                          {displayValue}
+                        </span>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -184,6 +210,22 @@ const ActivityFeedRow = ({
                 </div>
               );
             })}
+          {hasSessionLink && (
+            <div className="flex min-w-0 border-b last:border-b-0">
+              <span className="w-1/4 min-w-0 p-2 flex-none font-medium truncate">
+                {SESSION_LINK_LABEL}
+              </span>
+              <div className="flex-1 min-w-0 overflow-hidden p-2">
+                <Link
+                  to={`/env/${environmentId}/session/${event.bizSessionId}`}
+                  className="inline-block max-w-full truncate text-primary hover:underline underline-offset-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  View session
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Fragment>
