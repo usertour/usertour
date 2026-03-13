@@ -8,6 +8,9 @@ import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserSessions } from '../sessions';
+import { UserCompaniesTab } from '../companies';
+import { ActivityFeed } from '@/components/molecules/activity-feed';
+import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';
 import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
 import {
@@ -24,6 +27,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
+import {
+  Tabs,
+  UnderlineTabsList,
+  UnderlineTabsTrigger,
+  UnderlineTabsContent,
+} from '@usertour-packages/tabs';
 import { BizUserDeleteDialog } from '../dialogs';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
@@ -289,11 +298,49 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           </Card>
         </div>
 
-        {/* Right column - scrollable */}
+        {/* Right column - scrollable with tabs */}
         <div className="flex flex-col w-[800px]">
-          {bizUser?.externalId && (
-            <UserSessions environmentId={environmentId} externalUserId={bizUser?.externalId} />
-          )}
+          <Card>
+            <CardContent className="pt-6">
+              <Tabs defaultValue="activity-feed">
+                <UnderlineTabsList className="justify-start">
+                  <UnderlineTabsTrigger value="activity-feed">
+                    {t('users.detail.tabs.activityFeed')}
+                  </UnderlineTabsTrigger>
+                  <UnderlineTabsTrigger value="sessions">
+                    {t('users.detail.tabs.sessions')}
+                  </UnderlineTabsTrigger>
+                  <UnderlineTabsTrigger value="companies">
+                    {t('users.detail.tabs.companies')}
+                    {bizUser?.bizUsersOnCompany && bizUser.bizUsersOnCompany.length > 0 && (
+                      <span className="ml-1">({bizUser.bizUsersOnCompany.length})</span>
+                    )}
+                  </UnderlineTabsTrigger>
+                </UnderlineTabsList>
+
+                <UnderlineTabsContent value="activity-feed">
+                  {bizUser && (
+                    <UserActivityFeedProvider environmentId={environmentId} userId={bizUser.id}>
+                      <ActivityFeed environmentId={environmentId} />
+                    </UserActivityFeedProvider>
+                  )}
+                </UnderlineTabsContent>
+
+                <UnderlineTabsContent value="sessions">
+                  {bizUser?.externalId && (
+                    <UserSessions
+                      environmentId={environmentId}
+                      externalUserId={bizUser.externalId}
+                    />
+                  )}
+                </UnderlineTabsContent>
+
+                <UnderlineTabsContent value="companies">
+                  {bizUser && <UserCompaniesTab bizUser={bizUser} environmentId={environmentId} />}
+                </UnderlineTabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

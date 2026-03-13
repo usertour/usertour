@@ -107,7 +107,10 @@ type BizConnection {
 }
 
 type BizEvent {
-  bizSessionId: String!
+  bizCompany: BizModel
+  bizCompanyId: String
+  bizSessionId: String
+  bizUser: BizModel
   bizUserId: String!
 
   """Identifies the date and time when the object was created."""
@@ -119,6 +122,23 @@ type BizEvent {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+}
+
+type BizEventConnection {
+  edges: [BizEventEdge!]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type BizEventEdge {
+  cursor: String!
+  node: BizEvent!
+}
+
+input BizEventQuery {
+  companyId: String
+  environmentId: String!
+  userId: String
 }
 
 type BizModel {
@@ -821,8 +841,10 @@ type Query {
   listThemes(projectId: String!): [Theme!]!
   me: User!
   queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
+  queryBizCompanyEvents(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizEventQuery!, skip: Int): BizEventConnection!
   queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizUserConnection!
+  queryBizUserEvents(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizEventQuery!, skip: Int): BizEventConnection!
   queryContent(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
   queryContentAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): Analytics!
   queryContentQuestionAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): JSON!

@@ -1051,4 +1051,79 @@ export class BizService {
       paginationArgs,
     );
   }
+
+  async queryBizUserEvents(
+    query: { environmentId: string; userId: string },
+    pagination: PaginationArgs,
+    orderBy: BizOrder,
+  ) {
+    const { first, last, before, after } = pagination;
+    const { environmentId, userId } = query;
+    try {
+      const where: Prisma.BizEventWhereInput = {
+        bizUserId: userId,
+        bizUser: { environmentId },
+      };
+
+      return await findManyCursorConnection(
+        (args) =>
+          this.prisma.bizEvent.findMany({
+            where,
+            include: {
+              event: true,
+              bizCompany: true,
+            },
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+            ...args,
+          }),
+        () => this.prisma.bizEvent.count({ where }),
+        { first, last, before, after },
+      );
+    } catch (error) {
+      throw new UnknownError(error);
+    }
+  }
+
+  async queryBizCompanyEvents(
+    query: { environmentId: string; companyId: string },
+    pagination: PaginationArgs,
+    orderBy: BizOrder,
+  ) {
+    const { first, last, before, after } = pagination;
+    const { environmentId, companyId } = query;
+    try {
+      const where: Prisma.BizEventWhereInput = {
+        OR: [
+          {
+            bizCompanyId: companyId,
+            bizCompany: { environmentId },
+          },
+          {
+            bizSession: {
+              bizCompanyId: companyId,
+              environmentId,
+            },
+          },
+        ],
+      };
+
+      return await findManyCursorConnection(
+        (args) =>
+          this.prisma.bizEvent.findMany({
+            where,
+            include: {
+              event: true,
+              bizCompany: true,
+              bizUser: true,
+            },
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+            ...args,
+          }),
+        () => this.prisma.bizEvent.count({ where }),
+        { first, last, before, after },
+      );
+    } catch (error) {
+      throw new UnknownError(error);
+    }
+  }
 }
