@@ -150,14 +150,15 @@ export class FireConditionWaitTimerPayload {
 export class TrackEventPayload {
   @IsString()
   @MaxLength(255)
-  eventName: string;
+  name: string;
 
-  @IsString()
-  @MaxLength(255)
-  sessionId: string;
-
+  @IsOptional()
   @IsObject()
-  eventData: Record<string, any>;
+  attributes?: Record<string, any>;
+
+  @IsOptional()
+  @IsBoolean()
+  userOnly?: boolean;
 }
 
 /**

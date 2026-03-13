@@ -25,6 +25,7 @@ import {
   BizEvents,
   ClientCondition,
   CustomContentSession,
+  BizAttributeTypes,
 } from '@usertour/types';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { Socket, Server } from 'socket.io';
@@ -33,6 +34,20 @@ import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { buildExternalUserRoomId } from '@/utils/websocket-utils';
+import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { getAttributeType, isNull, isValidISO8601 } from '@usertour/helpers';
+
+/**
+ * Humanize a codeName into a display name.
+ * Splits on `_`, `-`, `.` and spaces, capitalizes each word.
+ */
+function humanize(name: string): string {
+  return name
+    .split(/[_\-.\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
 
 @Injectable()
 export class WebSocketV2Service {
@@ -364,24 +379,111 @@ export class WebSocketV2Service {
 
   /**
    * Track event
+   * Auto-creates Event and Attributes if they don't exist.
    * @param context - The web socket context
    * @param trackEventDto - The track event DTO
    * @returns True if the event was tracked successfully
    */
   async trackEvent(context: WebSocketContext, trackEventDto: TrackEventDto): Promise<boolean> {
     const { socketData } = context;
-    const { environment, externalUserId, clientContext } = socketData;
+    const { environment, bizUserId, bizCompanyId } = socketData;
+    const { projectId } = environment;
 
-    const { eventName, sessionId, eventData } = trackEventDto;
-    const eventTransactionParams = {
-      environment,
-      externalUserId,
-      eventName,
-      sessionId,
-      data: eventData,
-      clientContext,
-    };
-    return await this.eventTrackingService.trackCustomEvent(eventTransactionParams);
+    const { name, attributes, userOnly } = trackEventDto;
+
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Find or create Event by codeName + projectId
+      let event = await tx.event.findFirst({
+        where: { codeName: name, projectId },
+      });
+
+      if (!event) {
+        event = await tx.event.create({
+          data: {
+            codeName: name,
+            displayName: humanize(name),
+            description: '',
+            predefined: false,
+            projectId,
+          },
+        });
+      }
+
+      // 2. Process attributes: auto-create Attribute + AttributeOnEvent
+      const eventData: Record<string, any> = {};
+      if (attributes && Object.keys(attributes).length > 0) {
+        for (const attrName of Object.keys(attributes)) {
+          const attrValue = attributes[attrName];
+
+          if (isNull(attrValue)) {
+            eventData[attrName] = null;
+            continue;
+          }
+
+          const dataType = getAttributeType(attrValue);
+
+          // Find or create the attribute
+          let attr = await tx.attribute.findFirst({
+            where: { codeName: attrName, projectId, bizType: AttributeBizType.EVENT },
+          });
+
+          if (!attr) {
+            attr = await tx.attribute.create({
+              data: {
+                codeName: attrName,
+                dataType,
+                displayName: humanize(attrName),
+                projectId,
+                bizType: AttributeBizType.EVENT,
+              },
+            });
+          }
+
+          // Validate and store value (same logic as insertBizAttributes)
+          if (attr.dataType === BizAttributeTypes.DateTime) {
+            if (!isValidISO8601(attrValue)) {
+              this.logger.error(
+                `Invalid DateTime format for attribute "${attrName}". Received: ${JSON.stringify(attrValue)}. Skipping.`,
+              );
+              continue;
+            }
+            eventData[attrName] = attrValue;
+          } else if (attr.dataType === dataType) {
+            eventData[attrName] = attrValue;
+          } else {
+            this.logger.warn(
+              `Type mismatch for attribute ${attrName}. Expected: ${attr.dataType}, got: ${dataType}`,
+            );
+            continue;
+          }
+
+          // Link attribute to event via AttributeOnEvent
+          const existing = await tx.attributeOnEvent.findFirst({
+            where: { eventId: event.id, attributeId: attr.id },
+          });
+          if (!existing) {
+            await tx.attributeOnEvent.create({
+              data: { eventId: event.id, attributeId: attr.id },
+            });
+          }
+        }
+      }
+
+      // 3. Create BizEvent
+      await tx.bizEvent.create({
+        data: {
+          bizUserId,
+          eventId: event.id,
+          data: Object.keys(eventData).length > 0 ? eventData : undefined,
+          bizSessionId: null,
+          contentId: null,
+          versionId: null,
+          bizCompanyId: userOnly === true ? null : (bizCompanyId ?? null),
+        },
+      });
+
+      return true;
+    });
   }
 
   /**

@@ -13,6 +13,8 @@ export enum ErrorMessages {
   INVALID_USER_ID = "An error occurred in usertour.identify(): first argument must be a non-empty string representing the user's ID in your database. Value received: {value}",
   INVALID_COMPANY_ID = "An error occurred in usertour.group(): first argument must be a non-empty string representing the company's ID in your database. Value received: {value}",
   INVALID_CONTENT_ID = "An error occurred in usertour.start(): first argument must be a non-empty string representing the content's ID. Value received: {value}",
+  INVALID_EVENT_NAME = 'An error occurred in usertour.track(): first argument must be a non-empty string representing the event name. Value received: {value}',
+  FAILED_TO_TRACK_EVENT = 'The API request to track the event was unsuccessful. Please check your network connection and try again.',
   TARGET_MISSING_TIME_EXCEEDED = 'Target missing time cannot exceed 10 seconds',
   SHOW_STEP_BY_CVID_NOT_AVAILABLE = 'The showStepByCvid method is not available in this context',
   FAILED_TO_LOAD_CSS = 'Unable to load CSS stylesheet after maximum retries. Please check your network connection and ensure the CSS file is accessible.',

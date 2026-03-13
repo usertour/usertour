@@ -130,10 +130,9 @@ export type UpsertCompanyDto = {
  * Track event request
  */
 export type TrackEventDto = {
-  externalUserId: string;
-  eventName: string;
-  sessionId: string;
-  eventData: Record<string, any>;
+  name: string;
+  attributes?: Record<string, any>;
+  userOnly?: boolean;
 };
 
 /**

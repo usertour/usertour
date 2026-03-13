@@ -347,6 +347,35 @@ export class UsertourCore extends Evented {
     }
   }
 
+  // === Public API: Event Tracking ===
+  /**
+   * Tracks a custom event
+   * @param name - Event name (maps to Event.codeName)
+   * @param attributes - Optional event attributes
+   * @param opts - Optional track options (e.g. userOnly)
+   */
+  async track(
+    name: string,
+    attributes?: UserTourTypes.EventAttributes,
+    opts?: UserTourTypes.TrackOptions,
+  ): Promise<void> {
+    this.ensureIdentify();
+
+    if (isNullish(name) || isEmptyString(name)) {
+      throw new Error(formatErrorMessage(ErrorMessages.INVALID_EVENT_NAME, name));
+    }
+
+    const result = await this.socketService.trackEvent({
+      name,
+      attributes: attributes as Record<string, any>,
+      userOnly: opts?.userOnly ?? false,
+    });
+
+    if (!result) {
+      throw new Error(ErrorMessages.FAILED_TO_TRACK_EVENT);
+    }
+  }
+
   // === Public API: Content Management ===
   /**
    * Starts a content
