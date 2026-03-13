@@ -288,8 +288,7 @@ const LoadMoreButton = () => {
 
 const CompanyUserList = () => {
   const { t } = useTranslation();
-  // biome-ignore lint/correctness/noUnusedVariables: reset is used in handleRefresh function
-  const { contents, loading, refetch, totalCount, companyId, reset } = useCompanyUserListContext();
+  const { contents, loading, refetch, totalCount, companyId } = useCompanyUserListContext();
   const { attributeList } = useAttributeListContext();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const copyWithToast = useCopyWithToast();
@@ -299,8 +298,6 @@ const CompanyUserList = () => {
   };
 
   const handleRefresh = () => {
-    // Reset pagination to first page when refreshing
-    reset();
     refetch();
   };
 
