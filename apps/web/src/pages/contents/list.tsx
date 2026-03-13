@@ -118,7 +118,11 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
   trackers: {
     title: 'Event trackers',
     description: (
-      <ContentDescription text="Event trackers let you track business events when configured conditions are met. Perfect for monitoring user behavior and triggering analytics events." />
+      <ContentDescription
+        text="Event trackers let you track business events when conditions are met."
+        docUrl="https://docs.usertour.io/how-to-guides/event-trackers"
+        linkText="Read more in our Event trackers guide"
+      />
     ),
     emptyTitle: 'No event trackers added',
     emptyDescription: 'You have not added any event trackers. Add one below.',
