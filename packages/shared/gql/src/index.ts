@@ -15,3 +15,4 @@ export * from './gql/subscription';
 export * from './gql/api';
 export * from './gql/project';
 export * from './gql/integration';
+export * from './gql/admin';

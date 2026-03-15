@@ -30,11 +30,22 @@ Table User {
   password String
   avatarUrl String
   name String
+  isSystemAdmin Boolean [not null, default: false, note: 'Whether the user is a system admin (self-host only)']
   projects UserOnProject [not null]
   codes Code [not null]
   accounts Account [not null]
   refreshTokens RefreshToken [not null]
   invites Invite [not null]
+}
+
+Table InstanceSetting {
+  id String [pk, note: 'Primary key']
+  instanceId String [unique, not null, note: 'Stable instance identifier']
+  license String [note: 'Instance-level license JWT token']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [not null, note: 'Update timestamp']
+
+  Note: 'Instance-level settings for self-hosted mode'
 }
 
 Table Register {

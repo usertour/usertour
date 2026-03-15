@@ -19,7 +19,6 @@ export * from './types/checklist';
 export * from './types/team';
 export * from './types/subscription';
 export * from './types/integrations';
-export * from './types/jwt-license.types';
 export * from './types/web-socket';
 export * from './types/editor';
 export * from './types/button';

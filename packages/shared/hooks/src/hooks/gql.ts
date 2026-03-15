@@ -75,6 +75,12 @@ import {
   listThemes,
   deleteBizUser,
   deleteBizUserOnSegment,
+  adminSettings,
+  updateInstanceLicense,
+  adminUsers,
+  updateUserSystemAdmin,
+  adminProjects,
+  adminCreateProject,
 } from '@usertour-packages/gql';
 
 import type {
@@ -958,5 +964,48 @@ export const useUpdateProjectLicenseMutation = () => {
     return response.data?.updateProjectLicense;
   };
 
+  return { invoke, loading, error };
+};
+
+// Admin related hooks
+export const useAdminSettingsQuery = () => {
+  const { data, loading, error, refetch } = useQuery(adminSettings);
+  return { data: data?.adminSettings, loading, error, refetch };
+};
+
+export const useUpdateInstanceLicenseMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateInstanceLicense);
+  const invoke = async (license: string) => {
+    const response = await mutation({ variables: { license } });
+    return response.data?.updateInstanceLicense;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAdminUsersQuery = () => {
+  const { data, loading, error, refetch } = useQuery(adminUsers);
+  return { data: data?.adminUsers, loading, error, refetch };
+};
+
+export const useUpdateUserSystemAdminMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateUserSystemAdmin);
+  const invoke = async (userId: string, isSystemAdmin: boolean) => {
+    const response = await mutation({ variables: { userId, isSystemAdmin } });
+    return response.data?.updateUserSystemAdmin;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAdminProjectsQuery = () => {
+  const { data, loading, error, refetch } = useQuery(adminProjects);
+  return { data: data?.adminProjects, loading, error, refetch };
+};
+
+export const useAdminCreateProjectMutation = () => {
+  const [mutation, { loading, error }] = useMutation(adminCreateProject);
+  const invoke = async (name: string, ownerUserId: string) => {
+    const response = await mutation({ variables: { name, ownerUserId } });
+    return response.data?.adminCreateProject;
+  };
   return { invoke, loading, error };
 };

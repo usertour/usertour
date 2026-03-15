@@ -24,7 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEvent } from 'react-use';
 
 export const AdminUserNav = () => {
-  const { userInfo: user, handleLogout } = useAppContext();
+  const { userInfo: user, handleLogout, globalConfig } = useAppContext();
   const { project, projects } = useAppContext();
   const posthog = usePostHog();
   const { invoke } = useActiveUserProjectMutation();
@@ -115,6 +115,14 @@ export const AdminUserNav = () => {
           </DropdownMenuItem>
           {/* <DropdownMenuSeparator />
           <DropdownMenuLabel className="font-normal">My Organizations</DropdownMenuLabel> */}
+          {globalConfig?.isSelfHostedMode && user?.isSystemAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/admin/settings')}>
+                System Admin
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>My Companies</DropdownMenuSubTrigger>

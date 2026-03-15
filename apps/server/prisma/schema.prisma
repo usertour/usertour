@@ -44,19 +44,35 @@ model Account {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
-  email         String?         @unique
-  emailVerified DateTime?       @db.Timestamptz()
-  password      String?
-  avatarUrl     String?
-  name          String?
-  projects      UserOnProject[]
-  codes         Code[]
-  accounts      Account[]
-  refreshTokens RefreshToken[]
-  invites       Invite[]
+  id              String          @id @default(cuid())
+  createdAt       DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @db.Timestamptz(6)
+  email           String?         @unique
+  emailVerified   DateTime?       @db.Timestamptz()
+  password        String?
+  avatarUrl       String?
+  name            String?
+  /// Whether the user is a system admin (self-host only)
+  isSystemAdmin   Boolean         @default(false)
+  projects        UserOnProject[]
+  codes           Code[]
+  accounts        Account[]
+  refreshTokens   RefreshToken[]
+  invites         Invite[]
+}
+
+/// Instance-level settings for self-hosted mode
+model InstanceSetting {
+  /// Primary key
+  id          String   @id @default(cuid())
+  /// Stable instance identifier
+  instanceId  String   @unique
+  /// Instance-level license JWT token
+  license     String?
+  /// Create timestamp
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  /// Update timestamp
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 }
 
 model Register {

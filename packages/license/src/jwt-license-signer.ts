@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import jwt from 'jsonwebtoken';
-import type { JWTLicensePayload } from './types';
+import type { JWTLicensePayload, LicenseScope } from './types';
 
 export interface JWTLicenseSignerOptions {
   /** RSA private key path */
@@ -15,10 +15,16 @@ export interface JWTLicenseSignerOptions {
 export interface GenerateLicenseOptions {
   /** License plan type */
   plan: string;
-  /** Subject (project name) */
+  /** Subject (project name or instance name) */
   subject: string;
-  /** Project identifier */
-  projectId: string;
+  /** License scope (defaults to 'project' for backward compat) */
+  scope?: LicenseScope;
+  /** Project identifier (required for project scope) */
+  projectId?: string;
+  /** Instance identifier (required for instance scope) */
+  instanceId?: string;
+  /** Project limit for instance scope (null = unlimited) */
+  projectLimit?: number | null;
   /** Expiration days from now */
   expiresInDays: number;
   /** Array of enabled features, '*' means all features */
@@ -57,15 +63,26 @@ export class JWTLicenseSigner {
     const now = Math.floor(Date.now() / 1000);
     const expiresAt = now + options.expiresInDays * 24 * 60 * 60;
 
+    const scope = options.scope || 'project';
+
     const payload: JWTLicensePayload = {
       plan: options.plan,
       sub: options.subject,
-      projectId: options.projectId,
+      scope,
       iat: now,
       exp: expiresAt,
       issuer: options.issuer || this.issuer,
       features: options.features,
     };
+
+    if (scope === 'project') {
+      payload.projectId = options.projectId;
+    } else if (scope === 'instance') {
+      payload.instanceId = options.instanceId;
+      if (options.projectLimit !== undefined) {
+        payload.projectLimit = options.projectLimit;
+      }
+    }
 
     try {
       return jwt.sign(payload, this.privateKey, {
@@ -88,15 +105,26 @@ export class JWTLicenseSigner {
     const now = Math.floor(Date.now() / 1000);
     const expiresAt = now + options.expiresInDays * 24 * 60 * 60;
 
+    const scope = options.scope || 'project';
+
     const payload: JWTLicensePayload = {
       plan: options.plan,
       sub: options.subject,
-      projectId: options.projectId,
+      scope,
       iat: now,
       exp: expiresAt,
       issuer: options.issuer || this.issuer,
       features: options.features,
     };
+
+    if (scope === 'project') {
+      payload.projectId = options.projectId;
+    } else if (scope === 'instance') {
+      payload.instanceId = options.instanceId;
+      if (options.projectLimit !== undefined) {
+        payload.projectLimit = options.projectLimit;
+      }
+    }
 
     const token = jwt.sign(payload, this.privateKey, {
       algorithm: this.algorithm,

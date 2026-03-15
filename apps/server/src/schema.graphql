@@ -20,6 +20,31 @@ input ActiveUserProjectInput {
   userId: String!
 }
 
+type AdminProject {
+  createdAt: DateTime!
+  id: String!
+  licenseSource: String!
+  memberCount: Int!
+  name: String!
+  ownerEmail: String
+  ownerName: String
+}
+
+type AdminSettingsInfo {
+  instanceId: String!
+  licenseInfo: InstanceLicenseInfo
+  projectCount: Int!
+}
+
+type AdminUser {
+  createdAt: DateTime!
+  email: String
+  id: String!
+  isSystemAdmin: Boolean!
+  name: String
+  projectCount: Int!
+}
+
 type Analytics {
   totalCompletions: Int!
   totalViews: Int!
@@ -568,6 +593,36 @@ type GlobalConfig {
   isSelfHostedMode: Boolean!
 }
 
+type InstanceLicenseInfo {
+  daysRemaining: Int
+  error: String
+  isExpired: Boolean
+  isValid: Boolean!
+  license: String
+  payload: InstanceLicensePayload
+}
+
+type InstanceLicensePayload {
+  exp: Int
+  features: [String!]
+  iat: Int
+  instanceId: String
+  issuer: String
+  plan: String
+  projectId: String
+  projectLimit: Int
+  scope: String
+  sub: String
+}
+
+type InstanceSetting {
+  createdAt: DateTime!
+  id: String!
+  instanceId: String!
+  license: String
+  updatedAt: DateTime!
+}
+
 type Integration {
   accessToken: String!
   config: JSON
@@ -703,6 +758,7 @@ type Mutation {
   activeUserProject(data: ActiveUserProjectInput!): Boolean!
   addContentStep(data: CreateStepInput!): Step!
   addContentSteps(data: ContentStepsInput!): Common!
+  adminCreateProject(name: String!, ownerUserId: String!): Project!
   cancelInvite(data: CancelInviteInput!): Boolean!
   changeEmail(data: ChangeEmailInput!): User!
   changePassword(data: ChangePasswordInput!): User!
@@ -759,6 +815,7 @@ type Mutation {
   updateContentVersion(data: VersionUpdateInput!): Version!
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
+  updateInstanceLicense(license: String!): InstanceSetting!
   updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
   updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
@@ -767,6 +824,7 @@ type Mutation {
   updateSegment(data: UpdateSegment!): Segment!
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!
+  updateUserSystemAdmin(isSystemAdmin: Boolean!, userId: String!): User!
   updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
   upsertIntegrationObjectMapping(input: CreateIntegrationObjectMappingInput!, integrationId: String!): IntegrationObjectMapping!
 }
@@ -808,6 +866,9 @@ type Project {
 }
 
 type Query {
+  adminProjects: [AdminProject!]!
+  adminSettings: AdminSettingsInfo!
+  adminUsers: [AdminUser!]!
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
   getAuthConfig: [AuthConfigItem!]!
@@ -1185,6 +1246,7 @@ type User {
   email: String!
   id: ID!
   isOAuthUser: Boolean
+  isSystemAdmin: Boolean!
   name: String
   projects: [UserOnProject!]!
 

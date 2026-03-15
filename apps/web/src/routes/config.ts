@@ -17,6 +17,12 @@ import {
 } from '@/pages/layouts';
 import { AdminSettings, SettingsThemeDetail } from '@/pages/settings';
 import { AdminSettingsDetail } from '@/pages/settings/admin-setting-detail';
+import {
+  AdminProjectsPage,
+  AdminSettingsPage,
+  AdminUsersPage,
+  SystemAdminLayout,
+} from '@/pages/admin';
 import { UserDetail, UserList } from '@/pages/users';
 import { SessionDetail } from '@/pages/users/session-detail';
 
@@ -205,6 +211,36 @@ const config: CustomRouteConfig[] = [
     loginRequired: true,
     redirectIfLogged: false,
     title: 'CompanyDetail',
+  },
+  /* System Admin - Settings */
+  {
+    id: 'admin-settings',
+    path: '/admin/settings',
+    component: AdminSettingsPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - Settings',
+  },
+  /* System Admin - Users */
+  {
+    id: 'admin-users',
+    path: '/admin/users',
+    component: AdminUsersPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - Users',
+  },
+  /* System Admin - Projects */
+  {
+    id: 'admin-projects',
+    path: '/admin/projects',
+    component: AdminProjectsPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - Projects',
   },
   /* Settings */
   {

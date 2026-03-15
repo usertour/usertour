@@ -1,4 +1,9 @@
 /**
+ * License scope type
+ */
+export type LicenseScope = 'project' | 'instance';
+
+/**
  * JWT License payload structure
  */
 export interface JWTLicensePayload {
@@ -6,8 +11,14 @@ export interface JWTLicensePayload {
   plan: string;
   /** Subject (project name) */
   sub: string;
-  /** Project identifier */
-  projectId: string;
+  /** Project identifier (required for project scope) */
+  projectId?: string;
+  /** Instance identifier (required for instance scope) */
+  instanceId?: string;
+  /** License scope: 'project' or 'instance' */
+  scope?: LicenseScope;
+  /** Project limit for instance scope (null = unlimited) */
+  projectLimit?: number | null;
   /** JWT issued at timestamp */
   iat: number;
   /** JWT expiration timestamp */
@@ -50,8 +61,14 @@ export interface JWTLicenseValidationOptions {
  * JWT License generation options
  */
 export interface JWTLicenseGenerationOptions {
-  /** Project identifier */
-  projectId: string;
+  /** License scope */
+  scope?: LicenseScope;
+  /** Project identifier (required for project scope) */
+  projectId?: string;
+  /** Instance identifier (required for instance scope) */
+  instanceId?: string;
+  /** Project limit for instance scope (null = unlimited) */
+  projectLimit?: number | null;
   /** Array of features to enable */
   features: string[];
   /** Number of days until expiration */

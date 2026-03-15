@@ -100,8 +100,8 @@ export class WebSocketService {
   }
 
   /**
-   * Get configuration for self-hosted mode using license validation
-   * @returns Configuration object with plan type and branding settings
+   * Get configuration for self-hosted mode using license validation.
+   * Priority: project license > instance license > default free/hobby.
    */
   private async getSelfHostedConfig(environment: Environment): Promise<ConfigResponse> {
     const defaultConfig: ConfigResponse = {
@@ -112,32 +112,38 @@ export class WebSocketService {
       where: { id: environment.projectId },
     });
 
-    // Self-hosted mode: use license validation
-    const licenseToken = project?.license;
-    if (!licenseToken) {
-      return defaultConfig;
+    // Try project-level license first
+    if (project?.license) {
+      const validationResult = await this.licenseService.validateLicense(project.license);
+      if (validationResult.isValid) {
+        const licensePayload = await this.licenseService.getLicensePayload(project.license);
+        const scope = licensePayload?.scope || (licensePayload?.projectId ? 'project' : null);
+        if (scope === 'project' && licensePayload?.projectId === environment.projectId) {
+          const isBusinessPlan =
+            licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
+          return {
+            removeBranding: isBusinessPlan,
+            planType: licensePayload?.plan || 'hobby',
+          };
+        }
+      }
     }
 
-    const validationResult = await this.licenseService.validateLicense(licenseToken);
-
-    if (validationResult.isValid) {
-      const licensePayload = await this.licenseService.getLicensePayload(licenseToken);
-
-      // Check if license projectId matches the current project
-      if (licensePayload?.projectId !== environment.projectId) {
-        this.logger.warn(
-          `License projectId mismatch. Expected: ${environment.projectId}, Got: ${licensePayload?.projectId}`,
-        );
-        return defaultConfig;
+    // Fallback to instance-level license
+    const instanceSetting = await this.prisma.instanceSetting.findFirst();
+    if (instanceSetting?.license) {
+      const validationResult = await this.licenseService.validateLicense(instanceSetting.license);
+      if (validationResult.isValid) {
+        const payload = await this.licenseService.getLicensePayload(instanceSetting.license);
+        const scope = payload?.scope || (payload?.projectId ? 'project' : 'instance');
+        if (scope === 'instance' && payload?.instanceId === instanceSetting.instanceId) {
+          const isBusinessPlan = payload?.plan === 'business' || payload?.plan === 'enterprise';
+          return {
+            removeBranding: isBusinessPlan,
+            planType: payload?.plan || 'hobby',
+          };
+        }
       }
-
-      const isBusinessPlan =
-        licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
-
-      return {
-        removeBranding: isBusinessPlan,
-        planType: licensePayload?.plan || 'hobby',
-      };
     }
 
     return defaultConfig;
