@@ -507,7 +507,10 @@ const ProjectMembersModal = ({
             <div className="py-8 text-center text-muted-foreground">Loading...</div>
           ) : (
             <div className="space-y-4">
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {members?.length || 0} member{members && members.length !== 1 ? 's' : ''}
+                </span>
                 <Button size="sm" onClick={() => setAddMemberOpen(true)}>
                   <PlusIcon className="w-4 h-4" />
                   Add Member
