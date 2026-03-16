@@ -76,6 +76,7 @@
     "@usertour-packages/tooltip": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
     "@usertour-packages/widget": "workspace:^",
+    "@usertour-packages/ui": "workspace:^",
     "@usertour/helpers": "workspace:^",
     "@usertour/types": "workspace:^",
     "apollo3-cache-persist": "^0.14.1",

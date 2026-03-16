@@ -30,6 +30,16 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@usertour-packages/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import { cn } from '@usertour-packages/tailwind';
+import {
   Table,
   TableBody,
   TableCell,
@@ -59,6 +69,7 @@ import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { Delete2Icon, EditIcon } from '@usertour-packages/icons';
+import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 
 const PAGE_SIZE = 20;
 
@@ -392,13 +403,28 @@ const CreateProjectDialog = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
-  const { data: usersData } = useAdminUsersQuery(undefined, 1, 1000);
+  const [ownerPickerOpen, setOwnerPickerOpen] = useState(false);
+  const [ownerSearchQuery, setOwnerSearchQuery] = useState('');
+  const [selectedOwnerDisplay, setSelectedOwnerDisplay] = useState('');
+  const { data: usersData, loading: usersLoading } = useAdminUsersQuery(
+    ownerSearchQuery.trim() || undefined,
+    1,
+    20,
+  );
   const { invoke: createProject, loading } = useAdminCreateProjectMutation();
   const { toast } = useToast();
   const [projectName, setProjectName] = useState('');
   const [ownerUserId, setOwnerUserId] = useState('');
 
   const users: AdminUserOption[] = usersData?.items || [];
+  const currentOwner = users.find((user) => user.id === ownerUserId);
+  const ownerButtonLabel =
+    selectedOwnerDisplay ||
+    (currentOwner
+      ? currentOwner.name && currentOwner.email
+        ? `${currentOwner.name} (${currentOwner.email})`
+        : currentOwner.name || currentOwner.email || currentOwner.id
+      : '');
 
   const handleSubmit = async () => {
     if (!projectName.trim()) {
@@ -414,6 +440,9 @@ const CreateProjectDialog = ({
       toast({ title: 'Project created successfully' });
       setProjectName('');
       setOwnerUserId('');
+      setSelectedOwnerDisplay('');
+      setOwnerSearchQuery('');
+      setOwnerPickerOpen(false);
       onClose();
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -438,18 +467,102 @@ const CreateProjectDialog = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="owner">Owner</Label>
-            <Select value={ownerUserId} onValueChange={setOwnerUserId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select an owner" />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.name || user.email || user.id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover
+              open={ownerPickerOpen}
+              onOpenChange={(open) => {
+                setOwnerPickerOpen(open);
+                if (!open) {
+                  setOwnerSearchQuery('');
+                }
+              }}
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  id="owner"
+                  variant="outline"
+                  aria-expanded={ownerPickerOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  <span className={cn('truncate', !ownerButtonLabel && 'text-muted-foreground')}>
+                    {ownerButtonLabel || 'Select an owner'}
+                  </span>
+                  <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" withoutPortal>
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    placeholder="Search by name or email..."
+                    value={ownerSearchQuery}
+                    onValueChange={setOwnerSearchQuery}
+                  />
+                  <CommandList>
+                    {usersLoading ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">
+                        Loading...
+                      </div>
+                    ) : (
+                      <>
+                        {ownerSearchQuery.trim() ? (
+                          <>
+                            <CommandEmpty>No user found.</CommandEmpty>
+                            <CommandGroup>
+                              {users.map((user) => {
+                                const label = user.name || user.email || user.id;
+                                const description =
+                                  user.name && user.email ? user.email : undefined;
+                                const display =
+                                  user.name && user.email
+                                    ? `${user.name} (${user.email})`
+                                    : user.name || user.email || user.id;
+
+                                return (
+                                  <CommandItem
+                                    key={user.id}
+                                    value={user.id}
+                                    className="cursor-pointer"
+                                    onSelect={() => {
+                                      setOwnerUserId(user.id);
+                                      setSelectedOwnerDisplay(display);
+                                      setOwnerPickerOpen(false);
+                                      setOwnerSearchQuery('');
+                                    }}
+                                  >
+                                    <CheckIcon
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        ownerUserId === user.id ? 'opacity-100' : 'opacity-0',
+                                      )}
+                                    />
+                                    <div className="flex min-w-0 flex-col">
+                                      <span className="truncate">{label}</span>
+                                      {description && (
+                                        <span className="text-xs text-muted-foreground truncate">
+                                          {description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                            {users.length >= 20 && (
+                              <div className="px-3 py-2 text-xs text-muted-foreground border-t">
+                                Showing top 20 results. Refine your search to narrow it down.
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="px-3 py-6 text-sm text-muted-foreground text-center">
+                            Search users by name or email to select an owner.
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
         <DialogFooter>

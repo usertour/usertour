@@ -29,6 +29,7 @@ export interface SelectPopoverProps {
   contentClassName?: string;
   contentStyle?: CSSProperties;
   disabled?: boolean;
+  withoutPortal?: boolean;
 }
 
 export const SelectPopover = ({
@@ -41,6 +42,7 @@ export const SelectPopover = ({
   contentClassName,
   contentStyle,
   disabled = false,
+  withoutPortal = false,
 }: SelectPopoverProps) => {
   const [open, setOpen] = useState(false);
   const selectedOption = options.find((opt) => opt.value === value);
@@ -68,6 +70,7 @@ export const SelectPopover = ({
       <PopoverContent
         className={cn('w-[var(--radix-popover-trigger-width)] p-0', contentClassName)}
         style={contentStyle}
+        withoutPortal={withoutPortal}
       >
         <Command>
           <CommandInput placeholder="Search..." />
