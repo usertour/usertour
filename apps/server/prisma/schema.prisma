@@ -54,6 +54,8 @@ model User {
   name            String?
   /// Whether the user is a system admin (self-host only)
   isSystemAdmin   Boolean         @default(false)
+  /// Whether the user is disabled (cannot login)
+  disabled        Boolean         @default(false)
   projects        UserOnProject[]
   codes           Code[]
   accounts        Account[]

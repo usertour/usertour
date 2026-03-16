@@ -31,6 +31,7 @@ Table User {
   avatarUrl String
   name String
   isSystemAdmin Boolean [not null, default: false, note: 'Whether the user is a system admin (self-host only)']
+  disabled Boolean [not null, default: false, note: 'Whether the user is disabled (cannot login)']
   projects UserOnProject [not null]
   codes Code [not null]
   accounts Account [not null]

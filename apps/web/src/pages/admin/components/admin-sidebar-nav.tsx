@@ -18,7 +18,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    title: 'Settings',
+    title: 'Subscription',
     href: '/admin/settings',
     icon: SettingsIcon,
   },

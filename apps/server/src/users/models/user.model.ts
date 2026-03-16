@@ -33,4 +33,7 @@ export class User extends BaseModel {
 
   @Field(() => Boolean)
   isSystemAdmin: boolean;
+
+  @Field(() => Boolean)
+  disabled: boolean;
 }

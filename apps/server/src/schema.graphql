@@ -30,6 +30,22 @@ type AdminProject {
   ownerName: String
 }
 
+type AdminProjectList {
+  items: [AdminProject!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+type AdminProjectMember {
+  email: String
+  id: String!
+  isOwner: Boolean!
+  name: String
+  role: String!
+  userId: String
+}
+
 type AdminSettingsInfo {
   instanceId: String!
   licenseInfo: InstanceLicenseInfo
@@ -38,11 +54,19 @@ type AdminSettingsInfo {
 
 type AdminUser {
   createdAt: DateTime!
+  disabled: Boolean!
   email: String
   id: String!
   isSystemAdmin: Boolean!
   name: String
   projectCount: Int!
+}
+
+type AdminUserList {
+  items: [AdminUser!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
 }
 
 type Analytics {
@@ -758,7 +782,11 @@ type Mutation {
   activeUserProject(data: ActiveUserProjectInput!): Boolean!
   addContentStep(data: CreateStepInput!): Step!
   addContentSteps(data: ContentStepsInput!): Common!
+  adminChangeProjectMemberRole(projectId: String!, role: String!, userId: String!): Boolean!
   adminCreateProject(name: String!, ownerUserId: String!): Project!
+  adminCreateUser(email: String!, name: String!, password: String!): User!
+  adminRemoveProjectMember(projectId: String!, userId: String!): Boolean!
+  adminTransferProjectOwnership(projectId: String!, userId: String!): Boolean!
   cancelInvite(data: CancelInviteInput!): Boolean!
   changeEmail(data: ChangeEmailInput!): User!
   changePassword(data: ChangePasswordInput!): User!
@@ -824,6 +852,7 @@ type Mutation {
   updateSegment(data: UpdateSegment!): Segment!
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!
+  updateUserDisabled(disabled: Boolean!, userId: String!): User!
   updateUserSystemAdmin(isSystemAdmin: Boolean!, userId: String!): User!
   updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
   upsertIntegrationObjectMapping(input: CreateIntegrationObjectMappingInput!, integrationId: String!): IntegrationObjectMapping!
@@ -866,9 +895,10 @@ type Project {
 }
 
 type Query {
-  adminProjects: [AdminProject!]!
+  adminProjectMembers(projectId: String!): [AdminProjectMember!]!
+  adminProjects(page: Int, pageSize: Int, query: String): AdminProjectList!
   adminSettings: AdminSettingsInfo!
-  adminUsers: [AdminUser!]!
+  adminUsers(page: Int, pageSize: Int, query: String): AdminUserList!
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
   getAuthConfig: [AuthConfigItem!]!
@@ -1243,6 +1273,7 @@ type User {
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
+  disabled: Boolean!
   email: String!
   id: ID!
   isOAuthUser: Boolean

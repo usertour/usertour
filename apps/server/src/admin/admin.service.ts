@@ -3,13 +3,20 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { createHash, randomBytes } from 'node:crypto';
 import { LicenseService } from '@/license/license.service';
-import { InvalidLicenseError, LicenseExpiredError, ParamsError } from '@/common/errors';
+import {
+  EmailAlreadyRegistered,
+  InvalidLicenseError,
+  LicenseExpiredError,
+  ParamsError,
+} from '@/common/errors';
 import {
   getDefaultSegments,
   initialization,
   initializationThemes,
 } from '@/common/initialization/initialization';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { PasswordService } from '@/auth/password.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AdminService implements OnModuleInit {
@@ -19,6 +26,7 @@ export class AdminService implements OnModuleInit {
     private prisma: PrismaService,
     private configService: ConfigService,
     private licenseService: LicenseService,
+    private passwordService: PasswordService,
   ) {}
 
   async onModuleInit() {
@@ -152,24 +160,84 @@ export class AdminService implements OnModuleInit {
   // Users Management
   // ============================================================================
 
-  async getAdminUsers() {
-    const users = await this.prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        projects: {
-          select: { id: true },
+  async getAdminUsers(query?: string, page = 1, pageSize = 20) {
+    const where: any = {};
+    if (query) {
+      where.OR = [
+        { name: { contains: query, mode: 'insensitive' } },
+        { email: { contains: query, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, users] = await Promise.all([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          projects: {
+            select: { id: true },
+          },
         },
+      }),
+    ]);
+
+    return {
+      items: users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+        isSystemAdmin: user.isSystemAdmin,
+        disabled: user.disabled,
+        projectCount: user.projects.length,
+      })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async createUser(name: string, email: string, password: string) {
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new EmailAlreadyRegistered();
+    }
+
+    const hashedPassword = await this.passwordService.hashPassword(password);
+    return this.prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        isSystemAdmin: false,
+        disabled: false,
       },
     });
+  }
 
-    return users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      createdAt: user.createdAt,
-      isSystemAdmin: user.isSystemAdmin,
-      projectCount: user.projects.length,
-    }));
+  async updateUserDisabled(userId: string, disabled: boolean) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new ParamsError('User not found');
+    }
+
+    // Prevent disabling the last system admin
+    if (user.isSystemAdmin && disabled) {
+      const systemAdminCount = await this.prisma.user.count({
+        where: { isSystemAdmin: true, disabled: false },
+      });
+      if (systemAdminCount <= 1) {
+        throw new ParamsError('Cannot disable the last system admin');
+      }
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { disabled },
+    });
   }
 
   async updateUserSystemAdmin(userId: string, isSystemAdmin: boolean) {
@@ -198,19 +266,30 @@ export class AdminService implements OnModuleInit {
   // Projects Management
   // ============================================================================
 
-  async getAdminProjects() {
-    const projects = await this.prisma.project.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        users: {
-          include: { user: true },
+  async getAdminProjects(query?: string, page = 1, pageSize = 20) {
+    const where: any = {};
+    if (query) {
+      where.name = { contains: query, mode: 'insensitive' };
+    }
+
+    const [total, projects] = await Promise.all([
+      this.prisma.project.count({ where }),
+      this.prisma.project.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          users: {
+            include: { user: true },
+          },
         },
-      },
-    });
+      }),
+    ]);
 
     const instanceSetting = await this.prisma.instanceSetting.findFirst();
 
-    return Promise.all(
+    const items = await Promise.all(
       projects.map(async (project) => {
         const owner = project.users.find((u) => u.role === 'OWNER');
         const licenseSource = await this.resolveProjectLicenseSource(project, instanceSetting);
@@ -226,6 +305,8 @@ export class AdminService implements OnModuleInit {
         };
       }),
     );
+
+    return { items, total, page, pageSize };
   }
 
   private async resolveProjectLicenseSource(
@@ -310,5 +391,84 @@ export class AdminService implements OnModuleInit {
 
   async getProjectCount(): Promise<number> {
     return this.prisma.project.count();
+  }
+
+  // ============================================================================
+  // Project Members Management
+  // ============================================================================
+
+  async getProjectMembers(projectId: string) {
+    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) {
+      throw new ParamsError('Project not found');
+    }
+
+    const members = await this.prisma.userOnProject.findMany({
+      where: { projectId },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return members.map((m) => ({
+      id: m.id,
+      userId: m.userId,
+      name: m.user?.name || null,
+      email: m.user?.email || null,
+      role: m.role,
+      isOwner: m.role === Role.OWNER,
+    }));
+  }
+
+  async changeProjectMemberRole(projectId: string, userId: string, role: string) {
+    const userOnProject = await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId },
+    });
+    if (!userOnProject) {
+      throw new ParamsError('Member not found in project');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (role === Role.OWNER) {
+        await tx.userOnProject.updateMany({
+          where: { projectId, role: Role.OWNER },
+          data: { role: Role.ADMIN },
+        });
+      }
+      return tx.userOnProject.update({
+        where: { id: userOnProject.id },
+        data: { role: role as Role },
+      });
+    });
+  }
+
+  async transferProjectOwnership(projectId: string, userId: string) {
+    return this.changeProjectMemberRole(projectId, userId, Role.OWNER);
+  }
+
+  async removeProjectMember(projectId: string, userId: string) {
+    const userOnProject = await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId },
+    });
+    if (!userOnProject) {
+      throw new ParamsError('Member not found in project');
+    }
+    if (userOnProject.role === Role.OWNER) {
+      throw new ParamsError('Cannot remove the project owner');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.userOnProject.delete({ where: { id: userOnProject.id } });
+      // If the member was active in this project, activate another project
+      if (userOnProject.actived) {
+        const other = await tx.userOnProject.findFirst({ where: { userId } });
+        if (other) {
+          await tx.userOnProject.update({
+            where: { id: other.id },
+            data: { actived: true },
+          });
+        }
+      }
+      return true;
+    });
   }
 }

@@ -89,8 +89,62 @@ export class AdminUser {
   @Field()
   isSystemAdmin: boolean;
 
+  @Field()
+  disabled: boolean;
+
   @Field(() => Int)
   projectCount: number;
+}
+
+@ObjectType()
+export class AdminUserList {
+  @Field(() => [AdminUser])
+  items: AdminUser[];
+
+  @Field(() => Int)
+  total: number;
+
+  @Field(() => Int)
+  page: number;
+
+  @Field(() => Int)
+  pageSize: number;
+}
+
+@ObjectType()
+export class AdminProjectList {
+  @Field(() => [AdminProject])
+  items: AdminProject[];
+
+  @Field(() => Int)
+  total: number;
+
+  @Field(() => Int)
+  page: number;
+
+  @Field(() => Int)
+  pageSize: number;
+}
+
+@ObjectType()
+export class AdminProjectMember {
+  @Field()
+  id: string;
+
+  @Field(() => String, { nullable: true })
+  userId: string | null;
+
+  @Field(() => String, { nullable: true })
+  name: string | null;
+
+  @Field(() => String, { nullable: true })
+  email: string | null;
+
+  @Field()
+  role: string;
+
+  @Field()
+  isOwner: boolean;
 }
 
 @ObjectType()

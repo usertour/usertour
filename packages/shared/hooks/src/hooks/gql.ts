@@ -78,9 +78,15 @@ import {
   adminSettings,
   updateInstanceLicense,
   adminUsers,
+  adminCreateUser,
   updateUserSystemAdmin,
+  updateUserDisabled,
   adminProjects,
   adminCreateProject,
+  adminProjectMembers,
+  adminChangeProjectMemberRole,
+  adminTransferProjectOwnership,
+  adminRemoveProjectMember,
 } from '@usertour-packages/gql';
 
 import type {
@@ -982,9 +988,20 @@ export const useUpdateInstanceLicenseMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useAdminUsersQuery = () => {
-  const { data, loading, error, refetch } = useQuery(adminUsers);
+export const useAdminUsersQuery = (query?: string, page?: number, pageSize?: number) => {
+  const { data, loading, error, refetch } = useQuery(adminUsers, {
+    variables: { query, page, pageSize },
+  });
   return { data: data?.adminUsers, loading, error, refetch };
+};
+
+export const useAdminCreateUserMutation = () => {
+  const [mutation, { loading, error }] = useMutation(adminCreateUser);
+  const invoke = async (name: string, email: string, password: string) => {
+    const response = await mutation({ variables: { name, email, password } });
+    return response.data?.adminCreateUser;
+  };
+  return { invoke, loading, error };
 };
 
 export const useUpdateUserSystemAdminMutation = () => {
@@ -996,8 +1013,19 @@ export const useUpdateUserSystemAdminMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useAdminProjectsQuery = () => {
-  const { data, loading, error, refetch } = useQuery(adminProjects);
+export const useUpdateUserDisabledMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateUserDisabled);
+  const invoke = async (userId: string, disabled: boolean) => {
+    const response = await mutation({ variables: { userId, disabled } });
+    return response.data?.updateUserDisabled;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAdminProjectsQuery = (query?: string, page?: number, pageSize?: number) => {
+  const { data, loading, error, refetch } = useQuery(adminProjects, {
+    variables: { query, page, pageSize },
+  });
   return { data: data?.adminProjects, loading, error, refetch };
 };
 
@@ -1006,6 +1034,41 @@ export const useAdminCreateProjectMutation = () => {
   const invoke = async (name: string, ownerUserId: string) => {
     const response = await mutation({ variables: { name, ownerUserId } });
     return response.data?.adminCreateProject;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAdminProjectMembersQuery = (projectId: string) => {
+  const { data, loading, error, refetch } = useQuery(adminProjectMembers, {
+    variables: { projectId },
+    skip: !projectId,
+  });
+  return { data: data?.adminProjectMembers, loading, error, refetch };
+};
+
+export const useAdminChangeProjectMemberRoleMutation = () => {
+  const [mutation, { loading, error }] = useMutation(adminChangeProjectMemberRole);
+  const invoke = async (projectId: string, userId: string, role: string) => {
+    const response = await mutation({ variables: { projectId, userId, role } });
+    return response.data?.adminChangeProjectMemberRole;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAdminTransferProjectOwnershipMutation = () => {
+  const [mutation, { loading, error }] = useMutation(adminTransferProjectOwnership);
+  const invoke = async (projectId: string, userId: string) => {
+    const response = await mutation({ variables: { projectId, userId } });
+    return response.data?.adminTransferProjectOwnership;
+  };
+  return { invoke, loading, error };
+};
+
+export const useAdminRemoveProjectMemberMutation = () => {
+  const [mutation, { loading, error }] = useMutation(adminRemoveProjectMember);
+  const invoke = async (projectId: string, userId: string) => {
+    const response = await mutation({ variables: { projectId, userId } });
+    return response.data?.adminRemoveProjectMember;
   };
   return { invoke, loading, error };
 };

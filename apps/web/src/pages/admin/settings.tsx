@@ -64,7 +64,7 @@ export const AdminSettingsPage = () => {
         <div className="space-y-3 mt-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Instance ID</span>
-            <span className="text-sm font-mono">{data?.instanceId}</span>
+            <span className="text-sm font-mono select-all">{data?.instanceId}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Total Projects</span>
@@ -75,7 +75,7 @@ export const AdminSettingsPage = () => {
 
       {/* License Status */}
       <SettingsContent className="min-w-[750px] max-w-3xl shadow-sm border border-border rounded mx-auto bg-background">
-        <h3 className="text-lg font-medium">License</h3>
+        <h3 className="text-lg font-medium">Instance License</h3>
         {licenseInfo ? (
           <div className="space-y-3 mt-4">
             <div className="flex items-center justify-between">
@@ -140,7 +140,7 @@ export const AdminSettingsPage = () => {
 
       {/* Update License */}
       <SettingsContent className="min-w-[750px] max-w-3xl shadow-sm border border-border rounded mx-auto bg-background">
-        <h3 className="text-lg font-medium">Update License</h3>
+        <h3 className="text-lg font-medium">Update Instance License</h3>
         <div className="mt-4 space-y-4">
           <textarea
             className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"

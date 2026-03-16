@@ -30,6 +30,7 @@ import {
   OAuthError,
   PasswordIncorrect,
   UnknownError,
+  UserDisabledError,
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
@@ -563,6 +564,10 @@ export class AuthService {
       throw new AccountNotFoundError();
     }
 
+    if (user.disabled) {
+      throw new UserDisabledError();
+    }
+
     if (user.projects.length === 0) {
       const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
       await initialization(this.prisma, project.id);
@@ -636,7 +641,11 @@ export class AuthService {
   }
 
   async validateUser(userId: string): Promise<User> {
-    return await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.disabled) {
+      throw new UserDisabledError();
+    }
+    return user;
   }
 
   async getUserFromToken(token: string): Promise<User> {

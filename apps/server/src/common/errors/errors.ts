@@ -365,6 +365,14 @@ export class PrimaryEnvironmentCannotBeDeletedError extends BaseError {
   };
 }
 
+export class UserDisabledError extends BaseError {
+  code = 'E0024';
+  messageDict = {
+    en: 'Your account has been disabled. Please contact your administrator.',
+    'zh-CN': '您的账户已被禁用，请联系管理员。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -407,6 +415,7 @@ const errorMap = {
   E0021: S3ConfigNotSetError,
   E0022: LastEnvironmentCannotBeDeletedError,
   E0023: PrimaryEnvironmentCannotBeDeletedError,
+  E0024: UserDisabledError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {
