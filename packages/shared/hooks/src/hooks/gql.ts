@@ -42,6 +42,7 @@ import {
   getSubscriptionByProjectId,
   getSubscriptionUsage,
   globalConfig,
+  getProjectConfig,
   ListAccessTokens,
   DeleteAccessToken,
   GetAccessToken,
@@ -955,6 +956,24 @@ export const useGetProjectLicenseInfoQuery = (projectId: string) => {
 
   return {
     licenseInfo: data?.getProjectLicenseInfo,
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useGetProjectConfigQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(getProjectConfig, {
+    variables: { projectId },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+
+  return {
+    projectConfig: data?.getProjectConfig as { removeBranding: boolean; planType: string } | null,
     loading,
     error,
     refetch,

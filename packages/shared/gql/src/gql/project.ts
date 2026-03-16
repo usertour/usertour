@@ -9,6 +9,15 @@ export const updateProjectName = gql`
   }
 `;
 
+export const getProjectConfig = gql`
+  query GetProjectConfig($projectId: String!) {
+    getProjectConfig(projectId: $projectId) {
+      removeBranding
+      planType
+    }
+  }
+`;
+
 export const getProjectLicenseInfo = gql`
   query GetProjectLicenseInfo($projectId: String!) {
     getProjectLicenseInfo(projectId: $projectId) {

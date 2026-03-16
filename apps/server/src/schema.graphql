@@ -895,6 +895,11 @@ type Project {
   updatedAt: DateTime!
 }
 
+type ProjectConfigModel {
+  planType: String!
+  removeBranding: Boolean!
+}
+
 type Query {
   adminProjectMembers(projectId: String!): [AdminProjectMember!]!
   adminProjects(page: Int, pageSize: Int, query: String): AdminProjectList!
@@ -910,6 +915,7 @@ type Query {
   getIntegrationObjectMappings(integrationId: String!): [IntegrationObjectMapping!]!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
+  getProjectConfig(projectId: String!): ProjectConfigModel!
   getProjectLicenseInfo(projectId: String!): LicenseInfo
   getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
   getSalesforceObjectFields(integrationId: String!): SalesforceObjectFields!

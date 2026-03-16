@@ -129,30 +129,34 @@ export class ProjectsService {
    * @returns Configuration object with plan type and branding settings
    */
   async getConfig(environment: Environment): Promise<ProjectConfig> {
+    return this.getProjectConfig(environment.projectId);
+  }
+
+  async getProjectConfig(projectId: string): Promise<ProjectConfig> {
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
 
     if (isSelfHostedMode) {
-      return await this.getSelfHostedConfig(environment);
+      return await this.getSelfHostedConfig(projectId);
     }
 
-    return await this.getCloudConfig(environment);
+    return await this.getCloudConfig(projectId);
   }
 
   /**
    * Get configuration for self-hosted mode using license validation.
    * Priority: project license > instance license > default free/hobby.
    */
-  private async getSelfHostedConfig(environment: Environment): Promise<ProjectConfig> {
+  private async getSelfHostedConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
       planType: 'hobby',
     };
     const project = await this.prisma.project.findUnique({
-      where: { id: environment.projectId },
+      where: { id: projectId },
     });
 
     // Try project-level license first
-    const projectConfig = await this.tryProjectLicense(project?.license, environment.projectId);
+    const projectConfig = await this.tryProjectLicense(project?.license, projectId);
     if (projectConfig) {
       return projectConfig;
     }
@@ -246,7 +250,7 @@ export class ProjectsService {
    * @param environment - Environment context
    * @returns Configuration object with plan type and branding settings
    */
-  private async getCloudConfig(environment: Environment): Promise<ProjectConfig> {
+  private async getCloudConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
       planType: 'hobby',
@@ -254,7 +258,7 @@ export class ProjectsService {
 
     // Cloud mode: use subscription-based logic
     const project = await this.prisma.project.findUnique({
-      where: { id: environment.projectId },
+      where: { id: projectId },
     });
 
     if (!project?.subscriptionId) {

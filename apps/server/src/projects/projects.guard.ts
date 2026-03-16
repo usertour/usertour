@@ -27,10 +27,14 @@ export class ProjectsGuard implements CanActivate {
     }
 
     const user = req.user;
-    const roles = this.reflector.get<RolesScopeEnum>(Roles, context.getHandler());
+    const roles = this.reflector.get<RolesScopeEnum[]>(Roles, context.getHandler()) ?? [];
 
     const userProject = await this.projectsService.getUserProject(user.id, projectId);
-    if (!userProject || !roles.includes(userProject.role)) {
+    if (!userProject) {
+      throw new NoPermissionError();
+    }
+
+    if (roles.length > 0 && !roles.includes(userProject.role as RolesScopeEnum)) {
       throw new NoPermissionError();
     }
 
