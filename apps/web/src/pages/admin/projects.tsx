@@ -501,61 +501,61 @@ const ProjectMembersModal = ({
       <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <div className="flex items-center justify-between gap-4">
-              <DialogTitle>{projectName} Members</DialogTitle>
-              <Button size="sm" onClick={() => setAddMemberOpen(true)}>
-                <PlusIcon className="w-4 h-4" />
-                Add Member
-              </Button>
-            </div>
+            <DialogTitle>{projectName} Members</DialogTitle>
           </DialogHeader>
           {loading ? (
             <div className="py-8 text-center text-muted-foreground">Loading...</div>
           ) : (
-            <div className="overflow-x-auto max-h-96">
-              <Table className="table-fixed">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead className="hidden sm:table-cell">Email</TableHead>
-                    <TableHead className="w-28">Role</TableHead>
-                    <TableHead className="w-20" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {members?.map((member: AdminProjectMemberItem) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <UserAvatar email={member.email || ''} name={member.name || undefined} />
-                          <span className="truncate max-w-48">{member.name || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="truncate hidden sm:table-cell">
-                        {member.email || '-'}
-                      </TableCell>
-                      <TableCell>{member.role}</TableCell>
-                      <TableCell>
-                        <MemberAction member={member} projectId={projectId} onRefetch={refetch} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {(!members || members.length === 0) && (
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button size="sm" onClick={() => setAddMemberOpen(true)}>
+                  <PlusIcon className="w-4 h-4" />
+                  Add Member
+                </Button>
+              </div>
+              <div className="overflow-x-auto max-h-96">
+                <Table className="table-fixed">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">
-                        No members.
-                      </TableCell>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="hidden sm:table-cell">Email</TableHead>
+                      <TableHead className="w-28">Role</TableHead>
+                      <TableHead className="w-20" />
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {members?.map((member: AdminProjectMemberItem) => (
+                      <TableRow key={member.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <UserAvatar
+                              email={member.email || ''}
+                              name={member.name || undefined}
+                            />
+                            <span className="truncate max-w-48">{member.name || '-'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="truncate hidden sm:table-cell">
+                          {member.email || '-'}
+                        </TableCell>
+                        <TableCell>{member.role}</TableCell>
+                        <TableCell>
+                          <MemberAction member={member} projectId={projectId} onRefetch={refetch} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!members || members.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center">
+                          No members.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
       <AddProjectMemberDialog
