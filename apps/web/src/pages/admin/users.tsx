@@ -39,6 +39,7 @@ import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import { ListSkeleton } from '@/components/molecules/skeleton';
+import { UserAvatar } from '@/components/molecules/user-avatar';
 
 const PAGE_SIZE = 20;
 
@@ -226,8 +227,8 @@ export const AdminUsersPage = () => {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div className="flex flex-col grow space-y-8 py-8">
-      <SettingsContent className="min-w-[750px] max-w-5xl shadow-sm border border-border rounded mx-auto bg-background">
+    <>
+      <SettingsContent>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-semibold tracking-tight">Users</h3>
@@ -239,8 +240,7 @@ export const AdminUsersPage = () => {
         </div>
         <Separator />
 
-        {/* Search */}
-        <div className="flex items-center gap-2 py-2">
+        <div className="flex items-center gap-2 pt-5 pb-1">
           <div className="relative flex-1 max-w-sm">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -252,7 +252,6 @@ export const AdminUsersPage = () => {
           </div>
         </div>
 
-        {/* Table */}
         {loading ? (
           <ListSkeleton />
         ) : (
@@ -273,6 +272,7 @@ export const AdminUsersPage = () => {
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <UserAvatar email={user.email || ''} name={user.name || undefined} />
                         <span className="truncate max-w-64">{user.name || '-'}</span>
                         {user.isSystemAdmin && (
                           <Badge className="bg-blue-600 hover:bg-blue-700 text-xs">Admin</Badge>
@@ -310,7 +310,6 @@ export const AdminUsersPage = () => {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-4">
             <span className="text-sm text-muted-foreground">
@@ -348,7 +347,7 @@ export const AdminUsersPage = () => {
           refetch();
         }}
       />
-    </div>
+    </>
   );
 };
 

@@ -51,11 +51,14 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ExternalLinkIcon,
+  ArrowLeftRightIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useNavigate } from 'react-router-dom';
+import { UserAvatar } from '@/components/molecules/user-avatar';
+import { Delete2Icon, EditIcon } from '@usertour-packages/icons';
 
 const PAGE_SIZE = 20;
 
@@ -67,6 +70,12 @@ interface AdminProjectItem {
   ownerEmail: string | null;
   memberCount: number;
   licenseSource: string;
+}
+
+interface AdminUserOption {
+  id: string;
+  name: string | null;
+  email: string | null;
 }
 
 interface AdminProjectMemberItem {
@@ -165,6 +174,7 @@ const MemberAction = ({
               setChangeRoleOpen(true);
             }}
           >
+            <EditIcon className="w-6" width={16} height={16} />
             Change role
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -172,6 +182,7 @@ const MemberAction = ({
             disabled={member.isOwner}
             onClick={() => setTransferOpen(true)}
           >
+            <ArrowLeftRightIcon className="w-6" height={16} width={16} />
             Transfer ownership to this user
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -180,6 +191,7 @@ const MemberAction = ({
             disabled={member.isOwner}
             onClick={() => setRemoveOpen(true)}
           >
+            <Delete2Icon className="w-6" width={16} height={16} />
             Remove member
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -221,7 +233,9 @@ const MemberAction = ({
             <DialogTitle>Transfer account ownership</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Confirm transferring project ownership to {member.name || member.email}?
+            Only one user can be the owner of your Usertour account. Once you transfer ownership,
+            you can&apos;t undo it. Confirm transferring account ownership to{' '}
+            {member.name || member.email}?
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTransferOpen(false)}>
@@ -270,7 +284,7 @@ const ProjectMembersModal = ({
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Members - {projectName}</DialogTitle>
+          <DialogTitle>{projectName} Members</DialogTitle>
         </DialogHeader>
         {loading ? (
           <div className="py-8 text-center text-muted-foreground">Loading...</div>
@@ -289,7 +303,10 @@ const ProjectMembersModal = ({
                 {members?.map((member: AdminProjectMemberItem) => (
                   <TableRow key={member.id}>
                     <TableCell>
-                      <span className="truncate max-w-48">{member.name || '-'}</span>
+                      <div className="flex items-center gap-2">
+                        <UserAvatar email={member.email || ''} name={member.name || undefined} />
+                        <span className="truncate max-w-48">{member.name || '-'}</span>
+                      </div>
                     </TableCell>
                     <TableCell className="truncate hidden sm:table-cell">
                       {member.email || '-'}
@@ -381,7 +398,7 @@ const CreateProjectDialog = ({
   const [projectName, setProjectName] = useState('');
   const [ownerUserId, setOwnerUserId] = useState('');
 
-  const users = usersData?.items || [];
+  const users: AdminUserOption[] = usersData?.items || [];
 
   const handleSubmit = async () => {
     if (!projectName.trim()) {
@@ -426,7 +443,7 @@ const CreateProjectDialog = ({
                 <SelectValue placeholder="Select an owner" />
               </SelectTrigger>
               <SelectContent>
-                {users.map((user: any) => (
+                {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.name || user.email || user.id}
                   </SelectItem>
@@ -472,8 +489,8 @@ export const AdminProjectsPage = () => {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div className="flex flex-col grow space-y-8 py-8">
-      <SettingsContent className="min-w-[750px] max-w-5xl shadow-sm border border-border rounded mx-auto bg-background">
+    <>
+      <SettingsContent>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-semibold tracking-tight">Projects</h3>
@@ -485,8 +502,7 @@ export const AdminProjectsPage = () => {
         </div>
         <Separator />
 
-        {/* Search */}
-        <div className="flex items-center gap-2 py-2">
+        <div className="flex items-center gap-2 pt-5 pb-1">
           <div className="relative flex-1 max-w-sm">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -498,7 +514,6 @@ export const AdminProjectsPage = () => {
           </div>
         </div>
 
-        {/* Table */}
         {loading ? (
           <ListSkeleton />
         ) : (
@@ -519,13 +534,19 @@ export const AdminProjectsPage = () => {
                   <TableRow key={project.id}>
                     <TableCell className="truncate">{project.name}</TableCell>
                     <TableCell>
-                      <div className="flex flex-col">
-                        <span className="truncate">{project.ownerName || '-'}</span>
-                        {project.ownerEmail && (
-                          <span className="text-xs text-muted-foreground truncate">
-                            {project.ownerEmail}
-                          </span>
-                        )}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <UserAvatar
+                          email={project.ownerEmail || ''}
+                          name={project.ownerName || undefined}
+                        />
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate">{project.ownerName || '-'}</span>
+                          {project.ownerEmail && (
+                            <span className="text-xs text-muted-foreground truncate">
+                              {project.ownerEmail}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
@@ -552,7 +573,6 @@ export const AdminProjectsPage = () => {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-4">
             <span className="text-sm text-muted-foreground">
@@ -590,7 +610,7 @@ export const AdminProjectsPage = () => {
           refetch();
         }}
       />
-    </div>
+    </>
   );
 };
 
