@@ -612,6 +612,9 @@ export const AdminProjectsPage = () => {
               Create Project
             </Button>
           </div>
+          <p className="text-sm text-muted-foreground">
+            View and manage all projects in this self-hosted instance, including owners and members.
+          </p>
         </div>
         <Separator />
 

@@ -6,7 +6,7 @@ import {
   AdminSidebarContainerTemplate,
   AdminSidebarHeaderTemplate,
 } from '@/components/templates/admin-sidebar-template';
-import { SettingsIcon, GroupIcon2, FolderIcon2 } from '@usertour-packages/icons';
+import { BankCardIcon, RiGroupLine, RiProjectorLine } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import { Link } from 'react-router-dom';
 
@@ -19,18 +19,18 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     title: 'Subscription',
-    href: '/admin/settings',
-    icon: SettingsIcon,
+    href: '/admin/subscription',
+    icon: BankCardIcon,
   },
   {
     title: 'Users',
     href: '/admin/users',
-    icon: GroupIcon2,
+    icon: RiGroupLine,
   },
   {
     title: 'Projects',
     href: '/admin/projects',
-    icon: FolderIcon2,
+    icon: RiProjectorLine,
   },
 ];
 

@@ -212,15 +212,15 @@ const config: CustomRouteConfig[] = [
     redirectIfLogged: false,
     title: 'CompanyDetail',
   },
-  /* System Admin - Settings */
+  /* System Admin - Subscription */
   {
     id: 'admin-settings',
-    path: '/admin/settings',
+    path: '/admin/subscription',
     component: AdminSettingsPage,
     layout: SystemAdminLayout,
     loginRequired: true,
     redirectIfLogged: false,
-    title: 'System Admin - Settings',
+    title: 'System Admin - Subscription',
   },
   /* System Admin - Users */
   {

@@ -118,7 +118,7 @@ export const AdminUserNav = () => {
           {globalConfig?.isSelfHostedMode && user?.isSystemAdmin && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/admin/settings')}>
+              <DropdownMenuItem onClick={() => navigate('/admin/subscription')}>
                 System Admin
               </DropdownMenuItem>
             </>

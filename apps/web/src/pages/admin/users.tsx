@@ -237,6 +237,9 @@ export const AdminUsersPage = () => {
               Add User
             </Button>
           </div>
+          <p className="text-sm text-muted-foreground">
+            View and manage all users in this self-hosted instance, including system admin access.
+          </p>
         </div>
         <Separator />
 
