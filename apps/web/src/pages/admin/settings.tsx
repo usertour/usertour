@@ -12,8 +12,10 @@ import { Badge } from '@usertour-packages/badge';
 import { Input } from '@usertour-packages/input';
 import { Textarea } from '@usertour-packages/textarea';
 import { Skeleton } from '@usertour-packages/skeleton';
-import { CopyIcon } from 'lucide-react';
+import { CopyIcon, UploadIcon } from 'lucide-react';
 import { getErrorMessage } from '@usertour/helpers';
+import Upload from 'rc-upload';
+import type { UploadRequestOption } from 'rc-upload/lib/interface';
 
 const LicenseStatusBadge = ({
   isValid,
@@ -56,19 +58,64 @@ export const AdminSettingsPage = () => {
     });
   };
 
-  const handleUpdateLicense = async () => {
-    const trimmed = licenseInput.trim();
-    if (!trimmed) {
-      toast({ variant: 'destructive', title: 'Please enter a license key' });
+  const handleCustomUploadRequest = (option: UploadRequestOption) => {
+    const file = option.file as File;
+
+    if (
+      file.type !== 'text/plain' &&
+      !file.name.endsWith('.txt') &&
+      !file.name.endsWith('.license')
+    ) {
+      toast({
+        title: 'Please select a text file (.txt) or license file (.license)',
+        variant: 'destructive',
+      });
+      option.onError?.(new Error('Invalid file type'));
       return;
     }
-    try {
-      await updateLicense(trimmed);
-      toast({ title: 'License updated successfully' });
-      refetch();
-    } catch (error) {
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
+
+    if (file.size > 10 * 1024) {
+      toast({
+        title: 'Please select a file smaller than 10KB',
+        variant: 'destructive',
+      });
+      option.onError?.(new Error('File too large'));
+      return;
     }
+
+    const processFile = async () => {
+      try {
+        const content = await file.text();
+        const trimmedContent = content.trim();
+
+        if (!trimmedContent) {
+          toast({
+            title: 'Empty file',
+            variant: 'destructive',
+          });
+          option.onError?.(new Error('Empty file'));
+          return;
+        }
+
+        await updateLicense(trimmedContent);
+        setLicenseInput(trimmedContent);
+        refetch();
+        toast({
+          variant: 'success',
+          title: 'License updated',
+        });
+        option.onSuccess?.(trimmedContent);
+      } catch (error) {
+        const errorMessage = getErrorMessage(error);
+        toast({
+          title: errorMessage,
+          variant: 'destructive',
+        });
+        option.onError?.(new Error(errorMessage));
+      }
+    };
+
+    processFile();
   };
 
   return (
@@ -180,15 +227,22 @@ export const AdminSettingsPage = () => {
                 onChange={(e) => setLicenseInput(e.target.value)}
                 className="flex-1 font-mono"
                 rows={6}
+                disabled
               />
               <div className="flex gap-4">
-                <Button
-                  onClick={handleUpdateLicense}
+                <Upload
+                  accept=".txt,.license,text/plain"
+                  customRequest={handleCustomUploadRequest}
                   disabled={updating}
-                  className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
                 >
-                  {updating ? 'Updating...' : 'Upload License'}
-                </Button>
+                  <Button
+                    disabled={updating}
+                    className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
+                  >
+                    <UploadIcon className="w-4 h-4 mr-1" />
+                    {updating ? 'Updating...' : 'Upload License'}
+                  </Button>
+                </Upload>
               </div>
             </div>
           </div>
