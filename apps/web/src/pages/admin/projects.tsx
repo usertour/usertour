@@ -3,6 +3,7 @@ import {
   useAdminUsersQuery,
   useAdminCreateProjectMutation,
   useAdminProjectMembersQuery,
+  useAdminAddProjectMemberMutation,
   useAdminChangeProjectMemberRoleMutation,
   useAdminTransferProjectOwnershipMutation,
   useAdminRemoveProjectMemberMutation,
@@ -87,6 +88,7 @@ interface AdminUserOption {
   id: string;
   name: string | null;
   email: string | null;
+  disabled?: boolean;
 }
 
 interface AdminProjectMemberItem {
@@ -112,6 +114,205 @@ const LicenseSourceBadge = ({ source }: { source: string }) => {
 // ============================================================================
 // Project Members Modal
 // ============================================================================
+
+const AddProjectMemberDialog = ({
+  isOpen,
+  onClose,
+  onAdded,
+  projectId,
+  existingUserIds,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onAdded: () => void;
+  projectId: string;
+  existingUserIds: string[];
+}) => {
+  const [userPickerOpen, setUserPickerOpen] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [selectedUserDisplay, setSelectedUserDisplay] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedRole, setSelectedRole] = useState('ADMIN');
+  const { data: usersData, loading: usersLoading } = useAdminUsersQuery(
+    userSearchQuery.trim() || undefined,
+    1,
+    20,
+  );
+  const { invoke: addProjectMember, loading } = useAdminAddProjectMemberMutation();
+  const { toast } = useToast();
+
+  const availableUsers: AdminUserOption[] = (usersData?.items || []).filter(
+    (user: AdminUserOption) => !user.disabled && !existingUserIds.includes(user.id),
+  );
+  const currentUser = availableUsers.find((user) => user.id === selectedUserId);
+  const userButtonLabel =
+    selectedUserDisplay ||
+    (currentUser
+      ? currentUser.name && currentUser.email
+        ? `${currentUser.name} (${currentUser.email})`
+        : currentUser.name || currentUser.email || currentUser.id
+      : '');
+
+  const resetState = () => {
+    setUserPickerOpen(false);
+    setUserSearchQuery('');
+    setSelectedUserDisplay('');
+    setSelectedUserId('');
+    setSelectedRole('ADMIN');
+  };
+
+  const handleClose = () => {
+    resetState();
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedUserId) {
+      toast({ variant: 'destructive', title: 'Please select a user' });
+      return;
+    }
+    try {
+      await addProjectMember(projectId, selectedUserId, selectedRole);
+      toast({ title: 'Member added successfully' });
+      onAdded();
+      handleClose();
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(op) => !op && handleClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Member</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="project-member-user">User</Label>
+            <Popover
+              open={userPickerOpen}
+              onOpenChange={(open) => {
+                setUserPickerOpen(open);
+                if (!open) {
+                  setUserSearchQuery('');
+                }
+              }}
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  id="project-member-user"
+                  variant="outline"
+                  aria-expanded={userPickerOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  <span className={cn('truncate', !userButtonLabel && 'text-muted-foreground')}>
+                    {userButtonLabel || 'Select a user'}
+                  </span>
+                  <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" withoutPortal>
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    placeholder="Search by name or email..."
+                    value={userSearchQuery}
+                    onValueChange={setUserSearchQuery}
+                  />
+                  <CommandList>
+                    {usersLoading ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">
+                        Loading...
+                      </div>
+                    ) : (
+                      <>
+                        {userSearchQuery.trim() ? (
+                          <>
+                            <CommandEmpty>No user found.</CommandEmpty>
+                            <CommandGroup>
+                              {availableUsers.map((user) => {
+                                const label = user.name || user.email || user.id;
+                                const description =
+                                  user.name && user.email ? user.email : undefined;
+                                const display =
+                                  user.name && user.email
+                                    ? `${user.name} (${user.email})`
+                                    : user.name || user.email || user.id;
+
+                                return (
+                                  <CommandItem
+                                    key={user.id}
+                                    value={user.id}
+                                    className="cursor-pointer"
+                                    onSelect={() => {
+                                      setSelectedUserId(user.id);
+                                      setSelectedUserDisplay(display);
+                                      setUserPickerOpen(false);
+                                      setUserSearchQuery('');
+                                    }}
+                                  >
+                                    <CheckIcon
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        selectedUserId === user.id ? 'opacity-100' : 'opacity-0',
+                                      )}
+                                    />
+                                    <div className="flex min-w-0 flex-col">
+                                      <span className="truncate">{label}</span>
+                                      {description && (
+                                        <span className="text-xs text-muted-foreground truncate">
+                                          {description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                            {availableUsers.length >= 20 && (
+                              <div className="px-3 py-2 text-xs text-muted-foreground border-t">
+                                Showing top 20 results. Refine your search to narrow it down.
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="px-3 py-6 text-sm text-muted-foreground text-center">
+                            Search users by name or email to add them to this project.
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="project-member-role">Role</Label>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger id="project-member-role">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ADMIN">Admin</SelectItem>
+                <SelectItem value="VIEWER">Viewer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Adding...' : 'Add Member'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const MemberAction = ({
   member,
@@ -289,63 +490,82 @@ const ProjectMembersModal = ({
   projectId: string;
   projectName: string;
 }) => {
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
   const { data: members, loading, refetch } = useAdminProjectMembersQuery(projectId);
+  const existingUserIds = (members || [])
+    .map((member: AdminProjectMemberItem) => member.userId)
+    .filter(Boolean) as string[];
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{projectName} Members</DialogTitle>
-        </DialogHeader>
-        {loading ? (
-          <div className="py-8 text-center text-muted-foreground">Loading...</div>
-        ) : (
-          <div className="overflow-x-auto max-h-96">
-            <Table className="table-fixed">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="hidden sm:table-cell">Email</TableHead>
-                  <TableHead className="w-28">Role</TableHead>
-                  <TableHead className="w-20" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {members?.map((member: AdminProjectMemberItem) => (
-                  <TableRow key={member.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <UserAvatar email={member.email || ''} name={member.name || undefined} />
-                        <span className="truncate max-w-48">{member.name || '-'}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="truncate hidden sm:table-cell">
-                      {member.email || '-'}
-                    </TableCell>
-                    <TableCell>{member.role}</TableCell>
-                    <TableCell>
-                      <MemberAction member={member} projectId={projectId} onRefetch={refetch} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {(!members || members.length === 0) && (
+    <>
+      <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle>{projectName} Members</DialogTitle>
+              <Button size="sm" onClick={() => setAddMemberOpen(true)}>
+                <PlusIcon className="w-4 h-4" />
+                Add Member
+              </Button>
+            </div>
+          </DialogHeader>
+          {loading ? (
+            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+          ) : (
+            <div className="overflow-x-auto max-h-96">
+              <Table className="table-fixed">
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      No members.
-                    </TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden sm:table-cell">Email</TableHead>
+                    <TableHead className="w-28">Role</TableHead>
+                    <TableHead className="w-20" />
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                </TableHeader>
+                <TableBody>
+                  {members?.map((member: AdminProjectMemberItem) => (
+                    <TableRow key={member.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <UserAvatar email={member.email || ''} name={member.name || undefined} />
+                          <span className="truncate max-w-48">{member.name || '-'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="truncate hidden sm:table-cell">
+                        {member.email || '-'}
+                      </TableCell>
+                      <TableCell>{member.role}</TableCell>
+                      <TableCell>
+                        <MemberAction member={member} projectId={projectId} onRefetch={refetch} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!members || members.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        No members.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <AddProjectMemberDialog
+        isOpen={addMemberOpen}
+        onClose={() => setAddMemberOpen(false)}
+        onAdded={refetch}
+        projectId={projectId}
+        existingUserIds={existingUserIds}
+      />
+    </>
   );
 };
 

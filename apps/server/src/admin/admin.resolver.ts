@@ -111,6 +111,17 @@ export class AdminResolver {
 
   @Mutation(() => Boolean)
   @UseGuards(SystemAdminGuard)
+  async adminAddProjectMember(
+    @Args('projectId') projectId: string,
+    @Args('userId') userId: string,
+    @Args('role') role: string,
+  ) {
+    await this.adminService.addProjectMember(projectId, userId, role);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(SystemAdminGuard)
   async adminChangeProjectMemberRole(
     @Args('projectId') projectId: string,
     @Args('userId') userId: string,

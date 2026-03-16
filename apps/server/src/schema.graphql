@@ -782,6 +782,7 @@ type Mutation {
   activeUserProject(data: ActiveUserProjectInput!): Boolean!
   addContentStep(data: CreateStepInput!): Step!
   addContentSteps(data: ContentStepsInput!): Common!
+  adminAddProjectMember(projectId: String!, role: String!, userId: String!): Boolean!
   adminChangeProjectMemberRole(projectId: String!, role: String!, userId: String!): Boolean!
   adminCreateProject(name: String!, ownerUserId: String!): Project!
   adminCreateUser(email: String!, name: String!, password: String!): User!

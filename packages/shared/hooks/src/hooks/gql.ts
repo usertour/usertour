@@ -84,6 +84,7 @@ import {
   adminProjects,
   adminCreateProject,
   adminProjectMembers,
+  adminAddProjectMember,
   adminChangeProjectMemberRole,
   adminTransferProjectOwnership,
   adminRemoveProjectMember,
@@ -1044,6 +1045,15 @@ export const useAdminProjectMembersQuery = (projectId: string) => {
     skip: !projectId,
   });
   return { data: data?.adminProjectMembers, loading, error, refetch };
+};
+
+export const useAdminAddProjectMemberMutation = () => {
+  const [mutation, { loading, error }] = useMutation(adminAddProjectMember);
+  const invoke = async (projectId: string, userId: string, role: string) => {
+    const response = await mutation({ variables: { projectId, userId, role } });
+    return response.data?.adminAddProjectMember;
+  };
+  return { invoke, loading, error };
 };
 
 export const useAdminChangeProjectMemberRoleMutation = () => {

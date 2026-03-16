@@ -419,6 +419,41 @@ export class AdminService implements OnModuleInit {
     }));
   }
 
+  async addProjectMember(projectId: string, userId: string, role: string) {
+    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) {
+      throw new ParamsError('Project not found');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new ParamsError('User not found');
+    }
+    if (user.disabled) {
+      throw new ParamsError('Cannot add a disabled user to project');
+    }
+
+    if (role !== Role.ADMIN && role !== Role.VIEWER) {
+      throw new ParamsError('Invalid project member role');
+    }
+
+    const existingMember = await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId },
+    });
+    if (existingMember) {
+      throw new ParamsError('User is already a member of this project');
+    }
+
+    return this.prisma.userOnProject.create({
+      data: {
+        userId,
+        projectId,
+        role: role as Role,
+        actived: false,
+      },
+    });
+  }
+
   async changeProjectMemberRole(projectId: string, userId: string, role: string) {
     const userOnProject = await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },

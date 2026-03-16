@@ -126,6 +126,12 @@ export const adminProjectMembers = gql`
   }
 `;
 
+export const adminAddProjectMember = gql`
+  mutation AdminAddProjectMember($projectId: String!, $userId: String!, $role: String!) {
+    adminAddProjectMember(projectId: $projectId, userId: $userId, role: $role)
+  }
+`;
+
 export const adminChangeProjectMemberRole = gql`
   mutation AdminChangeProjectMemberRole($projectId: String!, $userId: String!, $role: String!) {
     adminChangeProjectMemberRole(projectId: $projectId, userId: $userId, role: $role)
