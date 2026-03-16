@@ -824,31 +824,31 @@ export const AdminProjectsPage = () => {
   return (
     <>
       <SettingsContent>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
             <h3 className="text-2xl font-semibold tracking-tight">Projects</h3>
+            <p className="text-sm text-muted-foreground">
+              View and manage all projects in this self-hosted instance, including owners and
+              members.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 md:w-auto md:flex-row md:items-center">
             <Button onClick={() => setIsCreateDialogOpen(true)} className="flex-none">
               <PlusIcon className="w-4 h-4" />
               Create Project
             </Button>
+            <div className="relative w-full md:w-[240px]">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Find a project"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            View and manage all projects in this self-hosted instance, including owners and members.
-          </p>
         </div>
         <Separator />
-
-        <div className="flex items-center gap-2 pt-5 pb-1">
-          <div className="relative flex-1 max-w-sm">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by project name..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
 
         {loading ? (
           <ListSkeleton />

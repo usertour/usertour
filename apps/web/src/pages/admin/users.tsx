@@ -229,31 +229,30 @@ export const AdminUsersPage = () => {
   return (
     <>
       <SettingsContent>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
             <h3 className="text-2xl font-semibold tracking-tight">Users</h3>
+            <p className="text-sm text-muted-foreground">
+              View and manage all users in this self-hosted instance, including system admin access.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 md:w-auto md:flex-row md:items-center">
             <Button onClick={() => setIsAddDialogOpen(true)} className="flex-none">
               <PlusIcon className="w-4 h-4" />
               Add User
             </Button>
+            <div className="relative w-full md:w-[240px]">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Find a user"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            View and manage all users in this self-hosted instance, including system admin access.
-          </p>
         </div>
         <Separator />
-
-        <div className="flex items-center gap-2 pt-5 pb-1">
-          <div className="relative flex-1 max-w-sm">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
 
         {loading ? (
           <ListSkeleton />
