@@ -41,8 +41,20 @@ export const updateInstanceLicense = gql`
 `;
 
 export const adminUsers = gql`
-  query AdminUsers($query: String, $page: Int, $pageSize: Int) {
-    adminUsers(query: $query, page: $page, pageSize: $pageSize) {
+  query AdminUsers(
+    $query: String
+    $page: Int
+    $pageSize: Int
+    $status: String
+    $role: String
+  ) {
+    adminUsers(
+      query: $query
+      page: $page
+      pageSize: $pageSize
+      status: $status
+      role: $role
+    ) {
       items {
         id
         name
@@ -92,8 +104,18 @@ export const updateUserDisabled = gql`
 `;
 
 export const adminProjects = gql`
-  query AdminProjects($query: String, $page: Int, $pageSize: Int) {
-    adminProjects(query: $query, page: $page, pageSize: $pageSize) {
+  query AdminProjects(
+    $query: String
+    $page: Int
+    $pageSize: Int
+    $usesInstanceLicense: String
+  ) {
+    adminProjects(
+      query: $query
+      page: $page
+      pageSize: $pageSize
+      usesInstanceLicense: $usesInstanceLicense
+    ) {
       items {
         id
         name

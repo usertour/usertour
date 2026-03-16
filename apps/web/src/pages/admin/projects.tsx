@@ -39,6 +39,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@usertour-packages/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
@@ -65,6 +66,8 @@ import {
   ChevronRightIcon,
   ExternalLinkIcon,
   ArrowLeftRightIcon,
+  PlusCircleIcon,
+  XIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
@@ -75,6 +78,85 @@ import { Delete2Icon, EditIcon } from '@usertour-packages/icons';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 
 const PAGE_SIZE = 20;
+
+const ProjectFilterButton = ({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: Array<{ label: string; value: string }>;
+  onChange: (value: string) => void;
+}) => {
+  const activeOption = options.find((option) => option.value === value);
+  const hasSelection = value !== 'all';
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 gap-2 border-dashed font-normal">
+          <PlusCircleIcon className="h-4 w-4" />
+          {label}
+          {hasSelection && (
+            <>
+              <Separator orientation="vertical" className="mx-1 h-4" />
+              <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                {activeOption?.label}
+              </Badge>
+            </>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[260px] p-0">
+        <Command>
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => {
+                const isSelected = option.value === value;
+
+                return (
+                  <CommandItem
+                    key={option.value}
+                    onSelect={() => onChange(option.value)}
+                    className="cursor-pointer"
+                  >
+                    <div
+                      className={cn(
+                        'flex size-4 items-center justify-center rounded-[4px] border',
+                        isSelected
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-input [&_svg]:invisible',
+                      )}
+                    >
+                      <CheckIcon className="size-3.5 text-primary-foreground" />
+                    </div>
+                    <span className="whitespace-nowrap">{option.label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            {hasSelection && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={() => onChange('all')}
+                    className="justify-center text-center cursor-pointer"
+                  >
+                    Clear filter
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 interface AdminProjectItem {
   id: string;
@@ -843,15 +925,28 @@ export const AdminProjectsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [assignmentFilter, setAssignmentFilter] = useState('all');
   const { data: settingsData, refetch: refetchSettings } = useAdminSettingsQuery();
   const { data, loading, refetch } = useAdminProjectsQuery(
     searchQuery || undefined,
     currentPage,
     PAGE_SIZE,
+    assignmentFilter,
   );
 
   const handleSearch = useCallback((value: string) => {
     setSearchQuery(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleAssignmentFilterChange = useCallback((value: string) => {
+    setAssignmentFilter(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setSearchQuery('');
+    setAssignmentFilter('all');
     setCurrentPage(1);
   }, []);
 
@@ -862,62 +957,70 @@ export const AdminProjectsPage = () => {
   const hasValidInstanceLicense = settingsData?.licenseInfo?.isValid ?? false;
   const isUnlimitedInstanceLicense =
     hasValidInstanceLicense && (projectLimit === null || projectLimit === undefined);
-  const projectsUsingInstanceLicense = settingsData?.projectsUsingInstanceLicense || 0;
   const isOverProjectLimit = settingsData?.isOverProjectLimit || false;
-  const projectLimitLabel = !hasValidInstanceLicense
-    ? 'No license'
-    : isUnlimitedInstanceLicense
-      ? 'Unlimited'
-      : String(projectLimit);
   const handleRefetchAll = useCallback(() => {
     refetch();
     refetchSettings();
   }, [refetch, refetchSettings]);
+  const hasActiveFilters = !!searchQuery || assignmentFilter !== 'all';
 
   return (
     <>
       <SettingsContent>
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <h3 className="text-2xl font-semibold tracking-tight">Projects</h3>
-            <p className="text-sm text-muted-foreground">
-              View and manage all projects in this self-hosted instance, including owners and
-              members.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 md:w-auto md:flex-row md:items-center">
-            <Button onClick={() => setIsCreateDialogOpen(true)} className="flex-none">
-              <PlusIcon className="w-4 h-4" />
-              Create Project
-            </Button>
+        <div className="space-y-2">
+          <h3 className="text-2xl font-semibold tracking-tight">Projects</h3>
+          <p className="text-sm text-muted-foreground">
+            View and manage all projects in this self-hosted instance, including owners and members.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
             <div className="relative w-full md:w-[240px]">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Find a project"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-9"
+                className="h-8 pl-9 md:w-[240px]"
               />
             </div>
+            <ProjectFilterButton
+              label="Assignment"
+              value={assignmentFilter}
+              onChange={handleAssignmentFilterChange}
+              options={[
+                { label: 'All', value: 'all' },
+                { label: 'Using Instance License', value: 'using' },
+                { label: 'Not Using Instance License', value: 'notUsing' },
+              ]}
+            />
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="h-8 px-2 lg:px-3"
+              >
+                Reset
+                <XIcon className="h-4 w-4" />
+              </Button>
+            )}
           </div>
+          <Button onClick={() => setIsCreateDialogOpen(true)} size="sm" className="h-8 flex-none">
+            <PlusIcon className="w-4 h-4" />
+            Create Project
+          </Button>
         </div>
         <Separator />
 
-        <div className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-muted-foreground">
-            {!hasValidInstanceLicense
-              ? 'No active instance license configured'
-              : isUnlimitedInstanceLicense
-                ? `${projectsUsingInstanceLicense} projects automatically using instance license`
-                : `${projectsUsingInstanceLicense} of ${projectLimitLabel} projects using instance license`}
-          </div>
-          {isOverProjectLimit && (
+        {isOverProjectLimit && (
+          <div className="py-4">
             <div className="text-sm text-destructive">
               Project usage exceeds the current instance license limit. Existing assignments still
               work, but you cannot add more until usage is reduced.
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {loading ? (
           <ListSkeleton />

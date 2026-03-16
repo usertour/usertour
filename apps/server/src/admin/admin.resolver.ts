@@ -55,8 +55,10 @@ export class AdminResolver {
     @Args('query', { nullable: true }) query?: string,
     @Args('page', { type: () => Int, nullable: true }) page?: number,
     @Args('pageSize', { type: () => Int, nullable: true }) pageSize?: number,
+    @Args('status', { nullable: true }) status?: string,
+    @Args('role', { nullable: true }) role?: string,
   ) {
-    return this.adminService.getAdminUsers(query, page || 1, pageSize || 20);
+    return this.adminService.getAdminUsers(query, page || 1, pageSize || 20, status, role);
   }
 
   @Mutation(() => User)
@@ -94,8 +96,14 @@ export class AdminResolver {
     @Args('query', { nullable: true }) query?: string,
     @Args('page', { type: () => Int, nullable: true }) page?: number,
     @Args('pageSize', { type: () => Int, nullable: true }) pageSize?: number,
+    @Args('usesInstanceLicense', { nullable: true }) usesInstanceLicense?: string,
   ) {
-    return this.adminService.getAdminProjects(query, page || 1, pageSize || 20);
+    return this.adminService.getAdminProjects(
+      query,
+      page || 1,
+      pageSize || 20,
+      usesInstanceLicense,
+    );
   }
 
   @Mutation(() => Project)

@@ -152,13 +152,23 @@ export class AdminService implements OnModuleInit {
   // Users Management
   // ============================================================================
 
-  async getAdminUsers(query?: string, page = 1, pageSize = 20) {
+  async getAdminUsers(query?: string, page = 1, pageSize = 20, status?: string, role?: string) {
     const where: any = {};
     if (query) {
       where.OR = [
         { name: { contains: query, mode: 'insensitive' } },
         { email: { contains: query, mode: 'insensitive' } },
       ];
+    }
+    if (status === 'active') {
+      where.disabled = false;
+    } else if (status === 'disabled') {
+      where.disabled = true;
+    }
+    if (role === 'systemAdmin') {
+      where.isSystemAdmin = true;
+    } else if (role === 'nonAdmin') {
+      where.isSystemAdmin = false;
     }
 
     const [total, users] = await Promise.all([
@@ -258,30 +268,32 @@ export class AdminService implements OnModuleInit {
   // Projects Management
   // ============================================================================
 
-  async getAdminProjects(query?: string, page = 1, pageSize = 20) {
+  async getAdminProjects(query?: string, page = 1, pageSize = 20, usesInstanceLicense?: string) {
     const where: any = {};
     if (query) {
       where.name = { contains: query, mode: 'insensitive' };
     }
-
-    const [total, projects] = await Promise.all([
-      this.prisma.project.count({ where }),
-      this.prisma.project.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: {
-          users: {
-            include: { user: true },
-          },
-        },
-      }),
-    ]);
+    if (usesInstanceLicense === 'using') {
+      where.usesInstanceLicense = true;
+    } else if (usesInstanceLicense === 'notUsing') {
+      where.usesInstanceLicense = false;
+    }
 
     const instanceSetting = await this.getInstanceSetting();
     const instancePayload = await this.getValidInstanceLicensePayload(instanceSetting);
+    const projects = await this.prisma.project.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        users: {
+          include: { user: true },
+        },
+      },
+    });
 
+    const total = await this.prisma.project.count({ where });
     const items = await Promise.all(
       projects.map(async (project) => {
         const owner = project.users.find((u) => u.role === 'OWNER');

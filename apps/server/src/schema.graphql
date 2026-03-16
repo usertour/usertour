@@ -906,9 +906,9 @@ type ProjectConfigModel {
 
 type Query {
   adminProjectMembers(projectId: String!): [AdminProjectMember!]!
-  adminProjects(page: Int, pageSize: Int, query: String): AdminProjectList!
+  adminProjects(page: Int, pageSize: Int, query: String, usesInstanceLicense: String): AdminProjectList!
   adminSettings: AdminSettingsInfo!
-  adminUsers(page: Int, pageSize: Int, query: String): AdminUserList!
+  adminUsers(page: Int, pageSize: Int, query: String, role: String, status: String): AdminUserList!
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
   getAuthConfig: [AuthConfigItem!]!

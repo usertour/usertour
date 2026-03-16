@@ -1034,9 +1034,15 @@ export const useUpdateInstanceLicenseMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useAdminUsersQuery = (query?: string, page?: number, pageSize?: number) => {
+export const useAdminUsersQuery = (
+  query?: string,
+  page?: number,
+  pageSize?: number,
+  status?: string,
+  role?: string,
+) => {
   const { data, loading, error, refetch } = useQuery(adminUsers, {
-    variables: { query, page, pageSize },
+    variables: { query, page, pageSize, status, role },
   });
   return { data: data?.adminUsers, loading, error, refetch };
 };
@@ -1068,9 +1074,14 @@ export const useUpdateUserDisabledMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useAdminProjectsQuery = (query?: string, page?: number, pageSize?: number) => {
+export const useAdminProjectsQuery = (
+  query?: string,
+  page?: number,
+  pageSize?: number,
+  usesInstanceLicense?: string,
+) => {
   const { data, loading, error, refetch } = useQuery(adminProjects, {
-    variables: { query, page, pageSize },
+    variables: { query, page, pageSize, usesInstanceLicense },
   });
   return { data: data?.adminProjects, loading, error, refetch };
 };

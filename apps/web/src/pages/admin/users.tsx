@@ -12,6 +12,15 @@ import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { Badge } from '@usertour-packages/badge';
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@usertour-packages/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import {
   Table,
   TableBody,
   TableCell,
@@ -33,15 +42,102 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@usertour-packages/dialog';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { PlusIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { CheckIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
+import {
+  PlusIcon,
+  SearchIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlusCircleIcon,
+  XIcon,
+} from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { UserAvatar } from '@/components/molecules/user-avatar';
+import { cn } from '@usertour-packages/tailwind';
 
 const PAGE_SIZE = 20;
+
+const UserFilterButton = ({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: Array<{ label: string; value: string }>;
+  onChange: (value: string) => void;
+}) => {
+  const activeOption = options.find((option) => option.value === value);
+  const hasSelection = value !== 'all';
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 gap-2 border-dashed font-normal">
+          <PlusCircleIcon className="h-4 w-4" />
+          {label}
+          {hasSelection && (
+            <>
+              <Separator orientation="vertical" className="mx-1 h-4" />
+              <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                {activeOption?.label}
+              </Badge>
+            </>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[220px] p-0">
+        <Command>
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => {
+                const isSelected = option.value === value;
+
+                return (
+                  <CommandItem
+                    key={option.value}
+                    onSelect={() => onChange(option.value)}
+                    className="cursor-pointer"
+                  >
+                    <div
+                      className={cn(
+                        'flex size-4 items-center justify-center rounded-[4px] border',
+                        isSelected
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-input [&_svg]:invisible',
+                      )}
+                    >
+                      <CheckIcon className="size-3.5 text-primary-foreground" />
+                    </div>
+                    <span className="whitespace-nowrap">{option.label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            {hasSelection && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={() => onChange('all')}
+                    className="justify-center text-center cursor-pointer"
+                  >
+                    Clear filter
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 interface AdminUserItem {
   id: string;
@@ -138,7 +234,10 @@ const AddUserDialog = ({
       return;
     }
     if (password.length < 8) {
-      toast({ variant: 'destructive', title: 'Password must be at least 8 characters' });
+      toast({
+        variant: 'destructive',
+        title: 'Password must be at least 8 characters',
+      });
       return;
     }
     try {
@@ -207,14 +306,35 @@ export const AdminUsersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
   const { data, loading, refetch } = useAdminUsersQuery(
     searchQuery || undefined,
     currentPage,
     PAGE_SIZE,
+    statusFilter,
+    roleFilter,
   );
 
   const handleSearch = useCallback((value: string) => {
     setSearchQuery(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleRoleFilterChange = useCallback((value: string) => {
+    setRoleFilter(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setRoleFilter('all');
     setCurrentPage(1);
   }, []);
 
@@ -225,32 +345,64 @@ export const AdminUsersPage = () => {
   const items: AdminUserItem[] = data?.items || [];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
+  const hasActiveFilters = !!searchQuery || statusFilter !== 'all' || roleFilter !== 'all';
 
   return (
     <>
       <SettingsContent>
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <h3 className="text-2xl font-semibold tracking-tight">Users</h3>
-            <p className="text-sm text-muted-foreground">
-              View and manage all users in this self-hosted instance, including system admin access.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 md:w-auto md:flex-row md:items-center">
-            <Button onClick={() => setIsAddDialogOpen(true)} className="flex-none">
-              <PlusIcon className="w-4 h-4" />
-              Add User
-            </Button>
+        <div className="space-y-2">
+          <h3 className="text-2xl font-semibold tracking-tight">Users</h3>
+          <p className="text-sm text-muted-foreground">
+            View and manage all users in this self-hosted instance, including system admin access.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
             <div className="relative w-full md:w-[240px]">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Find a user"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-9"
+                className="h-8 pl-9 md:w-[240px]"
               />
             </div>
+            <UserFilterButton
+              label="Status"
+              value={statusFilter}
+              onChange={handleStatusFilterChange}
+              options={[
+                { label: 'All', value: 'all' },
+                { label: 'Active', value: 'active' },
+                { label: 'Disabled', value: 'disabled' },
+              ]}
+            />
+            <UserFilterButton
+              label="Role"
+              value={roleFilter}
+              onChange={handleRoleFilterChange}
+              options={[
+                { label: 'All', value: 'all' },
+                { label: 'System Admin', value: 'systemAdmin' },
+                { label: 'Non-admin', value: 'nonAdmin' },
+              ]}
+            />
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="h-8 px-2 lg:px-3"
+              >
+                Reset
+                <XIcon className="h-4 w-4" />
+              </Button>
+            )}
           </div>
+          <Button onClick={() => setIsAddDialogOpen(true)} size="sm" className="h-8 flex-none">
+            <PlusIcon className="w-4 h-4" />
+            Add User
+          </Button>
         </div>
         <Separator />
 
