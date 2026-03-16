@@ -130,7 +130,9 @@ export class WebSocketService {
     }
 
     // Fallback to instance-level license
-    const instanceSetting = await this.prisma.instanceSetting.findFirst();
+    const instanceSetting = await this.prisma.instanceSetting.findUnique({
+      where: { key: 'instance' },
+    });
     if (instanceSetting?.license) {
       const validationResult = await this.licenseService.validateLicense(instanceSetting.license);
       if (validationResult.isValid) {

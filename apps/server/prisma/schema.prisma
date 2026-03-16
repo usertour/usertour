@@ -67,8 +67,10 @@ model User {
 model InstanceSetting {
   /// Primary key
   id          String   @id @default(cuid())
+  /// Singleton key to ensure exactly one instance setting record exists
+  key         String   @unique @default("instance")
   /// Stable instance identifier
-  instanceId  String   @unique
+  instanceId  String   @unique @default(cuid())
   /// Instance-level license JWT token
   license     String?
   /// Create timestamp

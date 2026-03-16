@@ -41,6 +41,7 @@ Table User {
 
 Table InstanceSetting {
   id String [pk, note: 'Primary key']
+  key String [unique, not null, default: 'instance', note: 'Singleton key to ensure exactly one instance setting record exists']
   instanceId String [unique, not null, note: 'Stable instance identifier']
   license String [note: 'Instance-level license JWT token']
   createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']

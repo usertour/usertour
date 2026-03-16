@@ -1,7 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
-import { createHash, randomBytes } from 'node:crypto';
 import { LicenseService } from '@/license/license.service';
 import {
   EmailAlreadyRegistered,
@@ -21,6 +20,7 @@ import { Role } from '@prisma/client';
 @Injectable()
 export class AdminService implements OnModuleInit {
   private readonly logger = new Logger(AdminService.name);
+  private static readonly INSTANCE_SETTING_KEY = 'instance';
 
   constructor(
     private prisma: PrismaService,
@@ -40,22 +40,12 @@ export class AdminService implements OnModuleInit {
    * Ensure exactly one InstanceSetting record exists with a stable instanceId.
    */
   private async ensureInstanceSetting() {
-    const existing = await this.prisma.instanceSetting.findFirst();
-    if (!existing) {
-      const instanceId = this.generateInstanceId();
-      await this.prisma.instanceSetting.create({
-        data: { instanceId },
-      });
-      this.logger.log(`Created instance setting with instanceId: ${instanceId}`);
-    }
-  }
-
-  /**
-   * Generate a stable instance ID based on a random seed.
-   */
-  private generateInstanceId(): string {
-    const seed = randomBytes(32).toString('hex');
-    return createHash('sha256').update(seed).digest('hex').substring(0, 32);
+    const created = await this.prisma.instanceSetting.upsert({
+      where: { key: AdminService.INSTANCE_SETTING_KEY },
+      create: { key: AdminService.INSTANCE_SETTING_KEY },
+      update: {},
+    });
+    this.logger.log(`Ensured instance setting with instanceId: ${created.instanceId}`);
   }
 
   // ============================================================================
@@ -63,11 +53,13 @@ export class AdminService implements OnModuleInit {
   // ============================================================================
 
   async getInstanceSetting() {
-    return this.prisma.instanceSetting.findFirst();
+    return this.prisma.instanceSetting.findUnique({
+      where: { key: AdminService.INSTANCE_SETTING_KEY },
+    });
   }
 
   async getInstanceLicenseInfo() {
-    const setting = await this.prisma.instanceSetting.findFirst();
+    const setting = await this.getInstanceSetting();
     if (!setting?.license) {
       return null;
     }
@@ -116,7 +108,7 @@ export class AdminService implements OnModuleInit {
   }
 
   async updateInstanceLicense(license: string) {
-    const setting = await this.prisma.instanceSetting.findFirst();
+    const setting = await this.getInstanceSetting();
     if (!setting) {
       throw new ParamsError('Instance setting not found');
     }
@@ -151,7 +143,7 @@ export class AdminService implements OnModuleInit {
     }
 
     return this.prisma.instanceSetting.update({
-      where: { id: setting.id },
+      where: { key: AdminService.INSTANCE_SETTING_KEY },
       data: { license },
     });
   }
@@ -287,7 +279,7 @@ export class AdminService implements OnModuleInit {
       }),
     ]);
 
-    const instanceSetting = await this.prisma.instanceSetting.findFirst();
+    const instanceSetting = await this.getInstanceSetting();
 
     const items = await Promise.all(
       projects.map(async (project) => {

@@ -211,7 +211,9 @@ export class ProjectsService {
    * Try to resolve config from the instance-level license.
    */
   private async tryInstanceLicense(): Promise<ProjectConfig | null> {
-    const instanceSetting = await this.prisma.instanceSetting.findFirst();
+    const instanceSetting = await this.prisma.instanceSetting.findUnique({
+      where: { key: 'instance' },
+    });
     if (!instanceSetting?.license) {
       return null;
     }
