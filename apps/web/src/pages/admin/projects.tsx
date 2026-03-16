@@ -1,7 +1,9 @@
 import {
   useAdminProjectsQuery,
+  useAdminSettingsQuery,
   useAdminUsersQuery,
   useAdminCreateProjectMutation,
+  useUpdateProjectUsesInstanceLicenseMutation,
   useAdminProjectMembersQuery,
   useAdminAddProjectMemberMutation,
   useAdminChangeProjectMemberRoleMutation,
@@ -81,6 +83,7 @@ interface AdminProjectItem {
   ownerName: string | null;
   ownerEmail: string | null;
   memberCount: number;
+  usesInstanceLicense: boolean;
   licenseSource: string;
 }
 
@@ -509,7 +512,8 @@ const ProjectMembersModal = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  {members?.length || 0} member{members && members.length !== 1 ? 's' : ''}
+                  {members?.length || 0} member
+                  {members && members.length !== 1 ? 's' : ''}
                 </span>
                 <Button size="sm" onClick={() => setAddMemberOpen(true)}>
                   <PlusIcon className="w-4 h-4" />
@@ -578,11 +582,32 @@ const ProjectMembersModal = ({
 
 const ProjectListAction = ({
   project,
+  isUnlimitedInstanceLicense,
+  onRefetch,
 }: {
   project: AdminProjectItem;
+  isUnlimitedInstanceLicense: boolean;
+  onRefetch: () => void;
 }) => {
   const navigate = useNavigate();
   const [membersOpen, setMembersOpen] = useState(false);
+  const { invoke: updateProjectUsesInstanceLicense, loading } =
+    useUpdateProjectUsesInstanceLicenseMutation();
+  const { toast } = useToast();
+
+  const handleToggleInstanceLicense = async () => {
+    try {
+      await updateProjectUsesInstanceLicense(project.id, !project.usesInstanceLicense);
+      toast({
+        title: project.usesInstanceLicense
+          ? 'Instance license disabled for project'
+          : 'Instance license enabled for project',
+      });
+      onRefetch();
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
 
   return (
     <>
@@ -603,6 +628,15 @@ const ProjectListAction = ({
           <DropdownMenuItem className="cursor-pointer" onClick={() => setMembersOpen(true)}>
             View Members
           </DropdownMenuItem>
+          {!isUnlimitedInstanceLicense && (
+            <DropdownMenuItem
+              className="cursor-pointer"
+              disabled={loading}
+              onClick={handleToggleInstanceLicense}
+            >
+              {project.usesInstanceLicense ? 'Stop Using Instance License' : 'Use Instance License'}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <ProjectMembersModal
@@ -809,6 +843,7 @@ export const AdminProjectsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { data: settingsData, refetch: refetchSettings } = useAdminSettingsQuery();
   const { data, loading, refetch } = useAdminProjectsQuery(
     searchQuery || undefined,
     currentPage,
@@ -823,6 +858,21 @@ export const AdminProjectsPage = () => {
   const items: AdminProjectItem[] = data?.items || [];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
+  const projectLimit = settingsData?.licenseInfo?.payload?.projectLimit;
+  const hasValidInstanceLicense = settingsData?.licenseInfo?.isValid ?? false;
+  const isUnlimitedInstanceLicense =
+    hasValidInstanceLicense && (projectLimit === null || projectLimit === undefined);
+  const projectsUsingInstanceLicense = settingsData?.projectsUsingInstanceLicense || 0;
+  const isOverProjectLimit = settingsData?.isOverProjectLimit || false;
+  const projectLimitLabel = !hasValidInstanceLicense
+    ? 'No license'
+    : isUnlimitedInstanceLicense
+      ? 'Unlimited'
+      : String(projectLimit);
+  const handleRefetchAll = useCallback(() => {
+    refetch();
+    refetchSettings();
+  }, [refetch, refetchSettings]);
 
   return (
     <>
@@ -852,6 +902,22 @@ export const AdminProjectsPage = () => {
           </div>
         </div>
         <Separator />
+
+        <div className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">
+            {!hasValidInstanceLicense
+              ? 'No active instance license configured'
+              : isUnlimitedInstanceLicense
+                ? `${projectsUsingInstanceLicense} projects automatically using instance license`
+                : `${projectsUsingInstanceLicense} of ${projectLimitLabel} projects using instance license`}
+          </div>
+          {isOverProjectLimit && (
+            <div className="text-sm text-destructive">
+              Project usage exceeds the current instance license limit. Existing assignments still
+              work, but you cannot add more until usage is reduced.
+            </div>
+          )}
+        </div>
 
         {loading ? (
           <ListSkeleton />
@@ -896,7 +962,11 @@ export const AdminProjectsPage = () => {
                       <LicenseSourceBadge source={project.licenseSource} />
                     </TableCell>
                     <TableCell>
-                      <ProjectListAction project={project} />
+                      <ProjectListAction
+                        project={project}
+                        isUnlimitedInstanceLicense={isUnlimitedInstanceLicense}
+                        onRefetch={handleRefetchAll}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -946,7 +1016,7 @@ export const AdminProjectsPage = () => {
         isOpen={isCreateDialogOpen}
         onClose={() => {
           setIsCreateDialogOpen(false);
-          refetch();
+          handleRefetchAll();
         }}
       />
     </>

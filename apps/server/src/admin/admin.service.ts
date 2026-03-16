@@ -280,11 +280,16 @@ export class AdminService implements OnModuleInit {
     ]);
 
     const instanceSetting = await this.getInstanceSetting();
+    const instancePayload = await this.getValidInstanceLicensePayload(instanceSetting);
 
     const items = await Promise.all(
       projects.map(async (project) => {
         const owner = project.users.find((u) => u.role === 'OWNER');
-        const licenseSource = await this.resolveProjectLicenseSource(project, instanceSetting);
+        const licenseSource = await this.resolveProjectLicenseSource(
+          project,
+          instanceSetting,
+          instancePayload,
+        );
 
         return {
           id: project.id,
@@ -293,6 +298,7 @@ export class AdminService implements OnModuleInit {
           ownerName: owner?.user?.name || null,
           ownerEmail: owner?.user?.email || null,
           memberCount: project.users.length,
+          usesInstanceLicense: project.usesInstanceLicense,
           licenseSource,
         };
       }),
@@ -301,38 +307,185 @@ export class AdminService implements OnModuleInit {
     return { items, total, page, pageSize };
   }
 
+  async getProjectsUsingInstanceLicenseCount(): Promise<number> {
+    const setting = await this.getInstanceSetting();
+    const instancePayload = await this.getValidInstanceLicensePayload(setting);
+    if (!instancePayload) {
+      return 0;
+    }
+
+    const projects = await this.prisma.project.findMany({
+      where:
+        instancePayload.projectLimit === null || instancePayload.projectLimit === undefined
+          ? {}
+          : { usesInstanceLicense: true },
+      select: { id: true, license: true },
+    });
+
+    const usage = await Promise.all(
+      projects.map(async (project) => {
+        const projectLicensePayload = await this.getValidProjectLicensePayload(
+          project.id,
+          project.license,
+        );
+        if (projectLicensePayload) {
+          return 0;
+        }
+
+        if (instancePayload.projectLimit === null || instancePayload.projectLimit === undefined) {
+          return 1;
+        }
+
+        return 1;
+      }),
+    );
+
+    return usage.reduce((sum, value) => sum + value, 0);
+  }
+
+  async isOverProjectLimit(): Promise<boolean> {
+    const setting = await this.getInstanceSetting();
+    const payload = await this.getValidInstanceLicensePayload(setting);
+    const projectLimit = payload?.projectLimit;
+
+    if (projectLimit === null || projectLimit === undefined) {
+      return false;
+    }
+
+    const projectsUsingInstanceLicense = await this.getProjectsUsingInstanceLicenseCount();
+    return projectsUsingInstanceLicense > projectLimit;
+  }
+
   private async resolveProjectLicenseSource(
-    project: { id: string; license: string | null },
+    project: {
+      id: string;
+      license: string | null;
+      usesInstanceLicense: boolean;
+    },
     instanceSetting: { instanceId: string; license: string | null } | null,
+    instancePayload?: {
+      plan?: string | null;
+      projectLimit?: number | null;
+      instanceId?: string | null;
+    } | null,
   ): Promise<string> {
     // Check project-level license first
-    if (project.license) {
-      const result = await this.licenseService.validateLicense(project.license);
-      if (result.isValid) {
-        const payload = await this.licenseService.getLicensePayload(project.license);
-        if (payload?.projectId === project.id) {
-          return 'project';
-        }
-      }
+    const projectPayload = await this.getValidProjectLicensePayload(project.id, project.license);
+    if (projectPayload) {
+      return 'project';
     }
 
     // Check instance-level license
-    if (instanceSetting?.license) {
-      const result = await this.licenseService.validateLicense(instanceSetting.license);
-      if (result.isValid) {
-        const payload = await this.licenseService.getLicensePayload(instanceSetting.license);
-        const scope = payload?.scope || (payload?.projectId ? 'project' : 'instance');
-        if (scope === 'instance' && payload?.instanceId === instanceSetting.instanceId) {
-          return 'instance';
-        }
-      }
+    if (
+      instanceSetting?.license &&
+      instancePayload &&
+      (instancePayload.projectLimit === null ||
+        instancePayload.projectLimit === undefined ||
+        project.usesInstanceLicense)
+    ) {
+      return 'instance';
     }
 
     return 'none';
   }
 
+  async updateProjectUsesInstanceLicense(projectId: string, enabled: boolean) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, usesInstanceLicense: true, license: true },
+    });
+    if (!project) {
+      throw new ParamsError('Project not found');
+    }
+
+    if (!enabled) {
+      await this.prisma.project.update({
+        where: { id: projectId },
+        data: { usesInstanceLicense: false },
+      });
+      return true;
+    }
+
+    const instanceSetting = await this.getInstanceSetting();
+    const instancePayload = await this.getValidInstanceLicensePayload(instanceSetting);
+    if (!instancePayload) {
+      throw new ParamsError('No valid instance license found');
+    }
+
+    const projectPayload = await this.getValidProjectLicensePayload(project.id, project.license);
+    const projectLimit = instancePayload.projectLimit;
+
+    if (projectLimit === null || projectLimit === undefined) {
+      await this.prisma.project.update({
+        where: { id: projectId },
+        data: { usesInstanceLicense: enabled },
+      });
+      return true;
+    }
+
+    if (!projectPayload && projectLimit !== null && projectLimit !== undefined) {
+      const projectsUsingInstanceLicense = await this.getProjectsUsingInstanceLicenseCount();
+      const currentUsage =
+        project.usesInstanceLicense && !projectPayload
+          ? projectsUsingInstanceLicense - 1
+          : projectsUsingInstanceLicense;
+
+      if (currentUsage >= projectLimit) {
+        throw new ParamsError('Instance license project limit has been reached');
+      }
+    }
+
+    await this.prisma.project.update({
+      where: { id: projectId },
+      data: { usesInstanceLicense: true },
+    });
+    return true;
+  }
+
+  private async getValidProjectLicensePayload(projectId: string, licenseToken: string | null) {
+    if (!licenseToken) {
+      return null;
+    }
+
+    const result = await this.licenseService.validateLicense(licenseToken);
+    if (!result.isValid) {
+      return null;
+    }
+
+    const payload = await this.licenseService.getLicensePayload(licenseToken);
+    const scope = payload?.scope || (payload?.projectId ? 'project' : null);
+    if (scope !== 'project' || payload?.projectId !== projectId) {
+      return null;
+    }
+
+    return payload;
+  }
+
+  private async getValidInstanceLicensePayload(
+    instanceSetting: { instanceId: string; license: string | null } | null,
+  ) {
+    if (!instanceSetting?.license) {
+      return null;
+    }
+
+    const result = await this.licenseService.validateLicense(instanceSetting.license);
+    if (!result.isValid) {
+      return null;
+    }
+
+    const payload = await this.licenseService.getLicensePayload(instanceSetting.license);
+    const scope = payload?.scope || (payload?.projectId ? 'project' : 'instance');
+    if (scope !== 'instance' || payload?.instanceId !== instanceSetting.instanceId) {
+      return null;
+    }
+
+    return payload;
+  }
+
   async createProject(name: string, ownerUserId: string) {
-    const owner = await this.prisma.user.findUnique({ where: { id: ownerUserId } });
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerUserId },
+    });
     if (!owner) {
       throw new ParamsError('Owner user not found');
     }
@@ -390,7 +543,9 @@ export class AdminService implements OnModuleInit {
   // ============================================================================
 
   async getProjectMembers(projectId: string) {
-    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
     if (!project) {
       throw new ParamsError('Project not found');
     }
@@ -412,7 +567,9 @@ export class AdminService implements OnModuleInit {
   }
 
   async addProjectMember(projectId: string, userId: string, role: string) {
-    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
     if (!project) {
       throw new ParamsError('Project not found');
     }

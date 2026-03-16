@@ -91,6 +91,7 @@ Table Project {
   updatedAt DateTime [not null]
   name String [not null]
   logoUrl String
+  usesInstanceLicense Boolean [not null, default: false, note: 'Whether this project is assigned to use the instance license entitlement']
   customerId String [note: 'Stripe customer ID']
   subscriptionId String [note: 'Stripe subscription ID']
   license String [note: 'License']

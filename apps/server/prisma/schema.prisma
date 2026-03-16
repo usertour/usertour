@@ -120,6 +120,8 @@ model Project {
   updatedAt      DateTime        @updatedAt @db.Timestamptz(6)
   name           String
   logoUrl        String?
+  /// Whether this project is assigned to use the instance license entitlement
+  usesInstanceLicense Boolean    @default(false)
   /// Stripe customer ID
   customerId     String?
   /// Stripe subscription ID

@@ -5,6 +5,8 @@ export const adminSettings = gql`
     adminSettings {
       instanceId
       projectCount
+      projectsUsingInstanceLicense
+      isOverProjectLimit
       licenseInfo {
         license
         payload {
@@ -58,7 +60,11 @@ export const adminUsers = gql`
 `;
 
 export const adminCreateUser = gql`
-  mutation AdminCreateUser($name: String!, $email: String!, $password: String!) {
+  mutation AdminCreateUser(
+    $name: String!
+    $email: String!
+    $password: String!
+  ) {
     adminCreateUser(name: $name, email: $email, password: $password) {
       id
       name
@@ -95,6 +101,7 @@ export const adminProjects = gql`
         ownerName
         ownerEmail
         memberCount
+        usesInstanceLicense
         licenseSource
       }
       total
@@ -113,6 +120,15 @@ export const adminCreateProject = gql`
   }
 `;
 
+export const updateProjectUsesInstanceLicense = gql`
+  mutation UpdateProjectUsesInstanceLicense(
+    $projectId: String!
+    $enabled: Boolean!
+  ) {
+    updateProjectUsesInstanceLicense(projectId: $projectId, enabled: $enabled)
+  }
+`;
+
 export const adminProjectMembers = gql`
   query AdminProjectMembers($projectId: String!) {
     adminProjectMembers(projectId: $projectId) {
@@ -127,19 +143,34 @@ export const adminProjectMembers = gql`
 `;
 
 export const adminAddProjectMember = gql`
-  mutation AdminAddProjectMember($projectId: String!, $userId: String!, $role: String!) {
+  mutation AdminAddProjectMember(
+    $projectId: String!
+    $userId: String!
+    $role: String!
+  ) {
     adminAddProjectMember(projectId: $projectId, userId: $userId, role: $role)
   }
 `;
 
 export const adminChangeProjectMemberRole = gql`
-  mutation AdminChangeProjectMemberRole($projectId: String!, $userId: String!, $role: String!) {
-    adminChangeProjectMemberRole(projectId: $projectId, userId: $userId, role: $role)
+  mutation AdminChangeProjectMemberRole(
+    $projectId: String!
+    $userId: String!
+    $role: String!
+  ) {
+    adminChangeProjectMemberRole(
+      projectId: $projectId
+      userId: $userId
+      role: $role
+    )
   }
 `;
 
 export const adminTransferProjectOwnership = gql`
-  mutation AdminTransferProjectOwnership($projectId: String!, $userId: String!) {
+  mutation AdminTransferProjectOwnership(
+    $projectId: String!
+    $userId: String!
+  ) {
     adminTransferProjectOwnership(projectId: $projectId, userId: $userId)
   }
 `;

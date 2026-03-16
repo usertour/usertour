@@ -20,7 +20,10 @@ import type { UploadRequestOption } from 'rc-upload/lib/interface';
 const LicenseStatusBadge = ({
   isValid,
   isExpired,
-}: { isValid: boolean; isExpired?: boolean | null }) => {
+}: {
+  isValid: boolean;
+  isExpired?: boolean | null;
+}) => {
   if (!isValid) {
     return <Badge variant="destructive">Invalid</Badge>;
   }
@@ -40,6 +43,12 @@ export const AdminSettingsPage = () => {
   const licenseInfo = data?.licenseInfo;
   const payload = licenseInfo?.payload;
   const planType = payload?.plan || 'free';
+  const hasValidInstanceLicense = licenseInfo?.isValid ?? false;
+  const projectsUsingInstanceLicense = data?.projectsUsingInstanceLicense ?? 0;
+  const isOverProjectLimit = data?.isOverProjectLimit ?? false;
+  const isUnlimitedProjectLimit =
+    hasValidInstanceLicense &&
+    (payload?.projectLimit === null || payload?.projectLimit === undefined);
 
   useEffect(() => {
     if (licenseInfo?.license) {
@@ -175,10 +184,13 @@ export const AdminSettingsPage = () => {
                       <div>Total Projects: {data?.projectCount ?? 0}</div>
                       <div>
                         Project Limit:{' '}
-                        {payload?.projectLimit === null || payload?.projectLimit === undefined
-                          ? 'Unlimited'
-                          : payload.projectLimit}
+                        {!hasValidInstanceLicense
+                          ? 'No license'
+                          : isUnlimitedProjectLimit
+                            ? 'Unlimited'
+                            : payload?.projectLimit}
                       </div>
+                      <div>Projects Using Instance License: {projectsUsingInstanceLicense}</div>
                       {licenseInfo?.daysRemaining !== null &&
                         licenseInfo?.daysRemaining !== undefined && (
                           <div>Days Remaining: {licenseInfo.daysRemaining}</div>
@@ -188,6 +200,19 @@ export const AdminSettingsPage = () => {
                   )}
                   {!!licenseInfo?.error && (
                     <div className="mt-3 text-xs text-destructive">{licenseInfo.error}</div>
+                  )}
+                  {isOverProjectLimit && (
+                    <div className="mt-3 text-xs text-destructive">
+                      Project usage exceeds the current instance license limit. Existing assignments
+                      still work, but no new projects can use the instance license until usage is
+                      reduced.
+                    </div>
+                  )}
+                  {!isOverProjectLimit && isUnlimitedProjectLimit && licenseInfo?.isValid && (
+                    <div className="mt-3 text-xs text-zinc-950/60 dark:text-white/50">
+                      This instance license automatically applies to all projects without a
+                      project-specific license.
+                    </div>
                   )}
                 </div>
               </div>

@@ -168,6 +168,9 @@ export class AdminProject {
   memberCount: number;
 
   @Field()
+  usesInstanceLicense: boolean;
+
+  @Field()
   licenseSource: string;
 }
 
@@ -181,4 +184,10 @@ export class AdminSettingsInfo {
 
   @Field(() => Int)
   projectCount: number;
+
+  @Field(() => Int)
+  projectsUsingInstanceLicense: number;
+
+  @Field(() => Boolean)
+  isOverProjectLimit: boolean;
 }

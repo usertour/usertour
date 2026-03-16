@@ -84,6 +84,7 @@ import {
   updateUserDisabled,
   adminProjects,
   adminCreateProject,
+  updateProjectUsesInstanceLicense,
   adminProjectMembers,
   adminAddProjectMember,
   adminChangeProjectMemberRole,
@@ -401,7 +402,10 @@ export const useQuerySessionDetailQuery = (sessionId: string) => {
 export const useQuerySessionsByExternalIdQuery = (
   query: SessionQuery,
   pagination: Pagination = { first: 10 },
-  orderBy: { field: string; direction: 'asc' | 'desc' } = { field: 'createdAt', direction: 'desc' },
+  orderBy: { field: string; direction: 'asc' | 'desc' } = {
+    field: 'createdAt',
+    direction: 'desc',
+  },
 ) => {
   const { data, loading, error, refetch } = useQuery(querySessionsByExternalId, {
     variables: {
@@ -539,7 +543,11 @@ export const useGetSubscriptionUsageQuery = (
 
 export const useGlobalConfigQuery = () => {
   const { data, loading, error } = useQuery(globalConfig);
-  return { data: data?.globalConfig as GlobalConfig | undefined, loading, error };
+  return {
+    data: data?.globalConfig as GlobalConfig | undefined,
+    loading,
+    error,
+  };
 };
 
 export interface AccessToken {
@@ -565,7 +573,9 @@ export const useListAccessTokensQuery = (environmentId: string | undefined) => {
 export const useDeleteAccessTokenMutation = () => {
   const [mutation, { loading, error }] = useMutation(DeleteAccessToken);
   const invoke = async (environmentId: string, accessTokenId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { environmentId, accessTokenId } });
+    const response = await mutation({
+      variables: { environmentId, accessTokenId },
+    });
     return !!response.data?.deleteAccessToken;
   };
   return { invoke, loading, error };
@@ -603,7 +613,9 @@ export const useListIntegrationsQuery = (environmentId: string, options?: QueryH
 export const useUpdateIntegrationMutation = () => {
   const [mutation, { loading, error }] = useMutation(UpdateIntegration);
   const invoke = async (environmentId: string, provider: string, input: UpdateIntegrationInput) => {
-    const response = await mutation({ variables: { environmentId, provider, input } });
+    const response = await mutation({
+      variables: { environmentId, provider, input },
+    });
     return response.data?.updateIntegration;
   };
   return { invoke, loading, error };
@@ -640,7 +652,12 @@ export const useGetIntegrationQuery = (
     variables: { environmentId, provider },
     ...options,
   });
-  return { data: data?.getIntegration as IntegrationModel, loading, error, refetch };
+  return {
+    data: data?.getIntegration as IntegrationModel,
+    loading,
+    error,
+    refetch,
+  };
 };
 
 export const useDisconnectIntegrationMutation = () => {
@@ -919,7 +936,10 @@ export const useListThemesQuery = (projectId: string | undefined) => {
 
 export const useDeleteBizUserMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteBizUser);
-  const invoke = async (data: { ids: string[]; environmentId: string }): Promise<{
+  const invoke = async (data: {
+    ids: string[];
+    environmentId: string;
+  }): Promise<{
     success: boolean;
     count: number;
   }> => {
@@ -934,7 +954,10 @@ export const useDeleteBizUserMutation = () => {
 
 export const useDeleteBizUserOnSegmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment);
-  const invoke = async (data: { bizUserIds: string[]; segmentId: string }): Promise<{
+  const invoke = async (data: {
+    bizUserIds: string[];
+    segmentId: string;
+  }): Promise<{
     success: boolean;
     count: number;
   }> => {
@@ -973,7 +996,10 @@ export const useGetProjectConfigQuery = (
   });
 
   return {
-    projectConfig: data?.getProjectConfig as { removeBranding: boolean; planType: string } | null,
+    projectConfig: data?.getProjectConfig as {
+      removeBranding: boolean;
+      planType: string;
+    } | null,
     loading,
     error,
     refetch,
@@ -1054,6 +1080,15 @@ export const useAdminCreateProjectMutation = () => {
   const invoke = async (name: string, ownerUserId: string) => {
     const response = await mutation({ variables: { name, ownerUserId } });
     return response.data?.adminCreateProject;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateProjectUsesInstanceLicenseMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateProjectUsesInstanceLicense);
+  const invoke = async (projectId: string, enabled: boolean) => {
+    const response = await mutation({ variables: { projectId, enabled } });
+    return response.data?.updateProjectUsesInstanceLicense;
   };
   return { invoke, loading, error };
 };

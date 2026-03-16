@@ -162,7 +162,7 @@ export class ProjectsService {
     }
 
     // Fallback to instance-level license
-    const instanceConfig = await this.tryInstanceLicense();
+    const instanceConfig = await this.tryInstanceLicense(project?.usesInstanceLicense ?? false);
     if (instanceConfig) {
       return instanceConfig;
     }
@@ -214,7 +214,7 @@ export class ProjectsService {
   /**
    * Try to resolve config from the instance-level license.
    */
-  private async tryInstanceLicense(): Promise<ProjectConfig | null> {
+  private async tryInstanceLicense(usesInstanceLicense: boolean): Promise<ProjectConfig | null> {
     const instanceSetting = await this.prisma.instanceSetting.findUnique({
       where: { key: 'instance' },
     });
@@ -234,6 +234,11 @@ export class ProjectsService {
     }
 
     if (payload?.instanceId !== instanceSetting.instanceId) {
+      return null;
+    }
+
+    const isUnlimited = payload?.projectLimit === null || payload?.projectLimit === undefined;
+    if (!isUnlimited && !usesInstanceLicense) {
       return null;
     }
 

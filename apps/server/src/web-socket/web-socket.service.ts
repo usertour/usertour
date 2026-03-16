@@ -129,21 +129,29 @@ export class WebSocketService {
       }
     }
 
-    // Fallback to instance-level license
-    const instanceSetting = await this.prisma.instanceSetting.findUnique({
-      where: { key: 'instance' },
-    });
-    if (instanceSetting?.license) {
-      const validationResult = await this.licenseService.validateLicense(instanceSetting.license);
-      if (validationResult.isValid) {
-        const payload = await this.licenseService.getLicensePayload(instanceSetting.license);
-        const scope = payload?.scope || (payload?.projectId ? 'project' : 'instance');
-        if (scope === 'instance' && payload?.instanceId === instanceSetting.instanceId) {
-          const isBusinessPlan = payload?.plan === 'business' || payload?.plan === 'enterprise';
-          return {
-            removeBranding: isBusinessPlan,
-            planType: payload?.plan || 'hobby',
-          };
+    // Fallback to instance-level license for explicitly assigned projects,
+    // or all projects when the instance license is unlimited.
+    if (project) {
+      const instanceSetting = await this.prisma.instanceSetting.findUnique({
+        where: { key: 'instance' },
+      });
+      if (instanceSetting?.license) {
+        const validationResult = await this.licenseService.validateLicense(instanceSetting.license);
+        if (validationResult.isValid) {
+          const payload = await this.licenseService.getLicensePayload(instanceSetting.license);
+          const scope = payload?.scope || (payload?.projectId ? 'project' : 'instance');
+          const isUnlimited = payload?.projectLimit === null || payload?.projectLimit === undefined;
+          if (
+            scope === 'instance' &&
+            payload?.instanceId === instanceSetting.instanceId &&
+            (isUnlimited || project.usesInstanceLicense)
+          ) {
+            const isBusinessPlan = payload?.plan === 'business' || payload?.plan === 'enterprise';
+            return {
+              removeBranding: isBusinessPlan,
+              planType: payload?.plan || 'hobby',
+            };
+          }
         }
       }
     }
@@ -729,7 +737,10 @@ export class WebSocketService {
       where: { id: segmentId },
     });
     const bizCompany = await this.prisma.bizCompany.findFirst({
-      where: { externalId: String(externalCompanyId), environmentId: environment.id },
+      where: {
+        externalId: String(externalCompanyId),
+        environmentId: environment.id,
+      },
     });
 
     if (!segment || !bizCompany) {
@@ -1008,7 +1019,10 @@ export class WebSocketService {
   async listThemes(body: ListThemesRequest, environment: Environment): Promise<Theme[]> {
     const { userId: externalUserId, companyId: externalCompanyId } = body;
     const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId: environment.id },
+      where: {
+        externalId: String(externalUserId),
+        environmentId: environment.id,
+      },
     });
 
     const themes = await this.prisma.theme.findMany({
@@ -1275,7 +1289,9 @@ export class WebSocketService {
         const updatedCompanyData = {
           ...companyData,
           [CompanyAttributes.LAST_SEEN_AT]: currentTime,
-          ...(isFirstCompanyEvent && { [CompanyAttributes.FIRST_SEEN_AT]: currentTime }),
+          ...(isFirstCompanyEvent && {
+            [CompanyAttributes.FIRST_SEEN_AT]: currentTime,
+          }),
         };
 
         await tx.bizCompany.update({
@@ -1439,7 +1455,10 @@ export class WebSocketService {
     environment: Environment,
   ): Promise<ContentSession | false> {
     const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId: environment.id },
+      where: {
+        externalId: String(externalUserId),
+        environmentId: environment.id,
+      },
     });
     if (!bizUser) return false;
     const bizSession = await this.prisma.bizSession.findUnique({

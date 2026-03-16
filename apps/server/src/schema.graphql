@@ -28,6 +28,7 @@ type AdminProject {
   name: String!
   ownerEmail: String
   ownerName: String
+  usesInstanceLicense: Boolean!
 }
 
 type AdminProjectList {
@@ -48,8 +49,10 @@ type AdminProjectMember {
 
 type AdminSettingsInfo {
   instanceId: String!
+  isOverProjectLimit: Boolean!
   licenseInfo: InstanceLicenseInfo
   projectCount: Int!
+  projectsUsingInstanceLicense: Int!
 }
 
 type AdminUser {
@@ -850,6 +853,7 @@ type Mutation {
   updateLocalization(data: UpdateLocalizationInput!): Localization!
   updateProjectLicense(license: String!, projectId: String!): Project!
   updateProjectName(name: String!, projectId: String!): Project!
+  updateProjectUsesInstanceLicense(enabled: Boolean!, projectId: String!): Boolean!
   updateSegment(data: UpdateSegment!): Segment!
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!

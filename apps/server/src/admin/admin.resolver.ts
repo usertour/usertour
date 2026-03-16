@@ -26,11 +26,16 @@ export class AdminResolver {
     const setting = await this.adminService.getInstanceSetting();
     const licenseInfo = await this.adminService.getInstanceLicenseInfo();
     const projectCount = await this.adminService.getProjectCount();
+    const projectsUsingInstanceLicense =
+      await this.adminService.getProjectsUsingInstanceLicenseCount();
+    const isOverProjectLimit = await this.adminService.isOverProjectLimit();
 
     return {
       instanceId: setting?.instanceId || '',
       licenseInfo,
       projectCount,
+      projectsUsingInstanceLicense,
+      isOverProjectLimit,
     };
   }
 
@@ -97,6 +102,15 @@ export class AdminResolver {
   @UseGuards(SystemAdminGuard)
   async adminCreateProject(@Args('name') name: string, @Args('ownerUserId') ownerUserId: string) {
     return this.adminService.createProject(name, ownerUserId);
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(SystemAdminGuard)
+  async updateProjectUsesInstanceLicense(
+    @Args('projectId') projectId: string,
+    @Args('enabled') enabled: boolean,
+  ) {
+    return this.adminService.updateProjectUsesInstanceLicense(projectId, enabled);
   }
 
   // ============================================================================
