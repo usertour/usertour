@@ -17,6 +17,9 @@ export class InstanceSetting {
   @Field()
   allowUserRegistration: boolean;
 
+  @Field(() => Boolean, { nullable: true })
+  allowProjectLevelSubscriptionManagement: boolean | null;
+
   @Field(() => String, { nullable: true })
   license: string | null;
 

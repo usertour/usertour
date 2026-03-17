@@ -77,6 +77,8 @@ model InstanceSetting {
   contactEmail String?
   /// Whether public user registration is allowed
   allowUserRegistration Boolean @default(true)
+  /// Whether self-host projects can manage project-level subscriptions
+  allowProjectLevelSubscriptionManagement Boolean?
   /// Instance-level license JWT token
   license     String?
   /// Create timestamp

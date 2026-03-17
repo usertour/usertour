@@ -56,8 +56,14 @@ export class AdminResolver {
   async updateInstanceGeneralSettings(
     @Args('name', { nullable: true }) name?: string,
     @Args('contactEmail', { nullable: true }) contactEmail?: string,
+    @Args('allowProjectLevelSubscriptionManagement', { nullable: true })
+    allowProjectLevelSubscriptionManagement?: boolean,
   ) {
-    return this.adminService.updateInstanceGeneralSettings(name, contactEmail);
+    return this.adminService.updateInstanceGeneralSettings(
+      name,
+      contactEmail,
+      allowProjectLevelSubscriptionManagement,
+    );
   }
 
   @Mutation(() => InstanceSetting)

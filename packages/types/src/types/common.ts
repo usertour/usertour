@@ -35,5 +35,6 @@ export type GlobalConfig = {
   isSelfHostedMode: boolean;
   apiUrl: string;
   allowUserRegistration: boolean;
+  allowProjectLevelSubscriptionManagement: boolean;
   authProviders: string[];
 };

@@ -38,6 +38,7 @@ export const adminInstanceSettings = gql`
       name
       contactEmail
       allowUserRegistration
+      allowProjectLevelSubscriptionManagement
       license
       createdAt
       updatedAt
@@ -56,13 +57,22 @@ export const updateInstanceLicense = gql`
 `;
 
 export const updateInstanceGeneralSettings = gql`
-  mutation UpdateInstanceGeneralSettings($name: String, $contactEmail: String) {
-    updateInstanceGeneralSettings(name: $name, contactEmail: $contactEmail) {
+  mutation UpdateInstanceGeneralSettings(
+    $name: String
+    $contactEmail: String
+    $allowProjectLevelSubscriptionManagement: Boolean
+  ) {
+    updateInstanceGeneralSettings(
+      name: $name
+      contactEmail: $contactEmail
+      allowProjectLevelSubscriptionManagement: $allowProjectLevelSubscriptionManagement
+    ) {
       id
       instanceId
       name
       contactEmail
       allowUserRegistration
+      allowProjectLevelSubscriptionManagement
     }
   }
 `;

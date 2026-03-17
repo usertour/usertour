@@ -16,6 +16,7 @@ export const globalConfig = gql`
       isSelfHostedMode
       apiUrl
       allowUserRegistration
+      allowProjectLevelSubscriptionManagement
       authProviders
     }
   }

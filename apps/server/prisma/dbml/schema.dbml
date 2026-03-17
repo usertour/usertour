@@ -46,6 +46,7 @@ Table InstanceSetting {
   name String [note: 'Instance display name']
   contactEmail String [note: 'Instance system admin contact email']
   allowUserRegistration Boolean [not null, default: true, note: 'Whether public user registration is allowed']
+  allowProjectLevelSubscriptionManagement Boolean [note: 'Whether self-host projects can manage project-level subscriptions']
   license String [note: 'Instance-level license JWT token']
   createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
   updatedAt DateTime [not null, note: 'Update timestamp']

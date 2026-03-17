@@ -611,6 +611,7 @@ type Events {
 }
 
 type GlobalConfig {
+  allowProjectLevelSubscriptionManagement: Boolean!
   allowUserRegistration: Boolean!
   apiUrl: String
   authProviders: [String!]!
@@ -640,6 +641,7 @@ type InstanceLicensePayload {
 }
 
 type InstanceSetting {
+  allowProjectLevelSubscriptionManagement: Boolean
   allowUserRegistration: Boolean!
   contactEmail: String
   createdAt: DateTime!
@@ -848,7 +850,7 @@ type Mutation {
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
   updateInstanceAuthenticationSettings(allowUserRegistration: Boolean!): InstanceSetting!
-  updateInstanceGeneralSettings(contactEmail: String, name: String): InstanceSetting!
+  updateInstanceGeneralSettings(allowProjectLevelSubscriptionManagement: Boolean, contactEmail: String, name: String): InstanceSetting!
   updateInstanceLicense(license: String!): InstanceSetting!
   updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
   updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!

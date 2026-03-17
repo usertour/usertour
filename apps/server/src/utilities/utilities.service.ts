@@ -99,19 +99,26 @@ export class UtilitiesService {
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
     const apiUrl = this.configService.get('app.apiUrl');
     let allowUserRegistration = true;
+    let allowProjectLevelSubscriptionManagement = true;
 
     if (isSelfHostedMode) {
       const setting = await this.prisma.instanceSetting.findUnique({
         where: { key: 'instance' },
-        select: { allowUserRegistration: true },
+        select: {
+          allowUserRegistration: true,
+          allowProjectLevelSubscriptionManagement: true,
+        },
       });
       allowUserRegistration = setting?.allowUserRegistration ?? true;
+      allowProjectLevelSubscriptionManagement =
+        setting?.allowProjectLevelSubscriptionManagement ?? false;
     }
 
     return {
       isSelfHostedMode,
       apiUrl,
       allowUserRegistration,
+      allowProjectLevelSubscriptionManagement,
       authProviders: this.getAuthProviders(),
     };
   }

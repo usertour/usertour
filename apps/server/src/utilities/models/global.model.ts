@@ -11,6 +11,9 @@ export class GlobalConfig {
   @Field(() => Boolean)
   allowUserRegistration: boolean;
 
+  @Field(() => Boolean)
+  allowProjectLevelSubscriptionManagement: boolean;
+
   @Field(() => [String])
   authProviders: string[];
 }

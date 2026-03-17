@@ -45,7 +45,40 @@ export class AdminService implements OnModuleInit {
       create: { key: AdminService.INSTANCE_SETTING_KEY },
       update: {},
     });
+
+    if (created.allowProjectLevelSubscriptionManagement === null) {
+      const allowProjectLevelSubscriptionManagement = await this.hasAnyValidProjectScopeLicense();
+
+      await this.prisma.instanceSetting.update({
+        where: { key: AdminService.INSTANCE_SETTING_KEY },
+        data: { allowProjectLevelSubscriptionManagement },
+      });
+    }
+
     this.logger.log(`Ensured instance setting with instanceId: ${created.instanceId}`);
+  }
+
+  private async hasAnyValidProjectScopeLicense() {
+    const projects = await this.prisma.project.findMany({
+      where: {
+        license: {
+          not: null,
+        },
+      },
+      select: {
+        id: true,
+        license: true,
+      },
+    });
+
+    for (const project of projects) {
+      const payload = await this.getValidProjectLicensePayload(project.id, project.license);
+      if (payload) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   // ============================================================================
@@ -156,7 +189,11 @@ export class AdminService implements OnModuleInit {
     });
   }
 
-  async updateInstanceGeneralSettings(name?: string, contactEmail?: string) {
+  async updateInstanceGeneralSettings(
+    name?: string,
+    contactEmail?: string,
+    allowProjectLevelSubscriptionManagement?: boolean,
+  ) {
     const normalizedName = name?.trim() || null;
     const normalizedContactEmail = contactEmail?.trim().toLowerCase() || null;
 
@@ -170,10 +207,14 @@ export class AdminService implements OnModuleInit {
         key: AdminService.INSTANCE_SETTING_KEY,
         name: normalizedName,
         contactEmail: normalizedContactEmail,
+        allowProjectLevelSubscriptionManagement,
       },
       update: {
         name: normalizedName,
         contactEmail: normalizedContactEmail,
+        ...(allowProjectLevelSubscriptionManagement !== undefined
+          ? { allowProjectLevelSubscriptionManagement }
+          : {}),
       },
     });
   }

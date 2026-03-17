@@ -208,6 +208,14 @@ export const SettingsSidebarNav = () => {
       href: `/project/${project?.id}${item.href}`,
     }))
     .filter((item) => {
+      if (
+        item.title === 'Subscription' &&
+        isSelfHosted &&
+        !globalConfig?.allowProjectLevelSubscriptionManagement
+      ) {
+        return false;
+      }
+
       const projectRole = project?.role;
       return projectRole && item.role.includes(projectRole as TeamMemberRole);
     });

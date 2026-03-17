@@ -1038,8 +1038,14 @@ export const useUpdateInstanceLicenseMutation = () => {
 
 export const useUpdateInstanceGeneralSettingsMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateInstanceGeneralSettings);
-  const invoke = async (name?: string, contactEmail?: string) => {
-    const response = await mutation({ variables: { name, contactEmail } });
+  const invoke = async (
+    name?: string,
+    contactEmail?: string,
+    allowProjectLevelSubscriptionManagement?: boolean,
+  ) => {
+    const response = await mutation({
+      variables: { name, contactEmail, allowProjectLevelSubscriptionManagement },
+    });
     return response.data?.updateInstanceGeneralSettings;
   };
   return { invoke, loading, error };

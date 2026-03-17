@@ -8,6 +8,7 @@ import { Separator } from '@usertour-packages/separator';
 import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
 import { Skeleton } from '@usertour-packages/skeleton';
+import { Switch } from '@usertour-packages/switch';
 import { CopyIcon } from 'lucide-react';
 import { getErrorMessage } from '@usertour/helpers';
 import { useEffect, useState } from 'react';
@@ -21,11 +22,16 @@ export const AdminGeneralPage = () => {
   const [, copyToClipboard] = useCopyToClipboard();
   const [name, setName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
+  const [allowProjectLevelSubscriptionManagement, setAllowProjectLevelSubscriptionManagement] =
+    useState(false);
 
   useEffect(() => {
     setName(data?.name || '');
     setContactEmail(data?.contactEmail || '');
-  }, [data?.name, data?.contactEmail]);
+    setAllowProjectLevelSubscriptionManagement(
+      data?.allowProjectLevelSubscriptionManagement ?? false,
+    );
+  }, [data?.allowProjectLevelSubscriptionManagement, data?.contactEmail, data?.name]);
 
   const handleCopyInstanceId = () => {
     if (!data?.instanceId) {
@@ -40,7 +46,11 @@ export const AdminGeneralPage = () => {
 
   const handleSave = async () => {
     try {
-      await updateGeneralSettings(name.trim() || undefined, contactEmail.trim() || undefined);
+      await updateGeneralSettings(
+        name.trim() || undefined,
+        contactEmail.trim() || undefined,
+        allowProjectLevelSubscriptionManagement,
+      );
       await refetch();
       toast({
         variant: 'success',
@@ -112,6 +122,26 @@ export const AdminGeneralPage = () => {
               type="email"
               value={contactEmail}
               onChange={(event) => setContactEmail(event.target.value)}
+            />
+          )}
+        </div>
+
+        <div className="flex items-start justify-between gap-6 rounded-xl border border-border/60 p-5">
+          <div className="space-y-1">
+            <div className="text-sm font-medium">Allow project-level subscription management</div>
+            <div className="text-sm text-muted-foreground">
+              When enabled, self-host project settings will show the Subscription page. When
+              disabled, use instance-level subscription management instead. Existing project
+              licenses continue to work.
+            </div>
+          </div>
+          {loading ? (
+            <Skeleton className="h-6 w-11 shrink-0 rounded-full" />
+          ) : (
+            <Switch
+              checked={allowProjectLevelSubscriptionManagement}
+              onCheckedChange={setAllowProjectLevelSubscriptionManagement}
+              className="shrink-0 data-[state=unchecked]:bg-input"
             />
           )}
         </div>
