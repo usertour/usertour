@@ -9,6 +9,15 @@ export class InstanceSetting {
   instanceId: string;
 
   @Field(() => String, { nullable: true })
+  name: string | null;
+
+  @Field(() => String, { nullable: true })
+  contactEmail: string | null;
+
+  @Field()
+  allowUserRegistration: boolean;
+
+  @Field(() => String, { nullable: true })
   license: string | null;
 
   @Field()

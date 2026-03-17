@@ -58,6 +58,14 @@ export class AdminService implements OnModuleInit {
     });
   }
 
+  async getOrCreateInstanceSetting() {
+    return this.prisma.instanceSetting.upsert({
+      where: { key: AdminService.INSTANCE_SETTING_KEY },
+      create: { key: AdminService.INSTANCE_SETTING_KEY },
+      update: {},
+    });
+  }
+
   async getInstanceLicenseInfo() {
     const setting = await this.getInstanceSetting();
     if (!setting?.license) {
@@ -108,7 +116,7 @@ export class AdminService implements OnModuleInit {
   }
 
   async updateInstanceLicense(license: string) {
-    const setting = await this.getInstanceSetting();
+    const setting = await this.getOrCreateInstanceSetting();
     if (!setting) {
       throw new ParamsError('Instance setting not found');
     }
@@ -145,6 +153,41 @@ export class AdminService implements OnModuleInit {
     return this.prisma.instanceSetting.update({
       where: { key: AdminService.INSTANCE_SETTING_KEY },
       data: { license },
+    });
+  }
+
+  async updateInstanceGeneralSettings(name?: string, contactEmail?: string) {
+    const normalizedName = name?.trim() || null;
+    const normalizedContactEmail = contactEmail?.trim().toLowerCase() || null;
+
+    if (normalizedContactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedContactEmail)) {
+      throw new ParamsError('Invalid contact email');
+    }
+
+    return this.prisma.instanceSetting.upsert({
+      where: { key: AdminService.INSTANCE_SETTING_KEY },
+      create: {
+        key: AdminService.INSTANCE_SETTING_KEY,
+        name: normalizedName,
+        contactEmail: normalizedContactEmail,
+      },
+      update: {
+        name: normalizedName,
+        contactEmail: normalizedContactEmail,
+      },
+    });
+  }
+
+  async updateInstanceAuthenticationSettings(allowUserRegistration: boolean) {
+    return this.prisma.instanceSetting.upsert({
+      where: { key: AdminService.INSTANCE_SETTING_KEY },
+      create: {
+        key: AdminService.INSTANCE_SETTING_KEY,
+        allowUserRegistration,
+      },
+      update: {
+        allowUserRegistration,
+      },
     });
   }
 

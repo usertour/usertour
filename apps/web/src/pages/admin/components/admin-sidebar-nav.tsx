@@ -6,7 +6,13 @@ import {
   AdminSidebarContainerTemplate,
   AdminSidebarHeaderTemplate,
 } from '@/components/templates/admin-sidebar-template';
-import { BankCardIcon, RiGroupLine, RiProjectorLine } from '@usertour-packages/icons';
+import {
+  BankCardIcon,
+  GroupLineIcon,
+  KeyIcon,
+  ProjectIcon,
+  SettingsIcon,
+} from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import { Link } from 'react-router-dom';
 
@@ -18,6 +24,16 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
+    title: 'General',
+    href: '/admin/general',
+    icon: SettingsIcon,
+  },
+  {
+    title: 'Authentication',
+    href: '/admin/authentication',
+    icon: KeyIcon,
+  },
+  {
     title: 'Subscription',
     href: '/admin/subscription',
     icon: BankCardIcon,
@@ -25,12 +41,12 @@ const navItems: NavItem[] = [
   {
     title: 'Users',
     href: '/admin/users',
-    icon: RiGroupLine,
+    icon: GroupLineIcon,
   },
   {
     title: 'Projects',
     href: '/admin/projects',
-    icon: RiProjectorLine,
+    icon: ProjectIcon,
   },
 ];
 
@@ -41,7 +57,7 @@ export const AdminPanelSidebarNav = () => {
     <AdminSidebarContainerTemplate>
       <AdminSidebarHeaderTemplate>System Admin</AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
-        <AdminSidebarBodyTitleTemplate>Management</AdminSidebarBodyTitleTemplate>
+        <AdminSidebarBodyTitleTemplate>Administration</AdminSidebarBodyTitleTemplate>
         {navItems.map((item) => {
           const isActive = location.pathname === item.href;
           const Icon = item.icon;

@@ -1,6 +1,6 @@
 import { Public } from '@/common/decorators/public.decorator';
 import { User } from '@/users/models/user.model';
-import { Args, Mutation, Parent, ResolveField, Resolver, Context, Query } from '@nestjs/graphql';
+import { Args, Mutation, Parent, ResolveField, Resolver, Context } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
 import { ResetPasswordByCodeInput } from './dto/change-password.input';
 import { LoginInput } from './dto/login.input';
@@ -8,7 +8,7 @@ import { MagicLinkInput } from './dto/magic-link.input';
 import { ResendLinkInput } from './dto/resend-link.input';
 import { ResetPasswordInput } from './dto/reset-password.input';
 import { SignupInput } from './dto/signup.input';
-import { Auth, AuthConfigItem } from './models/auth.model';
+import { Auth } from './models/auth.model';
 import { Common } from './models/common.model';
 import { Register } from './models/register.model';
 import { Logger, UseGuards } from '@nestjs/common';
@@ -81,12 +81,6 @@ export class AuthResolver {
       ...tokens,
       redirectUrl: this.configService.get('auth.redirectUrl'),
     };
-  }
-
-  @Query(() => [AuthConfigItem])
-  @Public()
-  async getAuthConfig() {
-    return this.auth.getAuthConfig();
   }
 
   @Mutation(() => Boolean)

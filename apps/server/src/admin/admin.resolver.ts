@@ -39,10 +39,33 @@ export class AdminResolver {
     };
   }
 
+  @Query(() => InstanceSetting)
+  @UseGuards(SystemAdminGuard)
+  async adminInstanceSettings() {
+    return this.adminService.getOrCreateInstanceSetting();
+  }
+
   @Mutation(() => InstanceSetting)
   @UseGuards(SystemAdminGuard)
   async updateInstanceLicense(@Args('license') license: string) {
     return this.adminService.updateInstanceLicense(license);
+  }
+
+  @Mutation(() => InstanceSetting)
+  @UseGuards(SystemAdminGuard)
+  async updateInstanceGeneralSettings(
+    @Args('name', { nullable: true }) name?: string,
+    @Args('contactEmail', { nullable: true }) contactEmail?: string,
+  ) {
+    return this.adminService.updateInstanceGeneralSettings(name, contactEmail);
+  }
+
+  @Mutation(() => InstanceSetting)
+  @UseGuards(SystemAdminGuard)
+  async updateInstanceAuthenticationSettings(
+    @Args('allowUserRegistration') allowUserRegistration: boolean,
+  ) {
+    return this.adminService.updateInstanceAuthenticationSettings(allowUserRegistration);
   }
 
   // ============================================================================

@@ -21,7 +21,6 @@ import { createTransport } from 'nodemailer';
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
 import { omit } from '@/utils/typesafe';
 import ms from 'ms';
-import { AuthConfigItem } from './models/auth.model';
 import {
   AccountNotFoundError,
   AuthenticationExpiredError,
@@ -31,6 +30,7 @@ import {
   PasswordIncorrect,
   UnknownError,
   UserDisabledError,
+  UserRegistrationDisabledError,
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
@@ -63,18 +63,25 @@ export class AuthService {
     @InjectQueue(QUEUE_INITIALIZE_PROJECT) private initializeProjectQueue: Queue,
   ) {}
 
-  getAuthConfig(): AuthConfigItem[] {
-    const items: AuthConfigItem[] = [];
-    if (this.configService.get('auth.email.enabled')) {
-      items.push({ provider: 'email' });
+  async isUserRegistrationAllowed() {
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+    if (!isSelfHostedMode) {
+      return true;
     }
-    if (this.configService.get('auth.google.enabled')) {
-      items.push({ provider: 'google' });
+
+    const setting = await this.prisma.instanceSetting.findUnique({
+      where: { key: 'instance' },
+      select: { allowUserRegistration: true },
+    });
+
+    return setting?.allowUserRegistration ?? true;
+  }
+
+  private async ensureUserRegistrationAllowed() {
+    const allowUserRegistration = await this.isUserRegistrationAllowed();
+    if (!allowUserRegistration) {
+      throw new UserRegistrationDisabledError();
     }
-    if (this.configService.get('auth.github.enabled')) {
-      items.push({ provider: 'github' });
-    }
-    return items;
   }
 
   cookieOptions(key: string): CookieOptions {
@@ -185,6 +192,10 @@ export class AuthService {
         await this.joinProject(inviteCode, user.id);
       }
       return user;
+    }
+
+    if (!inviteCode) {
+      await this.ensureUserRegistrationAllowed();
     }
 
     // download avatar if profile photo exists
@@ -355,6 +366,8 @@ export class AuthService {
   }
 
   async createMagicLink(email: string) {
+    await this.ensureUserRegistrationAllowed();
+
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) {
       throw new EmailAlreadyRegistered();
@@ -395,6 +408,8 @@ export class AuthService {
   }
 
   async resendMargicLink(id: string) {
+    await this.ensureUserRegistrationAllowed();
+
     const data = await this.prisma.register.findUnique({ where: { id } });
     if (!data) {
       throw new InvalidVerificationSession();
@@ -492,6 +507,10 @@ export class AuthService {
 
   async signup(payload: SignupInput): Promise<TokenData> {
     const { code, userName, companyName, password, isInvite } = payload;
+
+    if (!isInvite) {
+      await this.ensureUserRegistrationAllowed();
+    }
 
     // Validate verification code
     const { email, projectId, role } = await this.validateSignupCode(code, isInvite);

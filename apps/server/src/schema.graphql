@@ -142,10 +142,6 @@ type Auth {
   user: User!
 }
 
-type AuthConfigItem {
-  provider: String!
-}
-
 input BizCompanyOnSegmentInput {
   bizCompanyId: String!
   data: JSON
@@ -615,8 +611,9 @@ type Events {
 }
 
 type GlobalConfig {
+  allowUserRegistration: Boolean!
   apiUrl: String
-  enabledBilling: Boolean!
+  authProviders: [String!]!
   isSelfHostedMode: Boolean!
 }
 
@@ -643,10 +640,13 @@ type InstanceLicensePayload {
 }
 
 type InstanceSetting {
+  allowUserRegistration: Boolean!
+  contactEmail: String
   createdAt: DateTime!
   id: String!
   instanceId: String!
   license: String
+  name: String
   updatedAt: DateTime!
 }
 
@@ -847,6 +847,8 @@ type Mutation {
   updateContentVersion(data: VersionUpdateInput!): Version!
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
+  updateInstanceAuthenticationSettings(allowUserRegistration: Boolean!): InstanceSetting!
+  updateInstanceGeneralSettings(contactEmail: String, name: String): InstanceSetting!
   updateInstanceLicense(license: String!): InstanceSetting!
   updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
   updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!
@@ -905,13 +907,13 @@ type ProjectConfigModel {
 }
 
 type Query {
+  adminInstanceSettings: InstanceSetting!
   adminProjectMembers(projectId: String!): [AdminProjectMember!]!
   adminProjects(page: Int, pageSize: Int, query: String, usesInstanceLicense: String): AdminProjectList!
   adminSettings: AdminSettingsInfo!
   adminUsers(page: Int, pageSize: Int, query: String, role: String, status: String): AdminUserList!
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
-  getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
   getIntegration(environmentId: String!, provider: String!): Integration!

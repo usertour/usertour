@@ -32,7 +32,8 @@ export type SDKSettings = {
 };
 
 export type GlobalConfig = {
-  enabledBilling: boolean;
   isSelfHostedMode: boolean;
   apiUrl: string;
+  allowUserRegistration: boolean;
+  authProviders: string[];
 };

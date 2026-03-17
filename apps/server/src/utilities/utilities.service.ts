@@ -7,13 +7,14 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 } from 'uuid';
 import { createPresignedUrlInput } from './dto/createPresignedUrl.input';
-import { User } from '@/users/models/user.model';
+import { PrismaService } from 'nestjs-prisma';
 
 @Injectable()
 export class UtilitiesService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async createPresignedUrl(_: string, data: createPresignedUrlInput) {
@@ -78,15 +79,40 @@ export class UtilitiesService {
     return { html: '', width: '', height: '' };
   }
 
-  async globalConfig(user: User) {
-    const enabledBillingUsers = this.configService.get('globalConfig.enabledBillingUsers');
+  private getAuthProviders(): string[] {
+    const providers: string[] = [];
+
+    if (this.configService.get('auth.email.enabled')) {
+      providers.push('email');
+    }
+    if (this.configService.get('auth.google.enabled')) {
+      providers.push('google');
+    }
+    if (this.configService.get('auth.github.enabled')) {
+      providers.push('github');
+    }
+
+    return providers;
+  }
+
+  async globalConfig() {
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
-    const enabledBilling = enabledBillingUsers.includes(user.id);
     const apiUrl = this.configService.get('app.apiUrl');
+    let allowUserRegistration = true;
+
+    if (isSelfHostedMode) {
+      const setting = await this.prisma.instanceSetting.findUnique({
+        where: { key: 'instance' },
+        select: { allowUserRegistration: true },
+      });
+      allowUserRegistration = setting?.allowUserRegistration ?? true;
+    }
+
     return {
-      enabledBilling,
       isSelfHostedMode,
       apiUrl,
+      allowUserRegistration,
+      authProviders: this.getAuthProviders(),
     };
   }
 }

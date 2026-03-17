@@ -44,10 +44,11 @@ export const AdminUserNav = () => {
     'mod+e': `/project/${project?.id}/settings/events`,
     'shift+mod+k': '/auth/signin',
   };
-  const handleKeyEvent = (event: any) => {
+  const handleKeyEvent = (event: Event) => {
+    const keyboardEvent = event as KeyboardEvent;
     for (const key in hotkeys) {
       const path = hotkeys[key as keyof typeof hotkeys];
-      if (isHotkey(key, event)) {
+      if (isHotkey(key, keyboardEvent)) {
         if (path === '/auth/signin') {
           logoutHandler();
         } else {
@@ -118,7 +119,7 @@ export const AdminUserNav = () => {
           {globalConfig?.isSelfHostedMode && user?.isSystemAdmin && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/admin/subscription')}>
+              <DropdownMenuItem onClick={() => navigate('/admin/general')}>
                 System Admin
               </DropdownMenuItem>
             </>

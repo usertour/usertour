@@ -16,7 +16,6 @@ import {
   deleteSegment,
   deleteSession,
   endSession,
-  getAuthConfig,
   getInvite,
   getInvites,
   getTeamMembers,
@@ -77,7 +76,10 @@ import {
   deleteBizUser,
   deleteBizUserOnSegment,
   adminSettings,
+  adminInstanceSettings,
   updateInstanceLicense,
+  updateInstanceGeneralSettings,
+  updateInstanceAuthenticationSettings,
   adminUsers,
   adminCreateUser,
   updateUserSystemAdmin,
@@ -324,11 +326,6 @@ export const useGetInviteQuery = (inviteId: string) => {
     variables: { inviteId },
   });
   return { data: data?.getInvite, loading, error };
-};
-
-export const useGetAuthConfigQuery = () => {
-  const { data, loading, error } = useQuery(getAuthConfig);
-  return { data: data?.getAuthConfig, loading, error };
 };
 
 export type LoginMutationVariables = {
@@ -1025,11 +1022,34 @@ export const useAdminSettingsQuery = () => {
   return { data: data?.adminSettings, loading, error, refetch };
 };
 
+export const useAdminInstanceSettingsQuery = () => {
+  const { data, loading, error, refetch } = useQuery(adminInstanceSettings);
+  return { data: data?.adminInstanceSettings, loading, error, refetch };
+};
+
 export const useUpdateInstanceLicenseMutation = () => {
   const [mutation, { loading, error }] = useMutation(updateInstanceLicense);
   const invoke = async (license: string) => {
     const response = await mutation({ variables: { license } });
     return response.data?.updateInstanceLicense;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateInstanceGeneralSettingsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateInstanceGeneralSettings);
+  const invoke = async (name?: string, contactEmail?: string) => {
+    const response = await mutation({ variables: { name, contactEmail } });
+    return response.data?.updateInstanceGeneralSettings;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateInstanceAuthenticationSettingsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateInstanceAuthenticationSettings);
+  const invoke = async (allowUserRegistration: boolean) => {
+    const response = await mutation({ variables: { allowUserRegistration } });
+    return response.data?.updateInstanceAuthenticationSettings;
   };
   return { invoke, loading, error };
 };

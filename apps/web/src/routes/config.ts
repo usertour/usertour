@@ -18,6 +18,8 @@ import {
 import { AdminSettings, SettingsThemeDetail } from '@/pages/settings';
 import { AdminSettingsDetail } from '@/pages/settings/admin-setting-detail';
 import {
+  AdminAuthenticationPage,
+  AdminGeneralPage,
   AdminProjectsPage,
   AdminSettingsPage,
   AdminUsersPage,
@@ -211,6 +213,26 @@ const config: CustomRouteConfig[] = [
     loginRequired: true,
     redirectIfLogged: false,
     title: 'CompanyDetail',
+  },
+  /* System Admin - General */
+  {
+    id: 'admin-general',
+    path: '/admin/general',
+    component: AdminGeneralPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - General',
+  },
+  /* System Admin - Authentication */
+  {
+    id: 'admin-authentication',
+    path: '/admin/authentication',
+    component: AdminAuthenticationPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - Authentication',
   },
   /* System Admin - Subscription */
   {

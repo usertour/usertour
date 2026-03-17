@@ -30,12 +30,49 @@ export const adminSettings = gql`
   }
 `;
 
+export const adminInstanceSettings = gql`
+  query AdminInstanceSettings {
+    adminInstanceSettings {
+      id
+      instanceId
+      name
+      contactEmail
+      allowUserRegistration
+      license
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 export const updateInstanceLicense = gql`
   mutation UpdateInstanceLicense($license: String!) {
     updateInstanceLicense(license: $license) {
       id
       instanceId
       license
+    }
+  }
+`;
+
+export const updateInstanceGeneralSettings = gql`
+  mutation UpdateInstanceGeneralSettings($name: String, $contactEmail: String) {
+    updateInstanceGeneralSettings(name: $name, contactEmail: $contactEmail) {
+      id
+      instanceId
+      name
+      contactEmail
+      allowUserRegistration
+    }
+  }
+`;
+
+export const updateInstanceAuthenticationSettings = gql`
+  mutation UpdateInstanceAuthenticationSettings($allowUserRegistration: Boolean!) {
+    updateInstanceAuthenticationSettings(allowUserRegistration: $allowUserRegistration) {
+      id
+      instanceId
+      allowUserRegistration
     }
   }
 `;

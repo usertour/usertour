@@ -200,6 +200,14 @@ export class UserNotFoundError extends OpenAPIError {
   };
 }
 
+export class UserRegistrationDisabledError extends BaseError {
+  code = 'E0020';
+  messageDict = {
+    en: 'User registration is disabled for this instance. Please contact your administrator.',
+    'zh-CN': '当前实例已关闭用户注册，请联系管理员。',
+  };
+}
+
 export class CompanyNotFoundError extends OpenAPIError {
   code = 'E1002';
   statusCode = HttpStatus.NOT_FOUND;

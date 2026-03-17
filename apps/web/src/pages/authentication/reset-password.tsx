@@ -30,6 +30,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SignUpPrompt } from './components/sign-up-link';
 
 const formSchema = z.object({
   email: z
@@ -120,15 +121,10 @@ export const ResetPassword = () => {
                     Back to sign in
                   </Link>{' '}
                 </div>
-                <div className="pt-4 text-center text-sm text-muted-foreground">
-                  No account yet?{' '}
-                  <Link
-                    to="/auth/signup"
-                    className="underline underline-offset-4 hover:text-primary"
-                  >
-                    Sign up for a free trial
-                  </Link>{' '}
-                </div>
+                <SignUpPrompt
+                  prefix="No account yet?"
+                  className="pt-4 text-center text-sm text-muted-foreground"
+                />
               </CardFooter>
             </Card>
           </form>

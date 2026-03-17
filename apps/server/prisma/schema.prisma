@@ -71,6 +71,12 @@ model InstanceSetting {
   key         String   @unique @default("instance")
   /// Stable instance identifier
   instanceId  String   @unique @default(cuid())
+  /// Instance display name
+  name        String?
+  /// Instance system admin contact email
+  contactEmail String?
+  /// Whether public user registration is allowed
+  allowUserRegistration Boolean @default(true)
   /// Instance-level license JWT token
   license     String?
   /// Create timestamp

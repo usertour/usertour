@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
 import { apiUrl } from '@/utils/env';
 import {
   LoginMutationVariables,
-  useGetAuthConfigQuery,
+  useGlobalConfigQuery,
   useLoginMutation,
 } from '@usertour-packages/shared-hooks';
 
@@ -33,11 +33,6 @@ type SigninFormValues = z.infer<typeof signinFormSchema>;
 const defaultValues: Partial<SigninFormValues> = {
   email: '',
   password: '',
-};
-
-type AuthProvider = 'email' | 'google' | 'github';
-type AuthConfigItem = {
-  provider: AuthProvider;
 };
 
 // Context type definition
@@ -83,16 +78,14 @@ const SignInRoot = (props: SignInRootProps) => {
   const [isGithubAuthLoading, setIsGithubAuthLoading] = useState<boolean>(false);
   const { invoke } = useLoginMutation();
   const { toast } = useToast();
-  const { data: authConfig } = useGetAuthConfigQuery();
+  const { data: globalConfig } = useGlobalConfigQuery();
+  const authProviders = globalConfig?.authProviders;
 
   // Show all auth options by default when config is loading
   // Only disable if explicitly set to false in config
-  const isEmailAuthEnabled =
-    !authConfig || authConfig.some((item: AuthConfigItem) => item.provider === 'email');
-  const isGithubAuthEnabled =
-    !authConfig || authConfig.some((item: AuthConfigItem) => item.provider === 'github');
-  const isGoogleAuthEnabled =
-    !authConfig || authConfig.some((item: AuthConfigItem) => item.provider === 'google');
+  const isEmailAuthEnabled = !authProviders || authProviders.includes('email');
+  const isGithubAuthEnabled = !authProviders || authProviders.includes('github');
+  const isGoogleAuthEnabled = !authProviders || authProviders.includes('google');
 
   const form = useForm<SigninFormValues>({
     resolver: zodResolver(signinFormSchema),
