@@ -11,7 +11,7 @@ import {
   GroupLineIcon,
   KeyIcon,
   ProjectIcon,
-  SettingsIcon,
+  RiSettings2Line,
 } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import { Link } from 'react-router-dom';
@@ -26,7 +26,7 @@ const navItems: NavItem[] = [
   {
     title: 'General',
     href: '/admin/general',
-    icon: SettingsIcon,
+    icon: RiSettings2Line,
   },
   {
     title: 'Authentication',
