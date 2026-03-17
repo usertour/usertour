@@ -55,7 +55,9 @@ export const AdminPanelSidebarNav = () => {
 
   return (
     <AdminSidebarContainerTemplate>
-      <AdminSidebarHeaderTemplate>System Admin</AdminSidebarHeaderTemplate>
+      <AdminSidebarHeaderTemplate>
+        <h2 className="text-lg font-semibold">System Admin</h2>
+      </AdminSidebarHeaderTemplate>
       <AdminSidebarBodyTemplate>
         <AdminSidebarBodyTitleTemplate>Administration</AdminSidebarBodyTitleTemplate>
         {navItems.map((item) => {
