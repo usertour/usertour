@@ -27,6 +27,7 @@ async function main() {
       email: 'lisa@simpson.com',
       name: 'Lisa',
       password: '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', // secret42
+      isSystemAdmin: true,
     },
   });
 

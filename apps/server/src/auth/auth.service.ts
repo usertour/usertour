@@ -209,22 +209,13 @@ export class AuthService {
     }
 
     return await this.prisma.$transaction(async (tx) => {
-      const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
-      let isSystemAdmin = false;
-      if (isSelfHostedMode) {
-        const userCount = await tx.user.count();
-        if (userCount === 0) {
-          isSystemAdmin = true;
-        }
-      }
-
       const newUser = await tx.user.create({
         data: {
           name: displayName || email,
           email,
           avatarUrl: avatar,
           emailVerified: new Date(),
-          isSystemAdmin,
+          isSystemAdmin: false,
         },
       });
 
@@ -720,23 +711,12 @@ export class AuthService {
   }
 
   async createUser(tx: Prisma.TransactionClient, name: string, email: string, password: string) {
-    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
-    let isSystemAdmin = false;
-
-    if (isSelfHostedMode) {
-      // First user in self-hosted mode becomes system admin
-      const userCount = await tx.user.count();
-      if (userCount === 0) {
-        isSystemAdmin = true;
-      }
-    }
-
     return await tx.user.create({
       data: {
         name,
         email,
         password,
-        isSystemAdmin,
+        isSystemAdmin: false,
       },
     });
   }
