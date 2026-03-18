@@ -31,6 +31,9 @@ import {
   UnknownError,
   UserDisabledError,
   UserRegistrationDisabledError,
+  SystemAdminAlreadyInitializedError,
+  SystemAdminSetupRequiredError,
+  SystemAdminSetupUnavailableError,
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
@@ -46,6 +49,7 @@ import { RedisService, LockReleaseFn } from '@/shared/redis.service';
 const EMAIL_COOLDOWN_MS = 60 * 1000; // 60 seconds - minimum interval between email sends
 const REGISTER_REUSE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours - reuse existing register record within this window
 const EMAIL_LOCK_KEY_PREFIX = 'magic-link-email:';
+const SETUP_SYSTEM_ADMIN_LOCK_KEY = 'setup-system-admin';
 
 @Injectable()
 export class AuthService {
@@ -77,10 +81,38 @@ export class AuthService {
     return setting?.allowUserRegistration ?? true;
   }
 
+  async needsSystemAdminSetup() {
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+    if (!isSelfHostedMode) {
+      return false;
+    }
+
+    const user = await this.prisma.user.findFirst({
+      select: { id: true },
+    });
+
+    return !user;
+  }
+
   private async ensureUserRegistrationAllowed() {
+    if (await this.needsSystemAdminSetup()) {
+      throw new SystemAdminSetupRequiredError();
+    }
+
     const allowUserRegistration = await this.isUserRegistrationAllowed();
     if (!allowUserRegistration) {
       throw new UserRegistrationDisabledError();
+    }
+  }
+
+  private async ensureSystemAdminSetupAvailable() {
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+    if (!isSelfHostedMode) {
+      throw new SystemAdminSetupUnavailableError();
+    }
+
+    if (!(await this.needsSystemAdminSetup())) {
+      throw new SystemAdminAlreadyInitializedError();
     }
   }
 
@@ -535,6 +567,70 @@ export class AuthService {
       }
       this.logger.error('Failed to signup user', e);
       throw new UnknownError();
+    }
+  }
+
+  async setupSystemAdmin(name: string, email: string, password: string): Promise<TokenData> {
+    await this.ensureSystemAdminSetupAvailable();
+
+    const hashedPassword = await this.passwordService.hashPassword(password);
+    let releaseLock: LockReleaseFn | null = null;
+
+    try {
+      releaseLock = await this.redisService.acquireLock(SETUP_SYSTEM_ADMIN_LOCK_KEY);
+      if (!releaseLock) {
+        throw new SystemAdminAlreadyInitializedError();
+      }
+
+      await this.ensureSystemAdminSetupAvailable();
+
+      const user = await this.prisma.$transaction(async (tx) => {
+        const existingUser = await tx.user.findFirst({
+          where: { isSystemAdmin: true },
+          select: { id: true },
+        });
+
+        if (existingUser) {
+          throw new SystemAdminAlreadyInitializedError();
+        }
+
+        const user = await tx.user.create({
+          data: {
+            name,
+            email,
+            password: hashedPassword,
+            isSystemAdmin: true,
+          },
+        });
+
+        await this.createAccount(tx, 'email', user.id, 'email', email);
+        const project = await this.createProject(tx, 'Unnamed Project', user.id);
+        await initialization(tx, project.id);
+
+        return user;
+      });
+
+      this.logger.log(`System admin ${user.id} initialized`);
+      return this.login(user.id);
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new EmailAlreadyRegistered();
+      }
+
+      if (
+        e instanceof SystemAdminAlreadyInitializedError ||
+        e instanceof SystemAdminSetupRequiredError ||
+        e instanceof SystemAdminSetupUnavailableError
+      ) {
+        throw e;
+      }
+
+      this.logger.error('Failed to set up system admin', e);
+      throw new UnknownError();
+    } finally {
+      if (releaseLock) {
+        await releaseLock();
+      }
     }
   }
 

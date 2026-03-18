@@ -36,5 +36,6 @@ export type GlobalConfig = {
   apiUrl: string;
   allowUserRegistration: boolean;
   allowProjectLevelSubscriptionManagement: boolean;
+  needsSystemAdminSetup: boolean;
   authProviders: string[];
 };

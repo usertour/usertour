@@ -208,6 +208,30 @@ export class UserRegistrationDisabledError extends BaseError {
   };
 }
 
+export class SystemAdminAlreadyInitializedError extends BaseError {
+  code = 'E0021';
+  messageDict = {
+    en: 'A System Admin has already been set up for this instance.',
+    'zh-CN': '当前实例已经完成 System Admin 初始化。',
+  };
+}
+
+export class SystemAdminSetupUnavailableError extends BaseError {
+  code = 'E0022';
+  messageDict = {
+    en: 'System Admin setup is only available for self-hosted instances before initialization is complete.',
+    'zh-CN': 'System Admin 初始化仅适用于尚未完成初始化的 self-host 实例。',
+  };
+}
+
+export class SystemAdminSetupRequiredError extends BaseError {
+  code = 'E0023';
+  messageDict = {
+    en: 'Set up the first admin account for this self-hosted instance before creating other users.',
+    'zh-CN': '请先为当前 self-host 实例完成首个管理员初始化，再创建其他用户。',
+  };
+}
+
 export class CompanyNotFoundError extends OpenAPIError {
   code = 'E1002';
   statusCode = HttpStatus.NOT_FOUND;

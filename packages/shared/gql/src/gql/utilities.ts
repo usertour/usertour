@@ -17,6 +17,7 @@ export const globalConfig = gql`
       apiUrl
       allowUserRegistration
       allowProjectLevelSubscriptionManagement
+      needsSystemAdminSetup
       authProviders
     }
   }

@@ -7,6 +7,7 @@ import { LoginInput } from './dto/login.input';
 import { MagicLinkInput } from './dto/magic-link.input';
 import { ResendLinkInput } from './dto/resend-link.input';
 import { ResetPasswordInput } from './dto/reset-password.input';
+import { SetupSystemAdminInput } from './dto/setup-system-admin.input';
 import { SignupInput } from './dto/signup.input';
 import { Auth } from './models/auth.model';
 import { Common } from './models/common.model';
@@ -52,6 +53,25 @@ export class AuthResolver {
   @Public()
   resetUserPasswordByCode(@Args('data') data: ResetPasswordByCodeInput) {
     return this.auth.resetUserPasswordByCode(data.code, data.password);
+  }
+
+  @Mutation(() => Auth)
+  @Public()
+  async setupSystemAdmin(
+    @Args('data') data: SetupSystemAdminInput,
+    @Context() context: { res: Response },
+  ) {
+    const tokens = await this.auth.setupSystemAdmin(
+      data.name,
+      data.email.toLowerCase(),
+      data.password,
+    );
+    this.auth.setAuthCookie(context.res, tokens);
+
+    return {
+      ...tokens,
+      redirectUrl: '/admin/general',
+    };
   }
 
   @Mutation(() => Auth)

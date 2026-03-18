@@ -12,7 +12,7 @@ export const SignUpLink = ({
 }) => {
   const { data, loading } = useGlobalConfigQuery();
 
-  if (loading || data?.allowUserRegistration === false) {
+  if (loading || data?.allowUserRegistration === false || data?.needsSystemAdminSetup === true) {
     return null;
   }
 
@@ -39,7 +39,7 @@ export const SignUpPrompt = ({
 }) => {
   const { data, loading } = useGlobalConfigQuery();
 
-  if (loading || data?.allowUserRegistration === false) {
+  if (loading || data?.allowUserRegistration === false || data?.needsSystemAdminSetup === true) {
     return null;
   }
 

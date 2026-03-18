@@ -100,6 +100,7 @@ export class UtilitiesService {
     const apiUrl = this.configService.get('app.apiUrl');
     let allowUserRegistration = true;
     let allowProjectLevelSubscriptionManagement = true;
+    let needsSystemAdminSetup = false;
 
     if (isSelfHostedMode) {
       const setting = await this.prisma.instanceSetting.findUnique({
@@ -112,6 +113,11 @@ export class UtilitiesService {
       allowUserRegistration = setting?.allowUserRegistration ?? true;
       allowProjectLevelSubscriptionManagement =
         setting?.allowProjectLevelSubscriptionManagement ?? false;
+
+      const user = await this.prisma.user.findFirst({
+        select: { id: true },
+      });
+      needsSystemAdminSetup = !user;
     }
 
     return {
@@ -119,6 +125,7 @@ export class UtilitiesService {
       apiUrl,
       allowUserRegistration,
       allowProjectLevelSubscriptionManagement,
+      needsSystemAdminSetup,
       authProviders: this.getAuthProviders(),
     };
   }

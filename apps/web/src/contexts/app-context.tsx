@@ -20,6 +20,7 @@ interface AppContextProps {
   projects: Project[];
   isViewOnly: boolean;
   globalConfig: GlobalConfig | undefined;
+  globalConfigLoading: boolean;
   loading: boolean;
 }
 
@@ -35,7 +36,7 @@ export const AppProvider = (props: AppProviderProps) => {
   const [userInfo, setUserInfo] = useState<UserProfile | null | undefined>(undefined);
   const uid = useCurrentUserId();
   const { data, refetch, loading, error } = useGetUserInfoQuery(uid || undefined);
-  const { data: globalConfig } = useGlobalConfigQuery();
+  const { data: globalConfig, loading: globalConfigLoading } = useGlobalConfigQuery();
   const { invoke: logout } = useLogoutMutation();
 
   useEffect(() => {
@@ -85,6 +86,7 @@ export const AppProvider = (props: AppProviderProps) => {
     projects,
     isViewOnly,
     globalConfig,
+    globalConfigLoading,
     loading,
   };
 

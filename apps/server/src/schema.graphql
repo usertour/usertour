@@ -616,6 +616,7 @@ type GlobalConfig {
   apiUrl: String
   authProviders: [String!]!
   isSelfHostedMode: Boolean!
+  needsSystemAdminSetup: Boolean!
 }
 
 type InstanceLicenseInfo {
@@ -841,6 +842,7 @@ type Mutation {
   restoreContentVersion(data: VersionIdInput!): Version!
   setDefaultLocalization(id: String!): Localization!
   setDefaultTheme(themeId: String!): Theme!
+  setupSystemAdmin(data: SetupSystemAdminInput!): Auth!
   signup(data: SignupInput!): Auth!
   unpublishedContentVersion(data: ContentIdInput!): Common!
   updateAttribute(data: UpdateAttributeInput!): Attribute!
@@ -1059,6 +1061,12 @@ input SessionQuery {
   externalCompanyId: String
   externalUserId: String
   startDate: String
+}
+
+input SetupSystemAdminInput {
+  email: String!
+  name: String!
+  password: String!
 }
 
 input SignupInput {

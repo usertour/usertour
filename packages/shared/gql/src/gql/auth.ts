@@ -66,6 +66,20 @@ export const signUp = gql`
   }
 `;
 
+export const setupSystemAdmin = gql`
+  mutation setupSystemAdmin($name: String!, $email: String!, $password: String!) {
+    setupSystemAdmin(data: { name: $name, email: $email, password: $password }) {
+      accessToken
+      refreshToken
+      redirectUrl
+      user {
+        id
+        email
+      }
+    }
+  }
+`;
+
 export const resetUserPassword = gql`
   mutation resetUserPassword($email: String!) {
     resetUserPassword(data: { email: $email }) {

@@ -2,6 +2,7 @@ import {
   PasswordReset,
   Registration,
   ResetPassword,
+  SetupAdmin,
   SignIn,
   SignUp,
   Invite,
@@ -65,6 +66,15 @@ const config: CustomRouteConfig[] = [
     loginRequired: false,
     redirectIfLogged: true,
     title: 'SignUp',
+  },
+  /* SetupAdmin */
+  {
+    path: '/auth/setup-admin',
+    component: SetupAdmin,
+    layout: AuthLayout,
+    loginRequired: false,
+    redirectIfLogged: false,
+    title: 'SetupAdmin',
   },
   /* ResetPassword */
   {

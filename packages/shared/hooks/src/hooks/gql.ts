@@ -24,6 +24,7 @@ import {
   listAttributes,
   listSegment,
   login,
+  setupSystemAdmin as setupSystemAdminMutation,
   queryBizCompany,
   queryBizUser,
   queryContentQuestionAnalytics,
@@ -356,6 +357,21 @@ export const useSignupMutation = () => {
   const invoke = async (variables: SignupMutationVariables) => {
     const response = await mutation({ variables });
     return response.data?.signup;
+  };
+  return { invoke, loading, error };
+};
+
+export type SetupSystemAdminMutationVariables = {
+  name: string;
+  email: string;
+  password: string;
+};
+
+export const useSetupSystemAdminMutation = () => {
+  const [mutation, { loading, error }] = useMutation(setupSystemAdminMutation);
+  const invoke = async (variables: SetupSystemAdminMutationVariables) => {
+    const response = await mutation({ variables });
+    return response.data?.setupSystemAdmin;
   };
   return { invoke, loading, error };
 };

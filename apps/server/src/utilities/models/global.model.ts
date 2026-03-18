@@ -14,6 +14,9 @@ export class GlobalConfig {
   @Field(() => Boolean)
   allowProjectLevelSubscriptionManagement: boolean;
 
+  @Field(() => Boolean)
+  needsSystemAdminSetup: boolean;
+
   @Field(() => [String])
   authProviders: string[];
 }

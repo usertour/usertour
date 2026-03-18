@@ -114,8 +114,6 @@ export const AdminUserNav = () => {
           >
             Environments
           </DropdownMenuItem>
-          {/* <DropdownMenuSeparator />
-          <DropdownMenuLabel className="font-normal">My Organizations</DropdownMenuLabel> */}
           {globalConfig?.isSelfHostedMode && user?.isSystemAdmin && (
             <>
               <DropdownMenuSeparator />
