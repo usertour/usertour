@@ -124,10 +124,10 @@ export const AdminUserNav = () => {
           )}
           <DropdownMenuSeparator />
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger>My Companies</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger>My Projects</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="w-56">
-                <DropdownMenuLabel className="text-xs	">CURRENT COMPANY</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs	">CURRENT PROJECT</DropdownMenuLabel>
                 {activeProject && (
                   <DropdownMenuItem
                     key={activeProject.id}
@@ -141,7 +141,7 @@ export const AdminUserNav = () => {
                 <DropdownMenuSeparator />
                 {otherProjects.length > 0 && (
                   <>
-                    <DropdownMenuLabel className="text-xs">OTHER COMPANIES</DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-xs">OTHER PROJECTS</DropdownMenuLabel>
                     {otherProjects.map((p) => (
                       <DropdownMenuItem
                         key={p.id}

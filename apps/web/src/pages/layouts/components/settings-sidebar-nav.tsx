@@ -101,8 +101,8 @@ const NavSection = ({ title, items, currentPath, onNavigate }: NavSectionProps) 
 // Data
 const sidebarNavItems: readonly SidebarNavItem[] = [
   {
-    title: 'Company',
-    href: '/settings/companies',
+    title: 'Project',
+    href: '/settings/general',
     role: OWNER_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <ProjectIcon className={ICON_CLASS_NAME} />,
