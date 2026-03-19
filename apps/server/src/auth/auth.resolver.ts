@@ -70,7 +70,7 @@ export class AuthResolver {
 
     return {
       ...tokens,
-      redirectUrl: '/admin/general',
+      redirectUrl: this.configService.get('auth.redirectUrl'),
     };
   }
 

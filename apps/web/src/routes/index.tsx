@@ -20,7 +20,6 @@ const CustomRoute = ({
   const currentPath = window.location.pathname;
   const needsSystemAdminSetup = globalConfig?.needsSystemAdminSetup;
   const isSetupAdminPage = currentPath === '/auth/setup-admin';
-  const isSelfHosted = !!globalConfig?.isSelfHostedMode;
 
   if (!loginRequired && !isLoggedIn && globalConfigLoading) {
     return null;
@@ -32,16 +31,6 @@ const CustomRoute = ({
 
   if (!isLoggedIn && isSetupAdminPage && needsSystemAdminSetup === false) {
     return <Navigate to="/auth/signin" replace />;
-  }
-
-  if (
-    isLoggedIn &&
-    isSetupAdminPage &&
-    isSelfHosted &&
-    needsSystemAdminSetup === false &&
-    userInfo?.isSystemAdmin
-  ) {
-    return <Navigate to="/admin/general" replace />;
   }
 
   if (isLoggedIn && isSetupAdminPage) {
