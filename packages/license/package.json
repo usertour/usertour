@@ -5,7 +5,7 @@
   "description": "JWT license signing and validation utilities for UserTour",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc. <support@usertour.io>",
-  "license": "AGPL-3.0",
+  "license": "MIT",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
