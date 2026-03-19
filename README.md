@@ -126,4 +126,6 @@ Some icons are provided by Remix Icon (https://remixicon.com), licensed under th
 
 ## License 
 
-Usertour is open-source under the GNU Affero General Public License v3.0 (AGPL-3.0), you will find more information about the license and how to comply with it [here](./LICENSE)
+Community code is licensed under the MIT license. See [LICENSE](./LICENSE).
+
+Enterprise-licensed code for self-hosted Business and Enterprise plans is governed by [LICENSE.enterprise](./LICENSE.enterprise).

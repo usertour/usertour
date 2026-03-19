@@ -203,10 +203,6 @@ console.log('Payload:', licenseInfo.payload);
 3. **Token Storage**: Store JWT tokens securely and consider token rotation policies
 4. **Validation**: Always validate licenses on the server side for security-critical operations
 
-## License
-
-AGPL-3.0 - see [LICENSE](../../LICENSE) for details.
-
 ## Contributing
 
 See [CONTRIBUTING.md](../../CONTRIBUTING.md) for contribution guidelines.

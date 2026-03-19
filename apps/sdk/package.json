@@ -4,7 +4,7 @@
   "type": "module",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc.",
-  "license": "AGPL-3.0",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "vite",
