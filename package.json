@@ -2,7 +2,7 @@
   "name": "usertour",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc.",
-  "license": "AGPL-3.0",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "turbo dev --filter={@usertour/types,@usertour/helpers,@usertour/web,@usertour/sdk,@usertour/server}",
