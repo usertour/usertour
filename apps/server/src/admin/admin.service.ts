@@ -345,9 +345,9 @@ export class AdminService implements OnModuleInit {
       throw new ParamsError('User not found');
     }
 
-    if (user.isSystemAdmin && !isSystemAdmin) {
+    if (user.isSystemAdmin && !isSystemAdmin && !user.disabled) {
       const systemAdminCount = await this.prisma.user.count({
-        where: { isSystemAdmin: true },
+        where: { isSystemAdmin: true, disabled: false },
       });
 
       if (systemAdminCount <= 1) {
