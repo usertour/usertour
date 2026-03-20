@@ -512,11 +512,17 @@ export const RulesEvent = (props: RulesEventProps) => {
     if (showError) {
       setErrorInfo(errorInfo);
       setOpenError(true);
+    } else {
+      setErrorInfo('');
+      setOpenError(false);
     }
   }, [localData, open]);
 
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
+      if (isOpen === open) {
+        return;
+      }
       setOpen(isOpen);
       if (isOpen) {
         setErrorInfo('');
@@ -539,7 +545,7 @@ export const RulesEvent = (props: RulesEventProps) => {
         updateConditionData(index, newData);
       }
     },
-    [localData, whereConditions, index, updateConditionData],
+    [localData, open, whereConditions, index, updateConditionData],
   );
 
   const summary = useMemo(
@@ -558,10 +564,11 @@ export const RulesEvent = (props: RulesEventProps) => {
     }),
     [localData, updateLocalData, selectedEvent, events, whereConditions],
   );
+  const isErrorOpen = openError && Boolean(errorInfo);
 
   return (
     <RulesEventContext.Provider value={contextValue}>
-      <RulesError open={openError}>
+      <RulesError open={isErrorOpen}>
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
             <RulesPopover onOpenChange={handleOpenChange} open={open}>

@@ -310,6 +310,11 @@ export const RulesGroup = (props: RulesGroupProps) => {
 
   // Use ref to store newlyAddedId to avoid being affected by external state updates
   const newlyAddedIdRef = useRef<string | null>(null);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   // Memoize setNewConditions to maintain stable reference in context
   const setNewConditions = useCallback((newConditions: RulesCondition[]) => {
@@ -371,10 +376,10 @@ export const RulesGroup = (props: RulesGroupProps) => {
       isInitialRenderRef.current = false;
       return;
     }
-    if (onChange) {
-      onChange(conditions);
+    if (onChangeRef.current) {
+      onChangeRef.current(conditions);
     }
-  }, [conditions, onChange]);
+  }, [conditions]);
 
   const updateConditionData = useCallback(
     (index: number, data: Record<string, unknown>) => {

@@ -43,6 +43,7 @@ import { RulesConditionRightContent } from './rules-template';
 import { RulesPopoverTriggerWrapper } from './rules-wrapper';
 import { useAutoOpenPopover } from './use-auto-open-popover';
 import { conditionsTypeMapping } from './rules-user-attribute';
+import isEqual from 'fast-deep-equal';
 
 // ============================================================================
 // Context
@@ -416,9 +417,11 @@ export const RulesEventAttribute = (props: RulesEventAttributeProps) => {
 
   const [selectedPreset, setSelectedPreset] = useState<Attribute | null>(null);
   const [localData, setLocalData] = useState<EventAttrConditionData | undefined>(data);
+  const lastCommittedRef = useRef<EventAttrConditionData | undefined>(data);
 
   // Fetch event-specific attributes
-  const { attributeOnEvents: attrOnEvents } = useListAttributeOnEventsQuery(eventId);
+  const { attributeOnEvents: attrOnEvents, loading: attrOnEventsLoading } =
+    useListAttributeOnEventsQuery(eventId);
 
   const eventAttributes = useMemo(() => {
     if (!attrOnEvents || !attributes) return [];
@@ -427,6 +430,7 @@ export const RulesEventAttribute = (props: RulesEventAttributeProps) => {
       (attr) => attrIds.has(attr.id) && attr.bizType === AttributeBizTypes.Event,
     );
   }, [attrOnEvents, attributes]);
+  const areEventAttributesReady = !eventId || (!attrOnEventsLoading && Array.isArray(attrOnEvents));
 
   const [activeConditionMapping, setActiveConditionMapping] = useState<
     (typeof conditionsTypeMapping)[AttributeDataType.Number]
@@ -498,6 +502,11 @@ export const RulesEventAttribute = (props: RulesEventAttributeProps) => {
       setErrorInfo('');
       return;
     }
+    if (!areEventAttributesReady) {
+      setOpenError(false);
+      setErrorInfo('');
+      return;
+    }
     const { showError, errorInfo } = getEventAttrError(localData, eventAttributes);
     if (showError) {
       setErrorInfo(errorInfo);
@@ -510,8 +519,16 @@ export const RulesEventAttribute = (props: RulesEventAttributeProps) => {
 
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
+      if (isOpen === open) {
+        return;
+      }
       setOpen(isOpen);
       if (isOpen) {
+        setErrorInfo('');
+        setOpenError(false);
+        return;
+      }
+      if (!areEventAttributesReady) {
         setErrorInfo('');
         setOpenError(false);
         return;
@@ -522,9 +539,12 @@ export const RulesEventAttribute = (props: RulesEventAttributeProps) => {
         setOpenError(true);
         return;
       }
-      updateConditionData(index, { ...localData });
+      if (!isEqual(localData, lastCommittedRef.current)) {
+        lastCommittedRef.current = localData;
+        updateConditionData(index, { ...localData });
+      }
     },
-    [localData, eventAttributes, index, updateConditionData],
+    [areEventAttributesReady, eventAttributes, index, localData, open, updateConditionData],
   );
 
   const contextValue = useMemo(
@@ -541,7 +561,7 @@ export const RulesEventAttribute = (props: RulesEventAttributeProps) => {
 
   return (
     <RulesEventAttributeContext.Provider value={contextValue}>
-      <RulesError open={openError}>
+      <RulesError open={openError && Boolean(errorInfo)}>
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
             <RulesPopover onOpenChange={handleOpenChange} open={open}>
