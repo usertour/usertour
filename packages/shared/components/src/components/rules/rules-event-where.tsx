@@ -273,7 +273,7 @@ export const RulesEventWhereGroup = ({
         ))}
         <div className="flex flex-row items-center gap-1">
           {!isSubGroup && (
-            <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="inline-flex h-7 w-20 flex-none items-center justify-center rounded-md bg-secondary px-3 text-xs font-medium text-secondary-foreground">
               Where
             </span>
           )}
