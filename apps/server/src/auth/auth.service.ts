@@ -683,21 +683,11 @@ export class AuthService {
       await this.joinProject(inviteCode, user.id);
     }
 
-    let hashedPassword: string = user.password;
     if (user.accounts.length === 0) {
-      await this.prisma.$transaction(async (tx) => {
-        await this.createAccount(tx, 'email', user.id, 'email', user.email);
-        hashedPassword = await this.passwordService.hashPassword(password);
-        await tx.user.update({
-          data: {
-            password: hashedPassword,
-          },
-          where: { id: user.id },
-        });
-      });
+      throw new AccountNotFoundError();
     }
 
-    const passwordValid = await this.passwordService.validatePassword(password, hashedPassword);
+    const passwordValid = await this.passwordService.validatePassword(password, user.password);
 
     if (!passwordValid) {
       throw new PasswordIncorrect();

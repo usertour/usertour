@@ -293,14 +293,27 @@ export class AdminService implements OnModuleInit {
     }
 
     const hashedPassword = await this.passwordService.hashPassword(password);
-    return this.prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        isSystemAdmin: false,
-        disabled: false,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          isSystemAdmin: false,
+          disabled: false,
+        },
+      });
+
+      await tx.account.create({
+        data: {
+          type: 'email',
+          userId: user.id,
+          provider: 'email',
+          providerAccountId: email,
+        },
+      });
+
+      return user;
     });
   }
 
