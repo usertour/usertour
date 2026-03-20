@@ -201,7 +201,7 @@ export class UserNotFoundError extends OpenAPIError {
 }
 
 export class UserRegistrationDisabledError extends BaseError {
-  code = 'E0020';
+  code = 'E0025';
   messageDict = {
     en: 'User registration is disabled for this instance. Please contact your administrator.',
     'zh-CN': '当前实例已关闭用户注册，请联系管理员。',
@@ -209,7 +209,7 @@ export class UserRegistrationDisabledError extends BaseError {
 }
 
 export class SystemAdminAlreadyInitializedError extends BaseError {
-  code = 'E0021';
+  code = 'E0026';
   messageDict = {
     en: 'A System Admin has already been set up for this instance.',
     'zh-CN': '当前实例已经完成 System Admin 初始化。',
@@ -217,7 +217,7 @@ export class SystemAdminAlreadyInitializedError extends BaseError {
 }
 
 export class SystemAdminSetupUnavailableError extends BaseError {
-  code = 'E0022';
+  code = 'E0027';
   messageDict = {
     en: 'System Admin setup is only available for self-hosted instances before initialization is complete.',
     'zh-CN': 'System Admin 初始化仅适用于尚未完成初始化的 self-host 实例。',
@@ -225,7 +225,7 @@ export class SystemAdminSetupUnavailableError extends BaseError {
 }
 
 export class SystemAdminSetupRequiredError extends BaseError {
-  code = 'E0023';
+  code = 'E0028';
   messageDict = {
     en: 'Set up the first admin account for this self-hosted instance before creating other users.',
     'zh-CN': '请先为当前 self-host 实例完成首个管理员初始化，再创建其他用户。',
@@ -448,6 +448,10 @@ const errorMap = {
   E0022: LastEnvironmentCannotBeDeletedError,
   E0023: PrimaryEnvironmentCannotBeDeletedError,
   E0024: UserDisabledError,
+  E0025: UserRegistrationDisabledError,
+  E0026: SystemAdminAlreadyInitializedError,
+  E0027: SystemAdminSetupUnavailableError,
+  E0028: SystemAdminSetupRequiredError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {
