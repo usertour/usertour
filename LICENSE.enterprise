@@ -1,0 +1,60 @@
+The Usertour Enterprise License (the "Enterprise License")
+Copyright (c) 2023-present Usertour, Inc.
+
+With regard to the Usertour Software:
+
+This software and associated documentation files (the "Software") may only be
+used in production if you (and any entity that you represent) have agreed to,
+and are in compliance with, the applicable Usertour commercial subscription
+terms, order form, invoice, pricing page, or other written agreement governing
+your use of the Software, and otherwise have a valid Usertour Business or
+Enterprise subscription for the correct scope of use. Subject to the foregoing
+sentence, you are free to copy and modify this Software for development,
+testing, evaluation, and integration planning purposes.
+
+Subject to the terms above, Usertour grants you a non-exclusive,
+non-transferable, non-sublicensable license to use the Software solely for
+your internal business operations within the scope of your valid Business or
+Enterprise subscription. Business and Enterprise subscriptions are governed by
+this same Enterprise License, with feature entitlements, support levels, and
+commercial benefits defined by the applicable commercial subscription terms.
+
+Any modifications, patches, derivative works, or extensions of the Software may
+only be used, copied, modified, displayed, distributed, or otherwise exploited
+in production with a valid Usertour Business or Enterprise subscription for the
+correct scope of use. You are not granted any other rights beyond what is
+expressly stated herein.
+
+Without limiting the foregoing, you may not:
+
+- use the Software in production without a valid Usertour Business or
+  Enterprise subscription;
+- use the Software beyond the scope of your purchased subscription or
+  entitlement;
+- remove or replace branding where branding removal or white-label rights have
+  not been granted under the applicable commercial terms;
+- circumvent, modify, disable, or bypass any license validation, feature
+  gating, entitlement checks, or plan enablement mechanisms;
+- copy, merge, publish, distribute, sublicense, resell, host for third
+  parties, or otherwise commercially exploit the Software except as expressly
+  permitted by a valid agreement with Usertour.
+
+This Enterprise License applies to all source code files that contain
+"enterprise" or "ee" in their dirname, and to any code controlling feature,
+permission, role, license, branding removal, white-label enablement, or plan
+enablement.
+
+The full text of this Enterprise License shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+For all third party components incorporated into the Usertour Software, those
+components are licensed under the original license provided by the owner of the
+applicable component.

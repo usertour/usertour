@@ -2,7 +2,7 @@
   "name": "@usertour/web",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc.",
-  "license": "AGPL-3.0",
+  "license": "MIT",
   "private": true,
   "version": "0.1.1",
   "type": "module",
