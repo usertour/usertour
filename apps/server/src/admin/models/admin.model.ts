@@ -65,9 +65,6 @@ export class InstanceLicensePayload {
 
 @ObjectType()
 export class InstanceLicenseInfo {
-  @Field(() => String, { nullable: true })
-  license: string | null;
-
   @Field(() => InstanceLicensePayload, { nullable: true })
   payload: InstanceLicensePayload | null;
 

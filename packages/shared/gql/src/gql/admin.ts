@@ -8,7 +8,6 @@ export const adminSettings = gql`
       projectsUsingInstanceLicense
       isOverProjectLimit
       licenseInfo {
-        license
         payload {
           plan
           sub
@@ -39,7 +38,6 @@ export const adminInstanceSettings = gql`
       contactEmail
       allowUserRegistration
       allowProjectLevelSubscriptionManagement
-      license
       createdAt
       updatedAt
     }
@@ -51,7 +49,6 @@ export const updateInstanceLicense = gql`
     updateInstanceLicense(license: $license) {
       id
       instanceId
-      license
     }
   }
 `;

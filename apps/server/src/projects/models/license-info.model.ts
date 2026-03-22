@@ -26,9 +26,6 @@ export class LicensePayload {
 
 @ObjectType()
 export class LicenseInfo {
-  @Field(() => String, { nullable: true })
-  license?: string;
-
   @Field(() => LicensePayload, { nullable: true })
   payload?: LicensePayload;
 

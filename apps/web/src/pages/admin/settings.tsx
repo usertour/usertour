@@ -3,7 +3,7 @@ import {
   useUpdateInstanceLicenseMutation,
 } from '@usertour-packages/shared-hooks';
 import { useToast } from '@usertour-packages/use-toast';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { SettingsContent } from '@/pages/settings/components/content';
 import { Separator } from '@usertour-packages/separator';
@@ -12,10 +12,8 @@ import { Badge } from '@usertour-packages/badge';
 import { Input } from '@usertour-packages/input';
 import { Textarea } from '@usertour-packages/textarea';
 import { Skeleton } from '@usertour-packages/skeleton';
-import { CopyIcon, UploadIcon } from 'lucide-react';
+import { CopyIcon } from 'lucide-react';
 import { getErrorMessage } from '@usertour/helpers';
-import Upload from 'rc-upload';
-import type { UploadRequestOption } from 'rc-upload/lib/interface';
 
 const LicenseStatusBadge = ({
   isValid,
@@ -50,12 +48,6 @@ export const AdminSettingsPage = () => {
     hasValidInstanceLicense &&
     (payload?.projectLimit === null || payload?.projectLimit === undefined);
 
-  useEffect(() => {
-    if (licenseInfo?.license) {
-      setLicenseInput(licenseInfo.license);
-    }
-  }, [licenseInfo?.license]);
-
   const handleCopyInstanceId = () => {
     if (!data?.instanceId) {
       return;
@@ -67,64 +59,30 @@ export const AdminSettingsPage = () => {
     });
   };
 
-  const handleCustomUploadRequest = (option: UploadRequestOption) => {
-    const file = option.file as File;
-
-    if (
-      file.type !== 'text/plain' &&
-      !file.name.endsWith('.txt') &&
-      !file.name.endsWith('.license')
-    ) {
+  const handleSubmitLicense = async () => {
+    const trimmedContent = licenseInput.trim();
+    if (!trimmedContent) {
       toast({
-        title: 'Please select a text file (.txt) or license file (.license)',
+        title: 'License cannot be empty',
         variant: 'destructive',
       });
-      option.onError?.(new Error('Invalid file type'));
       return;
     }
 
-    if (file.size > 10 * 1024) {
+    try {
+      await updateLicense(trimmedContent);
+      setLicenseInput('');
+      refetch();
       toast({
-        title: 'Please select a file smaller than 10KB',
+        variant: 'success',
+        title: 'License updated',
+      });
+    } catch (error) {
+      toast({
+        title: getErrorMessage(error),
         variant: 'destructive',
       });
-      option.onError?.(new Error('File too large'));
-      return;
     }
-
-    const processFile = async () => {
-      try {
-        const content = await file.text();
-        const trimmedContent = content.trim();
-
-        if (!trimmedContent) {
-          toast({
-            title: 'Empty file',
-            variant: 'destructive',
-          });
-          option.onError?.(new Error('Empty file'));
-          return;
-        }
-
-        await updateLicense(trimmedContent);
-        setLicenseInput(trimmedContent);
-        refetch();
-        toast({
-          variant: 'success',
-          title: 'License updated',
-        });
-        option.onSuccess?.(trimmedContent);
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-        toast({
-          title: errorMessage,
-          variant: 'destructive',
-        });
-        option.onError?.(new Error(errorMessage));
-      }
-    };
-
-    processFile();
   };
 
   return (
@@ -241,8 +199,8 @@ export const AdminSettingsPage = () => {
             <div className="flex flex-col gap-1">
               <div className="text-sm font-medium">Upload License</div>
               <div className="text-zinc-950/50 dark:text-white/50 text-sm">
-                You can upload an instance license to unlock features across all projects in this
-                self-hosted deployment.
+                Paste the instance license to unlock features across all projects in this
+                self-hosted deployment. Existing license content is not shown after saving.
               </div>
             </div>
             <div className="flex flex-col gap-4">
@@ -252,22 +210,15 @@ export const AdminSettingsPage = () => {
                 onChange={(e) => setLicenseInput(e.target.value)}
                 className="flex-1 font-mono"
                 rows={6}
-                disabled
               />
               <div className="flex gap-4">
-                <Upload
-                  accept=".txt,.license,text/plain"
-                  customRequest={handleCustomUploadRequest}
-                  disabled={updating}
+                <Button
+                  disabled={updating || !licenseInput.trim()}
+                  onClick={handleSubmitLicense}
+                  className="text-sm px-2 min-w-[36px] h-9 flex-none"
                 >
-                  <Button
-                    disabled={updating}
-                    className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
-                  >
-                    <UploadIcon className="w-4 h-4 mr-1" />
-                    {updating ? 'Updating...' : 'Upload License'}
-                  </Button>
-                </Upload>
+                  {updating ? 'Updating...' : 'Upload License'}
+                </Button>
               </div>
             </div>
           </div>

@@ -52,7 +52,6 @@ export class ProjectsService {
       const expirationInfo = await this.licenseService.getExpirationInfo(project.license);
 
       return {
-        license: project.license,
         payload: payload,
         isValid: validationResult.isValid,
         isExpired: expirationInfo?.isExpired || false,

@@ -21,7 +21,6 @@ export const getProjectConfig = gql`
 export const getProjectLicenseInfo = gql`
   query GetProjectLicenseInfo($projectId: String!) {
     getProjectLicenseInfo(projectId: $projectId) {
-      license
       payload {
         plan
         sub
@@ -44,7 +43,6 @@ export const updateProjectLicense = gql`
     updateProjectLicense(projectId: $projectId, license: $license) {
       id
       name
-      license
     }
   }
 `;

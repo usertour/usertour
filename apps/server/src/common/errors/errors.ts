@@ -140,8 +140,8 @@ export class TeamMemberLimitError extends BaseError {
 export class InvalidLicenseError extends BaseError {
   code = 'E0016';
   messageDict = {
-    en: 'Invalid license provided',
-    'zh-CN': '提供的许可证无效',
+    en: "We couldn't verify this license. Please make sure you're using the correct license and try again.",
+    'zh-CN': '无法验证该许可证。请确认您使用的是正确的许可证后重试。',
   };
 }
 
@@ -229,6 +229,15 @@ export class SystemAdminSetupRequiredError extends BaseError {
   messageDict = {
     en: 'Set up the first admin account for this self-hosted instance before creating other users.',
     'zh-CN': '请先为当前 self-host 实例完成首个管理员初始化，再创建其他用户。',
+  };
+}
+
+export class InstanceLicenseProjectLimitReachedError extends BaseError {
+  code = 'E0029';
+  messageDict = {
+    en: 'The instance license project limit has been reached. Existing assignments still work, but no additional projects can use the instance license.',
+    'zh-CN':
+      '当前实例许可证的项目数量上限已达到。现有分配仍然有效，但无法再为更多项目启用实例许可证。',
   };
 }
 
@@ -452,6 +461,7 @@ const errorMap = {
   E0026: SystemAdminAlreadyInitializedError,
   E0027: SystemAdminSetupUnavailableError,
   E0028: SystemAdminSetupRequiredError,
+  E0029: InstanceLicenseProjectLimitReachedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

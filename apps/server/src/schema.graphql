@@ -624,7 +624,6 @@ type InstanceLicenseInfo {
   error: String
   isExpired: Boolean
   isValid: Boolean!
-  license: String
   payload: InstanceLicensePayload
 }
 
@@ -745,7 +744,6 @@ type LicenseInfo {
   error: String
   isExpired: Boolean
   isValid: Boolean
-  license: String
   payload: LicensePayload
 }
 

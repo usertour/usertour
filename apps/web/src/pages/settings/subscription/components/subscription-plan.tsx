@@ -1,19 +1,17 @@
 import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
 import { Textarea } from '@usertour-packages/textarea';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   useGetProjectLicenseInfoQuery,
   useUpdateProjectLicenseMutation,
 } from '@usertour-packages/shared-hooks';
 import { Separator } from '@usertour-packages/separator';
 import { Skeleton } from '@usertour-packages/skeleton';
-import { CopyIcon, UploadIcon } from 'lucide-react';
+import { CopyIcon } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
 import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
-import Upload from 'rc-upload';
-import { UploadRequestOption } from 'rc-upload/lib/interface';
 
 const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
   // License hooks
@@ -24,18 +22,11 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
   } = useGetProjectLicenseInfoQuery(projectId);
   const { invoke: updateLicense, loading: updateLicenseLoading } =
     useUpdateProjectLicenseMutation();
-  const [licenseInput, setLicenseInput] = useState(licenseInfo?.license || '');
+  const [licenseInput, setLicenseInput] = useState('');
   const [_, copyToClipboard] = useCopyToClipboard();
   const { toast } = useToast();
 
   const planType = licenseInfo?.payload?.plan || 'free';
-
-  // Update license input when license info is loaded
-  useEffect(() => {
-    if (licenseInfo?.license) {
-      setLicenseInput(licenseInfo.license);
-    }
-  }, [licenseInfo?.license]);
 
   // Handle copy project ID
   const handleCopyProjectId = () => {
@@ -46,75 +37,30 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
     });
   };
 
-  // Handle file upload using rc-upload
-  const handleCustomUploadRequest = (option: UploadRequestOption) => {
-    const file = option.file as File;
-
-    // Validate file type
-    if (
-      file.type !== 'text/plain' &&
-      !file.name.endsWith('.txt') &&
-      !file.name.endsWith('.license')
-    ) {
+  const handleSubmitLicense = async () => {
+    const trimmedContent = licenseInput.trim();
+    if (!trimmedContent) {
       toast({
-        title: 'Please select a text file (.txt) or license file (.license)',
+        title: 'License cannot be empty',
         variant: 'destructive',
       });
-      option.onError?.(new Error('Invalid file type'));
       return;
     }
 
-    // Validate file size (max 10KB)
-    if (file.size > 10 * 1024) {
+    try {
+      await updateLicense(projectId, trimmedContent);
+      setLicenseInput('');
+      refetchLicense();
       toast({
-        title: 'Please select a file smaller than 10KB',
+        variant: 'success',
+        title: 'License updated',
+      });
+    } catch (error) {
+      toast({
+        title: getErrorMessage(error),
         variant: 'destructive',
       });
-      option.onError?.(new Error('File too large'));
-      return;
     }
-
-    // Handle async operations
-    const processFile = async () => {
-      try {
-        const content = await file.text();
-        const trimmedContent = content.trim();
-
-        if (!trimmedContent) {
-          toast({
-            title: 'Empty file',
-            variant: 'destructive',
-          });
-          option.onError?.(new Error('Empty file'));
-          return;
-        }
-
-        // Use existing update license logic
-        await updateLicense(projectId, trimmedContent);
-
-        // Only update license input after successful update
-        setLicenseInput(trimmedContent);
-
-        refetchLicense();
-        toast({
-          variant: 'success',
-          title: 'License updated',
-        });
-
-        // Call onSuccess to complete the upload
-        option.onSuccess?.(trimmedContent);
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-        toast({
-          title: errorMessage,
-          variant: 'destructive',
-        });
-        option.onError?.(new Error(errorMessage));
-      }
-    };
-
-    // Start processing the file
-    processFile();
   };
 
   return (
@@ -194,7 +140,8 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
             <div className="flex flex-col gap-1">
               <div className="text-sm font-medium">Upload License</div>
               <div className="text-zinc-950/50 dark:text-white/50 text-sm">
-                You can upload your Usertour license to unlock business/enterprise features.
+                Paste the project license to unlock business/enterprise features. Existing license
+                content is not shown after saving.
               </div>
             </div>
             <div className="flex flex-col gap-4">
@@ -202,24 +149,17 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
                 placeholder="Sensitive - write only"
                 value={licenseInput}
                 onChange={(e) => setLicenseInput(e.target.value)}
-                className="flex-1"
+                className="flex-1 font-mono"
                 rows={6}
-                disabled
               />
               <div className="flex gap-4">
-                <Upload
-                  accept=".txt,.license,text/plain"
-                  customRequest={handleCustomUploadRequest}
-                  disabled={updateLicenseLoading}
+                <Button
+                  disabled={updateLicenseLoading || !licenseInput.trim()}
+                  onClick={handleSubmitLicense}
+                  className="text-sm px-2 min-w-[36px] h-9 flex-none"
                 >
-                  <Button
-                    disabled={updateLicenseLoading}
-                    className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
-                  >
-                    <UploadIcon className="w-4 h-4 mr-1" />
-                    Upload License
-                  </Button>
-                </Upload>
+                  {updateLicenseLoading ? 'Updating...' : 'Upload License'}
+                </Button>
               </div>
             </div>
           </div>

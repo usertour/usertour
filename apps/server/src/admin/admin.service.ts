@@ -4,6 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { LicenseService } from '@/license/license.service';
 import {
   EmailAlreadyRegistered,
+  InstanceLicenseProjectLimitReachedError,
   InvalidLicenseError,
   LicenseExpiredError,
   ParamsError,
@@ -114,7 +115,6 @@ export class AdminService implements OnModuleInit {
       const scope = payload?.scope || (payload?.projectId ? 'project' : 'instance');
       if (scope !== 'instance') {
         return {
-          license: setting.license,
           payload,
           isValid: false,
           isExpired: false,
@@ -126,7 +126,6 @@ export class AdminService implements OnModuleInit {
       // Validate instanceId matches
       if (payload?.instanceId !== setting.instanceId) {
         return {
-          license: setting.license,
           payload,
           isValid: false,
           isExpired: false,
@@ -136,7 +135,6 @@ export class AdminService implements OnModuleInit {
       }
 
       return {
-        license: setting.license,
         payload,
         isValid: validationResult.isValid,
         isExpired: expirationInfo?.isExpired || false,
@@ -540,7 +538,7 @@ export class AdminService implements OnModuleInit {
           : projectsUsingInstanceLicense;
 
       if (currentUsage >= projectLimit) {
-        throw new ParamsError('Instance license project limit has been reached');
+        throw new InstanceLicenseProjectLimitReachedError();
       }
     }
 
