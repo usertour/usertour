@@ -505,6 +505,7 @@ export class EventTrackingService {
         eventId,
         data: events,
         bizSessionId: bizSession.id,
+        bizCompanyId: bizSession.bizCompanyId ?? null,
       },
     });
 

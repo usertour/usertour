@@ -795,17 +795,9 @@ export class ConditionEvaluationService {
         }
         return {
           bizUserId: context.bizUser.id,
-          bizSession: {
-            bizUser: {
-              bizUsersOnCompany: {
-                some: {
-                  bizCompany: {
-                    externalId: String(context.externalCompanyId),
-                    environmentId: context.environment.id,
-                  },
-                },
-              },
-            },
+          bizCompany: {
+            externalId: String(context.externalCompanyId),
+            environmentId: context.environment.id,
           },
         };
       }
@@ -814,15 +806,9 @@ export class ConditionEvaluationService {
           return null;
         }
         return {
-          bizUser: {
-            bizUsersOnCompany: {
-              some: {
-                bizCompany: {
-                  externalId: String(context.externalCompanyId),
-                  environmentId: context.environment.id,
-                },
-              },
-            },
+          bizCompany: {
+            externalId: String(context.externalCompanyId),
+            environmentId: context.environment.id,
           },
         };
       }

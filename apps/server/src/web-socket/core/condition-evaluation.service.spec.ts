@@ -1144,7 +1144,10 @@ describe('ConditionEvaluationService', () => {
 
         const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
         expect(passedWhere.bizUserId).toBe('biz-user-1');
-        expect(passedWhere.bizSession).toBeDefined();
+        expect(passedWhere.bizCompany).toEqual({
+          externalId: 'company-1',
+          environmentId: 'env-1',
+        });
       });
 
       it('byCurrentUserInCurrentCompany — returns false without company context', async () => {
@@ -1168,7 +1171,10 @@ describe('ConditionEvaluationService', () => {
 
         const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
         expect(passedWhere.bizUserId).toBeUndefined();
-        expect(passedWhere.bizUser).toBeDefined();
+        expect(passedWhere.bizCompany).toEqual({
+          externalId: 'company-1',
+          environmentId: 'env-1',
+        });
       });
 
       it('byAnyUserInCurrentCompany — returns false without company context', async () => {

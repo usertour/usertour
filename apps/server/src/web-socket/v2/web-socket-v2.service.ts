@@ -392,7 +392,7 @@ export class WebSocketV2Service {
 
     const { name, attributes, userOnly } = trackEventDto;
 
-    return await this.prisma.$transaction(async (tx) => {
+    const success = await this.prisma.$transaction(async (tx) => {
       // 1. Find or create Event by codeName + projectId
       let event = await tx.event.findFirst({
         where: { codeName: name, projectId },
@@ -487,6 +487,13 @@ export class WebSocketV2Service {
 
       return true;
     });
+
+    if (!success) {
+      return false;
+    }
+
+    await this.contentOrchestratorService.toggleContents(context);
+    return true;
   }
 
   /**
