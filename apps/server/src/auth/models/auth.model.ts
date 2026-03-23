@@ -13,11 +13,3 @@ export class Auth extends Token {
   @Field(() => User)
   user: User;
 }
-
-export type AuthProvider = 'email' | 'google' | 'github';
-
-@ObjectType()
-export class AuthConfigItem {
-  @Field(() => String)
-  provider: AuthProvider;
-}

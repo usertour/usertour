@@ -5,7 +5,7 @@ import {
   WidgetZIndex,
 } from '@usertour-packages/constants';
 import { AssetAttributes } from '@usertour-packages/frame';
-import { isEmptyString, isNullish, storage, uuidV4 } from '@usertour/helpers';
+import { isConditionsActived, isEmptyString, isNullish, storage, uuidV4 } from '@usertour/helpers';
 import {
   contentStartReason,
   SDKSettingsMode,
@@ -79,6 +79,14 @@ export class UsertourCore extends Evented {
   activatedChecklist: UsertourChecklist | null = null;
   activatedBanner: UsertourBanner | null = null;
   launchers: UsertourLauncher[] = [];
+  // Active trackers keyed by contentId
+  private activeTrackers = new Map<
+    string,
+    {
+      session: CustomContentSession;
+      isActive: boolean;
+    }
+  >();
   assets: AssetAttributes[] = [];
   externalUserId: string | undefined;
   externalCompanyId: string | undefined;
@@ -97,6 +105,8 @@ export class UsertourCore extends Evented {
   private conditionsMonitor: UsertourConditionsMonitor | null = null;
   private waitTimerMonitor: ConditionWaitTimersMonitor | null = null;
   private urlMonitor: UsertourURLMonitor | null = null;
+  private trackerMonitorIntervalId: string | null = null;
+  private isTrackerMonitorRunning = false;
   private serverMessageHandlerManager: ServerMessageHandlerManager;
   // Map of sessionId to Set of unacked task IDs
   private taskIsUnacked = new Map<string, Set<string>>();
@@ -163,6 +173,7 @@ export class UsertourCore extends Evented {
     // Start monitors (idempotent, safe to call multiple times)
     this.startConditionsMonitor();
     this.startURLMonitor();
+    this.startTrackerMonitor();
 
     const { token } = this.startOptions;
     // Use dedicated initialization method
@@ -333,6 +344,35 @@ export class UsertourCore extends Evented {
     }
     if (opts?.membership) {
       this.attributeManager.setMembershipAttributes(opts.membership);
+    }
+  }
+
+  // === Public API: Event Tracking ===
+  /**
+   * Tracks a custom event
+   * @param name - Event name (maps to Event.codeName)
+   * @param attributes - Optional event attributes
+   * @param opts - Optional track options (e.g. userOnly)
+   */
+  async track(
+    name: string,
+    attributes?: UserTourTypes.EventAttributes,
+    opts?: UserTourTypes.TrackOptions,
+  ): Promise<void> {
+    this.ensureIdentify();
+
+    if (isNullish(name) || isEmptyString(name)) {
+      throw new Error(formatErrorMessage(ErrorMessages.INVALID_EVENT_NAME, name));
+    }
+
+    const result = await this.socketService.trackEvent({
+      name,
+      attributes: attributes as Record<string, any>,
+      userOnly: opts?.userOnly ?? false,
+    });
+
+    if (!result) {
+      throw new Error(ErrorMessages.FAILED_TO_TRACK_EVENT);
     }
   }
 
@@ -702,6 +742,8 @@ export class UsertourCore extends Evented {
     this.cleanupActivatedBanner();
     // Cleanup launchers
     this.cleanupLaunchers();
+    // Cleanup trackers
+    this.activeTrackers.clear();
     // Clear all unacked tasks
     this.clearUnackedTasks();
     // Note: We don't clear dismissedSessionIds here because:
@@ -712,6 +754,8 @@ export class UsertourCore extends Evented {
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
     this.cleanupWaitTimerMonitor();
+    // Cleanup tracker monitor
+    this.cleanupTrackerMonitor();
     // Stop URL monitor
     this.cleanupURLMonitor();
     // Cleanup time manager
@@ -1139,6 +1183,32 @@ export class UsertourCore extends Evented {
     return true;
   }
 
+  // === Tracker Management ===
+  /**
+   * Register or update a tracker session.
+   * SDK evaluates tracker conditions in the monitor loop and only reports on false→true edges.
+   */
+  private async addTracker(session: CustomContentSession): Promise<boolean> {
+    const contentId = session.content.id;
+    const existing = this.activeTrackers.get(contentId);
+    this.activeTrackers.set(contentId, {
+      session,
+      // Preserve activation state when same contentId is replaced by a newer version.
+      isActive: existing?.isActive ?? false,
+    });
+    // Evaluate promptly so always-active/no-condition trackers can be reported without waiting.
+    await this.evaluateTrackers();
+
+    return true;
+  }
+
+  /**
+   * Remove a tracker from SDK evaluation state.
+   */
+  private async removeTracker(contentId: string): Promise<boolean> {
+    return this.activeTrackers.delete(contentId);
+  }
+
   // === Store Synchronization ===
   /**
    * Synchronizes tours store
@@ -1184,6 +1254,8 @@ export class UsertourCore extends Evented {
       unsetBannerSession: this.unsetBannerSession,
       addLauncher: this.addLauncher,
       removeLauncher: this.removeLauncher,
+      addTracker: this.addTracker,
+      removeTracker: this.removeTracker,
       trackClientCondition: this.trackClientCondition,
       removeConditions: this.removeConditions,
       startConditionWaitTimer: this.startConditionWaitTimer,
@@ -1330,6 +1402,62 @@ export class UsertourCore extends Evented {
     this.urlMonitor?.start();
   }
 
+  /**
+   * Starts tracker condition monitor loop.
+   * Tracker condition activation is evaluated entirely on the SDK side.
+   */
+  private startTrackerMonitor() {
+    if (this.trackerMonitorIntervalId) {
+      return;
+    }
+    this.trackerMonitorIntervalId = `${this.id}-tracker-monitor`;
+    timerManager.setInterval(
+      this.trackerMonitorIntervalId,
+      async () => {
+        await this.evaluateTrackers();
+      },
+      1000,
+    );
+  }
+
+  private async evaluateTrackers(): Promise<void> {
+    if (this.isTrackerMonitorRunning || this.activeTrackers.size === 0) {
+      return;
+    }
+    this.isTrackerMonitorRunning = true;
+    try {
+      for (const [contentId, trackerState] of this.activeTrackers.entries()) {
+        const { session } = trackerState;
+        const rules = session.version.config?.autoStartRules ?? [];
+        const attrs = session.attributes ?? [];
+        let isActive = false;
+
+        if (rules.length === 0) {
+          // Empty rules means always active.
+          isActive = true;
+        } else {
+          const evaluator = rulesEvaluatorManager.getEvaluator(contentId);
+          const evaluatedRules = await evaluator.evaluate(rules, attrs);
+          isActive = isConditionsActived(evaluatedRules);
+        }
+
+        if (!trackerState.isActive && isActive) {
+          await this.socketService.trackTrackerEvent({
+            contentId: session.content.id,
+            versionId: session.version.id,
+          });
+        }
+
+        this.activeTrackers.set(contentId, {
+          session,
+          isActive,
+        });
+      }
+    } finally {
+      this.isTrackerMonitorRunning = false;
+    }
+  }
+
   // === Socket Credentials Synchronization ===
   /**
    * Synchronizes socket credentials
@@ -1468,6 +1596,15 @@ export class UsertourCore extends Evented {
    */
   private cleanupURLMonitor(): void {
     this.urlMonitor?.cleanup();
+  }
+
+  private cleanupTrackerMonitor(): void {
+    if (!this.trackerMonitorIntervalId) {
+      return;
+    }
+    timerManager.clearInterval(this.trackerMonitorIntervalId);
+    this.trackerMonitorIntervalId = null;
+    this.isTrackerMonitorRunning = false;
   }
 
   /**

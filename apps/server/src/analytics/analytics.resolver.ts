@@ -9,7 +9,7 @@ import { AnalyticsQuery } from './dto/analytics-query.input';
 import { SessionQuery } from './dto/session-query.input';
 import { TooltipTargetMissingQuery } from './dto/tooltip-target-missing-query.input';
 import { Analytics } from './models/analytics';
-import { BizSessionConnection } from './models/analytics-connection.model';
+import { BizSessionConnection, TrackerUserConnection } from './models/analytics-connection.model';
 import { TooltipTargetMissingResponse } from './models/tooltip-target-missing-response';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
@@ -107,5 +107,15 @@ export class AnalyticsResolver {
     @Args('orderBy') orderBy: AnalyticsOrder,
   ) {
     return await this.service.queryTooltipTargetMissingSessions(query, pagination, orderBy);
+  }
+
+  @Query(() => TrackerUserConnection)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  async queryTrackerUsers(
+    @Args() pagination: PaginationArgs,
+    @Args('query') query: AnalyticsQuery,
+    @Args('orderBy') orderBy: AnalyticsOrder,
+  ) {
+    return await this.service.queryTrackerUsers(query, pagination, orderBy);
   }
 }

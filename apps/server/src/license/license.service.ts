@@ -4,7 +4,7 @@ import type {
   JWTLicenseValidationOptions,
   JWTLicenseValidationResult,
   JWTLicensePayload,
-} from '@usertour/types';
+} from '@usertour/license';
 
 // Embedded public key for license validation
 const LICENSE_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----

@@ -26,7 +26,7 @@ export const ApiListHeader = () => {
           <br />
           Please note that API keys are environment-specific — you are currently viewing the{' '}
           <span className="font-bold text-foreground">{environment?.name}</span> environment. <br />
-          You can switch environments using the menu with your company name in the top-left corner.
+          Use the environment menu in the top-left corner to switch environments.
           <br />
           <a
             href="https://docs.usertour.io/api-reference/introduction"

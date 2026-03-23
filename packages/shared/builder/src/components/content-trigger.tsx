@@ -62,7 +62,7 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               currentContent={currentContent}
               token={token}
               filterItems={defaultRulesItems.filter(
-                (item) => item !== 'segment' && item !== 'content',
+                (item) => item !== 'segment' && item !== 'content' && item !== 'event',
               )}
               onElementChange={onRulesConditionElementChange}
               baseZIndex={EXTENSION_CONTENT_RULES}

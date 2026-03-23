@@ -14,6 +14,8 @@ export interface ServerMessageHandlerContext {
   unsetBannerSession: (sessionId: string) => Promise<boolean>;
   addLauncher: (session: CustomContentSession) => Promise<boolean>;
   removeLauncher: (contentId: string) => Promise<boolean>;
+  addTracker: (session: CustomContentSession) => Promise<boolean>;
+  removeTracker: (contentId: string) => Promise<boolean>;
   trackClientCondition: (condition: TrackCondition) => Promise<boolean>;
   removeConditions: (conditionIds: string[]) => Promise<boolean>;
   startConditionWaitTimer: (condition: ConditionWaitTimer) => Promise<boolean>;

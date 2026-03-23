@@ -10,6 +10,7 @@ export const getQueryType = (contentType: string): ContentDataType => {
     launchers: ContentDataType.LAUNCHER,
     banners: ContentDataType.BANNER,
     checklists: ContentDataType.CHECKLIST,
+    trackers: ContentDataType.TRACKER,
   };
   return typeMap[contentType] ?? ContentDataType.FLOW;
 };

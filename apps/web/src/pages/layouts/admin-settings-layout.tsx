@@ -11,7 +11,7 @@ interface SettingsLayoutProps {
 export const AdminSettingsLayout = ({ children }: SettingsLayoutProps) => {
   const { settingType, settingSubType } = useParams();
   const bgClassName =
-    settingType === 'account' || settingType === 'companies' || settingSubType ? 'bg-slate-50' : '';
+    settingType === 'account' || settingType === 'general' || settingSubType ? 'bg-slate-50' : '';
   return (
     <>
       <AdminNewLayout>

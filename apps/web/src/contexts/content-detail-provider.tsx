@@ -10,6 +10,7 @@ import { ContentDetailProvider } from './content-detail-context';
 import { ContentListProvider } from './content-list-context';
 import { ContentVersionProvider } from './content-version-context';
 import { ContentVersionListProvider } from './content-version-list-context';
+import { EventListProvider } from './event-list-context';
 import { SegmentListProvider } from './segment-list-context';
 import { ThemeListProvider } from './theme-list-context';
 import { ContentTypeName } from '@usertour/types';
@@ -87,7 +88,9 @@ export function ContentDetailProviderWrapper(props: ContentDetailProviderProps):
           <ContentVersionProvider>
             <ContentVersionListProvider contentId={contentId}>
               <ThemeListProvider projectId={project?.id}>
-                <ContentDetailContent>{children}</ContentDetailContent>
+                <EventListProvider projectId={project?.id}>
+                  <ContentDetailContent>{children}</ContentDetailContent>
+                </EventListProvider>
               </ThemeListProvider>
             </ContentVersionListProvider>
           </ContentVersionProvider>

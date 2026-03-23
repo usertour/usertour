@@ -1,8 +1,8 @@
 import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
 import { querySessionsByExternalId } from '@usertour-packages/gql';
-import { BizSession, PageInfo, Pagination, SessionQuery } from '@usertour/types';
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { BizSession, PageInfo, Pagination } from '@usertour/types';
+import { ReactNode, createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 const defaultPagination = {
   pageIndex: 0,
@@ -17,7 +17,7 @@ export interface UserSessionsProviderProps {
 }
 
 export interface UserSessionsContextValue {
-  refetch: any;
+  refetch: () => void;
   loading: boolean;
   requestPagination: Pagination;
   setRequestPagination: React.Dispatch<React.SetStateAction<Pagination>>;
@@ -27,6 +27,10 @@ export interface UserSessionsContextValue {
   userSessions: BizSession[];
   totalCount: number;
   loadMore: () => void;
+}
+
+interface SessionEdge {
+  node: BizSession;
 }
 
 const UserSessionsContext = createContext<UserSessionsContextValue | undefined>(undefined);
@@ -41,30 +45,27 @@ export const useUserSessionsContext = () => {
 
 export function UserSessionsProvider(props: UserSessionsProviderProps): JSX.Element {
   const { children, environmentId, externalUserId } = props;
+  const pageSize = defaultPagination.pageSize;
   const [requestPagination, setRequestPagination] = useState<Pagination>({
-    first: defaultPagination.pageSize,
+    first: pageSize,
   });
   const [pagination, setPagination] = useState<PaginationState>({
     ...defaultPagination,
   });
-  const [currentPagination, setCurrentPagination] = useState<PaginationState>({
-    ...defaultPagination,
-  });
-  const [currentPageInfo, setCurrentPageInfo] = useState<PageInfo>();
+  const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
+  const [currentPageInfo, setCurrentPageInfo] = useState<PageInfo | null>(null);
   const [userSessions, setUserSessions] = useState<BizSession[]>([]);
-  const [pageCount, setPageCount] = useState(defaultPagination.pageSize);
+  const [pageCount, setPageCount] = useState(0);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  const query: SessionQuery = {
-    environmentId,
-    externalUserId,
-  };
 
   const { data, refetch, loading } = useQuery(querySessionsByExternalId, {
     variables: {
       ...requestPagination,
-      query,
+      query: {
+        environmentId,
+        externalUserId,
+      },
       orderBy: { field: 'createdAt', direction: 'desc' },
     },
   });
@@ -72,37 +73,11 @@ export function UserSessionsProvider(props: UserSessionsProviderProps): JSX.Elem
   const sessionsList = data?.querySessionsByExternalId;
 
   useEffect(() => {
-    const { pageIndex, pageSize } = pagination;
-    let varis: Pagination = { first: pageSize };
-    if (
-      currentPagination &&
-      pageSize === currentPagination.pageSize &&
-      pageIndex === currentPagination.pageIndex
-    ) {
-      return;
-    }
-
-    if (pageIndex === 0) {
-      varis = { first: pageSize };
-    } else if (pageIndex + 1 === pageCount) {
-      const costSize = totalCount - (pageCount - 1) * pageSize;
-      varis = {
-        last: costSize > 0 ? costSize : pageSize,
-      };
-    } else if (currentPageInfo && pageIndex > currentPagination.pageIndex) {
-      varis = {
-        first: pageSize,
-        after: currentPageInfo.endCursor,
-      };
-    } else if (currentPageInfo && pageIndex < currentPagination.pageIndex) {
-      varis = {
-        last: pageSize,
-        before: currentPageInfo.startCursor,
-      };
-    }
-    setCurrentPagination({ ...pagination });
-    setRequestPagination(varis);
-  }, [pagination, currentPagination, currentPageInfo, totalCount]);
+    setRequestPagination({
+      first: pagination.pageSize,
+      after: afterCursor,
+    });
+  }, [afterCursor, pagination.pageSize]);
 
   useEffect(() => {
     if (!sessionsList) {
@@ -113,40 +88,64 @@ export function UserSessionsProvider(props: UserSessionsProviderProps): JSX.Elem
       return;
     }
     setCurrentPageInfo(pageInfo);
-    const newSessions: BizSession[] = edges.map((e: any) => {
-      return { ...e.node };
-    });
+    const newSessions: BizSession[] = edges.map((edge: SessionEdge) => ({ ...edge.node }));
 
-    // Always accumulate data - never replace
     setUserSessions((prev) => {
-      // Create a Set of existing session IDs to avoid duplicates
+      if (!afterCursor) {
+        return newSessions;
+      }
+
       const existingIds = new Set(prev.map((session) => session.id));
       const uniqueNewSessions = newSessions.filter((session) => !existingIds.has(session.id));
       return [...prev, ...uniqueNewSessions];
     });
 
     setTotalCount(totalCount);
-    setPageCount(Math.ceil(totalCount / currentPagination.pageSize));
+    setPageCount(Math.ceil(totalCount / pagination.pageSize));
     setIsLoadingMore(false);
-  }, [sessionsList, currentPagination, pagination.pageIndex, isLoadingMore]);
+  }, [afterCursor, pagination.pageSize, sessionsList]);
+
+  const reset = useCallback(() => {
+    setRequestPagination({ first: pageSize });
+    setPagination({ ...defaultPagination });
+    setAfterCursor(undefined);
+    setCurrentPageInfo(null);
+    setUserSessions([]);
+    setPageCount(0);
+    setTotalCount(0);
+    setIsLoadingMore(false);
+  }, [pageSize]);
 
   useEffect(() => {
-    refetch();
-  }, [requestPagination]);
+    reset();
+  }, [environmentId, externalUserId, reset]);
+
+  const handleRefetch = useCallback(() => {
+    reset();
+    refetch({
+      first: pageSize,
+      query: {
+        environmentId,
+        externalUserId,
+      },
+      orderBy: { field: 'createdAt', direction: 'desc' },
+    });
+  }, [environmentId, externalUserId, pageSize, refetch, reset]);
 
   const loadMore = () => {
-    if (userSessions.length < totalCount && !isLoadingMore) {
+    if (!isLoadingMore && currentPageInfo?.hasNextPage) {
       setIsLoadingMore(true);
       setPagination((prev) => ({
         ...prev,
         pageIndex: prev.pageIndex + 1,
       }));
+      setAfterCursor(currentPageInfo.endCursor);
     }
   };
 
   const value: UserSessionsContextValue = {
     userSessions,
-    refetch,
+    refetch: handleRefetch,
     loading: loading || isLoadingMore,
     requestPagination,
     setRequestPagination,

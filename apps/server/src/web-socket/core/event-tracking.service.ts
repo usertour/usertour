@@ -18,6 +18,7 @@ import {
   buildQuestionAnsweredEventData,
   buildBannerSeenEventData,
   buildBannerDismissedEventData,
+  buildTrackerCompletedEventData,
   getAnswer,
   assignClientContext,
 } from '@/utils/event-v2';
@@ -25,13 +26,16 @@ import {
   BizEvents,
   CompanyAttributes,
   EventAttributes,
+  trackerSystemReservedEventAttributes,
   UserAttributes,
   ChecklistItemType,
 } from '@usertour/types';
+import type { ClientContext } from '@usertour/types';
 import {
   BizCompany,
   BizSession,
   BizUser,
+  Environment,
   Step,
   BizSessionWithEvents,
   BizSessionWithRelations,
@@ -170,6 +174,145 @@ export class EventTrackingService {
     });
   }
 
+  /**
+   * Track a tracker event.
+   * Tracker does not use BizSession — creates BizEvent directly with contentId/versionId.
+   * Resolves target event from version.data.eventId (user-selected event, not a fixed event).
+   * Dedup by environmentId + externalUserId + contentId + versionId + eventId within a configurable window.
+   */
+  async trackTrackerEvent(params: {
+    environment: Environment;
+    externalUserId: string;
+    clientContext: ClientContext;
+    contentId: string;
+    versionId: string;
+    bizCompanyId?: string;
+  }): Promise<boolean> {
+    const { environment, externalUserId, clientContext, contentId, versionId, bizCompanyId } =
+      params;
+    const { id: environmentId } = environment;
+
+    return await this.prisma.$transaction(async (tx) => {
+      // Fetch version to resolve target eventId from version.data.eventId
+      const [bizUser, content, version] = await Promise.all([
+        tx.bizUser.findFirst({
+          where: { externalId: externalUserId, environmentId },
+        }),
+        tx.content.findUnique({
+          where: { id: contentId },
+          select: { id: true, name: true },
+        }),
+        tx.version.findUnique({
+          where: { id: versionId },
+          select: { id: true, sequence: true, data: true },
+        }),
+      ]);
+
+      if (!bizUser || !content || !version) {
+        this.logger.warn({
+          message: 'Tracker event rejected: missing entities',
+          contentId,
+          versionId,
+          hasBizUser: !!bizUser,
+          hasContent: !!content,
+          hasVersion: !!version,
+        });
+        return false;
+      }
+
+      // Resolve target event from version.data.eventId (server is source of truth)
+      const versionData = version.data as Record<string, any> | null;
+      const targetEventId = versionData?.eventId as string | undefined;
+      if (!targetEventId) {
+        this.logger.warn({
+          message: 'Tracker event rejected: no eventId configured in version data',
+          contentId,
+          versionId,
+        });
+        return false;
+      }
+
+      // Look up the actual event by ID (not by codeName)
+      const event = await tx.event.findUnique({
+        where: { id: targetEventId },
+      });
+      if (!event) {
+        this.logger.warn({
+          message: 'Tracker event rejected: target event not found',
+          contentId,
+          versionId,
+          targetEventId,
+        });
+        return false;
+      }
+
+      // Dedup: check for recent BizEvent with same key within 3-second window
+      const DEDUP_WINDOW_MS = 3000;
+      const dedupWindow = new Date(Date.now() - DEDUP_WINDOW_MS);
+      const recentEvent = await tx.bizEvent.findFirst({
+        where: {
+          bizUserId: bizUser.id,
+          eventId: event.id,
+          contentId,
+          versionId,
+          createdAt: { gte: dedupWindow },
+        },
+      });
+
+      if (recentEvent) {
+        this.logger.log({
+          message: 'Tracker event deduplicated',
+          contentId,
+          versionId,
+          eventId: event.id,
+          userId: bizUser.id,
+          dedupHit: true,
+        });
+        return true; // Deduped, return success
+      }
+
+      // Build event data with tracker attributes and client context
+      const trackerData = buildTrackerCompletedEventData(content, version);
+      const eventData = assignClientContext(trackerData, clientContext);
+
+      // Filter event data by allowed attributes
+      const filteredData = await this.filterEventDataByAttributes(
+        event.id,
+        eventData,
+        trackerSystemReservedEventAttributes,
+      );
+      if (!filteredData) {
+        return false;
+      }
+
+      // Create BizEvent directly (no BizSession for tracker)
+      await tx.bizEvent.create({
+        data: {
+          bizUserId: bizUser.id,
+          eventId: event.id,
+          data: filteredData,
+          contentId,
+          versionId,
+          bizCompanyId: bizCompanyId ?? null,
+        },
+      });
+
+      this.logger.log({
+        message: 'Tracker event created',
+        contentId,
+        versionId,
+        eventId: event.id,
+        userId: bizUser.id,
+        dedupHit: false,
+      });
+
+      // Update seen attributes
+      await this.updateSeenAttributes(tx, bizUser, undefined);
+
+      return true;
+    });
+  }
+
   // ============================================================================
   // Session Query Methods
   // ============================================================================
@@ -229,6 +372,7 @@ export class EventTrackingService {
   private async filterEventDataByAttributes(
     eventId: string,
     data: Record<string, any>,
+    extraAllowedAttributes: string[] = [],
   ): Promise<Record<string, any> | false> {
     // Early return if no data provided
     if (!data || Object.keys(data).length === 0) {
@@ -247,12 +391,15 @@ export class EventTrackingService {
       },
     });
 
-    if (!attributes?.length) {
+    if (!attributes?.length && extraAllowedAttributes.length === 0) {
       return false;
     }
 
     // Create a Set for O(1) lookup performance instead of O(n) find
     const allowedAttributeNames = new Set(attributes.map((attr) => attr.attribute.codeName));
+    for (const attr of extraAllowedAttributes) {
+      allowedAttributeNames.add(attr);
+    }
 
     // Filter data using efficient Set lookup
     const filteredData: Record<string, any> = {};
@@ -358,6 +505,7 @@ export class EventTrackingService {
         eventId,
         data: events,
         bizSessionId: bizSession.id,
+        bizCompanyId: bizSession.bizCompanyId ?? null,
       },
     });
 

@@ -8,6 +8,9 @@ import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserSessions } from '../sessions';
+import { UserCompaniesTab } from '../companies';
+import { ActivityFeed } from '@/components/molecules/activity-feed';
+import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';
 import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
 import {
@@ -24,6 +27,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
+import {
+  Tabs,
+  UnderlineTabsList,
+  UnderlineTabsTrigger,
+  UnderlineTabsContent,
+} from '@usertour-packages/tabs';
 import { BizUserDeleteDialog } from '../dialogs';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
@@ -169,18 +178,18 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           </div>
         </div>
       </div>
-      <div className="flex flex-row p-14 mt-12 space-x-8 justify-center">
-        {/* Left column - fixed height */}
-        <div className="flex flex-col w-[550px] flex-none space-y-4 h-fit">
+      <div className="mx-auto mt-12 flex w-full max-w-[1600px] flex-col gap-6 p-14 xl:flex-row xl:items-start xl:justify-center">
+        {/* Left column - primary content */}
+        <div className="flex min-w-0 flex-1 flex-col gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <UserIcon width={18} height={18} className="mr-2" />
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center text-lg font-normal">
+                <UserIcon width={18} height={18} className="mr-2 text-foreground/80" />
                 {t('users.detail.userDetails')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2 gap-x-12">
+              <div className="grid grid-cols-1 gap-x-16 gap-y-4 md:grid-cols-2">
                 <div className="group flex items-center min-w-0 gap-2">
                   <TooltipIcon icon={IdCardIcon} tooltipKey="users.detail.tooltips.userId" />
                   <span className="flex-1 min-w-0 truncate">{bizUser?.externalId || ''}</span>
@@ -242,10 +251,56 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
               </div>
             </CardContent>
           </Card>
+
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <UserProfile width={18} height={18} className="mr-2" />
+            <CardContent className="pt-6">
+              <Tabs defaultValue="activity-feed">
+                <UnderlineTabsList className="justify-start">
+                  <UnderlineTabsTrigger value="activity-feed" className="text-base font-medium">
+                    {t('users.detail.tabs.activityFeed')}
+                  </UnderlineTabsTrigger>
+                  <UnderlineTabsTrigger value="sessions" className="text-base font-medium">
+                    {t('users.detail.tabs.sessions')}
+                  </UnderlineTabsTrigger>
+                  <UnderlineTabsTrigger value="companies" className="text-base font-medium">
+                    {t('users.detail.tabs.companies')}
+                    {bizUser?.bizUsersOnCompany && bizUser.bizUsersOnCompany.length > 0 && (
+                      <span className="ml-1">({bizUser.bizUsersOnCompany.length})</span>
+                    )}
+                  </UnderlineTabsTrigger>
+                </UnderlineTabsList>
+
+                <UnderlineTabsContent value="activity-feed">
+                  {bizUser && (
+                    <UserActivityFeedProvider environmentId={environmentId} userId={bizUser.id}>
+                      <ActivityFeed environmentId={environmentId} />
+                    </UserActivityFeedProvider>
+                  )}
+                </UnderlineTabsContent>
+
+                <UnderlineTabsContent value="sessions">
+                  {bizUser?.externalId && (
+                    <UserSessions
+                      environmentId={environmentId}
+                      externalUserId={bizUser.externalId}
+                    />
+                  )}
+                </UnderlineTabsContent>
+
+                <UnderlineTabsContent value="companies">
+                  {bizUser && <UserCompaniesTab bizUser={bizUser} environmentId={environmentId} />}
+                </UnderlineTabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right column - supporting attributes */}
+        <div className="w-full flex-none xl:w-[550px]">
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center text-lg font-normal">
+                <UserProfile width={18} height={18} className="mr-2 text-foreground/80" />
                 {t('users.detail.userAttributes')}
               </CardTitle>
             </CardHeader>
@@ -257,7 +312,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
 
                 return (
                   <div
-                    className="group flex flex-row text-sm min-w-0 gap-2 border-b last:border-0"
+                    className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
                     key={key}
                   >
                     <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
@@ -277,7 +332,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                     <Button
                       variant={'ghost'}
                       size={'icon'}
-                      className="w-6 h-6 m-2 rounded invisible group-hover:visible flex-shrink-0"
+                      className="m-2 h-6 w-6 rounded invisible flex-shrink-0 group-hover:visible"
                       onClick={() => copyWithToast(textToCopy)}
                     >
                       <CopyIcon className="w-4 h-4" />
@@ -287,13 +342,6 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
               })}
             </CardContent>
           </Card>
-        </div>
-
-        {/* Right column - scrollable */}
-        <div className="flex flex-col w-[800px]">
-          {bizUser?.externalId && (
-            <UserSessions environmentId={environmentId} externalUserId={bizUser?.externalId} />
-          )}
         </div>
       </div>
 

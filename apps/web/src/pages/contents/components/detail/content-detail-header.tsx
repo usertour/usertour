@@ -2,6 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useContentBuilder } from '@/hooks/useContentBuilder';
+import { useContentPublishState } from '@/hooks/use-content-publish-state';
 import { ArrowLeftIcon, DotsHorizontalIcon, EnterIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { EditIcon, PlaneIcon, SpinnerIcon } from '@usertour-packages/icons';
@@ -13,9 +14,8 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import { ContentPublishForm } from '../shared/content-publish-form';
 import { ContentRenameForm } from '../shared/content-rename-form';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { isPublishedInAllEnvironments } from '@/utils/content';
 import { ContentDetailHeaderSkeleton } from './content-detail-header-skeleton';
+import { ContentDataType } from '@usertour/types';
 
 const navigations = [
   {
@@ -71,7 +71,7 @@ export const ContentDetailHeader = () => {
   const { version, isSaving } = useContentVersionContext();
   const { environment, isViewOnly } = useAppContext();
   const { openBuilder } = useContentBuilder();
-  const { environmentList } = useEnvironmentListContext();
+  const isPublishDisabled = useContentPublishState();
   const [_, setSearchParams] = useSearchParams();
 
   // Warn user when closing page while saving
@@ -87,8 +87,6 @@ export const ContentDetailHeader = () => {
   }
 
   if (!contentType || !content) return null;
-
-  const isDisabled = isPublishedInAllEnvironments(content, environmentList, version);
 
   const handleBack = () => {
     navigator(`/env/${environment?.id}/${contentType}`);
@@ -134,18 +132,20 @@ export const ContentDetailHeader = () => {
               </div>
             )}
             {/* <ContentOpenBuilder content={content} /> */}
+            {content.type !== ContentDataType.TRACKER && (
+              <Button
+                type="button"
+                variant={'outline'}
+                onClick={() => openBuilder(content, contentType)}
+                className="flex-none"
+                disabled={isViewOnly || isSaving}
+              >
+                <EnterIcon className="mr-2" />
+                Edit In Builder
+              </Button>
+            )}
             <Button
-              type="button"
-              variant={'outline'}
-              onClick={() => openBuilder(content, contentType)}
-              className="flex-none"
-              disabled={isViewOnly || isSaving}
-            >
-              <EnterIcon className="mr-2" />
-              Edit In Builder
-            </Button>
-            <Button
-              disabled={isDisabled || isViewOnly || isSaving}
+              disabled={isPublishDisabled}
               onClick={() => {
                 setOpenPublish(true);
               }}

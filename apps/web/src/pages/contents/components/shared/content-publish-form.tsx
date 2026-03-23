@@ -20,6 +20,7 @@ import { useCallback } from 'react';
 import { Checkbox } from '@usertour-packages/checkbox';
 import { Label } from '@usertour-packages/label';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
+import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentPublishFormProps {
   versionId: string;
@@ -37,6 +38,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
   const [version, setVersion] = React.useState<ContentVersion>();
   const { content, refetch } = useContentDetailContext();
+  const contentTypeMeta = getContentTypeMeta(content?.type);
 
   const contentVersion = useQuery(getContentVersion, {
     variables: { versionId },
@@ -77,7 +79,9 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
 
   const showToast = (isSuccess: boolean, message?: string) => {
     const variant = isSuccess ? 'success' : 'destructive';
-    const title = isSuccess ? 'The flow published successfully.' : 'The flow published failed.';
+    const title = isSuccess
+      ? `The ${contentTypeMeta.singular} published successfully.`
+      : `The ${contentTypeMeta.singular} failed to publish.`;
     toast({ variant, title: message || title });
   };
 
@@ -148,7 +152,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
       showToast(
         allSuccess,
         allSuccess
-          ? `The ${content?.type} published successfully to ${envNames}.`
+          ? `The ${contentTypeMeta.singular} published successfully to ${envNames}.`
           : 'Some environments failed to publish.',
       );
 
@@ -169,7 +173,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Publish {content?.type}</DialogTitle>
+          <DialogTitle>Publish {contentTypeMeta.singular}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">

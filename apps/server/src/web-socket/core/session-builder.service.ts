@@ -20,6 +20,7 @@ import {
   extractChecklistAttrCodes,
   extractBannerAttrCodes,
   extractButtonConditionAttributeIds,
+  extractAttributeIdsFromConditions,
 } from '@/utils/content-utils';
 import { CustomContentSession, SessionTheme, SessionStep, SessionAttribute } from '@usertour/types';
 import {
@@ -245,6 +246,9 @@ export class SessionBuilderService {
     }
     if (contentType === ContentDataType.BANNER) {
       return await this.processBannerSession(session, customContentVersion, socketData);
+    }
+    if (contentType === ContentDataType.TRACKER) {
+      return await this.processTrackerSession(session, customContentVersion, socketData);
     }
     return session;
   }
@@ -499,6 +503,40 @@ export class SessionBuilderService {
     session.attributes = attributes;
 
     session.version.launcher = { ...launcher };
+    return session;
+  }
+
+  /**
+   * Process TRACKER content type session
+   * Tracker sessions carry the eventId from version.data for SDK-side event triggering.
+   * Extracts and injects required attributes from autoStartRules conditions
+   * (aligning with Launcher attribute injection pattern).
+   */
+  private async processTrackerSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId } = socketData;
+    const data = customContentVersion.data as any;
+    session.version.tracker = { eventId: data?.eventId ?? '' };
+    // Send full config so SDK can evaluate tracker conditions locally.
+    session.version.config = customContentVersion.config;
+
+    // Extract attribute IDs from autoStartRules conditions for attribute injection
+    const autoStartRules = customContentVersion.config?.autoStartRules ?? [];
+    const attrIds = extractAttributeIdsFromConditions(autoStartRules);
+
+    if (attrIds.length > 0) {
+      const attributes = await this.extractAttributes(
+        attrIds,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+      session.attributes = attributes;
+    }
+
     return session;
   }
 

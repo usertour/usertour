@@ -1,5 +1,5 @@
 import { RulesZIndexOffset, WebZIndex } from '@usertour-packages/constants';
-import { Attribute, Content, Segment } from '@usertour/types';
+import { Attribute, Content, Event, Segment } from '@usertour/types';
 import { createContext, useContext } from 'react';
 
 interface RulesContextValue {
@@ -11,6 +11,7 @@ interface RulesContextValue {
   segments: Segment[] | undefined;
   contents: Content[];
   currentContent?: Content | undefined;
+  events?: Event[] | undefined;
   saveBuildUrl?: () => boolean;
   onElementChange?: (conditionIndex: number, type: string) => void;
   token: string;

@@ -14,6 +14,7 @@ import {
   FireConditionWaitTimerDto,
   ActivateLauncherDto,
   DismissLauncherDto,
+  TrackTrackerEventDto,
   ClientCondition,
   WebSocketEvents,
   ClientMessageKind,
@@ -427,6 +428,10 @@ export class UsertourSocket implements IUsertourSocket {
 
   async dismissLauncher(params: DismissLauncherDto, options?: BatchOptions): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.DISMISS_LAUNCHER, params, options);
+  }
+
+  async trackTrackerEvent(params: TrackTrackerEventDto): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.TRACK_TRACKER_EVENT, params);
   }
 
   // === Status Methods ===

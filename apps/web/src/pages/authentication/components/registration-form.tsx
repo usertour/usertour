@@ -32,7 +32,7 @@ const registFormSchema = z.object({
     .min(4),
   companyName: z
     .string({
-      required_error: 'Please input your company name.',
+      required_error: 'Please input your project name.',
     })
     .max(30)
     .min(4)
@@ -192,9 +192,9 @@ const RegistrationFormFields = () => {
             name="companyName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Company name</FormLabel>
+                <FormLabel>Project name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter your company name" {...field} />
+                  <Input placeholder="Enter your project name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

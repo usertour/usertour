@@ -3,7 +3,23 @@ import type {
   JWTLicensePayload,
   JWTLicenseValidationResult,
   JWTLicenseValidationOptions,
+  LicenseScope,
 } from './types';
+
+/**
+ * Resolve the effective scope of a license payload.
+ * Backward compatible: if no scope but has projectId, treat as 'project'.
+ */
+function resolveScope(payload: JWTLicensePayload): LicenseScope {
+  if (payload.scope) {
+    return payload.scope;
+  }
+  // Backward compat: no scope but has projectId → project scope
+  if (payload.projectId) {
+    return 'project';
+  }
+  return 'project';
+}
 
 /**
  * JWT License validator
@@ -11,10 +27,6 @@ import type {
 export const JWTLicenseValidator = {
   /**
    * Validate a JWT license
-   * @param license - JWT license string
-   * @param publicKey - RSA public key in PEM format
-   * @param options - Validation options
-   * @returns Validation result
    */
   validateLicense(
     license: string,
@@ -29,6 +41,9 @@ export const JWTLicenseValidator = {
         algorithms: ['RS256'],
         ignoreExpiration: !checkExpiration,
       }) as JWTLicensePayload;
+
+      // Normalize scope for backward compat
+      decoded.scope = resolveScope(decoded);
 
       // Validate required fields
       const fieldValidation = this.validateRequiredFields(decoded);
@@ -56,17 +71,17 @@ export const JWTLicenseValidator = {
         hasFeature,
       };
     } catch (error: unknown) {
-      if (error instanceof jwt.JsonWebTokenError) {
-        return {
-          isValid: false,
-          error: `JWT validation failed: ${error.message}`,
-        };
-      }
       if (error instanceof jwt.TokenExpiredError) {
         return {
           isValid: false,
           error: `License expired: ${error.message}`,
           isExpired: true,
+        };
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        return {
+          isValid: false,
+          error: `JWT validation failed: ${error.message}`,
         };
       }
       return {
@@ -78,18 +93,54 @@ export const JWTLicenseValidator = {
 
   /**
    * Validate that all required fields are present in license payload
-   * @param payload - License payload to validate
-   * @returns Validation result
    */
   validateRequiredFields(payload: JWTLicensePayload): JWTLicenseValidationResult {
-    const requiredFields = ['plan', 'sub', 'projectId', 'iat', 'exp', 'issuer', 'features'];
+    const scope = payload.scope || resolveScope(payload);
 
-    for (const field of requiredFields) {
+    // Common required fields
+    const commonFields = ['plan', 'sub', 'iat', 'exp', 'issuer', 'features'];
+    for (const field of commonFields) {
       if (!(field in payload)) {
         return {
           isValid: false,
           error: `Missing required field: ${field}`,
         };
+      }
+    }
+
+    // Scope-specific required fields
+    if (scope === 'project') {
+      if (
+        !payload.projectId ||
+        (typeof payload.projectId === 'string' && !payload.projectId.trim())
+      ) {
+        return {
+          isValid: false,
+          error: 'Invalid projectId: must be a non-empty string for project scope',
+        };
+      }
+    } else if (scope === 'instance') {
+      if (
+        !payload.instanceId ||
+        (typeof payload.instanceId === 'string' && !payload.instanceId.trim())
+      ) {
+        return {
+          isValid: false,
+          error: 'Invalid instanceId: must be a non-empty string for instance scope',
+        };
+      }
+      // Validate projectLimit if present
+      if (payload.projectLimit !== undefined && payload.projectLimit !== null) {
+        if (
+          typeof payload.projectLimit !== 'number' ||
+          payload.projectLimit <= 0 ||
+          !Number.isInteger(payload.projectLimit)
+        ) {
+          return {
+            isValid: false,
+            error: 'Invalid projectLimit: must be a positive integer or null',
+          };
+        }
       }
     }
 
@@ -105,13 +156,6 @@ export const JWTLicenseValidator = {
       return {
         isValid: false,
         error: 'Invalid sub: must be a non-empty string',
-      };
-    }
-
-    if (typeof payload.projectId !== 'string' || !payload.projectId.trim()) {
-      return {
-        isValid: false,
-        error: 'Invalid projectId: must be a non-empty string',
       };
     }
 

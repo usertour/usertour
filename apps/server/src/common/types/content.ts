@@ -50,6 +50,7 @@ export interface SocketData {
   checklistSession?: CustomContentSession;
   bannerSession?: CustomContentSession;
   launcherSessions?: CustomContentSession[];
+  trackerSessions?: CustomContentSession[];
   lastDismissedFlowId?: string;
   lastDismissedChecklistId?: string;
   lastDismissedBannerId?: string;

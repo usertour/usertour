@@ -30,6 +30,7 @@ import {
   EmptyContentPreview,
   FlowPreview,
   LauncherPreview,
+  TrackerPreview,
 } from '../shared/content-preview';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
@@ -167,6 +168,10 @@ const ContentPreview = ({
         />
       </AutoScaledPreviewContainer>
     );
+  }
+
+  if (type === ContentDataType.TRACKER && currentVersion) {
+    return <TrackerPreview currentVersion={currentVersion} />;
   }
 
   // Only show empty state when not loading and truly no data

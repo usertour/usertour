@@ -121,6 +121,29 @@ export class RemoveLauncherHandler implements ServerMessageHandler {
 }
 
 /**
+ * Handler for AddTracker message
+ */
+export class AddTrackerHandler implements ServerMessageHandler {
+  readonly messageKind = 'AddTracker';
+
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    return await context.addTracker(payload as CustomContentSession);
+  }
+}
+
+/**
+ * Handler for RemoveTracker message
+ */
+export class RemoveTrackerHandler implements ServerMessageHandler {
+  readonly messageKind = 'RemoveTracker';
+
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    const { contentId } = payload as { contentId: string };
+    return await context.removeTracker(contentId);
+  }
+}
+
+/**
  * Handler for TrackClientCondition message
  */
 export class TrackClientConditionHandler implements ServerMessageHandler {

@@ -35,7 +35,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { useAppContext } from '@/contexts/app-context';
 
 const ProgressColumn = ({ session, eventList }: { session: BizSession; eventList: Event[] }) => {
@@ -173,72 +172,68 @@ export const UserSessionsList = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>
-            {t('users.sessions.title')} ({totalCount})
-          </CardTitle>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={handleRefresh}
-                  disabled={loading}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center space-x-2"
-                >
-                  <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reload</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-sm text-muted-foreground">
+          {t('users.sessions.title')} ({totalCount})
         </div>
-      </CardHeader>
-      <CardContent>
-        {loading && userSessions.length === 0 ? (
-          <ListSkeleton length={5} />
-        ) : userSessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <img src="/images/rocket.png" alt="No sessions" className="w-16 h-16 mb-4 opacity-50" />
-            <p className="text-muted-foreground text-center">No sessions found for this user.</p>
-          </div>
-        ) : (
-          <div className="flex flex-col w-full grow">
-            <Table className="table-fixed">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-2/5">{t('users.sessions.table.content')}</TableHead>
-                  <TableHead className="w-2/5">{t('users.sessions.table.progress')}</TableHead>
-                  <TableHead className="w-1/5">{t('users.sessions.table.lastActivity')}</TableHead>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleRefresh}
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <ReloadIcon className={cn('w-4 h-4', loading && 'animate-spin')} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reload</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      {loading && userSessions.length === 0 ? (
+        <ListSkeleton length={5} />
+      ) : userSessions.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-8">
+          <img src="/images/rocket.png" alt="No sessions" className="w-16 h-16 mb-4 opacity-50" />
+          <p className="text-muted-foreground text-center">No sessions found for this user.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col w-full grow">
+          <Table className="table-fixed">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-2/5">{t('users.sessions.table.content')}</TableHead>
+                <TableHead className="w-2/5">{t('users.sessions.table.progress')}</TableHead>
+                <TableHead className="w-1/5">{t('users.sessions.table.lastActivity')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="[&_tr]:h-14">
+              {userSessions.map((session) => (
+                <TableRow key={session.id} className="cursor-pointer group">
+                  <TableCell className="w-2/5 overflow-hidden">
+                    <ContentColumn session={session} environmentId={environment?.id || ''} />
+                  </TableCell>
+                  <TableCell className="w-2/5 overflow-hidden">
+                    <Link to={`/env/${environment?.id}/session/${session.id}`}>
+                      <ProgressColumn session={session} eventList={eventList || []} />
+                    </Link>
+                  </TableCell>
+                  <TableCell className="w-1/5 overflow-hidden">
+                    <CreateAtColumn session={session} />
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody className="[&_tr]:h-14">
-                {userSessions.map((session) => (
-                  <TableRow key={session.id} className="cursor-pointer group">
-                    <TableCell className="w-2/5 overflow-hidden">
-                      <ContentColumn session={session} environmentId={environment?.id || ''} />
-                    </TableCell>
-                    <TableCell className="w-2/5 overflow-hidden">
-                      <Link to={`/env/${environment?.id}/session/${session.id}`}>
-                        <ProgressColumn session={session} eventList={eventList || []} />
-                      </Link>
-                    </TableCell>
-                    <TableCell className="w-1/5 overflow-hidden">
-                      <CreateAtColumn session={session} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
-        <LoadMoreButton />
-      </CardContent>
-    </Card>
+      <LoadMoreButton />
+    </div>
   );
 };
 

@@ -140,8 +140,8 @@ export class TeamMemberLimitError extends BaseError {
 export class InvalidLicenseError extends BaseError {
   code = 'E0016';
   messageDict = {
-    en: 'Invalid license provided',
-    'zh-CN': '提供的许可证无效',
+    en: "We couldn't verify this license. Please make sure you're using the correct license and try again.",
+    'zh-CN': '无法验证该许可证。请确认您使用的是正确的许可证后重试。',
   };
 }
 
@@ -197,6 +197,47 @@ export class UserNotFoundError extends OpenAPIError {
   messageDict = {
     en: 'User not found',
     'zh-CN': '用户未找到',
+  };
+}
+
+export class UserRegistrationDisabledError extends BaseError {
+  code = 'E0025';
+  messageDict = {
+    en: 'User registration is disabled for this instance. Please contact your administrator.',
+    'zh-CN': '当前实例已关闭用户注册，请联系管理员。',
+  };
+}
+
+export class SystemAdminAlreadyInitializedError extends BaseError {
+  code = 'E0026';
+  messageDict = {
+    en: 'A System Admin has already been set up for this instance.',
+    'zh-CN': '当前实例已经完成 System Admin 初始化。',
+  };
+}
+
+export class SystemAdminSetupUnavailableError extends BaseError {
+  code = 'E0027';
+  messageDict = {
+    en: 'System Admin setup is only available for self-hosted instances before initialization is complete.',
+    'zh-CN': 'System Admin 初始化仅适用于尚未完成初始化的 self-host 实例。',
+  };
+}
+
+export class SystemAdminSetupRequiredError extends BaseError {
+  code = 'E0028';
+  messageDict = {
+    en: 'Set up the first admin account for this self-hosted instance before creating other users.',
+    'zh-CN': '请先为当前 self-host 实例完成首个管理员初始化，再创建其他用户。',
+  };
+}
+
+export class InstanceLicenseProjectLimitReachedError extends BaseError {
+  code = 'E0029';
+  messageDict = {
+    en: 'The instance license project limit has been reached. Existing assignments still work, but no additional projects can use the instance license.',
+    'zh-CN':
+      '当前实例许可证的项目数量上限已达到。现有分配仍然有效，但无法再为更多项目启用实例许可证。',
   };
 }
 
@@ -365,6 +406,14 @@ export class PrimaryEnvironmentCannotBeDeletedError extends BaseError {
   };
 }
 
+export class UserDisabledError extends BaseError {
+  code = 'E0024';
+  messageDict = {
+    en: 'Your account has been disabled. Please contact your administrator.',
+    'zh-CN': '您的账户已被禁用，请联系管理员。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -407,6 +456,12 @@ const errorMap = {
   E0021: S3ConfigNotSetError,
   E0022: LastEnvironmentCannotBeDeletedError,
   E0023: PrimaryEnvironmentCannotBeDeletedError,
+  E0024: UserDisabledError,
+  E0025: UserRegistrationDisabledError,
+  E0026: SystemAdminAlreadyInitializedError,
+  E0027: SystemAdminSetupUnavailableError,
+  E0028: SystemAdminSetupRequiredError,
+  E0029: InstanceLicenseProjectLimitReachedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

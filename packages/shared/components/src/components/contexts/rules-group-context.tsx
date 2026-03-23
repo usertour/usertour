@@ -1,9 +1,9 @@
 import { RulesCondition } from '@usertour/types';
-import { Dispatch, MutableRefObject, SetStateAction, createContext, useContext } from 'react';
+import { MutableRefObject, createContext, useContext } from 'react';
 
 export interface RulesGroupContextValue {
   conditionType: 'and' | 'or';
-  setConditionType: Dispatch<SetStateAction<'and' | 'or'>>;
+  setConditionType: (value: 'and' | 'or') => void;
   conditions: RulesCondition[];
   setNewConditions: (conditions: RulesCondition[]) => void;
   updateConditionData: (index: number, data: any) => void;

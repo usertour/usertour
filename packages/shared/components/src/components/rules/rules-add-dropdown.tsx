@@ -7,7 +7,7 @@ import {
 import {
   ContentIcon,
   ElementIcon,
-  EventIcon,
+  RiFlashlightFill,
   GroupIcon,
   PagesIcon,
   SegmentIcon,
@@ -43,7 +43,7 @@ const RULES_ITEMS = [
   {
     type: 'event',
     text: 'Event',
-    IconElement: EventIcon,
+    IconElement: RiFlashlightFill,
   },
   {
     type: 'segment',

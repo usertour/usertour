@@ -30,11 +30,28 @@ Table User {
   password String
   avatarUrl String
   name String
+  isSystemAdmin Boolean [not null, default: false, note: 'Whether the user is a system admin (self-host only)']
+  disabled Boolean [not null, default: false, note: 'Whether the user is disabled (cannot login)']
   projects UserOnProject [not null]
   codes Code [not null]
   accounts Account [not null]
   refreshTokens RefreshToken [not null]
   invites Invite [not null]
+}
+
+Table InstanceSetting {
+  id String [pk, note: 'Primary key']
+  key String [unique, not null, default: 'instance', note: 'Singleton key to ensure exactly one instance setting record exists']
+  instanceId String [unique, not null, note: 'Stable instance identifier']
+  name String [note: 'Instance display name']
+  contactEmail String [note: 'Instance system admin contact email']
+  allowUserRegistration Boolean [not null, default: true, note: 'Whether public user registration is allowed']
+  allowProjectLevelSubscriptionManagement Boolean [note: 'Whether self-host projects can manage project-level subscriptions']
+  license String [note: 'Instance-level license JWT token']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  updatedAt DateTime [not null, note: 'Update timestamp']
+
+  Note: 'Instance-level settings for self-hosted mode'
 }
 
 Table Register {
@@ -78,6 +95,7 @@ Table Project {
   updatedAt DateTime [not null]
   name String [not null]
   logoUrl String
+  usesInstanceLicense Boolean [not null, default: false, note: 'Whether this project is assigned to use the instance license entitlement']
   customerId String [note: 'Stripe customer ID']
   subscriptionId String [note: 'Stripe subscription ID']
   license String [note: 'License']
@@ -355,6 +373,7 @@ Table BizCompany {
   bizUsers BizUser [not null]
   bizCompaniesOnSegment BizCompanyOnSegment [not null]
   BizSession BizSession [not null]
+  BizEvent BizEvent [not null]
 
   indexes {
     (environmentId, externalId) [unique]
@@ -478,6 +497,10 @@ Table BizEvent {
   bizUserId String [not null]
   bizSession BizSession
   bizSessionId String
+  bizCompany BizCompany
+  bizCompanyId String
+  contentId String
+  versionId String
 }
 
 Table BizAnswer {
@@ -720,6 +743,8 @@ Ref: BizEvent.eventId > Event.id
 Ref: BizEvent.bizUserId > BizUser.id
 
 Ref: BizEvent.bizSessionId > BizSession.id
+
+Ref: BizEvent.bizCompanyId > BizCompany.id
 
 Ref: RefreshToken.userId > User.id
 

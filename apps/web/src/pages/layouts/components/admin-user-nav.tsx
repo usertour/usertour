@@ -24,7 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEvent } from 'react-use';
 
 export const AdminUserNav = () => {
-  const { userInfo: user, handleLogout } = useAppContext();
+  const { userInfo: user, handleLogout, globalConfig } = useAppContext();
   const { project, projects } = useAppContext();
   const posthog = usePostHog();
   const { invoke } = useActiveUserProjectMutation();
@@ -44,10 +44,11 @@ export const AdminUserNav = () => {
     'mod+e': `/project/${project?.id}/settings/events`,
     'shift+mod+k': '/auth/signin',
   };
-  const handleKeyEvent = (event: any) => {
+  const handleKeyEvent = (event: Event) => {
+    const keyboardEvent = event as KeyboardEvent;
     for (const key in hotkeys) {
       const path = hotkeys[key as keyof typeof hotkeys];
-      if (isHotkey(key, event)) {
+      if (isHotkey(key, keyboardEvent)) {
         if (path === '/auth/signin') {
           logoutHandler();
         } else {
@@ -113,14 +114,20 @@ export const AdminUserNav = () => {
           >
             Environments
           </DropdownMenuItem>
-          {/* <DropdownMenuSeparator />
-          <DropdownMenuLabel className="font-normal">My Organizations</DropdownMenuLabel> */}
+          {globalConfig?.isSelfHostedMode && user?.isSystemAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/admin/general')}>
+                System Admin
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger>My Companies</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger>My Projects</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="w-56">
-                <DropdownMenuLabel className="text-xs	">CURRENT COMPANY</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs	">CURRENT PROJECT</DropdownMenuLabel>
                 {activeProject && (
                   <DropdownMenuItem
                     key={activeProject.id}
@@ -134,7 +141,7 @@ export const AdminUserNav = () => {
                 <DropdownMenuSeparator />
                 {otherProjects.length > 0 && (
                   <>
-                    <DropdownMenuLabel className="text-xs">OTHER COMPANIES</DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-xs">OTHER PROJECTS</DropdownMenuLabel>
                     {otherProjects.map((p) => (
                       <DropdownMenuItem
                         key={p.id}

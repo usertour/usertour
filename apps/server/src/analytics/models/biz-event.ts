@@ -1,4 +1,5 @@
 import { BaseModel } from '@/common/models/base.model';
+import { BizModel } from '@/biz/models/biz.model';
 import { Events } from '@/events/models/events.model';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonObject } from '@prisma/client/runtime/library';
@@ -15,8 +16,17 @@ export class BizEvent extends BaseModel {
   @Field(() => String)
   bizUserId: string;
 
-  @Field(() => String)
-  bizSessionId: string;
+  @Field(() => String, { nullable: true })
+  bizSessionId?: string;
+
+  @Field(() => String, { nullable: true })
+  bizCompanyId?: string;
+
+  @Field(() => BizModel, { nullable: true })
+  bizCompany?: BizModel;
+
+  @Field(() => BizModel, { nullable: true })
+  bizUser?: BizModel;
 
   @Field(() => Events, { nullable: true })
   event?: Events;

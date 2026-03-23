@@ -4,6 +4,7 @@ export type {
   JWTLicenseValidationResult,
   JWTLicenseValidationOptions,
   JWTLicenseGenerationOptions,
+  LicenseScope,
 } from './types';
 export { JWTLicenseErrorType } from './types';
 

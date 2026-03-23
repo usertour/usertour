@@ -54,6 +54,59 @@ export enum RulesType {
   GROUP = 'group',
   WAIT = 'wait',
   TASK_IS_CLICKED = 'task-is-clicked',
+  EVENT_ATTR = 'event-attr',
+}
+
+// ============================================================================
+// Event Condition Types
+// ============================================================================
+
+export enum EventCountLogic {
+  AT_LEAST = 'atLeast',
+  AT_MOST = 'atMost',
+  EXACTLY = 'exactly',
+  BETWEEN = 'between',
+}
+
+export enum EventTimeLogic {
+  IN_THE_LAST = 'inTheLast',
+  MORE_THAN = 'moreThan',
+  BETWEEN = 'between',
+  AT_ANY_POINT_IN_TIME = 'atAnyPointInTime',
+}
+
+export enum EventTimeUnit {
+  SECONDS = 'seconds',
+  MINUTES = 'minutes',
+  HOURS = 'hours',
+  DAYS = 'days',
+}
+
+export enum EventScope {
+  BY_CURRENT_USER_IN_ANY_COMPANY = 'byCurrentUserInAnyCompany',
+  BY_CURRENT_USER_IN_CURRENT_COMPANY = 'byCurrentUserInCurrentCompany',
+  BY_ANY_USER_IN_CURRENT_COMPANY = 'byAnyUserInCurrentCompany',
+}
+
+export interface EventConditionData {
+  eventId?: string;
+  countLogic?: EventCountLogic;
+  count?: number;
+  count2?: number;
+  timeLogic?: EventTimeLogic;
+  windowValue?: number;
+  windowValue2?: number;
+  timeUnit?: EventTimeUnit;
+  scope?: EventScope;
+}
+
+export interface EventAttrConditionData {
+  eventId?: string;
+  attrId?: string;
+  logic?: string;
+  value?: string;
+  value2?: string;
+  listValues?: string[];
 }
 
 export enum StringConditionLogic {

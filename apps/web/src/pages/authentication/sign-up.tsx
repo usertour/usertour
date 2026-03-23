@@ -27,6 +27,9 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useGlobalConfigQuery } from '@usertour-packages/shared-hooks';
+import { Skeleton } from '@usertour-packages/skeleton';
+import { SignUpDisabledCard } from './components/sign-up-disabled-card';
 
 const signupFormSchema = z.object({
   email: z
@@ -43,6 +46,7 @@ const defaultValues: Partial<SignupFormValues> = {
 };
 
 export const SignUp = () => {
+  const { data: globalConfig, loading: globalConfigLoading } = useGlobalConfigQuery();
   const [signupMutation] = useMutation(createMagicLink);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -77,7 +81,23 @@ export const SignUp = () => {
   return (
     <>
       {registerData && <SignUpSuccess {...registerData} />}
-      {!registerData && (
+      {!registerData && globalConfigLoading && (
+        <Card>
+          <CardHeader className="space-y-1 text-center">
+            <CardTitle className="text-2xl font-semibold tracking-tight">
+              Get ready for the fun to begin!
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+      )}
+      {!registerData && !globalConfigLoading && globalConfig?.allowUserRegistration === false && (
+        <SignUpDisabledCard />
+      )}
+      {!registerData && !globalConfigLoading && globalConfig?.allowUserRegistration !== false && (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <Card>

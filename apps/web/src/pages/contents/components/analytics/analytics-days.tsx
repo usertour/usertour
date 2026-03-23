@@ -22,6 +22,18 @@ const generateChartConfig = (
   contentType: ContentDataType,
 ): ChartConfig => {
   if (chartType === 'view') {
+    if (contentType === ContentDataType.TRACKER) {
+      return {
+        totalViews: {
+          label: 'Events',
+          color: 'hsl(var(--chart-1))',
+        },
+        uniqueViews: {
+          label: 'Unique events',
+          color: 'hsl(var(--chart-2))',
+        },
+      };
+    }
     if (contentType === ContentDataType.LAUNCHER) {
       return {
         uniqueViews: {
@@ -228,7 +240,11 @@ export const AnalyticsDays = () => {
 
   // Improve data transformation
   useEffect(() => {
-    if (!analyticsData?.viewsByDay) return;
+    if (!analyticsData?.viewsByDay) {
+      setViewData(undefined);
+      setRateData(undefined);
+      return;
+    }
 
     const transformData = analyticsData.viewsByDay.map((view) => {
       const date = format(new Date(view.date), 'PP');
@@ -262,6 +278,9 @@ export const AnalyticsDays = () => {
     return null;
   }
 
+  const showRateTab =
+    contentType !== ContentDataType.BANNER && contentType !== ContentDataType.TRACKER;
+
   return (
     <>
       <Tabs defaultValue="views">
@@ -269,7 +288,7 @@ export const AnalyticsDays = () => {
           <CardHeader>
             <CardTitle className="space-between flex flex-row  items-center">
               <div className="grow	">Performance</div>
-              {contentType !== ContentDataType.BANNER && (
+              {showRateTab && (
                 <TabsList className="flex-none">
                   <TabsTrigger value="views" className="relative">
                     Views
@@ -288,7 +307,7 @@ export const AnalyticsDays = () => {
               chartData={viewData}
             />
           </TabsContent>
-          {contentType !== ContentDataType.BANNER && (
+          {showRateTab && (
             <TabsContent value="rate" className="border-none p-0 outline-none">
               {/* <AnalyticsChart chartConfig={totalChartConfig} chartData={totalData} /> */}
               <AnalyticsRateChart

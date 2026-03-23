@@ -13,9 +13,12 @@ export const queryOembedInfo = gql`
 export const globalConfig = gql`
   query globalConfig {
     globalConfig {
-      enabledBilling
       isSelfHostedMode
       apiUrl
+      allowUserRegistration
+      allowProjectLevelSubscriptionManagement
+      needsSystemAdminSetup
+      authProviders
     }
   }
 `;

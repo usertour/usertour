@@ -1,3 +1,4 @@
+import { Public } from '@/common/decorators/public.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { S3ConfigGuard } from '@/common/guards';
 import { User } from '@/users/models/user.model';
@@ -24,8 +25,9 @@ export class UtilitiesResolver {
     return this.utilitiesService.queryOembedInfo(url);
   }
 
+  @Public()
   @Query(() => GlobalConfig)
-  async globalConfig(@UserEntity() user: User) {
-    return this.utilitiesService.globalConfig(user);
+  async globalConfig() {
+    return this.utilitiesService.globalConfig();
   }
 }
