@@ -189,6 +189,7 @@ const EventSelector = () => {
 
 const EventCountSelector = () => {
   const { localData, updateLocalData } = useRulesEventContext();
+  const { dropdown: zIndex } = useRulesZIndex();
 
   return (
     <div className="flex flex-row flex-wrap items-center gap-2">
@@ -199,7 +200,7 @@ const EventCountSelector = () => {
             <ChevronDownIcon width={16} height={16} className="ml-2" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
+        <DropdownMenuContent align="start" style={{ zIndex }}>
           <DropdownMenuRadioGroup
             value={localData.countLogic}
             onValueChange={(val) => updateLocalData({ countLogic: val as EventCountLogic })}
@@ -246,6 +247,7 @@ const EventCountSelector = () => {
 
 const EventTimeSelector = () => {
   const { localData, updateLocalData } = useRulesEventContext();
+  const { dropdown: zIndex } = useRulesZIndex();
   const showTimeInputs = localData.timeLogic !== EventTimeLogic.AT_ANY_POINT_IN_TIME;
 
   return (
@@ -257,7 +259,7 @@ const EventTimeSelector = () => {
             <ChevronDownIcon width={16} height={16} className="ml-2" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
+        <DropdownMenuContent align="start" style={{ zIndex }}>
           <DropdownMenuRadioGroup
             value={localData.timeLogic}
             onValueChange={(val) => updateLocalData({ timeLogic: val as EventTimeLogic })}
@@ -308,7 +310,7 @@ const EventTimeSelector = () => {
                 <ChevronDownIcon width={16} height={16} className="ml-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
+            <DropdownMenuContent align="start" style={{ zIndex }}>
               <DropdownMenuRadioGroup
                 value={localData.timeUnit}
                 onValueChange={(val) => updateLocalData({ timeUnit: val as EventTimeUnit })}
@@ -332,6 +334,7 @@ const EventTimeSelector = () => {
 
 const EventScopeSelector = () => {
   const { localData, updateLocalData } = useRulesEventContext();
+  const { dropdown: zIndex } = useRulesZIndex();
 
   return (
     <div className="flex justify-start">
@@ -345,7 +348,7 @@ const EventScopeSelector = () => {
             <ChevronDownIcon width={16} height={16} className="ml-2" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
+        <DropdownMenuContent align="start" style={{ zIndex }}>
           <DropdownMenuRadioGroup
             value={localData.scope}
             onValueChange={(val) => updateLocalData({ scope: val as EventScope })}
