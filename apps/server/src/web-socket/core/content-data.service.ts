@@ -115,6 +115,7 @@ export class ContentDataService {
     AttributeBizType.USER,
     AttributeBizType.COMPANY,
     AttributeBizType.MEMBERSHIP,
+    AttributeBizType.EVENT,
   ] as const;
 
   constructor(
