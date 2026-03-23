@@ -34,6 +34,7 @@ import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { buildExternalUserRoomId } from '@/utils/websocket-utils';
+import { assignClientContext } from '@/utils/event-v2';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { getAttributeType, isNull, isValidISO8601 } from '@usertour/helpers';
 
@@ -386,7 +387,7 @@ export class WebSocketV2Service {
    */
   async trackEvent(context: WebSocketContext, trackEventDto: TrackEventDto): Promise<boolean> {
     const { socketData } = context;
-    const { environment, bizUserId, bizCompanyId } = socketData;
+    const { environment, bizUserId, bizCompanyId, clientContext } = socketData;
     const { projectId } = environment;
 
     const { name, attributes, userOnly } = trackEventDto;
@@ -411,9 +412,11 @@ export class WebSocketV2Service {
 
       // 2. Process attributes: auto-create Attribute + AttributeOnEvent
       const eventData: Record<string, any> = {};
-      if (attributes && Object.keys(attributes).length > 0) {
-        for (const attrName of Object.keys(attributes)) {
-          const attrValue = attributes[attrName];
+      const mergedAttributes = assignClientContext(attributes ?? {}, clientContext);
+
+      if (Object.keys(mergedAttributes).length > 0) {
+        for (const attrName of Object.keys(mergedAttributes)) {
+          const attrValue = mergedAttributes[attrName];
 
           if (isNull(attrValue)) {
             eventData[attrName] = null;
