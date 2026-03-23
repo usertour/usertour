@@ -10,6 +10,7 @@ export const getUserInfo = gql`
       createdAt
       updatedAt
       isOAuthUser
+      isSystemAdmin
       projects {
         id
         role

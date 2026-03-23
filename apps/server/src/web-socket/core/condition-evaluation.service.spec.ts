@@ -11,6 +11,10 @@ import {
   RulesType,
   ContentConditionLogic,
   BizEvents,
+  EventCountLogic,
+  EventTimeLogic,
+  EventTimeUnit,
+  EventScope,
 } from '@usertour/types';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { Step } from '@/common/types/schema';
@@ -25,6 +29,7 @@ describe('ConditionEvaluationService', () => {
       name: 'Test Environment',
       token: 'test-token',
       deleted: false,
+      isPrimary: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -111,6 +116,34 @@ describe('ConditionEvaluationService', () => {
         randomMax: 0,
         source: '',
       },
+      {
+        id: 'attr-event-action',
+        codeName: 'action',
+        dataType: BizAttributeTypes.String,
+        bizType: AttributeBizType.EVENT,
+        projectId: 'project-1',
+        displayName: 'Action',
+        description: 'Event action attribute',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        predefined: false,
+        randomMax: 0,
+        source: '',
+      },
+      {
+        id: 'attr-event-timestamp',
+        codeName: 'timestamp',
+        dataType: BizAttributeTypes.DateTime,
+        bizType: AttributeBizType.EVENT,
+        projectId: 'project-1',
+        displayName: 'Timestamp',
+        description: 'Event timestamp attribute',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        predefined: false,
+        randomMax: 0,
+        source: '',
+      },
     ] as any,
   });
 
@@ -126,6 +159,7 @@ describe('ConditionEvaluationService', () => {
       },
       bizEvent: {
         findFirst: jest.fn(),
+        count: jest.fn(),
       },
       segment: {
         findFirst: jest.fn(),
@@ -570,7 +604,11 @@ describe('ConditionEvaluationService', () => {
             contentId: 'content-1',
             bizUserId: 'biz-user-1',
             deleted: false,
-            bizEvent: { some: { event: { codeName: BizEvents.FLOW_STEP_SEEN } } },
+            bizEvent: {
+              some: {
+                event: { codeName: { in: [BizEvents.FLOW_STEP_SEEN, BizEvents.CHECKLIST_SEEN] } },
+              },
+            },
           },
         });
       });
@@ -668,7 +706,13 @@ describe('ConditionEvaluationService', () => {
             contentId: 'content-1',
             bizUserId: 'biz-user-1',
             deleted: false,
-            bizEvent: { some: { event: { codeName: BizEvents.FLOW_COMPLETED } } },
+            bizEvent: {
+              some: {
+                event: {
+                  codeName: { in: [BizEvents.FLOW_COMPLETED, BizEvents.CHECKLIST_COMPLETED] },
+                },
+              },
+            },
           },
         });
       });
@@ -798,6 +842,489 @@ describe('ConditionEvaluationService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].actived).toBe(false);
+    });
+  });
+
+  // ==========================================================================
+  // Event Condition Evaluation
+  // ==========================================================================
+
+  describe('Event Condition Evaluation', () => {
+    const makeEventCondition = (overrides: Record<string, any> = {}): RulesCondition => ({
+      id: 'event-rule-1',
+      type: RulesType.EVENT,
+      operators: 'and',
+      data: {
+        eventId: 'event-1',
+        countLogic: EventCountLogic.AT_LEAST,
+        count: 1,
+        timeLogic: EventTimeLogic.AT_ANY_POINT_IN_TIME,
+        timeUnit: EventTimeUnit.DAYS,
+        scope: EventScope.BY_CURRENT_USER_IN_ANY_COMPANY,
+        ...overrides,
+      },
+    });
+
+    // --------------------------------------------------------------------
+    // Basic & edge cases
+    // --------------------------------------------------------------------
+
+    it('should return false when eventId is missing', async () => {
+      const conditions: RulesCondition[] = [makeEventCondition({ eventId: undefined })];
+      const context = createMockContext();
+      const result = await service.evaluateRulesConditions(conditions, context);
+
+      expect(result[0].actived).toBe(false);
+      expect(mockPrismaService.bizEvent.count).not.toHaveBeenCalled();
+    });
+
+    it('should return false for unknown condition type', async () => {
+      const conditions: RulesCondition[] = [
+        { id: 'rule-x', type: 'unknown-type' as any, operators: 'and', data: {} },
+      ];
+      const context = createMockContext();
+      const result = await service.evaluateRulesConditions(conditions, context);
+
+      expect(result[0].actived).toBe(false);
+    });
+
+    // --------------------------------------------------------------------
+    // Count logic
+    // --------------------------------------------------------------------
+
+    describe('Count logic', () => {
+      it('atLeast — true when eventCount >= count', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(3);
+        const conditions = [makeEventCondition({ countLogic: EventCountLogic.AT_LEAST, count: 2 })];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(true);
+      });
+
+      it('atLeast — false when eventCount < count', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [makeEventCondition({ countLogic: EventCountLogic.AT_LEAST, count: 2 })];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(false);
+      });
+
+      it('atMost — true when eventCount <= count', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(2);
+        const conditions = [makeEventCondition({ countLogic: EventCountLogic.AT_MOST, count: 3 })];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(true);
+      });
+
+      it('atMost — false when eventCount > count', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(4);
+        const conditions = [makeEventCondition({ countLogic: EventCountLogic.AT_MOST, count: 3 })];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(false);
+      });
+
+      it('exactly — true when eventCount === count', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(5);
+        const conditions = [makeEventCondition({ countLogic: EventCountLogic.EXACTLY, count: 5 })];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(true);
+      });
+
+      it('exactly — false when eventCount !== count', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(4);
+        const conditions = [makeEventCondition({ countLogic: EventCountLogic.EXACTLY, count: 5 })];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(false);
+      });
+
+      it('between — true when eventCount is within range', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(5);
+        const conditions = [
+          makeEventCondition({ countLogic: EventCountLogic.BETWEEN, count: 3, count2: 7 }),
+        ];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(true);
+      });
+
+      it('between — false when eventCount is outside range', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(10);
+        const conditions = [
+          makeEventCondition({ countLogic: EventCountLogic.BETWEEN, count: 3, count2: 7 }),
+        ];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(false);
+      });
+
+      it('between — handles reversed count/count2 order', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(5);
+        const conditions = [
+          makeEventCondition({ countLogic: EventCountLogic.BETWEEN, count: 7, count2: 3 }),
+        ];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(true);
+      });
+    });
+
+    // --------------------------------------------------------------------
+    // Time logic
+    // --------------------------------------------------------------------
+
+    describe('Time logic', () => {
+      it('atAnyPointInTime — no createdAt filter applied', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [makeEventCondition({ timeLogic: EventTimeLogic.AT_ANY_POINT_IN_TIME })];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.createdAt).toBeUndefined();
+      });
+
+      it('inTheLast — applies gte createdAt filter', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            timeLogic: EventTimeLogic.IN_THE_LAST,
+            windowValue: 7,
+            timeUnit: EventTimeUnit.DAYS,
+          }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.createdAt).toBeDefined();
+        expect(passedWhere.createdAt.gte).toBeInstanceOf(Date);
+        expect(passedWhere.createdAt.lte).toBeUndefined();
+      });
+
+      it('moreThan — applies lte createdAt filter', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            timeLogic: EventTimeLogic.MORE_THAN,
+            windowValue: 30,
+            timeUnit: EventTimeUnit.DAYS,
+          }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.createdAt).toBeDefined();
+        expect(passedWhere.createdAt.lte).toBeInstanceOf(Date);
+        expect(passedWhere.createdAt.gte).toBeUndefined();
+      });
+
+      it('between — applies gte and lte createdAt filter', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            timeLogic: EventTimeLogic.BETWEEN,
+            windowValue: 7,
+            windowValue2: 30,
+            timeUnit: EventTimeUnit.DAYS,
+          }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.createdAt).toBeDefined();
+        expect(passedWhere.createdAt.gte).toBeInstanceOf(Date);
+        expect(passedWhere.createdAt.lte).toBeInstanceOf(Date);
+        expect(passedWhere.createdAt.gte.getTime()).toBeLessThan(
+          passedWhere.createdAt.lte.getTime(),
+        );
+      });
+
+      it('inTheLast — no createdAt filter if windowValue is missing', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            timeLogic: EventTimeLogic.IN_THE_LAST,
+            windowValue: undefined,
+          }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.createdAt).toBeUndefined();
+      });
+
+      it('between — no createdAt filter if windowValue2 is missing', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            timeLogic: EventTimeLogic.BETWEEN,
+            windowValue: 7,
+            windowValue2: undefined,
+          }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.createdAt).toBeUndefined();
+      });
+
+      it('time unit conversion — seconds', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            timeLogic: EventTimeLogic.IN_THE_LAST,
+            windowValue: 60,
+            timeUnit: EventTimeUnit.SECONDS,
+          }),
+        ];
+        const before = Date.now();
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        const gteTime = passedWhere.createdAt.gte.getTime();
+        // 60 seconds = 60000 ms
+        expect(before - gteTime).toBeGreaterThanOrEqual(59000);
+        expect(before - gteTime).toBeLessThanOrEqual(62000);
+      });
+
+      it('time unit conversion — minutes', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            timeLogic: EventTimeLogic.IN_THE_LAST,
+            windowValue: 5,
+            timeUnit: EventTimeUnit.MINUTES,
+          }),
+        ];
+        const before = Date.now();
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        const gteTime = passedWhere.createdAt.gte.getTime();
+        // 5 minutes = 300000 ms
+        expect(before - gteTime).toBeGreaterThanOrEqual(299000);
+        expect(before - gteTime).toBeLessThanOrEqual(302000);
+      });
+
+      it('time unit conversion — hours', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            timeLogic: EventTimeLogic.IN_THE_LAST,
+            windowValue: 2,
+            timeUnit: EventTimeUnit.HOURS,
+          }),
+        ];
+        const before = Date.now();
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        const gteTime = passedWhere.createdAt.gte.getTime();
+        // 2 hours = 7200000 ms
+        expect(before - gteTime).toBeGreaterThanOrEqual(7199000);
+        expect(before - gteTime).toBeLessThanOrEqual(7202000);
+      });
+    });
+
+    // --------------------------------------------------------------------
+    // Scope logic
+    // --------------------------------------------------------------------
+
+    describe('Scope logic', () => {
+      it('byCurrentUserInAnyCompany — filters by bizUserId', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({ scope: EventScope.BY_CURRENT_USER_IN_ANY_COMPANY }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.bizUserId).toBe('biz-user-1');
+      });
+
+      it('byCurrentUserInCurrentCompany — filters by bizUserId and company', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({ scope: EventScope.BY_CURRENT_USER_IN_CURRENT_COMPANY }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.bizUserId).toBe('biz-user-1');
+        expect(passedWhere.bizCompany).toEqual({
+          externalId: 'company-1',
+          environmentId: 'env-1',
+        });
+      });
+
+      it('byCurrentUserInCurrentCompany — returns false without company context', async () => {
+        const context = createMockContext();
+        (context as any).externalCompanyId = undefined;
+        const conditions = [
+          makeEventCondition({ scope: EventScope.BY_CURRENT_USER_IN_CURRENT_COMPANY }),
+        ];
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result[0].actived).toBe(false);
+        expect(mockPrismaService.bizEvent.count).not.toHaveBeenCalled();
+      });
+
+      it('byAnyUserInCurrentCompany — filters by company only, not bizUserId', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({ scope: EventScope.BY_ANY_USER_IN_CURRENT_COMPANY }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.bizUserId).toBeUndefined();
+        expect(passedWhere.bizCompany).toEqual({
+          externalId: 'company-1',
+          environmentId: 'env-1',
+        });
+      });
+
+      it('byAnyUserInCurrentCompany — returns false without company context', async () => {
+        const context = createMockContext();
+        (context as any).externalCompanyId = undefined;
+        const conditions = [
+          makeEventCondition({ scope: EventScope.BY_ANY_USER_IN_CURRENT_COMPANY }),
+        ];
+        const result = await service.evaluateRulesConditions(conditions, context);
+
+        expect(result[0].actived).toBe(false);
+        expect(mockPrismaService.bizEvent.count).not.toHaveBeenCalled();
+      });
+    });
+
+    // --------------------------------------------------------------------
+    // Where conditions (event attribute filters)
+    // --------------------------------------------------------------------
+
+    describe('Where conditions (event attribute filters)', () => {
+      it('should pass where condition filters to prisma query', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            whereConditions: [
+              {
+                id: 'where-1',
+                type: 'event-attr',
+                operators: 'and',
+                data: {
+                  attrId: 'attr-event-action',
+                  logic: 'is',
+                  value: 'click',
+                },
+              },
+            ],
+          }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        // createConditionsFilter should produce AND/OR filter structure
+        expect(passedWhere.eventId).toBe('event-1');
+        expect(mockPrismaService.bizEvent.count).toHaveBeenCalledTimes(1);
+      });
+
+      it('should handle empty where conditions', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [makeEventCondition({ whereConditions: [] })];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        expect(mockPrismaService.bizEvent.count).toHaveBeenCalledTimes(1);
+      });
+
+      it('should handle where conditions with unknown attribute', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            whereConditions: [
+              {
+                id: 'where-1',
+                type: 'event-attr',
+                operators: 'and',
+                data: {
+                  attrId: 'attr-non-existent',
+                  logic: 'is',
+                  value: 'click',
+                },
+              },
+            ],
+          }),
+        ];
+        await service.evaluateRulesConditions(conditions, createMockContext());
+
+        // Should still call count, just the filter may be empty
+        expect(mockPrismaService.bizEvent.count).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    // --------------------------------------------------------------------
+    // Integration: combines count + time + scope
+    // --------------------------------------------------------------------
+
+    describe('Integration scenarios', () => {
+      it('at least 3 times in the last 7 days by current user', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(5);
+        const conditions = [
+          makeEventCondition({
+            countLogic: EventCountLogic.AT_LEAST,
+            count: 3,
+            timeLogic: EventTimeLogic.IN_THE_LAST,
+            windowValue: 7,
+            timeUnit: EventTimeUnit.DAYS,
+            scope: EventScope.BY_CURRENT_USER_IN_ANY_COMPANY,
+          }),
+        ];
+
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(true);
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.eventId).toBe('event-1');
+        expect(passedWhere.bizUserId).toBe('biz-user-1');
+        expect(passedWhere.createdAt).toBeDefined();
+        expect(passedWhere.createdAt.gte).toBeInstanceOf(Date);
+      });
+
+      it('exactly 0 times — true when no events', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(0);
+        const conditions = [
+          makeEventCondition({
+            countLogic: EventCountLogic.EXACTLY,
+            count: 0,
+          }),
+        ];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(true);
+      });
+
+      it('at most 0 times — false when events exist', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(1);
+        const conditions = [
+          makeEventCondition({
+            countLogic: EventCountLogic.AT_MOST,
+            count: 0,
+          }),
+        ];
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(false);
+      });
+
+      it('more than 30 days ago, between 5 and 10 times', async () => {
+        mockPrismaService.bizEvent.count.mockResolvedValue(7);
+        const conditions = [
+          makeEventCondition({
+            countLogic: EventCountLogic.BETWEEN,
+            count: 5,
+            count2: 10,
+            timeLogic: EventTimeLogic.MORE_THAN,
+            windowValue: 30,
+            timeUnit: EventTimeUnit.DAYS,
+          }),
+        ];
+
+        const result = await service.evaluateRulesConditions(conditions, createMockContext());
+        expect(result[0].actived).toBe(true);
+
+        const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
+        expect(passedWhere.createdAt.lte).toBeInstanceOf(Date);
+      });
     });
   });
 });

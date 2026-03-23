@@ -48,5 +48,8 @@ export type BizEvent = {
   event?: CustomEvent;
   data: any | null;
   bizUserId: string;
-  bizSessionId: string | null;
+  bizSessionId?: string | null;
+  bizCompanyId?: string | null;
+  bizCompany?: BizCompany;
+  bizUser?: BizUser;
 };

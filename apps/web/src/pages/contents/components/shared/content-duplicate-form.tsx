@@ -31,13 +31,13 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentDuplicateFormProps {
   content: Content;
   onSuccess: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  name: string;
 }
 
 const formSchema = z.object({
@@ -53,9 +53,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
-  const { onSuccess, content, open, onOpenChange, name } = props;
+  const { onSuccess, content, open, onOpenChange } = props;
   const [mutation] = useMutation(duplicateContent);
   const { environment } = useAppContext();
+  const contentTypeMeta = getContentTypeMeta(content.type);
 
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
@@ -87,7 +88,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
       if (ret.data.duplicateContent.id) {
         toast({
           variant: 'success',
-          title: `The ${name} has been successfully created`,
+          title: `The ${contentTypeMeta.singular} has been successfully created`,
         });
       }
       onSuccess();
@@ -103,12 +104,12 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Duplicate {name}</DialogTitle>
+              <DialogTitle>Duplicate {contentTypeMeta.singular}</DialogTitle>
               <DialogDescription>
-                {name === ContentDataType.FLOW &&
-                  `This will create a new ${name} with a copy of the original ${name}'s steps.`}
-                {name !== ContentDataType.FLOW &&
-                  `This will create a new ${name} with a copy of the original ${name}.`}
+                {content.type === ContentDataType.FLOW &&
+                  `This will create a new ${contentTypeMeta.singular} with a copy of the original ${contentTypeMeta.singular}'s steps.`}
+                {content.type !== ContentDataType.FLOW &&
+                  `This will create a new ${contentTypeMeta.singular} with a copy of the original ${contentTypeMeta.singular}.`}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2 pb-4 pt-4">
@@ -120,7 +121,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input placeholder={`Enter ${name} name`} {...field} />
+                        <Input placeholder={`Enter ${contentTypeMeta.singular} name`} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

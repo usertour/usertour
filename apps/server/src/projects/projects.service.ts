@@ -52,7 +52,6 @@ export class ProjectsService {
       const expirationInfo = await this.licenseService.getExpirationInfo(project.license);
 
       return {
-        license: project.license,
         payload: payload,
         isValid: validationResult.isValid,
         isExpired: expirationInfo?.isExpired || false,
@@ -96,6 +95,12 @@ export class ProjectsService {
       throw new LicenseDecodeError();
     }
 
+    // Ensure this is a project-scope license
+    const scope = licensePayload.scope || (licensePayload.projectId ? 'project' : 'project');
+    if (scope !== 'project') {
+      throw new InvalidLicenseError();
+    }
+
     // Check if license projectId matches the target project
     if (licensePayload.projectId !== projectId) {
       throw new LicenseProjectMismatchError();
@@ -123,58 +128,125 @@ export class ProjectsService {
    * @returns Configuration object with plan type and branding settings
    */
   async getConfig(environment: Environment): Promise<ProjectConfig> {
+    return this.getProjectConfig(environment.projectId);
+  }
+
+  async getProjectConfig(projectId: string): Promise<ProjectConfig> {
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
 
     if (isSelfHostedMode) {
-      return await this.getSelfHostedConfig(environment);
+      return await this.getSelfHostedConfig(projectId);
     }
 
-    return await this.getCloudConfig(environment);
+    return await this.getCloudConfig(projectId);
   }
 
   /**
-   * Get configuration for self-hosted mode using license validation
-   * @param environment - Environment context
-   * @returns Configuration object with plan type and branding settings
+   * Get configuration for self-hosted mode using license validation.
+   * Priority: project license > instance license > default free/hobby.
    */
-  private async getSelfHostedConfig(environment: Environment): Promise<ProjectConfig> {
+  private async getSelfHostedConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
       planType: 'hobby',
     };
     const project = await this.prisma.project.findUnique({
-      where: { id: environment.projectId },
+      where: { id: projectId },
     });
 
-    // Self-hosted mode: use license validation
-    const licenseToken = project?.license;
-    if (!licenseToken) {
-      return defaultConfig;
+    // Try project-level license first
+    const projectConfig = await this.tryProjectLicense(project?.license, projectId);
+    if (projectConfig) {
+      return projectConfig;
     }
 
-    const validationResult = await this.licenseService.validateLicense(licenseToken);
-
-    if (validationResult.isValid) {
-      const licensePayload = await this.licenseService.getLicensePayload(licenseToken);
-
-      // Check if license projectId matches the current project
-      if (licensePayload?.projectId !== environment.projectId) {
-        this.logger.warn(
-          `License projectId mismatch. Expected: ${environment.projectId}, Got: ${licensePayload?.projectId}`,
-        );
-        return defaultConfig;
-      }
-
-      const isBusinessPlan =
-        licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
-
-      return {
-        removeBranding: isBusinessPlan,
-        planType: licensePayload?.plan || 'hobby',
-      };
+    // Fallback to instance-level license
+    const instanceConfig = await this.tryInstanceLicense(project?.usesInstanceLicense ?? false);
+    if (instanceConfig) {
+      return instanceConfig;
     }
 
     return defaultConfig;
+  }
+
+  /**
+   * Try to resolve config from a project-level license.
+   */
+  private async tryProjectLicense(
+    licenseToken: string | null | undefined,
+    projectId: string,
+  ): Promise<ProjectConfig | null> {
+    if (!licenseToken) {
+      return null;
+    }
+
+    const validationResult = await this.licenseService.validateLicense(licenseToken);
+    if (!validationResult.isValid) {
+      return null;
+    }
+
+    const licensePayload = await this.licenseService.getLicensePayload(licenseToken);
+
+    // Check scope: legacy (no scope + projectId) or explicit project scope
+    const scope = licensePayload?.scope || (licensePayload?.projectId ? 'project' : null);
+    if (scope !== 'project') {
+      return null;
+    }
+
+    // Check if license projectId matches
+    if (licensePayload?.projectId !== projectId) {
+      this.logger.warn(
+        `License projectId mismatch. Expected: ${projectId}, Got: ${licensePayload?.projectId}`,
+      );
+      return null;
+    }
+
+    const isBusinessPlan =
+      licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
+
+    return {
+      removeBranding: isBusinessPlan,
+      planType: licensePayload?.plan || 'hobby',
+    };
+  }
+
+  /**
+   * Try to resolve config from the instance-level license.
+   */
+  private async tryInstanceLicense(usesInstanceLicense: boolean): Promise<ProjectConfig | null> {
+    const instanceSetting = await this.prisma.instanceSetting.findUnique({
+      where: { key: 'instance' },
+    });
+    if (!instanceSetting?.license) {
+      return null;
+    }
+
+    const validationResult = await this.licenseService.validateLicense(instanceSetting.license);
+    if (!validationResult.isValid) {
+      return null;
+    }
+
+    const payload = await this.licenseService.getLicensePayload(instanceSetting.license);
+    const scope = payload?.scope || (payload?.projectId ? 'project' : 'instance');
+    if (scope !== 'instance') {
+      return null;
+    }
+
+    if (payload?.instanceId !== instanceSetting.instanceId) {
+      return null;
+    }
+
+    const isUnlimited = payload?.projectLimit === null || payload?.projectLimit === undefined;
+    if (!isUnlimited && !usesInstanceLicense) {
+      return null;
+    }
+
+    const isBusinessPlan = payload?.plan === 'business' || payload?.plan === 'enterprise';
+
+    return {
+      removeBranding: isBusinessPlan,
+      planType: payload?.plan || 'hobby',
+    };
   }
 
   /**
@@ -182,7 +254,7 @@ export class ProjectsService {
    * @param environment - Environment context
    * @returns Configuration object with plan type and branding settings
    */
-  private async getCloudConfig(environment: Environment): Promise<ProjectConfig> {
+  private async getCloudConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
       planType: 'hobby',
@@ -190,7 +262,7 @@ export class ProjectsService {
 
     // Cloud mode: use subscription-based logic
     const project = await this.prisma.project.findUnique({
-      where: { id: environment.projectId },
+      where: { id: projectId },
     });
 
     if (!project?.subscriptionId) {

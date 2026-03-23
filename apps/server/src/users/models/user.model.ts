@@ -30,4 +30,10 @@ export class User extends BaseModel {
 
   @Field(() => Boolean, { nullable: true })
   isOAuthUser?: boolean;
+
+  @Field(() => Boolean)
+  isSystemAdmin: boolean;
+
+  @Field(() => Boolean)
+  disabled: boolean;
 }

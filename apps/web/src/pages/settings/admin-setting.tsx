@@ -11,9 +11,10 @@ import { SettingsApiList } from './api';
 import { SettingsProjectsDetail } from './projects';
 import { SettingsIntegrationsList } from './integrations';
 import { SettingsSubscription } from './subscription/';
+import { Navigate } from 'react-router-dom';
 
 export const AdminSettings = () => {
-  const { settingType } = useParams();
+  const { settingType, projectId } = useParams();
 
   if (settingType === 'themes') {
     return <SettingsThemeList />;
@@ -40,6 +41,9 @@ export const AdminSettings = () => {
     return <SettingsApiList />;
   }
   if (settingType === 'companies') {
+    return <Navigate to={`/project/${projectId}/settings/general`} replace />;
+  }
+  if (settingType === 'general') {
     return <SettingsProjectsDetail />;
   }
   if (settingType === 'integrations') {

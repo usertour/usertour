@@ -20,6 +20,58 @@ input ActiveUserProjectInput {
   userId: String!
 }
 
+type AdminProject {
+  createdAt: DateTime!
+  id: String!
+  licenseSource: String!
+  memberCount: Int!
+  name: String!
+  ownerEmail: String
+  ownerName: String
+  usesInstanceLicense: Boolean!
+}
+
+type AdminProjectList {
+  items: [AdminProject!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+type AdminProjectMember {
+  email: String
+  id: String!
+  isOwner: Boolean!
+  name: String
+  role: String!
+  userId: String
+}
+
+type AdminSettingsInfo {
+  instanceId: String!
+  isOverProjectLimit: Boolean!
+  licenseInfo: InstanceLicenseInfo
+  projectCount: Int!
+  projectsUsingInstanceLicense: Int!
+}
+
+type AdminUser {
+  createdAt: DateTime!
+  disabled: Boolean!
+  email: String
+  id: String!
+  isSystemAdmin: Boolean!
+  name: String
+  projectCount: Int!
+}
+
+type AdminUserList {
+  items: [AdminUser!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
 type Analytics {
   totalCompletions: Int!
   totalViews: Int!
@@ -90,10 +142,6 @@ type Auth {
   user: User!
 }
 
-type AuthConfigItem {
-  provider: String!
-}
-
 input BizCompanyOnSegmentInput {
   bizCompanyId: String!
   data: JSON
@@ -107,7 +155,10 @@ type BizConnection {
 }
 
 type BizEvent {
-  bizSessionId: String!
+  bizCompany: BizModel
+  bizCompanyId: String
+  bizSessionId: String
+  bizUser: BizModel
   bizUserId: String!
 
   """Identifies the date and time when the object was created."""
@@ -119,6 +170,23 @@ type BizEvent {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+}
+
+type BizEventConnection {
+  edges: [BizEventEdge!]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type BizEventEdge {
+  cursor: String!
+  node: BizEvent!
+}
+
+input BizEventQuery {
+  companyId: String
+  environmentId: String!
+  userId: String
 }
 
 type BizModel {
@@ -543,9 +611,45 @@ type Events {
 }
 
 type GlobalConfig {
+  allowProjectLevelSubscriptionManagement: Boolean!
+  allowUserRegistration: Boolean!
   apiUrl: String
-  enabledBilling: Boolean!
+  authProviders: [String!]!
   isSelfHostedMode: Boolean!
+  needsSystemAdminSetup: Boolean!
+}
+
+type InstanceLicenseInfo {
+  daysRemaining: Int
+  error: String
+  isExpired: Boolean
+  isValid: Boolean!
+  payload: InstanceLicensePayload
+}
+
+type InstanceLicensePayload {
+  exp: Int
+  features: [String!]
+  iat: Int
+  instanceId: String
+  issuer: String
+  plan: String
+  projectId: String
+  projectLimit: Int
+  scope: String
+  sub: String
+}
+
+type InstanceSetting {
+  allowProjectLevelSubscriptionManagement: Boolean
+  allowUserRegistration: Boolean!
+  contactEmail: String
+  createdAt: DateTime!
+  id: String!
+  instanceId: String!
+  license: String
+  name: String
+  updatedAt: DateTime!
 }
 
 type Integration {
@@ -640,7 +744,6 @@ type LicenseInfo {
   error: String
   isExpired: Boolean
   isValid: Boolean
-  license: String
   payload: LicensePayload
 }
 
@@ -683,6 +786,12 @@ type Mutation {
   activeUserProject(data: ActiveUserProjectInput!): Boolean!
   addContentStep(data: CreateStepInput!): Step!
   addContentSteps(data: ContentStepsInput!): Common!
+  adminAddProjectMember(projectId: String!, role: String!, userId: String!): Boolean!
+  adminChangeProjectMemberRole(projectId: String!, role: String!, userId: String!): Boolean!
+  adminCreateProject(name: String!, ownerUserId: String!): Project!
+  adminCreateUser(email: String!, name: String!, password: String!): User!
+  adminRemoveProjectMember(projectId: String!, userId: String!): Boolean!
+  adminTransferProjectOwnership(projectId: String!, userId: String!): Boolean!
   cancelInvite(data: CancelInviteInput!): Boolean!
   changeEmail(data: ChangeEmailInput!): User!
   changePassword(data: ChangePasswordInput!): User!
@@ -731,6 +840,7 @@ type Mutation {
   restoreContentVersion(data: VersionIdInput!): Version!
   setDefaultLocalization(id: String!): Localization!
   setDefaultTheme(themeId: String!): Theme!
+  setupSystemAdmin(data: SetupSystemAdminInput!): Auth!
   signup(data: SignupInput!): Auth!
   unpublishedContentVersion(data: ContentIdInput!): Common!
   updateAttribute(data: UpdateAttributeInput!): Attribute!
@@ -739,14 +849,20 @@ type Mutation {
   updateContentVersion(data: VersionUpdateInput!): Version!
   updateEnvironments(data: UpdateEnvironmentInput!): Environment!
   updateEvent(data: UpdateEventInput!): Events!
+  updateInstanceAuthenticationSettings(allowUserRegistration: Boolean!): InstanceSetting!
+  updateInstanceGeneralSettings(allowProjectLevelSubscriptionManagement: Boolean, contactEmail: String, name: String): InstanceSetting!
+  updateInstanceLicense(license: String!): InstanceSetting!
   updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
   updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
   updateProjectLicense(license: String!, projectId: String!): Project!
   updateProjectName(name: String!, projectId: String!): Project!
+  updateProjectUsesInstanceLicense(enabled: Boolean!, projectId: String!): Boolean!
   updateSegment(data: UpdateSegment!): Segment!
   updateTheme(data: UpdateThemeInput!): Theme!
   updateUser(data: UpdateUserInput!): User!
+  updateUserDisabled(disabled: Boolean!, userId: String!): User!
+  updateUserSystemAdmin(isSystemAdmin: Boolean!, userId: String!): User!
   updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
   upsertIntegrationObjectMapping(input: CreateIntegrationObjectMappingInput!, integrationId: String!): IntegrationObjectMapping!
 }
@@ -787,10 +903,19 @@ type Project {
   updatedAt: DateTime!
 }
 
+type ProjectConfigModel {
+  planType: String!
+  removeBranding: Boolean!
+}
+
 type Query {
+  adminInstanceSettings: InstanceSetting!
+  adminProjectMembers(projectId: String!): [AdminProjectMember!]!
+  adminProjects(page: Int, pageSize: Int, query: String, usesInstanceLicense: String): AdminProjectList!
+  adminSettings: AdminSettingsInfo!
+  adminUsers(page: Int, pageSize: Int, query: String, role: String, status: String): AdminUserList!
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
-  getAuthConfig: [AuthConfigItem!]!
   getContent(contentId: String!): Content!
   getContentVersion(versionId: String!): Version!
   getIntegration(environmentId: String!, provider: String!): Integration!
@@ -798,6 +923,7 @@ type Query {
   getIntegrationObjectMappings(integrationId: String!): [IntegrationObjectMapping!]!
   getInvite(inviteId: String!): Invite!
   getInvites(projectId: String!): [Invite!]!
+  getProjectConfig(projectId: String!): ProjectConfigModel!
   getProjectLicenseInfo(projectId: String!): LicenseInfo
   getSalesforceAuthUrl(environmentId: String!, provider: String!): String!
   getSalesforceObjectFields(integrationId: String!): SalesforceObjectFields!
@@ -821,8 +947,10 @@ type Query {
   listThemes(projectId: String!): [Theme!]!
   me: User!
   queryBizCompany(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizConnection!
+  queryBizCompanyEvents(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizEventQuery!, skip: Int): BizEventConnection!
   queryBizSession(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): BizSessionConnection!
   queryBizUser(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizQuery!, skip: Int): BizUserConnection!
+  queryBizUserEvents(after: String, before: String, first: Int, last: Int, orderBy: BizOrder!, query: BizEventQuery!, skip: Int): BizEventConnection!
   queryContent(after: String, before: String, first: Int, last: Int, orderBy: ContentOrder, query: ContentQuery, skip: Int): ContentConnection!
   queryContentAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): Analytics!
   queryContentQuestionAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): JSON!
@@ -830,6 +958,7 @@ type Query {
   querySessionDetail(sessionId: String!): BizSession!
   querySessionsByExternalId(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: SessionQuery!, skip: Int): BizSessionConnection!
   queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): TooltipTargetMissingResponse!
+  queryTrackerUsers(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): TrackerUserConnection!
   userEnvironments(projectId: String!): [Environment!]!
 }
 
@@ -930,6 +1059,12 @@ input SessionQuery {
   externalCompanyId: String
   externalUserId: String
   startDate: String
+}
+
+input SetupSystemAdminInput {
+  email: String!
+  name: String!
+  password: String!
 }
 
 input SignupInput {
@@ -1051,6 +1186,26 @@ type TooltipTargetMissingResponse {
   stepAnalytics: StepAnalytics!
 }
 
+type TrackerUser {
+  bizCompany: BizModel
+  bizUser: BizUser!
+  eventsCount: Int!
+  firstTrackedAt: DateTime!
+  id: String!
+  lastTrackedAt: DateTime!
+}
+
+type TrackerUserConnection {
+  edges: [TrackerUserEdge!]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type TrackerUserEdge {
+  cursor: String!
+  node: TrackerUser!
+}
+
 input UpdateAttributeInput {
   bizType: Int
   codeName: String
@@ -1139,9 +1294,11 @@ type User {
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
+  disabled: Boolean!
   email: String!
   id: ID!
   isOAuthUser: Boolean
+  isSystemAdmin: Boolean!
   name: String
   projects: [UserOnProject!]!
 

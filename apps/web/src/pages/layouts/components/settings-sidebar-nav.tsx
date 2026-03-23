@@ -21,7 +21,7 @@ import {
   // PlugIcon,
   KeyIcon,
 } from '@usertour-packages/icons';
-import { TeamMemberRole } from '@usertour/types';
+import { GlobalConfig, TeamMemberRole } from '@usertour/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Constants
@@ -48,6 +48,7 @@ interface SidebarNavItem {
   type: SidebarNavItemType;
   icon: React.ReactNode;
   mode: readonly Mode[];
+  visible?: (globalConfig: GlobalConfig | undefined) => boolean;
 }
 
 // Components
@@ -100,8 +101,8 @@ const NavSection = ({ title, items, currentPath, onNavigate }: NavSectionProps) 
 // Data
 const sidebarNavItems: readonly SidebarNavItem[] = [
   {
-    title: 'Company',
-    href: '/settings/companies',
+    title: 'Project',
+    href: '/settings/general',
     role: OWNER_ROLES,
     type: SidebarNavItemType.GENERAL,
     icon: <ProjectIcon className={ICON_CLASS_NAME} />,
@@ -162,6 +163,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
     type: SidebarNavItemType.GENERAL,
     icon: <BankCardIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.SELF_HOSTED],
+    visible: (globalConfig) => globalConfig?.allowProjectLevelSubscriptionManagement === true,
   },
   {
     title: 'Account',
@@ -201,6 +203,7 @@ export const SettingsSidebarNav = () => {
   const { project, globalConfig } = useAppContext();
 
   const isSelfHosted = globalConfig?.isSelfHostedMode;
+  const currentMode = isSelfHosted ? Mode.SELF_HOSTED : Mode.CLOUD;
 
   const filteredItems = sidebarNavItems
     .map((item) => ({
@@ -208,15 +211,24 @@ export const SettingsSidebarNav = () => {
       href: `/project/${project?.id}${item.href}`,
     }))
     .filter((item) => {
-      const projectRole = project?.role;
-      return projectRole && item.role.includes(projectRole as TeamMemberRole);
+      const projectRole = project?.role as TeamMemberRole | undefined;
+
+      if (!projectRole || !item.role.includes(projectRole)) {
+        return false;
+      }
+
+      if (!item.mode.includes(currentMode)) {
+        return false;
+      }
+
+      if (item.visible && !item.visible(globalConfig)) {
+        return false;
+      }
+
+      return true;
     });
 
-  const generalItems = filteredItems.filter(
-    (item) =>
-      item.type === SidebarNavItemType.GENERAL &&
-      item.mode.includes(isSelfHosted ? Mode.SELF_HOSTED : Mode.CLOUD),
-  );
+  const generalItems = filteredItems.filter((item) => item.type === SidebarNavItemType.GENERAL);
   const developerItems = filteredItems.filter((item) => item.type === SidebarNavItemType.DEVELOPER);
 
   const handleNavigate = (href: string) => {

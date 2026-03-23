@@ -1,3 +1,4 @@
+import { AdminModule } from '@/admin/admin.module';
 import { AnalyticsModule } from '@/analytics/analytics.module';
 import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
@@ -137,6 +138,7 @@ import { Logger } from '@nestjs/common';
     LicenseModule,
     OpenAPIModule,
     SharedModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

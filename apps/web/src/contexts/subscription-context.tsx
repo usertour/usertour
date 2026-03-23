@@ -7,9 +7,10 @@ import {
 } from '@usertour-packages/constants';
 import {
   useGetSubscriptionByProjectIdQuery,
+  useGetProjectConfigQuery,
   useGetSubscriptionUsageQuery,
 } from '@usertour-packages/shared-hooks';
-import { ReactNode, createContext, useContext, useMemo } from 'react';
+import { ReactNode, createContext, useCallback, useContext, useMemo } from 'react';
 
 export interface SubscriptionProviderProps {
   children?: ReactNode;
@@ -51,18 +52,29 @@ export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Elem
     skip: !projectId || !subscriptionId, // Skip if either is missing
   });
 
+  const {
+    projectConfig,
+    loading: projectConfigLoading,
+    refetch: refetchProjectConfig,
+  } = useGetProjectConfigQuery(projectId, {
+    skip: !projectId,
+  });
+
   const { usage: currentUsage, loading: usageLoading } = useGetSubscriptionUsageQuery(projectId);
 
   // Calculate derived values
   const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
   const totalLimit = PLAN_LIMITS[planType] ?? HobbySessionLimit;
-  // Default to false during loading to avoid flickering when transitioning from true to false
-  // If no subscriptionId, default to HOBBY (show made with)
-  // If loading, don't show to avoid flicker
-  // If loaded, show only when planType is HOBBY
-  const shouldShowMadeWith = !subscriptionId
-    ? true // No subscriptionId means HOBBY plan, show by default
-    : !subscriptionLoading && subscription?.planType === PlanType.HOBBY;
+  const shouldShowMadeWith = projectConfigLoading
+    ? false
+    : !(projectConfig?.removeBranding ?? false);
+  const loading = projectConfigLoading || subscriptionLoading || usageLoading;
+  const refetch = useCallback(() => {
+    refetchProjectConfig();
+    if (subscriptionId) {
+      refetchSubscription();
+    }
+  }, [refetchProjectConfig, refetchSubscription, subscriptionId]);
 
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo<SubscriptionContextValue>(
@@ -71,20 +83,11 @@ export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Elem
       currentUsage,
       totalLimit,
       planType,
-      loading: subscriptionLoading || usageLoading,
-      refetch: refetchSubscription,
+      loading,
+      refetch,
       shouldShowMadeWith,
     }),
-    [
-      subscription,
-      currentUsage,
-      totalLimit,
-      planType,
-      subscriptionLoading,
-      usageLoading,
-      refetchSubscription,
-      shouldShowMadeWith,
-    ],
+    [subscription, currentUsage, totalLimit, planType, loading, refetch, shouldShowMadeWith],
   );
 
   return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;

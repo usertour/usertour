@@ -150,14 +150,15 @@ export class FireConditionWaitTimerPayload {
 export class TrackEventPayload {
   @IsString()
   @MaxLength(255)
-  eventName: string;
+  name: string;
 
-  @IsString()
-  @MaxLength(255)
-  sessionId: string;
-
+  @IsOptional()
   @IsObject()
-  eventData: Record<string, any>;
+  attributes?: Record<string, any>;
+
+  @IsOptional()
+  @IsBoolean()
+  userOnly?: boolean;
 }
 
 /**
@@ -256,6 +257,19 @@ export class DismissLauncherPayload {
   endReason: string;
 }
 
+/**
+ * Track tracker event payload validator
+ */
+export class TrackTrackerEventPayload {
+  @IsString()
+  @MaxLength(255)
+  contentId: string;
+
+  @IsString()
+  @MaxLength(255)
+  versionId: string;
+}
+
 // ============================================================================
 // Payload DTO Map
 // ============================================================================
@@ -280,5 +294,6 @@ export const payloadValidatorMap = new Map<ClientMessageKind, new () => object>(
   [ClientMessageKind.REPORT_TOOLTIP_TARGET_MISSING, TooltipTargetMissingPayload],
   [ClientMessageKind.ACTIVATE_LAUNCHER, SessionOnlyPayload],
   [ClientMessageKind.DISMISS_LAUNCHER, DismissLauncherPayload],
+  [ClientMessageKind.TRACK_TRACKER_EVENT, TrackTrackerEventPayload],
   // BEGIN_BATCH, END_BATCH, END_ALL_CONTENT don't require payload validation
 ]);

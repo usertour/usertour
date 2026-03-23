@@ -21,7 +21,6 @@ import { createTransport } from 'nodemailer';
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
 import { omit } from '@/utils/typesafe';
 import ms from 'ms';
-import { AuthConfigItem } from './models/auth.model';
 import {
   AccountNotFoundError,
   AuthenticationExpiredError,
@@ -30,6 +29,11 @@ import {
   OAuthError,
   PasswordIncorrect,
   UnknownError,
+  UserDisabledError,
+  UserRegistrationDisabledError,
+  SystemAdminAlreadyInitializedError,
+  SystemAdminSetupRequiredError,
+  SystemAdminSetupUnavailableError,
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
@@ -45,6 +49,7 @@ import { RedisService, LockReleaseFn } from '@/shared/redis.service';
 const EMAIL_COOLDOWN_MS = 60 * 1000; // 60 seconds - minimum interval between email sends
 const REGISTER_REUSE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours - reuse existing register record within this window
 const EMAIL_LOCK_KEY_PREFIX = 'magic-link-email:';
+const SETUP_SYSTEM_ADMIN_LOCK_KEY = 'setup-system-admin';
 
 @Injectable()
 export class AuthService {
@@ -62,18 +67,53 @@ export class AuthService {
     @InjectQueue(QUEUE_INITIALIZE_PROJECT) private initializeProjectQueue: Queue,
   ) {}
 
-  getAuthConfig(): AuthConfigItem[] {
-    const items: AuthConfigItem[] = [];
-    if (this.configService.get('auth.email.enabled')) {
-      items.push({ provider: 'email' });
+  async isUserRegistrationAllowed() {
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+    if (!isSelfHostedMode) {
+      return true;
     }
-    if (this.configService.get('auth.google.enabled')) {
-      items.push({ provider: 'google' });
+
+    const setting = await this.prisma.instanceSetting.findUnique({
+      where: { key: 'instance' },
+      select: { allowUserRegistration: true },
+    });
+
+    return setting?.allowUserRegistration ?? true;
+  }
+
+  async needsSystemAdminSetup() {
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+    if (!isSelfHostedMode) {
+      return false;
     }
-    if (this.configService.get('auth.github.enabled')) {
-      items.push({ provider: 'github' });
+
+    const user = await this.prisma.user.findFirst({
+      select: { id: true },
+    });
+
+    return !user;
+  }
+
+  private async ensureUserRegistrationAllowed() {
+    if (await this.needsSystemAdminSetup()) {
+      throw new SystemAdminSetupRequiredError();
     }
-    return items;
+
+    const allowUserRegistration = await this.isUserRegistrationAllowed();
+    if (!allowUserRegistration) {
+      throw new UserRegistrationDisabledError();
+    }
+  }
+
+  private async ensureSystemAdminSetupAvailable() {
+    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+    if (!isSelfHostedMode) {
+      throw new SystemAdminSetupUnavailableError();
+    }
+
+    if (!(await this.needsSystemAdminSetup())) {
+      throw new SystemAdminAlreadyInitializedError();
+    }
   }
 
   cookieOptions(key: string): CookieOptions {
@@ -186,6 +226,10 @@ export class AuthService {
       return user;
     }
 
+    if (!inviteCode) {
+      await this.ensureUserRegistrationAllowed();
+    }
+
     // download avatar if profile photo exists
     let avatar: string;
     try {
@@ -203,6 +247,7 @@ export class AuthService {
           email,
           avatarUrl: avatar,
           emailVerified: new Date(),
+          isSystemAdmin: false,
         },
       });
 
@@ -344,6 +389,8 @@ export class AuthService {
   }
 
   async createMagicLink(email: string) {
+    await this.ensureUserRegistrationAllowed();
+
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) {
       throw new EmailAlreadyRegistered();
@@ -384,6 +431,8 @@ export class AuthService {
   }
 
   async resendMargicLink(id: string) {
+    await this.ensureUserRegistrationAllowed();
+
     const data = await this.prisma.register.findUnique({ where: { id } });
     if (!data) {
       throw new InvalidVerificationSession();
@@ -482,6 +531,10 @@ export class AuthService {
   async signup(payload: SignupInput): Promise<TokenData> {
     const { code, userName, companyName, password, isInvite } = payload;
 
+    if (!isInvite) {
+      await this.ensureUserRegistrationAllowed();
+    }
+
     // Validate verification code
     const { email, projectId, role } = await this.validateSignupCode(code, isInvite);
 
@@ -514,6 +567,70 @@ export class AuthService {
       }
       this.logger.error('Failed to signup user', e);
       throw new UnknownError();
+    }
+  }
+
+  async setupSystemAdmin(name: string, email: string, password: string): Promise<TokenData> {
+    await this.ensureSystemAdminSetupAvailable();
+
+    const hashedPassword = await this.passwordService.hashPassword(password);
+    let releaseLock: LockReleaseFn | null = null;
+
+    try {
+      releaseLock = await this.redisService.acquireLock(SETUP_SYSTEM_ADMIN_LOCK_KEY);
+      if (!releaseLock) {
+        throw new SystemAdminAlreadyInitializedError();
+      }
+
+      await this.ensureSystemAdminSetupAvailable();
+
+      const user = await this.prisma.$transaction(async (tx) => {
+        const existingUser = await tx.user.findFirst({
+          where: { isSystemAdmin: true },
+          select: { id: true },
+        });
+
+        if (existingUser) {
+          throw new SystemAdminAlreadyInitializedError();
+        }
+
+        const user = await tx.user.create({
+          data: {
+            name,
+            email,
+            password: hashedPassword,
+            isSystemAdmin: true,
+          },
+        });
+
+        await this.createAccount(tx, 'email', user.id, 'email', email);
+        const project = await this.createProject(tx, 'Unnamed Project', user.id);
+        await initialization(tx, project.id);
+
+        return user;
+      });
+
+      this.logger.log(`System admin ${user.id} initialized`);
+      return this.login(user.id);
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new EmailAlreadyRegistered();
+      }
+
+      if (
+        e instanceof SystemAdminAlreadyInitializedError ||
+        e instanceof SystemAdminSetupRequiredError ||
+        e instanceof SystemAdminSetupUnavailableError
+      ) {
+        throw e;
+      }
+
+      this.logger.error('Failed to set up system admin', e);
+      throw new UnknownError();
+    } finally {
+      if (releaseLock) {
+        await releaseLock();
+      }
     }
   }
 
@@ -553,6 +670,10 @@ export class AuthService {
       throw new AccountNotFoundError();
     }
 
+    if (user.disabled) {
+      throw new UserDisabledError();
+    }
+
     if (user.projects.length === 0) {
       const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
       await initialization(this.prisma, project.id);
@@ -562,21 +683,11 @@ export class AuthService {
       await this.joinProject(inviteCode, user.id);
     }
 
-    let hashedPassword: string = user.password;
     if (user.accounts.length === 0) {
-      await this.prisma.$transaction(async (tx) => {
-        await this.createAccount(tx, 'email', user.id, 'email', user.email);
-        hashedPassword = await this.passwordService.hashPassword(password);
-        await tx.user.update({
-          data: {
-            password: hashedPassword,
-          },
-          where: { id: user.id },
-        });
-      });
+      throw new AccountNotFoundError();
     }
 
-    const passwordValid = await this.passwordService.validatePassword(password, hashedPassword);
+    const passwordValid = await this.passwordService.validatePassword(password, user.password);
 
     if (!passwordValid) {
       throw new PasswordIncorrect();
@@ -626,7 +737,11 @@ export class AuthService {
   }
 
   async validateUser(userId: string): Promise<User> {
-    return await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.disabled) {
+      throw new UserDisabledError();
+    }
+    return user;
   }
 
   async getUserFromToken(token: string): Promise<User> {
@@ -687,6 +802,7 @@ export class AuthService {
         name,
         email,
         password,
+        isSystemAdmin: false,
       },
     });
   }

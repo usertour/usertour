@@ -1,6 +1,12 @@
 const translations = {
   language: 'English',
   productName: 'Usertour',
+  activityFeed: {
+    noEvents: 'No events found.',
+    loadMore: 'Load More Events',
+    loading: 'Loading...',
+    tab: 'Activity feed',
+  },
   privacyPage: {
     title: 'Privacy Policy',
   },
@@ -54,6 +60,19 @@ const translations = {
       userDetails: 'User details',
       userAttributes: 'User attributes',
       unnamedUser: 'Unnamed user',
+      tabs: {
+        activityFeed: 'Activity feed',
+        sessions: 'Sessions',
+        companies: 'Companies',
+      },
+      companies: {
+        noCompanies: 'No companies found for this user.',
+        loadMore: 'Load More Companies',
+        loading: 'Loading...',
+        company: 'Company',
+        membershipAttributes: 'Membership attributes',
+        noMembershipAttributes: 'No membership attributes',
+      },
       tooltips: {
         userId: 'User ID',
         email: 'Email',
@@ -164,6 +183,10 @@ const translations = {
       companyMembers: 'Company members',
       user: 'User',
       membershipAttributes: 'Membership Attributes',
+      tabs: {
+        activityFeed: 'Activity feed',
+        companyMembers: 'Company members',
+      },
       noMembershipAttributes: 'No membership attributes',
       loadMoreUsers: 'Load More Users',
       loading: 'Loading...',

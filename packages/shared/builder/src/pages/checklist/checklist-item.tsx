@@ -12,7 +12,7 @@ import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Rules } from '@usertour-packages/shared-components';
 import { defaultRulesItems } from '@usertour-packages/shared-components';
 import { ContentActions } from '@usertour-packages/shared-editor';
-import { useSegmentListQuery } from '@usertour-packages/shared-hooks';
+import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
 import {
   ChecklistItemType,
@@ -52,10 +52,11 @@ const ChecklistItemBody = () => {
   const { currentItem, setCurrentItem, zIndex } = useChecklistContext();
   const { attributeList } = useAttributeListContext();
   const { contents } = useContentListContext();
-  const { environmentId } = useBuilderContext();
+  const { environmentId, projectId } = useBuilderContext();
   const formPrefix = useId();
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
+  const { eventList } = useListEventsQuery(projectId);
   const handleInputChange =
     (field: keyof ChecklistItemType) => (e: React.ChangeEvent<HTMLInputElement> | boolean) => {
       setCurrentItem((prev) =>
@@ -136,6 +137,7 @@ const ChecklistItemBody = () => {
               attributes={attributeList}
               contents={contents}
               segments={segmentList}
+              events={eventList}
               token={token}
               baseZIndex={EXTENSION_CONTENT_RULES}
             />
@@ -159,6 +161,7 @@ const ChecklistItemBody = () => {
                 attributes={attributeList}
                 contents={contents}
                 segments={segmentList}
+                events={eventList}
                 token={token}
                 baseZIndex={EXTENSION_CONTENT_RULES}
               />

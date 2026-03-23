@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { EyeNoneIcon } from '@usertour-packages/icons';
+import { useEventListContext } from '@/contexts/event-list-context';
+import { EyeNoneIcon, RiFlashlightFill } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import {
   BannerContainer,
@@ -258,11 +259,43 @@ const BannerPreviewContent = ({
   );
 };
 
+const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) => {
+  const { eventList } = useEventListContext();
+
+  const versionData =
+    typeof currentVersion.data === 'string' ? JSON.parse(currentVersion.data) : currentVersion.data;
+
+  const hasEvent = !!versionData?.eventId;
+  const eventId = versionData?.eventId as string | undefined;
+  const eventDisplayName = eventList?.find((item) => item.id === eventId)?.displayName;
+  const conditionCount = ((currentVersion.config as { autoStartRules?: unknown[] } | undefined)
+    ?.autoStartRules?.length ?? 0) as number;
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full w-full gap-3 px-6">
+      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+        <RiFlashlightFill className="w-5 h-5 text-primary" />
+      </div>
+      <div className="flex flex-col items-center gap-1 text-center w-full max-w-[260px]">
+        <span className="text-sm font-medium text-foreground truncate max-w-full">
+          {hasEvent ? eventDisplayName || 'Event configured' : 'No event selected'}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {conditionCount > 0
+            ? `${conditionCount} trigger condition${conditionCount > 1 ? 's' : ''}`
+            : 'No trigger conditions'}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export {
   FlowPreview,
   LauncherPreview,
   ChecklistPreview,
   BannerPreviewContent,
+  TrackerPreview,
   EmptyContentPreview,
   ScaledPreviewContainer,
 };

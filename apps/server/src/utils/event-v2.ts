@@ -60,6 +60,7 @@ const isCompletedEvent = (eventCodeName: string) => {
     BizEvents.FLOW_COMPLETED,
     BizEvents.CHECKLIST_COMPLETED,
     BizEvents.LAUNCHER_ACTIVATED,
+    BizEvents.BANNER_DISMISSED,
   ].includes(eventCodeName as BizEvents);
 };
 
@@ -700,4 +701,28 @@ export const getEndEventType = (contentType: ContentDataType): BizEvents | null 
     return BizEvents.BANNER_DISMISSED;
   }
   return null;
+};
+
+// ============================================================================
+// Tracker Event Data Builders
+// ============================================================================
+
+/**
+ * Build event data for tracker completed events
+ * Unlike other content types, tracker does not use BizSession.
+ * Event data is built directly from content and version records.
+ * @param content - The content record with id and name
+ * @param version - The version record with id and sequence
+ * @returns Tracker completed event data
+ */
+export const buildTrackerCompletedEventData = (
+  content: { id: string; name: string },
+  version: { id: string; sequence: number },
+): Record<string, any> => {
+  return {
+    [EventAttributes.EVENT_TRACKER_ID]: content.id,
+    [EventAttributes.EVENT_TRACKER_NAME]: content.name,
+    [EventAttributes.EVENT_TRACKER_VERSION_ID]: version.id,
+    [EventAttributes.EVENT_TRACKER_VERSION_NUMBER]: version.sequence,
+  };
 };

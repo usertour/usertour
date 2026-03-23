@@ -23,6 +23,7 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { getContentTypeMeta } from './content-type-meta';
 
 interface RenameFormProps {
   data: Content;
@@ -33,7 +34,7 @@ interface RenameFormProps {
 const formSchema = z.object({
   name: z
     .string({
-      required_error: 'Please input your flow name.',
+      required_error: 'Please input the content name.',
     })
     .min(1),
 });
@@ -46,6 +47,7 @@ export const ContentRenameForm = (props: RenameFormProps) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [open, setOpen] = React.useState(false);
   const { toast } = useToast();
+  const contentTypeMeta = getContentTypeMeta(data.type);
 
   const showError = (title: string) => {
     toast({
@@ -92,7 +94,7 @@ export const ContentRenameForm = (props: RenameFormProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Rename {data.type} </DialogTitle>
+              <DialogTitle>Rename {contentTypeMeta.singular}</DialogTitle>
             </DialogHeader>
             <div>
               <div className="space-y-4 py-2 pb-4 pt-4">
@@ -103,7 +105,10 @@ export const ContentRenameForm = (props: RenameFormProps) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Input placeholder={`Enter ${data.type} name`} {...field} />
+                          <Input
+                            placeholder={`Enter ${contentTypeMeta.singular} name`}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -12,6 +12,7 @@ import { ContentDeleteForm } from './content-delete-form';
 import { ContentDuplicateForm } from './content-duplicate-form';
 import { ContentUnpublishForm } from './content-unpublish-form';
 import { isPublishedAtLeastOneEnvironment } from '@/utils/content';
+import { getContentTypeMeta } from './content-type-meta';
 
 type ContentEditDropdownMenuProps = {
   content: Content;
@@ -26,6 +27,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
   const [openUnpublish, setOpenUnpublish] = useState(false);
 
   const isPublished = isPublishedAtLeastOneEnvironment(content);
+  const contentTypeMeta = getContentTypeMeta(content.type);
 
   const handleOnClick = () => {
     setOpenDelete(true);
@@ -65,7 +67,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
             disabled={disabled}
           >
             <CopyIcon className="mr-1" width={15} height={15} />
-            Duplicate {content.type}
+            Duplicate {contentTypeMeta.singular}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -74,7 +76,7 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
             disabled={isPublishedAtLeastOneEnvironment(content) || disabled}
           >
             <Delete2Icon className="mr-1" />
-            Delete {content.type}
+            Delete {contentTypeMeta.singular}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -83,10 +85,8 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
         open={openDuplicate}
         onOpenChange={setOpenDuplicate}
         onSuccess={handleDuplicateSuccess}
-        name={content.type}
       />
       <ContentDeleteForm
-        name="flow"
         content={content}
         open={openDelete}
         onOpenChange={setOpenDelete}
@@ -95,7 +95,6 @@ export const ContentEditDropdownMenu = (props: ContentEditDropdownMenuProps) => 
         }}
       />
       <ContentUnpublishForm
-        name="flow"
         content={content}
         open={openUnpublish}
         onOpenChange={setOpenUnpublish}

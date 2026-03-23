@@ -239,6 +239,12 @@ export class ContentOrchestratorService {
       return false;
     }
 
+    // Tracker has its own lightweight distribution flow:
+    // distribute all published trackers and let SDK evaluate conditions.
+    if (contentType === ContentDataType.TRACKER) {
+      return await this.startTrackerBatch(context);
+    }
+
     // Prepare, create, and execute in sequence
     const preparationResult = await this.prepareBatchData(context, contentType);
     if (!preparationResult.success) {
@@ -258,6 +264,45 @@ export class ContentOrchestratorService {
       sessions,
       preparationResult.shouldTrackVersions,
       contentType,
+    );
+  }
+
+  /**
+   * Start tracker batch using tracker-specific semantics.
+   * Tracker does not rely on server-side auto-start/wait/pre-track strategies.
+   * Server only distributes tracker sessions (with full conditions/attributes),
+   * and SDK evaluates condition activation locally.
+   */
+  private async startTrackerBatch(context: ContentStartContext): Promise<boolean> {
+    const { socket, socketData, options } = context;
+    const { environment } = socketData;
+    const { contentId, startReason = contentStartReason.START_FROM_CONDITION } = options ?? {};
+
+    const versionId = contentId
+      ? await this.findPublishedVersionId(contentId, environment)
+      : undefined;
+    if (contentId && !versionId) {
+      return false;
+    }
+
+    const trackerVersions = await this.findEvaluatedContentVersions(
+      socketData,
+      ContentDataType.TRACKER,
+      versionId,
+    );
+
+    const sessions = await Promise.all(
+      trackerVersions.map((contentVersion) =>
+        this.initializeSession(contentVersion, socketData, { startReason }, true),
+      ),
+    );
+    const validSessions = sessions.filter((session): session is CustomContentSession => !!session);
+
+    return await this.socketOperationService.activateBatchSessions(
+      socket,
+      socketData,
+      validSessions,
+      ContentDataType.TRACKER,
     );
   }
 
@@ -311,6 +356,7 @@ export class ContentOrchestratorService {
       ContentDataType.BANNER,
       ContentDataType.FLOW,
       ContentDataType.LAUNCHER,
+      ContentDataType.TRACKER,
     ];
 
     // Start content asynchronously without waiting for completion

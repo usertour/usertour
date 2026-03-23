@@ -2,6 +2,7 @@ import {
   PasswordReset,
   Registration,
   ResetPassword,
+  SetupAdmin,
   SignIn,
   SignUp,
   Invite,
@@ -17,6 +18,14 @@ import {
 } from '@/pages/layouts';
 import { AdminSettings, SettingsThemeDetail } from '@/pages/settings';
 import { AdminSettingsDetail } from '@/pages/settings/admin-setting-detail';
+import {
+  AdminAuthenticationPage,
+  AdminGeneralPage,
+  AdminProjectsPage,
+  AdminSettingsPage,
+  AdminUsersPage,
+  SystemAdminLayout,
+} from '@/pages/admin';
 import { UserDetail, UserList } from '@/pages/users';
 import { SessionDetail } from '@/pages/users/session-detail';
 
@@ -57,6 +66,15 @@ const config: CustomRouteConfig[] = [
     loginRequired: false,
     redirectIfLogged: true,
     title: 'SignUp',
+  },
+  /* SetupAdmin */
+  {
+    path: '/auth/setup-admin',
+    component: SetupAdmin,
+    layout: AuthLayout,
+    loginRequired: false,
+    redirectIfLogged: false,
+    title: 'SetupAdmin',
   },
   /* ResetPassword */
   {
@@ -205,6 +223,56 @@ const config: CustomRouteConfig[] = [
     loginRequired: true,
     redirectIfLogged: false,
     title: 'CompanyDetail',
+  },
+  /* System Admin - General */
+  {
+    id: 'admin-general',
+    path: '/admin/general',
+    component: AdminGeneralPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - General',
+  },
+  /* System Admin - Authentication */
+  {
+    id: 'admin-authentication',
+    path: '/admin/authentication',
+    component: AdminAuthenticationPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - Authentication',
+  },
+  /* System Admin - Subscription */
+  {
+    id: 'admin-settings',
+    path: '/admin/subscription',
+    component: AdminSettingsPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - Subscription',
+  },
+  /* System Admin - Users */
+  {
+    id: 'admin-users',
+    path: '/admin/users',
+    component: AdminUsersPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - Users',
+  },
+  /* System Admin - Projects */
+  {
+    id: 'admin-projects',
+    path: '/admin/projects',
+    component: AdminProjectsPage,
+    layout: SystemAdminLayout,
+    loginRequired: true,
+    redirectIfLogged: false,
+    title: 'System Admin - Projects',
   },
   /* Settings */
   {

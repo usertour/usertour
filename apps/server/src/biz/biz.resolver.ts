@@ -7,6 +7,7 @@ import { BizGuard } from './biz.guard';
 import { BizService } from './biz.service';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
+import { BizEventQuery } from './dto/biz-event-query.input';
 import {
   BizUserOrCompanyIdsInput,
   CreatSegment,
@@ -19,6 +20,7 @@ import {
   UpdateSegment,
 } from './dto/segment.input';
 import { BizConnection, BizUserConnection } from './models/biz-connection.model';
+import { BizEventConnection } from './models/biz-event-connection.model';
 import { Segment } from './models/segment.model';
 
 @Resolver()
@@ -44,6 +46,34 @@ export class BizResolver {
     @Args('orderBy') orderBy: BizOrder,
   ) {
     return await this.service.queryBizCompany(query, pagination, orderBy);
+  }
+
+  @Query(() => BizEventConnection)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  async queryBizUserEvents(
+    @Args() pagination: PaginationArgs,
+    @Args('query') query: BizEventQuery,
+    @Args('orderBy') orderBy: BizOrder,
+  ) {
+    return await this.service.queryBizUserEvents(
+      { environmentId: query.environmentId, userId: query.userId! },
+      pagination,
+      orderBy,
+    );
+  }
+
+  @Query(() => BizEventConnection)
+  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  async queryBizCompanyEvents(
+    @Args() pagination: PaginationArgs,
+    @Args('query') query: BizEventQuery,
+    @Args('orderBy') orderBy: BizOrder,
+  ) {
+    return await this.service.queryBizCompanyEvents(
+      { environmentId: query.environmentId, companyId: query.companyId! },
+      pagination,
+      orderBy,
+    );
   }
 
   @Mutation(() => Segment)

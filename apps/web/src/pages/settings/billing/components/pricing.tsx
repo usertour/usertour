@@ -361,7 +361,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
           values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
-          name: 'Banners(coming soon)',
+          name: 'Banners',
           values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {

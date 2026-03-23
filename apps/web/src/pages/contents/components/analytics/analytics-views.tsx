@@ -164,6 +164,23 @@ const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
   />
 );
 
+const TrackerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
+  <div className="grid gap-4 md:grid-cols-2">
+    <AnalyticsCard
+      title="Events"
+      tooltip="Total number of tracker events fired."
+      value={analyticsData?.totalViews || 0}
+      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+    <AnalyticsCard
+      title="Unique events"
+      tooltip="Unique users who triggered this tracker event."
+      value={analyticsData?.uniqueViews || 0}
+      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+  </div>
+);
+
 export const AnalyticsViews = () => {
   const { analyticsData, loading } = useAnalyticsContext();
   const { content } = useContentDetailContext();
@@ -175,6 +192,9 @@ export const AnalyticsViews = () => {
 
   if (!content || !analyticsData) {
     return null;
+  }
+  if (contentType === ContentDataType.TRACKER) {
+    return <TrackerAnalyticsViews analyticsData={analyticsData} />;
   }
   if (contentType === ContentDataType.LAUNCHER) {
     return <LauncherAnalyticsViews analyticsData={analyticsData} />;

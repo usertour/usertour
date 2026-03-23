@@ -44,19 +44,47 @@ model Account {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  createdAt     DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime        @updatedAt @db.Timestamptz(6)
-  email         String?         @unique
-  emailVerified DateTime?       @db.Timestamptz()
-  password      String?
-  avatarUrl     String?
-  name          String?
-  projects      UserOnProject[]
-  codes         Code[]
-  accounts      Account[]
-  refreshTokens RefreshToken[]
-  invites       Invite[]
+  id              String          @id @default(cuid())
+  createdAt       DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @db.Timestamptz(6)
+  email           String?         @unique
+  emailVerified   DateTime?       @db.Timestamptz()
+  password        String?
+  avatarUrl       String?
+  name            String?
+  /// Whether the user is a system admin (self-host only)
+  isSystemAdmin   Boolean         @default(false)
+  /// Whether the user is disabled (cannot login)
+  disabled        Boolean         @default(false)
+  projects        UserOnProject[]
+  codes           Code[]
+  accounts        Account[]
+  refreshTokens   RefreshToken[]
+  invites         Invite[]
+}
+
+/// Instance-level settings for self-hosted mode
+model InstanceSetting {
+  /// Primary key
+  id          String   @id @default(cuid())
+  /// Singleton key to ensure exactly one instance setting record exists
+  key         String   @unique @default("instance")
+  /// Stable instance identifier
+  instanceId  String   @unique @default(cuid())
+  /// Instance display name
+  name        String?
+  /// Instance system admin contact email
+  contactEmail String?
+  /// Whether public user registration is allowed
+  allowUserRegistration Boolean @default(true)
+  /// Whether self-host projects can manage project-level subscriptions
+  allowProjectLevelSubscriptionManagement Boolean?
+  /// Instance-level license JWT token
+  license     String?
+  /// Create timestamp
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  /// Update timestamp
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 }
 
 model Register {
@@ -100,6 +128,8 @@ model Project {
   updatedAt      DateTime        @updatedAt @db.Timestamptz(6)
   name           String
   logoUrl        String?
+  /// Whether this project is assigned to use the instance license entitlement
+  usesInstanceLicense Boolean    @default(false)
   /// Stripe customer ID
   customerId     String?
   /// Stripe subscription ID
@@ -377,6 +407,7 @@ model BizCompany {
   bizUsers              BizUser[]
   bizCompaniesOnSegment BizCompanyOnSegment[]
   BizSession            BizSession[]
+  BizEvent              BizEvent[]
 
   @@unique([environmentId, externalId])
   @@index([externalId])
@@ -499,9 +530,15 @@ model BizEvent {
   bizUserId    String
   bizSession   BizSession? @relation(fields: [bizSessionId], references: [id])
   bizSessionId String?
+  bizCompany   BizCompany? @relation(fields: [bizCompanyId], references: [id])
+  bizCompanyId String?
+  contentId    String?
+  versionId    String?
 
   @@index([bizUserId])
   @@index([bizSessionId])
+  @@index([bizCompanyId])
+  @@index([contentId])
 }
 
 model BizAnswer {

@@ -38,14 +38,6 @@ export const login = gql`
   }
 `;
 
-export const getAuthConfig = gql`
-  query getAuthConfig {
-    getAuthConfig {
-      provider
-    }
-  }
-`;
-
 export const signUp = gql`
   mutation signUp(
     $code: String!
@@ -63,6 +55,20 @@ export const signUp = gql`
         isInvite: $isInvite
       }
     ) {
+      accessToken
+      refreshToken
+      redirectUrl
+      user {
+        id
+        email
+      }
+    }
+  }
+`;
+
+export const setupSystemAdmin = gql`
+  mutation setupSystemAdmin($name: String!, $email: String!, $password: String!) {
+    setupSystemAdmin(data: { name: $name, email: $email, password: $password }) {
       accessToken
       refreshToken
       redirectUrl

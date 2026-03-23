@@ -27,10 +27,10 @@ const projectNameFormSchema = z.object({
   name: z
     .string()
     .min(2, {
-      message: 'Company name must be at least 2 characters.',
+      message: 'Project name must be at least 2 characters.',
     })
     .max(30, {
-      message: 'Company name must not be longer than 30 characters.',
+      message: 'Project name must not be longer than 30 characters.',
     }),
 });
 
@@ -78,7 +78,7 @@ export const ProjectNameForm = () => {
       await refetch();
       toast({
         variant: 'success',
-        title: 'The company name has been successfully updated',
+        title: 'The project name has been successfully updated',
       });
     } catch (error) {
       toast({
@@ -99,7 +99,7 @@ export const ProjectNameForm = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-row justify-between items-center h-10">
-        <h3 className="text-2xl font-semibold tracking-tight">Company Name</h3>
+        <h3 className="text-2xl font-semibold tracking-tight">Project Name</h3>
       </div>
       <Separator />
       <Form {...form}>
@@ -109,9 +109,9 @@ export const ProjectNameForm = () => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Company Name</FormLabel>
+                <FormLabel>Project Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Your Company name" {...field} disabled={isLoading} />
+                  <Input placeholder="Your project name" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

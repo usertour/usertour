@@ -1,6 +1,7 @@
 import { Resolver, Mutation, Query, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { Project } from './models/project.model';
+import { ProjectConfigModel } from './models/project-config.model';
 import { LicenseInfo } from './models/license-info.model';
 import { ProjectsService } from './projects.service';
 import { UserEntity } from '@/common/decorators/user.decorator';
@@ -12,6 +13,13 @@ import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 @Resolver(() => Project)
 export class ProjectsResolver {
   constructor(private projectsService: ProjectsService) {}
+
+  @Query(() => ProjectConfigModel)
+  @UseGuards(ProjectsGuard)
+  @Roles([RolesScopeEnum.OWNER, RolesScopeEnum.ADMIN, RolesScopeEnum.VIEWER])
+  async getProjectConfig(@Args('projectId') projectId: string) {
+    return this.projectsService.getProjectConfig(projectId);
+  }
 
   @Query(() => LicenseInfo, { nullable: true })
   @UseGuards(ProjectsGuard)

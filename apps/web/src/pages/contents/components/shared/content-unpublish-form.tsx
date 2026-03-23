@@ -20,13 +20,13 @@ import { useToast } from '@usertour-packages/use-toast';
 import * as React from 'react';
 import { Checkbox } from '@usertour-packages/checkbox';
 import { Label } from '@usertour-packages/label';
+import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentUnpublishFormProps {
   content: Content;
   onSuccess: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  name: string;
 }
 
 export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
@@ -36,6 +36,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
   const { toast } = useToast();
   const { environmentList } = useEnvironmentListContext();
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
+  const contentTypeMeta = getContentTypeMeta(content.type);
 
   // Reset selected environments when dialog opens
   React.useEffect(() => {
@@ -125,7 +126,7 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
       toast({
         variant: allSuccess ? 'success' : 'destructive',
         title: allSuccess
-          ? `The ${content?.type} has been successfully unpublished from ${envNames}`
+          ? `The ${contentTypeMeta.singular} has been successfully unpublished from ${envNames}`
           : 'Some environments failed to unpublish',
       });
 
@@ -145,10 +146,11 @@ export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Unpublish {content?.type}</DialogTitle>
+          <DialogTitle>Unpublish {contentTypeMeta.singular}</DialogTitle>
           <DialogDescription>
-            When you unpublish a {content?.type}, users will no longer be able to view it. <br />
-            Select the environments you want to unpublish the {content?.type} from.
+            When you unpublish a {contentTypeMeta.singular}, users will no longer be able to view
+            it. <br />
+            Select the environments you want to unpublish the {contentTypeMeta.singular} from.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">

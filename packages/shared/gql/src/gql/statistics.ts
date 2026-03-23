@@ -325,3 +325,50 @@ export const querySessionsByExternalId = gql`
     }
   }
 `;
+
+export const queryTrackerUsers = gql`
+  query queryTrackerUsers(
+    $first: Int
+    $last: Int
+    $after: String
+    $before: String
+    $query: AnalyticsQuery!
+    $orderBy: AnalyticsOrder!
+  ) {
+    queryTrackerUsers(
+      first: $first
+      last: $last
+      after: $after
+      before: $before
+      query: $query
+      orderBy: $orderBy
+    ) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          firstTrackedAt
+          lastTrackedAt
+          eventsCount
+          bizUser {
+            id
+            externalId
+            data
+          }
+          bizCompany {
+            id
+            externalId
+            data
+          }
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+`;

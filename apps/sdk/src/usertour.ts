@@ -112,8 +112,7 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       attributes?: UserTourTypes.EventAttributes,
       opts?: UserTourTypes.TrackOptions,
     ) => {
-      // Intentionally empty - reserved for future event tracking
-      logger.warn('track method is not yet implemented', { name, attributes, opts });
+      return await app.track(name, attributes, opts);
     },
 
     isIdentified: () => {

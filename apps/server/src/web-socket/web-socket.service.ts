@@ -100,8 +100,8 @@ export class WebSocketService {
   }
 
   /**
-   * Get configuration for self-hosted mode using license validation
-   * @returns Configuration object with plan type and branding settings
+   * Get configuration for self-hosted mode using license validation.
+   * Priority: project license > instance license > default free/hobby.
    */
   private async getSelfHostedConfig(environment: Environment): Promise<ConfigResponse> {
     const defaultConfig: ConfigResponse = {
@@ -112,32 +112,48 @@ export class WebSocketService {
       where: { id: environment.projectId },
     });
 
-    // Self-hosted mode: use license validation
-    const licenseToken = project?.license;
-    if (!licenseToken) {
-      return defaultConfig;
+    // Try project-level license first
+    if (project?.license) {
+      const validationResult = await this.licenseService.validateLicense(project.license);
+      if (validationResult.isValid) {
+        const licensePayload = await this.licenseService.getLicensePayload(project.license);
+        const scope = licensePayload?.scope || (licensePayload?.projectId ? 'project' : null);
+        if (scope === 'project' && licensePayload?.projectId === environment.projectId) {
+          const isBusinessPlan =
+            licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
+          return {
+            removeBranding: isBusinessPlan,
+            planType: licensePayload?.plan || 'hobby',
+          };
+        }
+      }
     }
 
-    const validationResult = await this.licenseService.validateLicense(licenseToken);
-
-    if (validationResult.isValid) {
-      const licensePayload = await this.licenseService.getLicensePayload(licenseToken);
-
-      // Check if license projectId matches the current project
-      if (licensePayload?.projectId !== environment.projectId) {
-        this.logger.warn(
-          `License projectId mismatch. Expected: ${environment.projectId}, Got: ${licensePayload?.projectId}`,
-        );
-        return defaultConfig;
+    // Fallback to instance-level license for explicitly assigned projects,
+    // or all projects when the instance license is unlimited.
+    if (project) {
+      const instanceSetting = await this.prisma.instanceSetting.findUnique({
+        where: { key: 'instance' },
+      });
+      if (instanceSetting?.license) {
+        const validationResult = await this.licenseService.validateLicense(instanceSetting.license);
+        if (validationResult.isValid) {
+          const payload = await this.licenseService.getLicensePayload(instanceSetting.license);
+          const scope = payload?.scope || (payload?.projectId ? 'project' : 'instance');
+          const isUnlimited = payload?.projectLimit === null || payload?.projectLimit === undefined;
+          if (
+            scope === 'instance' &&
+            payload?.instanceId === instanceSetting.instanceId &&
+            (isUnlimited || project.usesInstanceLicense)
+          ) {
+            const isBusinessPlan = payload?.plan === 'business' || payload?.plan === 'enterprise';
+            return {
+              removeBranding: isBusinessPlan,
+              planType: payload?.plan || 'hobby',
+            };
+          }
+        }
       }
-
-      const isBusinessPlan =
-        licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
-
-      return {
-        removeBranding: isBusinessPlan,
-        planType: licensePayload?.plan || 'hobby',
-      };
     }
 
     return defaultConfig;
@@ -721,7 +737,10 @@ export class WebSocketService {
       where: { id: segmentId },
     });
     const bizCompany = await this.prisma.bizCompany.findFirst({
-      where: { externalId: String(externalCompanyId), environmentId: environment.id },
+      where: {
+        externalId: String(externalCompanyId),
+        environmentId: environment.id,
+      },
     });
 
     if (!segment || !bizCompany) {
@@ -1000,7 +1019,10 @@ export class WebSocketService {
   async listThemes(body: ListThemesRequest, environment: Environment): Promise<Theme[]> {
     const { userId: externalUserId, companyId: externalCompanyId } = body;
     const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId: environment.id },
+      where: {
+        externalId: String(externalUserId),
+        environmentId: environment.id,
+      },
     });
 
     const themes = await this.prisma.theme.findMany({
@@ -1267,7 +1289,9 @@ export class WebSocketService {
         const updatedCompanyData = {
           ...companyData,
           [CompanyAttributes.LAST_SEEN_AT]: currentTime,
-          ...(isFirstCompanyEvent && { [CompanyAttributes.FIRST_SEEN_AT]: currentTime }),
+          ...(isFirstCompanyEvent && {
+            [CompanyAttributes.FIRST_SEEN_AT]: currentTime,
+          }),
         };
 
         await tx.bizCompany.update({
@@ -1431,7 +1455,10 @@ export class WebSocketService {
     environment: Environment,
   ): Promise<ContentSession | false> {
     const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId: environment.id },
+      where: {
+        externalId: String(externalUserId),
+        environmentId: environment.id,
+      },
     });
     if (!bizUser) return false;
     const bizSession = await this.prisma.bizSession.findUnique({

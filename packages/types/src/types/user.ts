@@ -9,5 +9,6 @@ export type UserProfile = {
   projectId?: string;
   invitationToken?: string;
   isOAuthUser?: boolean;
+  isSystemAdmin?: boolean;
   createdAt: string;
 };

@@ -1,5 +1,5 @@
 import { hasError } from '@usertour/helpers';
-import { Attribute, Content, RulesCondition, Segment } from '@usertour/types';
+import { Attribute, Content, Event, RulesCondition, Segment } from '@usertour/types';
 import { useCallback } from 'react';
 import { RulesContext } from './rules-context';
 import { RulesGroup } from './rules-group';
@@ -15,6 +15,7 @@ interface RulesProps {
   segments?: Segment[] | undefined;
   contents?: Content[] | undefined;
   currentContent?: Content | undefined;
+  events?: Event[] | undefined;
   saveBuildUrl?: () => boolean;
   token?: string;
   onElementChange?: (conditionIndex: number, type: string) => void;
@@ -47,6 +48,7 @@ export const Rules = (props: RulesProps) => {
     segments = [],
     contents = [],
     currentContent,
+    events = [],
     saveBuildUrl,
     token = '',
     onElementChange,
@@ -73,6 +75,7 @@ export const Rules = (props: RulesProps) => {
     segments,
     contents,
     currentContent,
+    events,
     saveBuildUrl,
     token,
     onElementChange,

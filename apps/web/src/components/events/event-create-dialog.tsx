@@ -40,7 +40,14 @@ import { ScrollArea } from '@usertour-packages/scroll-area';
 interface CreateFormProps {
   isOpen: boolean;
   onClose: () => void;
+  onCreated?: (event: CreatedEvent) => void;
 }
+
+type CreatedEvent = {
+  id: string;
+  displayName: string;
+  codeName: string;
+};
 
 const formSchema = z.object({
   displayName: z
@@ -68,7 +75,7 @@ const defaultValues: Partial<FormValues> = {
   attributeIds: [],
 };
 
-export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
+export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProps) => {
   const [createMutation] = useMutation(createEvent);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);
@@ -121,6 +128,12 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
       const ret = await createMutation({ variables: { data } });
       if (!ret.data?.createEvent?.id) {
         showError('Create Event failed.');
+      } else {
+        onCreated?.({
+          id: ret.data.createEvent.id,
+          displayName: ret.data.createEvent.displayName,
+          codeName: ret.data.createEvent.codeName,
+        });
       }
       onClose();
     } catch (error) {
@@ -338,4 +351,4 @@ export const EventCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   );
 };
 
-EventCreateForm.displayName = 'EventCreateForm';
+EventCreateDialog.displayName = 'EventCreateDialog';

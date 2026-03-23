@@ -1,8 +1,13 @@
 import {
   Attribute,
+  AttributeBizTypes,
   AttributeDataType,
   ContentActionsItemType,
   ElementSelectorPropsData,
+  EventAttrConditionData,
+  EventConditionData,
+  EventCountLogic,
+  EventTimeLogic,
   RulesCondition,
   RulesUserAttributeData,
 } from '@usertour/types';
@@ -150,6 +155,77 @@ export const getContentError = (data: any) => {
   return ret;
 };
 
+export const getEventError = (data: EventConditionData | undefined) => {
+  const ret = { showError: false, errorInfo: '' };
+  if (!data?.eventId) {
+    ret.showError = true;
+    ret.errorInfo = 'Please select an event';
+    return ret;
+  }
+  if (data.count === undefined || data.count === null) {
+    ret.showError = true;
+    ret.errorInfo = 'Please enter a count value';
+    return ret;
+  }
+  if (
+    data.countLogic === EventCountLogic.BETWEEN &&
+    (data.count2 === undefined || data.count2 === null)
+  ) {
+    ret.showError = true;
+    ret.errorInfo = 'Please enter the second count value';
+    return ret;
+  }
+  if (
+    data.timeLogic !== EventTimeLogic.AT_ANY_POINT_IN_TIME &&
+    (data.windowValue === undefined || data.windowValue === null)
+  ) {
+    ret.showError = true;
+    ret.errorInfo = 'Please enter a time value';
+    return ret;
+  }
+  if (
+    data.timeLogic === EventTimeLogic.BETWEEN &&
+    (data.windowValue2 === undefined || data.windowValue2 === null)
+  ) {
+    ret.showError = true;
+    ret.errorInfo = 'Please enter the second time value';
+    return ret;
+  }
+  return ret;
+};
+
+export const getEventAttrError = (
+  data: EventAttrConditionData | undefined,
+  attributes: Attribute[],
+) => {
+  const ret = { showError: false, errorInfo: '' };
+  const item = attributes.find(
+    (attr: Attribute) => attr.id === data?.attrId && attr.bizType === AttributeBizTypes.Event,
+  );
+  if (!data?.attrId || !item) {
+    ret.showError = true;
+    ret.errorInfo = 'Please select an event attribute';
+  } else if (data?.logic === 'between' && (!data?.value || !data?.value2)) {
+    ret.showError = true;
+    ret.errorInfo = 'Please enter a value';
+  } else if (item?.dataType !== AttributeDataType.Boolean) {
+    if (data.logic !== 'any' && data.logic !== 'empty') {
+      if (item?.dataType === AttributeDataType.List) {
+        if (!data.listValues || data.listValues.length === 0) {
+          ret.showError = true;
+          ret.errorInfo = 'Please enter a value';
+        }
+      } else {
+        if (!data.value || data.value === '') {
+          ret.showError = true;
+          ret.errorInfo = 'Please enter a value';
+        }
+      }
+    }
+  }
+  return ret;
+};
+
 export const getStepError = (data: any) => {
   const ret = { showError: false, errorInfo: '' };
   if (!data.stepCvid) {
@@ -187,6 +263,8 @@ const errorHandlerMapping = {
   'text-fill': getTextFillError,
   segment: getSegmentError,
   content: getContentError,
+  event: getEventError,
+  'event-attr': getEventAttrError,
 };
 
 export const hasError = (conds: RulesCondition[], attributes: Attribute[]) => {
@@ -201,6 +279,14 @@ export const hasError = (conds: RulesCondition[], attributes: Attribute[]) => {
     }
     if (cond.conditions) {
       if (hasError(cond.conditions, attributes) === true) {
+        return true;
+      }
+    }
+
+    if (cond.type === 'event') {
+      const whereConditions = (cond.data as { whereConditions?: RulesCondition[] } | undefined)
+        ?.whereConditions;
+      if (whereConditions && hasError(whereConditions, attributes) === true) {
         return true;
       }
     }
