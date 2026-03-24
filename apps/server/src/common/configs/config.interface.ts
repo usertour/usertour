@@ -38,6 +38,7 @@ export interface Config {
     port: number;
     username: string;
     password: string;
+    tls: boolean;
   };
   app: {
     homepageUrl: string;
