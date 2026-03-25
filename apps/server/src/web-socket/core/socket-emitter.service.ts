@@ -136,6 +136,31 @@ export class SocketEmitterService {
   }
 
   /**
+   * Set the resource center session
+   * @param socket - The socket
+   * @param session - The session to set
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async setResourceCenterSessionWithAck(
+    socket: Socket,
+    session: CustomContentSession,
+  ): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.SET_RESOURCE_CENTER_SESSION, session);
+  }
+
+  /**
+   * Unset the resource center session
+   * @param socket - The socket
+   * @param sessionId - The session id to unset
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async unsetResourceCenterSessionWithAck(socket: Socket, sessionId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.UNSET_RESOURCE_CENTER_SESSION, {
+      sessionId,
+    });
+  }
+
+  /**
    * Add a launcher session
    * @param socket - The socket
    * @param session - The session to add

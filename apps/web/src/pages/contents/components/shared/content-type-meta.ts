@@ -44,6 +44,13 @@ export const CONTENT_TYPE_META: Record<ContentDataType, ContentTypeMeta> = {
     builderPathSegment: 'trackers',
     hasBuilder: false,
   },
+  [ContentDataType.RESOURCE_CENTER]: {
+    dataType: ContentDataType.RESOURCE_CENTER,
+    singular: 'resource center',
+    plural: 'resource centers',
+    builderPathSegment: 'resource-centers',
+    hasBuilder: true,
+  },
 };
 
 export const getContentTypeMeta = (type?: ContentDataType | null): ContentTypeMeta =>

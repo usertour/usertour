@@ -31,6 +31,8 @@ export enum ThemeDetailPreviewType {
   CHECKLIST = 'checklist',
   CHECKLIST_LAUNCHER = 'checklist-launcher',
   NPS = 'nps',
+  RESOURCE_CENTER = 'resource-center',
+  RESOURCE_CENTER_LAUNCHER = 'resource-center-launcher',
 }
 
 export type ThemeDetailSelectorType = {

@@ -49,6 +49,7 @@ import { formatErrorMessage } from '@/types/error-messages';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
 import { UsertourBanner } from './usertour-banner';
+import { UsertourResourceCenter } from './usertour-resource-center';
 import { customInputRegistry } from './registries/custom-input-registry';
 import {
   ServerMessageHandlerManager,
@@ -75,9 +76,11 @@ export class UsertourCore extends Evented {
   checklistsStore = new ExternalStore<UsertourChecklist[]>([]);
   launchersStore = new ExternalStore<UsertourLauncher[]>([]);
   bannersStore = new ExternalStore<UsertourBanner[]>([]);
+  resourceCentersStore = new ExternalStore<UsertourResourceCenter[]>([]);
   activatedTour: UsertourTour | null = null;
   activatedChecklist: UsertourChecklist | null = null;
   activatedBanner: UsertourBanner | null = null;
+  activatedResourceCenter: UsertourResourceCenter | null = null;
   launchers: UsertourLauncher[] = [];
   // Active trackers keyed by contentId
   private activeTrackers = new Map<
@@ -654,6 +657,7 @@ export class UsertourCore extends Evented {
       checklistsStore: this.checklistsStore,
       launchersStore: this.launchersStore,
       bannersStore: this.bannersStore,
+      resourceCentersStore: this.resourceCentersStore,
     });
 
     if (!initialized) {
@@ -740,6 +744,8 @@ export class UsertourCore extends Evented {
     this.cleanupActivatedChecklist();
     // Cleanup activated banner
     this.cleanupActivatedBanner();
+    // Cleanup activated resource center
+    this.cleanupActivatedResourceCenter();
     // Cleanup launchers
     this.cleanupLaunchers();
     // Cleanup trackers
@@ -924,7 +930,12 @@ export class UsertourCore extends Evented {
    * @param onDismissed - Optional callback when component is dismissed
    */
   private setupComponentDismissHandler(
-    component: UsertourTour | UsertourChecklist | UsertourLauncher | UsertourBanner,
+    component:
+      | UsertourTour
+      | UsertourChecklist
+      | UsertourLauncher
+      | UsertourBanner
+      | UsertourResourceCenter,
     onDismissed?: (sessionId: string) => void | Promise<void>,
   ): void {
     component.on(SDKClientEvents.COMPONENT_CLOSED, (eventData: unknown) => {
@@ -1111,6 +1122,50 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Sets the resource center session and manages resource center lifecycle
+   * @param session - The SDK content session to set
+   */
+  private async setResourceCenterSession(session: CustomContentSession): Promise<boolean> {
+    if (this.isSessionDismissed(session.id)) {
+      logger.info(`Ignoring setResourceCenterSession for dismissed session: ${session.id}`);
+      return false;
+    }
+
+    if (this.activatedResourceCenter) {
+      if (this.activatedResourceCenter.getSessionId() === session.id) {
+        await this.activatedResourceCenter.update(session);
+        return true;
+      }
+      this.cleanupActivatedResourceCenter();
+    }
+
+    this.activatedResourceCenter = new UsertourResourceCenter(this, new UsertourSession(session));
+    this.setupComponentDismissHandler(this.activatedResourceCenter, (sessionId) => {
+      if (this.activatedResourceCenter?.getSessionId() === sessionId) {
+        this.cleanupActivatedResourceCenter();
+      }
+    });
+    this.syncResourceCentersStore([this.activatedResourceCenter]);
+    await this.activatedResourceCenter.show();
+    return true;
+  }
+
+  /**
+   * Unsets the resource center session and destroys the resource center
+   * @param sessionId - The session ID to unset
+   */
+  private async unsetResourceCenterSession(sessionId: string): Promise<boolean> {
+    if (
+      !this.activatedResourceCenter ||
+      this.activatedResourceCenter.getSessionId() !== sessionId
+    ) {
+      return false;
+    }
+    this.cleanupActivatedResourceCenter();
+    return true;
+  }
+
+  /**
    * Expands the checklist
    */
   private async expandChecklist() {
@@ -1238,6 +1293,13 @@ export class UsertourCore extends Evented {
     this.bannersStore.setData([...banners]);
   }
 
+  /**
+   * Synchronizes resource centers store
+   */
+  private syncResourceCentersStore(resourceCenters: UsertourResourceCenter[]) {
+    this.resourceCentersStore.setData([...resourceCenters]);
+  }
+
   // === Server Message Handler Context Initialization ===
   /**
    * Initializes the server message handler context
@@ -1252,6 +1314,8 @@ export class UsertourCore extends Evented {
       unsetChecklistSession: this.unsetChecklistSession,
       setBannerSession: this.setBannerSession,
       unsetBannerSession: this.unsetBannerSession,
+      setResourceCenterSession: this.setResourceCenterSession,
+      unsetResourceCenterSession: this.unsetResourceCenterSession,
       addLauncher: this.addLauncher,
       removeLauncher: this.removeLauncher,
       addTracker: this.addTracker,
@@ -1527,6 +1591,15 @@ export class UsertourCore extends Evented {
     this.activatedBanner?.destroy();
     this.activatedBanner = null;
     this.bannersStore.setData(undefined);
+  }
+
+  /**
+   * Cleans up the activated resource center
+   */
+  private cleanupActivatedResourceCenter() {
+    this.activatedResourceCenter?.destroy();
+    this.activatedResourceCenter = null;
+    this.resourceCentersStore.setData(undefined);
   }
 
   // === Unacked Tasks Management ===

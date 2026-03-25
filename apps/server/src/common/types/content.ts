@@ -49,11 +49,13 @@ export interface SocketData {
   flowSession?: CustomContentSession;
   checklistSession?: CustomContentSession;
   bannerSession?: CustomContentSession;
+  resourceCenterSession?: CustomContentSession;
   launcherSessions?: CustomContentSession[];
   trackerSessions?: CustomContentSession[];
   lastDismissedFlowId?: string;
   lastDismissedChecklistId?: string;
   lastDismissedBannerId?: string;
+  lastDismissedResourceCenterId?: string;
 }
 
 export interface ContentStartContext {

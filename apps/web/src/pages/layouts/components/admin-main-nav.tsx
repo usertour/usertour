@@ -9,6 +9,7 @@ import {
   SettingsIcon,
   BannerIcon,
   RiFlashlightFill,
+  RiQuestionFill,
 } from '@usertour-packages/icons';
 import { TooltipContent } from '@usertour-packages/tooltip';
 import { TooltipTrigger } from '@usertour-packages/tooltip';
@@ -61,6 +62,13 @@ const navigations = [
     contentType: 'trackers',
     routeIds: ['trackers'],
     icon: RiFlashlightFill,
+  },
+  {
+    name: 'Resource Centers',
+    href: '/resource-centers',
+    contentType: 'resource-centers',
+    routeIds: ['resource-centers'],
+    icon: RiQuestionFill,
   },
   {
     name: 'Users',

@@ -34,6 +34,16 @@ const sdkColors = [
   'sdk-checklist-trigger-font',
   'sdk-checklist-trigger-hover-background',
   'sdk-checklist-checkmark',
+  // Resource center colors
+  'sdk-resource-center-launcher-background',
+  'sdk-resource-center-launcher-hover',
+  'sdk-resource-center-launcher-active',
+  'sdk-resource-center-launcher-foreground',
+  'sdk-resource-center-badge-background',
+  'sdk-resource-center-badge-foreground',
+  'sdk-resource-center-header-background',
+  'sdk-resource-center-header-foreground',
+  'sdk-resource-center-divider',
   // Button primary colors
   'sdk-btn-primary',
   'sdk-btn-primary-hover',
@@ -85,6 +95,7 @@ const customTwMerge = extendTailwindMerge({
       // borderRadius group - matches rounded-* classes
       rounded: [
         'rounded-sdk-checklist-trigger',
+        'rounded-sdk-resource-center-launcher',
         'rounded-sdk-lg',
         'rounded-sdk-md',
         'rounded-sdk-sm',
@@ -121,6 +132,7 @@ const customTwMerge = extendTailwindMerge({
         'font-sdk-primary',
         'font-sdk-secondary',
         'font-sdk-checklist-trigger',
+        'font-sdk-resource-center-launcher',
       ],
 
       // fontFamily group - matches font-* classes for font family

@@ -25,6 +25,23 @@ export const extendSdk = {
         'trigger-hover-background': 'var(--usertour-checklist-trigger-hover-background-color)',
         checkmark: 'var(--usertour-checkmark-background-color)',
       },
+      'resource-center': {
+        launcher: {
+          background: 'hsl(var(--usertour-resource-center-launcher-background-color))',
+          hover: 'hsl(var(--usertour-resource-center-launcher-hover-background-color))',
+          active: 'hsl(var(--usertour-resource-center-launcher-active-background-color))',
+          foreground: 'hsl(var(--usertour-resource-center-launcher-foreground-color))',
+        },
+        badge: {
+          background: 'var(--usertour-resource-center-badge-background-color)',
+          foreground: 'var(--usertour-resource-center-badge-foreground-color)',
+        },
+        header: {
+          background: 'hsl(var(--usertour-resource-center-header-background-color))',
+          foreground: 'hsl(var(--usertour-resource-center-header-foreground-color))',
+        },
+        divider: 'var(--usertour-resource-center-divider-color)',
+      },
       banner: {
         DEFAULT: 'hsl(var(--usertour-banner-background-color))',
         foreground: 'hsl(var(--usertour-banner-foreground-color))',
@@ -59,6 +76,7 @@ export const extendSdk = {
   },
   borderRadius: {
     'sdk-checklist-trigger': 'var(--usertour-checklist-trigger-border-radius)',
+    'sdk-resource-center-launcher': 'var(--usertour-resource-center-launcher-border-radius)',
     'sdk-lg': 'var(--usertour-radius)',
     'sdk-md': 'calc(var(--usertour-radius) - 2px)',
     'sdk-sm': 'calc(var(--usertour-radius) - 4px)',
@@ -138,6 +156,7 @@ export const extendSdk = {
     'sdk-primary': 'var(--usertour-primary-font-weight)',
     'sdk-secondary': 'var(--usertour-secondary-font-weight)',
     'sdk-checklist-trigger': 'var(--usertour-checklist-trigger-font-weight)',
+    'sdk-resource-center-launcher': 'var(--usertour-resource-center-launcher-font-weight)',
   },
   keyframes: {
     'accordion-down': {

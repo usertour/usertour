@@ -4,6 +4,7 @@ import { ChecklistData } from './checklist';
 import { Content, ContentDataType, Step } from './contents';
 import { ContentConfigObject, RulesCondition } from './config';
 import { LauncherData } from './launcher';
+import { ResourceCenterData } from './resource-center';
 import { ClientContext, contentStartReason } from './sdk';
 import { Theme } from './theme';
 
@@ -25,6 +26,7 @@ export interface SocketAuthData {
   flowSessionId?: string;
   checklistSessionId?: string;
   bannerSessionId?: string;
+  resourceCenterSessionId?: string;
 }
 
 /**
@@ -77,9 +79,11 @@ export enum ServerMessageKind {
   SET_FLOW_SESSION = 'SetFlowSession',
   SET_CHECKLIST_SESSION = 'SetChecklistSession',
   SET_BANNER_SESSION = 'SetBannerSession',
+  SET_RESOURCE_CENTER_SESSION = 'SetResourceCenterSession',
   UNSET_FLOW_SESSION = 'UnsetFlowSession',
   UNSET_CHECKLIST_SESSION = 'UnsetChecklistSession',
   UNSET_BANNER_SESSION = 'UnsetBannerSession',
+  UNSET_RESOURCE_CENTER_SESSION = 'UnsetResourceCenterSession',
   ADD_LAUNCHER = 'AddLauncher',
   REMOVE_LAUNCHER = 'RemoveLauncher',
   ADD_TRACKER = 'AddTracker',
@@ -311,6 +315,7 @@ export type CustomContentSession = {
     checklist?: ChecklistData;
     launcher?: LauncherData;
     banner?: BannerData;
+    resourceCenter?: ResourceCenterData;
     tracker?: { eventId: string };
   };
 };

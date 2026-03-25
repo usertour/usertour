@@ -12,6 +12,8 @@ export interface ServerMessageHandlerContext {
   unsetChecklistSession: (sessionId: string) => Promise<boolean>;
   setBannerSession: (session: CustomContentSession) => Promise<boolean>;
   unsetBannerSession: (sessionId: string) => Promise<boolean>;
+  setResourceCenterSession: (session: CustomContentSession) => Promise<boolean>;
+  unsetResourceCenterSession: (sessionId: string) => Promise<boolean>;
   addLauncher: (session: CustomContentSession) => Promise<boolean>;
   removeLauncher: (contentId: string) => Promise<boolean>;
   addTracker: (session: CustomContentSession) => Promise<boolean>;

@@ -86,6 +86,29 @@ export class UnsetBannerSessionHandler implements ServerMessageHandler {
 }
 
 /**
+ * Handler for SetResourceCenterSession message
+ */
+export class SetResourceCenterSessionHandler implements ServerMessageHandler {
+  readonly messageKind = 'SetResourceCenterSession';
+
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    return await context.setResourceCenterSession(payload as CustomContentSession);
+  }
+}
+
+/**
+ * Handler for UnsetResourceCenterSession message
+ */
+export class UnsetResourceCenterSessionHandler implements ServerMessageHandler {
+  readonly messageKind = 'UnsetResourceCenterSession';
+
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    const { sessionId } = payload as { sessionId: string };
+    return await context.unsetResourceCenterSession(sessionId);
+  }
+}
+
+/**
  * Handler for ChecklistTaskCompleted message
  */
 export class ChecklistTaskCompletedHandler implements ServerMessageHandler {

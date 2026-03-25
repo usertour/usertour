@@ -73,6 +73,7 @@ export const SINGLETON_CONTENT_TYPES = [
   ContentDataType.FLOW,
   ContentDataType.CHECKLIST,
   ContentDataType.BANNER,
+  ContentDataType.RESOURCE_CENTER,
 ];
 
 /**
@@ -82,6 +83,7 @@ export const ALL_CONTENT_TYPES: ContentDataType[] = [
   ContentDataType.CHECKLIST,
   ContentDataType.FLOW,
   ContentDataType.BANNER,
+  ContentDataType.RESOURCE_CENTER,
   ContentDataType.LAUNCHER,
   ContentDataType.TRACKER,
 ];
@@ -678,7 +680,10 @@ export const isSingletonContentType = (contentType: ContentDataType): boolean =>
   return SINGLETON_CONTENT_TYPES.includes(contentType);
 };
 
-const SHOW_ONLY_CONTENT_TYPES: ContentDataType[] = [ContentDataType.BANNER];
+const SHOW_ONLY_CONTENT_TYPES: ContentDataType[] = [
+  ContentDataType.BANNER,
+  ContentDataType.RESOURCE_CENTER,
+];
 
 export const isShowOnlyContentType = (contentType: ContentDataType): boolean =>
   SHOW_ONLY_CONTENT_TYPES.includes(contentType);

@@ -11,6 +11,7 @@ import { ThemePreviewModal } from './preview/theme-preview-modal';
 import { ThemePreviewPopper } from './preview/theme-preview-popper';
 import { ThemePreviewBubble } from './preview/theme-preview-bubble';
 import { ThemePreviewBanner } from './preview/theme-preview-banner';
+import { ThemePreviewResourceCenter } from './preview/theme-preview-resource-center';
 import { ThemePreviewSelector } from './preview/theme-preview-selector';
 import {
   BANNER_PREVIEW_CONTENT,
@@ -129,6 +130,13 @@ export const ThemePreviewPanel = ({
           selectedType?.type === ThemeDetailPreviewType.CHECKLIST_LAUNCHER) && (
           <ThemePreviewChecklist
             expanded={selectedType.type === ThemeDetailPreviewType.CHECKLIST}
+            settings={settings}
+          />
+        )}
+        {(selectedType?.type === ThemeDetailPreviewType.RESOURCE_CENTER ||
+          selectedType?.type === ThemeDetailPreviewType.RESOURCE_CENTER_LAUNCHER) && (
+          <ThemePreviewResourceCenter
+            expanded={selectedType.type === ThemeDetailPreviewType.RESOURCE_CENTER}
             settings={settings}
           />
         )}

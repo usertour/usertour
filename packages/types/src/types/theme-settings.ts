@@ -1,4 +1,9 @@
 import { ContentModalPlacementData, ModalPosition } from './contents';
+import type {
+  ResourceCenterThemeSettings,
+  ResourceCenterLauncherButtonThemeSettings,
+  ResourceCenterUnreadBadgeThemeSettings,
+} from './resource-center';
 
 export enum ProgressBarType {
   FULL_WIDTH = 'full-width',
@@ -169,6 +174,9 @@ export type ThemeTypesSetting = {
     url?: string;
     name?: string;
   };
+  resourceCenter?: ResourceCenterThemeSettings;
+  resourceCenterLauncherButton?: ResourceCenterLauncherButtonThemeSettings;
+  resourceCenterUnreadBadge?: ResourceCenterUnreadBadgeThemeSettings;
 };
 
 export const defaultSettings: ThemeTypesSetting = {
@@ -407,6 +415,27 @@ export const defaultSettings: ThemeTypesSetting = {
     url: '',
     name: 'alex',
   },
+  resourceCenter: {
+    placement: 'bottom-right',
+    offsetX: 20,
+    offsetY: 20,
+    normalWidth: 360,
+    largeWidth: 480,
+    transitionDuration: 450,
+    dividerLines: true,
+  },
+  resourceCenterLauncherButton: {
+    iconType: 'default-question-mark',
+    height: 60,
+    imageHeight: 50,
+    borderRadius: 9999,
+    textMode: 'active-checklist-text',
+    showRemainingTasks: true,
+  },
+  resourceCenterUnreadBadge: {
+    backgroundColor: '#ef4444',
+    textColor: '#ffffff',
+  },
 };
 
 export const standardDarkSettings: ThemeTypesSetting = {
@@ -644,5 +673,26 @@ export const standardDarkSettings: ThemeTypesSetting = {
     size: 60,
     url: '',
     name: 'alex',
+  },
+  resourceCenter: {
+    placement: 'bottom-right',
+    offsetX: 20,
+    offsetY: 20,
+    normalWidth: 360,
+    largeWidth: 480,
+    transitionDuration: 450,
+    dividerLines: true,
+  },
+  resourceCenterLauncherButton: {
+    iconType: 'default-question-mark',
+    height: 60,
+    imageHeight: 50,
+    borderRadius: 9999,
+    textMode: 'active-checklist-text',
+    showRemainingTasks: true,
+  },
+  resourceCenterUnreadBadge: {
+    backgroundColor: '#ef4444',
+    textColor: '#ffffff',
   },
 };

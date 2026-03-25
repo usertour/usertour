@@ -3,6 +3,7 @@ import {
   BannerData,
   ChecklistData,
   LauncherData,
+  ResourceCenterData,
   Step,
   ThemeTypesSetting,
   UserTourTypes,
@@ -46,4 +47,10 @@ export type LauncherStore = BaseStore & {
 export type BannerStore = BaseStore & {
   bannerData?: BannerData;
   targetElement?: Element | null;
+};
+
+// Resource Center store type
+export type ResourceCenterStore = BaseStore & {
+  resourceCenterData?: ResourceCenterData;
+  expanded: boolean;
 };

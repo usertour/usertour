@@ -87,7 +87,7 @@ export const extractSessionByContentType = (
   socketData: SocketData,
   contentType: ContentDataType,
 ): CustomContentSession | null => {
-  const { flowSession, checklistSession, bannerSession } = socketData;
+  const { flowSession, checklistSession, bannerSession, resourceCenterSession } = socketData;
   switch (contentType) {
     case ContentDataType.FLOW:
       return flowSession ?? null;
@@ -95,6 +95,8 @@ export const extractSessionByContentType = (
       return checklistSession ?? null;
     case ContentDataType.BANNER:
       return bannerSession ?? null;
+    case ContentDataType.RESOURCE_CENTER:
+      return resourceCenterSession ?? null;
     default:
       return null;
   }
@@ -154,12 +156,18 @@ export const extractExcludedContentIds = (
   socketData: SocketData,
   contentType: ContentDataType,
 ): string[] => {
-  const { lastDismissedFlowId, lastDismissedChecklistId, lastDismissedBannerId } = socketData;
+  const {
+    lastDismissedFlowId,
+    lastDismissedChecklistId,
+    lastDismissedBannerId,
+    lastDismissedResourceCenterId,
+  } = socketData;
 
   return [
     contentType === ContentDataType.FLOW && lastDismissedFlowId,
     contentType === ContentDataType.CHECKLIST && lastDismissedChecklistId,
     contentType === ContentDataType.BANNER && lastDismissedBannerId,
+    contentType === ContentDataType.RESOURCE_CENTER && lastDismissedResourceCenterId,
   ].filter(Boolean) as string[];
 };
 

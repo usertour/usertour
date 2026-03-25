@@ -7,6 +7,7 @@ import { BannerBuilder } from '../pages/banner';
 import { ChecklistBuilder } from '../pages/checklist';
 import { FlowBuilderDetail, FlowBuilderTrigger } from '../pages/flow';
 import { LauncherBuilder } from '../pages/launcher';
+import { ResourceCenterBuilder } from '../pages/resource-center';
 import { BuilderSideBar } from '../pages/sidebar';
 
 const Container = () => {
@@ -46,6 +47,12 @@ const Container = () => {
   }
   if (currentMode.mode === BuilderMode.BANNER) {
     return <BannerBuilder />;
+  }
+  if (
+    currentMode.mode === BuilderMode.RESOURCE_CENTER ||
+    currentMode.mode === BuilderMode.RESOURCE_CENTER_BLOCK
+  ) {
+    return <ResourceCenterBuilder />;
   }
   if (currentMode.mode === BuilderMode.FLOW) {
     return <BuilderSideBar />;

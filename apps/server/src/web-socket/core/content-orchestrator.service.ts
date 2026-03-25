@@ -354,6 +354,7 @@ export class ContentOrchestratorService {
     const contentTypes = types ?? [
       ContentDataType.CHECKLIST,
       ContentDataType.BANNER,
+      ContentDataType.RESOURCE_CENTER,
       ContentDataType.FLOW,
       ContentDataType.LAUNCHER,
       ContentDataType.TRACKER,
@@ -1225,6 +1226,9 @@ export class ContentOrchestratorService {
     if (contentType === ContentDataType.BANNER) {
       return await this.activateBannerSession(params);
     }
+    if (contentType === ContentDataType.RESOURCE_CENTER) {
+      return await this.activateResourceCenterSession(params);
+    }
     return false;
   }
 
@@ -1289,6 +1293,26 @@ export class ContentOrchestratorService {
     };
 
     return await this.socketOperationService.activateBannerSession(
+      socket as unknown as Socket,
+      socketData,
+      session,
+      options,
+    );
+  }
+
+  /**
+   * Activate resource center session
+   * @param params - The activate session parameters
+   * @returns True if the session was activated successfully
+   */
+  private async activateResourceCenterSession(params: ActivateSessionParams) {
+    const { socket, session, trackConditions, socketData } = params;
+    const options = {
+      trackConditions,
+      cleanupContentTypes: [ContentDataType.RESOURCE_CENTER],
+    };
+
+    return await this.socketOperationService.activateResourceCenterSession(
       socket as unknown as Socket,
       socketData,
       session,

@@ -6,6 +6,7 @@ import { UsertourTour } from '../core/usertour-tour';
 import { UsertourChecklist } from '../core/usertour-checklist';
 import { UsertourLauncher } from '@/core/usertour-launcher';
 import { UsertourBanner } from '@/core/usertour-banner';
+import { UsertourResourceCenter } from '@/core/usertour-resource-center';
 import { logger } from '@/utils';
 import '../index.css';
 
@@ -39,6 +40,11 @@ const WIDGETS = {
       default: module.BannerWidget,
     })),
   ),
+  ResourceCenter: React.lazy(() =>
+    import('./resource-center').then((module) => ({
+      default: module.ResourceCenterWidget,
+    })),
+  ),
 };
 
 interface AppProps {
@@ -46,10 +52,17 @@ interface AppProps {
   checklistsStore: ExternalStore<UsertourChecklist[]>;
   launchersStore: ExternalStore<UsertourLauncher[]>;
   bannersStore: ExternalStore<UsertourBanner[]>;
+  resourceCentersStore: ExternalStore<UsertourResourceCenter[]>;
 }
 
 // App component with error boundaries to prevent crashes on customer sites
-const App = ({ toursStore, checklistsStore, launchersStore, bannersStore }: AppProps) => {
+const App = ({
+  toursStore,
+  checklistsStore,
+  launchersStore,
+  bannersStore,
+  resourceCentersStore,
+}: AppProps) => {
   // Use custom hook to reduce repetition
   const useStore = <T,>(store: ExternalStore<T>) =>
     useSyncExternalStore(store.subscribe, store.getSnapshot);
@@ -58,6 +71,7 @@ const App = ({ toursStore, checklistsStore, launchersStore, bannersStore }: AppP
   const checklists = useStore(checklistsStore);
   const launchers = useStore(launchersStore);
   const banners = useStore(bannersStore);
+  const resourceCenters = useStore(resourceCentersStore);
 
   return (
     <React.StrictMode>
@@ -97,6 +111,11 @@ const App = ({ toursStore, checklistsStore, launchersStore, bannersStore }: AppP
               onError={handleWidgetError}
             >
               <WIDGETS.Banner banner={banner} />
+            </ErrorBoundary>
+          ))}
+          {resourceCenters?.map((rc) => (
+            <ErrorBoundary key={rc.getId()} fallbackRender={() => null} onError={handleWidgetError}>
+              <WIDGETS.ResourceCenter resourceCenter={rc} checklists={checklists} />
             </ErrorBoundary>
           ))}
         </React.Suspense>

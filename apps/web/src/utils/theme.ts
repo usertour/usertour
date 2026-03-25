@@ -87,6 +87,14 @@ export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
     name: 'NPS question',
     type: ThemeDetailPreviewType.NPS,
   },
+  {
+    name: 'Resource center',
+    type: ThemeDetailPreviewType.RESOURCE_CENTER,
+  },
+  {
+    name: 'Resource center launcher',
+    type: ThemeDetailPreviewType.RESOURCE_CENTER_LAUNCHER,
+  },
 ];
 
 const defaultChecklistContent = [

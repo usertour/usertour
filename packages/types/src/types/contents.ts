@@ -27,13 +27,14 @@ export enum ContentDataType {
   LAUNCHER = 'launcher',
   BANNER = 'banner',
   TRACKER = 'tracker',
+  RESOURCE_CENTER = 'resource-center',
 }
 
 export enum ContentTypeName {
   CHECKLISTS = 'checklists',
   FLOWS = 'flows',
   LAUNCHERS = 'launchers',
-  // RESOURCE_CENTERS = "resource-centers",
+  RESOURCE_CENTERS = 'resource-centers',
   BANNERS = 'banners',
   TRACKERS = 'trackers',
 }

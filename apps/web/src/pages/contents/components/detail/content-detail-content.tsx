@@ -20,6 +20,7 @@ import {
   LauncherActionType,
   LauncherData,
   LauncherDataType,
+  ResourceCenterData,
   Step,
   Theme,
   ThemeTypesSetting,
@@ -494,6 +495,52 @@ const BannerContentPreview = ({
   );
 };
 
+interface ResourceCenterContentPreviewProps {
+  currentVersion: ContentVersion;
+  content: Content;
+  onEdit: () => void;
+  disabled: boolean;
+}
+
+const ResourceCenterContentPreview = ({
+  currentVersion,
+  content,
+  onEdit,
+  disabled,
+}: ResourceCenterContentPreviewProps) => {
+  const currentTheme = useThemeHandler(currentVersion);
+  const data = currentVersion.data as ResourceCenterData;
+
+  if (!currentVersion || !currentTheme) return null;
+
+  const badges = (
+    <>
+      <ContentBadge>Launcher button text: {data.buttonText ?? ''}</ContentBadge>
+      <ContentBadge>Header text: {data.headerText ?? ''}</ContentBadge>
+      <ContentBadge>Blocks: {data.blocks?.length ?? 0}</ContentBadge>
+      <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
+    </>
+  );
+
+  const leftContent = (
+    <div className="flex items-center justify-center w-[200px] h-[120px] bg-muted rounded-md text-muted-foreground text-sm">
+      Resource Center
+    </div>
+  );
+
+  return (
+    <ContentPreviewCard
+      themeSettings={currentTheme.settings}
+      title={content.name ?? ''}
+      badges={badges}
+      updatedAt={currentVersion.updatedAt}
+      onEdit={onEdit}
+      disabled={disabled}
+      leftContent={leftContent}
+    />
+  );
+};
+
 export const ContentDetailContent = () => {
   const { version } = useContentVersionContext();
   const { content, contentType } = useContentDetailContext();
@@ -541,6 +588,14 @@ export const ContentDetailContent = () => {
         )}
         {contentType === ContentTypeName.BANNERS && content && version.data && (
           <BannerContentPreview
+            currentVersion={version}
+            content={content}
+            onEdit={() => openBuilder(content, contentType)}
+            disabled={isViewOnly}
+          />
+        )}
+        {contentType === ContentTypeName.RESOURCE_CENTERS && content && version.data && (
+          <ResourceCenterContentPreview
             currentVersion={version}
             content={content}
             onEdit={() => openBuilder(content, contentType)}

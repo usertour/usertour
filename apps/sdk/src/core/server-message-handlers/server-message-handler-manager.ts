@@ -20,6 +20,8 @@ import {
   UntrackClientConditionHandler,
   StartConditionWaitTimerHandler,
   CancelConditionWaitTimerHandler,
+  SetResourceCenterSessionHandler,
+  UnsetResourceCenterSessionHandler,
 } from './server-message-handlers';
 
 /**
@@ -43,6 +45,8 @@ export class ServerMessageHandlerManager {
     this.registerHandler(new SetBannerSessionHandler());
     this.registerHandler(new UnsetChecklistSessionHandler());
     this.registerHandler(new UnsetBannerSessionHandler());
+    this.registerHandler(new SetResourceCenterSessionHandler());
+    this.registerHandler(new UnsetResourceCenterSessionHandler());
     this.registerHandler(new ChecklistTaskCompletedHandler());
     this.registerHandler(new AddLauncherHandler());
     this.registerHandler(new RemoveLauncherHandler());
