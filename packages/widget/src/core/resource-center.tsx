@@ -480,21 +480,19 @@ interface ResourceCenterViewportProps {
   launcherText?: string;
 }
 
-const getResourceCenterFrameClassName = (isOpen: boolean) =>
+const getResourceCenterFrameClassName = (isOpen: boolean, isAnimating: boolean) =>
   cn(
     'usertour-widget-resource-center-frame',
     'usertour-widget-resource-center-frame--animating',
     isOpen
       ? 'usertour-widget-resource-center-frame--open'
       : 'usertour-widget-resource-center-frame--closed',
+    isAnimating && isOpen && 'usertour-widget-resource-center-frame--opening',
+    isAnimating && !isOpen && 'usertour-widget-resource-center-frame--closing',
   );
 
-const ResourceCenterFrameRoot = memo(({ children, launcherText }: ResourceCenterViewportProps) => {
-  const { isOpen, handleExpandedChange, themeSetting } = useResourceCenterRootContext();
-  const [launcherContainer, setLauncherContainer] = useState<HTMLDivElement | null>(null);
-  const [panelContainer, setPanelContainer] = useState<HTMLDivElement | null>(null);
+const useResourceCenterAnimating = (isOpen: boolean, transitionDuration: number) => {
   const [isAnimating, setIsAnimating] = useState(false);
-  const transitionDuration = themeSetting.resourceCenter?.transitionDuration ?? 450;
 
   useEffect(() => {
     setIsAnimating(true);
@@ -505,6 +503,16 @@ const ResourceCenterFrameRoot = memo(({ children, launcherText }: ResourceCenter
 
     return () => window.clearTimeout(timer);
   }, [isOpen, transitionDuration]);
+
+  return isAnimating;
+};
+
+const ResourceCenterFrameRoot = memo(({ children, launcherText }: ResourceCenterViewportProps) => {
+  const { isOpen, handleExpandedChange, themeSetting } = useResourceCenterRootContext();
+  const [launcherContainer, setLauncherContainer] = useState<HTMLDivElement | null>(null);
+  const [panelContainer, setPanelContainer] = useState<HTMLDivElement | null>(null);
+  const transitionDuration = themeSetting.resourceCenter?.transitionDuration ?? 450;
+  const isAnimating = useResourceCenterAnimating(isOpen, transitionDuration);
 
   useEffect(() => {
     const activeElement = document.activeElement;
@@ -536,6 +544,8 @@ const ResourceCenterFrameRoot = memo(({ children, launcherText }: ResourceCenter
           ? 'usertour-widget-resource-center-frame-root--open'
           : 'usertour-widget-resource-center-frame-root--closed',
         isAnimating && 'usertour-widget-resource-center-frame-root--animating',
+        isAnimating && isOpen && 'usertour-widget-resource-center-frame-root--opening',
+        isAnimating && !isOpen && 'usertour-widget-resource-center-frame-root--closing',
         'relative h-full w-full overflow-hidden usertour-root text-sdk-foreground',
       )}
     >
@@ -618,6 +628,8 @@ const ResourceCenter = forwardRef<
   const panelRect = useSize(panelMeasureRef);
   const rc = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
+  const transitionDuration = themeSetting.resourceCenter?.transitionDuration ?? 450;
+  const isAnimating = useResourceCenterAnimating(isOpen, transitionDuration);
   const style = computePositionStyle(
     resourceCenterPlacementToPosition(rc?.placement ?? 'bottom-right'),
     rc?.offsetX ?? 20,
@@ -664,7 +676,7 @@ const ResourceCenter = forwardRef<
       </div>
       <div className="usertour-widget-resource-center-frame-wrapper">
         <div
-          className={getResourceCenterFrameClassName(isOpen)}
+          className={getResourceCenterFrameClassName(isOpen, isAnimating)}
           style={{
             width: isOpen ? openWidth : closedWidth,
             height: isOpen ? openHeight : `${closedHeight}px`,
@@ -705,6 +717,8 @@ const ResourceCenterFrame = forwardRef<
   const panelRect = useSize(panelMeasureRef);
   const rc = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
+  const transitionDuration = themeSetting.resourceCenter?.transitionDuration ?? 450;
+  const isAnimating = useResourceCenterAnimating(isOpen, transitionDuration);
   const style = computePositionStyle(
     resourceCenterPlacementToPosition(rc?.placement ?? 'bottom-right'),
     rc?.offsetX ?? 20,
@@ -751,7 +765,7 @@ const ResourceCenterFrame = forwardRef<
         <Frame
           assets={assets}
           ref={ref}
-          className={getResourceCenterFrameClassName(isOpen)}
+          className={getResourceCenterFrameClassName(isOpen, isAnimating)}
           defaultStyle={{
             width: isOpen ? openWidth : closedWidth,
             height: isOpen ? openHeight : `${closedHeight}px`,
@@ -825,6 +839,8 @@ const ResourceCenterStatic = forwardRef<
   const launcherMeasureRect = useSize(launcherMeasureRef);
   const rc = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
+  const transitionDuration = themeSetting.resourceCenter?.transitionDuration ?? 450;
+  const isAnimating = useResourceCenterAnimating(isOpen, transitionDuration);
   const closedHeight = launcher?.height ?? 60;
   const openWidth = `${rc?.normalWidth ?? 360}px`;
 
@@ -852,7 +868,7 @@ const ResourceCenterStatic = forwardRef<
       </div>
       <div className="usertour-widget-resource-center-frame-wrapper">
         <div
-          className={getResourceCenterFrameClassName(isOpen)}
+          className={getResourceCenterFrameClassName(isOpen, isAnimating)}
           style={{
             width: isOpen
               ? openWidth
