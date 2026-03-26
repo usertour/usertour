@@ -1102,7 +1102,7 @@ const ResourceCenterFooter = memo(() => {
   const { showMadeWith } = useResourceCenterRootContext();
   if (!showMadeWith) return null;
   return (
-    <div className="usertour-widget-resource-center-footer h-4">
+    <div className="usertour-widget-resource-center-footer bg-sdk-background h-4">
       <div className="absolute bottom-2 left-3 text-xs opacity-50 hover:opacity-75">
         <a
           href="https://www.usertour.io?utm_source=made-with-usertour&utm_medium=link&utm_campaign=made-with-usertour-widget"
