@@ -39,6 +39,7 @@ export const ThemeSettingsResourceCenterLauncher = () => {
           name="rc-launcher-icon-type"
           items={iconTypeItems}
           tooltip="The icon displayed in the launcher button."
+          vertical
           defaultValue={launcher.iconType}
           onValueChange={(value: string) => {
             update({ iconType: value as ResourceCenterLauncherIconType });
@@ -80,6 +81,7 @@ export const ThemeSettingsResourceCenterLauncher = () => {
           name="rc-launcher-text-mode"
           items={textModeItems}
           tooltip="Controls what text is shown next to the launcher icon."
+          vertical
           defaultValue={launcher.textMode}
           onValueChange={(value: string) => {
             update({ textMode: value as ResourceCenterLauncherTextMode });

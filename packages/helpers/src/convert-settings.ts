@@ -484,6 +484,9 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-resource-center-launcher-height': `${resourceCenterLauncherButton.height}px`,
     '--usertour-resource-center-launcher-icon-size': `${resourceCenterLauncherButton.imageHeight}px`,
     '--usertour-resource-center-badge-background-color': resourceCenterUnreadBadge.backgroundColor,
+    '--usertour-resource-center-badge-background-color-rgb': hexToRGBStr(
+      resourceCenterUnreadBadge.backgroundColor,
+    ),
     '--usertour-resource-center-badge-foreground-color': resourceCenterUnreadBadge.textColor,
     '--usertour-resource-center-header-background-color': hexToHSLString(
       settings.brandColor.background,

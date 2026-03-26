@@ -9,8 +9,7 @@ import {
   ContentEditorSerialize,
   ResourceCenterRoot,
   ResourceCenterContainer,
-  ResourceCenterStaticPopper,
-  ResourceCenterPopperContent,
+  ResourceCenterStatic,
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
@@ -205,15 +204,13 @@ export const ResourceCenterEmbed = () => {
       checklistSlot={previewChecklistSlot}
     >
       <ResourceCenterContainer>
-        <ResourceCenterStaticPopper>
-          <ResourceCenterPopperContent>
-            <ResourceCenterHeader text={localData.headerText} />
-            <ResourceCenterBody>
-              <ResourceCenterBlocks messageEditSlots={messageEditSlots} />
-            </ResourceCenterBody>
-            <ResourceCenterFooter />
-          </ResourceCenterPopperContent>
-        </ResourceCenterStaticPopper>
+        <ResourceCenterStatic>
+          <ResourceCenterHeader text={localData.headerText} />
+          <ResourceCenterBody>
+            <ResourceCenterBlocks messageEditSlots={messageEditSlots} />
+          </ResourceCenterBody>
+          <ResourceCenterFooter />
+        </ResourceCenterStatic>
       </ResourceCenterContainer>
     </ResourceCenterRoot>
   );

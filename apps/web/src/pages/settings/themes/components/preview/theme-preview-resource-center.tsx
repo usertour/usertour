@@ -7,8 +7,7 @@ import {
   ContentEditorSerialize,
   ResourceCenterRoot,
   ResourceCenterContainer,
-  ResourceCenterPopper,
-  ResourceCenterPopperContent,
+  ResourceCenter,
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
@@ -196,6 +195,16 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
     </ChecklistRoot>
   );
 
+  const previewContent = (
+    <>
+      <ResourceCenterHeader text={defaultResourceCenterPreviewData.headerText} />
+      <ResourceCenterBody>
+        <ResourceCenterBlocks />
+      </ResourceCenterBody>
+      <ResourceCenterFooter />
+    </>
+  );
+
   return (
     <div className="w-full h-full scale-100">
       <ResourceCenterRoot
@@ -210,15 +219,7 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
         checklistSlot={previewChecklistSlot}
       >
         <ResourceCenterContainer>
-          <ResourceCenterPopper zIndex={10000}>
-            <ResourceCenterPopperContent>
-              <ResourceCenterHeader text={defaultResourceCenterPreviewData.headerText} />
-              <ResourceCenterBody>
-                <ResourceCenterBlocks />
-              </ResourceCenterBody>
-              <ResourceCenterFooter />
-            </ResourceCenterPopperContent>
-          </ResourceCenterPopper>
+          <ResourceCenter badgeCount={2}>{previewContent}</ResourceCenter>
         </ResourceCenterContainer>
       </ResourceCenterRoot>
     </div>

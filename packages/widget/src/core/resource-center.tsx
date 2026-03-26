@@ -1,5 +1,4 @@
 import {
-  ModalPosition,
   ResourceCenterBlockType,
   ResourceCenterData,
   ResourceCenterMessageBlock,
@@ -7,11 +6,12 @@ import {
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
-import { DropDownIcon, QuestionMarkCircledIcon } from '@usertour-packages/icons';
+import { DropDownIcon, QuestionMarkCircledIcon, UsertourIcon } from '@usertour-packages/icons';
 import {
   createContext,
   forwardRef,
   memo,
+  type HTMLAttributes,
   useCallback,
   useContext,
   useEffect,
@@ -20,34 +20,44 @@ import {
 } from 'react';
 import { useSettingsStyles } from './hooks/use-settings-styles';
 import { ContentEditorSerialize } from '../serialize/content-editor-serialize';
-import {
-  Popper,
-  PopperContent,
-  PopperContentFrame,
-  PopperMadeWith,
-  PopperModalContentPotal,
-  type PopperProps,
-  PopperStaticContent,
-} from './popper';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
-import { computePositionStyle } from './utils/position';
 import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
 import { useSize } from '@usertour-packages/react-use-size';
 import { cn } from '@usertour-packages/tailwind';
 import { Button } from '../primitives';
+import { computePositionStyle } from './utils/position';
+
+interface ResourceCenterAnchorProps extends HTMLAttributes<HTMLDivElement> {
+  anchor?: React.ReactNode;
+}
+
+const ResourceCenterAnchor = forwardRef<HTMLDivElement, ResourceCenterAnchorProps>(
+  ({ anchor, children, className, ...props }, ref) => {
+    return (
+      <div ref={ref} className={cn('relative', className)} {...props}>
+        <div className="relative">
+          {children}
+          {anchor}
+        </div>
+      </div>
+    );
+  },
+);
+
+ResourceCenterAnchor.displayName = 'ResourceCenterAnchor';
 
 // ============================================================================
 // Placement mapping
 // ============================================================================
 
-const placementToModalPosition = (placement: ResourceCenterPlacement): ModalPosition => {
-  const map: Record<ResourceCenterPlacement, ModalPosition> = {
-    'top-left': ModalPosition.LeftTop,
-    'top-right': ModalPosition.RightTop,
-    'bottom-left': ModalPosition.LeftBottom,
-    'bottom-right': ModalPosition.RightBottom,
+const resourceCenterPlacementToPosition = (placement: ResourceCenterPlacement) => {
+  const map: Record<ResourceCenterPlacement, string> = {
+    'top-left': 'leftTop',
+    'top-right': 'rightTop',
+    'bottom-left': 'leftBottom',
+    'bottom-right': 'rightBottom',
   };
-  return map[placement] ?? ModalPosition.RightBottom;
+  return map[placement] ?? map['bottom-right'];
 };
 
 // ============================================================================
@@ -221,7 +231,7 @@ const ResourceCenterBadge = memo(({ count }: ResourceCenterBadgeProps) => {
   if (count <= 0) return null;
 
   return (
-    <div className="absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full text-xs font-bold min-w-[20px] h-5 px-1 bg-sdk-resource-center-badge-background text-sdk-resource-center-badge-foreground">
+    <div className="usertour-widget-resource-center-launcher-unread-badge flex items-center justify-center text-xs font-bold min-w-[24px] h-6 px-1.5 bg-sdk-resource-center-badge-background text-sdk-resource-center-badge-foreground">
       {count}
     </div>
   );
@@ -281,7 +291,7 @@ const ResourceCenterLauncherContent = forwardRef<
       style={{ height: launcher?.height ?? 60 }}
       className={buttonClassName}
       onClick={onClick}
-      aria-label={data.buttonText}
+      aria-label={`Open ${data.buttonText}${badgeCount > 0 ? ` (${badgeCount} unread)` : ''}`}
     >
       <div
         ref={setContentRef}
@@ -292,13 +302,12 @@ const ResourceCenterLauncherContent = forwardRef<
           transitionDuration: 'var(--usertour-resource-center-transition-duration)',
         }}
       >
-        <span className="relative flex items-center justify-center">
+        <span className="flex items-center justify-center">
           <ResourceCenterLauncherIcon
             iconType={launcher?.iconType}
             iconUrl={launcher?.iconUrl}
             imageHeight={launcher?.imageHeight}
           />
-          <ResourceCenterBadge count={badgeCount} />
         </span>
         {resolvedText && (
           <span className="text-sm font-semibold whitespace-nowrap">{resolvedText}</span>
@@ -314,35 +323,41 @@ interface ResourceCenterLauncherProps {
   badgeCount?: number;
   launcherText?: string;
   onClick?: () => void;
+  style?: React.CSSProperties;
+  frameStyle?: React.CSSProperties;
 }
 
 const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterLauncherProps>(
   (props, ref) => {
-    const { onClick, badgeCount, launcherText } = props;
+    const { onClick, badgeCount, launcherText, style, frameStyle } = props;
     const { themeSetting, zIndex } = useResourceCenterRootContext();
-
     const rc = themeSetting.resourceCenter;
     const launcher = themeSetting.resourceCenterLauncherButton;
-    const placement = rc?.placement ?? 'bottom-right';
-    const position = placementToModalPosition(placement);
-    const style = computePositionStyle(position, rc?.offsetX ?? 20, rc?.offsetY ?? 20);
+    const positionStyle = computePositionStyle(
+      resourceCenterPlacementToPosition(rc?.placement ?? 'bottom-right'),
+      rc?.offsetX ?? 20,
+      rc?.offsetY ?? 20,
+    );
 
     return (
-      <div
-        ref={ref}
-        className="fixed overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.15),0_1px_2px_rgba(0,0,0,0.1)]"
-        style={{
-          zIndex,
-          ...style,
-          height: launcher?.height ?? 60,
-          borderRadius: launcher?.borderRadius ?? 9999,
-        }}
-      >
-        <ResourceCenterLauncherContent
-          onClick={onClick}
-          badgeCount={badgeCount}
-          launcherText={launcherText}
-        />
+      <div ref={ref} className="relative" style={{ zIndex, ...positionStyle, ...style }}>
+        <div className="relative">
+          <div
+            className="usertour-widget-resource-center-launcher"
+            style={{
+              height: launcher?.height ?? 60,
+              borderRadius: launcher?.borderRadius,
+              ...frameStyle,
+            }}
+          >
+            <ResourceCenterLauncherContent
+              onClick={onClick}
+              badgeCount={badgeCount}
+              launcherText={launcherText}
+            />
+          </div>
+          <ResourceCenterBadge count={badgeCount ?? 0} />
+        </div>
       </div>
     );
   },
@@ -370,32 +385,42 @@ const ResourceCenterLauncherFrame = forwardRef<HTMLIFrameElement, ResourceCenter
 
     const rc = themeSetting.resourceCenter;
     const launcher = themeSetting.resourceCenterLauncherButton;
-    const placement = rc?.placement ?? 'bottom-right';
-    const position = placementToModalPosition(placement);
-    const style = computePositionStyle(position, rc?.offsetX ?? 20, rc?.offsetY ?? 20);
-
+    const style = computePositionStyle(
+      resourceCenterPlacementToPosition(rc?.placement ?? 'bottom-right'),
+      rc?.offsetX ?? 20,
+      rc?.offsetY ?? 20,
+    );
     const width = launcherRect?.width ? `${launcherRect.width}px` : undefined;
 
     return (
-      <Frame
-        assets={assets}
-        ref={ref}
-        className="fixed overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.15),0_1px_2px_rgba(0,0,0,0.1)]"
-        defaultStyle={{
+      <div
+        className="relative"
+        style={{
           zIndex,
           ...style,
-          height: launcher?.height ?? 60,
-          borderRadius: launcher?.borderRadius ?? 9999,
-          width,
         }}
       >
-        <ResourceCenterLauncherInFrame
-          globalStyle={globalStyle}
-          onSizeChange={setLauncherRect}
-          badgeCount={badgeCount}
-          launcherText={launcherText}
-        />
-      </Frame>
+        <div className="relative">
+          <Frame
+            assets={assets}
+            ref={ref}
+            className="usertour-widget-resource-center-launcher"
+            defaultStyle={{
+              width,
+              height: launcher?.height ?? 60,
+              borderRadius: launcher?.borderRadius,
+            }}
+          >
+            <ResourceCenterLauncherInFrame
+              globalStyle={globalStyle}
+              onSizeChange={setLauncherRect}
+              badgeCount={badgeCount}
+              launcherText={launcherText}
+            />
+          </Frame>
+          <ResourceCenterBadge count={badgeCount ?? 0} />
+        </div>
+      </div>
     );
   },
 );
@@ -436,179 +461,427 @@ const ResourceCenterLauncherInFrame = forwardRef<
 
 ResourceCenterLauncherInFrame.displayName = 'ResourceCenterLauncherInFrame';
 
-// ============================================================================
-// Popper (like ChecklistPopper — conditional launcher / modal)
-// ============================================================================
-
-interface ResourceCenterPopperExtraProps {
+interface ResourceCenterProps {
+  children?: React.ReactNode;
   badgeCount?: number;
+  launcherText?: string;
+  openHeightOverride?: number;
+  closedWidthOverride?: number;
+}
+
+interface ResourceCenterViewportProps {
+  children: React.ReactNode;
   launcherText?: string;
 }
 
-const ResourceCenterPopper = forwardRef<
-  HTMLDivElement,
-  Omit<PopperProps, 'globalStyle'> & ResourceCenterPopperExtraProps
->((props, ref) => {
-  const { children, badgeCount, launcherText, ...popperProps } = props;
-  const { globalStyle, isOpen, themeSetting, handleExpandedChange } =
-    useResourceCenterRootContext();
-
-  const rc = themeSetting.resourceCenter;
-  const placement = rc?.placement ?? 'bottom-right';
-  const position = placementToModalPosition(placement);
-
-  const handleLauncherClick = useCallback(async () => {
-    await handleExpandedChange(true);
-  }, [handleExpandedChange]);
-
-  const modalContentProps = useMemo(
-    () => ({
-      position: position as unknown as string,
-      positionOffsetX: rc?.offsetX ?? 20,
-      positionOffsetY: rc?.offsetY ?? 20,
-      enabledBackdrop: false,
-      width: `${rc?.normalWidth ?? 360}px`,
-    }),
-    [position, rc?.offsetX, rc?.offsetY, rc?.normalWidth],
+const getResourceCenterFrameClassName = (isOpen: boolean) =>
+  cn(
+    'usertour-widget-resource-center-frame',
+    'usertour-widget-resource-center-frame--animating',
+    isOpen
+      ? 'usertour-widget-resource-center-frame--open'
+      : 'usertour-widget-resource-center-frame--closed',
   );
 
-  const optimizedPopperProps = useMemo(
-    () => ({
-      ...popperProps,
-      triggerRef: undefined,
-      open: isOpen,
-      globalStyle,
-    }),
-    [popperProps, isOpen, globalStyle],
-  );
+const ResourceCenterFrameRoot = memo(({ children, launcherText }: ResourceCenterViewportProps) => {
+  const { isOpen, handleExpandedChange } = useResourceCenterRootContext();
+  const [launcherContainer, setLauncherContainer] = useState<HTMLDivElement | null>(null);
+  const [panelContainer, setPanelContainer] = useState<HTMLDivElement | null>(null);
 
-  if (!isOpen) {
-    return (
-      <ResourceCenterLauncher
-        onClick={handleLauncherClick}
-        badgeCount={badgeCount}
-        launcherText={launcherText}
-      />
-    );
-  }
+  useEffect(() => {
+    const activeElement = document.activeElement;
+
+    if (
+      isOpen &&
+      launcherContainer &&
+      activeElement instanceof HTMLElement &&
+      launcherContainer.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
+
+    if (
+      !isOpen &&
+      panelContainer &&
+      activeElement instanceof HTMLElement &&
+      panelContainer.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
+  }, [isOpen, launcherContainer, panelContainer]);
 
   return (
-    <Popper ref={ref} {...optimizedPopperProps}>
-      <PopperModalContentPotal {...modalContentProps}>{children}</PopperModalContentPotal>
-    </Popper>
+    <div className="relative h-full w-full overflow-hidden usertour-root text-sdk-foreground">
+      <ResourceCenterLauncherArea isOpen={isOpen} launcherRef={setLauncherContainer}>
+        <div className="usertour-widget-resource-center-launcher">
+          <ResourceCenterLauncherContent
+            onClick={async () => await handleExpandedChange(true)}
+            launcherText={launcherText}
+          />
+        </div>
+      </ResourceCenterLauncherArea>
+      <ResourceCenterPanelArea isOpen={isOpen} panelRef={setPanelContainer}>
+        {children}
+      </ResourceCenterPanelArea>
+    </div>
   );
 });
 
-ResourceCenterPopper.displayName = 'ResourceCenterPopper';
+ResourceCenterFrameRoot.displayName = 'ResourceCenterFrameRoot';
+
+const ResourceCenterLauncherArea = memo(
+  ({
+    children,
+    isOpen,
+    launcherRef,
+  }: {
+    children: React.ReactNode;
+    isOpen: boolean;
+    launcherRef?: (el: HTMLDivElement | null) => void;
+  }) => {
+    return (
+      <div
+        ref={launcherRef}
+        className={cn(
+          'h-full w-full',
+          isOpen
+            ? 'absolute inset-0 invisible opacity-0 pointer-events-none'
+            : 'relative visible opacity-100 pointer-events-auto',
+        )}
+        style={{ transition: 'opacity var(--usertour-resource-center-transition-duration)' }}
+        aria-hidden={isOpen}
+      >
+        {children}
+      </div>
+    );
+  },
+);
+
+ResourceCenterLauncherArea.displayName = 'ResourceCenterLauncherArea';
+
+const ResourceCenterPanelArea = memo(
+  ({
+    children,
+    isOpen,
+    panelRef,
+  }: {
+    children: React.ReactNode;
+    isOpen: boolean;
+    panelRef?: (el: HTMLDivElement | null) => void;
+  }) => {
+    return (
+      <div
+        ref={panelRef}
+        className={cn(
+          'min-h-0 h-full w-full',
+          isOpen
+            ? 'relative visible opacity-100 pointer-events-auto'
+            : 'absolute inset-0 invisible opacity-0 pointer-events-none',
+        )}
+        style={{ transition: 'opacity var(--usertour-resource-center-transition-duration)' }}
+        aria-hidden={!isOpen}
+      >
+        {children}
+      </div>
+    );
+  },
+);
+
+ResourceCenterPanelArea.displayName = 'ResourceCenterPanelArea';
+
+const ResourceCenter = forwardRef<
+  HTMLDivElement,
+  Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'onClick'> & ResourceCenterProps
+>((props, ref) => {
+  const {
+    children,
+    badgeCount,
+    launcherText,
+    openHeightOverride,
+    closedWidthOverride,
+    ...restProps
+  } = props;
+  const { themeSetting, zIndex, isOpen } = useResourceCenterRootContext();
+  const [launcherMeasureRef, setLauncherMeasureRef] = useState<HTMLDivElement | null>(null);
+  const [panelMeasureRef, setPanelMeasureRef] = useState<HTMLDivElement | null>(null);
+  const launcherRect = useSize(launcherMeasureRef);
+  const panelRect = useSize(panelMeasureRef);
+  const rc = themeSetting.resourceCenter;
+  const launcher = themeSetting.resourceCenterLauncherButton;
+  const style = computePositionStyle(
+    resourceCenterPlacementToPosition(rc?.placement ?? 'bottom-right'),
+    rc?.offsetX ?? 20,
+    rc?.offsetY ?? 20,
+  );
+  const closedHeight = launcher?.height ?? 60;
+  const closedWidth = closedWidthOverride
+    ? `${closedWidthOverride}px`
+    : launcherRect?.width
+      ? `${launcherRect.width}px`
+      : `${closedHeight}px`;
+  const openWidth = `${rc?.normalWidth ?? 360}px`;
+  const openHeight = openHeightOverride
+    ? `${openHeightOverride}px`
+    : panelRect?.height
+      ? `${panelRect.height}px`
+      : undefined;
+
+  return (
+    <ResourceCenterAnchor
+      ref={ref}
+      style={{
+        zIndex,
+        ...style,
+      }}
+      anchor={!isOpen ? <ResourceCenterBadge count={badgeCount ?? 0} /> : undefined}
+      {...restProps}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed opacity-0"
+        style={{
+          left: '-10000px',
+          top: '-10000px',
+          width: openWidth,
+        }}
+      >
+        <div ref={setLauncherMeasureRef} className="inline-block">
+          <ResourceCenterLauncherContent badgeCount={badgeCount} launcherText={launcherText} />
+        </div>
+        <div ref={setPanelMeasureRef}>
+          <ResourceCenterContent>{children}</ResourceCenterContent>
+        </div>
+      </div>
+      <div className="usertour-widget-resource-center-frame-wrapper">
+        <div
+          className={getResourceCenterFrameClassName(isOpen)}
+          style={{
+            width: isOpen ? openWidth : closedWidth,
+            height: isOpen ? openHeight : `${closedHeight}px`,
+            borderRadius: isOpen
+              ? 'var(--usertour-widget-popper-border-radius)'
+              : launcher?.borderRadius,
+            borderWidth: isOpen ? 'var(--usertour-widget-popper-border-width)' : '0px',
+            borderStyle: isOpen ? 'solid' : 'none',
+            borderColor: isOpen ? 'var(--usertour-widget-popper-border-color)' : 'transparent',
+          }}
+          role={isOpen ? 'dialog' : undefined}
+        >
+          <ResourceCenterFrameRoot launcherText={launcherText}>{children}</ResourceCenterFrameRoot>
+        </div>
+      </div>
+    </ResourceCenterAnchor>
+  );
+});
+
+ResourceCenter.displayName = 'ResourceCenter';
 
 // ============================================================================
 // Popper with iframe (like ChecklistPopperUseIframe)
 // ============================================================================
 
-const ResourceCenterPopperUseIframe = forwardRef<
-  HTMLDivElement,
-  Omit<PopperProps, 'globalStyle'> & ResourceCenterPopperExtraProps
->((props, ref) => {
-  const { children, assets, badgeCount, launcherText, ...popperProps } = props;
-  const { globalStyle, isOpen, themeSetting } = useResourceCenterRootContext();
-
-  const rc = themeSetting.resourceCenter;
-  const placement = rc?.placement ?? 'bottom-right';
-  const position = placementToModalPosition(placement);
-
-  const modalContentProps = useMemo(
-    () => ({
-      position: position as unknown as string,
-      positionOffsetX: rc?.offsetX ?? 20,
-      positionOffsetY: rc?.offsetY ?? 20,
-      enabledBackdrop: false,
-      width: `${rc?.normalWidth ?? 360}px`,
-    }),
-    [position, rc?.offsetX, rc?.offsetY, rc?.normalWidth],
-  );
-
-  const optimizedPopperProps = useMemo(
-    () => ({
-      ...popperProps,
-      triggerRef: undefined,
-      open: isOpen,
-      globalStyle,
-      assets,
-    }),
-    [popperProps, isOpen, globalStyle, assets],
-  );
-
-  if (!isOpen) {
-    return (
-      <ResourceCenterLauncherFrame
-        assets={assets}
-        badgeCount={badgeCount}
-        launcherText={launcherText}
-      />
-    );
+const ResourceCenterFrame = forwardRef<
+  HTMLIFrameElement,
+  ResourceCenterProps & {
+    assets?: AssetAttributes[];
   }
+>((props, ref) => {
+  const { children, assets, badgeCount, launcherText, openHeightOverride, closedWidthOverride } =
+    props;
+  const { globalStyle, themeSetting, zIndex, isOpen } = useResourceCenterRootContext();
+  const [launcherMeasureRef, setLauncherMeasureRef] = useState<HTMLDivElement | null>(null);
+  const [panelMeasureRef, setPanelMeasureRef] = useState<HTMLDivElement | null>(null);
+  const launcherRect = useSize(launcherMeasureRef);
+  const panelRect = useSize(panelMeasureRef);
+  const rc = themeSetting.resourceCenter;
+  const launcher = themeSetting.resourceCenterLauncherButton;
+  const style = computePositionStyle(
+    resourceCenterPlacementToPosition(rc?.placement ?? 'bottom-right'),
+    rc?.offsetX ?? 20,
+    rc?.offsetY ?? 20,
+  );
+  const closedHeight = launcher?.height ?? 60;
+  const openWidth = `${rc?.normalWidth ?? 360}px`;
+  const closedWidth = closedWidthOverride
+    ? `${closedWidthOverride}px`
+    : launcherRect?.width
+      ? `${launcherRect.width}px`
+      : `${closedHeight}px`;
+  const openHeight = openHeightOverride
+    ? `${openHeightOverride}px`
+    : panelRect?.height
+      ? `${panelRect.height}px`
+      : undefined;
 
   return (
-    <Popper ref={ref} {...optimizedPopperProps} isIframeMode={true}>
-      <PopperModalContentPotal {...modalContentProps}>
-        <PopperContentFrame {...props}>{children}</PopperContentFrame>
-      </PopperModalContentPotal>
-    </Popper>
+    <ResourceCenterAnchor
+      style={{
+        zIndex,
+        ...style,
+      }}
+      anchor={!isOpen ? <ResourceCenterBadge count={badgeCount ?? 0} /> : undefined}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed opacity-0"
+        style={{
+          left: '-10000px',
+          top: '-10000px',
+          width: openWidth,
+        }}
+      >
+        <div ref={setLauncherMeasureRef} className="inline-block">
+          <ResourceCenterLauncherContent badgeCount={badgeCount} launcherText={launcherText} />
+        </div>
+        <div ref={setPanelMeasureRef}>
+          <ResourceCenterContent>{children}</ResourceCenterContent>
+        </div>
+      </div>
+      <div className="usertour-widget-resource-center-frame-wrapper">
+        <Frame
+          assets={assets}
+          ref={ref}
+          className={getResourceCenterFrameClassName(isOpen)}
+          defaultStyle={{
+            width: isOpen ? openWidth : closedWidth,
+            height: isOpen ? openHeight : `${closedHeight}px`,
+            borderRadius: isOpen
+              ? 'var(--usertour-widget-popper-border-radius)'
+              : launcher?.borderRadius,
+            borderWidth: isOpen ? 'var(--usertour-widget-popper-border-width)' : '0px',
+            borderStyle: isOpen ? 'solid' : 'none',
+            borderColor: isOpen ? 'var(--usertour-widget-popper-border-color)' : 'transparent',
+          }}
+        >
+          <ResourceCenterFrameContent globalStyle={globalStyle} launcherText={launcherText}>
+            {children}
+          </ResourceCenterFrameContent>
+        </Frame>
+      </div>
+    </ResourceCenterAnchor>
   );
 });
 
-ResourceCenterPopperUseIframe.displayName = 'ResourceCenterPopperUseIframe';
+ResourceCenterFrame.displayName = 'ResourceCenterFrame';
+
+interface ResourceCenterFrameContentProps {
+  globalStyle?: string;
+  children: React.ReactNode;
+  launcherText?: string;
+}
+
+const ResourceCenterFrameContent = forwardRef<HTMLDivElement, ResourceCenterFrameContentProps>(
+  (props, _) => {
+    const { globalStyle, launcherText, children } = props;
+    const { document } = useFrame();
+
+    useEffect(() => {
+      if (globalStyle && document?.body) {
+        document.body.style.cssText = globalStyle;
+        document.body.className = 'usertour-widget-root';
+      }
+    }, [globalStyle, document]);
+
+    return (
+      <ResourceCenterFrameRoot launcherText={launcherText}>
+        <ResourceCenterContent>{children}</ResourceCenterContent>
+      </ResourceCenterFrameRoot>
+    );
+  },
+);
+
+ResourceCenterFrameContent.displayName = 'ResourceCenterFrameContent';
 
 // ============================================================================
 // Static Popper (like ChecklistStaticPopper — for previews)
 // ============================================================================
 
-const ResourceCenterStaticPopper = forwardRef<
+const ResourceCenterStatic = forwardRef<
   HTMLDivElement,
-  Omit<PopperProps, 'globalStyle' | 'zIndex'>
+  Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'onClick'> & ResourceCenterProps
 >((props, ref) => {
-  const { children, ...popperProps } = props;
-  const { globalStyle, zIndex, themeSetting } = useResourceCenterRootContext();
-
+  const {
+    children,
+    badgeCount,
+    launcherText,
+    openHeightOverride,
+    closedWidthOverride,
+    ...restProps
+  } = props;
+  const { themeSetting, isOpen } = useResourceCenterRootContext();
+  const [panelMeasureRef, setPanelMeasureRef] = useState<HTMLDivElement | null>(null);
+  const [launcherMeasureRef, setLauncherMeasureRef] = useState<HTMLDivElement | null>(null);
+  const panelMeasureRect = useSize(panelMeasureRef);
+  const launcherMeasureRect = useSize(launcherMeasureRef);
   const rc = themeSetting.resourceCenter;
-
-  const optimizedPopperProps = useMemo(
-    () => ({
-      ...popperProps,
-      triggerRef: undefined,
-      open: true,
-      globalStyle,
-      zIndex,
-    }),
-    [popperProps, globalStyle, zIndex],
-  );
-
-  const staticContentProps = useMemo(
-    () => ({
-      ref,
-      globalStyle,
-      height: 'auto',
-      width: `${rc?.normalWidth ?? 360}px`,
-      showArrow: false,
-    }),
-    [globalStyle, rc?.normalWidth],
-  );
+  const launcher = themeSetting.resourceCenterLauncherButton;
+  const closedHeight = launcher?.height ?? 60;
+  const openWidth = `${rc?.normalWidth ?? 360}px`;
 
   return (
-    <Popper {...optimizedPopperProps}>
-      <PopperStaticContent {...staticContentProps}>{children}</PopperStaticContent>
-    </Popper>
+    <ResourceCenterAnchor
+      ref={ref}
+      anchor={!isOpen ? <ResourceCenterBadge count={badgeCount ?? 0} /> : undefined}
+      {...restProps}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed opacity-0"
+        style={{
+          left: '-10000px',
+          top: '-10000px',
+          width: openWidth,
+        }}
+      >
+        <div ref={setLauncherMeasureRef} className="inline-block">
+          <ResourceCenterLauncherContent badgeCount={badgeCount} launcherText={launcherText} />
+        </div>
+        <div ref={setPanelMeasureRef}>
+          <ResourceCenterContent>{children}</ResourceCenterContent>
+        </div>
+      </div>
+      <div className="usertour-widget-resource-center-frame-wrapper">
+        <div
+          className={getResourceCenterFrameClassName(isOpen)}
+          style={{
+            width: isOpen
+              ? openWidth
+              : `${closedWidthOverride ?? launcherMeasureRect?.width ?? closedHeight}px`,
+            height: isOpen
+              ? `${openHeightOverride ?? panelMeasureRect?.height ?? closedHeight}px`
+              : `${closedHeight}px`,
+            borderRadius: isOpen
+              ? 'var(--usertour-widget-popper-border-radius)'
+              : launcher?.borderRadius,
+            borderWidth: isOpen ? 'var(--usertour-widget-popper-border-width)' : '0px',
+            borderStyle: isOpen ? 'solid' : 'none',
+            borderColor: isOpen ? 'var(--usertour-widget-popper-border-color)' : 'transparent',
+          }}
+          role={isOpen ? 'dialog' : undefined}
+        >
+          <ResourceCenterFrameRoot launcherText={launcherText}>{children}</ResourceCenterFrameRoot>
+        </div>
+      </div>
+    </ResourceCenterAnchor>
   );
 });
 
-ResourceCenterStaticPopper.displayName = 'ResourceCenterStaticPopper';
+ResourceCenterStatic.displayName = 'ResourceCenterStatic';
 
 // ============================================================================
 // Popper Content (alias, like ChecklistPopperContent)
 // ============================================================================
 
-const ResourceCenterPopperContent = PopperContent;
-ResourceCenterPopperContent.displayName = 'ResourceCenterPopperContent';
+const ResourceCenterContent = forwardRef<HTMLDivElement, { children?: React.ReactNode }>(
+  ({ children }, ref) => {
+    return (
+      <div ref={ref} className="min-h-0 flex flex-col bg-sdk-background text-sdk-foreground">
+        {children}
+      </div>
+    );
+  },
+);
+ResourceCenterContent.displayName = 'ResourceCenterContent';
 
 // ============================================================================
 // Header (brand-colored header bar with close button)
@@ -616,10 +889,7 @@ ResourceCenterPopperContent.displayName = 'ResourceCenterPopperContent';
 
 const ResourceCenterHeader = memo(({ text }: { text: string }) => {
   return (
-    <div
-      className="bg-sdk-resource-center-header-background px-3 py-2 flex items-center shrink-0"
-      style={{ transitionDuration: 'var(--usertour-resource-center-transition-duration)' }}
-    >
+    <div className="usertour-widget-resource-center-header bg-sdk-resource-center-header-background px-3 py-2 flex items-center shrink-0">
       <div className="text-sdk-resource-center-header-foreground font-semibold text-base flex-1">
         {text}
       </div>
@@ -736,7 +1006,7 @@ const ResourceCenterBody = memo(({ children }: { children: React.ReactNode }) =>
 
   return (
     <div
-      className="flex-1 overflow-y-auto bg-sdk-background"
+      className="usertour-widget-resource-center-body flex-1 overflow-y-auto bg-sdk-background"
       style={{
         maxHeight: rc?.maxHeight ? `${rc.maxHeight}px` : undefined,
       }}
@@ -802,7 +1072,21 @@ ResourceCenterBlocks.displayName = 'ResourceCenterBlocks';
 const ResourceCenterFooter = memo(() => {
   const { showMadeWith } = useResourceCenterRootContext();
   if (!showMadeWith) return null;
-  return <PopperMadeWith />;
+  return (
+    <div className="usertour-widget-resource-center-footer h-4">
+      <div className="absolute bottom-2 left-3 text-xs opacity-50 hover:opacity-75">
+        <a
+          href="https://www.usertour.io?utm_source=made-with-usertour&utm_medium=link&utm_campaign=made-with-usertour-widget"
+          className="!text-sdk-foreground !no-underline flex flex-row space-x-0.5 items-center !font-sans"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <UsertourIcon width={14} height={14} />
+          <span>Made with Usertour</span>
+        </a>
+      </div>
+    </div>
+  );
 });
 
 ResourceCenterFooter.displayName = 'ResourceCenterFooter';
@@ -818,10 +1102,10 @@ export {
   ResourceCenterLauncherContent,
   ResourceCenterLauncherIcon,
   ResourceCenterLauncherFrame,
-  ResourceCenterPopper,
-  ResourceCenterPopperUseIframe,
-  ResourceCenterPopperContent,
-  ResourceCenterStaticPopper,
+  ResourceCenter,
+  ResourceCenterFrame,
+  ResourceCenterContent,
+  ResourceCenterStatic,
   ResourceCenterHeader,
   ResourceCenterDropdown,
   ResourceCenterBody,
@@ -830,5 +1114,6 @@ export {
   ResourceCenterChecklistBlockView,
   ResourceCenterBadge,
   ResourceCenterFooter,
+  ResourceCenterFrameContent,
   useResourceCenterRootContext,
 };

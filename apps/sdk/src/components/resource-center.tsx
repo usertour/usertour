@@ -6,8 +6,8 @@ import {
   ChecklistPopperContentBody,
   ContentEditorSerialize,
   LinkDecoratorContext,
+  ResourceCenterFrame,
   ResourceCenterRoot,
-  ResourceCenterPopperUseIframe,
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
@@ -130,6 +130,12 @@ export const ResourceCenterWidget = ({ resourceCenter, checklists }: ResourceCen
     hasChecklistBlock && checklistStore?.checklistData?.buttonText
       ? checklistStore.checklistData.buttonText
       : undefined;
+  const badgeCount =
+    hasChecklistBlock && themeSettings.resourceCenterLauncherButton?.showRemainingTasks
+      ? (checklistStore?.checklistData?.items ?? []).filter(
+          (item: any) => item?.isVisible !== false && !item?.isCompleted,
+        ).length
+      : 0;
 
   return (
     <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
@@ -144,13 +150,13 @@ export const ResourceCenterWidget = ({ resourceCenter, checklists }: ResourceCen
         showMadeWith={!removeBranding}
         checklistSlot={checklistSlot}
       >
-        <ResourceCenterPopperUseIframe zIndex={zIndex} launcherText={launcherText}>
+        <ResourceCenterFrame launcherText={launcherText} badgeCount={badgeCount}>
           <ResourceCenterHeader text={resourceCenterData.headerText} />
           <ResourceCenterBody>
             <ResourceCenterBlocks />
           </ResourceCenterBody>
           <ResourceCenterFooter />
-        </ResourceCenterPopperUseIframe>
+        </ResourceCenterFrame>
       </ResourceCenterRoot>
     </LinkDecoratorContext.Provider>
   );
