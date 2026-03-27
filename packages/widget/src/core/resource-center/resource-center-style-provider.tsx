@@ -13,7 +13,11 @@ export const ResourceCenterStyleProvider = forwardRef<
     }
   });
 
-  return <div ref={composedRefs}>{children}</div>;
+  return (
+    <div ref={composedRefs} className="usertour-widget-chrome usertour-widget-root">
+      {children}
+    </div>
+  );
 });
 
 ResourceCenterStyleProvider.displayName = 'ResourceCenterStyleProvider';

@@ -50,11 +50,7 @@ interface ResourceCenterBadgeProps {
 export const ResourceCenterBadge = memo(({ count }: ResourceCenterBadgeProps) => {
   if (count <= 0) return null;
 
-  return (
-    <div className="usertour-widget-resource-center-launcher-unread-badge flex items-center justify-center text-xs font-bold min-w-[24px] h-6 px-1.5 bg-sdk-resource-center-badge-background text-sdk-resource-center-badge-foreground">
-      {count}
-    </div>
-  );
+  return <div className="usertour-widget-resource-center-launcher-unread-badge">{count}</div>;
 });
 
 ResourceCenterBadge.displayName = 'ResourceCenterBadge';
@@ -93,9 +89,10 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
     }, [launcher?.textMode, launcherText, data.buttonText]);
 
     const buttonClassName = cn(
-      'usertour-widget-resource-center-launcher-button',
       'rounded-sdk-resource-center-launcher flex bg-transparent',
       'cursor-pointer items-center',
+      'transition-opacity duration-sdk-resource-center',
+      'group-data-[state=closed]:opacity-100 group-data-[state=open]:opacity-0',
       layout === 'fill' ? 'h-full w-full justify-center' : 'inline-flex justify-start',
       'hover:bg-sdk-resource-center-launcher-hover',
       'active:bg-sdk-resource-center-launcher-active',

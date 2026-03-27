@@ -252,6 +252,19 @@ _:future,
 }
 
 /* Resource Center */
+.usertour-widget-resource-center-anchor {
+  position: relative;
+}
+.usertour-widget-resource-center-hidden-measurement {
+  pointer-events: none;
+  position: fixed;
+  opacity: 0;
+  left: -10000px;
+  top: -10000px;
+}
+.usertour-widget-resource-center-hidden-measurement-inline {
+  display: inline-block;
+}
 .usertour-widget-resource-center-frame-wrapper {
   position: relative;
 }
@@ -264,6 +277,7 @@ _:future,
 .usertour-widget-resource-center-launcher {
   overflow: hidden;
   display: block;
+  animation: usertour-widget-chrome-visible 200ms linear normal;
 }
 _::-webkit-full-page-media,
 _:future,
@@ -288,75 +302,13 @@ _:future,
   border-radius: var(--usertour-widget-popper-border-radius);
 }
 .usertour-widget-resource-center-frame-root {
-  position: relative;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
   transition: border-radius var(--usertour-resource-center-transition-duration);
 }
-.usertour-widget-resource-center-frame-root--closed {
+.usertour-widget-resource-center-frame-root[data-state="closed"] {
   border-radius: var(--usertour-resource-center-launcher-border-radius);
 }
-.usertour-widget-resource-center-frame-root--open {
+.usertour-widget-resource-center-frame-root[data-state="open"] {
   border-radius: var(--usertour-widget-popper-border-radius);
-}
-.usertour-widget-resource-center-launcher-container {
-  min-width: 0;
-  flex: 1 1 0%;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  overflow: hidden;
-  border-radius: inherit;
-}
-.usertour-widget-resource-center-launcher-button-wrap {
-  position: relative;
-  z-index: 1;
-}
-.usertour-widget-resource-center-header {
-  order: 1;
-}
-.usertour-widget-resource-center-body {
-  order: 2;
-}
-.usertour-widget-resource-center-footer {
-  order: 3;
-}
-.usertour-widget-resource-center-header-content,
-.usertour-widget-resource-center-body-content,
-.usertour-widget-resource-center-footer-content {
-  transition: opacity var(--usertour-resource-center-transition-duration);
-}
-.usertour-widget-resource-center-frame-root--closed .usertour-widget-resource-center-launcher-button {
-  opacity: 1;
-}
-.usertour-widget-resource-center-frame-root--closed .usertour-widget-resource-center-header,
-.usertour-widget-resource-center-frame-root--closed .usertour-widget-resource-center-body,
-.usertour-widget-resource-center-frame-root--closed .usertour-widget-resource-center-footer {
-  position: absolute;
-  visibility: hidden;
-}
-.usertour-widget-resource-center-frame-root--closed .usertour-widget-resource-center-header-content,
-.usertour-widget-resource-center-frame-root--closed .usertour-widget-resource-center-body-content,
-.usertour-widget-resource-center-frame-root--closed .usertour-widget-resource-center-footer-content {
-  opacity: 0;
-}
-.usertour-widget-resource-center-frame-root--open .usertour-widget-resource-center-launcher-container {
-  position: absolute;
-  visibility: hidden;
-}
-.usertour-widget-resource-center-frame-root--open .usertour-widget-resource-center-launcher-button {
-  opacity: 0;
-}
-.usertour-widget-resource-center-frame-root--open .usertour-widget-resource-center-header-content,
-.usertour-widget-resource-center-frame-root--open .usertour-widget-resource-center-body-content,
-.usertour-widget-resource-center-frame-root--open .usertour-widget-resource-center-footer-content {
-  opacity: 1;
-}
-.usertour-widget-resource-center-frame-root--animating .usertour-widget-resource-center-body {
-  pointer-events: none;
-  overflow: hidden;
 }
 .usertour-widget-resource-center-launcher-unread-badge {
   position: absolute;
@@ -366,6 +318,17 @@ _:future,
   right: calc(
     0.3 * var(--usertour-resource-center-launcher-border-radius) - 12px
   );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 24px;
+  height: 24px;
+  padding-left: 6px;
+  padding-right: 6px;
+  background-color: var(--usertour-resource-center-badge-background-color);
+  color: var(--usertour-resource-center-badge-foreground-color);
   border-radius: 12px;
   filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15))
     drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
@@ -382,10 +345,6 @@ _:future,
   animation: usertour-widget-resource-center-content-appear 200ms linear
     var(--usertour-resource-center-transition-duration) both;
 }
-.usertour-widget-resource-center-launcher-button {
-  transition: opacity var(--usertour-resource-center-transition-duration);
-}
-
 .usertour-widget-bubble__avatar {
   pointer-events: all;
   position: absolute;

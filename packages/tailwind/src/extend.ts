@@ -150,6 +150,9 @@ export const extendSdk = {
     'sdk-sm': 'calc(var(--usertour-font-size) * 0.875)',
     'sdk-numbered-progress': 'var(--usertour-numbered-progress-bar-height)',
   },
+  transitionDuration: {
+    'sdk-resource-center': 'var(--usertour-resource-center-transition-duration)',
+  },
   fontWeight: {
     'sdk-normal': 'var(--usertour-font-weight)',
     'sdk-bold': 'var(--usertour-font-weight-bold)',

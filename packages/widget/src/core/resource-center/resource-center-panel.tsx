@@ -11,17 +11,7 @@ import { ResourceCenterTrigger } from './resource-center-trigger';
 import { ResourceCenterFrameRoot } from './resource-center-frame-root';
 
 // ============================================================================
-// Panel Content (flex wrapper for header/body/footer)
-// ============================================================================
-
-const ResourceCenterPanelContent = ({ children }: { children?: React.ReactNode }) => (
-  <div className="usertour-widget-resource-center-panel-content min-h-0 flex flex-col text-sdk-foreground">
-    {children}
-  </div>
-);
-
-// ============================================================================
-// Hidden Measurement (shared offscreen measurement container)
+// Hidden Measurement (outside iframe — uses CSS class, no tailwind)
 // ============================================================================
 
 interface HiddenMeasurementProps {
@@ -43,20 +33,21 @@ const HiddenMeasurement = ({
 }: HiddenMeasurementProps) => (
   <div
     aria-hidden="true"
-    className="pointer-events-none fixed opacity-0"
-    style={{ left: '-10000px', top: '-10000px', width: openWidth }}
+    className="usertour-widget-resource-center-hidden-measurement"
+    style={{ width: openWidth }}
   >
-    <div ref={setLauncherMeasureRef} className="inline-block">
+    <div
+      ref={setLauncherMeasureRef}
+      className="usertour-widget-resource-center-hidden-measurement-inline"
+    >
       <ResourceCenterTrigger badgeCount={badgeCount} launcherText={launcherText} />
     </div>
-    <div ref={setPanelMeasureRef}>
-      <ResourceCenterPanelContent>{children}</ResourceCenterPanelContent>
-    </div>
+    <div ref={setPanelMeasureRef}>{children}</div>
   </div>
 );
 
 // ============================================================================
-// Frame class name helper
+// Frame class name helper (outside iframe — uses CSS class)
 // ============================================================================
 
 const getFrameClassName = (isOpen: boolean, isAnimating: boolean) =>
@@ -106,7 +97,7 @@ const IFrameContent = ({
 
   return (
     <ResourceCenterFrameRoot launcherText={launcherText} isAnimating={isAnimating}>
-      <ResourceCenterPanelContent>{children}</ResourceCenterPanelContent>
+      {children}
     </ResourceCenterFrameRoot>
   );
 };
@@ -171,7 +162,7 @@ export const ResourceCenterPanel = forwardRef<
 
   const innerContent = (
     <ResourceCenterFrameRoot launcherText={launcherText} isAnimating={isAnimating}>
-      <ResourceCenterPanelContent>{children}</ResourceCenterPanelContent>
+      {children}
     </ResourceCenterFrameRoot>
   );
 

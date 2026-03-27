@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { ResourceCenterMessageBlock, UserTourTypes } from '@usertour/types';
 import { ResourceCenterBlockType } from '@usertour/types';
+import { cn } from '@usertour-packages/tailwind';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { useResourceCenterContext } from './context';
 
@@ -72,12 +73,17 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
 
   return (
     <div
-      className="usertour-widget-resource-center-body min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background"
+      className={cn(
+        'order-2 min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background',
+        'transition-opacity duration-sdk-resource-center',
+        'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
+        'group-data-[animating]:pointer-events-none group-data-[animating]:overflow-hidden',
+      )}
       style={{
         maxHeight: rc?.maxHeight ? `${rc.maxHeight}px` : undefined,
       }}
     >
-      <div className="usertour-widget-resource-center-body-content">{children}</div>
+      {children}
     </div>
   );
 });

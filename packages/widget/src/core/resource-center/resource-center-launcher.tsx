@@ -32,23 +32,23 @@ export const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterL
     );
 
     return (
-      <div ref={ref} className="relative" style={{ zIndex, ...positionStyle, ...style }}>
-        <div className="relative">
-          <div
-            className="usertour-widget-resource-center-launcher"
-            style={{
-              height: launcher?.height ?? RC_DEFAULTS.launcherHeight,
-              borderRadius: launcher?.borderRadius,
-              ...frameStyle,
-            }}
-          >
-            <ResourceCenterTrigger
-              onClick={onClick}
-              badgeCount={badgeCount}
-              launcherText={launcherText}
-            />
-          </div>
-        </div>
+      <div
+        ref={ref}
+        className="usertour-widget-resource-center-launcher"
+        style={{
+          zIndex,
+          ...positionStyle,
+          height: launcher?.height ?? RC_DEFAULTS.launcherHeight,
+          borderRadius: launcher?.borderRadius,
+          ...style,
+          ...frameStyle,
+        }}
+      >
+        <ResourceCenterTrigger
+          onClick={onClick}
+          badgeCount={badgeCount}
+          launcherText={launcherText}
+        />
       </div>
     );
   },
@@ -84,27 +84,25 @@ export const ResourceCenterLauncherFrame = forwardRef<
   const width = launcherRect?.width ? `${launcherRect.width}px` : undefined;
 
   return (
-    <div className="relative" style={{ zIndex, ...style }}>
-      <div className="relative">
-        <Frame
-          assets={assets}
-          ref={ref}
-          className="usertour-widget-resource-center-launcher"
-          defaultStyle={{
-            width,
-            height: launcher?.height ?? RC_DEFAULTS.launcherHeight,
-            borderRadius: launcher?.borderRadius,
-          }}
-        >
-          <ResourceCenterLauncherInFrame
-            globalStyle={globalStyle}
-            onSizeChange={setLauncherRect}
-            badgeCount={badgeCount}
-            launcherText={launcherText}
-          />
-        </Frame>
-      </div>
-    </div>
+    <Frame
+      assets={assets}
+      ref={ref}
+      className="usertour-widget-resource-center-launcher"
+      defaultStyle={{
+        zIndex,
+        ...style,
+        width,
+        height: launcher?.height ?? RC_DEFAULTS.launcherHeight,
+        borderRadius: launcher?.borderRadius,
+      }}
+    >
+      <ResourceCenterLauncherInFrame
+        globalStyle={globalStyle}
+        onSizeChange={setLauncherRect}
+        badgeCount={badgeCount}
+        launcherText={launcherText}
+      />
+    </Frame>
   );
 });
 

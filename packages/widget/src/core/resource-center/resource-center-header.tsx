@@ -50,13 +50,17 @@ ResourceCenterCloseButton.displayName = 'ResourceCenterCloseButton';
 
 export const ResourceCenterHeader = memo(({ text }: { text: string }) => {
   return (
-    <div className="usertour-widget-resource-center-header bg-sdk-resource-center-header-background shrink-0">
-      <div className="usertour-widget-resource-center-header-content px-3 py-2 flex items-center">
-        <div className="text-sdk-resource-center-header-foreground font-semibold text-base flex-1">
-          {text}
-        </div>
-        <ResourceCenterCloseButton />
+    <div
+      className={cn(
+        'order-1 shrink-0 px-3 py-2 flex items-center bg-sdk-resource-center-header-background',
+        'transition-opacity duration-sdk-resource-center',
+        'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
+      )}
+    >
+      <div className="text-sdk-resource-center-header-foreground font-semibold text-base flex-1">
+        {text}
       </div>
+      <ResourceCenterCloseButton />
     </div>
   );
 });
