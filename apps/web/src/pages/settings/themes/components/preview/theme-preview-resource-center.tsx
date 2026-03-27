@@ -6,8 +6,8 @@ import {
   ChecklistRoot,
   ContentEditorSerialize,
   ResourceCenterRoot,
-  ResourceCenterContainer,
-  ResourceCenter,
+  ResourceCenterStyleProvider,
+  ResourceCenterPanel,
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
@@ -218,9 +218,11 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
         showMadeWith={shouldShowMadeWith}
         checklistSlot={previewChecklistSlot}
       >
-        <ResourceCenterContainer>
-          <ResourceCenter badgeCount={2}>{previewContent}</ResourceCenter>
-        </ResourceCenterContainer>
+        <ResourceCenterStyleProvider>
+          <ResourceCenterPanel mode="dom" badgeCount={2}>
+            {previewContent}
+          </ResourceCenterPanel>
+        </ResourceCenterStyleProvider>
       </ResourceCenterRoot>
     </div>
   );

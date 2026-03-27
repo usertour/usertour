@@ -6,7 +6,7 @@ import {
   ChecklistPopperContentBody,
   ContentEditorSerialize,
   LinkDecoratorContext,
-  ResourceCenterFrame,
+  ResourceCenterPanel,
   ResourceCenterRoot,
   ResourceCenterHeader,
   ResourceCenterBody,
@@ -150,13 +150,13 @@ export const ResourceCenterWidget = ({ resourceCenter, checklists }: ResourceCen
         showMadeWith={!removeBranding}
         checklistSlot={checklistSlot}
       >
-        <ResourceCenterFrame launcherText={launcherText} badgeCount={badgeCount}>
+        <ResourceCenterPanel mode="iframe" launcherText={launcherText} badgeCount={badgeCount}>
           <ResourceCenterHeader text={resourceCenterData.headerText} />
           <ResourceCenterBody>
             <ResourceCenterBlocks />
           </ResourceCenterBody>
           <ResourceCenterFooter />
-        </ResourceCenterFrame>
+        </ResourceCenterPanel>
       </ResourceCenterRoot>
     </LinkDecoratorContext.Provider>
   );

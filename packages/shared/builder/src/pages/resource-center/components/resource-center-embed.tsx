@@ -8,8 +8,8 @@ import {
   ChecklistRoot,
   ContentEditorSerialize,
   ResourceCenterRoot,
-  ResourceCenterContainer,
-  ResourceCenterStatic,
+  ResourceCenterStyleProvider,
+  ResourceCenterPanel,
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
@@ -203,15 +203,15 @@ export const ResourceCenterEmbed = () => {
       showMadeWith={shouldShowMadeWith}
       checklistSlot={previewChecklistSlot}
     >
-      <ResourceCenterContainer>
-        <ResourceCenterStatic>
+      <ResourceCenterStyleProvider>
+        <ResourceCenterPanel mode="preview">
           <ResourceCenterHeader text={localData.headerText} />
           <ResourceCenterBody>
             <ResourceCenterBlocks messageEditSlots={messageEditSlots} />
           </ResourceCenterBody>
           <ResourceCenterFooter />
-        </ResourceCenterStatic>
-      </ResourceCenterContainer>
+        </ResourceCenterPanel>
+      </ResourceCenterStyleProvider>
     </ResourceCenterRoot>
   );
 };
