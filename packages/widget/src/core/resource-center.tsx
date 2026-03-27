@@ -16,6 +16,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useSettingsStyles } from './hooks/use-settings-styles';
@@ -69,6 +70,7 @@ interface ResourceCenterRootContextValue {
   themeSetting: ThemeTypesSetting;
   data: ResourceCenterData;
   isOpen: boolean;
+  isAnimating: boolean;
   handleExpandedChange: (expanded: boolean) => Promise<void>;
   zIndex: number;
   userAttributes?: UserTourTypes.Attributes;
@@ -120,13 +122,32 @@ const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
 
   const isOpen = expanded;
+  const [isAnimating, setIsAnimating] = useState(false);
+  const animationTimerRef = useRef<number | null>(null);
 
   const handleExpandedChange = useCallback(
     async (open: boolean) => {
+      const duration = themeSetting.resourceCenter?.transitionDuration ?? 450;
+
+      setIsAnimating(true);
+      if (animationTimerRef.current != null) {
+        window.clearTimeout(animationTimerRef.current);
+      }
       await onExpandedChange?.(open);
+      animationTimerRef.current = window.setTimeout(() => {
+        setIsAnimating(false);
+      }, duration);
     },
-    [onExpandedChange],
+    [onExpandedChange, themeSetting.resourceCenter?.transitionDuration],
   );
+
+  useEffect(() => {
+    return () => {
+      if (animationTimerRef.current != null) {
+        window.clearTimeout(animationTimerRef.current);
+      }
+    };
+  }, []);
 
   const contextValue = useMemo(
     () => ({
@@ -134,6 +155,7 @@ const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       themeSetting,
       data,
       isOpen,
+      isAnimating,
       handleExpandedChange,
       zIndex,
       userAttributes,
@@ -146,6 +168,7 @@ const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       themeSetting,
       data,
       isOpen,
+      isAnimating,
       handleExpandedChange,
       zIndex,
       userAttributes,
@@ -308,6 +331,17 @@ const ResourceCenterLauncherContent = forwardRef<
           transitionDuration: 'var(--usertour-resource-center-transition-duration)',
         }}
       >
+        {badgeCount > 0 && (
+          <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-sdk-resource-center-launcher-foreground/10 px-2 text-sm font-bold text-sdk-resource-center-launcher-foreground">
+            {badgeCount}
+          </span>
+        )}
+        {resolvedText && (
+          <span className="text-sm font-semibold whitespace-nowrap">{resolvedText}</span>
+        )}
+        {(badgeCount > 0 || resolvedText) && (
+          <span className="h-6 w-px bg-sdk-resource-center-launcher-foreground/20" />
+        )}
         <span className="flex items-center justify-center">
           <ResourceCenterLauncherIcon
             iconType={launcher?.iconType}
@@ -315,9 +349,6 @@ const ResourceCenterLauncherContent = forwardRef<
             imageHeight={launcher?.imageHeight}
           />
         </span>
-        {resolvedText && (
-          <span className="text-sm font-semibold whitespace-nowrap">{resolvedText}</span>
-        )}
       </div>
     </Button>
   );
@@ -362,7 +393,6 @@ const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterLauncher
               launcherText={launcherText}
             />
           </div>
-          <ResourceCenterBadge count={badgeCount ?? 0} />
         </div>
       </div>
     );
@@ -424,7 +454,6 @@ const ResourceCenterLauncherFrame = forwardRef<HTMLIFrameElement, ResourceCenter
               launcherText={launcherText}
             />
           </Frame>
-          <ResourceCenterBadge count={badgeCount ?? 0} />
         </div>
       </div>
     );
@@ -478,80 +507,64 @@ interface ResourceCenterProps {
 interface ResourceCenterViewportProps {
   children: React.ReactNode;
   launcherText?: string;
+  isAnimating?: boolean;
 }
 
 const getResourceCenterFrameClassName = (isOpen: boolean, isAnimating: boolean) =>
   cn(
     'usertour-widget-resource-center-frame',
-    'usertour-widget-resource-center-frame--animating',
+    isAnimating && 'usertour-widget-resource-center-frame--animating',
     isOpen
       ? 'usertour-widget-resource-center-frame--open'
       : 'usertour-widget-resource-center-frame--closed',
-    isAnimating && isOpen && 'usertour-widget-resource-center-frame--opening',
-    isAnimating && !isOpen && 'usertour-widget-resource-center-frame--closing',
   );
 
-const useResourceCenterAnimating = (isOpen: boolean, transitionDuration: number) => {
-  const [isAnimating, setIsAnimating] = useState(false);
+const ResourceCenterFrameRoot = memo(
+  ({ children, launcherText, isAnimating = false }: ResourceCenterViewportProps) => {
+    const { isOpen, handleExpandedChange } = useResourceCenterRootContext();
+    const [launcherButtonContainer, setLauncherButtonContainer] = useState<HTMLDivElement | null>(
+      null,
+    );
+    const [panelContainer, setPanelContainer] = useState<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    setIsAnimating(true);
+    useEffect(() => {
+      const activeElement = document.activeElement;
 
-    const timer = window.setTimeout(() => {
-      setIsAnimating(false);
-    }, transitionDuration);
+      if (
+        isOpen &&
+        launcherButtonContainer &&
+        activeElement instanceof HTMLElement &&
+        launcherButtonContainer.contains(activeElement)
+      ) {
+        activeElement.blur();
+      }
 
-    return () => window.clearTimeout(timer);
-  }, [isOpen, transitionDuration]);
+      if (
+        !isOpen &&
+        panelContainer &&
+        activeElement instanceof HTMLElement &&
+        panelContainer.contains(activeElement)
+      ) {
+        activeElement.blur();
+      }
+    }, [isOpen, launcherButtonContainer, panelContainer]);
 
-  return isAnimating;
-};
-
-const ResourceCenterFrameRoot = memo(({ children, launcherText }: ResourceCenterViewportProps) => {
-  const { isOpen, handleExpandedChange, themeSetting } = useResourceCenterRootContext();
-  const [launcherContainer, setLauncherContainer] = useState<HTMLDivElement | null>(null);
-  const [panelContainer, setPanelContainer] = useState<HTMLDivElement | null>(null);
-  const transitionDuration = themeSetting.resourceCenter?.transitionDuration ?? 450;
-  const isAnimating = useResourceCenterAnimating(isOpen, transitionDuration);
-
-  useEffect(() => {
-    const activeElement = document.activeElement;
-
-    if (
-      isOpen &&
-      launcherContainer &&
-      activeElement instanceof HTMLElement &&
-      launcherContainer.contains(activeElement)
-    ) {
-      activeElement.blur();
-    }
-
-    if (
-      !isOpen &&
-      panelContainer &&
-      activeElement instanceof HTMLElement &&
-      panelContainer.contains(activeElement)
-    ) {
-      activeElement.blur();
-    }
-  }, [isOpen, launcherContainer, panelContainer]);
-
-  return (
-    <div
-      className={cn(
-        'usertour-widget-resource-center-frame-root',
-        isOpen
-          ? 'usertour-widget-resource-center-frame-root--open'
-          : 'usertour-widget-resource-center-frame-root--closed',
-        isAnimating && 'usertour-widget-resource-center-frame-root--animating',
-        isAnimating && isOpen && 'usertour-widget-resource-center-frame-root--opening',
-        isAnimating && !isOpen && 'usertour-widget-resource-center-frame-root--closing',
-        'relative h-full w-full overflow-hidden usertour-root text-sdk-foreground',
-      )}
-    >
-      <ResourceCenterLauncherArea launcherRef={setLauncherContainer}>
-        <div className="usertour-widget-resource-center-launcher-container bg-sdk-resource-center-launcher-background">
-          <div className="usertour-widget-resource-center-launcher">
+    return (
+      <div
+        className={cn(
+          'usertour-widget-resource-center-frame-root',
+          isAnimating && 'usertour-widget-resource-center-frame-root--animating',
+          isOpen
+            ? 'usertour-widget-resource-center-frame-root--open'
+            : 'usertour-widget-resource-center-frame-root--closed',
+          'relative h-full w-full overflow-hidden usertour-root text-sdk-foreground',
+        )}
+      >
+        <div
+          ref={setLauncherButtonContainer}
+          className="usertour-widget-resource-center-launcher-container bg-sdk-resource-center-launcher-background"
+        >
+          <div className="usertour-widget-resource-center-launcher-button-wrap">
             <ResourceCenterLauncherContent
               onClick={async () => await handleExpandedChange(true)}
               launcherText={launcherText}
@@ -559,55 +572,15 @@ const ResourceCenterFrameRoot = memo(({ children, launcherText }: ResourceCenter
             />
           </div>
         </div>
-      </ResourceCenterLauncherArea>
-      <ResourceCenterPanelArea panelRef={setPanelContainer}>{children}</ResourceCenterPanelArea>
-    </div>
-  );
-});
+        <div ref={setPanelContainer} className="contents">
+          {children}
+        </div>
+      </div>
+    );
+  },
+);
 
 ResourceCenterFrameRoot.displayName = 'ResourceCenterFrameRoot';
-
-const ResourceCenterLauncherArea = memo(
-  ({
-    children,
-    launcherRef,
-  }: {
-    children: React.ReactNode;
-    launcherRef?: (el: HTMLDivElement | null) => void;
-  }) => {
-    return (
-      <div
-        ref={launcherRef}
-        className="usertour-widget-resource-center-launcher-area flex min-h-0 min-w-0 flex-1"
-      >
-        {children}
-      </div>
-    );
-  },
-);
-
-ResourceCenterLauncherArea.displayName = 'ResourceCenterLauncherArea';
-
-const ResourceCenterPanelArea = memo(
-  ({
-    children,
-    panelRef,
-  }: {
-    children: React.ReactNode;
-    panelRef?: (el: HTMLDivElement | null) => void;
-  }) => {
-    return (
-      <div
-        ref={panelRef}
-        className="usertour-widget-resource-center-panel-area flex min-h-0 min-w-0 flex-1 flex-col"
-      >
-        {children}
-      </div>
-    );
-  },
-);
-
-ResourceCenterPanelArea.displayName = 'ResourceCenterPanelArea';
 
 const ResourceCenter = forwardRef<
   HTMLDivElement,
@@ -621,15 +594,13 @@ const ResourceCenter = forwardRef<
     closedWidthOverride,
     ...restProps
   } = props;
-  const { themeSetting, zIndex, isOpen } = useResourceCenterRootContext();
+  const { themeSetting, zIndex, isOpen, isAnimating } = useResourceCenterRootContext();
   const [launcherMeasureRef, setLauncherMeasureRef] = useState<HTMLDivElement | null>(null);
   const [panelMeasureRef, setPanelMeasureRef] = useState<HTMLDivElement | null>(null);
   const launcherRect = useSize(launcherMeasureRef);
   const panelRect = useSize(panelMeasureRef);
   const rc = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
-  const transitionDuration = themeSetting.resourceCenter?.transitionDuration ?? 450;
-  const isAnimating = useResourceCenterAnimating(isOpen, transitionDuration);
   const style = computePositionStyle(
     resourceCenterPlacementToPosition(rc?.placement ?? 'bottom-right'),
     rc?.offsetX ?? 20,
@@ -680,16 +651,15 @@ const ResourceCenter = forwardRef<
           style={{
             width: isOpen ? openWidth : closedWidth,
             height: isOpen ? openHeight : `${closedHeight}px`,
-            borderRadius: isOpen
-              ? 'var(--usertour-widget-popper-border-radius)'
-              : launcher?.borderRadius,
             borderWidth: isOpen ? 'var(--usertour-widget-popper-border-width)' : '0px',
             borderStyle: isOpen ? 'solid' : 'none',
             borderColor: isOpen ? 'var(--usertour-widget-popper-border-color)' : 'transparent',
           }}
           role={isOpen ? 'dialog' : undefined}
         >
-          <ResourceCenterFrameRoot launcherText={launcherText}>{children}</ResourceCenterFrameRoot>
+          <ResourceCenterFrameRoot launcherText={launcherText} isAnimating={isAnimating}>
+            {children}
+          </ResourceCenterFrameRoot>
         </div>
       </div>
     </ResourceCenterAnchor>
@@ -710,15 +680,13 @@ const ResourceCenterFrame = forwardRef<
 >((props, ref) => {
   const { children, assets, badgeCount, launcherText, openHeightOverride, closedWidthOverride } =
     props;
-  const { globalStyle, themeSetting, zIndex, isOpen } = useResourceCenterRootContext();
+  const { globalStyle, themeSetting, zIndex, isOpen, isAnimating } = useResourceCenterRootContext();
   const [launcherMeasureRef, setLauncherMeasureRef] = useState<HTMLDivElement | null>(null);
   const [panelMeasureRef, setPanelMeasureRef] = useState<HTMLDivElement | null>(null);
   const launcherRect = useSize(launcherMeasureRef);
   const panelRect = useSize(panelMeasureRef);
   const rc = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
-  const transitionDuration = themeSetting.resourceCenter?.transitionDuration ?? 450;
-  const isAnimating = useResourceCenterAnimating(isOpen, transitionDuration);
   const style = computePositionStyle(
     resourceCenterPlacementToPosition(rc?.placement ?? 'bottom-right'),
     rc?.offsetX ?? 20,
@@ -769,15 +737,16 @@ const ResourceCenterFrame = forwardRef<
           defaultStyle={{
             width: isOpen ? openWidth : closedWidth,
             height: isOpen ? openHeight : `${closedHeight}px`,
-            borderRadius: isOpen
-              ? 'var(--usertour-widget-popper-border-radius)'
-              : launcher?.borderRadius,
             borderWidth: isOpen ? 'var(--usertour-widget-popper-border-width)' : '0px',
             borderStyle: isOpen ? 'solid' : 'none',
             borderColor: isOpen ? 'var(--usertour-widget-popper-border-color)' : 'transparent',
           }}
         >
-          <ResourceCenterFrameContent globalStyle={globalStyle} launcherText={launcherText}>
+          <ResourceCenterFrameContent
+            globalStyle={globalStyle}
+            launcherText={launcherText}
+            isAnimating={isAnimating}
+          >
             {children}
           </ResourceCenterFrameContent>
         </Frame>
@@ -792,11 +761,12 @@ interface ResourceCenterFrameContentProps {
   globalStyle?: string;
   children: React.ReactNode;
   launcherText?: string;
+  isAnimating?: boolean;
 }
 
 const ResourceCenterFrameContent = forwardRef<HTMLDivElement, ResourceCenterFrameContentProps>(
   (props, _) => {
-    const { globalStyle, launcherText, children } = props;
+    const { globalStyle, launcherText, children, isAnimating = false } = props;
     const { document } = useFrame();
 
     useEffect(() => {
@@ -807,7 +777,7 @@ const ResourceCenterFrameContent = forwardRef<HTMLDivElement, ResourceCenterFram
     }, [globalStyle, document]);
 
     return (
-      <ResourceCenterFrameRoot launcherText={launcherText}>
+      <ResourceCenterFrameRoot launcherText={launcherText} isAnimating={isAnimating}>
         <ResourceCenterContent>{children}</ResourceCenterContent>
       </ResourceCenterFrameRoot>
     );
@@ -832,15 +802,13 @@ const ResourceCenterStatic = forwardRef<
     closedWidthOverride,
     ...restProps
   } = props;
-  const { themeSetting, isOpen } = useResourceCenterRootContext();
+  const { themeSetting, isOpen, isAnimating } = useResourceCenterRootContext();
   const [panelMeasureRef, setPanelMeasureRef] = useState<HTMLDivElement | null>(null);
   const [launcherMeasureRef, setLauncherMeasureRef] = useState<HTMLDivElement | null>(null);
   const panelMeasureRect = useSize(panelMeasureRef);
   const launcherMeasureRect = useSize(launcherMeasureRef);
   const rc = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
-  const transitionDuration = themeSetting.resourceCenter?.transitionDuration ?? 450;
-  const isAnimating = useResourceCenterAnimating(isOpen, transitionDuration);
   const closedHeight = launcher?.height ?? 60;
   const openWidth = `${rc?.normalWidth ?? 360}px`;
 
@@ -876,16 +844,15 @@ const ResourceCenterStatic = forwardRef<
             height: isOpen
               ? `${openHeightOverride ?? panelMeasureRect?.height ?? closedHeight}px`
               : `${closedHeight}px`,
-            borderRadius: isOpen
-              ? 'var(--usertour-widget-popper-border-radius)'
-              : launcher?.borderRadius,
             borderWidth: isOpen ? 'var(--usertour-widget-popper-border-width)' : '0px',
             borderStyle: isOpen ? 'solid' : 'none',
             borderColor: isOpen ? 'var(--usertour-widget-popper-border-color)' : 'transparent',
           }}
           role={isOpen ? 'dialog' : undefined}
         >
-          <ResourceCenterFrameRoot launcherText={launcherText}>{children}</ResourceCenterFrameRoot>
+          <ResourceCenterFrameRoot launcherText={launcherText} isAnimating={isAnimating}>
+            {children}
+          </ResourceCenterFrameRoot>
         </div>
       </div>
     </ResourceCenterAnchor>
@@ -903,7 +870,7 @@ const ResourceCenterContent = forwardRef<HTMLDivElement, { children?: React.Reac
     return (
       <div
         ref={ref}
-        className="usertour-widget-resource-center-panel-content min-h-0 flex flex-col bg-sdk-background text-sdk-foreground"
+        className="usertour-widget-resource-center-panel-content min-h-0 flex flex-col text-sdk-foreground"
       >
         {children}
       </div>
@@ -918,11 +885,13 @@ ResourceCenterContent.displayName = 'ResourceCenterContent';
 
 const ResourceCenterHeader = memo(({ text }: { text: string }) => {
   return (
-    <div className="usertour-widget-resource-center-header bg-sdk-resource-center-header-background px-3 py-2 flex items-center shrink-0">
-      <div className="text-sdk-resource-center-header-foreground font-semibold text-base flex-1">
-        {text}
+    <div className="usertour-widget-resource-center-header bg-sdk-resource-center-header-background shrink-0">
+      <div className="usertour-widget-resource-center-header-content px-3 py-2 flex items-center">
+        <div className="text-sdk-resource-center-header-foreground font-semibold text-base flex-1">
+          {text}
+        </div>
+        <ResourceCenterDropdown />
       </div>
-      <ResourceCenterDropdown />
     </div>
   );
 });
@@ -1035,12 +1004,12 @@ const ResourceCenterBody = memo(({ children }: { children: React.ReactNode }) =>
 
   return (
     <div
-      className="usertour-widget-resource-center-body flex-1 overflow-y-auto bg-sdk-background"
+      className="usertour-widget-resource-center-body min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background"
       style={{
         maxHeight: rc?.maxHeight ? `${rc.maxHeight}px` : undefined,
       }}
     >
-      {children}
+      <div className="usertour-widget-resource-center-body-content">{children}</div>
     </div>
   );
 });
@@ -1102,8 +1071,8 @@ const ResourceCenterFooter = memo(() => {
   const { showMadeWith } = useResourceCenterRootContext();
   if (!showMadeWith) return null;
   return (
-    <div className="usertour-widget-resource-center-footer bg-sdk-background h-4">
-      <div className="absolute bottom-2 left-3 text-xs opacity-50 hover:opacity-75">
+    <div className="usertour-widget-resource-center-footer bg-sdk-background">
+      <div className="usertour-widget-resource-center-footer-content text-xs opacity-50 hover:opacity-75">
         <a
           href="https://www.usertour.io?utm_source=made-with-usertour&utm_medium=link&utm_campaign=made-with-usertour-widget"
           className="!text-sdk-foreground !no-underline flex flex-row space-x-0.5 items-center !font-sans"
