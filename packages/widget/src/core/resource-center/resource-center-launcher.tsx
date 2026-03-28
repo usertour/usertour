@@ -34,7 +34,7 @@ export const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterL
     return (
       <div
         ref={ref}
-        className="usertour-widget-resource-center-launcher"
+        className="usertour-widget-resource-center-launcher usertour-widget-shadow"
         style={{
           zIndex,
           ...positionStyle,
@@ -87,7 +87,7 @@ export const ResourceCenterLauncherFrame = forwardRef<
     <Frame
       assets={assets}
       ref={ref}
-      className="usertour-widget-resource-center-launcher"
+      className="usertour-widget-resource-center-launcher usertour-widget-shadow"
       defaultStyle={{
         zIndex,
         ...style,

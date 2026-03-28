@@ -248,7 +248,7 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
   return (
     <>
       <div
-        className="usertour-widget-popper"
+        className="usertour-widget-popper usertour-widget-shadow"
         ref={finalComposedRefs}
         data-usertour-popper-content-wrapper=""
         data-usertour-popper-data-placement={placedSide}
@@ -332,7 +332,7 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
           />
         )}
         <div
-          className="usertour-widget-popper"
+          className="usertour-widget-popper usertour-widget-shadow"
           ref={composedRefs}
           data-usertour-popper-content-wrapper=""
           style={{
@@ -462,7 +462,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
 
     return (
       <div
-        className={cn('usertour-widget-popper', className)}
+        className={cn('usertour-widget-popper usertour-widget-shadow', className)}
         dir="ltr"
         style={customStyle}
         ref={forwardedRef}

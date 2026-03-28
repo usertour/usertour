@@ -31,19 +31,22 @@
 .usertour-widget-chrome > * {
   animation: usertour-widget-chrome-visible 200ms linear normal;
 }
+.usertour-widget-shadow {
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15))
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+_::-webkit-full-page-media,
+_:future,
+:root .usertour-widget-shadow {
+  filter: drop-shadow(0 2px 9px rgba(0, 0, 0, 0.18));
+}
 
 .usertour-widget-popper {
   pointer-events: none;
   top: 0;
   left: 0;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
   display: flex;
   flex-direction: column;
-}
-_::-webkit-full-page-media,
-_:future,
-:root .usertour-widget-popper {
-  filter: drop-shadow(0 2px 9px rgba(0, 0, 0, 0.18));
 }
 .usertour-widget-popper-outline {
   position: relative;
@@ -252,33 +255,17 @@ _:future,
 }
 
 /* Resource Center */
-.usertour-widget-resource-center-anchor {
-  position: relative;
-}
-.usertour-widget-resource-center-frame-wrapper {
+.usertour-widget-resource-center {
   position: relative;
 }
 .usertour-widget-resource-center-frame {
   overflow: hidden;
   display: block;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15))
-    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 .usertour-widget-resource-center-launcher {
   overflow: hidden;
   display: block;
   animation: usertour-widget-chrome-visible 200ms linear normal;
-}
-_::-webkit-full-page-media,
-_:future,
-:root .usertour-widget-resource-center-frame {
-  filter: drop-shadow(0 2px 9px rgba(0, 0, 0, 0.18));
-}
-_::-webkit-full-page-media,
-_:future,
-:root .usertour-widget-resource-center-launcher {
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15))
-    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 .usertour-widget-resource-center-frame--animating {
   transition: width var(--usertour-resource-center-transition-duration),

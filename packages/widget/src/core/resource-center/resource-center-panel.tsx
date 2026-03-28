@@ -15,7 +15,7 @@ import { ResourceCenterFrameRoot } from './resource-center-frame-root';
 
 const getFrameClassName = (isOpen: boolean, isAnimating: boolean) =>
   cn(
-    'usertour-widget-resource-center-frame',
+    'usertour-widget-resource-center-frame usertour-widget-shadow',
     isAnimating && 'usertour-widget-resource-center-frame--animating',
     isOpen
       ? 'usertour-widget-resource-center-frame--open'
@@ -160,41 +160,35 @@ export const ResourceCenterPanel = forwardRef<
       anchor={!isOpen ? <ResourceCenterBadge count={badgeCount ?? 0} /> : undefined}
       {...restProps}
     >
-      <div className="usertour-widget-resource-center-frame-wrapper">
-        {mode === 'iframe' ? (
-          <Frame
-            assets={assets}
-            ref={ref as React.Ref<HTMLIFrameElement>}
-            className={frameClassName}
-            defaultStyle={frameSizeStyle}
+      {mode === 'iframe' ? (
+        <Frame
+          assets={assets}
+          ref={ref as React.Ref<HTMLIFrameElement>}
+          className={frameClassName}
+          defaultStyle={frameSizeStyle}
+        >
+          <IFrameContent
+            globalStyle={globalStyle}
+            launcherText={launcherText}
+            isAnimating={isAnimating}
+            onLauncherSizeChange={onLauncherSizeChange}
+            onContentSizeChange={onContentSizeChange}
           >
-            <IFrameContent
-              globalStyle={globalStyle}
-              launcherText={launcherText}
-              isAnimating={isAnimating}
-              onLauncherSizeChange={onLauncherSizeChange}
-              onContentSizeChange={onContentSizeChange}
-            >
-              {children}
-            </IFrameContent>
-          </Frame>
-        ) : (
-          <div
-            className={frameClassName}
-            style={frameSizeStyle}
-            role={isOpen ? 'dialog' : undefined}
+            {children}
+          </IFrameContent>
+        </Frame>
+      ) : (
+        <div className={frameClassName} style={frameSizeStyle} role={isOpen ? 'dialog' : undefined}>
+          <ResourceCenterFrameRoot
+            launcherText={launcherText}
+            isAnimating={isAnimating}
+            onLauncherSizeChange={onLauncherSizeChange}
+            onContentSizeChange={onContentSizeChange}
           >
-            <ResourceCenterFrameRoot
-              launcherText={launcherText}
-              isAnimating={isAnimating}
-              onLauncherSizeChange={onLauncherSizeChange}
-              onContentSizeChange={onContentSizeChange}
-            >
-              {children}
-            </ResourceCenterFrameRoot>
-          </div>
-        )}
-      </div>
+            {children}
+          </ResourceCenterFrameRoot>
+        </div>
+      )}
     </ResourceCenterAnchor>
   );
 });

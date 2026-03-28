@@ -1,3 +1,4 @@
+import { cn } from '@usertour-packages/tailwind';
 import { forwardRef, type HTMLAttributes } from 'react';
 
 interface ResourceCenterAnchorProps extends HTMLAttributes<HTMLDivElement> {
@@ -7,11 +8,7 @@ interface ResourceCenterAnchorProps extends HTMLAttributes<HTMLDivElement> {
 export const ResourceCenterAnchor = forwardRef<HTMLDivElement, ResourceCenterAnchorProps>(
   ({ anchor, children, className, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={`usertour-widget-chrome usertour-widget-resource-center-anchor ${className ?? ''}`}
-        {...props}
-      >
+      <div ref={ref} className={cn('usertour-widget-resource-center', className)} {...props}>
         {children}
         {anchor}
       </div>
