@@ -10,6 +10,8 @@
   "scripts": {
     "prebuild": "rm -rf dist",
     "build": "prisma generate && nest build",
+    "backup:db": "node --env-file=.env scripts/backup-db.mjs",
+    "backup:db:prod": "node scripts/backup-db.mjs",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "dev": "nest start --watch",
