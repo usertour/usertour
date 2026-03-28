@@ -15,11 +15,7 @@ export { ResourceCenterPanel } from './resource-center-panel';
 export { ResourceCenterFrameRoot } from './resource-center-frame-root';
 
 // Trigger & related (was LauncherContent)
-export {
-  ResourceCenterTrigger,
-  ResourceCenterLauncherIcon,
-  ResourceCenterBadge,
-} from './resource-center-trigger';
+export { ResourceCenterTrigger, ResourceCenterLauncherIcon } from './resource-center-trigger';
 
 // Standalone launchers
 export { ResourceCenterLauncher, ResourceCenterLauncherFrame } from './resource-center-launcher';

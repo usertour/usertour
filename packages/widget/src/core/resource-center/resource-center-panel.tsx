@@ -6,8 +6,9 @@ import { useResourceCenterContext } from './context';
 import { RC_DEFAULTS } from './constants';
 import { useResourceCenterPositionStyle } from './hooks/use-resource-center-position-style';
 import { ResourceCenterAnchor } from './resource-center-anchor';
-import { ResourceCenterBadge } from './resource-center-trigger';
 import { ResourceCenterFrameRoot } from './resource-center-frame-root';
+import { ResourceCenterBadge } from './resource-center-trigger';
+import { useFrameGlobalStyle } from './hooks/use-frame-global-style';
 
 // ============================================================================
 // Frame class name helper (outside iframe — uses CSS class)
@@ -72,6 +73,21 @@ const IFrameContent = ({
       {children}
     </ResourceCenterFrameRoot>
   );
+};
+
+// ============================================================================
+// Badge iframe inner content
+// ============================================================================
+
+const BadgeFrameContent = ({
+  globalStyle,
+  count,
+}: {
+  globalStyle?: string;
+  count: number;
+}) => {
+  useFrameGlobalStyle(globalStyle);
+  return <ResourceCenterBadge count={count} />;
 };
 
 // ============================================================================
@@ -154,40 +170,57 @@ export const ResourceCenterPanel = forwardRef<
   const frameClassName = getFrameClassName(isOpen, isAnimating);
 
   return (
-    <ResourceCenterAnchor
-      ref={ref as React.Ref<HTMLDivElement>}
-      style={outerStyle}
-      anchor={!isOpen ? <ResourceCenterBadge count={badgeCount ?? 0} /> : undefined}
-      {...restProps}
-    >
+    <ResourceCenterAnchor ref={ref as React.Ref<HTMLDivElement>} style={outerStyle} {...restProps}>
       {mode === 'iframe' ? (
-        <Frame
-          assets={assets}
-          ref={ref as React.Ref<HTMLIFrameElement>}
-          className={frameClassName}
-          defaultStyle={frameSizeStyle}
-        >
-          <IFrameContent
-            globalStyle={globalStyle}
-            launcherText={launcherText}
-            isAnimating={isAnimating}
-            onLauncherSizeChange={onLauncherSizeChange}
-            onContentSizeChange={onContentSizeChange}
+        <>
+          <Frame
+            assets={assets}
+            ref={ref as React.Ref<HTMLIFrameElement>}
+            className={frameClassName}
+            defaultStyle={frameSizeStyle}
           >
-            {children}
-          </IFrameContent>
-        </Frame>
+            <IFrameContent
+              globalStyle={globalStyle}
+              launcherText={launcherText}
+              isAnimating={isAnimating}
+              onLauncherSizeChange={onLauncherSizeChange}
+              onContentSizeChange={onContentSizeChange}
+            >
+              {children}
+            </IFrameContent>
+          </Frame>
+          {!isOpen && (
+            <Frame
+              assets={assets}
+              className="usertour-widget-resource-center-launcher-unread-badge usertour-widget-shadow"
+              defaultStyle={{ border: 'none' }}
+            >
+              <BadgeFrameContent globalStyle={globalStyle} count={badgeCount ?? 0} />
+            </Frame>
+          )}
+        </>
       ) : (
-        <div className={frameClassName} style={frameSizeStyle} role={isOpen ? 'dialog' : undefined}>
-          <ResourceCenterFrameRoot
-            launcherText={launcherText}
-            isAnimating={isAnimating}
-            onLauncherSizeChange={onLauncherSizeChange}
-            onContentSizeChange={onContentSizeChange}
+        <>
+          <div
+            className={frameClassName}
+            style={frameSizeStyle}
+            role={isOpen ? 'dialog' : undefined}
           >
-            {children}
-          </ResourceCenterFrameRoot>
-        </div>
+            <ResourceCenterFrameRoot
+              launcherText={launcherText}
+              isAnimating={isAnimating}
+              onLauncherSizeChange={onLauncherSizeChange}
+              onContentSizeChange={onContentSizeChange}
+            >
+              {children}
+            </ResourceCenterFrameRoot>
+          </div>
+          {!isOpen && (
+            <div className="usertour-widget-resource-center-launcher-unread-badge usertour-widget-shadow">
+              <ResourceCenterBadge count={badgeCount ?? 0} />
+            </div>
+          )}
+        </>
       )}
     </ResourceCenterAnchor>
   );

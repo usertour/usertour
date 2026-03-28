@@ -75,7 +75,7 @@ _:future,
   overflow: hidden;
   border-radius: calc(
     var(--usertour-widget-popper-border-radius) -
-    var(--usertour-widget-popper-border-width)
+      var(--usertour-widget-popper-border-width)
   );
 }
 .usertour-widget-popper-frame-root {
@@ -96,7 +96,10 @@ _:future,
   right: 0;
   bottom: 0;
   left: 0;
-  background-color: rgba(var(--usertour-backdrop-color-rgb), var(--usertour-backdrop-opacity));
+  background-color: rgba(
+    var(--usertour-backdrop-color-rgb),
+    var(--usertour-backdrop-opacity)
+  );
   visibility: hidden;
 }
 .usertour-widget-backdrop--visible {
@@ -105,10 +108,15 @@ _:future,
 .usertour-widget-popper-backdrop {
   position: fixed;
   border-radius: 2px;
-  box-shadow: var(--usertour-backdrop-highlight-inset, ) 0 0 var(--usertour-backdrop-highlight-radius)
-    var(--usertour-backdrop-highlight-spread)
-    rgba(var(--usertour-backdrop-highlight-color-rgb), var(--usertour-backdrop-highlight-opacity)),
-    0 0 0 1000vw rgba(var(--usertour-backdrop-color-rgb), var(--usertour-backdrop-opacity));
+  box-shadow: var(--usertour-backdrop-highlight-inset) 0 0
+      var(--usertour-backdrop-highlight-radius)
+      var(--usertour-backdrop-highlight-spread)
+      rgba(
+        var(--usertour-backdrop-highlight-color-rgb),
+        var(--usertour-backdrop-highlight-opacity)
+      ),
+    0 0 0 1000vw
+      rgba(var(--usertour-backdrop-color-rgb), var(--usertour-backdrop-opacity));
 
   visibility: hidden;
 }
@@ -203,15 +211,17 @@ _:future,
   height: var(--usertour-launcher-button-height);
   padding: 0 var(--usertour-launcher-button-horizontal-padding);
   line-height: calc(
-    var(--usertour-launcher-button-height) -
-    2 *
-    var(--usertour-launcher-button-border-width)
+    var(--usertour-launcher-button-height) - 2 *
+      var(--usertour-launcher-button-border-width)
   );
   font-family: var(--usertour-font-family);
   font-size: var(--usertour-font-size);
   font-weight: var(--usertour-launcher-button-font-weight);
   color: var(--usertour-launcher-button-font-color);
-  background-color: var(--usertour-launcher-button-background-color, transparent);
+  background-color: var(
+    --usertour-launcher-button-background-color,
+    transparent
+  );
   border: var(--usertour-launcher-button-border-width) solid
     var(--usertour-launcher-button-border-color, transparent);
   border-radius: var(--usertour-launcher-button-border-radius);
@@ -222,13 +232,22 @@ _:future,
 }
 .usertour-widget-launcher--button:hover {
   color: var(--usertour-launcher-button-hover-font-color);
-  background-color: var(--usertour-launcher-button-hover-background-color, transparent);
+  background-color: var(
+    --usertour-launcher-button-hover-background-color,
+    transparent
+  );
   border-color: var(--usertour-launcher-button-hover-border-color, transparent);
 }
 .usertour-widget-launcher--button:active {
   color: var(--usertour-launcher-button-active-font-color);
-  background-color: var(--usertour-launcher-button-active-background-color, transparent);
-  border-color: var(--usertour-launcher-button-active-border-color, transparent);
+  background-color: var(
+    --usertour-launcher-button-active-background-color,
+    transparent
+  );
+  border-color: var(
+    --usertour-launcher-button-active-border-color,
+    transparent
+  );
 }
 .usertour-widget-launcher--button:focus {
   outline: 0;
@@ -236,7 +255,8 @@ _:future,
 
 .usertour-widget-checklist-launcher {
   overflow: hidden;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15))
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
   animation: usertour-widget-chrome-visible 200ms linear normal;
 }
 _::-webkit-full-page-media,
@@ -280,20 +300,9 @@ _:future,
   right: calc(
     0.3 * var(--usertour-resource-center-launcher-border-radius) - 12px
   );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
-  min-width: 24px;
+  width: 24px;
   height: 24px;
-  padding-left: 6px;
-  padding-right: 6px;
-  background-color: var(--usertour-resource-center-badge-background-color);
-  color: var(--usertour-resource-center-badge-foreground-color);
   border-radius: 12px;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.15))
-    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
   animation: usertour-widget-resource-center-launcher-unread-badge-scale-in
       250ms cubic-bezier(1, 2.5, 0.8, 0.5)
       var(--usertour-resource-center-transition-duration) backwards,

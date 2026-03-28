@@ -50,7 +50,18 @@ interface ResourceCenterBadgeProps {
 export const ResourceCenterBadge = memo(({ count }: ResourceCenterBadgeProps) => {
   if (count <= 0) return null;
 
-  return <div className="usertour-widget-resource-center-launcher-unread-badge">{count}</div>;
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-center',
+        'size-6 rounded-full',
+        'text-xs font-bold',
+        'bg-sdk-resource-center-badge-background text-sdk-resource-center-badge-foreground',
+      )}
+    >
+      {count}
+    </div>
+  );
 });
 
 ResourceCenterBadge.displayName = 'ResourceCenterBadge';
