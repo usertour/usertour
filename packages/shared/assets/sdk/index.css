@@ -255,16 +255,6 @@ _:future,
 .usertour-widget-resource-center-anchor {
   position: relative;
 }
-.usertour-widget-resource-center-hidden-measurement {
-  pointer-events: none;
-  position: fixed;
-  opacity: 0;
-  left: -10000px;
-  top: -10000px;
-}
-.usertour-widget-resource-center-hidden-measurement-inline {
-  display: inline-block;
-}
 .usertour-widget-resource-center-frame-wrapper {
   position: relative;
 }
