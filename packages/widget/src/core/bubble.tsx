@@ -196,7 +196,7 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
           />
         )}
         <div
-          className={cn('usertour-widget-popper usertour-centered usertour-enabled', className)}
+          className={cn('usertour-widget-popper', className)}
           ref={composedRefs}
           data-usertour-popper-content-wrapper=""
           style={{
@@ -292,7 +292,7 @@ const PopperStaticBubble = forwardRef<HTMLDivElement, PopperStaticBubbleProps>(
 
     return (
       <div
-        className={cn('usertour-widget-popper usertour-centered usertour-enabled', className)}
+        className={cn('usertour-widget-popper', className)}
         ref={forwardedRef}
         dir={dir}
         style={{ width }}
