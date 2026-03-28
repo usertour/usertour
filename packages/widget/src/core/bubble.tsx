@@ -208,7 +208,7 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
         >
           <div
             className={cn(
-              'usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative',
+              'usertour-widget-popper-outline relative',
               !isContentVisible && 'usertour-widget-popper-outline--minimized',
             )}
             style={outlineStyle}
@@ -297,10 +297,7 @@ const PopperStaticBubble = forwardRef<HTMLDivElement, PopperStaticBubbleProps>(
         dir={dir}
         style={{ width }}
       >
-        <div
-          className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left relative"
-          style={outlineStyle}
-        >
+        <div className="usertour-widget-popper-outline relative" style={outlineStyle}>
           <div className="usertour-widget-popper__frame-wrapper">
             <div className="usertour-root usertour-widget-popper-frame-root usertour-widget-popper-frame-root-iframe text-sdk-foreground">
               {children}

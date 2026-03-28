@@ -255,7 +255,7 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
         style={inlineStyle}
         dir={dir}
       >
-        <div className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left">
+        <div className="usertour-widget-popper-outline">
           <div className="usertour-widget-popper__frame-wrapper">{children}</div>
         </div>
         <span
@@ -342,7 +342,7 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
           }}
           dir={dir}
         >
-          <div className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left">
+          <div className="usertour-widget-popper-outline">
             <div className="usertour-widget-popper__frame-wrapper">{children}</div>
           </div>
         </div>
@@ -468,7 +468,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
         ref={forwardedRef}
       >
         <div
-          className="usertour-widget-popper-outline usertour-widget-popper-outline--bubble-placement-bottom-left"
+          className="usertour-widget-popper-outline"
           style={{
             width,
             height,
