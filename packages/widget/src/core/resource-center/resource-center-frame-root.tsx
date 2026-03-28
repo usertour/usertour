@@ -68,7 +68,7 @@ export const ResourceCenterFrameRoot = memo(
         data-animating={isAnimating || undefined}
         className={cn(
           'group',
-          'relative h-full w-full flex flex-col overflow-hidden text-sdk-foreground',
+          'relative h-full w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
           'rounded-sdk-resource-center-launcher data-[state=open]:rounded-sdk-popper',
           'transition-[border-radius] duration-sdk-resource-center',
         )}
