@@ -67,8 +67,10 @@ export const ResourceCenterFrameRoot = memo(
         data-state={isOpen ? 'open' : 'closed'}
         data-animating={isAnimating || undefined}
         className={cn(
-          'usertour-widget-resource-center-frame-root group',
-          'relative h-full w-full flex flex-col overflow-hidden usertour-root text-sdk-foreground',
+          'group',
+          'relative h-full w-full flex flex-col overflow-hidden text-sdk-foreground',
+          'rounded-sdk-resource-center-launcher data-[state=open]:rounded-sdk-popper',
+          'transition-[border-radius] duration-sdk-resource-center',
         )}
       >
         <div

@@ -80,7 +80,7 @@ export const extendSdk = {
     'sdk-lg': 'var(--usertour-radius)',
     'sdk-md': 'calc(var(--usertour-radius) - 2px)',
     'sdk-sm': 'calc(var(--usertour-radius) - 4px)',
-    'sdk-popper': 'var(--usertour-popper-radius)',
+    'sdk-popper': 'var(--usertour-widget-popper-border-radius)',
     'sdk-button': 'var(--usertour-button-border-radius)',
     'sdk-xs': 'calc(var(--usertour-font-size) * 0.25)',
   },

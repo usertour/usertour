@@ -299,9 +299,7 @@ const PopperStaticBubble = forwardRef<HTMLDivElement, PopperStaticBubbleProps>(
       >
         <div className="usertour-widget-popper-outline relative" style={outlineStyle}>
           <div className="usertour-widget-popper__frame-wrapper">
-            <div className="usertour-root usertour-widget-popper-frame-root usertour-widget-popper-frame-root-iframe text-sdk-foreground">
-              {children}
-            </div>
+            <div className="usertour-widget-popper-frame-root text-sdk-foreground">{children}</div>
           </div>
           {showAvatar && (
             <PopperAvatarNotch

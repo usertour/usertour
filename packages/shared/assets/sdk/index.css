@@ -154,9 +154,6 @@ _:future,
   width: var(--usertour-widget-beacon-size);
   height: var(--usertour-widget-beacon-size);
 }
-.usertour-widget-beacon--for-flow {
-  pointer-events: none;
-}
 .usertour-widget-beacon__ping {
   position: absolute;
   width: 100%;
@@ -247,9 +244,6 @@ _:future,
 :root .usertour-widget-checklist-launcher {
   filter: drop-shadow(0 2px 9px rgba(0, 0, 0, 0.18));
 }
-.usertour-widget-checklist-launcher--position-absolute {
-  position: absolute;
-}
 .usertour-widget-checklist-launcher--position-fixed {
   position: fixed;
 }
@@ -276,15 +270,6 @@ _:future,
   border-radius: var(--usertour-resource-center-launcher-border-radius);
 }
 .usertour-widget-resource-center-frame--open {
-  border-radius: var(--usertour-widget-popper-border-radius);
-}
-.usertour-widget-resource-center-frame-root {
-  transition: border-radius var(--usertour-resource-center-transition-duration);
-}
-.usertour-widget-resource-center-frame-root[data-state="closed"] {
-  border-radius: var(--usertour-resource-center-launcher-border-radius);
-}
-.usertour-widget-resource-center-frame-root[data-state="open"] {
   border-radius: var(--usertour-widget-popper-border-radius);
 }
 .usertour-widget-resource-center-launcher-unread-badge {

@@ -383,10 +383,7 @@ const PopperContent = forwardRef<HTMLDivElement, PopperContentProps>((props, _) 
 
   return (
     <>
-      <div
-        ref={setRef}
-        className="usertour-root usertour-widget-popper-frame-root usertour-widget-popper-frame-root-iframe text-sdk-foreground"
-      >
+      <div ref={setRef} className="usertour-widget-popper-frame-root text-sdk-foreground">
         {children}
       </div>
     </>
@@ -476,9 +473,7 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
           }}
         >
           <div className="usertour-widget-popper__frame-wrapper">
-            <div className="usertour-root usertour-widget-popper-frame-root usertour-widget-popper-frame-root-iframe text-sdk-foreground">
-              {children}
-            </div>
+            <div className="usertour-widget-popper-frame-root text-sdk-foreground">{children}</div>
           </div>
         </div>
         {showArrow && (
