@@ -49,7 +49,7 @@ WORKDIR /app
 
 # Install pnpm and system dependencies
 RUN npm install -g pnpm && \
-    apk add --no-cache nginx openssl openssl-dev libc6-compat gettext
+    apk add --no-cache nginx openssl openssl-dev libc6-compat gettext postgresql16-client
 
 # Copy nginx configuration
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
@@ -75,6 +75,7 @@ RUN mkdir -p /var/cache/nginx
 
 # Copy scripts
 COPY scripts/start.sh ./scripts/start.sh
+COPY apps/server/scripts/backup-db.mjs ./apps/server/scripts/backup-db.mjs
 RUN chmod +x ./scripts/start.sh
 
 # Environment variables
