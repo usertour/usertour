@@ -19,11 +19,11 @@ interface ResourceCenterMessageBlockViewProps {
 export const ResourceCenterMessageBlockView = memo(
   ({ block, userAttributes, onContentClick, editSlot }: ResourceCenterMessageBlockViewProps) => {
     if (editSlot) {
-      return <div className="py-2 px-4">{editSlot}</div>;
+      return <div className="p-2">{editSlot}</div>;
     }
 
     return (
-      <div className="py-2 px-4">
+      <div className="p-2">
         <ContentEditorSerialize
           contents={block.content}
           onClick={onContentClick}
@@ -47,11 +47,11 @@ interface ResourceCenterChecklistBlockViewProps {
 export const ResourceCenterChecklistBlockView = memo(
   ({ slot }: ResourceCenterChecklistBlockViewProps) => {
     if (slot) {
-      return <div className="px-4 py-2">{slot}</div>;
+      return <div className="p-2">{slot}</div>;
     }
 
     return (
-      <div className="px-4 py-3">
+      <div className="p-2">
         <div className="flex items-center gap-2 text-sm opacity-50">
           <span>📋</span>
           <span>No active checklist</span>
@@ -74,7 +74,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
   return (
     <div
       className={cn(
-        'order-2 min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background',
+        'order-2 min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background p-2',
         'transition-opacity duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
         'group-data-[animating]:pointer-events-none group-data-[animating]:overflow-hidden',
@@ -123,7 +123,7 @@ export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBl
             {block.type === ResourceCenterBlockType.CHECKLIST && (
               <ResourceCenterChecklistBlockView slot={checklistSlot} />
             )}
-            {showDivider && <div className="mx-4 border-b border-sdk-resource-center-divider" />}
+            {showDivider && <div className="mx-2 border-b border-sdk-resource-center-divider" />}
           </div>
         );
       })}

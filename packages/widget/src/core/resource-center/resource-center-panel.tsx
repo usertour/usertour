@@ -91,11 +91,15 @@ const BadgeFrameContent = ({
 };
 
 // ============================================================================
-// ResourceCenterPanel — unified component (mode: dom | iframe | preview)
+// ResourceCenterPanel — unified component (mode: dom | iframe)
 // ============================================================================
 
 interface ResourceCenterPanelProps {
-  mode: 'dom' | 'iframe' | 'preview';
+  mode: 'dom' | 'iframe';
+  /** Set to false to disable fixed positioning (e.g. theme preview) */
+  position?: boolean;
+  /** Allow content to overflow the frame (e.g. for builder editor toolbar) */
+  allowOverflow?: boolean;
   children?: React.ReactNode;
   badgeCount?: number;
   launcherText?: string;
@@ -116,6 +120,8 @@ export const ResourceCenterPanel = forwardRef<
 >((props, ref) => {
   const {
     mode,
+    position: positionProp,
+    allowOverflow,
     children,
     badgeCount,
     launcherText,
@@ -126,12 +132,13 @@ export const ResourceCenterPanel = forwardRef<
   } = props;
 
   const { globalStyle, zIndex, isOpen, isAnimating, themeSetting } = useResourceCenterContext();
-  const positionStyle = mode !== 'preview' ? useResourceCenterPositionStyle() : undefined;
+  const positionStyle = useResourceCenterPositionStyle();
 
   const rc = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
   const closedHeight = launcher?.height ?? RC_DEFAULTS.launcherHeight;
   const openWidth = `${rc?.normalWidth ?? RC_DEFAULTS.normalWidth}px`;
+  const applyPosition = positionProp !== false;
 
   const [launcherSize, setLauncherSize] = useState<{ width: number; height: number } | null>(null);
   const [contentSize, setContentSize] = useState<{ width: number; height: number } | null>(null);
@@ -158,7 +165,7 @@ export const ResourceCenterPanel = forwardRef<
       : undefined;
 
   const outerStyle: React.CSSProperties = {
-    ...(mode !== 'preview' ? { zIndex, ...positionStyle } : {}),
+    ...(applyPosition ? { zIndex, ...positionStyle } : {}),
   };
 
   const frameSizeStyle = {
@@ -167,7 +174,10 @@ export const ResourceCenterPanel = forwardRef<
     ...getFrameBorderStyle(isOpen),
   };
 
-  const frameClassName = getFrameClassName(isOpen, isAnimating);
+  const frameClassName = cn(
+    getFrameClassName(isOpen, isAnimating),
+    allowOverflow && '!overflow-visible',
+  );
 
   return (
     <ResourceCenterAnchor ref={ref as React.Ref<HTMLDivElement>} style={outerStyle} {...restProps}>

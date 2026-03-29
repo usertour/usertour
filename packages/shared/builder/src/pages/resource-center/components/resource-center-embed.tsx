@@ -31,6 +31,7 @@ export const ResourceCenterEmbed = () => {
   const { localData, updateBlock } = useResourceCenterContext();
   const { upload } = useAws();
   const [theme, setTheme] = useState<Theme | undefined>();
+  const [expanded, setExpanded] = useState(true);
   const { themeList } = useThemeListContext();
   const { currentVersion, projectId, shouldShowMadeWith = true } = useBuilderContext();
   const { attributeList } = useAttributeListContext();
@@ -197,14 +198,16 @@ export const ResourceCenterEmbed = () => {
     <ResourceCenterRoot
       data={localData}
       themeSettings={theme.settings}
-      expanded={true}
-      onExpandedChange={async () => {}}
+      expanded={expanded}
+      onExpandedChange={async (open: boolean) => {
+        setExpanded(open);
+      }}
       zIndex={10000}
       showMadeWith={shouldShowMadeWith}
       checklistSlot={previewChecklistSlot}
     >
       <ResourceCenterStyleProvider>
-        <ResourceCenterPanel mode="preview">
+        <ResourceCenterPanel mode="dom" allowOverflow>
           <ResourceCenterHeader text={localData.headerText} />
           <ResourceCenterBody>
             <ResourceCenterBlocks messageEditSlots={messageEditSlots} />

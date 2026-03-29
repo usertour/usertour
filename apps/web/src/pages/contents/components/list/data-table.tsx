@@ -30,6 +30,7 @@ import {
   EmptyContentPreview,
   FlowPreview,
   LauncherPreview,
+  ResourceCenterPreview,
   TrackerPreview,
 } from '../shared/content-preview';
 import { columns } from './columns';
@@ -154,6 +155,19 @@ const ContentPreview = ({
     return (
       <AutoScaledPreviewContainer padding={16}>
         <ChecklistPreview currentTheme={currentTheme} currentVersion={currentVersion} />
+      </AutoScaledPreviewContainer>
+    );
+  }
+
+  if (
+    type === ContentDataType.RESOURCE_CENTER &&
+    currentTheme &&
+    currentVersion &&
+    currentVersion?.data
+  ) {
+    return (
+      <AutoScaledPreviewContainer padding={16}>
+        <ResourceCenterPreview currentTheme={currentTheme} currentVersion={currentVersion} />
       </AutoScaledPreviewContainer>
     );
   }

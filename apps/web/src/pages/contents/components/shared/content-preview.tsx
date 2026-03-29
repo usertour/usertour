@@ -25,6 +25,13 @@ import {
   LauncherContainer,
   LauncherView,
   LauncherRoot,
+  ResourceCenterRoot,
+  ResourceCenterStyleProvider,
+  ResourceCenterPanel,
+  ResourceCenterHeader,
+  ResourceCenterBody,
+  ResourceCenterBlocks,
+  ResourceCenterFooter,
 } from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import {
@@ -36,6 +43,7 @@ import {
   LauncherData,
   ProgressBarPosition,
   ProgressBarType,
+  ResourceCenterData,
   Step,
   StepContentType,
   Theme,
@@ -233,6 +241,37 @@ const ChecklistPreview = (props: {
   );
 };
 
+const ResourceCenterPreview = (props: {
+  currentTheme: Theme;
+  currentVersion: ContentVersion;
+}) => {
+  const { currentTheme, currentVersion } = props;
+  const data = currentVersion.data as ResourceCenterData;
+  const themeSettings = currentTheme.settings;
+  const { shouldShowMadeWith } = useSubscriptionContext();
+
+  return (
+    <ResourceCenterRoot
+      data={data}
+      themeSettings={themeSettings}
+      expanded={true}
+      onExpandedChange={async () => {}}
+      zIndex={10000}
+      showMadeWith={shouldShowMadeWith}
+    >
+      <ResourceCenterStyleProvider>
+        <ResourceCenterPanel mode="dom" position={false}>
+          <ResourceCenterHeader text={data.headerText} />
+          <ResourceCenterBody>
+            <ResourceCenterBlocks />
+          </ResourceCenterBody>
+          <ResourceCenterFooter />
+        </ResourceCenterPanel>
+      </ResourceCenterStyleProvider>
+    </ResourceCenterRoot>
+  );
+};
+
 const BannerPreviewContent = ({
   currentTheme,
   currentVersion,
@@ -294,6 +333,7 @@ export {
   FlowPreview,
   LauncherPreview,
   ChecklistPreview,
+  ResourceCenterPreview,
   BannerPreviewContent,
   TrackerPreview,
   EmptyContentPreview,

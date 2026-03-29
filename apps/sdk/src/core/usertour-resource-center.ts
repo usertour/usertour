@@ -28,7 +28,12 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
 
   async show(): Promise<void> {
     const storeData = await this.buildStoreData();
-    if (!storeData?.resourceCenterData) {
+    if (!storeData) {
+      logger.warn('Resource center: buildStoreData returned null (missing theme?)');
+      return;
+    }
+    if (!storeData.resourceCenterData) {
+      logger.warn('Resource center: resourceCenterData is missing from session');
       return;
     }
     this.setStoreData({ ...storeData, openState: true });

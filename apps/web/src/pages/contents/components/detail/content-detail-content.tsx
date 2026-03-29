@@ -34,6 +34,7 @@ import {
   ChecklistPreview,
   FlowPreview,
   LauncherPreview,
+  ResourceCenterPreview,
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
@@ -510,8 +511,21 @@ const ResourceCenterContentPreview = ({
 }: ResourceCenterContentPreviewProps) => {
   const currentTheme = useThemeHandler(currentVersion);
   const data = currentVersion.data as ResourceCenterData;
+  const { height, setContentRect, setScale } = useScaledPreview();
 
   if (!currentVersion || !currentTheme) return null;
+
+  const leftContent = (
+    <ScaledPreviewWrapper
+      height={height}
+      onContentRectChange={(rect, scale) => {
+        setContentRect(rect);
+        setScale(scale);
+      }}
+    >
+      <ResourceCenterPreview currentTheme={currentTheme} currentVersion={currentVersion} />
+    </ScaledPreviewWrapper>
+  );
 
   const badges = (
     <>
@@ -520,12 +534,6 @@ const ResourceCenterContentPreview = ({
       <ContentBadge>Blocks: {data.blocks?.length ?? 0}</ContentBadge>
       <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
     </>
-  );
-
-  const leftContent = (
-    <div className="flex items-center justify-center w-[200px] h-[120px] bg-muted rounded-md text-muted-foreground text-sm">
-      Resource Center
-    </div>
   );
 
   return (

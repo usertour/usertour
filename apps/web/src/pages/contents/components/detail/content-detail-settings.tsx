@@ -11,18 +11,32 @@ import { useAppContext } from '@/contexts/app-context';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 
 const getAutoStartRulesName = (contentType: ContentDataType) => {
-  if (contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER) {
-    if (contentType === ContentDataType.BANNER) {
-      return 'Show banner if...';
-    }
+  if (contentType === ContentDataType.BANNER) {
+    return 'Show banner if...';
+  }
+  if (contentType === ContentDataType.LAUNCHER) {
     return 'Show launcher if...';
+  }
+  if (contentType === ContentDataType.RESOURCE_CENTER) {
+    return 'Show resource center if...';
   }
   return `Auto-start ${contentType} if...`;
 };
 
+const SHOW_ONLY_CONTENT_TYPES = [
+  ContentDataType.LAUNCHER,
+  ContentDataType.BANNER,
+  ContentDataType.RESOURCE_CENTER,
+];
+
 const AutoStartTooltips = (contentType: ContentDataType) => {
-  if (contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER) {
-    const contentLabel = contentType === ContentDataType.BANNER ? 'banner' : 'launcher';
+  if (SHOW_ONLY_CONTENT_TYPES.includes(contentType)) {
+    const contentLabel =
+      contentType === ContentDataType.BANNER
+        ? 'banner'
+        : contentType === ContentDataType.RESOURCE_CENTER
+          ? 'resource center'
+          : 'launcher';
     return (
       <>
         Show the {contentLabel} if the user matches the given condition. If the user doesn't match
@@ -94,10 +108,8 @@ export const ContentDetailSettings = () => {
     return null;
   }
 
-  const isLauncherLike =
-    contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER;
-  const isLauncher = contentType === ContentDataType.LAUNCHER;
-  const enabledAutoStartRules = !isLauncherLike;
+  const isShowOnly = SHOW_ONLY_CONTENT_TYPES.includes(contentType);
+  const enabledAutoStartRules = !isShowOnly;
 
   return (
     <div className="flex flex-col space-y-6 flex-none w-[420px]">
@@ -110,11 +122,11 @@ export const ContentDetailSettings = () => {
           onDataChange={handleAutoStartRulesDataChange}
           content={content}
           type={ContentDetailAutoStartRulesType.START_RULES}
-          showIfCompleted={!isLauncherLike}
-          showFrequency={!isLauncherLike}
+          showIfCompleted={!isShowOnly}
+          showFrequency={!isShowOnly}
           showAtLeast={contentType !== ContentDataType.CHECKLIST}
-          showWait={!isLauncherLike}
-          showPriority={!isLauncher}
+          showWait={!isShowOnly}
+          showPriority={!isShowOnly}
           disabled={isViewOnly}
           featureTooltip={AutoStartTooltips(contentType)}
         />
