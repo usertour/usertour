@@ -69,10 +69,11 @@ export const ThemeSettingsResourceCenterLauncher = () => {
         <ThemeSettingInput
           text="Border radius"
           name="rc-launcher-border-radius"
-          tooltip="The border radius of the launcher button."
-          defaultValue={String(launcher.borderRadius)}
+          tooltip="The border radius of the launcher button. Leave blank for a round launcher."
+          placeholder="Round"
+          defaultValue={launcher.borderRadius == null ? '' : String(launcher.borderRadius)}
           onChange={(value: string) => {
-            update({ borderRadius: Number(value) });
+            update({ borderRadius: value.trim() === '' ? null : Number(value) });
           }}
           disabled={isViewOnly}
         />

@@ -178,6 +178,7 @@ export const ResourceCenterPanel = forwardRef<
     getFrameClassName(isOpen, isAnimating),
     allowOverflow && '!overflow-visible',
   );
+  const shouldShowBadge = !isOpen && (badgeCount ?? 0) > 0;
 
   return (
     <ResourceCenterAnchor ref={ref as React.Ref<HTMLDivElement>} style={outerStyle} {...restProps}>
@@ -199,7 +200,7 @@ export const ResourceCenterPanel = forwardRef<
               {children}
             </IFrameContent>
           </Frame>
-          {!isOpen && (
+          {shouldShowBadge && (
             <Frame
               assets={assets}
               className="usertour-widget-resource-center-launcher-unread-badge usertour-widget-shadow"
@@ -225,7 +226,7 @@ export const ResourceCenterPanel = forwardRef<
               {children}
             </ResourceCenterFrameRoot>
           </div>
-          {!isOpen && (
+          {shouldShowBadge && (
             <div className="usertour-widget-resource-center-launcher-unread-badge usertour-widget-shadow">
               <ResourceCenterBadge count={badgeCount ?? 0} />
             </div>

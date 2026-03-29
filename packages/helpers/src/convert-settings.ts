@@ -479,7 +479,10 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-resource-center-launcher-foreground-color': hexToHSLString(
       settings.brandColor.color,
     ),
-    '--usertour-resource-center-launcher-border-radius': `${resourceCenterLauncherButton.borderRadius}px`,
+    '--usertour-resource-center-launcher-border-radius':
+      resourceCenterLauncherButton.borderRadius == null
+        ? 'calc(var(--usertour-resource-center-launcher-height) / 2)'
+        : `${resourceCenterLauncherButton.borderRadius}px`,
     '--usertour-resource-center-launcher-font-weight': settings.font.fontWeightBold,
     '--usertour-resource-center-launcher-height': `${resourceCenterLauncherButton.height}px`,
     '--usertour-resource-center-launcher-icon-size': `${resourceCenterLauncherButton.imageHeight}px`,

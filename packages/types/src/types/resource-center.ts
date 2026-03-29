@@ -88,7 +88,7 @@ export type ResourceCenterLauncherButtonThemeSettings = {
   iconUrl?: string;
   height: number;
   imageHeight: number;
-  borderRadius: number;
+  borderRadius: number | null;
   textMode: ResourceCenterLauncherTextMode;
   showRemainingTasks: boolean;
 };

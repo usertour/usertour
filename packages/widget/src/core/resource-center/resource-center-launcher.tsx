@@ -7,6 +7,11 @@ import { computePositionStyle } from '../utils/position';
 import { ResourceCenterTrigger } from './resource-center-trigger';
 import { useFrameGlobalStyle } from './hooks/use-frame-global-style';
 
+const getLauncherBorderRadius = (
+  borderRadius: number | null | undefined,
+  height: number,
+): React.CSSProperties['borderRadius'] => (borderRadius == null ? `${height / 2}px` : borderRadius);
+
 // ============================================================================
 // Launcher (fixed position DOM wrapper)
 // ============================================================================
@@ -25,6 +30,7 @@ export const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterL
     const { themeSetting, zIndex } = useResourceCenterContext();
     const rc = themeSetting.resourceCenter;
     const launcher = themeSetting.resourceCenterLauncherButton;
+    const launcherHeight = launcher?.height ?? RC_DEFAULTS.launcherHeight;
     const positionStyle = computePositionStyle(
       resourceCenterPlacementToPosition(rc?.placement ?? RC_DEFAULTS.placement),
       rc?.offsetX ?? RC_DEFAULTS.offsetX,
@@ -38,8 +44,8 @@ export const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterL
         style={{
           zIndex,
           ...positionStyle,
-          height: launcher?.height ?? RC_DEFAULTS.launcherHeight,
-          borderRadius: launcher?.borderRadius,
+          height: launcherHeight,
+          borderRadius: getLauncherBorderRadius(launcher?.borderRadius, launcherHeight),
           ...style,
           ...frameStyle,
         }}
@@ -76,6 +82,7 @@ export const ResourceCenterLauncherFrame = forwardRef<
 
   const rc = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
+  const launcherHeight = launcher?.height ?? RC_DEFAULTS.launcherHeight;
   const style = computePositionStyle(
     resourceCenterPlacementToPosition(rc?.placement ?? RC_DEFAULTS.placement),
     rc?.offsetX ?? RC_DEFAULTS.offsetX,
@@ -92,8 +99,8 @@ export const ResourceCenterLauncherFrame = forwardRef<
         zIndex,
         ...style,
         width,
-        height: launcher?.height ?? RC_DEFAULTS.launcherHeight,
-        borderRadius: launcher?.borderRadius,
+        height: launcherHeight,
+        borderRadius: getLauncherBorderRadius(launcher?.borderRadius, launcherHeight),
       }}
     >
       <ResourceCenterLauncherInFrame
