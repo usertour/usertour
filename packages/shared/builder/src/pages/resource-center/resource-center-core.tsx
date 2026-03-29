@@ -1,20 +1,30 @@
 'use client';
 
+import type { ElementType } from 'react';
+import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { EXTENSION_SELECT } from '@usertour-packages/constants';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@usertour-packages/dropdown-menu';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import { ScrollArea } from '@usertour-packages/scroll-area';
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
-import { ResourceCenterBlockType } from '@usertour/types';
+  RiBookOpenFill,
+  RiCheckboxCircleFill,
+  RiFileTextFill,
+  RiFlashlightFill,
+  RiListCheck3,
+  RiMailFill,
+  RiPagesFill,
+  RiSeparator,
+} from '@usertour-packages/icons';
+import { ScrollArea } from '@usertour-packages/scroll-area';
+import { Button } from '@usertour-packages/button';
+import { ContentEditorRoot, ResourceCenterBlockType } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar';
@@ -22,25 +32,116 @@ import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
 import { ResourceCenterBlocks } from './components/resource-center-blocks';
-import { useState } from 'react';
 import type { ResourceCenterBlock } from '@usertour/types';
 
 const labelStyles = 'flex justify-start items-center space-x-1';
 
-const BLOCK_TYPE_OPTIONS = [
-  { value: ResourceCenterBlockType.MESSAGE, label: 'Message' },
-  { value: ResourceCenterBlockType.CHECKLIST, label: 'Checklist' },
-  { value: ResourceCenterBlockType.ACTION_LINK, label: 'Action', disabled: true },
-  { value: ResourceCenterBlockType.SUB_PAGE, label: 'Sub-page', disabled: true },
-  { value: ResourceCenterBlockType.CONTACT, label: 'Contact', disabled: true },
+type IconComponent = ElementType<{ className?: string }>;
+
+type BlockTypeOption = {
+  key: string;
+  value?: ResourceCenterBlockType;
+  label: string;
+  description: string;
+  icon: IconComponent;
+  disabled?: boolean;
+};
+
+const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
   {
-    value: ResourceCenterBlockType.CONTENT_LIST,
-    label: 'List of flows/checklists',
+    key: ResourceCenterBlockType.ACTION_LINK,
+    value: ResourceCenterBlockType.ACTION_LINK,
+    label: 'Action Link',
+    description: 'Start flow, Custom JS',
+    icon: RiFlashlightFill,
     disabled: true,
   },
-  { value: ResourceCenterBlockType.AI_ASSISTANT, label: 'AI Assistant', disabled: true },
-  { value: ResourceCenterBlockType.KNOWLEDGE_BASE, label: 'Knowledge base', disabled: true },
+  {
+    key: ResourceCenterBlockType.MESSAGE,
+    value: ResourceCenterBlockType.MESSAGE,
+    label: 'Message',
+    description: 'Announcement, General info',
+    icon: RiFileTextFill,
+  },
+  {
+    key: ResourceCenterBlockType.SUB_PAGE,
+    value: ResourceCenterBlockType.SUB_PAGE,
+    label: 'Sub-page',
+    description: 'Nested route with free-form content',
+    icon: RiPagesFill,
+    disabled: true,
+  },
+  {
+    key: ResourceCenterBlockType.CONTACT,
+    value: ResourceCenterBlockType.CONTACT,
+    label: 'Contact',
+    description: 'Email, Phone, Live-chat',
+    icon: RiMailFill,
+    disabled: true,
+  },
+  {
+    key: ResourceCenterBlockType.CONTENT_LIST,
+    value: ResourceCenterBlockType.CONTENT_LIST,
+    label: 'List of flows/checklists',
+    description: 'Start on demand',
+    icon: RiListCheck3,
+    disabled: true,
+  },
+  {
+    key: ResourceCenterBlockType.CHECKLIST,
+    value: ResourceCenterBlockType.CHECKLIST,
+    label: 'Checklist',
+    description: 'Embed an active checklist',
+    icon: RiCheckboxCircleFill,
+  },
+  {
+    key: ResourceCenterBlockType.AI_ASSISTANT,
+    value: ResourceCenterBlockType.AI_ASSISTANT,
+    label: 'Adoption Agent',
+    description: 'Instant answers from Adoption agent',
+    icon: RiFlashlightFill,
+    disabled: true,
+  },
+  {
+    key: ResourceCenterBlockType.KNOWLEDGE_BASE,
+    value: ResourceCenterBlockType.KNOWLEDGE_BASE,
+    label: 'Knowledge base',
+    description: 'Search help articles',
+    icon: RiBookOpenFill,
+    disabled: true,
+  },
+  {
+    key: 'divider-line',
+    label: 'Divider line',
+    description: 'Used to visually separate sections',
+    icon: RiSeparator,
+    disabled: true,
+  },
 ];
+
+const DEFAULT_MESSAGE_BLOCK_CONTENT = [
+  {
+    element: { type: 'group' },
+    children: [
+      {
+        element: {
+          type: 'column',
+          style: {},
+          width: { type: 'fill' },
+          justifyContent: 'justify-start',
+        },
+        children: [
+          {
+            element: {
+              data: [{ type: 'paragraph', children: [{ text: '' }] }],
+              type: 'text',
+            },
+          },
+        ],
+      },
+    ],
+  },
+] as ContentEditorRoot[];
 
 const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null => {
   const id = uuidV4();
@@ -49,7 +150,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.MESSAGE,
-        content: [],
+        content: DEFAULT_MESSAGE_BLOCK_CONTENT,
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };
@@ -67,18 +168,16 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
 
 const ResourceCenterCoreBody = () => {
   const { localData, zIndex, addBlock, updateLocalData } = useResourceCenterContext();
-  const [addBlockType, setAddBlockType] = useState<string>('');
 
   if (!localData) {
     return null;
   }
 
-  const handleAddBlock = (type: string) => {
-    const block = createBlock(type as ResourceCenterBlockType);
+  const handleAddBlock = (type: ResourceCenterBlockType) => {
+    const block = createBlock(type);
     if (block) {
       addBlock(block);
     }
-    setAddBlockType('');
   };
 
   return (
@@ -122,30 +221,40 @@ const ResourceCenterCoreBody = () => {
           <ResourceCenterBlocks />
 
           {/* Add Block */}
-          <div className="flex flex-col space-y-2">
-            <div className={labelStyles}>
-              <Label>Add block</Label>
-            </div>
-            <Select value={addBlockType} onValueChange={handleAddBlock}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select block type..." />
-              </SelectTrigger>
-              <SelectPortal style={{ zIndex: zIndex + EXTENSION_SELECT }}>
-                <SelectContent>
-                  <SelectGroup>
-                    {BLOCK_TYPE_OPTIONS.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        disabled={option.disabled}
+          <div>
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button className="w-full" variant="secondary">
+                  <PlusCircledIcon className="mr-2" />
+                  Add block
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                sideOffset={6}
+                className="min-w-[280px]"
+                style={{ zIndex: zIndex + EXTENSION_SELECT }}
+              >
+                {BLOCK_TYPE_OPTIONS.map(
+                  ({ key, value, label, description, icon: Icon, disabled }) => {
+                    return (
+                      <DropdownMenuItem
+                        key={key}
+                        disabled={disabled}
+                        className="cursor-pointer min-w-[220px] gap-2 py-1.5 text-xs"
+                        onSelect={() => value && handleAddBlock(value)}
                       >
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </SelectPortal>
-            </Select>
+                        <Icon width={16} height={16} className="shrink-0 text-foreground" />
+                        <span className="min-w-0 leading-none">
+                          <span className="text-xs font-medium text-foreground">{label}</span>
+                          <span className="ml-1 text-xs text-muted-foreground">{description}</span>
+                        </span>
+                      </DropdownMenuItem>
+                    );
+                  },
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </ScrollArea>
