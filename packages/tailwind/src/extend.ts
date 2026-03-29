@@ -40,7 +40,6 @@ export const extendSdk = {
           background: 'hsl(var(--usertour-resource-center-header-background-color))',
           foreground: 'hsl(var(--usertour-resource-center-header-foreground-color))',
         },
-        divider: 'var(--usertour-resource-center-divider-color)',
       },
       banner: {
         DEFAULT: 'hsl(var(--usertour-banner-background-color))',

@@ -123,7 +123,7 @@ export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBl
             {block.type === ResourceCenterBlockType.CHECKLIST && (
               <ResourceCenterChecklistBlockView slot={checklistSlot} />
             )}
-            {showDivider && <div className="mx-2 border-b border-sdk-resource-center-divider" />}
+            {showDivider && <div className="my-4 bg-sdk-foreground/10 h-px overflow-hidden" />}
           </div>
         );
       })}

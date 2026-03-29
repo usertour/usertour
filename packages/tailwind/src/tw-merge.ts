@@ -43,7 +43,6 @@ const sdkColors = [
   'sdk-resource-center-badge-foreground',
   'sdk-resource-center-header-background',
   'sdk-resource-center-header-foreground',
-  'sdk-resource-center-divider',
   // Button primary colors
   'sdk-btn-primary',
   'sdk-btn-primary-hover',

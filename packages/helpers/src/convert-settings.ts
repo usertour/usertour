@@ -492,7 +492,6 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
       settings.brandColor.background,
     ),
     '--usertour-resource-center-header-foreground-color': hexToHSLString(settings.brandColor.color),
-    '--usertour-resource-center-divider-color': hexToHSLAString(settings.mainColor.color, 0.1),
     '--usertour-resource-center-width': `${resourceCenter.normalWidth}px`,
     '--usertour-resource-center-large-width': `${resourceCenter.largeWidth}px`,
     '--usertour-resource-center-max-height': resourceCenter.maxHeight
