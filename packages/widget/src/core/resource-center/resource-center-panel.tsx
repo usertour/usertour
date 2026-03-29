@@ -131,7 +131,8 @@ export const ResourceCenterPanel = forwardRef<
     ...restProps
   } = props;
 
-  const { globalStyle, zIndex, isOpen, isAnimating, themeSetting } = useResourceCenterContext();
+  const { globalStyle, zIndex, isOpen, isAnimating, themeSetting, animateFrame } =
+    useResourceCenterContext();
   const positionStyle = useResourceCenterPositionStyle();
 
   const rc = themeSetting.resourceCenter;
@@ -158,11 +159,13 @@ export const ResourceCenterPanel = forwardRef<
       ? `${launcherSize.width}px`
       : `${closedHeight}px`;
 
-  const openHeight = openHeightOverride
-    ? `${openHeightOverride}px`
-    : contentSize?.height
-      ? `${contentSize.height}px`
-      : undefined;
+  const openHeight = animateFrame
+    ? openHeightOverride
+      ? `${openHeightOverride}px`
+      : contentSize?.height
+        ? `${contentSize.height}px`
+        : undefined
+    : undefined;
 
   const outerStyle: React.CSSProperties = {
     ...(applyPosition ? { zIndex, ...positionStyle } : {}),
@@ -175,7 +178,7 @@ export const ResourceCenterPanel = forwardRef<
   };
 
   const frameClassName = cn(
-    getFrameClassName(isOpen, isAnimating),
+    getFrameClassName(isOpen, isAnimating && animateFrame),
     allowOverflow && '!overflow-visible',
   );
   const shouldShowBadge = !isOpen && (badgeCount ?? 0) > 0;
@@ -193,7 +196,7 @@ export const ResourceCenterPanel = forwardRef<
             <IFrameContent
               globalStyle={globalStyle}
               launcherText={launcherText}
-              isAnimating={isAnimating}
+              isAnimating={isAnimating && animateFrame}
               onLauncherSizeChange={onLauncherSizeChange}
               onContentSizeChange={onContentSizeChange}
             >
@@ -219,7 +222,7 @@ export const ResourceCenterPanel = forwardRef<
           >
             <ResourceCenterFrameRoot
               launcherText={launcherText}
-              isAnimating={isAnimating}
+              isAnimating={isAnimating && animateFrame}
               onLauncherSizeChange={onLauncherSizeChange}
               onContentSizeChange={onContentSizeChange}
             >

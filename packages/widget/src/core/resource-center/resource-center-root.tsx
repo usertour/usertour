@@ -8,6 +8,7 @@ interface ResourceCenterRootProps {
   children: React.ReactNode;
   themeSettings: ThemeTypesSetting;
   data: ResourceCenterData;
+  animateFrame?: boolean;
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => Promise<void>;
   zIndex: number;
@@ -21,6 +22,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const {
     children,
     data,
+    animateFrame = true,
     expanded = false,
     onExpandedChange,
     zIndex,
@@ -68,6 +70,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       data,
       isOpen,
       isAnimating,
+      animateFrame,
       handleExpandedChange,
       zIndex,
       userAttributes,
@@ -81,6 +84,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       data,
       isOpen,
       isAnimating,
+      animateFrame,
       handleExpandedChange,
       zIndex,
       userAttributes,

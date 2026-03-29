@@ -102,7 +102,8 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
     const buttonClassName = cn(
       'rounded-sdk-resource-center-launcher flex bg-transparent',
       'cursor-pointer items-center',
-      'transition-opacity duration-sdk-resource-center',
+      'group-data-[animate-frame=true]:transition-opacity',
+      'group-data-[animate-frame=true]:duration-sdk-resource-center',
       'group-data-[state=closed]:opacity-100 group-data-[state=open]:opacity-0',
       layout === 'fill' ? 'h-full w-full justify-center' : 'inline-flex justify-start',
       'hover:bg-sdk-resource-center-launcher-hover',

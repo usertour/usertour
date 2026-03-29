@@ -20,7 +20,7 @@ export const ResourceCenterFrameRoot = memo(
     onLauncherSizeChange,
     onContentSizeChange,
   }: ResourceCenterFrameRootProps) => {
-    const { isOpen, handleExpandedChange, themeSetting } = useResourceCenterContext();
+    const { isOpen, handleExpandedChange, themeSetting, animateFrame } = useResourceCenterContext();
     const rootRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 
@@ -66,11 +66,13 @@ export const ResourceCenterFrameRoot = memo(
         ref={rootRef}
         data-state={isOpen ? 'open' : 'closed'}
         data-animating={isAnimating || undefined}
+        data-animate-frame={animateFrame ? 'true' : 'false'}
         className={cn(
           'group',
           'relative h-full w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
           'rounded-sdk-resource-center-launcher data-[state=open]:rounded-sdk-popper',
-          'transition-[border-radius] duration-sdk-resource-center',
+          'data-[animate-frame=true]:transition-[border-radius]',
+          'data-[animate-frame=true]:duration-sdk-resource-center',
         )}
       >
         <div

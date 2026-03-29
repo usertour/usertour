@@ -75,7 +75,8 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
     <div
       className={cn(
         'order-2 min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background p-2',
-        'transition-opacity duration-sdk-resource-center',
+        'group-data-[animate-frame=true]:transition-opacity',
+        'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
         'group-data-[animating]:pointer-events-none group-data-[animating]:overflow-hidden',
       )}

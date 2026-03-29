@@ -7,6 +7,7 @@ export interface ResourceCenterContextValue {
   data: ResourceCenterData;
   isOpen: boolean;
   isAnimating: boolean;
+  animateFrame: boolean;
   handleExpandedChange: (expanded: boolean) => Promise<void>;
   zIndex: number;
   userAttributes?: UserTourTypes.Attributes;

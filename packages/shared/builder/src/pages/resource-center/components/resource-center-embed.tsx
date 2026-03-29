@@ -198,6 +198,7 @@ export const ResourceCenterEmbed = () => {
     <ResourceCenterRoot
       data={localData}
       themeSettings={theme.settings}
+      animateFrame={false}
       expanded={expanded}
       onExpandedChange={async (open: boolean) => {
         setExpanded(open);
