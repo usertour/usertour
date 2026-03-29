@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { Fragment, memo } from 'react';
 import type { ResourceCenterMessageBlock, UserTourTypes } from '@usertour/types';
 import { ResourceCenterBlockType } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
@@ -111,7 +111,7 @@ export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBl
         const showDivider = showDividers && index < data.blocks.length - 1;
 
         return (
-          <div key={block.id}>
+          <Fragment key={block.id}>
             {block.type === ResourceCenterBlockType.MESSAGE && (
               <ResourceCenterMessageBlockView
                 block={block}
@@ -124,7 +124,7 @@ export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBl
               <ResourceCenterChecklistBlockView slot={checklistSlot} />
             )}
             {showDivider && <div className="my-4 bg-sdk-foreground/10 h-px overflow-hidden" />}
-          </div>
+          </Fragment>
         );
       })}
 
