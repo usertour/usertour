@@ -11,7 +11,7 @@ import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-compo
 import { logger } from '@/utils';
 import { CommonActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
-import { storage } from '@usertour/helpers';
+import { isDisplayOnlyBlockType, storage } from '@usertour/helpers';
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
   protected initializeActionHandlers(): void {
@@ -73,6 +73,11 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   }
 
   async handleBlockClick(blockId: string): Promise<void> {
+    const store = this.getStoreData();
+    const block = store?.resourceCenterData?.blocks?.find((b) => b.id === blockId);
+    if (!block || isDisplayOnlyBlockType(block.type)) {
+      return;
+    }
     const sessionId = this.getSessionId();
     this.socketService.clickResourceCenter({ sessionId, blockId });
   }

@@ -23,7 +23,6 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
   blocks: [
     {
       id: 'preview-msg-1',
-      name: 'Welcome',
       type: ResourceCenterBlockType.MESSAGE,
       content: [
         {
@@ -71,14 +70,12 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
     },
     {
       id: 'preview-checklist',
-      name: 'Checklist',
       type: ResourceCenterBlockType.CHECKLIST,
       onlyShowTask: false,
       onlyShowTaskConditions: [],
     },
     {
       id: 'preview-msg-2',
-      name: 'Support',
       type: ResourceCenterBlockType.MESSAGE,
       content: [
         {

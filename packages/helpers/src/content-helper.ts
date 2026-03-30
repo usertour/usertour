@@ -11,7 +11,11 @@ import type {
   Step,
   StepTrigger,
 } from '@usertour/types';
-import { ContentDataType, ContentEditorElementType } from '@usertour/types';
+import {
+  ContentDataType,
+  ContentEditorElementType,
+  ResourceCenterBlockType,
+} from '@usertour/types';
 
 import { cuid, uuidV4 } from './helper';
 import { regenerateConditionIds } from './conditions';
@@ -353,3 +357,7 @@ export const duplicateStep = <T extends StepLike>(
     target: duplicateTarget(target as Step['target']),
   } as Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId'>;
 };
+
+/** Display-only block types that do not emit click analytics. */
+export const isDisplayOnlyBlockType = (type: ResourceCenterBlockType): boolean =>
+  type === ResourceCenterBlockType.MESSAGE || type === ResourceCenterBlockType.CHECKLIST;

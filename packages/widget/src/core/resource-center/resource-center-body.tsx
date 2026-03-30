@@ -30,8 +30,8 @@ export const ResourceCenterMessageBlockView = memo(
     }
 
     const handleContentClick = async (element: any) => {
-      onBlockClick?.(block.id);
       onContentClick?.(element);
+      onBlockClick?.(block.id);
     };
 
     return (

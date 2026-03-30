@@ -13,6 +13,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
 import { extractStepQuestion, numberQuestionTypes } from '@/utils/content-question';
+import { isDisplayOnlyBlockType } from '@usertour/helpers';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
 import { PaginationConnection } from '@/common/openapi/pagination';
@@ -845,7 +846,7 @@ export class AnalyticsService {
     }
 
     const resourceCenterData = version.data as unknown as ResourceCenterData;
-    const blocks = resourceCenterData.blocks || [];
+    const blocks = (resourceCenterData.blocks || []).filter((b) => !isDisplayOnlyBlockType(b.type));
 
     const ret = [];
     for (const block of blocks) {
@@ -864,7 +865,7 @@ export class AnalyticsService {
         isDistinct: false,
       });
       ret.push({
-        name: block.name,
+        name: block.name ?? '',
         blockId: block.id,
         analytics: {
           uniqueClicks,

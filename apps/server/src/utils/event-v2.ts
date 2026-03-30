@@ -7,7 +7,7 @@ import {
   ContentDataType,
   ResourceCenterData,
 } from '@usertour/types';
-import { isEmptyString, isNullish } from '@usertour/helpers';
+import { isDisplayOnlyBlockType, isEmptyString, isNullish } from '@usertour/helpers';
 import {
   Step,
   BizEventWithEvent,
@@ -701,10 +701,15 @@ export const buildResourceCenterClickedEventData = (
     return null;
   }
 
+  // Display-only blocks (Message, Checklist) do not emit click analytics.
+  if (isDisplayOnlyBlockType(block.type)) {
+    return null;
+  }
+
   return {
     ...buildResourceCenterBaseEventData(session),
     [EventAttributes.RESOURCE_CENTER_BLOCK_ID]: block.id,
-    [EventAttributes.RESOURCE_CENTER_BLOCK_NAME]: block.name,
+    [EventAttributes.RESOURCE_CENTER_BLOCK_NAME]: block.name ?? '',
   };
 };
 

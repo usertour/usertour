@@ -149,7 +149,6 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
     case ResourceCenterBlockType.MESSAGE:
       return {
         id,
-        name: '',
         type: ResourceCenterBlockType.MESSAGE,
         content: DEFAULT_MESSAGE_BLOCK_CONTENT,
         onlyShowTask: false,
@@ -158,7 +157,6 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
     case ResourceCenterBlockType.CHECKLIST:
       return {
         id,
-        name: '',
         type: ResourceCenterBlockType.CHECKLIST,
         onlyShowTask: false,
         onlyShowTaskConditions: [],

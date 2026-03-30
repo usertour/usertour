@@ -19,12 +19,15 @@ export const AnalyticsBlocks = () => {
     return <AnalyticsTasksSkeleton />;
   }
 
-  const maxClicks = analyticsData?.viewsByBlock
-    ? Math.max(
-        ...analyticsData.viewsByBlock.map((b: AnalyticsViewsByBlock) => b.analytics.totalClicks),
-        1,
-      )
-    : 1;
+  const blocks = analyticsData?.viewsByBlock ?? [];
+  const totalUniqueClicks = blocks.reduce(
+    (sum: number, b: AnalyticsViewsByBlock) => sum + b.analytics.uniqueClicks,
+    0,
+  );
+  const totalTotalClicks = blocks.reduce(
+    (sum: number, b: AnalyticsViewsByBlock) => sum + b.analytics.totalClicks,
+    0,
+  );
 
   return (
     <Card>
@@ -45,34 +48,48 @@ export const AnalyticsBlocks = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {analyticsData?.viewsByBlock && analyticsData.viewsByBlock.length > 0 ? (
-              analyticsData.viewsByBlock.map((block: AnalyticsViewsByBlock) => {
-                const barWidth = Math.round((block.analytics.totalClicks / maxClicks) * 100);
-                return (
-                  <TableRow key={block.blockId}>
-                    <TableCell className="py-[1px] overflow-hidden">
-                      <div className="min-w-0">
-                        <span className="truncate block">{block.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-[1px] text-right">
-                      {block.analytics.uniqueClicks}
-                    </TableCell>
-                    <TableCell className="py-[1px] text-right">
-                      {block.analytics.totalClicks}
-                    </TableCell>
-                    <TableCell className="py-[1px] px-0 w-6" />
-                    <TableCell className="py-[1px] px-0">
-                      <div
-                        className="h-9 bg-gradient-to-r from-chart-1/50 to-chart-1"
-                        style={{
-                          width: `${barWidth}%`,
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+            {blocks.length > 0 ? (
+              <>
+                <TableRow className="font-medium bg-muted/50">
+                  <TableCell className="py-[1px]">All blocks</TableCell>
+                  <TableCell className="py-[1px] text-right">{totalUniqueClicks}</TableCell>
+                  <TableCell className="py-[1px] text-right">{totalTotalClicks}</TableCell>
+                  <TableCell className="py-[1px] px-0 w-6" />
+                  <TableCell className="py-[1px] px-0" />
+                </TableRow>
+                {blocks.map((block: AnalyticsViewsByBlock) => {
+                  const uniqueBar =
+                    totalUniqueClicks > 0
+                      ? Math.round((block.analytics.uniqueClicks / totalUniqueClicks) * 100)
+                      : 0;
+                  const totalBar =
+                    totalTotalClicks > 0
+                      ? Math.round((block.analytics.totalClicks / totalTotalClicks) * 100)
+                      : 0;
+                  return (
+                    <TableRow key={block.blockId}>
+                      <TableCell className="py-[1px] overflow-hidden">
+                        <div className="min-w-0">
+                          <span className="truncate block">{block.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-[1px] text-right">
+                        {block.analytics.uniqueClicks}
+                      </TableCell>
+                      <TableCell className="py-[1px] text-right">
+                        {block.analytics.totalClicks}
+                      </TableCell>
+                      <TableCell className="py-[1px] px-0 w-6" />
+                      <TableCell className="py-[1px] px-0">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="h-4 bg-chart-1/50" style={{ width: `${uniqueBar}%` }} />
+                          <div className="h-4 bg-chart-1" style={{ width: `${totalBar}%` }} />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </>
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
