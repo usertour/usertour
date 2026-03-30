@@ -8,6 +8,7 @@ interface ResourceCenterFrameRootProps {
   children: React.ReactNode;
   launcherText?: string;
   isAnimating?: boolean;
+  mode?: 'dom' | 'iframe';
   onLauncherSizeChange?: (rect: { width: number; height: number }) => void;
   onContentSizeChange?: (rect: { width: number; height: number }) => void;
 }
@@ -17,6 +18,7 @@ export const ResourceCenterFrameRoot = memo(
     children,
     launcherText,
     isAnimating = false,
+    mode = 'iframe',
     onLauncherSizeChange,
     onContentSizeChange,
   }: ResourceCenterFrameRootProps) => {
@@ -69,7 +71,9 @@ export const ResourceCenterFrameRoot = memo(
         data-animate-frame={animateFrame ? 'true' : 'false'}
         className={cn(
           'group',
-          'relative min-h-screen w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
+          'relative w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
+          mode === 'iframe' && 'min-h-screen',
+          mode !== 'iframe' && 'h-full',
           'rounded-sdk-resource-center-launcher data-[state=open]:rounded-sdk-popper',
           'data-[animate-frame=true]:transition-[border-radius]',
           'data-[animate-frame=true]:duration-sdk-resource-center',

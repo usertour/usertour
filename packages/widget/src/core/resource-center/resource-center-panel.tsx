@@ -41,6 +41,7 @@ interface IFrameContentProps {
   globalStyle?: string;
   children: React.ReactNode;
   launcherText?: string;
+  mode?: 'dom' | 'iframe';
   isAnimating?: boolean;
   onLauncherSizeChange?: (rect: { width: number; height: number }) => void;
   onContentSizeChange?: (rect: { width: number; height: number }) => void;
@@ -50,6 +51,7 @@ const IFrameContent = ({
   globalStyle,
   launcherText,
   children,
+  mode,
   isAnimating = false,
   onLauncherSizeChange,
   onContentSizeChange,
@@ -66,6 +68,7 @@ const IFrameContent = ({
   return (
     <ResourceCenterFrameRoot
       launcherText={launcherText}
+      mode={mode}
       isAnimating={isAnimating}
       onLauncherSizeChange={onLauncherSizeChange}
       onContentSizeChange={onContentSizeChange}
@@ -167,13 +170,15 @@ export const ResourceCenterPanel = forwardRef<
         : undefined
     : undefined;
 
+  const openFrameHeight = openHeight ?? (mode === 'iframe' ? `${closedHeight}px` : 'auto');
+
   const outerStyle: React.CSSProperties = {
     ...(applyPosition ? { zIndex, ...positionStyle } : {}),
   };
 
   const frameSizeStyle = {
     width: isOpen ? openWidth : closedWidth,
-    height: isOpen ? (openHeight ?? `${closedHeight}px`) : `${closedHeight}px`,
+    height: isOpen ? openFrameHeight : `${closedHeight}px`,
     ...getFrameBorderStyle(isOpen),
   };
 
@@ -196,6 +201,7 @@ export const ResourceCenterPanel = forwardRef<
             <IFrameContent
               globalStyle={globalStyle}
               launcherText={launcherText}
+              mode="iframe"
               isAnimating={isAnimating && animateFrame}
               onLauncherSizeChange={onLauncherSizeChange}
               onContentSizeChange={onContentSizeChange}
@@ -222,6 +228,7 @@ export const ResourceCenterPanel = forwardRef<
           >
             <ResourceCenterFrameRoot
               launcherText={launcherText}
+              mode="dom"
               isAnimating={isAnimating && animateFrame}
               onLauncherSizeChange={onLauncherSizeChange}
               onContentSizeChange={onContentSizeChange}
