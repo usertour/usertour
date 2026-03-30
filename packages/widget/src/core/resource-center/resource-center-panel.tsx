@@ -173,7 +173,7 @@ export const ResourceCenterPanel = forwardRef<
 
   const frameSizeStyle = {
     width: isOpen ? openWidth : closedWidth,
-    height: isOpen ? openHeight : `${closedHeight}px`,
+    height: isOpen ? (openHeight ?? `${closedHeight}px`) : `${closedHeight}px`,
     ...getFrameBorderStyle(isOpen),
   };
 
