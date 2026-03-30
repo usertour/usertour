@@ -13,6 +13,7 @@ import {
   ChecklistProgressColumn,
   FlowProgressColumn,
   LauncherProgressColumn,
+  ResourceCenterProgressColumn,
 } from '@/components/molecules/session';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { Link } from 'react-router-dom';
@@ -41,6 +42,9 @@ const ProgressColumn = (props: Row<BizSession>) => {
   }
   if (contentType === ContentDataType.BANNER) {
     return <BannerProgressColumn original={props.original} eventList={eventList} />;
+  }
+  if (contentType === ContentDataType.RESOURCE_CENTER) {
+    return <ResourceCenterProgressColumn original={props.original} eventList={eventList} />;
   }
 
   return <></>;

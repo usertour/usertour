@@ -103,6 +103,10 @@ export enum BizEvents {
   CHECKLIST_TASK_COMPLETED = 'checklist_task_completed',
   BANNER_SEEN = 'banner_seen',
   BANNER_DISMISSED = 'banner_dismissed',
+  RESOURCE_CENTER_OPENED = 'resource_center_opened',
+  RESOURCE_CENTER_CLOSED = 'resource_center_closed',
+  RESOURCE_CENTER_CLICKED = 'resource_center_clicked',
+  RESOURCE_CENTER_DISMISSED = 'resource_center_dismissed',
   EVENT_TRACKER_COMPLETED = 'event_tracker_completed',
   QUESTION_ANSWERED = 'question_answered',
 }
@@ -146,6 +150,14 @@ export enum EventAttributes {
   BANNER_SESSION_ID = 'banner_session_id',
   BANNER_VERSION_ID = 'banner_version_id',
   BANNER_VERSION_NUMBER = 'banner_version_number',
+  // Resource center attributes
+  RESOURCE_CENTER_ID = 'resource_center_id',
+  RESOURCE_CENTER_NAME = 'resource_center_name',
+  RESOURCE_CENTER_SESSION_ID = 'resource_center_session_id',
+  RESOURCE_CENTER_VERSION_ID = 'resource_center_version_id',
+  RESOURCE_CENTER_VERSION_NUMBER = 'resource_center_version_number',
+  RESOURCE_CENTER_BLOCK_ID = 'resource_center_block_id',
+  RESOURCE_CENTER_BLOCK_NAME = 'resource_center_block_name',
   // Event tracker attributes
   EVENT_TRACKER_ID = 'event_tracker_id',
   EVENT_TRACKER_NAME = 'event_tracker_name',

@@ -41,6 +41,7 @@ type ExportMode = {
   isBannerContent: boolean;
   isLauncherContent: boolean;
   isChecklistContent: boolean;
+  isResourceCenterContent: boolean;
   isSimpleExport: boolean;
 };
 
@@ -57,12 +58,14 @@ const getExportMode = (contentType?: ContentDataType): ExportMode => {
   const isBannerContent = contentType === ContentDataType.BANNER;
   const isLauncherContent = contentType === ContentDataType.LAUNCHER;
   const isChecklistContent = contentType === ContentDataType.CHECKLIST;
+  const isResourceCenterContent = contentType === ContentDataType.RESOURCE_CENTER;
 
   return {
     isBannerContent,
     isLauncherContent,
     isChecklistContent,
-    isSimpleExport: isBannerContent || isLauncherContent,
+    isResourceCenterContent,
+    isSimpleExport: isBannerContent || isLauncherContent || isResourceCenterContent,
   };
 };
 
@@ -317,6 +320,9 @@ const buildCompanyHeaders = (maxCompanies: number) => {
 };
 
 const buildOtherHeaders = (contentType: ContentDataType | undefined, mode: ExportMode) => {
+  if (mode.isResourceCenterContent) {
+    return ['Started at (UTC)'];
+  }
   if (mode.isSimpleExport) {
     return ['Version', 'Started at (UTC)', ...(mode.isLauncherContent ? ['Activated'] : [])];
   }
@@ -451,21 +457,23 @@ const buildRows = (args: {
       (event) => event.event?.codeName === BizEvents.LAUNCHER_ACTIVATED,
     ).length;
 
-    const commonInfo = mode.isSimpleExport
-      ? [
-          `v${session.version?.sequence}`,
-          formatUTCDate(session.createdAt),
-          ...(mode.isLauncherContent ? [activatedCount] : []),
-        ]
-      : [
-          `v${session.version?.sequence}`,
-          formatUTCDate(session.createdAt),
-          formatUTCDate(getLastActivityAt(session)),
-          formatUTCDate(getCompletedAt(session, contentType)),
-          `${session.progress}%`,
-          getState(session, contentType),
-          ...(includeReasonColumns ? [startReason, endReason] : []),
-        ];
+    const commonInfo = mode.isResourceCenterContent
+      ? [formatUTCDate(session.createdAt)]
+      : mode.isSimpleExport
+        ? [
+            `v${session.version?.sequence}`,
+            formatUTCDate(session.createdAt),
+            ...(mode.isLauncherContent ? [activatedCount] : []),
+          ]
+        : [
+            `v${session.version?.sequence}`,
+            formatUTCDate(session.createdAt),
+            formatUTCDate(getLastActivityAt(session)),
+            formatUTCDate(getCompletedAt(session, contentType)),
+            `${session.progress}%`,
+            getState(session, contentType),
+            ...(includeReasonColumns ? [startReason, endReason] : []),
+          ];
 
     const questionAnswersRow = mode.isSimpleExport
       ? []

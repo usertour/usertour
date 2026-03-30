@@ -97,6 +97,13 @@ function getFallbackSessionAttributeKey(event: BizEvent): string | null {
     return EventAttributes.BANNER_SESSION_ID;
   }
 
+  if (
+    dataKeys.some((key) => key.startsWith('resource_center_')) ||
+    event.event?.codeName?.startsWith('RESOURCE_CENTER_')
+  ) {
+    return EventAttributes.RESOURCE_CENTER_SESSION_ID;
+  }
+
   return null;
 }
 
@@ -115,6 +122,7 @@ const SESSION_ID_ATTRIBUTES = new Set<string>([
   EventAttributes.LAUNCHER_SESSION_ID,
   EventAttributes.CHECKLIST_SESSION_ID,
   EventAttributes.BANNER_SESSION_ID,
+  EventAttributes.RESOURCE_CENTER_SESSION_ID,
 ]);
 
 const ActivityFeedRow = ({

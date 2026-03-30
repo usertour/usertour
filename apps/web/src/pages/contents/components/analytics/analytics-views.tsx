@@ -164,6 +164,23 @@ const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
   />
 );
 
+const ResourceCenterAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
+  <div className="grid gap-4 md:grid-cols-2">
+    <AnalyticsCard
+      title="Unique user interactions"
+      tooltip="Unique users who opened the resource center."
+      value={analyticsData?.uniqueViews || 0}
+      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+    <AnalyticsCard
+      title="Clicks"
+      tooltip="Unique users who clicked a block in the resource center."
+      value={analyticsData?.uniqueCompletions || 0}
+      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+  </div>
+);
+
 const TrackerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
   <div className="grid gap-4 md:grid-cols-2">
     <AnalyticsCard
@@ -201,6 +218,9 @@ export const AnalyticsViews = () => {
   }
   if (contentType === ContentDataType.BANNER) {
     return <BannerAnalyticsViews analyticsData={analyticsData} />;
+  }
+  if (contentType === ContentDataType.RESOURCE_CENTER) {
+    return <ResourceCenterAnalyticsViews analyticsData={analyticsData} />;
   }
   if (contentType === ContentDataType.FLOW) {
     return <FlowAnalyticsViews analyticsData={analyticsData} />;

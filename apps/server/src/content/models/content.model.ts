@@ -15,6 +15,7 @@ export enum ContentType {
   SURVEY = 'survey',
   TRACKER = 'tracker',
   EVENT = 'event',
+  RESOURCE_CENTER = 'resource-center',
 }
 
 @ObjectType()

@@ -13,20 +13,32 @@ interface ResourceCenterMessageBlockViewProps {
   block: ResourceCenterMessageBlock;
   userAttributes?: UserTourTypes.Attributes;
   onContentClick?: (element: any) => Promise<void>;
+  onBlockClick?: (blockId: string) => Promise<void>;
   editSlot?: React.ReactNode;
 }
 
 export const ResourceCenterMessageBlockView = memo(
-  ({ block, userAttributes, onContentClick, editSlot }: ResourceCenterMessageBlockViewProps) => {
+  ({
+    block,
+    userAttributes,
+    onContentClick,
+    onBlockClick,
+    editSlot,
+  }: ResourceCenterMessageBlockViewProps) => {
     if (editSlot) {
       return <div className="p-2">{editSlot}</div>;
     }
+
+    const handleContentClick = async (element: any) => {
+      onBlockClick?.(block.id);
+      onContentClick?.(element);
+    };
 
     return (
       <div className="p-2">
         <ContentEditorSerialize
           contents={block.content}
-          onClick={onContentClick}
+          onClick={handleContentClick}
           userAttributes={userAttributes}
         />
       </div>
@@ -100,7 +112,7 @@ interface ResourceCenterBlocksProps {
 }
 
 export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBlocksProps) => {
-  const { themeSetting, data, userAttributes, onContentClick, checklistSlot } =
+  const { themeSetting, data, userAttributes, onContentClick, onBlockClick, checklistSlot } =
     useResourceCenterContext();
 
   const rc = themeSetting.resourceCenter;
@@ -118,6 +130,7 @@ export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBl
                 block={block}
                 userAttributes={userAttributes}
                 onContentClick={onContentClick}
+                onBlockClick={onBlockClick}
                 editSlot={messageEditSlots?.[block.id]}
               />
             )}

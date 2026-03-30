@@ -18,6 +18,10 @@ import {
   buildQuestionAnsweredEventData,
   buildBannerSeenEventData,
   buildBannerDismissedEventData,
+  buildResourceCenterOpenedEventData,
+  buildResourceCenterClosedEventData,
+  buildResourceCenterClickedEventData,
+  buildResourceCenterDismissedEventData,
   buildTrackerCompletedEventData,
   getAnswer,
   assignClientContext,
@@ -990,6 +994,27 @@ export class EventTrackingService {
     register({
       eventName: BizEvents.BANNER_DISMISSED,
       buildEventData: (session) => buildBannerDismissedEventData(session),
+    });
+
+    // Resource center events
+    register({
+      eventName: BizEvents.RESOURCE_CENTER_OPENED,
+      buildEventData: (session) => buildResourceCenterOpenedEventData(session),
+    });
+
+    register({
+      eventName: BizEvents.RESOURCE_CENTER_CLOSED,
+      buildEventData: (session) => buildResourceCenterClosedEventData(session),
+    });
+
+    register({
+      eventName: BizEvents.RESOURCE_CENTER_CLICKED,
+      buildEventData: (session, params) => buildResourceCenterClickedEventData(session, params),
+    });
+
+    register({
+      eventName: BizEvents.RESOURCE_CENTER_DISMISSED,
+      buildEventData: (session) => buildResourceCenterDismissedEventData(session),
     });
 
     // Flow step seen event with conditional FLOW_COMPLETED

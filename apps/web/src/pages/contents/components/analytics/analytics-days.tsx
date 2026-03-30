@@ -58,6 +58,18 @@ const generateChartConfig = (
         },
       };
     }
+    if (contentType === ContentDataType.RESOURCE_CENTER) {
+      return {
+        uniqueViews: {
+          label: 'Interactions',
+          color: 'hsl(var(--chart-1))',
+        },
+        uniqueCompletions: {
+          label: 'Clicks',
+          color: 'hsl(var(--chart-2))',
+        },
+      };
+    }
     return {
       uniqueViews: {
         label: 'Unique Views',
@@ -279,7 +291,9 @@ export const AnalyticsDays = () => {
   }
 
   const showRateTab =
-    contentType !== ContentDataType.BANNER && contentType !== ContentDataType.TRACKER;
+    contentType !== ContentDataType.BANNER &&
+    contentType !== ContentDataType.TRACKER &&
+    contentType !== ContentDataType.RESOURCE_CENTER;
 
   return (
     <>

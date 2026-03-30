@@ -1,4 +1,4 @@
-import { BizEvents, EventAttributes, StepSettings } from '@usertour/types';
+import { BizEvents, EventAttributes, ResourceCenterData, StepSettings } from '@usertour/types';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -85,6 +85,10 @@ const EVENT_TYPE_MAPPING = {
     start: BizEvents.BANNER_SEEN,
     complete: BizEvents.BANNER_DISMISSED,
   },
+  [ContentType.RESOURCE_CENTER]: {
+    start: BizEvents.RESOURCE_CENTER_OPENED,
+    complete: BizEvents.RESOURCE_CENTER_CLICKED,
+  },
 };
 
 const EVENTS = [
@@ -98,6 +102,10 @@ const EVENTS = [
   BizEvents.TOOLTIP_TARGET_MISSING,
   BizEvents.BANNER_SEEN,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.RESOURCE_CENTER_OPENED,
+  BizEvents.RESOURCE_CENTER_CLOSED,
+  BizEvents.RESOURCE_CENTER_CLICKED,
+  BizEvents.RESOURCE_CENTER_DISMISSED,
 ];
 
 export interface ChecklistData {
@@ -393,6 +401,7 @@ export class AnalyticsService {
         )
       : false;
     const viewsByTask = await this.aggregationTasksByContent(condition, projectId);
+    const viewsByBlock = await this.aggregationBlocksByContent(condition, projectId);
     const viewsByDay = await this.aggregationViewsByDay(
       { ...condition },
       timezone,
@@ -408,6 +417,7 @@ export class AnalyticsService {
       viewsByDay,
       viewsByStep,
       viewsByTask,
+      viewsByBlock,
     };
   }
 
@@ -800,6 +810,63 @@ export class AnalyticsService {
           totalViews,
           uniqueCompletions,
           totalCompletions,
+          uniqueClicks,
+          totalClicks,
+        },
+      });
+    }
+    return ret;
+  }
+
+  async aggregationBlocksByContent(condition: AnalyticsConditions, projectId: string) {
+    const { contentId } = condition;
+    const content = await this.prisma.content.findFirst({
+      where: { id: contentId },
+    });
+    if (!content || content.type !== ContentType.RESOURCE_CENTER) {
+      return false;
+    }
+    const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
+    const version = await this.prisma.version.findFirst({
+      where: { id: versionId },
+    });
+    if (!version || !version.data) {
+      return false;
+    }
+
+    const clickEvent = await this.prisma.event.findFirst({
+      where: {
+        projectId,
+        codeName: BizEvents.RESOURCE_CENTER_CLICKED,
+      },
+    });
+    if (!clickEvent) {
+      return false;
+    }
+
+    const resourceCenterData = version.data as unknown as ResourceCenterData;
+    const blocks = resourceCenterData.blocks || [];
+
+    const ret = [];
+    for (const block of blocks) {
+      const blockCondition = {
+        ...condition,
+        eventId: clickEvent.id,
+        key: EventAttributes.RESOURCE_CENTER_BLOCK_ID,
+        value: block.id,
+      };
+      const uniqueClicks = await this.aggregationByItem({
+        ...blockCondition,
+        isDistinct: true,
+      });
+      const totalClicks = await this.aggregationByItem({
+        ...blockCondition,
+        isDistinct: false,
+      });
+      ret.push({
+        name: block.name,
+        blockId: block.id,
+        analytics: {
           uniqueClicks,
           totalClicks,
         },

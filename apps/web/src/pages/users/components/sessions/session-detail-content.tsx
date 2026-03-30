@@ -15,6 +15,7 @@ import {
   BannerProgressColumn,
   ChecklistItemsColumn,
   LauncherProgressColumn,
+  ResourceCenterProgressColumn,
 } from '@/components/molecules/session';
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
@@ -99,7 +100,8 @@ const SessionDetailContentInner = ({
       bizEvent.event?.codeName === BizEvents.FLOW_STARTED ||
       bizEvent.event?.codeName === BizEvents.LAUNCHER_SEEN ||
       bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED ||
-      bizEvent.event?.codeName === BizEvents.BANNER_SEEN,
+      bizEvent.event?.codeName === BizEvents.BANNER_SEEN ||
+      bizEvent.event?.codeName === BizEvents.RESOURCE_CENTER_OPENED,
   );
 
   const endEvent = session?.bizEvent?.find(
@@ -107,7 +109,8 @@ const SessionDetailContentInner = ({
       bizEvent.event?.codeName === BizEvents.FLOW_ENDED ||
       bizEvent.event?.codeName === BizEvents.CHECKLIST_DISMISSED ||
       bizEvent.event?.codeName === BizEvents.LAUNCHER_DISMISSED ||
-      bizEvent.event?.codeName === BizEvents.BANNER_DISMISSED,
+      bizEvent.event?.codeName === BizEvents.BANNER_DISMISSED ||
+      bizEvent.event?.codeName === BizEvents.RESOURCE_CENTER_DISMISSED,
   );
 
   if (!eventList || !content || !version) {
@@ -230,6 +233,9 @@ const SessionDetailContentInner = ({
           )}
           {contentType === ContentDataType.BANNER && (
             <BannerProgressColumn original={session} eventList={eventList} />
+          )}
+          {contentType === ContentDataType.RESOURCE_CENTER && (
+            <ResourceCenterProgressColumn original={session} eventList={eventList} />
           )}
         </SessionItemContainer>
 

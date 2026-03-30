@@ -8,6 +8,7 @@ import {
   LauncherProgressColumn,
   ChecklistProgressColumn,
   FlowProgressColumn,
+  ResourceCenterProgressColumn,
 } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { Link } from 'react-router-dom';
@@ -25,6 +26,7 @@ import {
   FlowIcon,
   LauncherIcon,
   ChecklistIcon,
+  ResourceCenterIcon,
   SpinnerIcon,
 } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
@@ -63,6 +65,10 @@ const ProgressColumn = ({ session, eventList }: { session: BizSession; eventList
 
   if (contentType === ContentDataType.BANNER) {
     return <BannerProgressColumn original={session} eventList={eventList} />;
+  }
+
+  if (contentType === ContentDataType.RESOURCE_CENTER) {
+    return <ResourceCenterProgressColumn original={session} eventList={eventList} />;
   }
 
   return <div className="text-muted-foreground">Unknown content type</div>;
@@ -112,6 +118,8 @@ const ContentColumn = ({
         return <ChecklistIcon className={iconClassName} />;
       case ContentDataType.BANNER:
         return <BannerIcon className={iconClassName} />;
+      case ContentDataType.RESOURCE_CENTER:
+        return <ResourceCenterIcon className={iconClassName} />;
       default:
         return null;
     }

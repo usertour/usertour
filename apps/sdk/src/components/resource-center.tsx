@@ -8,6 +8,7 @@ import {
   LinkDecoratorContext,
   ResourceCenterPanel,
   ResourceCenterRoot,
+  ResourceCenterStyleProvider,
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
@@ -37,6 +38,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     themeSettings,
     removeBranding,
     linkUrlDecorator,
+    assets,
   } = store;
 
   if (!resourceCenterData || !openState) return null;
@@ -50,6 +52,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     themeSettings,
     removeBranding,
     linkUrlDecorator,
+    assets,
   };
 };
 
@@ -111,6 +114,7 @@ export const ResourceCenterWidget = ({ resourceCenter, checklists }: ResourceCen
     expanded,
     removeBranding,
     linkUrlDecorator,
+    assets,
   } = store;
 
   if (!themeSettings || !resourceCenterData) return <></>;
@@ -147,16 +151,24 @@ export const ResourceCenterWidget = ({ resourceCenter, checklists }: ResourceCen
         zIndex={zIndex}
         userAttributes={userAttributes}
         onContentClick={resourceCenter.handleOnClick}
+        onBlockClick={resourceCenter.handleBlockClick}
         showMadeWith={!removeBranding}
         checklistSlot={checklistSlot}
       >
-        <ResourceCenterPanel mode="iframe" launcherText={launcherText} badgeCount={badgeCount}>
-          <ResourceCenterHeader text={resourceCenterData.headerText} />
-          <ResourceCenterBody>
-            <ResourceCenterBlocks />
-          </ResourceCenterBody>
-          <ResourceCenterFooter />
-        </ResourceCenterPanel>
+        <ResourceCenterStyleProvider>
+          <ResourceCenterPanel
+            mode="iframe"
+            launcherText={launcherText}
+            badgeCount={badgeCount}
+            assets={assets}
+          >
+            <ResourceCenterHeader text={resourceCenterData.headerText} />
+            <ResourceCenterBody>
+              <ResourceCenterBlocks />
+            </ResourceCenterBody>
+            <ResourceCenterFooter />
+          </ResourceCenterPanel>
+        </ResourceCenterStyleProvider>
       </ResourceCenterRoot>
     </LinkDecoratorContext.Provider>
   );

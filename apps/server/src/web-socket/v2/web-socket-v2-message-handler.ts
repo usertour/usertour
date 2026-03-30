@@ -127,6 +127,21 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
+      ClientMessageKind.OPEN_RESOURCE_CENTER,
+      async (context, payload) => await this.service.openResourceCenter(context, payload),
+    );
+
+    register(
+      ClientMessageKind.CLOSE_RESOURCE_CENTER,
+      async (context, payload) => await this.service.closeResourceCenter(context, payload),
+    );
+
+    register(
+      ClientMessageKind.CLICK_RESOURCE_CENTER,
+      async (context, payload) => await this.service.clickResourceCenter(context, payload),
+    );
+
+    register(
       ClientMessageKind.END_BATCH,
       async (context, _payload) => await this.service.endBatch(context),
     );

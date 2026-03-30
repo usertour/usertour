@@ -270,6 +270,19 @@ export class TrackTrackerEventPayload {
   versionId: string;
 }
 
+/**
+ * Click resource center block payload validator
+ */
+export class ClickResourceCenterPayload {
+  @IsString()
+  @MaxLength(255)
+  sessionId: string;
+
+  @IsString()
+  @MaxLength(255)
+  blockId: string;
+}
+
 // ============================================================================
 // Payload DTO Map
 // ============================================================================
@@ -295,5 +308,8 @@ export const payloadValidatorMap = new Map<ClientMessageKind, new () => object>(
   [ClientMessageKind.ACTIVATE_LAUNCHER, SessionOnlyPayload],
   [ClientMessageKind.DISMISS_LAUNCHER, DismissLauncherPayload],
   [ClientMessageKind.TRACK_TRACKER_EVENT, TrackTrackerEventPayload],
+  [ClientMessageKind.OPEN_RESOURCE_CENTER, SessionOnlyPayload],
+  [ClientMessageKind.CLOSE_RESOURCE_CENTER, SessionOnlyPayload],
+  [ClientMessageKind.CLICK_RESOURCE_CENTER, ClickResourceCenterPayload],
   // BEGIN_BATCH, END_BATCH, END_ALL_CONTENT don't require payload validation
 ]);

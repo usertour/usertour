@@ -10,6 +10,7 @@ import { AnalyticsTasks } from '../analytics/analytics-tasks';
 import { AnalyticsViews } from '../analytics/analytics-views';
 import { AnalyticsQuestion } from '../analytics/analytics-question';
 import { AnalyticsTrackerUsers } from '../analytics/analytics-tracker-users';
+import { AnalyticsBlocks } from '../analytics/analytics-blocks';
 
 export const ContentDetailAnalytics = (props: { contentId: string }) => {
   const { contentId } = props;
@@ -33,6 +34,7 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
               {contentType === ContentDataType.FLOW && <AnalyticsSteps />}
               {contentType === ContentDataType.FLOW && <AnalyticsQuestion contentId={contentId} />}
               {contentType === ContentDataType.CHECKLIST && <AnalyticsTasks />}
+              {contentType === ContentDataType.RESOURCE_CENTER && <AnalyticsBlocks />}
               {isTracker && <AnalyticsTrackerUsers contentId={contentId} />}
               {!isTracker && <AnalyticsSessions />}
             </div>

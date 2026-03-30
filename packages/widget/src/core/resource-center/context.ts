@@ -12,6 +12,7 @@ export interface ResourceCenterContextValue {
   zIndex: number;
   userAttributes?: UserTourTypes.Attributes;
   onContentClick?: (element: any) => Promise<void>;
+  onBlockClick?: (blockId: string) => Promise<void>;
   checklistSlot?: React.ReactNode;
   showMadeWith: boolean;
 }

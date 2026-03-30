@@ -126,7 +126,7 @@ export const ContentDetailSettings = () => {
           showFrequency={!isShowOnly}
           showAtLeast={contentType !== ContentDataType.CHECKLIST}
           showWait={!isShowOnly}
-          showPriority={!isShowOnly}
+          showPriority={!isShowOnly || contentType === ContentDataType.RESOURCE_CENTER}
           disabled={isViewOnly}
           featureTooltip={AutoStartTooltips(contentType)}
         />

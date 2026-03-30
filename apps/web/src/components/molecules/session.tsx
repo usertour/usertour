@@ -324,10 +324,62 @@ const FlowProgressColumn = ({
 };
 FlowProgressColumn.displayName = 'FlowProgressColumn';
 
+const ResourceCenterProgressColumn = ({
+  original,
+  eventList,
+}: { original: BizSession; eventList: Event[] }) => {
+  const { bizEvent } = original;
+  if (!eventList || !bizEvent || bizEvent.length === 0) {
+    return <></>;
+  }
+
+  const isOpened = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.RESOURCE_CENTER_OPENED);
+  const isDismissed = !!bizEvent.find(
+    (e) =>
+      e?.event?.codeName === BizEvents.RESOURCE_CENTER_CLOSED ||
+      e?.event?.codeName === BizEvents.RESOURCE_CENTER_DISMISSED,
+  );
+
+  if (!isOpened && !isDismissed) {
+    return <></>;
+  }
+
+  return (
+    <div className="flex flex-row items-center space-x-3">
+      {!isDismissed && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-default">
+              <PlayIcon className="text-success h-5 w-5" />
+            </TooltipTrigger>
+            <TooltipContent>Active</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {isDismissed && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-default">
+              <CancelIcon className="text-foreground/60 h-5 w-5" />
+            </TooltipTrigger>
+            <TooltipContent>Dismissed</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      <div className="flex flex-col">
+        {!isDismissed && <div className="text-success">Active</div>}
+        {isDismissed && <div className="text-foreground/60">Dismissed</div>}
+      </div>
+    </div>
+  );
+};
+ResourceCenterProgressColumn.displayName = 'ResourceCenterProgressColumn';
+
 export {
   BannerProgressColumn,
   LauncherProgressColumn,
   ChecklistProgressColumn,
   FlowProgressColumn,
   ChecklistItemsColumn,
+  ResourceCenterProgressColumn,
 };

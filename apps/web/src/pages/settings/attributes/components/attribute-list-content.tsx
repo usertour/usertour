@@ -24,7 +24,11 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
 
   useEffect(() => {
     if (attributeList) {
-      setAttributes(attributeList?.filter((attr) => attr.bizType === bizType));
+      setAttributes(
+        attributeList
+          ?.filter((attr) => attr.bizType === bizType)
+          .sort((a, b) => (a.predefined === b.predefined ? 0 : a.predefined ? -1 : 1)),
+      );
     }
   }, [attributeList, bizType]);
 

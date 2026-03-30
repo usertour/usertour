@@ -62,6 +62,19 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     if (store.expanded === expanded) return;
     this.setExpandedStateStorage(this.getSessionId(), expanded);
     this.updateStore({ expanded });
+
+    // Report open/close events
+    const sessionId = this.getSessionId();
+    if (expanded) {
+      this.socketService.openResourceCenter({ sessionId });
+    } else {
+      this.socketService.closeResourceCenter({ sessionId });
+    }
+  }
+
+  async handleBlockClick(blockId: string): Promise<void> {
+    const sessionId = this.getSessionId();
+    this.socketService.clickResourceCenter({ sessionId, blockId });
   }
 
   isExpandable(): boolean {

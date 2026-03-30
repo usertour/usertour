@@ -66,6 +66,9 @@ export enum ClientMessageKind {
   ACTIVATE_LAUNCHER = 'ActivateLauncher',
   DISMISS_LAUNCHER = 'DismissLauncher',
   TRACK_TRACKER_EVENT = 'TrackTrackerEvent',
+  OPEN_RESOURCE_CENTER = 'OpenResourceCenter',
+  CLOSE_RESOURCE_CENTER = 'CloseResourceCenter',
+  CLICK_RESOURCE_CENTER = 'ClickResourceCenter',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
   END_ALL_CONTENT = 'EndAllContent',
@@ -260,6 +263,32 @@ export type ActivateLauncherDto = {
 export type DismissLauncherDto = {
   sessionId: string;
   endReason: string;
+};
+
+// ============================================================================
+// Resource Center DTOs
+// ============================================================================
+
+/**
+ * Open resource center request
+ */
+export type OpenResourceCenterDto = {
+  sessionId: string;
+};
+
+/**
+ * Close resource center request
+ */
+export type CloseResourceCenterDto = {
+  sessionId: string;
+};
+
+/**
+ * Click resource center block request
+ */
+export type ClickResourceCenterDto = {
+  sessionId: string;
+  blockId: string;
 };
 
 // ============================================================================

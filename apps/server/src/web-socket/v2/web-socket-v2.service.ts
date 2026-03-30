@@ -18,6 +18,9 @@ import {
   ActivateLauncherDto,
   DismissLauncherDto,
   TrackTrackerEventDto,
+  OpenResourceCenterDto,
+  CloseResourceCenterDto,
+  ClickResourceCenterDto,
   ContentDataType,
   ClientContext,
   contentEndReason,
@@ -663,6 +666,59 @@ export class WebSocketV2Service {
       contentId: params.contentId,
       versionId: params.versionId,
       bizCompanyId,
+    });
+  }
+
+  // ============================================================================
+  // Resource Center Methods
+  // ============================================================================
+
+  /**
+   * Open resource center (panel expanded)
+   */
+  async openResourceCenter(
+    context: WebSocketContext,
+    params: OpenResourceCenterDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackEventByType(BizEvents.RESOURCE_CENTER_OPENED, {
+      sessionId: params.sessionId,
+      environment,
+      clientContext,
+    });
+  }
+
+  /**
+   * Close resource center (panel collapsed)
+   */
+  async closeResourceCenter(
+    context: WebSocketContext,
+    params: CloseResourceCenterDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackEventByType(BizEvents.RESOURCE_CENTER_CLOSED, {
+      sessionId: params.sessionId,
+      environment,
+      clientContext,
+    });
+  }
+
+  /**
+   * Click resource center block
+   */
+  async clickResourceCenter(
+    context: WebSocketContext,
+    params: ClickResourceCenterDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackEventByType(BizEvents.RESOURCE_CENTER_CLICKED, {
+      sessionId: params.sessionId,
+      environment,
+      clientContext,
+      blockId: params.blockId,
     });
   }
 

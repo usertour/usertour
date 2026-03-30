@@ -23,6 +23,7 @@ export enum ResourceCenterBlockType {
 
 export interface ResourceCenterMessageBlock {
   id: string;
+  name: string;
   type: ResourceCenterBlockType.MESSAGE;
   content: ContentEditorRoot[];
   onlyShowTask: boolean;
@@ -31,6 +32,7 @@ export interface ResourceCenterMessageBlock {
 
 export interface ResourceCenterChecklistBlock {
   id: string;
+  name: string;
   type: ResourceCenterBlockType.CHECKLIST;
   onlyShowTask: boolean;
   onlyShowTaskConditions: RulesCondition[];

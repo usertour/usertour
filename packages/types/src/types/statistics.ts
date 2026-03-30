@@ -55,10 +55,20 @@ export type AnalyticsViewsByTask = {
   analytics: AnalyticsViews;
 };
 
+export type AnalyticsViewsByBlock = {
+  name: string;
+  blockId: string;
+  analytics: {
+    uniqueClicks: number;
+    totalClicks: number;
+  };
+};
+
 export type AnalyticsData = AnalyticsViews & {
   viewsByDay: AnalyticsViewsByDay[];
   viewsByStep: AnalyticsViewsByStep[];
   viewsByTask: AnalyticsViewsByTask[];
+  viewsByBlock: AnalyticsViewsByBlock[];
 };
 
 export type BizSession = {

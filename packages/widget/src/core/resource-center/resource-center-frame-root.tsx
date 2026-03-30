@@ -69,7 +69,7 @@ export const ResourceCenterFrameRoot = memo(
         data-animate-frame={animateFrame ? 'true' : 'false'}
         className={cn(
           'group',
-          'relative h-full w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
+          'relative min-h-screen w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
           'rounded-sdk-resource-center-launcher data-[state=open]:rounded-sdk-popper',
           'data-[animate-frame=true]:transition-[border-radius]',
           'data-[animate-frame=true]:duration-sdk-resource-center',

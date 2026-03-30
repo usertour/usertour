@@ -33,4 +33,7 @@ export class Analytics {
 
   @Field(() => GraphQLJSON, { nullable: true })
   viewsByTask: JsonValue;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  viewsByBlock: JsonValue;
 }

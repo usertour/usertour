@@ -15,6 +15,9 @@ import {
   ActivateLauncherDto,
   DismissLauncherDto,
   TrackTrackerEventDto,
+  OpenResourceCenterDto,
+  CloseResourceCenterDto,
+  ClickResourceCenterDto,
   ClientCondition,
   WebSocketEvents,
   ClientMessageKind,
@@ -56,6 +59,11 @@ export interface IUsertourSocket {
   clickChecklistTask(params: ClickChecklistTaskDto, options?: BatchOptions): Promise<boolean>;
   hideChecklist(params: HideChecklistDto, options?: BatchOptions): Promise<boolean>;
   showChecklist(params: ShowChecklistDto, options?: BatchOptions): Promise<boolean>;
+
+  // Resource center operations
+  openResourceCenter(params: OpenResourceCenterDto, options?: BatchOptions): Promise<boolean>;
+  closeResourceCenter(params: CloseResourceCenterDto, options?: BatchOptions): Promise<boolean>;
+  clickResourceCenter(params: ClickResourceCenterDto, options?: BatchOptions): Promise<boolean>;
 
   // Context and reporting
   updateClientContext(params: ClientContext, options?: BatchOptions): Promise<boolean>;
@@ -432,6 +440,28 @@ export class UsertourSocket implements IUsertourSocket {
 
   async trackTrackerEvent(params: TrackTrackerEventDto): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.TRACK_TRACKER_EVENT, params);
+  }
+
+  // === Resource Center Operations ===
+  async openResourceCenter(
+    params: OpenResourceCenterDto,
+    options?: BatchOptions,
+  ): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.OPEN_RESOURCE_CENTER, params, options);
+  }
+
+  async closeResourceCenter(
+    params: CloseResourceCenterDto,
+    options?: BatchOptions,
+  ): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.CLOSE_RESOURCE_CENTER, params, options);
+  }
+
+  async clickResourceCenter(
+    params: ClickResourceCenterDto,
+    options?: BatchOptions,
+  ): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.CLICK_RESOURCE_CENTER, params, options);
   }
 
   // === Status Methods ===

@@ -32,29 +32,31 @@ export const EventListContent = () => {
         </TableHeader>
         <TableBody>
           {eventList ? (
-            eventList?.map((event: Event) => (
-              <TableRow className="cursor-pointer" key={event.id} onClick={() => {}}>
-                <TableCell className="truncate">
-                  {event.description ? (
-                    <div className="flex flex-col">
-                      <span className="truncate">{event.displayName}</span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {event.description}
-                      </span>
-                    </div>
-                  ) : (
-                    event.displayName
-                  )}
-                </TableCell>
-                <TableCell className="truncate">{event.codeName}</TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  {format(new Date(event.createdAt), 'PPpp')}
-                </TableCell>
-                <TableCell>
-                  <EventListAction event={event} />
-                </TableCell>
-              </TableRow>
-            ))
+            [...eventList]
+              .sort((a, b) => (a.predefined === b.predefined ? 0 : a.predefined ? -1 : 1))
+              .map((event: Event) => (
+                <TableRow className="cursor-pointer" key={event.id} onClick={() => {}}>
+                  <TableCell className="truncate">
+                    {event.description ? (
+                      <div className="flex flex-col">
+                        <span className="truncate">{event.displayName}</span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {event.description}
+                        </span>
+                      </div>
+                    ) : (
+                      event.displayName
+                    )}
+                  </TableCell>
+                  <TableCell className="truncate">{event.codeName}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {format(new Date(event.createdAt), 'PPpp')}
+                  </TableCell>
+                  <TableCell>
+                    <EventListAction event={event} />
+                  </TableCell>
+                </TableRow>
+              ))
           ) : (
             <TableRow>
               <TableCell colSpan={4} className="h-24 text-center">

@@ -5,6 +5,7 @@ import {
   ChecklistData,
   ClientContext,
   ContentDataType,
+  ResourceCenterData,
 } from '@usertour/types';
 import { isEmptyString, isNullish } from '@usertour/helpers';
 import {
@@ -41,6 +42,7 @@ const SINGLE_OCCURRENCE_EVENTS = [
   BizEvents.LAUNCHER_DISMISSED,
   BizEvents.BANNER_SEEN,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.RESOURCE_CENTER_DISMISSED,
 ] as const;
 
 // Events that should invalidate subsequent events
@@ -49,6 +51,7 @@ const DISMISSED_EVENTS = [
   BizEvents.LAUNCHER_DISMISSED,
   BizEvents.FLOW_ENDED,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.RESOURCE_CENTER_DISMISSED,
 ] as const;
 
 // ============================================================================
@@ -328,7 +331,6 @@ export const buildBannerBaseEventData = (session: BizSessionWithRelations): Reco
   return {
     [EventAttributes.BANNER_ID]: session.content.id,
     [EventAttributes.BANNER_NAME]: session.content.name,
-    [EventAttributes.BANNER_SESSION_ID]: session.id,
     [EventAttributes.BANNER_VERSION_ID]: session.version.id,
     [EventAttributes.BANNER_VERSION_NUMBER]: session.version.sequence,
   };
@@ -625,6 +627,88 @@ export const buildBannerDismissedEventData = (
 };
 
 // ============================================================================
+// Resource Center Event Data Builders
+// ============================================================================
+
+/**
+ * Build base event data for resource center events
+ * @param session - The business session with content and version
+ * @returns Base resource center event data
+ */
+export const buildResourceCenterBaseEventData = (
+  session: BizSessionWithRelations,
+): Record<string, any> => {
+  return {
+    [EventAttributes.RESOURCE_CENTER_ID]: session.content.id,
+    [EventAttributes.RESOURCE_CENTER_NAME]: session.content.name,
+    [EventAttributes.RESOURCE_CENTER_VERSION_ID]: session.version.id,
+    [EventAttributes.RESOURCE_CENTER_VERSION_NUMBER]: session.version.sequence,
+  };
+};
+
+/**
+ * Build event data for resource center opened events
+ * @param session - The business session with content and version
+ * @returns Resource center opened event data
+ */
+export const buildResourceCenterOpenedEventData = (
+  session: BizSessionWithRelations,
+): Record<string, any> | null => {
+  return buildResourceCenterBaseEventData(session);
+};
+
+/**
+ * Build event data for resource center closed events
+ * @param session - The business session with content and version
+ * @returns Resource center closed event data
+ */
+export const buildResourceCenterClosedEventData = (
+  session: BizSessionWithRelations,
+): Record<string, any> | null => {
+  return buildResourceCenterBaseEventData(session);
+};
+
+/**
+ * Build event data for resource center dismissed events
+ * Only triggered by system/backend, never by user action.
+ * @param session - The business session with content and version
+ * @returns Resource center dismissed event data
+ */
+export const buildResourceCenterDismissedEventData = (
+  session: BizSessionWithRelations,
+): Record<string, any> | null => {
+  return buildResourceCenterBaseEventData(session);
+};
+
+/**
+ * Build event data for resource center clicked events
+ * @param session - The business session with content and version
+ * @param params - Event build parameters containing blockId
+ * @returns Resource center clicked event data, or null if block not found
+ */
+export const buildResourceCenterClickedEventData = (
+  session: BizSessionWithRelations,
+  params?: EventBuildParams,
+): Record<string, any> | null => {
+  const blockId = params?.blockId;
+  if (!blockId) {
+    return null;
+  }
+
+  const resourceCenterData = session.version.data as unknown as ResourceCenterData;
+  const block = resourceCenterData?.blocks?.find((b) => b.id === blockId);
+  if (!block) {
+    return null;
+  }
+
+  return {
+    ...buildResourceCenterBaseEventData(session),
+    [EventAttributes.RESOURCE_CENTER_BLOCK_ID]: block.id,
+    [EventAttributes.RESOURCE_CENTER_BLOCK_NAME]: block.name,
+  };
+};
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 
@@ -679,6 +763,9 @@ export const getStartEventType = (contentType: ContentDataType): BizEvents | nul
   if (contentType === ContentDataType.BANNER) {
     return BizEvents.BANNER_SEEN;
   }
+  if (contentType === ContentDataType.RESOURCE_CENTER) {
+    return BizEvents.RESOURCE_CENTER_OPENED;
+  }
   return null;
 };
 
@@ -699,6 +786,9 @@ export const getEndEventType = (contentType: ContentDataType): BizEvents | null 
   }
   if (contentType === ContentDataType.BANNER) {
     return BizEvents.BANNER_DISMISSED;
+  }
+  if (contentType === ContentDataType.RESOURCE_CENTER) {
+    return BizEvents.RESOURCE_CENTER_DISMISSED;
   }
   return null;
 };

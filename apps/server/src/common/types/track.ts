@@ -10,6 +10,7 @@ export interface EventBuildParams {
   endReason?: string;
   stepId?: string;
   taskId?: string;
+  blockId?: string;
   answer?: AnswerQuestionDto;
 }
 

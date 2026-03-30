@@ -14,6 +14,7 @@ interface ResourceCenterRootProps {
   zIndex: number;
   userAttributes?: UserTourTypes.Attributes;
   onContentClick?: (element: any) => Promise<void>;
+  onBlockClick?: (blockId: string) => Promise<void>;
   checklistSlot?: React.ReactNode;
   showMadeWith?: boolean;
 }
@@ -29,6 +30,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     themeSettings,
     userAttributes,
     onContentClick,
+    onBlockClick,
     checklistSlot,
     showMadeWith = true,
   } = props;
@@ -75,6 +77,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       zIndex,
       userAttributes,
       onContentClick,
+      onBlockClick,
       checklistSlot,
       showMadeWith,
     }),
@@ -89,6 +92,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       zIndex,
       userAttributes,
       onContentClick,
+      onBlockClick,
       checklistSlot,
       showMadeWith,
     ],
