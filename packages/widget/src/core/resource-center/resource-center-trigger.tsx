@@ -1,4 +1,4 @@
-import { forwardRef, memo, useEffect, useMemo, useState } from 'react';
+import { forwardRef, memo, useEffect, useState } from 'react';
 import { QuestionMarkCircledIcon } from '@usertour-packages/icons';
 import { useSize } from '@usertour-packages/react-use-size';
 import { cn } from '@usertour-packages/tailwind';
@@ -91,11 +91,13 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
       }
     }, [rect, onSizeChange]);
 
-    const resolvedText = useMemo(() => {
-      if (launcher?.textMode === 'no-text') return undefined;
-      if (launcher?.textMode === 'active-checklist-text' && launcherText) return launcherText;
-      return data.buttonText;
-    }, [launcher?.textMode, launcherText, data.buttonText]);
+    const showChecklistInfo = uncompletedCount > 0;
+    const showChecklistText =
+      launcher?.textMode === 'active-checklist-text' && showChecklistInfo && !!launcherText;
+    const showResourceCenterText =
+      launcher?.textMode === 'resource-center-text' && !!data.buttonText;
+    const showDividerAfterChecklistText = showChecklistText;
+    const showDividerBeforeResourceCenterText = showChecklistInfo && showResourceCenterText;
 
     const buttonClassName = cn(
       'rounded-sdk-resource-center-launcher flex bg-transparent',
@@ -140,11 +142,17 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
               {uncompletedCount}
             </span>
           )}
-          {resolvedText && (
-            <span className="text-sm font-semibold whitespace-nowrap">{resolvedText}</span>
+          {showChecklistText && (
+            <span className="text-sm font-semibold whitespace-nowrap">{launcherText}</span>
           )}
-          {launcherText && (
+          {showDividerAfterChecklistText && (
             <span className="h-6 w-px bg-sdk-resource-center-launcher-foreground/20" />
+          )}
+          {showDividerBeforeResourceCenterText && (
+            <span className="h-6 w-px bg-sdk-resource-center-launcher-foreground/20" />
+          )}
+          {showResourceCenterText && (
+            <span className="text-sm font-semibold whitespace-nowrap">{data.buttonText}</span>
           )}
           <span
             className="flex shrink-0 items-center justify-center"
