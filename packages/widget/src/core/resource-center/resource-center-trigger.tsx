@@ -135,8 +135,8 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
           ref={setContentRef}
           className="flex items-center whitespace-nowrap gap-2"
           style={{
-            paddingLeft: launcher?.height ? `${Number(launcher.height) / 2}px` : undefined,
-            paddingRight: launcher?.height ? `${Number(launcher.height) / 2}px` : undefined,
+            paddingLeft: launcher?.height ? `${Number(launcher.height) / 4}px` : undefined,
+            paddingRight: launcher?.height ? `${Number(launcher.height) / 4}px` : undefined,
             transitionDuration: 'var(--usertour-resource-center-transition-duration)',
           }}
         >
