@@ -16,11 +16,10 @@ export const ResourceCenterCloseButton = forwardRef<
   const { className, ...restProps } = props;
 
   const buttonClassName = cn(
-    'size-6 rounded',
-    'inline-flex items-center justify-center',
+    'rounded-lg inline-flex items-center justify-center',
     'text-sdk-resource-center-header-foreground',
     'hover:bg-sdk-resource-center-header-foreground/10',
-    'outline-none cursor-pointer',
+    'outline-none cursor-pointer p-2',
     className,
   );
 
@@ -52,15 +51,13 @@ export const ResourceCenterHeader = memo(({ text }: { text: string }) => {
   return (
     <div
       className={cn(
-        'order-1 shrink-0 px-3 py-2 flex items-center bg-sdk-resource-center-header-background rounded-t-[inherit]',
+        'order-1 shrink-0 p-2 flex items-center bg-sdk-resource-center-header-background rounded-t-[inherit]',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
       )}
     >
-      <div className="text-sdk-resource-center-header-foreground font-semibold text-base flex-1">
-        {text}
-      </div>
+      <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">{text}</div>
       <ResourceCenterCloseButton />
     </div>
   );
