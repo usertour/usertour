@@ -15,10 +15,12 @@ export const ResourceCenterLauncherIcon = memo(
     iconType,
     iconUrl,
     imageHeight,
+    launcherHeight,
   }: {
     iconType?: string;
     iconUrl?: string;
     imageHeight?: number;
+    launcherHeight?: number;
   }) => {
     const h = imageHeight ?? RC_DEFAULTS.imageHeight;
     if (iconType === 'custom' && iconUrl) {
@@ -27,8 +29,9 @@ export const ResourceCenterLauncherIcon = memo(
       );
     }
     if (iconType === 'plaintext-question-mark') {
+      const textSize = Math.round((launcherHeight ?? RC_DEFAULTS.launcherHeight) * 0.6);
       return (
-        <span className="text-lg font-bold leading-none" style={{ fontSize: h }}>
+        <span className="leading-none" style={{ fontSize: textSize }}>
           ?
         </span>
       );
@@ -162,6 +165,7 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
               iconType={launcher?.iconType}
               iconUrl={launcher?.iconUrl}
               imageHeight={launcher?.imageHeight}
+              launcherHeight={launcherHeight}
             />
           </span>
         </div>
