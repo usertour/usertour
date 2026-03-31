@@ -100,6 +100,7 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
     const showResourceCenterText =
       launcher?.textMode === 'resource-center-text' && !!data.buttonText;
     const showChecklistDivider = showChecklistInfo;
+    const showGapAfterChecklistCount = showChecklistText;
 
     const buttonClassName = cn(
       'rounded-sdk-resource-center-launcher flex bg-transparent',
@@ -132,10 +133,15 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
       >
         <div
           ref={setContentRef}
-          className="flex items-center whitespace-nowrap gap-2 px-sdk-resource-center-launcher"
+          className="flex items-center whitespace-nowrap px-sdk-resource-center-launcher"
         >
           {uncompletedCount > 0 && (
-            <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-sdk-resource-center-launcher-foreground/10 px-2 text-sm font-bold text-sdk-resource-center-launcher-foreground">
+            <span
+              className={cn(
+                'flex h-8 min-w-8 items-center justify-center rounded-full bg-sdk-resource-center-launcher-foreground/10 px-2 text-sm font-bold text-sdk-resource-center-launcher-foreground',
+                showGapAfterChecklistCount && 'mr-sdk-resource-center-launcher-gap',
+              )}
+            >
               {uncompletedCount}
             </span>
           )}
@@ -143,10 +149,12 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
             <span className="text-sm font-semibold whitespace-nowrap">{launcherText}</span>
           )}
           {showChecklistDivider && (
-            <span className="h-sdk-line-height w-px bg-sdk-resource-center-launcher-foreground/20" />
+            <span className="mx-sdk-resource-center-launcher-divider h-sdk-line-height w-px bg-sdk-resource-center-launcher-foreground/20" />
           )}
           {showResourceCenterText && (
-            <span className="text-sm font-semibold whitespace-nowrap">{data.buttonText}</span>
+            <span className="mr-sdk-resource-center-launcher-gap text-sm font-semibold whitespace-nowrap">
+              {data.buttonText}
+            </span>
           )}
           <span
             className="flex shrink-0 items-center justify-center"

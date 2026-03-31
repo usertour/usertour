@@ -100,6 +100,12 @@ export const extendSdk = {
       active: 'var(--usertour-secondary-border-active)',
     },
   },
+  margin: {
+    'sdk-resource-center-launcher-gap':
+      'calc(var(--usertour-resource-center-launcher-height) / 7.5)',
+    'sdk-resource-center-launcher-divider':
+      'calc(var(--usertour-resource-center-launcher-height) / 3.75)',
+  },
   padding: {
     'sdk-button-x': 'var(--usertour-button-px)',
     'sdk-banner': 'var(--usertour-banner-padding, 8px)',
