@@ -185,7 +185,13 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
   if (!settings) return null;
 
   const previewChecklistSlot = (
-    <ChecklistRoot data={previewChecklistData} themeSettings={settings} expanded={true} zIndex={0}>
+    <ChecklistRoot
+      data={previewChecklistData}
+      themeSettings={settings}
+      embedded={true}
+      expanded={true}
+      zIndex={0}
+    >
       <ChecklistPopperContentBody>
         <ContentEditorSerialize contents={previewChecklistData.content} />
         <ChecklistProgress />

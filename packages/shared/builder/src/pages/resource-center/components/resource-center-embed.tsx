@@ -151,6 +151,7 @@ export const ResourceCenterEmbed = () => {
         } as any
       }
       themeSettings={theme.settings}
+      embedded={true}
       expanded={true}
       zIndex={0}
     >

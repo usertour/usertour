@@ -43,6 +43,7 @@ interface ChecklistRootContextValue {
   themeSetting?: ThemeTypesSetting;
   data: ChecklistData;
   isOpen: boolean;
+  embedded: boolean;
   isAllCompleted: boolean;
   unCompletedItemsCount: number;
   progress: number;
@@ -69,6 +70,7 @@ interface ChecklistRootProps {
   children: React.ReactNode;
   themeSettings: ThemeTypesSetting;
   data: ChecklistData;
+  embedded?: boolean;
   defaultOpen?: boolean;
   expanded?: boolean;
   onDismiss?: () => Promise<void>;
@@ -80,6 +82,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
   const {
     children,
     data: initialData,
+    embedded = false,
     defaultOpen = true,
     expanded,
     onDismiss,
@@ -135,6 +138,7 @@ const ChecklistRoot = (props: ChecklistRootProps) => {
         themeSetting,
         data,
         isOpen,
+        embedded,
         isAllCompleted,
         unCompletedItemsCount,
         progress,
@@ -582,7 +586,7 @@ interface ChecklistItemsProps {
 }
 const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
   ({ onClick, disabledUpdate }, ref) => {
-    const { data, updateItemStatus, themeSetting } = useChecklistRootContext();
+    const { data, updateItemStatus, themeSetting, embedded } = useChecklistRootContext();
 
     const textDecoration = themeSetting?.checklist.completedTaskTextDecoration;
 
@@ -601,7 +605,7 @@ const ChecklistItems = forwardRef<HTMLDivElement, ChecklistItemsProps>(
     );
 
     return (
-      <div ref={ref} className="flex flex-col -mx-[24px]">
+      <div ref={ref} className={cn('flex flex-col', !embedded && '-mx-[24px]')}>
         {data.items
           ?.filter((item) => item.isVisible !== false)
           .map((item, index) => (
@@ -747,7 +751,7 @@ interface ChecklistItemProps {
 
 const ChecklistItem = (props: ChecklistItemProps) => {
   const { item, index, onClick, textDecoration = 'line-through' } = props;
-  const { isOpen, data } = useChecklistRootContext();
+  const { isOpen, data, embedded } = useChecklistRootContext();
   const [shouldShowAnimation, setShouldShowAnimation] = useState(false);
 
   const isCompleted = useMemo(() => {
@@ -786,7 +790,9 @@ const ChecklistItem = (props: ChecklistItemProps) => {
       variant="custom"
       disabled={!isClickable}
       className={cn(
-        'group flex items-center px-[24px] py-2 hover:bg-sdk-foreground/5 transition-colors',
+        'group flex items-center transition-colors',
+        embedded ? 'hover:bg-sdk-hover' : 'hover:bg-sdk-foreground/5',
+        embedded ? 'rounded-lg p-2' : 'px-[24px] py-2',
         cursorStyle,
       )}
       onClick={() => onClick(item, index)}
@@ -804,15 +810,17 @@ const ChecklistItem = (props: ChecklistItemProps) => {
           <span className="text-sdk-sm opacity-75 leading-4">{item.description}</span>
         )}
       </div>
-      <TaskArrowIcon
-        className={cn(
-          'w-4 h-4 ml-4 flex-shrink-0',
-          'opacity-0 -translate-x-4',
-          'transition-all duration-200 ease-out',
-          'text-sdk-checklist-checkmark',
-          !isCompleted && isClickable && 'group-hover:opacity-100 group-hover:translate-x-0',
-        )}
-      />
+      {!embedded && (
+        <TaskArrowIcon
+          className={cn(
+            'w-4 h-4 ml-4 flex-shrink-0',
+            'opacity-0 -translate-x-4',
+            'transition-all duration-200 ease-out',
+            'text-sdk-checklist-checkmark',
+            !isCompleted && isClickable && 'group-hover:opacity-100 group-hover:translate-x-0',
+          )}
+        />
+      )}
     </Button>
   );
 };

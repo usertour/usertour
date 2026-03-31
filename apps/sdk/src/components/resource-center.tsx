@@ -76,6 +76,7 @@ const EmbeddedChecklistSlot = ({ checklist }: { checklist: UsertourChecklist }) 
     <ChecklistRoot
       data={checklistData}
       themeSettings={themeSettings}
+      embedded={true}
       expanded={true}
       onExpandedChange={checklist.handleExpandedChange}
       onDismiss={checklist.handleDismiss}
