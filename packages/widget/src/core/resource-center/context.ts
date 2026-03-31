@@ -5,6 +5,9 @@ export interface ResourceCenterContextValue {
   globalStyle: string;
   themeSetting: ThemeTypesSetting;
   data: ResourceCenterData;
+  launcherText?: string;
+  badgeCount: number;
+  uncompletedCount: number;
   isOpen: boolean;
   isAnimating: boolean;
   animateFrame: boolean;

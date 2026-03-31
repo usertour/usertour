@@ -72,16 +72,14 @@ ResourceCenterBadge.displayName = 'ResourceCenterBadge';
 
 interface ResourceCenterTriggerProps {
   onClick?: () => void;
-  badgeCount?: number;
-  launcherText?: string;
   onSizeChange?: (rect: { width: number; height: number }) => void;
   layout?: 'fill' | 'inline';
 }
 
 export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCenterTriggerProps>(
   (props, ref) => {
-    const { onClick, badgeCount = 0, launcherText, onSizeChange, layout = 'fill' } = props;
-    const { themeSetting, data } = useResourceCenterContext();
+    const { onClick, onSizeChange, layout = 'fill' } = props;
+    const { themeSetting, data, launcherText, uncompletedCount } = useResourceCenterContext();
     const launcher = themeSetting.resourceCenterLauncherButton;
 
     const [contentRef, setContentRef] = useState<HTMLDivElement | null>(null);
@@ -126,7 +124,7 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
         }}
         className={buttonClassName}
         onClick={onClick}
-        aria-label={`Open ${data.buttonText}${badgeCount > 0 ? ` (${badgeCount} unread)` : ''}`}
+        aria-label={`Open ${data.buttonText}${uncompletedCount > 0 ? ` (${uncompletedCount} remaining)` : ''}`}
       >
         <div
           ref={setContentRef}
@@ -137,18 +135,21 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
             transitionDuration: 'var(--usertour-resource-center-transition-duration)',
           }}
         >
-          {badgeCount > 0 && (
+          {uncompletedCount > 0 && (
             <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-sdk-resource-center-launcher-foreground/10 px-2 text-sm font-bold text-sdk-resource-center-launcher-foreground">
-              {badgeCount}
+              {uncompletedCount}
             </span>
           )}
           {resolvedText && (
             <span className="text-sm font-semibold whitespace-nowrap">{resolvedText}</span>
           )}
-          {(badgeCount > 0 || resolvedText) && (
+          {launcherText && (
             <span className="h-6 w-px bg-sdk-resource-center-launcher-foreground/20" />
           )}
-          <span className="flex items-center justify-center">
+          <span
+            className="flex shrink-0 items-center justify-center"
+            style={{ width: launcherHeight / 2, height: launcherHeight / 2 }}
+          >
             <ResourceCenterLauncherIcon
               iconType={launcher?.iconType}
               iconUrl={launcher?.iconUrl}

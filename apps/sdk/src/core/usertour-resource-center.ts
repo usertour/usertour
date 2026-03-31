@@ -12,8 +12,54 @@ import { logger } from '@/utils';
 import { CommonActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
 import { isDisplayOnlyBlockType, storage } from '@usertour/helpers';
+import { UsertourChecklist } from '@/core/usertour-checklist';
+
+type ResourceCenterChecklistPresentation = {
+  checklist?: UsertourChecklist;
+  launcherText?: string;
+  badgeCount: number;
+  uncompletedCount: number;
+};
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
+  getActivatedChecklist(): UsertourChecklist | null {
+    return this.instance.activatedChecklist;
+  }
+
+  getChecklistPresentation(): ResourceCenterChecklistPresentation {
+    const store = this.getStoreData();
+    const resourceCenterData = store?.resourceCenterData;
+    const themeSettings = store?.themeSettings;
+    const checklist = this.getActivatedChecklist() ?? undefined;
+
+    const hasChecklistBlock =
+      resourceCenterData?.blocks?.some((block) => block.type === 'checklist') ?? false;
+
+    if (!hasChecklistBlock || !checklist) {
+      return {
+        checklist: undefined,
+        launcherText: undefined,
+        badgeCount: 0,
+        uncompletedCount: 0,
+      };
+    }
+
+    const checklistStore = checklist.getSnapshot();
+    const items =
+      checklistStore?.checklistData?.items?.filter(
+        (item) => item?.isVisible !== false && !item?.isCompleted,
+      ) ?? [];
+
+    return {
+      checklist,
+      launcherText: checklistStore?.checklistData?.buttonText,
+      badgeCount: 0,
+      uncompletedCount: themeSettings?.resourceCenterLauncherButton?.showRemainingTasks
+        ? items.length
+        : 0,
+    };
+  }
+
   protected initializeActionHandlers(): void {
     this.registerActionHandlers([new CommonActionHandler()]);
   }

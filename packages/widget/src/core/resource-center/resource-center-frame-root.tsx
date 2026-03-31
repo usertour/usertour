@@ -6,7 +6,6 @@ import { ResourceCenterTrigger } from './resource-center-trigger';
 
 interface ResourceCenterFrameRootProps {
   children: React.ReactNode;
-  launcherText?: string;
   isAnimating?: boolean;
   mode?: 'dom' | 'iframe';
   onLauncherSizeChange?: (rect: { width: number; height: number }) => void;
@@ -16,7 +15,6 @@ interface ResourceCenterFrameRootProps {
 export const ResourceCenterFrameRoot = memo(
   ({
     children,
-    launcherText,
     isAnimating = false,
     mode = 'iframe',
     onLauncherSizeChange,
@@ -88,7 +86,6 @@ export const ResourceCenterFrameRoot = memo(
         >
           <ResourceCenterTrigger
             onClick={handleOpen}
-            launcherText={launcherText}
             onSizeChange={onLauncherSizeChange}
             layout="inline"
           />

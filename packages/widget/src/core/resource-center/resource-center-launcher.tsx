@@ -17,7 +17,7 @@ const getLauncherBorderRadius = (
 // ============================================================================
 
 interface ResourceCenterLauncherProps {
-  badgeCount?: number;
+  uncompletedCount?: number;
   launcherText?: string;
   onClick?: () => void;
   style?: React.CSSProperties;
@@ -26,7 +26,7 @@ interface ResourceCenterLauncherProps {
 
 export const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterLauncherProps>(
   (props, ref) => {
-    const { onClick, badgeCount, launcherText, style, frameStyle } = props;
+    const { onClick, style, frameStyle } = props;
     const { themeSetting, zIndex } = useResourceCenterContext();
     const rc = themeSetting.resourceCenter;
     const launcher = themeSetting.resourceCenterLauncherButton;
@@ -50,11 +50,7 @@ export const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterL
           ...frameStyle,
         }}
       >
-        <ResourceCenterTrigger
-          onClick={onClick}
-          badgeCount={badgeCount}
-          launcherText={launcherText}
-        />
+        <ResourceCenterTrigger onClick={onClick} />
       </div>
     );
   },
@@ -68,7 +64,7 @@ ResourceCenterLauncher.displayName = 'ResourceCenterLauncher';
 
 interface ResourceCenterLauncherFrameProps {
   assets: AssetAttributes[] | undefined;
-  badgeCount?: number;
+  uncompletedCount?: number;
   launcherText?: string;
 }
 
@@ -76,7 +72,7 @@ export const ResourceCenterLauncherFrame = forwardRef<
   HTMLIFrameElement,
   ResourceCenterLauncherFrameProps
 >((props, ref) => {
-  const { assets, badgeCount, launcherText } = props;
+  const { assets, uncompletedCount, launcherText } = props;
   const { globalStyle, themeSetting, zIndex } = useResourceCenterContext();
   const [launcherRect, setLauncherRect] = useState<{ width: number; height: number } | null>(null);
 
@@ -106,7 +102,7 @@ export const ResourceCenterLauncherFrame = forwardRef<
       <ResourceCenterLauncherInFrame
         globalStyle={globalStyle}
         onSizeChange={setLauncherRect}
-        badgeCount={badgeCount}
+        uncompletedCount={uncompletedCount}
         launcherText={launcherText}
       />
     </Frame>
@@ -122,12 +118,12 @@ ResourceCenterLauncherFrame.displayName = 'ResourceCenterLauncherFrame';
 interface ResourceCenterLauncherInFrameProps {
   globalStyle?: string;
   onSizeChange?: (rect: { width: number; height: number }) => void;
-  badgeCount?: number;
+  uncompletedCount?: number;
   launcherText?: string;
 }
 
 const ResourceCenterLauncherInFrame = (props: ResourceCenterLauncherInFrameProps) => {
-  const { globalStyle, onSizeChange, badgeCount, launcherText } = props;
+  const { globalStyle, onSizeChange } = props;
   const { handleExpandedChange } = useResourceCenterContext();
 
   useFrameGlobalStyle(globalStyle);
@@ -136,8 +132,6 @@ const ResourceCenterLauncherInFrame = (props: ResourceCenterLauncherInFrameProps
     <ResourceCenterTrigger
       onClick={async () => await handleExpandedChange(true)}
       onSizeChange={onSizeChange}
-      badgeCount={badgeCount}
-      launcherText={launcherText}
     />
   );
 };

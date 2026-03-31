@@ -115,7 +115,7 @@ const App = ({
           ))}
           {resourceCenters?.map((rc) => (
             <ErrorBoundary key={rc.getId()} fallbackRender={() => null} onError={handleWidgetError}>
-              <WIDGETS.ResourceCenter resourceCenter={rc} checklists={checklists} />
+              <WIDGETS.ResourceCenter resourceCenter={rc} />
             </ErrorBoundary>
           ))}
         </React.Suspense>

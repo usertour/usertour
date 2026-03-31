@@ -14,14 +14,12 @@ import {
   ResourceCenterBlocks,
   ResourceCenterFooter,
 } from '@usertour-packages/widget';
-import { ResourceCenterBlockType } from '@usertour/types';
 import { useSyncExternalStore } from 'react';
 import { UsertourChecklist } from '@/core/usertour-checklist';
 import { UsertourResourceCenter } from '@/core/usertour-resource-center';
 
 type ResourceCenterWidgetProps = {
   resourceCenter: UsertourResourceCenter;
-  checklists?: UsertourChecklist[];
 };
 
 const useResourceCenterStore = (rc: UsertourResourceCenter) => {
@@ -97,12 +95,8 @@ const EmbeddedChecklistSlot = ({ checklist }: { checklist: UsertourChecklist }) 
   );
 };
 
-export const ResourceCenterWidget = ({ resourceCenter, checklists }: ResourceCenterWidgetProps) => {
+export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetProps) => {
   const store = useResourceCenterStore(resourceCenter);
-
-  // Find the first active checklist for embedding
-  const activeChecklist = checklists?.[0];
-  const checklistStore = useChecklistStore(activeChecklist);
 
   if (!store) return <></>;
 
@@ -119,33 +113,19 @@ export const ResourceCenterWidget = ({ resourceCenter, checklists }: ResourceCen
 
   if (!themeSettings || !resourceCenterData) return <></>;
 
-  const hasChecklistBlock = resourceCenterData.blocks.some(
-    (b) => b.type === ResourceCenterBlockType.CHECKLIST,
-  );
+  const { checklist, launcherText, badgeCount, uncompletedCount } =
+    resourceCenter.getChecklistPresentation();
 
-  // Build checklistSlot for embedding
-  const checklistSlot =
-    hasChecklistBlock && activeChecklist ? (
-      <EmbeddedChecklistSlot checklist={activeChecklist} />
-    ) : undefined;
-
-  // Launcher text: show checklist button text when active checklist is embedded
-  const launcherText =
-    hasChecklistBlock && checklistStore?.checklistData?.buttonText
-      ? checklistStore.checklistData.buttonText
-      : undefined;
-  const badgeCount =
-    hasChecklistBlock && themeSettings.resourceCenterLauncherButton?.showRemainingTasks
-      ? (checklistStore?.checklistData?.items ?? []).filter(
-          (item: any) => item?.isVisible !== false && !item?.isCompleted,
-        ).length
-      : 0;
+  const checklistSlot = checklist ? <EmbeddedChecklistSlot checklist={checklist} /> : undefined;
 
   return (
     <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
       <ResourceCenterRoot
         data={resourceCenterData}
         themeSettings={themeSettings}
+        launcherText={launcherText}
+        badgeCount={badgeCount}
+        uncompletedCount={uncompletedCount}
         expanded={expanded}
         onExpandedChange={resourceCenter.expand}
         zIndex={zIndex}
@@ -156,12 +136,7 @@ export const ResourceCenterWidget = ({ resourceCenter, checklists }: ResourceCen
         checklistSlot={checklistSlot}
       >
         <ResourceCenterStyleProvider>
-          <ResourceCenterPanel
-            mode="iframe"
-            launcherText={launcherText}
-            badgeCount={badgeCount}
-            assets={assets}
-          >
+          <ResourceCenterPanel mode="iframe" assets={assets}>
             <ResourceCenterHeader text={resourceCenterData.headerText} />
             <ResourceCenterBody>
               <ResourceCenterBlocks />

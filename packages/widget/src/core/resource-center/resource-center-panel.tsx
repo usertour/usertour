@@ -1,4 +1,11 @@
-import { forwardRef, useCallback, useEffect, useState, type HTMLAttributes } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  type HTMLAttributes,
+} from 'react';
 import type { AssetAttributes } from '@usertour-packages/frame';
 import { Frame, useFrame } from '@usertour-packages/frame';
 import { cn } from '@usertour-packages/tailwind';
@@ -40,7 +47,6 @@ const getFrameBorderStyle = (isOpen: boolean) => ({
 interface IFrameContentProps {
   globalStyle?: string;
   children: React.ReactNode;
-  launcherText?: string;
   mode?: 'dom' | 'iframe';
   isAnimating?: boolean;
   onLauncherSizeChange?: (rect: { width: number; height: number }) => void;
@@ -49,7 +55,6 @@ interface IFrameContentProps {
 
 const IFrameContent = ({
   globalStyle,
-  launcherText,
   children,
   mode,
   isAnimating = false,
@@ -58,7 +63,7 @@ const IFrameContent = ({
 }: IFrameContentProps) => {
   const { document } = useFrame();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (globalStyle && document?.body) {
       document.body.style.cssText = globalStyle;
       document.body.className = 'usertour-widget-root';
@@ -67,7 +72,6 @@ const IFrameContent = ({
 
   return (
     <ResourceCenterFrameRoot
-      launcherText={launcherText}
       mode={mode}
       isAnimating={isAnimating}
       onLauncherSizeChange={onLauncherSizeChange}
@@ -104,8 +108,6 @@ interface ResourceCenterPanelProps {
   /** Allow content to overflow the frame (e.g. for builder editor toolbar) */
   allowOverflow?: boolean;
   children?: React.ReactNode;
-  badgeCount?: number;
-  launcherText?: string;
   openHeightOverride?: number;
   closedWidthOverride?: number;
   assets?: AssetAttributes[];
@@ -126,16 +128,23 @@ export const ResourceCenterPanel = forwardRef<
     position: positionProp,
     allowOverflow,
     children,
-    badgeCount,
-    launcherText,
     openHeightOverride,
     closedWidthOverride,
     assets,
     ...restProps
   } = props;
 
-  const { globalStyle, zIndex, isOpen, isAnimating, themeSetting, animateFrame } =
-    useResourceCenterContext();
+  const {
+    globalStyle,
+    zIndex,
+    isOpen,
+    isAnimating,
+    themeSetting,
+    animateFrame,
+    launcherText,
+    uncompletedCount,
+    badgeCount,
+  } = useResourceCenterContext();
   const positionStyle = useResourceCenterPositionStyle();
 
   const rc = themeSetting.resourceCenter;
@@ -146,6 +155,12 @@ export const ResourceCenterPanel = forwardRef<
 
   const [launcherSize, setLauncherSize] = useState<{ width: number; height: number } | null>(null);
   const [contentSize, setContentSize] = useState<{ width: number; height: number } | null>(null);
+
+  // Reset launcher measurement when content changes so the container
+  // temporarily becomes `auto`-width, allowing correct re-measurement.
+  useEffect(() => {
+    setLauncherSize(null);
+  }, [launcherText, uncompletedCount]);
 
   const onLauncherSizeChange = useCallback(
     (rect: { width: number; height: number }) => setLauncherSize(rect),
@@ -160,7 +175,7 @@ export const ResourceCenterPanel = forwardRef<
     ? `${closedWidthOverride}px`
     : launcherSize?.width
       ? `${launcherSize.width}px`
-      : `${closedHeight}px`;
+      : 'auto';
 
   const openHeight = animateFrame
     ? openHeightOverride
@@ -200,7 +215,6 @@ export const ResourceCenterPanel = forwardRef<
           >
             <IFrameContent
               globalStyle={globalStyle}
-              launcherText={launcherText}
               mode="iframe"
               isAnimating={isAnimating && animateFrame}
               onLauncherSizeChange={onLauncherSizeChange}
@@ -227,7 +241,6 @@ export const ResourceCenterPanel = forwardRef<
             role={isOpen ? 'dialog' : undefined}
           >
             <ResourceCenterFrameRoot
-              launcherText={launcherText}
               mode="dom"
               isAnimating={isAnimating && animateFrame}
               onLauncherSizeChange={onLauncherSizeChange}
