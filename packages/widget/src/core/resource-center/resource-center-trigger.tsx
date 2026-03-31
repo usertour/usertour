@@ -132,12 +132,7 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
       >
         <div
           ref={setContentRef}
-          className="flex items-center whitespace-nowrap gap-2"
-          style={{
-            paddingLeft: launcher?.height ? `${Number(launcher.height) / 4}px` : undefined,
-            paddingRight: launcher?.height ? `${Number(launcher.height) / 4}px` : undefined,
-            transitionDuration: 'var(--usertour-resource-center-transition-duration)',
-          }}
+          className="flex items-center whitespace-nowrap gap-2 px-sdk-resource-center-launcher"
         >
           {uncompletedCount > 0 && (
             <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-sdk-resource-center-launcher-foreground/10 px-2 text-sm font-bold text-sdk-resource-center-launcher-foreground">
@@ -148,7 +143,7 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
             <span className="text-sm font-semibold whitespace-nowrap">{launcherText}</span>
           )}
           {showChecklistDivider && (
-            <span className="h-6 w-px bg-sdk-resource-center-launcher-foreground/20" />
+            <span className="h-sdk-line-height w-px bg-sdk-resource-center-launcher-foreground/20" />
           )}
           {showResourceCenterText && (
             <span className="text-sm font-semibold whitespace-nowrap">{data.buttonText}</span>
