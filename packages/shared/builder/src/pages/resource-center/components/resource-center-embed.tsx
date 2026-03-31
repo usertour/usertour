@@ -195,6 +195,10 @@ export const ResourceCenterEmbed = () => {
   );
 
   const previewUncompletedCount = 1;
+  const previewLauncherUncompletedCount = theme.settings.resourceCenterLauncherButton
+    ?.showRemainingTasks
+    ? previewUncompletedCount
+    : 0;
 
   return (
     <ResourceCenterRoot
@@ -202,7 +206,7 @@ export const ResourceCenterEmbed = () => {
       themeSettings={theme.settings}
       launcherText="Getting started"
       badgeCount={previewUncompletedCount}
-      uncompletedCount={previewUncompletedCount}
+      uncompletedCount={previewLauncherUncompletedCount}
       animateFrame={false}
       expanded={expanded}
       onExpandedChange={async (open: boolean) => {

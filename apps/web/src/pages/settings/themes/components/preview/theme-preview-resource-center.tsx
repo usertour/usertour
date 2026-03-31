@@ -198,6 +198,9 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
   const previewUncompletedCount = previewChecklistData.items.filter(
     (item: { completed?: boolean; hidden?: boolean }) => item.hidden !== true && !item.completed,
   ).length;
+  const previewLauncherUncompletedCount = settings.resourceCenterLauncherButton?.showRemainingTasks
+    ? previewUncompletedCount
+    : 0;
 
   const previewContent = (
     <>
@@ -216,7 +219,7 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
         themeSettings={settings}
         launcherText={previewChecklistData.buttonText}
         badgeCount={previewUncompletedCount}
-        uncompletedCount={previewUncompletedCount}
+        uncompletedCount={previewLauncherUncompletedCount}
         expanded={expandedState}
         onExpandedChange={async (open: boolean) => {
           setExpandedState(open);

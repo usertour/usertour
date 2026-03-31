@@ -99,8 +99,7 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
       launcher?.textMode === 'active-checklist-text' && showChecklistInfo && !!launcherText;
     const showResourceCenterText =
       launcher?.textMode === 'resource-center-text' && !!data.buttonText;
-    const showDividerAfterChecklistText = showChecklistText;
-    const showDividerBeforeResourceCenterText = showChecklistInfo && showResourceCenterText;
+    const showChecklistDivider = showChecklistInfo;
 
     const buttonClassName = cn(
       'rounded-sdk-resource-center-launcher flex bg-transparent',
@@ -148,10 +147,7 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
           {showChecklistText && (
             <span className="text-sm font-semibold whitespace-nowrap">{launcherText}</span>
           )}
-          {showDividerAfterChecklistText && (
-            <span className="h-6 w-px bg-sdk-resource-center-launcher-foreground/20" />
-          )}
-          {showDividerBeforeResourceCenterText && (
+          {showChecklistDivider && (
             <span className="h-6 w-px bg-sdk-resource-center-launcher-foreground/20" />
           )}
           {showResourceCenterText && (
