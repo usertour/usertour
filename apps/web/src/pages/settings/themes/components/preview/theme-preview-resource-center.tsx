@@ -195,6 +195,10 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
     </ChecklistRoot>
   );
 
+  const previewUncompletedCount = previewChecklistData.items.filter(
+    (item: { completed?: boolean; hidden?: boolean }) => item.hidden !== true && !item.completed,
+  ).length;
+
   const previewContent = (
     <>
       <ResourceCenterHeader text={defaultResourceCenterPreviewData.headerText} />
@@ -210,6 +214,9 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
       <ResourceCenterRoot
         data={defaultResourceCenterPreviewData}
         themeSettings={settings}
+        launcherText={previewChecklistData.buttonText}
+        badgeCount={previewUncompletedCount}
+        uncompletedCount={previewUncompletedCount}
         expanded={expandedState}
         onExpandedChange={async (open: boolean) => {
           setExpandedState(open);
@@ -219,9 +226,7 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
         checklistSlot={previewChecklistSlot}
       >
         <ResourceCenterStyleProvider>
-          <ResourceCenterPanel mode="dom" badgeCount={2}>
-            {previewContent}
-          </ResourceCenterPanel>
+          <ResourceCenterPanel mode="dom">{previewContent}</ResourceCenterPanel>
         </ResourceCenterStyleProvider>
       </ResourceCenterRoot>
     </div>

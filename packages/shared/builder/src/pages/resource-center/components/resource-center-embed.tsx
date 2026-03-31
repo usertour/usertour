@@ -194,10 +194,15 @@ export const ResourceCenterEmbed = () => {
     </ChecklistRoot>
   );
 
+  const previewUncompletedCount = 1;
+
   return (
     <ResourceCenterRoot
       data={localData}
       themeSettings={theme.settings}
+      launcherText="Getting started"
+      badgeCount={previewUncompletedCount}
+      uncompletedCount={previewUncompletedCount}
       animateFrame={false}
       expanded={expanded}
       onExpandedChange={async (open: boolean) => {
