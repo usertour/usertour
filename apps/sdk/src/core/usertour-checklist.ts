@@ -35,6 +35,17 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     }
   }
 
+  /**
+   * Sets whether the checklist is embedded in a resource center.
+   * When embedded, the standalone checklist UI is hidden.
+   */
+  setEmbeddedInResourceCenter(embedded: boolean): void {
+    const store = this.getStoreData();
+    if (store && store.embeddedInResourceCenter !== embedded) {
+      this.setStoreData({ ...store, embeddedInResourceCenter: embedded });
+    }
+  }
+
   // === Public API Methods ===
   /**
    * Shows the checklist by initializing its store data with closed state.
@@ -224,6 +235,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     return {
       checklistData: evaluatedChecklistData,
       expanded,
+      embeddedInResourceCenter: false,
     };
   }
 

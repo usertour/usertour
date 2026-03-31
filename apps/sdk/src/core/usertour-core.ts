@@ -15,6 +15,7 @@ import {
   ConditionWaitTimer,
   ClientCondition,
   WebSocketEvents,
+  ResourceCenterBlockType,
 } from '@usertour/types';
 import { Evented } from '@/utils/evented';
 import { ExternalStore } from '@/utils/store';
@@ -1061,6 +1062,7 @@ export class UsertourCore extends Evented {
     this.syncChecklistsStore([this.activatedChecklist]);
     // Show checklist with appropriate expanded state
     await this.activatedChecklist.show();
+    this.syncChecklistEmbeddedState();
     return true;
   }
 
@@ -1147,6 +1149,7 @@ export class UsertourCore extends Evented {
     });
     this.syncResourceCentersStore([this.activatedResourceCenter]);
     await this.activatedResourceCenter.show();
+    this.syncChecklistEmbeddedState();
     return true;
   }
 
@@ -1162,6 +1165,7 @@ export class UsertourCore extends Evented {
       return false;
     }
     this.cleanupActivatedResourceCenter();
+    this.syncChecklistEmbeddedState();
     return true;
   }
 
@@ -1600,6 +1604,21 @@ export class UsertourCore extends Evented {
     this.activatedResourceCenter?.destroy();
     this.activatedResourceCenter = null;
     this.resourceCentersStore.setData(undefined);
+  }
+
+  /**
+   * Checks whether the active resource center embeds a checklist block
+   * and updates the checklist store's `embeddedInResourceCenter` flag accordingly.
+   */
+  private syncChecklistEmbeddedState() {
+    const checklist = this.activatedChecklist;
+    if (!checklist) return;
+
+    const rcData = this.activatedResourceCenter?.getSnapshot()?.resourceCenterData;
+    const embedded =
+      rcData?.blocks?.some((b) => b.type === ResourceCenterBlockType.CHECKLIST) ?? false;
+
+    checklist.setEmbeddedInResourceCenter(embedded);
   }
 
   // === Unacked Tasks Management ===
