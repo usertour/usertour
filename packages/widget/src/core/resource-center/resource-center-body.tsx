@@ -62,14 +62,7 @@ export const ResourceCenterChecklistBlockView = memo(
       return <div className="p-2">{slot}</div>;
     }
 
-    return (
-      <div className="p-2">
-        <div className="flex items-center gap-2 text-sm opacity-50">
-          <span>📋</span>
-          <span>No active checklist</span>
-        </div>
-      </div>
-    );
+    return <></>;
   },
 );
 
@@ -86,7 +79,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
   return (
     <div
       className={cn(
-        'order-2 min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background p-2',
+        'order-2 min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background p-4',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
