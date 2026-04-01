@@ -1,7 +1,7 @@
 import { EXTENSION_SIDEBAR_MAIN } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { LauncherDataType } from '@usertour/types';
-import { LauncherContentType, LauncherIconType } from '../../../components/';
+import { LauncherContentType, IconPicker } from '../../../components/';
 import { useLauncherContext } from '../../../contexts';
 
 export const LauncherType = () => {
@@ -27,7 +27,7 @@ export const LauncherType = () => {
       />
 
       {localData.type === LauncherDataType.ICON && (
-        <LauncherIconType
+        <IconPicker
           type={localData.iconType}
           iconSource={localData.iconSource}
           iconUrl={localData.iconUrl}

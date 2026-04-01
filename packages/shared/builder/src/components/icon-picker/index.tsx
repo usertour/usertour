@@ -16,16 +16,16 @@ import { IconTriggerButton } from './icon-trigger-button';
 import { BuiltinIconTab } from './builtin-icon-tab';
 import { UploadIconTab } from './upload-icon-tab';
 import { UrlIconTab } from './url-icon-tab';
-import type { LauncherIconTypeProps } from './types';
+import type { IconPickerProps } from './types';
 
-export const LauncherIconType = ({
+export const IconPicker = ({
   type,
   iconSource = LauncherIconSource.BUILTIN,
   iconUrl,
   zIndex,
   showNoIcon = false,
   onChange,
-}: LauncherIconTypeProps) => {
+}: IconPickerProps) => {
   const [open, setOpen] = useState(false);
   const hasNoIconTab = showNoIcon;
   const popoverWidthClassName = hasNoIconTab ? 'w-[360px]' : 'w-72';
@@ -161,4 +161,4 @@ export const LauncherIconType = ({
     </TooltipProvider>
   );
 };
-LauncherIconType.displayName = 'LauncherIconType';
+IconPicker.displayName = 'IconPicker';

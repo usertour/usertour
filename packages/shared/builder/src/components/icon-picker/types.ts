@@ -2,7 +2,7 @@ import type { LauncherIconSource } from '@usertour/types';
 import type { RemixiconComponentType } from '@usertour-packages/icons';
 
 // Main component props
-export interface LauncherIconTypeProps {
+export interface IconPickerProps {
   type: string;
   iconSource?: LauncherIconSource;
   iconUrl?: string;

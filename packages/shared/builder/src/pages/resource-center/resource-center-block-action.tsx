@@ -22,7 +22,7 @@ import {
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
-import { LauncherIconType } from '../../components/launcher-icon-type';
+import { IconPicker } from '../../components/icon-picker';
 
 const BlockActionHeader = () => {
   const { setCurrentMode } = useBuilderContext();
@@ -99,7 +99,7 @@ const BlockActionBody = () => {
           {/* Icon */}
           <div className="flex flex-col space-y-2">
             <Label>Icon</Label>
-            <LauncherIconType
+            <IconPicker
               type={currentBlock.iconType}
               iconSource={currentBlock.iconSource}
               iconUrl={currentBlock.iconUrl}
