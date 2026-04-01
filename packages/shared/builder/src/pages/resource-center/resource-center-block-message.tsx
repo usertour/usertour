@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
+import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
@@ -64,9 +65,12 @@ const BlockMessageBody = () => {
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
-          <p className="text-sm text-muted-foreground">
-            Edit Message content by clicking on the content area in the preview.
-          </p>
+          <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+            <InfoCircledIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+            <p className="text-sm text-blue-800">
+              Edit message content by clicking on the content area in the preview.
+            </p>
+          </div>
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="only-show-block" className="font-normal">
