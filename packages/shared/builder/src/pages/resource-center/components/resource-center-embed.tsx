@@ -25,6 +25,7 @@ import {
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderContext, useResourceCenterContext } from '../../../contexts';
+import { PreviewModeTabs } from '../../../components/preview';
 import { useAws } from '../../../hooks/use-aws';
 
 export const ResourceCenterEmbed = () => {
@@ -32,6 +33,9 @@ export const ResourceCenterEmbed = () => {
   const { upload } = useAws();
   const [theme, setTheme] = useState<Theme | undefined>();
   const [expanded, setExpanded] = useState(true);
+  const [previewMode, setPreviewMode] = useState<'default' | 'active-checklist'>(
+    'active-checklist',
+  );
   const { themeList } = useThemeListContext();
   const { currentVersion, projectId, shouldShowMadeWith = true } = useBuilderContext();
   const { attributeList } = useAttributeListContext();
@@ -94,6 +98,11 @@ export const ResourceCenterEmbed = () => {
   if (!theme || !localData) {
     return null;
   }
+
+  const hasChecklistBlock = localData.blocks.some(
+    (block) => block.type === ResourceCenterBlockType.CHECKLIST,
+  );
+  const showActiveChecklistPreview = hasChecklistBlock && previewMode === 'active-checklist';
 
   const previewChecklistSlot = (
     <ChecklistRoot
@@ -202,31 +211,47 @@ export const ResourceCenterEmbed = () => {
     : 0;
 
   return (
-    <ResourceCenterRoot
-      data={localData}
-      themeSettings={theme.settings}
-      launcherText="Getting started"
-      badgeCount={previewUncompletedCount}
-      uncompletedCount={previewLauncherUncompletedCount}
-      animateFrame={false}
-      expanded={expanded}
-      onExpandedChange={async (open: boolean) => {
-        setExpanded(open);
-      }}
-      zIndex={10000}
-      showMadeWith={shouldShowMadeWith}
-      checklistSlot={previewChecklistSlot}
-    >
-      <ResourceCenterStyleProvider>
-        <ResourceCenterPanel mode="dom" allowOverflow>
-          <ResourceCenterHeader text={localData.headerText} />
-          <ResourceCenterBody>
-            <ResourceCenterBlocks messageEditSlots={messageEditSlots} />
-          </ResourceCenterBody>
-          <ResourceCenterFooter />
-        </ResourceCenterPanel>
-      </ResourceCenterStyleProvider>
-    </ResourceCenterRoot>
+    <>
+      <PreviewModeTabs
+        value={showActiveChecklistPreview ? 'active-checklist' : 'default'}
+        onValueChange={(value) => setPreviewMode(value as 'default' | 'active-checklist')}
+        options={[
+          { value: 'default', label: 'Default' },
+          {
+            value: 'active-checklist',
+            label: 'Active checklist',
+            disabled: !hasChecklistBlock,
+          },
+        ]}
+        tooltip="Default previews the resource center without an active checklist. Active checklist previews the embedded checklist state in the launcher and panel."
+      />
+
+      <ResourceCenterRoot
+        data={localData}
+        themeSettings={theme.settings}
+        launcherText={showActiveChecklistPreview ? 'Getting started' : undefined}
+        badgeCount={0}
+        uncompletedCount={showActiveChecklistPreview ? previewLauncherUncompletedCount : 0}
+        animateFrame={false}
+        expanded={expanded}
+        onExpandedChange={async (open: boolean) => {
+          setExpanded(open);
+        }}
+        zIndex={10000}
+        showMadeWith={shouldShowMadeWith}
+        checklistSlot={showActiveChecklistPreview ? previewChecklistSlot : undefined}
+      >
+        <ResourceCenterStyleProvider>
+          <ResourceCenterPanel mode="dom" allowOverflow>
+            <ResourceCenterHeader text={localData.headerText} />
+            <ResourceCenterBody>
+              <ResourceCenterBlocks messageEditSlots={messageEditSlots} />
+            </ResourceCenterBody>
+            <ResourceCenterFooter />
+          </ResourceCenterPanel>
+        </ResourceCenterStyleProvider>
+      </ResourceCenterRoot>
+    </>
   );
 };
 
