@@ -52,16 +52,8 @@ const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     key: ResourceCenterBlockType.ACTION,
     value: ResourceCenterBlockType.ACTION,
     label: 'Action',
-    description: 'Start flow, Custom JS',
+    description: 'Link, Start flow, Custom JS',
     icon: RiFlashlightFill,
-  },
-  {
-    key: ResourceCenterBlockType.ACTION_LINK,
-    value: ResourceCenterBlockType.ACTION_LINK,
-    label: 'Action Link',
-    description: 'Start flow, Custom JS',
-    icon: RiFlashlightFill,
-    disabled: true,
   },
   {
     key: ResourceCenterBlockType.MESSAGE,

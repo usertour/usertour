@@ -7,7 +7,6 @@ import type { LauncherIconSource } from './launcher';
 // ============================================================================
 
 export enum ResourceCenterBlockType {
-  ACTION_LINK = 'action-link',
   ACTION = 'action',
   MESSAGE = 'message',
   DIVIDER = 'divider',

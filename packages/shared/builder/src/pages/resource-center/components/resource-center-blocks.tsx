@@ -41,7 +41,6 @@ import { forwardRef, useState } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../../contexts';
 
 const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
-  [ResourceCenterBlockType.ACTION_LINK]: 'Action Link',
   [ResourceCenterBlockType.ACTION]: 'Action',
   [ResourceCenterBlockType.MESSAGE]: 'Message',
   [ResourceCenterBlockType.DIVIDER]: 'Divider line',
