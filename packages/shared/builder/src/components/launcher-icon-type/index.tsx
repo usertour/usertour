@@ -21,6 +21,7 @@ export const LauncherIconType = ({
   iconSource = LauncherIconSource.BUILTIN,
   iconUrl,
   zIndex,
+  showNoIcon = false,
   onChange,
 }: LauncherIconTypeProps) => {
   const [open, setOpen] = useState(false);
@@ -30,6 +31,15 @@ export const LauncherIconType = ({
   const { activeTab, handleTabChange } = useIconTab({
     iconSource,
   });
+
+  const handleNoIcon = useCallback(() => {
+    onChange({
+      iconType: '',
+      iconSource: LauncherIconSource.NONE,
+      iconUrl: undefined,
+    });
+    setOpen(false);
+  }, [onChange]);
 
   const handleIconSelect = useCallback(
     (selectedName: string) => {
@@ -97,10 +107,27 @@ export const LauncherIconType = ({
           <div className="bg-background p-4 rounded space-y-3 w-72">
             <Tabs value={activeTab} onValueChange={handleTabChange}>
               <UnderlineTabsList>
+                {showNoIcon && <UnderlineTabsTrigger value="none">No icon</UnderlineTabsTrigger>}
                 <UnderlineTabsTrigger value="builtin">Built-in icon</UnderlineTabsTrigger>
                 <UnderlineTabsTrigger value="upload">Upload icon</UnderlineTabsTrigger>
                 <UnderlineTabsTrigger value="url">Enter URL</UnderlineTabsTrigger>
               </UnderlineTabsList>
+              {showNoIcon && (
+                <UnderlineTabsContent value="none">
+                  <div className="py-4 flex flex-col items-center gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      No icon will be displayed for this item.
+                    </p>
+                    <button
+                      type="button"
+                      className="text-sm text-primary underline cursor-pointer"
+                      onClick={handleNoIcon}
+                    >
+                      Remove icon
+                    </button>
+                  </div>
+                </UnderlineTabsContent>
+              )}
               <UnderlineTabsContent value="builtin">
                 <BuiltinIconTab selectedType={type} onIconSelect={handleIconSelect} />
               </UnderlineTabsContent>

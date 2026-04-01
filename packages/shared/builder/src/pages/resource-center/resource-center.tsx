@@ -4,6 +4,7 @@ import { ResourceCenterCore } from './resource-center-core';
 import { ResourceCenterBlockMessage } from './resource-center-block-message';
 import { ResourceCenterBlockChecklist } from './resource-center-block-checklist';
 import { ResourceCenterBlockDivider } from './resource-center-block-divider';
+import { ResourceCenterBlockAction } from './resource-center-block-action';
 import { ResourceCenterEmbed } from './components/resource-center-embed';
 import { useResourceCenterContext } from '../../contexts';
 import { ResourceCenterBlockType } from '@usertour/types';
@@ -25,6 +26,8 @@ export const ResourceCenterBuilder = () => {
         )}
       {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&
         currentBlock?.type === ResourceCenterBlockType.DIVIDER && <ResourceCenterBlockDivider />}
+      {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&
+        currentBlock?.type === ResourceCenterBlockType.ACTION && <ResourceCenterBlockAction />}
       <ResourceCenterEmbed />
     </>
   );

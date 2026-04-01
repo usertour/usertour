@@ -41,7 +41,8 @@ import { forwardRef, useState } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../../contexts';
 
 const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
-  [ResourceCenterBlockType.ACTION_LINK]: 'Action',
+  [ResourceCenterBlockType.ACTION_LINK]: 'Action Link',
+  [ResourceCenterBlockType.ACTION]: 'Action',
   [ResourceCenterBlockType.MESSAGE]: 'Message',
   [ResourceCenterBlockType.DIVIDER]: 'Divider line',
   [ResourceCenterBlockType.SUB_PAGE]: 'Sub-page',
@@ -99,7 +100,9 @@ const DeleteDialog = ({
 
 const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
   ({ onClick, listeners = {}, attributes = {}, block, style }, ref) => {
-    const label = BLOCK_TYPE_LABELS[block.type] ?? block.type;
+    const typeLabel = BLOCK_TYPE_LABELS[block.type] ?? block.type;
+    const label =
+      block.type === ResourceCenterBlockType.ACTION && block.name ? block.name : typeLabel;
     return (
       <div
         ref={ref}

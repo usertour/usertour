@@ -1,5 +1,6 @@
 import type { ContentEditorRoot } from './editor';
 import type { RulesCondition } from './config';
+import type { LauncherIconSource } from './launcher';
 
 // ============================================================================
 // Block Type Enum
@@ -7,6 +8,7 @@ import type { RulesCondition } from './config';
 
 export enum ResourceCenterBlockType {
   ACTION_LINK = 'action-link',
+  ACTION = 'action',
   MESSAGE = 'message',
   DIVIDER = 'divider',
   SUB_PAGE = 'sub-page',
@@ -47,11 +49,24 @@ export interface ResourceCenterDividerBlock {
   onlyShowTaskConditions: RulesCondition[];
 }
 
+export interface ResourceCenterActionBlock {
+  id: string;
+  name: string;
+  type: ResourceCenterBlockType.ACTION;
+  iconSource: LauncherIconSource;
+  iconType: string;
+  iconUrl?: string;
+  clickedActions: RulesCondition[];
+  onlyShowTask: boolean;
+  onlyShowTaskConditions: RulesCondition[];
+}
+
 /** Union of all implemented block types. */
 export type ResourceCenterBlock =
   | ResourceCenterMessageBlock
   | ResourceCenterChecklistBlock
-  | ResourceCenterDividerBlock;
+  | ResourceCenterDividerBlock
+  | ResourceCenterActionBlock;
 
 // ============================================================================
 // Resource Center Data

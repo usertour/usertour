@@ -1,13 +1,15 @@
 import { Fragment, memo } from 'react';
 import type {
+  ResourceCenterActionBlock,
   ResourceCenterDividerBlock,
   ResourceCenterMessageBlock,
   UserTourTypes,
 } from '@usertour/types';
-import { ResourceCenterBlockType } from '@usertour/types';
+import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { useResourceCenterContext } from './context';
+import { IconsList } from '../launcher';
 
 // ============================================================================
 // Block — MESSAGE
@@ -91,6 +93,60 @@ export const ResourceCenterDividerBlockView = memo(
 ResourceCenterDividerBlockView.displayName = 'ResourceCenterDividerBlockView';
 
 // ============================================================================
+// Block — ACTION
+// ============================================================================
+
+interface ResourceCenterActionBlockViewProps {
+  block: ResourceCenterActionBlock;
+  onActionBlockClick?: (blockId: string) => Promise<void>;
+}
+
+export const ResourceCenterActionBlockView = memo(
+  ({ block, onActionBlockClick }: ResourceCenterActionBlockViewProps) => {
+    const handleClick = async () => {
+      onActionBlockClick?.(block.id);
+    };
+
+    const renderIcon = () => {
+      if (block.iconSource === LauncherIconSource.NONE) {
+        return null;
+      }
+      if (
+        (block.iconSource === LauncherIconSource.UPLOAD ||
+          block.iconSource === LauncherIconSource.URL) &&
+        block.iconUrl
+      ) {
+        return <img src={block.iconUrl} alt="" className="h-5 w-5 flex-shrink-0 object-contain" />;
+      }
+      if (block.iconSource === LauncherIconSource.BUILTIN && block.iconType) {
+        const iconItem = IconsList.find((item) => item.name === block.iconType);
+        if (iconItem) {
+          const Icon = iconItem.ICON;
+          return <Icon size={20} className="flex-shrink-0 text-sdk-foreground" />;
+        }
+      }
+      return null;
+    };
+
+    return (
+      <button
+        type="button"
+        data-block-id={block.id}
+        className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-sdk-hover cursor-pointer"
+        onClick={handleClick}
+      >
+        {renderIcon()}
+        <span className="min-w-0 flex-1 truncate text-sdk-foreground">
+          {block.name || 'Untitled action'}
+        </span>
+      </button>
+    );
+  },
+);
+
+ResourceCenterActionBlockView.displayName = 'ResourceCenterActionBlockView';
+
+// ============================================================================
 // Body
 // ============================================================================
 
@@ -149,6 +205,9 @@ export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBl
             )}
             {block.type === ResourceCenterBlockType.DIVIDER && (
               <ResourceCenterDividerBlockView block={block} />
+            )}
+            {block.type === ResourceCenterBlockType.ACTION && (
+              <ResourceCenterActionBlockView block={block} onActionBlockClick={onBlockClick} />
             )}
           </Fragment>
         );

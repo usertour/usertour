@@ -2,6 +2,7 @@ import {
   ContentEditorClickableElement,
   ContentEditorRoot,
   CustomContentSession,
+  ResourceCenterBlockType,
   ResourceCenterData,
   ThemeTypesSetting,
   contentEndReason,
@@ -126,6 +127,11 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     }
     const sessionId = this.getSessionId();
     this.socketService.clickResourceCenter({ sessionId, blockId });
+
+    // Handle clickedActions for ACTION blocks
+    if (block.type === ResourceCenterBlockType.ACTION && block.clickedActions?.length > 0) {
+      await this.handleActions(block.clickedActions);
+    }
   }
 
   isExpandable(): boolean {

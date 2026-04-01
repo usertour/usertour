@@ -24,7 +24,7 @@ import {
 } from '@usertour-packages/icons';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Button } from '@usertour-packages/button';
-import { ContentEditorRoot, ResourceCenterBlockType } from '@usertour/types';
+import { ContentEditorRoot, LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar';
@@ -48,6 +48,13 @@ type BlockTypeOption = {
 };
 
 const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
+  {
+    key: ResourceCenterBlockType.ACTION,
+    value: ResourceCenterBlockType.ACTION,
+    label: 'Action',
+    description: 'Start flow, Custom JS',
+    icon: RiFlashlightFill,
+  },
   {
     key: ResourceCenterBlockType.ACTION_LINK,
     value: ResourceCenterBlockType.ACTION_LINK,
@@ -165,6 +172,17 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.DIVIDER,
+        onlyShowTask: false,
+        onlyShowTaskConditions: [],
+      };
+    case ResourceCenterBlockType.ACTION:
+      return {
+        id,
+        type: ResourceCenterBlockType.ACTION,
+        name: '',
+        iconSource: LauncherIconSource.BUILTIN,
+        iconType: '',
+        clickedActions: [],
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };

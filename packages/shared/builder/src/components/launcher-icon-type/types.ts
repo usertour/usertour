@@ -7,6 +7,7 @@ export interface LauncherIconTypeProps {
   iconSource?: LauncherIconSource;
   iconUrl?: string;
   zIndex: number;
+  showNoIcon?: boolean;
   onChange: (updates: {
     iconType?: string;
     iconSource?: LauncherIconSource;

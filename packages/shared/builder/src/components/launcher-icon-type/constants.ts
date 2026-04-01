@@ -1,5 +1,6 @@
 // Tab values
 export const TAB_VALUES = {
+  NONE: 'none',
   BUILTIN: 'builtin',
   UPLOAD: 'upload',
   URL: 'url',
