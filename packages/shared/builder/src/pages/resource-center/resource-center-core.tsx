@@ -13,6 +13,7 @@ import {
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import {
+  RiArrowRightCircleFill,
   RiBookOpenFill,
   RiCheckboxCircleFill,
   RiFileTextFill,
@@ -53,7 +54,7 @@ const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     value: ResourceCenterBlockType.ACTION,
     label: 'Action',
     description: 'Link, Start flow, Custom JS',
-    icon: RiFlashlightFill,
+    icon: RiArrowRightCircleFill,
   },
   {
     key: ResourceCenterBlockType.MESSAGE,
