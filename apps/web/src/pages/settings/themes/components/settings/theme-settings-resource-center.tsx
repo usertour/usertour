@@ -100,20 +100,6 @@ export const ThemeSettingsResourceCenter = () => {
           }}
           disabled={isViewOnly}
         />
-        <ThemeSettingSelect
-          text="Divider lines"
-          name="rc-divider-lines"
-          items={[
-            { name: 'Show', value: 'true' },
-            { name: 'Hide', value: 'false' },
-          ]}
-          tooltip="Show divider lines between blocks."
-          defaultValue={String(rc.dividerLines)}
-          onValueChange={(value: string) => {
-            update({ dividerLines: value === 'true' });
-          }}
-          disabled={isViewOnly}
-        />
       </div>
     </div>
   );

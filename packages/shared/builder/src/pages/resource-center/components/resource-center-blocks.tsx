@@ -43,6 +43,7 @@ import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../
 const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
   [ResourceCenterBlockType.ACTION_LINK]: 'Action',
   [ResourceCenterBlockType.MESSAGE]: 'Message',
+  [ResourceCenterBlockType.DIVIDER]: 'Divider line',
   [ResourceCenterBlockType.SUB_PAGE]: 'Sub-page',
   [ResourceCenterBlockType.CONTACT]: 'Contact',
   [ResourceCenterBlockType.CONTENT_LIST]: 'List of flows/checklists',

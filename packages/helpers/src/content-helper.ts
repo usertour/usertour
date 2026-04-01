@@ -360,4 +360,6 @@ export const duplicateStep = <T extends StepLike>(
 
 /** Display-only block types that do not emit click analytics. */
 export const isDisplayOnlyBlockType = (type: ResourceCenterBlockType): boolean =>
-  type === ResourceCenterBlockType.MESSAGE || type === ResourceCenterBlockType.CHECKLIST;
+  type === ResourceCenterBlockType.MESSAGE ||
+  type === ResourceCenterBlockType.CHECKLIST ||
+  type === ResourceCenterBlockType.DIVIDER;

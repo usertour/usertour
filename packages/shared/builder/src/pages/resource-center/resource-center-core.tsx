@@ -111,11 +111,11 @@ const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     disabled: true,
   },
   {
-    key: 'divider-line',
+    key: ResourceCenterBlockType.DIVIDER,
+    value: ResourceCenterBlockType.DIVIDER,
     label: 'Divider line',
     description: 'Used to visually separate sections',
     icon: RiSeparator,
-    disabled: true,
   },
 ];
 
@@ -158,6 +158,13 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.CHECKLIST,
+        onlyShowTask: false,
+        onlyShowTaskConditions: [],
+      };
+    case ResourceCenterBlockType.DIVIDER:
+      return {
+        id,
+        type: ResourceCenterBlockType.DIVIDER,
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };

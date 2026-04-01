@@ -1,5 +1,9 @@
 import { Fragment, memo } from 'react';
-import type { ResourceCenterMessageBlock, UserTourTypes } from '@usertour/types';
+import type {
+  ResourceCenterDividerBlock,
+  ResourceCenterMessageBlock,
+  UserTourTypes,
+} from '@usertour/types';
 import { ResourceCenterBlockType } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
@@ -69,6 +73,24 @@ export const ResourceCenterChecklistBlockView = memo(
 ResourceCenterChecklistBlockView.displayName = 'ResourceCenterChecklistBlockView';
 
 // ============================================================================
+// Block — DIVIDER
+// ============================================================================
+
+interface ResourceCenterDividerBlockViewProps {
+  block: ResourceCenterDividerBlock;
+}
+
+export const ResourceCenterDividerBlockView = memo(
+  ({ block }: ResourceCenterDividerBlockViewProps) => {
+    return (
+      <div data-block-id={block.id} className="my-4 h-px overflow-hidden bg-sdk-foreground/10" />
+    );
+  },
+);
+
+ResourceCenterDividerBlockView.displayName = 'ResourceCenterDividerBlockView';
+
+// ============================================================================
 // Body
 // ============================================================================
 
@@ -105,17 +127,12 @@ interface ResourceCenterBlocksProps {
 }
 
 export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBlocksProps) => {
-  const { themeSetting, data, userAttributes, onContentClick, onBlockClick, checklistSlot } =
+  const { data, userAttributes, onContentClick, onBlockClick, checklistSlot } =
     useResourceCenterContext();
-
-  const rc = themeSetting.resourceCenter;
-  const showDividers = rc?.dividerLines !== false;
 
   return (
     <>
-      {data.blocks.map((block, index) => {
-        const showDivider = showDividers && index < data.blocks.length - 1;
-
+      {data.blocks.map((block) => {
         return (
           <Fragment key={block.id}>
             {block.type === ResourceCenterBlockType.MESSAGE && (
@@ -130,7 +147,9 @@ export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBl
             {block.type === ResourceCenterBlockType.CHECKLIST && (
               <ResourceCenterChecklistBlockView slot={checklistSlot} />
             )}
-            {showDivider && <div className="my-4 bg-sdk-foreground/10 h-px overflow-hidden" />}
+            {block.type === ResourceCenterBlockType.DIVIDER && (
+              <ResourceCenterDividerBlockView block={block} />
+            )}
           </Fragment>
         );
       })}
