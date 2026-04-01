@@ -6,8 +6,10 @@ import {
   UnderlineTabsTrigger,
   UnderlineTabsContent,
 } from '@usertour-packages/tabs';
+import { cn } from '@usertour-packages/tailwind';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import { LauncherIconSource } from '@usertour/types';
+import { TAB_VALUES } from './constants';
 import { getActiveText } from './utils';
 import { useIconTab } from './hooks/use-icon-tab';
 import { IconTriggerButton } from './icon-trigger-button';
@@ -25,6 +27,8 @@ export const LauncherIconType = ({
   onChange,
 }: LauncherIconTypeProps) => {
   const [open, setOpen] = useState(false);
+  const hasNoIconTab = showNoIcon;
+  const popoverWidthClassName = hasNoIconTab ? 'w-[360px]' : 'w-72';
 
   const activeText = getActiveText(iconSource, type);
 
@@ -85,6 +89,18 @@ export const LauncherIconType = ({
     });
   }, [onChange, type]);
 
+  const handleTabValueChange = useCallback(
+    (value: string) => {
+      if (value === TAB_VALUES.NONE) {
+        handleNoIcon();
+        return;
+      }
+
+      handleTabChange(value);
+    },
+    [handleNoIcon, handleTabChange],
+  );
+
   return (
     <TooltipProvider>
       <Popover open={open} onOpenChange={setOpen}>
@@ -104,27 +120,18 @@ export const LauncherIconType = ({
             zIndex: zIndex + 1,
           }}
         >
-          <div className="bg-background p-4 rounded space-y-3 w-72">
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <div className={cn('bg-background space-y-3 rounded p-4', popoverWidthClassName)}>
+            <Tabs value={activeTab} onValueChange={handleTabValueChange}>
               <UnderlineTabsList>
-                {showNoIcon && <UnderlineTabsTrigger value="none">No icon</UnderlineTabsTrigger>}
                 <UnderlineTabsTrigger value="builtin">Built-in icon</UnderlineTabsTrigger>
                 <UnderlineTabsTrigger value="upload">Upload icon</UnderlineTabsTrigger>
                 <UnderlineTabsTrigger value="url">Enter URL</UnderlineTabsTrigger>
+                {showNoIcon && <UnderlineTabsTrigger value="none">No icon</UnderlineTabsTrigger>}
               </UnderlineTabsList>
               {showNoIcon && (
                 <UnderlineTabsContent value="none">
-                  <div className="py-4 flex flex-col items-center gap-2">
-                    <p className="text-sm text-muted-foreground">
-                      No icon will be displayed for this item.
-                    </p>
-                    <button
-                      type="button"
-                      className="text-sm text-primary underline cursor-pointer"
-                      onClick={handleNoIcon}
-                    >
-                      Remove icon
-                    </button>
+                  <div className="py-4 text-center text-sm text-muted-foreground">
+                    No icon will be displayed for this item.
                   </div>
                 </UnderlineTabsContent>
               )}
