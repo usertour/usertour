@@ -7,7 +7,7 @@ import { DistributedLockService } from '../core/distributed-lock.service';
 import { buildSocketLockKey, getSocketToken } from '@/utils/websocket-utils';
 
 interface MessageHandler {
-  handle(context: WebSocketContext, payload?: any): Promise<boolean>;
+  handle(context: WebSocketContext, payload?: any): Promise<any>;
 }
 
 /**
@@ -29,7 +29,7 @@ export class WebSocketV2MessageHandler {
   private registerHandlers(): void {
     const register = (
       kind: ClientMessageKind,
-      handler: (context: WebSocketContext, payload: any) => Promise<boolean>,
+      handler: (context: WebSocketContext, payload: any) => Promise<any>,
     ) => {
       this.handlers.set(kind, { handle: handler });
     };
@@ -142,6 +142,12 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
+      ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT,
+      async (context, payload) =>
+        await this.service.listResourceCenterBlockContent(context, payload),
+    );
+
+    register(
       ClientMessageKind.END_BATCH,
       async (context, _payload) => await this.service.endBatch(context),
     );
@@ -152,7 +158,7 @@ export class WebSocketV2MessageHandler {
     });
   }
 
-  async handle(server: Server, socket: Socket, kind: string, payload: any): Promise<boolean> {
+  async handle(server: Server, socket: Socket, kind: string, payload: any): Promise<any> {
     const startTime = Date.now();
     const lockKey = buildSocketLockKey(socket);
 
@@ -178,7 +184,7 @@ export class WebSocketV2MessageHandler {
     socket: Socket,
     kind: string,
     payload: any,
-  ): Promise<boolean> {
+  ): Promise<any> {
     const handler = this.handlers.get(kind);
 
     if (!handler) {

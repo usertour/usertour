@@ -104,7 +104,8 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
       (block.type === ResourceCenterBlockType.ACTION ||
         block.type === ResourceCenterBlockType.SUB_PAGE ||
         block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
-        block.type === ResourceCenterBlockType.CONTACT) &&
+        block.type === ResourceCenterBlockType.CONTACT ||
+        block.type === ResourceCenterBlockType.CONTENT_LIST) &&
       block.name
         ? block.name
         : typeLabel;

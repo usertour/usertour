@@ -122,6 +122,24 @@ export interface ResourceCenterContactBlock {
   onlyShowTaskConditions: RulesCondition[];
 }
 
+export interface ContentListItem {
+  contentId: string;
+  contentType: 'flow' | 'checklist';
+}
+
+export interface ResourceCenterContentListBlock {
+  id: string;
+  name: string;
+  type: ResourceCenterBlockType.CONTENT_LIST;
+  iconSource: LauncherIconSource;
+  iconType: string;
+  iconUrl?: string;
+  showSearchField: boolean;
+  contentItems: ContentListItem[];
+  onlyShowTask: boolean;
+  onlyShowTaskConditions: RulesCondition[];
+}
+
 /** Union of all implemented block types. */
 export type ResourceCenterBlock =
   | ResourceCenterMessageBlock
@@ -130,7 +148,8 @@ export type ResourceCenterBlock =
   | ResourceCenterActionBlock
   | ResourceCenterSubPageBlock
   | ResourceCenterKnowledgeBaseBlock
-  | ResourceCenterContactBlock;
+  | ResourceCenterContactBlock
+  | ResourceCenterContentListBlock;
 
 // ============================================================================
 // Resource Center Data

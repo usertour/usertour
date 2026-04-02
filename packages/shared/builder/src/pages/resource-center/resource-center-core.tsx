@@ -89,7 +89,6 @@ const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     label: 'List of flows/checklists',
     description: 'Start on demand',
     icon: RiListCheck3,
-    disabled: true,
   },
   {
     key: ResourceCenterBlockType.CHECKLIST,
@@ -220,6 +219,18 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         liveChatEnabled: false,
         liveChatProvider: ContactLiveChatProvider.INTERCOM,
         customLiveChatCode: '',
+        onlyShowTask: false,
+        onlyShowTaskConditions: [],
+      };
+    case ResourceCenterBlockType.CONTENT_LIST:
+      return {
+        id,
+        type: ResourceCenterBlockType.CONTENT_LIST,
+        name: '',
+        iconSource: LauncherIconSource.BUILTIN,
+        iconType: '',
+        showSearchField: true,
+        contentItems: [],
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };

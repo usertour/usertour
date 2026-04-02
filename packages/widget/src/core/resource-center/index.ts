@@ -1,6 +1,10 @@
 // Context
 export { useResourceCenterContext } from './context';
-export type { ResourceCenterContextValue, ContactPageType } from './context';
+export type {
+  ResourceCenterContextValue,
+  ContactPageType,
+  ContentListDisplayItem,
+} from './context';
 
 // Root
 export { ResourceCenterRoot } from './resource-center-root';
@@ -39,6 +43,8 @@ export {
   ResourceCenterKnowledgeBaseContent,
   ResourceCenterContactBlockView,
   ResourceCenterContactPageContent,
+  ResourceCenterContentListBlockView,
+  ResourceCenterContentListContent,
 } from './resource-center-body';
 export type { KnowledgeBaseArticle } from './resource-center-body';
 

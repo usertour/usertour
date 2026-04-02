@@ -21,6 +21,9 @@ import {
   OpenResourceCenterDto,
   CloseResourceCenterDto,
   ClickResourceCenterDto,
+  ListResourceCenterBlockContentDto,
+  ResourceCenterBlockContentItem,
+  ResourceCenterBlockType,
   ContentDataType,
   ClientContext,
   contentEndReason,
@@ -720,6 +723,55 @@ export class WebSocketV2Service {
       clientContext,
       blockId: params.blockId,
     });
+  }
+
+  /**
+   * List resource center block content items (flows/checklists)
+   * Returns content names and types for the given block
+   */
+  async listResourceCenterBlockContent(
+    context: WebSocketContext,
+    params: ListResourceCenterBlockContentDto,
+  ): Promise<ResourceCenterBlockContentItem[]> {
+    const { socketData } = context;
+    const rcSession = socketData.resourceCenterSession;
+    if (!rcSession) {
+      this.logger.warn('No resource center session found');
+      return [];
+    }
+
+    const rcData = rcSession.version?.resourceCenter;
+    if (!rcData?.blocks) {
+      return [];
+    }
+
+    const block = rcData.blocks.find(
+      (b) => b.id === params.blockId && b.type === ResourceCenterBlockType.CONTENT_LIST,
+    );
+    if (!block || block.type !== ResourceCenterBlockType.CONTENT_LIST) {
+      return [];
+    }
+
+    const contentItems = block.contentItems;
+    if (!contentItems || contentItems.length === 0) {
+      return [];
+    }
+
+    const contentIds = contentItems.map((item) => item.contentId);
+    const contents = await this.prisma.content.findMany({
+      where: { id: { in: contentIds }, deleted: false },
+      select: { id: true, name: true, type: true },
+    });
+
+    const contentNameMap = new Map(contents.map((c) => [c.id, c.name || '']));
+
+    return contentItems
+      .filter((item) => contentNameMap.has(item.contentId))
+      .map((item) => ({
+        contentId: item.contentId,
+        contentType: item.contentType,
+        name: contentNameMap.get(item.contentId) || '',
+      }));
   }
 
   // ============================================================================

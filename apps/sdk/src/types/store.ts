@@ -4,6 +4,7 @@ import {
   ChecklistData,
   LauncherData,
   ResourceCenterData,
+  ResourceCenterBlockContentItem,
   Step,
   ThemeTypesSetting,
   UserTourTypes,
@@ -54,4 +55,5 @@ export type BannerStore = BaseStore & {
 export type ResourceCenterStore = BaseStore & {
   resourceCenterData?: ResourceCenterData;
   expanded: boolean;
+  contentListItems?: ResourceCenterBlockContentItem[];
 };

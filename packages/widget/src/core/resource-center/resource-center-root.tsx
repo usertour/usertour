@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ResourceCenterContactBlock,
+  ResourceCenterContentListBlock,
   ResourceCenterData,
   ResourceCenterKnowledgeBaseBlock,
   ResourceCenterSubPageBlock,
@@ -8,7 +9,11 @@ import type {
   UserTourTypes,
 } from '@usertour/types';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
-import { ResourceCenterRootContext, type ContactPageType } from './context';
+import {
+  ResourceCenterRootContext,
+  type ContactPageType,
+  type ContentListDisplayItem,
+} from './context';
 import { RC_DEFAULTS } from './constants';
 
 interface ResourceCenterRootProps {
@@ -28,6 +33,9 @@ interface ResourceCenterRootProps {
   checklistSlot?: React.ReactNode;
   showMadeWith?: boolean;
   onLiveChatClick?: (block: ResourceCenterContactBlock) => void;
+  contentListItems?: ContentListDisplayItem[];
+  onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
+  onContentListItemClick?: (item: ContentListDisplayItem) => void;
 }
 
 export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
@@ -48,6 +56,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     checklistSlot,
     showMadeWith = true,
     onLiveChatClick,
+    contentListItems: contentListItemsProp = [],
+    onContentListNavigate,
+    onContentListItemClick,
   } = props;
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
 
@@ -60,18 +71,23 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     block: ResourceCenterContactBlock;
     page: ContactPageType;
   } | null>(null);
+  const [activeContentList, setActiveContentList] = useState<ResourceCenterContentListBlock | null>(
+    null,
+  );
   const animationTimerRef = useRef<number | null>(null);
 
   const navigateToSubPage = useCallback((block: ResourceCenterSubPageBlock) => {
     setActiveSubPage(block);
     setActiveKnowledgeBase(null);
     setActiveContactPage(null);
+    setActiveContentList(null);
   }, []);
 
   const navigateToKnowledgeBase = useCallback((block: ResourceCenterKnowledgeBaseBlock) => {
     setActiveKnowledgeBase(block);
     setActiveSubPage(null);
     setActiveContactPage(null);
+    setActiveContentList(null);
   }, []);
 
   const navigateToContactPage = useCallback(
@@ -79,14 +95,27 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       setActiveContactPage({ block, page });
       setActiveSubPage(null);
       setActiveKnowledgeBase(null);
+      setActiveContentList(null);
     },
     [],
+  );
+
+  const navigateToContentList = useCallback(
+    (block: ResourceCenterContentListBlock) => {
+      setActiveContentList(block);
+      setActiveSubPage(null);
+      setActiveKnowledgeBase(null);
+      setActiveContactPage(null);
+      onContentListNavigate?.(block);
+    },
+    [onContentListNavigate],
   );
 
   const navigateBack = useCallback(() => {
     setActiveSubPage(null);
     setActiveKnowledgeBase(null);
     setActiveContactPage(null);
+    setActiveContentList(null);
   }, []);
 
   const handleExpandedChange = useCallback(
@@ -140,6 +169,10 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       navigateToContactPage,
       onLiveChatClick,
       navigateBack,
+      activeContentList,
+      navigateToContentList,
+      contentListItems: contentListItemsProp,
+      onContentListItemClick,
     }),
     [
       globalStyle,
@@ -166,6 +199,10 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       navigateToContactPage,
       onLiveChatClick,
       navigateBack,
+      activeContentList,
+      navigateToContentList,
+      contentListItemsProp,
+      onContentListItemClick,
     ],
   );
 

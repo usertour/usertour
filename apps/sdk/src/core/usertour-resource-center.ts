@@ -5,9 +5,12 @@ import {
   CustomContentSession,
   ResourceCenterBlockType,
   ResourceCenterContactBlock,
+  ResourceCenterContentListBlock,
   ResourceCenterData,
   ThemeTypesSetting,
+  ResourceCenterBlockContentItem,
   contentEndReason,
+  contentStartReason,
 } from '@usertour/types';
 import { ResourceCenterStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
@@ -184,6 +187,35 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       }
     } catch (error) {
       logger.error('Failed to open live chat:', error);
+    }
+  }
+
+  async handleContentListNavigate(
+    block: ResourceCenterContentListBlock,
+  ): Promise<ResourceCenterBlockContentItem[]> {
+    const sessionId = this.getSessionId();
+    try {
+      const items = await this.socketService.listResourceCenterBlockContent({
+        sessionId,
+        blockId: block.id,
+      });
+      this.updateStore({ contentListItems: items });
+      return items;
+    } catch (error) {
+      logger.error('Failed to fetch content list items:', error);
+      this.updateStore({ contentListItems: [] });
+      return [];
+    }
+  }
+
+  async handleContentListItemClick(item: ResourceCenterBlockContentItem): Promise<void> {
+    try {
+      await this.socketService.startContent({
+        contentId: item.contentId,
+        startReason: contentStartReason.START_FROM_ACTION,
+      });
+    } catch (error) {
+      logger.error('Failed to start content from content list:', error);
     }
   }
 

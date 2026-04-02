@@ -37,6 +37,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     removeBranding,
     linkUrlDecorator,
     assets,
+    contentListItems,
   } = store;
 
   if (!resourceCenterData || !openState) return null;
@@ -51,6 +52,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     removeBranding,
     linkUrlDecorator,
     assets,
+    contentListItems,
   };
 };
 
@@ -110,6 +112,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
     removeBranding,
     linkUrlDecorator,
     assets,
+    contentListItems,
   } = store;
 
   if (!themeSettings || !resourceCenterData) return <></>;
@@ -136,6 +139,9 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onLiveChatClick={resourceCenter.handleLiveChatClick}
         showMadeWith={!removeBranding}
         checklistSlot={checklistSlot}
+        contentListItems={contentListItems ?? []}
+        onContentListNavigate={resourceCenter.handleContentListNavigate}
+        onContentListItemClick={resourceCenter.handleContentListItemClick}
       >
         <ResourceCenterStyleProvider>
           <ResourceCenterPanel mode="iframe" assets={assets}>

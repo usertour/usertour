@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type {
   ResourceCenterContactBlock,
+  ResourceCenterContentListBlock,
   ResourceCenterData,
   ResourceCenterKnowledgeBaseBlock,
   ResourceCenterSubPageBlock,
@@ -9,6 +10,12 @@ import type {
 } from '@usertour/types';
 
 export type ContactPageType = 'email' | 'phone';
+
+export interface ContentListDisplayItem {
+  contentId: string;
+  contentType: 'flow' | 'checklist';
+  name: string;
+}
 
 export interface ResourceCenterContextValue {
   globalStyle: string;
@@ -34,6 +41,10 @@ export interface ResourceCenterContextValue {
   activeContactPage: { block: ResourceCenterContactBlock; page: ContactPageType } | null;
   navigateToContactPage: (block: ResourceCenterContactBlock, page: ContactPageType) => void;
   onLiveChatClick?: (block: ResourceCenterContactBlock) => void;
+  activeContentList: ResourceCenterContentListBlock | null;
+  navigateToContentList: (block: ResourceCenterContentListBlock) => void;
+  contentListItems: ContentListDisplayItem[];
+  onContentListItemClick?: (item: ContentListDisplayItem) => void;
   navigateBack: () => void;
 }
 

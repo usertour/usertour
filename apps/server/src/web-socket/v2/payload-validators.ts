@@ -283,6 +283,19 @@ export class ClickResourceCenterPayload {
   blockId: string;
 }
 
+/**
+ * List resource center block content payload validator
+ */
+export class ListResourceCenterBlockContentPayload {
+  @IsString()
+  @MaxLength(255)
+  sessionId: string;
+
+  @IsString()
+  @MaxLength(255)
+  blockId: string;
+}
+
 // ============================================================================
 // Payload DTO Map
 // ============================================================================
@@ -311,5 +324,6 @@ export const payloadValidatorMap = new Map<ClientMessageKind, new () => object>(
   [ClientMessageKind.OPEN_RESOURCE_CENTER, SessionOnlyPayload],
   [ClientMessageKind.CLOSE_RESOURCE_CENTER, SessionOnlyPayload],
   [ClientMessageKind.CLICK_RESOURCE_CENTER, ClickResourceCenterPayload],
+  [ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT, ListResourceCenterBlockContentPayload],
   // BEGIN_BATCH, END_BATCH, END_ALL_CONTENT don't require payload validation
 ]);

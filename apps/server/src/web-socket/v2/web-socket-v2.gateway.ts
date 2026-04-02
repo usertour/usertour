@@ -121,7 +121,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   async handleClientMessage(
     @ConnectedSocket() socket: Socket,
     @MessageBody(WebSocketMessageValidationPipe) message: ClientMessageDto,
-  ): Promise<boolean> {
+  ): Promise<any> {
     const { kind, payload, requestId } = message;
 
     this.logger.debug(

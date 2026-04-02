@@ -16,11 +16,15 @@ import {
   ResourceCenterFooter,
   useResourceCenterContext as useWidgetResourceCenterContext,
 } from '@usertour-packages/widget';
+import type { ContentListDisplayItem } from '@usertour-packages/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
+import { useContentListQuery } from '@usertour-packages/shared-hooks';
 import {
+  ContentDataType,
   ContentEditorElementType,
   ResourceCenterBlockType,
   ResourceCenterContactBlock,
+  ResourceCenterContentListBlock,
   ResourceCenterMessageBlock,
   ResourceCenterSubPageBlock,
   Theme,
@@ -132,8 +136,52 @@ export const ResourceCenterEmbed = () => {
   const [theme, setTheme] = useState<Theme | undefined>();
   const [expanded, setExpanded] = useState(true);
   const { themeList } = useThemeListContext();
-  const { currentVersion, projectId, shouldShowMadeWith = true } = useBuilderContext();
+  const {
+    currentVersion,
+    projectId,
+    environmentId,
+    shouldShowMadeWith = true,
+  } = useBuilderContext();
   const { attributeList } = useAttributeListContext();
+
+  // Query flows and checklists for content list block preview
+  const { contents: flowContents } = useContentListQuery({
+    query: { environmentId, type: ContentDataType.FLOW },
+  });
+  const { contents: checklistContents } = useContentListQuery({
+    query: { environmentId, type: ContentDataType.CHECKLIST },
+  });
+
+  // Build a name lookup map for all content
+  const contentNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of flowContents) {
+      map.set(c.id, c.name || 'Untitled flow');
+    }
+    for (const c of checklistContents) {
+      map.set(c.id, c.name || 'Untitled checklist');
+    }
+    return map;
+  }, [flowContents, checklistContents]);
+
+  // Track which content list block is currently active for preview
+  const [previewContentListItems, setPreviewContentListItems] = useState<ContentListDisplayItem[]>(
+    [],
+  );
+
+  const handleContentListNavigate = useCallback(
+    (block: ResourceCenterContentListBlock) => {
+      const items: ContentListDisplayItem[] = block.contentItems
+        .filter((item) => contentNameMap.has(item.contentId))
+        .map((item) => ({
+          contentId: item.contentId,
+          contentType: item.contentType,
+          name: contentNameMap.get(item.contentId) || '',
+        }));
+      setPreviewContentListItems(items);
+    },
+    [contentNameMap],
+  );
 
   useEffect(() => {
     if (!themeList) {
@@ -315,6 +363,8 @@ export const ResourceCenterEmbed = () => {
       zIndex={10000}
       showMadeWith={shouldShowMadeWith}
       checklistSlot={previewChecklistSlot}
+      contentListItems={previewContentListItems}
+      onContentListNavigate={handleContentListNavigate}
     >
       <ResourceCenterStyleProvider>
         <ResourceCenterPanel mode="dom" allowOverflow>

@@ -69,6 +69,7 @@ export enum ClientMessageKind {
   OPEN_RESOURCE_CENTER = 'OpenResourceCenter',
   CLOSE_RESOURCE_CENTER = 'CloseResourceCenter',
   CLICK_RESOURCE_CENTER = 'ClickResourceCenter',
+  LIST_RESOURCE_CENTER_BLOCK_CONTENT = 'ListResourceCenterBlockContent',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
   END_ALL_CONTENT = 'EndAllContent',
@@ -289,6 +290,23 @@ export type CloseResourceCenterDto = {
 export type ClickResourceCenterDto = {
   sessionId: string;
   blockId: string;
+};
+
+/**
+ * List resource center block content request
+ */
+export type ListResourceCenterBlockContentDto = {
+  sessionId: string;
+  blockId: string;
+};
+
+/**
+ * List resource center block content response item
+ */
+export type ResourceCenterBlockContentItem = {
+  contentId: string;
+  contentType: 'flow' | 'checklist';
+  name: string;
 };
 
 // ============================================================================

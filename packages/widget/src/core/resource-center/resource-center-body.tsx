@@ -1,7 +1,8 @@
-import { Fragment, memo, useCallback, useState } from 'react';
+import { Fragment, memo, useCallback, useMemo, useState } from 'react';
 import type {
   ResourceCenterActionBlock,
   ResourceCenterContactBlock,
+  ResourceCenterContentListBlock,
   ResourceCenterDividerBlock,
   ResourceCenterKnowledgeBaseBlock,
   ResourceCenterMessageBlock,
@@ -622,6 +623,150 @@ export const ResourceCenterContactPageContent = memo(
 ResourceCenterContactPageContent.displayName = 'ResourceCenterContactPageContent';
 
 // ============================================================================
+// Block — CONTENT_LIST (row in the main panel)
+// ============================================================================
+
+interface ResourceCenterContentListBlockViewProps {
+  block: ResourceCenterContentListBlock;
+  onContentListClick?: (block: ResourceCenterContentListBlock) => void;
+}
+
+export const ResourceCenterContentListBlockView = memo(
+  ({ block, onContentListClick }: ResourceCenterContentListBlockViewProps) => {
+    const handleClick = () => {
+      onContentListClick?.(block);
+    };
+
+    const renderIcon = () => {
+      if (block.iconSource === LauncherIconSource.NONE) {
+        return null;
+      }
+      if (
+        (block.iconSource === LauncherIconSource.UPLOAD ||
+          block.iconSource === LauncherIconSource.URL) &&
+        block.iconUrl
+      ) {
+        return <img src={block.iconUrl} alt="" className="h-5 w-5 flex-shrink-0 object-contain" />;
+      }
+      if (block.iconSource === LauncherIconSource.BUILTIN && block.iconType) {
+        const iconItem = IconsList.find((item) => item.name === block.iconType);
+        if (iconItem) {
+          const Icon = iconItem.ICON;
+          return <Icon size={20} className="flex-shrink-0 text-sdk-foreground" />;
+        }
+      }
+      return null;
+    };
+
+    return (
+      <button
+        type="button"
+        data-block-id={block.id}
+        className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-sdk-hover cursor-pointer"
+        onClick={handleClick}
+      >
+        {renderIcon()}
+        <span className="min-w-0 flex-1 truncate text-sdk-foreground">
+          {block.name || 'Content list'}
+        </span>
+      </button>
+    );
+  },
+);
+
+ResourceCenterContentListBlockView.displayName = 'ResourceCenterContentListBlockView';
+
+// ============================================================================
+// Content List — flow/checklist item icon
+// ============================================================================
+
+const ContentListFlowIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="h-5 w-5 flex-shrink-0 text-sdk-foreground/60"
+  >
+    <path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM10 15.5L16 12L10 8.5V15.5Z" />
+  </svg>
+);
+
+const ContentListChecklistIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="h-5 w-5 flex-shrink-0 text-sdk-foreground/60"
+  >
+    <path d="M11 4H21V6H11V4ZM11 8H17V10H11V8ZM11 14H21V16H11V14ZM11 18H17V20H11V18ZM3 4H9V10H3V4ZM5 6V8H7V6H5ZM3 14H9V20H3V14ZM5 16V18H7V16H5Z" />
+  </svg>
+);
+
+// ============================================================================
+// Content List content view (second-level panel)
+// ============================================================================
+
+export const ResourceCenterContentListContent = memo(() => {
+  const { activeContentList, contentListItems, onContentListItemClick } =
+    useResourceCenterContext();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return contentListItems;
+    const query = searchQuery.trim().toLowerCase();
+    return contentListItems.filter((item) => item.name.toLowerCase().includes(query));
+  }, [contentListItems, searchQuery]);
+
+  if (!activeContentList) return null;
+
+  const showSearch = activeContentList.showSearchField;
+
+  return (
+    <div className="flex flex-col gap-3 p-2">
+      {showSearch && (
+        <div className="px-1">
+          <input
+            type="text"
+            className={cn(
+              'w-full rounded-md border border-sdk-foreground/20 bg-sdk-background px-3 py-2 text-sm',
+              'text-sdk-foreground placeholder:text-sdk-foreground/40',
+              'outline-none focus:border-sdk-primary focus:ring-1 focus:ring-sdk-primary',
+            )}
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      )}
+
+      {filteredItems.length === 0 && (
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">
+          {searchQuery.trim() ? 'No results found' : 'No items'}
+        </div>
+      )}
+
+      {filteredItems.length > 0 && (
+        <div className="flex flex-col">
+          {filteredItems.map((item) => (
+            <button
+              key={item.contentId}
+              type="button"
+              className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-sdk-hover cursor-pointer"
+              onClick={() => onContentListItemClick?.(item)}
+            >
+              {item.contentType === 'flow' ? <ContentListFlowIcon /> : <ContentListChecklistIcon />}
+              <span className="min-w-0 flex-1 truncate text-sdk-foreground">{item.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+ResourceCenterContentListContent.displayName = 'ResourceCenterContentListContent';
+
+// ============================================================================
 // Knowledge Base — search API helper
 // ============================================================================
 
@@ -770,6 +915,8 @@ export const ResourceCenterBlocks = memo(
       navigateToKnowledgeBase,
       activeContactPage,
       navigateToContactPage,
+      activeContentList,
+      navigateToContentList,
       onLiveChatClick,
     } = useResourceCenterContext();
 
@@ -786,6 +933,11 @@ export const ResourceCenterBlocks = memo(
     // When a contact email/phone page is active, show its content
     if (activeContactPage) {
       return <ResourceCenterContactPageContent editSlot={contactPageEditSlot} />;
+    }
+
+    // When a content list page is active, show its content
+    if (activeContentList) {
+      return <ResourceCenterContentListContent />;
     }
 
     return (
@@ -826,6 +978,12 @@ export const ResourceCenterBlocks = memo(
                   onContactEmailClick={(b) => navigateToContactPage(b, 'email')}
                   onContactPhoneClick={(b) => navigateToContactPage(b, 'phone')}
                   onContactLiveChatClick={onLiveChatClick}
+                />
+              )}
+              {block.type === ResourceCenterBlockType.CONTENT_LIST && (
+                <ResourceCenterContentListBlockView
+                  block={block}
+                  onContentListClick={navigateToContentList}
                 />
               )}
             </Fragment>
