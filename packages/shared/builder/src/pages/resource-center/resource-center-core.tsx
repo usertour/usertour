@@ -69,7 +69,6 @@ const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     label: 'Sub-page',
     description: 'Nested route with free-form content',
     icon: RiPagesFill,
-    disabled: true,
   },
   {
     key: ResourceCenterBlockType.CONTACT,
@@ -176,6 +175,17 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         iconSource: LauncherIconSource.BUILTIN,
         iconType: '',
         clickedActions: [],
+        onlyShowTask: false,
+        onlyShowTaskConditions: [],
+      };
+    case ResourceCenterBlockType.SUB_PAGE:
+      return {
+        id,
+        type: ResourceCenterBlockType.SUB_PAGE,
+        name: '',
+        iconSource: LauncherIconSource.BUILTIN,
+        iconType: '',
+        content: DEFAULT_MESSAGE_BLOCK_CONTENT,
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };

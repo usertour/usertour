@@ -1,5 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ResourceCenterData, ThemeTypesSetting, UserTourTypes } from '@usertour/types';
+import type {
+  ResourceCenterData,
+  ResourceCenterSubPageBlock,
+  ThemeTypesSetting,
+  UserTourTypes,
+} from '@usertour/types';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
 import { ResourceCenterRootContext } from './context';
 import { RC_DEFAULTS } from './constants';
@@ -44,7 +49,16 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
 
   const isOpen = expanded;
   const [isAnimating, setIsAnimating] = useState(false);
+  const [activeSubPage, setActiveSubPage] = useState<ResourceCenterSubPageBlock | null>(null);
   const animationTimerRef = useRef<number | null>(null);
+
+  const navigateToSubPage = useCallback((block: ResourceCenterSubPageBlock) => {
+    setActiveSubPage(block);
+  }, []);
+
+  const navigateBack = useCallback(() => {
+    setActiveSubPage(null);
+  }, []);
 
   const handleExpandedChange = useCallback(
     async (open: boolean) => {
@@ -89,6 +103,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onBlockClick,
       checklistSlot,
       showMadeWith,
+      activeSubPage,
+      navigateToSubPage,
+      navigateBack,
     }),
     [
       globalStyle,
@@ -107,6 +124,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onBlockClick,
       checklistSlot,
       showMadeWith,
+      activeSubPage,
+      navigateToSubPage,
+      navigateBack,
     ],
   );
 

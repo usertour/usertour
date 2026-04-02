@@ -60,12 +60,25 @@ export interface ResourceCenterActionBlock {
   onlyShowTaskConditions: RulesCondition[];
 }
 
+export interface ResourceCenterSubPageBlock {
+  id: string;
+  name: string;
+  type: ResourceCenterBlockType.SUB_PAGE;
+  iconSource: LauncherIconSource;
+  iconType: string;
+  iconUrl?: string;
+  content: ContentEditorRoot[];
+  onlyShowTask: boolean;
+  onlyShowTaskConditions: RulesCondition[];
+}
+
 /** Union of all implemented block types. */
 export type ResourceCenterBlock =
   | ResourceCenterMessageBlock
   | ResourceCenterChecklistBlock
   | ResourceCenterDividerBlock
-  | ResourceCenterActionBlock;
+  | ResourceCenterActionBlock
+  | ResourceCenterSubPageBlock;
 
 // ============================================================================
 // Resource Center Data

@@ -1,5 +1,10 @@
 import { createContext, useContext } from 'react';
-import type { ResourceCenterData, ThemeTypesSetting, UserTourTypes } from '@usertour/types';
+import type {
+  ResourceCenterData,
+  ResourceCenterSubPageBlock,
+  ThemeTypesSetting,
+  UserTourTypes,
+} from '@usertour/types';
 
 export interface ResourceCenterContextValue {
   globalStyle: string;
@@ -18,6 +23,9 @@ export interface ResourceCenterContextValue {
   onBlockClick?: (blockId: string) => Promise<void>;
   checklistSlot?: React.ReactNode;
   showMadeWith: boolean;
+  activeSubPage: ResourceCenterSubPageBlock | null;
+  navigateToSubPage: (block: ResourceCenterSubPageBlock) => void;
+  navigateBack: () => void;
 }
 
 export const ResourceCenterRootContext = createContext<ResourceCenterContextValue | null>(null);

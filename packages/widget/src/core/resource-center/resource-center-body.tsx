@@ -3,6 +3,7 @@ import type {
   ResourceCenterActionBlock,
   ResourceCenterDividerBlock,
   ResourceCenterMessageBlock,
+  ResourceCenterSubPageBlock,
   UserTourTypes,
 } from '@usertour/types';
 import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
@@ -147,6 +148,98 @@ export const ResourceCenterActionBlockView = memo(
 ResourceCenterActionBlockView.displayName = 'ResourceCenterActionBlockView';
 
 // ============================================================================
+// Block — SUB_PAGE (row in the main panel)
+// ============================================================================
+
+interface ResourceCenterSubPageBlockViewProps {
+  block: ResourceCenterSubPageBlock;
+  onSubPageClick?: (block: ResourceCenterSubPageBlock) => void;
+}
+
+export const ResourceCenterSubPageBlockView = memo(
+  ({ block, onSubPageClick }: ResourceCenterSubPageBlockViewProps) => {
+    const handleClick = () => {
+      onSubPageClick?.(block);
+    };
+
+    const renderIcon = () => {
+      if (block.iconSource === LauncherIconSource.NONE) {
+        return null;
+      }
+      if (
+        (block.iconSource === LauncherIconSource.UPLOAD ||
+          block.iconSource === LauncherIconSource.URL) &&
+        block.iconUrl
+      ) {
+        return <img src={block.iconUrl} alt="" className="h-5 w-5 flex-shrink-0 object-contain" />;
+      }
+      if (block.iconSource === LauncherIconSource.BUILTIN && block.iconType) {
+        const iconItem = IconsList.find((item) => item.name === block.iconType);
+        if (iconItem) {
+          const Icon = iconItem.ICON;
+          return <Icon size={20} className="flex-shrink-0 text-sdk-foreground" />;
+        }
+      }
+      return null;
+    };
+
+    return (
+      <button
+        type="button"
+        data-block-id={block.id}
+        className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-sdk-hover cursor-pointer"
+        onClick={handleClick}
+      >
+        {renderIcon()}
+        <span className="min-w-0 flex-1 truncate text-sdk-foreground">
+          {block.name || 'Untitled sub-page'}
+        </span>
+      </button>
+    );
+  },
+);
+
+ResourceCenterSubPageBlockView.displayName = 'ResourceCenterSubPageBlockView';
+
+// ============================================================================
+// Sub-page content view (second-level panel content)
+// ============================================================================
+
+interface ResourceCenterSubPageContentProps {
+  editSlot?: React.ReactNode;
+}
+
+export const ResourceCenterSubPageContent = memo(
+  ({ editSlot }: ResourceCenterSubPageContentProps) => {
+    const { activeSubPage, userAttributes, onContentClick, onBlockClick } =
+      useResourceCenterContext();
+
+    if (!activeSubPage) return null;
+
+    if (editSlot) {
+      return <div className="p-2">{editSlot}</div>;
+    }
+
+    const handleContentClick = async (element: any) => {
+      onContentClick?.(element);
+      onBlockClick?.(activeSubPage.id);
+    };
+
+    return (
+      <div className="p-2">
+        <ContentEditorSerialize
+          contents={activeSubPage.content}
+          onClick={handleContentClick}
+          userAttributes={userAttributes}
+        />
+      </div>
+    );
+  },
+);
+
+ResourceCenterSubPageContent.displayName = 'ResourceCenterSubPageContent';
+
+// ============================================================================
 // Body
 // ============================================================================
 
@@ -180,44 +273,62 @@ ResourceCenterBody.displayName = 'ResourceCenterBody';
 
 interface ResourceCenterBlocksProps {
   messageEditSlots?: Record<string, React.ReactNode>;
+  subPageEditSlot?: React.ReactNode;
 }
 
-export const ResourceCenterBlocks = memo(({ messageEditSlots }: ResourceCenterBlocksProps) => {
-  const { data, userAttributes, onContentClick, onBlockClick, checklistSlot } =
-    useResourceCenterContext();
+export const ResourceCenterBlocks = memo(
+  ({ messageEditSlots, subPageEditSlot }: ResourceCenterBlocksProps) => {
+    const {
+      data,
+      userAttributes,
+      onContentClick,
+      onBlockClick,
+      checklistSlot,
+      activeSubPage,
+      navigateToSubPage,
+    } = useResourceCenterContext();
 
-  return (
-    <>
-      {data.blocks.map((block) => {
-        return (
-          <Fragment key={block.id}>
-            {block.type === ResourceCenterBlockType.MESSAGE && (
-              <ResourceCenterMessageBlockView
-                block={block}
-                userAttributes={userAttributes}
-                onContentClick={onContentClick}
-                onBlockClick={onBlockClick}
-                editSlot={messageEditSlots?.[block.id]}
-              />
-            )}
-            {block.type === ResourceCenterBlockType.CHECKLIST && (
-              <ResourceCenterChecklistBlockView slot={checklistSlot} />
-            )}
-            {block.type === ResourceCenterBlockType.DIVIDER && (
-              <ResourceCenterDividerBlockView block={block} />
-            )}
-            {block.type === ResourceCenterBlockType.ACTION && (
-              <ResourceCenterActionBlockView block={block} onActionBlockClick={onBlockClick} />
-            )}
-          </Fragment>
-        );
-      })}
+    // When a sub-page is active, show its content instead of the block list
+    if (activeSubPage) {
+      return <ResourceCenterSubPageContent editSlot={subPageEditSlot} />;
+    }
 
-      {data.blocks.length === 0 && (
-        <div className="py-8 text-center text-sm opacity-40">No blocks added yet</div>
-      )}
-    </>
-  );
-});
+    return (
+      <>
+        {data.blocks.map((block) => {
+          return (
+            <Fragment key={block.id}>
+              {block.type === ResourceCenterBlockType.MESSAGE && (
+                <ResourceCenterMessageBlockView
+                  block={block}
+                  userAttributes={userAttributes}
+                  onContentClick={onContentClick}
+                  onBlockClick={onBlockClick}
+                  editSlot={messageEditSlots?.[block.id]}
+                />
+              )}
+              {block.type === ResourceCenterBlockType.CHECKLIST && (
+                <ResourceCenterChecklistBlockView slot={checklistSlot} />
+              )}
+              {block.type === ResourceCenterBlockType.DIVIDER && (
+                <ResourceCenterDividerBlockView block={block} />
+              )}
+              {block.type === ResourceCenterBlockType.ACTION && (
+                <ResourceCenterActionBlockView block={block} onActionBlockClick={onBlockClick} />
+              )}
+              {block.type === ResourceCenterBlockType.SUB_PAGE && (
+                <ResourceCenterSubPageBlockView block={block} onSubPageClick={navigateToSubPage} />
+              )}
+            </Fragment>
+          );
+        })}
+
+        {data.blocks.length === 0 && (
+          <div className="py-8 text-center text-sm opacity-40">No blocks added yet</div>
+        )}
+      </>
+    );
+  },
+);
 
 ResourceCenterBlocks.displayName = 'ResourceCenterBlocks';

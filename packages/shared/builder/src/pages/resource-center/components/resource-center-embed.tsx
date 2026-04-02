@@ -14,18 +14,83 @@ import {
   ResourceCenterBody,
   ResourceCenterBlocks,
   ResourceCenterFooter,
+  useResourceCenterContext as useWidgetResourceCenterContext,
 } from '@usertour-packages/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
 import {
   ContentEditorElementType,
   ResourceCenterBlockType,
   ResourceCenterMessageBlock,
+  ResourceCenterSubPageBlock,
   Theme,
 } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderContext, useResourceCenterContext } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
+
+/** Inner panel content that can access the widget's ResourceCenterContext */
+const ResourceCenterEmbedContent = ({
+  messageEditSlots,
+  headerText,
+}: {
+  messageEditSlots: Record<string, React.ReactNode>;
+  headerText: string;
+}) => {
+  const { activeSubPage } = useWidgetResourceCenterContext();
+  const { localData, updateBlock } = useResourceCenterContext();
+  const { upload } = useAws();
+  const { projectId } = useBuilderContext();
+  const { attributeList } = useAttributeListContext();
+
+  const handleCustomUploadRequest = useCallback(
+    (file: File): Promise<string> => upload(file),
+    [upload],
+  );
+
+  const enabledElementTypes = [
+    ContentEditorElementType.IMAGE,
+    ContentEditorElementType.EMBED,
+    ContentEditorElementType.TEXT,
+  ];
+
+  // Build subPageEditSlot for the currently active sub-page
+  const subPageEditSlot = useMemo(() => {
+    if (!activeSubPage || !localData) return undefined;
+    const block = localData.blocks.find(
+      (b) => b.id === activeSubPage.id && b.type === ResourceCenterBlockType.SUB_PAGE,
+    ) as ResourceCenterSubPageBlock | undefined;
+    if (!block) return undefined;
+    return (
+      <ContentEditor
+        zIndex={EXTENSION_CONTENT_POPPER}
+        customUploadRequest={handleCustomUploadRequest}
+        initialValue={block.content}
+        onValueChange={(value: ContentEditorRoot[]) => {
+          if (!isEqual(value, block.content)) {
+            updateBlock(block.id, { content: value } as any);
+          }
+        }}
+        projectId={projectId}
+        attributes={attributeList}
+        enabledElementTypes={enabledElementTypes}
+      />
+    );
+  }, [activeSubPage, localData, handleCustomUploadRequest, updateBlock, projectId, attributeList]);
+
+  return (
+    <>
+      <ResourceCenterHeader text={headerText} />
+      <ResourceCenterBody>
+        <ResourceCenterBlocks
+          messageEditSlots={messageEditSlots}
+          subPageEditSlot={subPageEditSlot}
+        />
+      </ResourceCenterBody>
+      <ResourceCenterFooter />
+    </>
+  );
+};
 
 export const ResourceCenterEmbed = () => {
   const { localData, updateBlock } = useResourceCenterContext();
@@ -219,11 +284,10 @@ export const ResourceCenterEmbed = () => {
     >
       <ResourceCenterStyleProvider>
         <ResourceCenterPanel mode="dom" allowOverflow>
-          <ResourceCenterHeader text={localData.headerText} />
-          <ResourceCenterBody>
-            <ResourceCenterBlocks messageEditSlots={messageEditSlots} />
-          </ResourceCenterBody>
-          <ResourceCenterFooter />
+          <ResourceCenterEmbedContent
+            messageEditSlots={messageEditSlots}
+            headerText={localData.headerText}
+          />
         </ResourceCenterPanel>
       </ResourceCenterStyleProvider>
     </ResourceCenterRoot>

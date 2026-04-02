@@ -101,7 +101,11 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
   ({ onClick, listeners = {}, attributes = {}, block, style }, ref) => {
     const typeLabel = BLOCK_TYPE_LABELS[block.type] ?? block.type;
     const label =
-      block.type === ResourceCenterBlockType.ACTION && block.name ? block.name : typeLabel;
+      (block.type === ResourceCenterBlockType.ACTION ||
+        block.type === ResourceCenterBlockType.SUB_PAGE) &&
+      block.name
+        ? block.name
+        : typeLabel;
     return (
       <div
         ref={ref}

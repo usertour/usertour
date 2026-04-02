@@ -1,5 +1,5 @@
 import { forwardRef, memo, useCallback, type HTMLAttributes } from 'react';
-import { DropDownIcon } from '@usertour-packages/icons';
+import { ArrowLeftIcon, DropDownIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import { Button } from '../../primitives';
 import { useResourceCenterContext } from './context';
@@ -44,10 +44,43 @@ export const ResourceCenterCloseButton = forwardRef<
 ResourceCenterCloseButton.displayName = 'ResourceCenterCloseButton';
 
 // ============================================================================
+// Back Button (shown when navigated into a sub-page)
+// ============================================================================
+
+export const ResourceCenterBackButton = memo(() => {
+  const { navigateBack } = useResourceCenterContext();
+
+  const handleClick = useCallback(() => {
+    navigateBack();
+  }, [navigateBack]);
+
+  return (
+    <Button
+      variant="custom"
+      className={cn(
+        'rounded-lg inline-flex items-center justify-center',
+        'text-sdk-resource-center-header-foreground',
+        'hover:bg-sdk-resource-center-header-foreground/10',
+        'outline-none cursor-pointer p-2',
+      )}
+      onClick={handleClick}
+      aria-label="Back"
+    >
+      <ArrowLeftIcon height={20} width={20} />
+    </Button>
+  );
+});
+
+ResourceCenterBackButton.displayName = 'ResourceCenterBackButton';
+
+// ============================================================================
 // Header
 // ============================================================================
 
 export const ResourceCenterHeader = memo(({ text }: { text: string }) => {
+  const { activeSubPage } = useResourceCenterContext();
+  const headerText = activeSubPage ? activeSubPage.name || 'Sub-page' : text;
+
   return (
     <div
       className={cn(
@@ -57,7 +90,10 @@ export const ResourceCenterHeader = memo(({ text }: { text: string }) => {
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
       )}
     >
-      <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">{text}</div>
+      {activeSubPage && <ResourceCenterBackButton />}
+      <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">
+        {headerText}
+      </div>
       <ResourceCenterCloseButton />
     </div>
   );

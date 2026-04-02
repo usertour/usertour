@@ -21,7 +21,11 @@ export { ResourceCenterTrigger, ResourceCenterLauncherIcon } from './resource-ce
 export { ResourceCenterLauncher, ResourceCenterLauncherFrame } from './resource-center-launcher';
 
 // Header & close
-export { ResourceCenterHeader, ResourceCenterCloseButton } from './resource-center-header';
+export {
+  ResourceCenterHeader,
+  ResourceCenterCloseButton,
+  ResourceCenterBackButton,
+} from './resource-center-header';
 
 // Body & blocks
 export {
@@ -29,6 +33,8 @@ export {
   ResourceCenterBlocks,
   ResourceCenterMessageBlockView,
   ResourceCenterChecklistBlockView,
+  ResourceCenterSubPageBlockView,
+  ResourceCenterSubPageContent,
 } from './resource-center-body';
 
 // Footer
