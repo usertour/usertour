@@ -26,6 +26,7 @@ import {
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Button } from '@usertour-packages/button';
 import {
+  ContactLiveChatProvider,
   ContentEditorRoot,
   KnowledgeBaseSearchProvider,
   LauncherIconSource,
@@ -81,7 +82,6 @@ const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     label: 'Contact',
     description: 'Email, Phone, Live-chat',
     icon: RiMailFill,
-    disabled: true,
   },
   {
     key: ResourceCenterBlockType.CONTENT_LIST,
@@ -203,6 +203,23 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         searchProvider: KnowledgeBaseSearchProvider.GOOGLE,
         knowledgeBaseUrl: '',
         defaultSearchQuery: '',
+        onlyShowTask: false,
+        onlyShowTaskConditions: [],
+      };
+    case ResourceCenterBlockType.CONTACT:
+      return {
+        id,
+        type: ResourceCenterBlockType.CONTACT,
+        name: '',
+        iconSource: LauncherIconSource.BUILTIN,
+        iconType: '',
+        emailEnabled: true,
+        emailContent: DEFAULT_MESSAGE_BLOCK_CONTENT,
+        phoneEnabled: true,
+        phoneContent: DEFAULT_MESSAGE_BLOCK_CONTENT,
+        liveChatEnabled: false,
+        liveChatProvider: ContactLiveChatProvider.INTERCOM,
+        customLiveChatCode: '',
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };

@@ -1,11 +1,14 @@
 import { createContext, useContext } from 'react';
 import type {
+  ResourceCenterContactBlock,
   ResourceCenterData,
   ResourceCenterKnowledgeBaseBlock,
   ResourceCenterSubPageBlock,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
+
+export type ContactPageType = 'email' | 'phone';
 
 export interface ResourceCenterContextValue {
   globalStyle: string;
@@ -28,6 +31,9 @@ export interface ResourceCenterContextValue {
   navigateToSubPage: (block: ResourceCenterSubPageBlock) => void;
   activeKnowledgeBase: ResourceCenterKnowledgeBaseBlock | null;
   navigateToKnowledgeBase: (block: ResourceCenterKnowledgeBaseBlock) => void;
+  activeContactPage: { block: ResourceCenterContactBlock; page: ContactPageType } | null;
+  navigateToContactPage: (block: ResourceCenterContactBlock, page: ContactPageType) => void;
+  onLiveChatClick?: (block: ResourceCenterContactBlock) => void;
   navigateBack: () => void;
 }
 

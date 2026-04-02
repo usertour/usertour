@@ -20,6 +20,7 @@ import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-edit
 import {
   ContentEditorElementType,
   ResourceCenterBlockType,
+  ResourceCenterContactBlock,
   ResourceCenterMessageBlock,
   ResourceCenterSubPageBlock,
   Theme,
@@ -37,7 +38,7 @@ const ResourceCenterEmbedContent = ({
   messageEditSlots: Record<string, React.ReactNode>;
   headerText: string;
 }) => {
-  const { activeSubPage } = useWidgetResourceCenterContext();
+  const { activeSubPage, activeContactPage } = useWidgetResourceCenterContext();
   const { localData, updateBlock } = useResourceCenterContext();
   const { upload } = useAws();
   const { projectId } = useBuilderContext();
@@ -78,6 +79,38 @@ const ResourceCenterEmbedContent = ({
     );
   }, [activeSubPage, localData, handleCustomUploadRequest, updateBlock, projectId, attributeList]);
 
+  // Build contactPageEditSlot for the currently active contact email/phone page
+  const contactPageEditSlot = useMemo(() => {
+    if (!activeContactPage || !localData) return undefined;
+    const block = localData.blocks.find(
+      (b) => b.id === activeContactPage.block.id && b.type === ResourceCenterBlockType.CONTACT,
+    ) as ResourceCenterContactBlock | undefined;
+    if (!block) return undefined;
+    const contentField = activeContactPage.page === 'email' ? 'emailContent' : 'phoneContent';
+    return (
+      <ContentEditor
+        zIndex={EXTENSION_CONTENT_POPPER}
+        customUploadRequest={handleCustomUploadRequest}
+        initialValue={block[contentField]}
+        onValueChange={(value: ContentEditorRoot[]) => {
+          if (!isEqual(value, block[contentField])) {
+            updateBlock(block.id, { [contentField]: value } as any);
+          }
+        }}
+        projectId={projectId}
+        attributes={attributeList}
+        enabledElementTypes={enabledElementTypes}
+      />
+    );
+  }, [
+    activeContactPage,
+    localData,
+    handleCustomUploadRequest,
+    updateBlock,
+    projectId,
+    attributeList,
+  ]);
+
   return (
     <>
       <ResourceCenterHeader text={headerText} />
@@ -85,6 +118,7 @@ const ResourceCenterEmbedContent = ({
         <ResourceCenterBlocks
           messageEditSlots={messageEditSlots}
           subPageEditSlot={subPageEditSlot}
+          contactPageEditSlot={contactPageEditSlot}
         />
       </ResourceCenterBody>
       <ResourceCenterFooter />

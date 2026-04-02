@@ -78,13 +78,17 @@ ResourceCenterBackButton.displayName = 'ResourceCenterBackButton';
 // ============================================================================
 
 export const ResourceCenterHeader = memo(({ text }: { text: string }) => {
-  const { activeSubPage, activeKnowledgeBase } = useResourceCenterContext();
-  const isSecondaryPage = activeSubPage || activeKnowledgeBase;
+  const { activeSubPage, activeKnowledgeBase, activeContactPage } = useResourceCenterContext();
+  const isSecondaryPage = activeSubPage || activeKnowledgeBase || activeContactPage;
   const headerText = activeSubPage
     ? activeSubPage.name || 'Sub-page'
     : activeKnowledgeBase
       ? activeKnowledgeBase.name || 'Knowledge base'
-      : text;
+      : activeContactPage
+        ? activeContactPage.page === 'email'
+          ? 'Email'
+          : 'Phone'
+        : text;
 
   return (
     <div

@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  ResourceCenterContactBlock,
   ResourceCenterData,
   ResourceCenterKnowledgeBaseBlock,
   ResourceCenterSubPageBlock,
@@ -7,7 +8,7 @@ import type {
   UserTourTypes,
 } from '@usertour/types';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
-import { ResourceCenterRootContext } from './context';
+import { ResourceCenterRootContext, type ContactPageType } from './context';
 import { RC_DEFAULTS } from './constants';
 
 interface ResourceCenterRootProps {
@@ -26,6 +27,7 @@ interface ResourceCenterRootProps {
   onBlockClick?: (blockId: string) => Promise<void>;
   checklistSlot?: React.ReactNode;
   showMadeWith?: boolean;
+  onLiveChatClick?: (block: ResourceCenterContactBlock) => void;
 }
 
 export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
@@ -45,6 +47,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onBlockClick,
     checklistSlot,
     showMadeWith = true,
+    onLiveChatClick,
   } = props;
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
 
@@ -53,21 +56,37 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const [activeSubPage, setActiveSubPage] = useState<ResourceCenterSubPageBlock | null>(null);
   const [activeKnowledgeBase, setActiveKnowledgeBase] =
     useState<ResourceCenterKnowledgeBaseBlock | null>(null);
+  const [activeContactPage, setActiveContactPage] = useState<{
+    block: ResourceCenterContactBlock;
+    page: ContactPageType;
+  } | null>(null);
   const animationTimerRef = useRef<number | null>(null);
 
   const navigateToSubPage = useCallback((block: ResourceCenterSubPageBlock) => {
     setActiveSubPage(block);
     setActiveKnowledgeBase(null);
+    setActiveContactPage(null);
   }, []);
 
   const navigateToKnowledgeBase = useCallback((block: ResourceCenterKnowledgeBaseBlock) => {
     setActiveKnowledgeBase(block);
     setActiveSubPage(null);
+    setActiveContactPage(null);
   }, []);
+
+  const navigateToContactPage = useCallback(
+    (block: ResourceCenterContactBlock, page: ContactPageType) => {
+      setActiveContactPage({ block, page });
+      setActiveSubPage(null);
+      setActiveKnowledgeBase(null);
+    },
+    [],
+  );
 
   const navigateBack = useCallback(() => {
     setActiveSubPage(null);
     setActiveKnowledgeBase(null);
+    setActiveContactPage(null);
   }, []);
 
   const handleExpandedChange = useCallback(
@@ -117,6 +136,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       navigateToSubPage,
       activeKnowledgeBase,
       navigateToKnowledgeBase,
+      activeContactPage,
+      navigateToContactPage,
+      onLiveChatClick,
       navigateBack,
     }),
     [
@@ -140,6 +162,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       navigateToSubPage,
       activeKnowledgeBase,
       navigateToKnowledgeBase,
+      activeContactPage,
+      navigateToContactPage,
+      onLiveChatClick,
       navigateBack,
     ],
   );

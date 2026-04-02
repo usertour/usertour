@@ -1,8 +1,10 @@
 import {
+  ContactLiveChatProvider,
   ContentEditorClickableElement,
   ContentEditorRoot,
   CustomContentSession,
   ResourceCenterBlockType,
+  ResourceCenterContactBlock,
   ResourceCenterData,
   ThemeTypesSetting,
   contentEndReason,
@@ -131,6 +133,57 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     // Handle clickedActions for ACTION blocks
     if (block.type === ResourceCenterBlockType.ACTION && block.clickedActions?.length > 0) {
       await this.handleActions(block.clickedActions);
+    }
+  }
+
+  handleLiveChatClick(block: ResourceCenterContactBlock): void {
+    try {
+      const provider = block.liveChatProvider;
+      switch (provider) {
+        case ContactLiveChatProvider.CRISP:
+          if (typeof (window as any).$crisp !== 'undefined') {
+            (window as any).$crisp.push(['do', 'chat:open']);
+          }
+          break;
+        case ContactLiveChatProvider.FRESHCHAT:
+          if (typeof (window as any).fcWidget !== 'undefined') {
+            (window as any).fcWidget.open();
+          }
+          break;
+        case ContactLiveChatProvider.HELP_SCOUT:
+          if (typeof (window as any).Beacon !== 'undefined') {
+            (window as any).Beacon('open');
+          }
+          break;
+        case ContactLiveChatProvider.HUBSPOT:
+          if (typeof (window as any).HubSpotConversations !== 'undefined') {
+            (window as any).HubSpotConversations.widget.open();
+          }
+          break;
+        case ContactLiveChatProvider.INTERCOM:
+          if (typeof (window as any).Intercom !== 'undefined') {
+            (window as any).Intercom('show');
+          }
+          break;
+        case ContactLiveChatProvider.ZENDESK_CLASSIC:
+          if (typeof (window as any).zE !== 'undefined') {
+            (window as any).zE('webWidget', 'open');
+          }
+          break;
+        case ContactLiveChatProvider.ZENDESK_MESSENGER:
+          if (typeof (window as any).zE !== 'undefined') {
+            (window as any).zE('messenger', 'open');
+          }
+          break;
+        case ContactLiveChatProvider.CUSTOM:
+          if (block.customLiveChatCode) {
+            const fn = new Function(block.customLiveChatCode);
+            fn();
+          }
+          break;
+      }
+    } catch (error) {
+      logger.error('Failed to open live chat:', error);
     }
   }
 

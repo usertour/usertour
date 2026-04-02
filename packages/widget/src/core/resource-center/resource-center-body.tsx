@@ -1,6 +1,7 @@
 import { Fragment, memo, useCallback, useState } from 'react';
 import type {
   ResourceCenterActionBlock,
+  ResourceCenterContactBlock,
   ResourceCenterDividerBlock,
   ResourceCenterKnowledgeBaseBlock,
   ResourceCenterMessageBlock,
@@ -458,6 +459,169 @@ export const ResourceCenterKnowledgeBaseContent = memo(() => {
 ResourceCenterKnowledgeBaseContent.displayName = 'ResourceCenterKnowledgeBaseContent';
 
 // ============================================================================
+// Block — CONTACT (row in the main panel)
+// ============================================================================
+
+interface ResourceCenterContactBlockViewProps {
+  block: ResourceCenterContactBlock;
+  onContactEmailClick?: (block: ResourceCenterContactBlock) => void;
+  onContactPhoneClick?: (block: ResourceCenterContactBlock) => void;
+  onContactLiveChatClick?: (block: ResourceCenterContactBlock) => void;
+}
+
+const ContactEmailIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="h-5 w-5"
+  >
+    <path d="M3 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3ZM20 7.23792L12.0718 14.338L4 7.21594V19H20V7.23792ZM4.51146 5L12.0619 11.662L19.501 5H4.51146Z" />
+  </svg>
+);
+
+const ContactPhoneIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="h-5 w-5"
+  >
+    <path d="M9.36556 10.6821C10.302 12.3288 11.6712 13.698 13.3179 14.6344L14.2024 13.3961C14.4965 12.9845 15.0516 12.8573 15.4956 13.0998C16.9024 13.8683 18.4571 14.3353 20.0789 14.4637C20.5906 14.5049 21 14.9389 21 15.4524V19.9981C21 20.5084 20.5947 20.9216 20.0867 20.9486C19.5091 20.9798 18.9271 20.9964 18.3412 20.9964C9.16019 20.9964 1.68823 13.5765 1.00391 4.41789C0.977047 4.0581 1.12233 3.71846 1.37624 3.48836C1.63015 3.25826 1.97402 3.15192 2.31919 3.19408L6.54778 3.00006C7.0613 3.00006 7.49527 3.40948 7.53643 3.92115C7.66477 5.54293 8.13175 7.09761 8.90025 8.50444C9.14268 8.94838 9.01553 9.50354 8.60385 9.79757L7.36556 10.6821Z" />
+  </svg>
+);
+
+const ContactChatIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="h-5 w-5"
+  >
+    <path d="M7.29117 20.8242L2 22L3.17581 16.7088C2.42544 15.3056 2 13.7025 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C10.2975 22 8.6944 21.5746 7.29117 20.8242ZM7.58075 18.711L8.23428 19.0605C9.38248 19.6745 10.6655 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 13.3345 4.32549 14.6175 4.93949 15.7657L5.28896 16.4192L4.63416 19.3658L7.58075 18.711Z" />
+  </svg>
+);
+
+export const ResourceCenterContactBlockView = memo(
+  ({
+    block,
+    onContactEmailClick,
+    onContactPhoneClick,
+    onContactLiveChatClick,
+  }: ResourceCenterContactBlockViewProps) => {
+    const renderIcon = () => {
+      if (block.iconSource === LauncherIconSource.NONE) {
+        return null;
+      }
+      if (
+        (block.iconSource === LauncherIconSource.UPLOAD ||
+          block.iconSource === LauncherIconSource.URL) &&
+        block.iconUrl
+      ) {
+        return <img src={block.iconUrl} alt="" className="h-5 w-5 flex-shrink-0 object-contain" />;
+      }
+      if (block.iconSource === LauncherIconSource.BUILTIN && block.iconType) {
+        const iconItem = IconsList.find((item) => item.name === block.iconType);
+        if (iconItem) {
+          const Icon = iconItem.ICON;
+          return <Icon size={20} className="flex-shrink-0 text-sdk-foreground" />;
+        }
+      }
+      return null;
+    };
+
+    return (
+      <div
+        data-block-id={block.id}
+        className="flex w-full items-center gap-3 rounded-md p-2 text-sm"
+      >
+        {renderIcon()}
+        <span className="min-w-0 flex-1 truncate text-sdk-foreground">
+          {block.name || 'Contact us'}
+        </span>
+        <div className="flex items-center gap-1">
+          {block.emailEnabled && (
+            <button
+              type="button"
+              className="rounded-md p-1.5 text-sdk-foreground/60 hover:text-sdk-foreground hover:bg-sdk-hover cursor-pointer transition-colors"
+              onClick={() => onContactEmailClick?.(block)}
+              aria-label="Email"
+            >
+              <ContactEmailIcon />
+            </button>
+          )}
+          {block.phoneEnabled && (
+            <button
+              type="button"
+              className="rounded-md p-1.5 text-sdk-foreground/60 hover:text-sdk-foreground hover:bg-sdk-hover cursor-pointer transition-colors"
+              onClick={() => onContactPhoneClick?.(block)}
+              aria-label="Phone"
+            >
+              <ContactPhoneIcon />
+            </button>
+          )}
+          {block.liveChatEnabled && (
+            <button
+              type="button"
+              className="rounded-md p-1.5 text-sdk-foreground/60 hover:text-sdk-foreground hover:bg-sdk-hover cursor-pointer transition-colors"
+              onClick={() => onContactLiveChatClick?.(block)}
+              aria-label="Live chat"
+            >
+              <ContactChatIcon />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  },
+);
+
+ResourceCenterContactBlockView.displayName = 'ResourceCenterContactBlockView';
+
+// ============================================================================
+// Contact page content view (second-level panel — email or phone)
+// ============================================================================
+
+interface ResourceCenterContactPageContentProps {
+  editSlot?: React.ReactNode;
+}
+
+export const ResourceCenterContactPageContent = memo(
+  ({ editSlot }: ResourceCenterContactPageContentProps) => {
+    const { activeContactPage, userAttributes, onContentClick, onBlockClick } =
+      useResourceCenterContext();
+
+    if (!activeContactPage) return null;
+
+    if (editSlot) {
+      return <div className="p-2">{editSlot}</div>;
+    }
+
+    const content =
+      activeContactPage.page === 'email'
+        ? activeContactPage.block.emailContent
+        : activeContactPage.block.phoneContent;
+
+    const handleContentClick = async (element: any) => {
+      onContentClick?.(element);
+      onBlockClick?.(activeContactPage.block.id);
+    };
+
+    return (
+      <div className="p-2">
+        <ContentEditorSerialize
+          contents={content}
+          onClick={handleContentClick}
+          userAttributes={userAttributes}
+        />
+      </div>
+    );
+  },
+);
+
+ResourceCenterContactPageContent.displayName = 'ResourceCenterContactPageContent';
+
+// ============================================================================
 // Knowledge Base — search API helper
 // ============================================================================
 
@@ -589,10 +753,11 @@ ResourceCenterBody.displayName = 'ResourceCenterBody';
 interface ResourceCenterBlocksProps {
   messageEditSlots?: Record<string, React.ReactNode>;
   subPageEditSlot?: React.ReactNode;
+  contactPageEditSlot?: React.ReactNode;
 }
 
 export const ResourceCenterBlocks = memo(
-  ({ messageEditSlots, subPageEditSlot }: ResourceCenterBlocksProps) => {
+  ({ messageEditSlots, subPageEditSlot, contactPageEditSlot }: ResourceCenterBlocksProps) => {
     const {
       data,
       userAttributes,
@@ -603,6 +768,9 @@ export const ResourceCenterBlocks = memo(
       navigateToSubPage,
       activeKnowledgeBase,
       navigateToKnowledgeBase,
+      activeContactPage,
+      navigateToContactPage,
+      onLiveChatClick,
     } = useResourceCenterContext();
 
     // When a sub-page is active, show its content instead of the block list
@@ -613,6 +781,11 @@ export const ResourceCenterBlocks = memo(
     // When a knowledge base page is active, show its content
     if (activeKnowledgeBase) {
       return <ResourceCenterKnowledgeBaseContent />;
+    }
+
+    // When a contact email/phone page is active, show its content
+    if (activeContactPage) {
+      return <ResourceCenterContactPageContent editSlot={contactPageEditSlot} />;
     }
 
     return (
@@ -645,6 +818,14 @@ export const ResourceCenterBlocks = memo(
                 <ResourceCenterKnowledgeBaseBlockView
                   block={block}
                   onKnowledgeBaseClick={navigateToKnowledgeBase}
+                />
+              )}
+              {block.type === ResourceCenterBlockType.CONTACT && (
+                <ResourceCenterContactBlockView
+                  block={block}
+                  onContactEmailClick={(b) => navigateToContactPage(b, 'email')}
+                  onContactPhoneClick={(b) => navigateToContactPage(b, 'phone')}
+                  onContactLiveChatClick={onLiveChatClick}
                 />
               )}
             </Fragment>

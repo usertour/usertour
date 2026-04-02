@@ -93,6 +93,35 @@ export interface ResourceCenterKnowledgeBaseBlock {
   onlyShowTaskConditions: RulesCondition[];
 }
 
+export enum ContactLiveChatProvider {
+  CRISP = 'crisp',
+  CUSTOM = 'custom',
+  FRESHCHAT = 'freshchat',
+  HELP_SCOUT = 'help-scout',
+  HUBSPOT = 'hubspot',
+  INTERCOM = 'intercom',
+  ZENDESK_CLASSIC = 'zendesk-classic',
+  ZENDESK_MESSENGER = 'zendesk-messenger',
+}
+
+export interface ResourceCenterContactBlock {
+  id: string;
+  name: string;
+  type: ResourceCenterBlockType.CONTACT;
+  iconSource: LauncherIconSource;
+  iconType: string;
+  iconUrl?: string;
+  emailEnabled: boolean;
+  emailContent: ContentEditorRoot[];
+  phoneEnabled: boolean;
+  phoneContent: ContentEditorRoot[];
+  liveChatEnabled: boolean;
+  liveChatProvider: ContactLiveChatProvider;
+  customLiveChatCode: string;
+  onlyShowTask: boolean;
+  onlyShowTaskConditions: RulesCondition[];
+}
+
 /** Union of all implemented block types. */
 export type ResourceCenterBlock =
   | ResourceCenterMessageBlock
@@ -100,7 +129,8 @@ export type ResourceCenterBlock =
   | ResourceCenterDividerBlock
   | ResourceCenterActionBlock
   | ResourceCenterSubPageBlock
-  | ResourceCenterKnowledgeBaseBlock;
+  | ResourceCenterKnowledgeBaseBlock
+  | ResourceCenterContactBlock;
 
 // ============================================================================
 // Resource Center Data
