@@ -25,7 +25,12 @@ import {
 } from '@usertour-packages/icons';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Button } from '@usertour-packages/button';
-import { ContentEditorRoot, LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
+import {
+  ContentEditorRoot,
+  KnowledgeBaseSearchProvider,
+  LauncherIconSource,
+  ResourceCenterBlockType,
+} from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar';
@@ -107,7 +112,6 @@ const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     label: 'Knowledge base',
     description: 'Search help articles',
     icon: RiBookOpenFill,
-    disabled: true,
   },
   {
     key: ResourceCenterBlockType.DIVIDER,
@@ -186,6 +190,19 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         iconSource: LauncherIconSource.BUILTIN,
         iconType: '',
         content: DEFAULT_MESSAGE_BLOCK_CONTENT,
+        onlyShowTask: false,
+        onlyShowTaskConditions: [],
+      };
+    case ResourceCenterBlockType.KNOWLEDGE_BASE:
+      return {
+        id,
+        type: ResourceCenterBlockType.KNOWLEDGE_BASE,
+        name: '',
+        iconSource: LauncherIconSource.BUILTIN,
+        iconType: '',
+        searchProvider: KnowledgeBaseSearchProvider.GOOGLE,
+        knowledgeBaseUrl: '',
+        defaultSearchQuery: '',
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };

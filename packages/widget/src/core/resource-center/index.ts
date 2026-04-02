@@ -35,7 +35,10 @@ export {
   ResourceCenterChecklistBlockView,
   ResourceCenterSubPageBlockView,
   ResourceCenterSubPageContent,
+  ResourceCenterKnowledgeBaseBlockView,
+  ResourceCenterKnowledgeBaseContent,
 } from './resource-center-body';
+export type { KnowledgeBaseArticle } from './resource-center-body';
 
 // Footer
 export { ResourceCenterFooter } from './resource-center-footer';

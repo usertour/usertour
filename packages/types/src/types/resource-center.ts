@@ -72,13 +72,35 @@ export interface ResourceCenterSubPageBlock {
   onlyShowTaskConditions: RulesCondition[];
 }
 
+export enum KnowledgeBaseSearchProvider {
+  GOOGLE = 'google',
+  FRESHDESK = 'freshdesk',
+  HUBSPOT = 'hubspot',
+  ZENDESK = 'zendesk',
+}
+
+export interface ResourceCenterKnowledgeBaseBlock {
+  id: string;
+  name: string;
+  type: ResourceCenterBlockType.KNOWLEDGE_BASE;
+  iconSource: LauncherIconSource;
+  iconType: string;
+  iconUrl?: string;
+  searchProvider: KnowledgeBaseSearchProvider;
+  knowledgeBaseUrl: string;
+  defaultSearchQuery: string;
+  onlyShowTask: boolean;
+  onlyShowTaskConditions: RulesCondition[];
+}
+
 /** Union of all implemented block types. */
 export type ResourceCenterBlock =
   | ResourceCenterMessageBlock
   | ResourceCenterChecklistBlock
   | ResourceCenterDividerBlock
   | ResourceCenterActionBlock
-  | ResourceCenterSubPageBlock;
+  | ResourceCenterSubPageBlock
+  | ResourceCenterKnowledgeBaseBlock;
 
 // ============================================================================
 // Resource Center Data

@@ -102,7 +102,8 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
     const typeLabel = BLOCK_TYPE_LABELS[block.type] ?? block.type;
     const label =
       (block.type === ResourceCenterBlockType.ACTION ||
-        block.type === ResourceCenterBlockType.SUB_PAGE) &&
+        block.type === ResourceCenterBlockType.SUB_PAGE ||
+        block.type === ResourceCenterBlockType.KNOWLEDGE_BASE) &&
       block.name
         ? block.name
         : typeLabel;

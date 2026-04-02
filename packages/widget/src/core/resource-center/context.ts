@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type {
   ResourceCenterData,
+  ResourceCenterKnowledgeBaseBlock,
   ResourceCenterSubPageBlock,
   ThemeTypesSetting,
   UserTourTypes,
@@ -25,6 +26,8 @@ export interface ResourceCenterContextValue {
   showMadeWith: boolean;
   activeSubPage: ResourceCenterSubPageBlock | null;
   navigateToSubPage: (block: ResourceCenterSubPageBlock) => void;
+  activeKnowledgeBase: ResourceCenterKnowledgeBaseBlock | null;
+  navigateToKnowledgeBase: (block: ResourceCenterKnowledgeBaseBlock) => void;
   navigateBack: () => void;
 }
 

@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ResourceCenterData,
+  ResourceCenterKnowledgeBaseBlock,
   ResourceCenterSubPageBlock,
   ThemeTypesSetting,
   UserTourTypes,
@@ -50,14 +51,23 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const isOpen = expanded;
   const [isAnimating, setIsAnimating] = useState(false);
   const [activeSubPage, setActiveSubPage] = useState<ResourceCenterSubPageBlock | null>(null);
+  const [activeKnowledgeBase, setActiveKnowledgeBase] =
+    useState<ResourceCenterKnowledgeBaseBlock | null>(null);
   const animationTimerRef = useRef<number | null>(null);
 
   const navigateToSubPage = useCallback((block: ResourceCenterSubPageBlock) => {
     setActiveSubPage(block);
+    setActiveKnowledgeBase(null);
+  }, []);
+
+  const navigateToKnowledgeBase = useCallback((block: ResourceCenterKnowledgeBaseBlock) => {
+    setActiveKnowledgeBase(block);
+    setActiveSubPage(null);
   }, []);
 
   const navigateBack = useCallback(() => {
     setActiveSubPage(null);
+    setActiveKnowledgeBase(null);
   }, []);
 
   const handleExpandedChange = useCallback(
@@ -105,6 +115,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       showMadeWith,
       activeSubPage,
       navigateToSubPage,
+      activeKnowledgeBase,
+      navigateToKnowledgeBase,
       navigateBack,
     }),
     [
@@ -126,6 +138,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       showMadeWith,
       activeSubPage,
       navigateToSubPage,
+      activeKnowledgeBase,
+      navigateToKnowledgeBase,
       navigateBack,
     ],
   );
