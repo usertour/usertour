@@ -236,32 +236,25 @@ const BlockContentListBody = () => {
               return (
                 <div
                   key={item.contentId}
-                  className="relative group border-b border-gray-300 hover:bg-blue-100"
+                  className="relative group border-b hover:bg-muted"
                   style={{ marginTop: '0' }}
                 >
                   <div className="flex items-center gap-2 p-2">
                     {item.contentType === 'flow' ? (
-                      <FlowIcon
-                        width={16}
-                        height={16}
-                        className="flex-shrink-0 text-muted-foreground"
-                      />
+                      <FlowIcon width={16} height={16} className="flex-shrink-0" />
                     ) : (
-                      <ChecklistIcon
-                        width={16}
-                        height={16}
-                        className="flex-shrink-0 text-muted-foreground"
-                      />
+                      <ChecklistIcon width={16} height={16} className="flex-shrink-0" />
                     )}
                     <span className="truncate text-sm">{info?.name || item.contentId}</span>
                   </div>
                   <div className="absolute top-1/2 right-2 transform -translate-y-1/2 hidden group-hover:flex items-center justify-center">
-                    <CloseIcon
-                      width={16}
-                      height={16}
-                      className="mr-1 text-gray-600 hover:text-gray-800 hover:bg-red-200 w-6 h-6 p-1 rounded cursor-pointer"
+                    <Button
+                      variant={'ghost'}
+                      className="mr-1 w-6 h-6 p-1 rounded cursor-pointer"
                       onClick={() => handleRemoveContent(item.contentId)}
-                    />
+                    >
+                      <CloseIcon width={16} height={16} />
+                    </Button>
                   </div>
                 </div>
               );
