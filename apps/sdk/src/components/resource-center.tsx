@@ -145,7 +145,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
       >
         <ResourceCenterStyleProvider>
           <ResourceCenterPanel mode="iframe" assets={assets}>
-            <ResourceCenterHeader text={resourceCenterData.headerText} />
+            <ResourceCenterHeader />
             <ResourceCenterBody>
               <ResourceCenterBlocks />
             </ResourceCenterBody>

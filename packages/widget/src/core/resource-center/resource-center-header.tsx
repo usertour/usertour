@@ -81,22 +81,8 @@ ResourceCenterBackButton.displayName = 'ResourceCenterBackButton';
 // Header
 // ============================================================================
 
-export const ResourceCenterHeader = memo(({ text }: { text: string }) => {
-  const { activeSubPage, activeKnowledgeBase, activeContactPage, activeContentList } =
-    useResourceCenterContext();
-  const isSecondaryPage =
-    activeSubPage || activeKnowledgeBase || activeContactPage || activeContentList;
-  const headerText = activeSubPage
-    ? activeSubPage.name || 'Sub-page'
-    : activeKnowledgeBase
-      ? activeKnowledgeBase.name || 'Knowledge base'
-      : activeContactPage
-        ? activeContactPage.page === 'email'
-          ? 'Email'
-          : 'Phone'
-        : activeContentList
-          ? activeContentList.name || 'Content list'
-          : text;
+export const ResourceCenterHeader = memo(() => {
+  const { data, isSecondaryPage } = useResourceCenterContext();
 
   return (
     <div
@@ -108,9 +94,12 @@ export const ResourceCenterHeader = memo(({ text }: { text: string }) => {
       )}
     >
       {isSecondaryPage && <ResourceCenterBackButton />}
-      <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">
-        {headerText}
-      </div>
+      {!isSecondaryPage && (
+        <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">
+          {data.headerText}
+        </div>
+      )}
+      {isSecondaryPage && <div className="flex-1" />}
       <ResourceCenterCloseButton />
     </div>
   );

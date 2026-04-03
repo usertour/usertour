@@ -34,6 +34,7 @@ export interface ResourceCenterContextValue {
   onBlockClick?: (blockId: string) => Promise<void>;
   checklistSlot?: React.ReactNode;
   showMadeWith: boolean;
+  isSecondaryPage: boolean;
   activeSubPage: ResourceCenterSubPageBlock | null;
   navigateToSubPage: (block: ResourceCenterSubPageBlock) => void;
   activeKnowledgeBase: ResourceCenterKnowledgeBaseBlock | null;

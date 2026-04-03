@@ -261,7 +261,7 @@ const ResourceCenterPreview = (props: {
     >
       <ResourceCenterStyleProvider>
         <ResourceCenterPanel mode="dom" position={false}>
-          <ResourceCenterHeader text={data.headerText} />
+          <ResourceCenterHeader />
           <ResourceCenterBody>
             <ResourceCenterBlocks />
           </ResourceCenterBody>

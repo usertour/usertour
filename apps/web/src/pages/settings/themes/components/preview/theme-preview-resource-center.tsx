@@ -210,7 +210,7 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
 
   const previewContent = (
     <>
-      <ResourceCenterHeader text={defaultResourceCenterPreviewData.headerText} />
+      <ResourceCenterHeader />
       <ResourceCenterBody>
         <ResourceCenterBlocks />
       </ResourceCenterBody>

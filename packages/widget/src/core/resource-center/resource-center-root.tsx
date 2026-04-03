@@ -143,6 +143,13 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     };
   }, []);
 
+  const isSecondaryPage = !!(
+    activeSubPage ||
+    activeKnowledgeBase ||
+    activeContactPage ||
+    activeContentList
+  );
+
   const contextValue = useMemo(
     () => ({
       globalStyle,
@@ -161,6 +168,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onBlockClick,
       checklistSlot,
       showMadeWith,
+      isSecondaryPage,
       activeSubPage,
       navigateToSubPage,
       activeKnowledgeBase,
@@ -191,6 +199,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onBlockClick,
       checklistSlot,
       showMadeWith,
+      isSecondaryPage,
       activeSubPage,
       navigateToSubPage,
       activeKnowledgeBase,

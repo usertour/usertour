@@ -37,10 +37,8 @@ import { useAws } from '../../../hooks/use-aws';
 /** Inner panel content that can access the widget's ResourceCenterContext */
 const ResourceCenterEmbedContent = ({
   messageEditSlots,
-  headerText,
 }: {
   messageEditSlots: Record<string, React.ReactNode>;
-  headerText: string;
 }) => {
   const { activeSubPage, activeContactPage } = useWidgetResourceCenterContext();
   const { localData, updateBlock } = useResourceCenterContext();
@@ -117,7 +115,7 @@ const ResourceCenterEmbedContent = ({
 
   return (
     <>
-      <ResourceCenterHeader text={headerText} />
+      <ResourceCenterHeader />
       <ResourceCenterBody>
         <ResourceCenterBlocks
           messageEditSlots={messageEditSlots}
@@ -368,10 +366,7 @@ export const ResourceCenterEmbed = () => {
     >
       <ResourceCenterStyleProvider>
         <ResourceCenterPanel mode="dom" allowOverflow>
-          <ResourceCenterEmbedContent
-            messageEditSlots={messageEditSlots}
-            headerText={localData.headerText}
-          />
+          <ResourceCenterEmbedContent messageEditSlots={messageEditSlots} />
         </ResourceCenterPanel>
       </ResourceCenterStyleProvider>
     </ResourceCenterRoot>
