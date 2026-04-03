@@ -179,7 +179,7 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
               <DialogTitle>Create New Event</DialogTitle>
             </DialogHeader>
             <div className="flex mt-4 mb-4 ">
-              <div className="flex flex-col mr-6 w-2/3 ">
+              <div className="flex flex-col mr-6 w-2/3 space-y-2">
                 <div className="flex flex-row justify-between">
                   <FormField
                     control={form.control}
@@ -260,22 +260,23 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
                       {eventsOnAttributes.map((eventsOnAttribute, i) => {
                         return (
                           <div
-                            className="relative group border-b border-gray-300 hover:bg-blue-100"
+                            className="relative group border-b hover:bg-muted"
                             key={i}
                             style={{ marginTop: '0' }}
                           >
-                            <div className="p-2">{eventsOnAttribute.displayName}</div>
+                            <div className="p-2 text-sm">{eventsOnAttribute.displayName}</div>
                             <div className="absolute top-1/2 right-2 transform -translate-y-1/2 hidden group-hover:flex items-center justify-center">
-                              <CloseIcon
-                                width={16}
-                                height={16}
-                                className="mr-1 text-gray-600 hover:text-gray-800 hover:bg-red-200 w-6 h-6 p-1 rounded cursor-pointer"
+                              <Button
+                                variant={'ghost'}
+                                className="mr-1 w-6 h-6 p-1 rounded cursor-pointer"
                                 onClick={() =>
                                   setEventsOnAttributes((prev) =>
                                     prev.filter((_, index) => index !== i),
                                   )
                                 }
-                              />
+                              >
+                                <CloseIcon width={16} height={16} />
+                              </Button>
                             </div>
                           </div>
                         );
