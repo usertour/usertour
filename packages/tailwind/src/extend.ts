@@ -124,6 +124,7 @@ export const extendSdk = {
   height: {
     'sdk-font-size': 'var(--usertour-font-size)',
     'sdk-line-height': 'var(--usertour-line-height)',
+    'sdk-resource-center-header-button': 'calc(var(--usertour-line-height) + 1rem)',
     'sdk-button': 'var(--usertour-button-height)',
     'sdk-progress': 'var(--usertour-progress-bar-height)',
     'sdk-narrow-progress': 'var(--usertour-narrow-progress-bar-height)',

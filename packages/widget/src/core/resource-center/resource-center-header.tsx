@@ -16,10 +16,11 @@ export const ResourceCenterCloseButton = forwardRef<
   const { className, ...restProps } = props;
 
   const buttonClassName = cn(
-    'rounded-lg inline-flex items-center justify-center',
+    'rounded-lg inline-flex h-sdk-resource-center-header-button aspect-square items-center justify-center p-2',
     'text-sdk-resource-center-header-foreground',
     'hover:bg-sdk-resource-center-header-foreground/10',
-    'outline-none cursor-pointer p-2',
+    'active:bg-sdk-resource-center-header-foreground/24',
+    'outline-none cursor-pointer',
     className,
   );
 
@@ -58,15 +59,18 @@ export const ResourceCenterBackButton = memo(() => {
     <Button
       variant="custom"
       className={cn(
-        'rounded-lg inline-flex items-center justify-center',
+        'rounded-lg inline-flex h-sdk-resource-center-header-button items-center justify-center gap-2 p-2',
         'text-sdk-resource-center-header-foreground',
         'hover:bg-sdk-resource-center-header-foreground/10',
-        'outline-none cursor-pointer p-2',
+        'active:bg-sdk-resource-center-header-foreground/24',
+        'outline-none cursor-pointer',
+        'px-3',
       )}
       onClick={handleClick}
       aria-label="Back"
     >
-      <ArrowLeftIcon height={20} width={20} />
+      <ArrowLeftIcon height={18} width={18} />
+      <span className="text-sm font-medium leading-none">Back</span>
     </Button>
   );
 });
