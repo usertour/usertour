@@ -31,6 +31,7 @@ import {
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
+  ResourceCenterTabBar,
   ResourceCenterFooter,
 } from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
@@ -265,6 +266,7 @@ const ResourceCenterPreview = (props: {
           <ResourceCenterBody>
             <ResourceCenterBlocks />
           </ResourceCenterBody>
+          <ResourceCenterTabBar />
           <ResourceCenterFooter />
         </ResourceCenterPanel>
       </ResourceCenterStyleProvider>
