@@ -39,19 +39,10 @@ import {
 import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
 import { forwardRef, useState } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../../contexts';
-
-const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
-  [ResourceCenterBlockType.ACTION]: 'Action',
-  [ResourceCenterBlockType.MESSAGE]: 'Message',
-  [ResourceCenterBlockType.DIVIDER]: 'Divider line',
-  [ResourceCenterBlockType.SUB_PAGE]: 'Sub-page',
-  [ResourceCenterBlockType.CONTACT]: 'Contact',
-  [ResourceCenterBlockType.CONTENT_LIST]: 'List of flows/checklists',
-  [ResourceCenterBlockType.AI_ASSISTANT]: 'AI Assistant',
-  [ResourceCenterBlockType.ANNOUNCEMENTS]: 'Announcements',
-  [ResourceCenterBlockType.KNOWLEDGE_BASE]: 'Knowledge base',
-  [ResourceCenterBlockType.CHECKLIST]: 'Checklist',
-};
+import {
+  BLOCK_TYPE_LABELS,
+  getResourceCenterBlockTypeIcon,
+} from '../resource-center-block-options';
 
 interface BlockContentProps {
   onClick?: (action: 'edit' | 'delete', block: ResourceCenterBlock) => void;
@@ -100,6 +91,7 @@ const DeleteDialog = ({
 const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
   ({ onClick, listeners = {}, attributes = {}, block, style }, ref) => {
     const typeLabel = BLOCK_TYPE_LABELS[block.type] ?? block.type;
+    const BlockTypeIcon = getResourceCenterBlockTypeIcon(block.type);
     const label =
       (block.type === ResourceCenterBlockType.ACTION ||
         block.type === ResourceCenterBlockType.SUB_PAGE ||
@@ -117,8 +109,11 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
         className="bg-background-700 p-2.5 rounded-lg flex flex-col"
       >
         <div className="flex items-center justify-between">
-          <div className="grow inline-flex items-center text-sm gap-2">
-            <DragHandleDots2Icon className="cursor-move" {...listeners} />
+          <div className="grow inline-flex items-center text-sm">
+            <DragHandleDots2Icon className="h-4 w-4 shrink-0 cursor-move -mr-0.5" {...listeners} />
+            {BlockTypeIcon ? (
+              <BlockTypeIcon width={16} height={16} className="h-4 w-4 shrink-0 mr-1" />
+            ) : null}
             <span className="w-36 truncate" title={label}>
               {label}
             </span>

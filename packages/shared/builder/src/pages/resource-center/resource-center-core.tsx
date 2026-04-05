@@ -1,6 +1,5 @@
 'use client';
 
-import type { ElementType } from 'react';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { EXTENSION_SELECT } from '@usertour-packages/constants';
@@ -12,17 +11,6 @@ import {
 } from '@usertour-packages/dropdown-menu';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
-import {
-  RiArrowRightCircleFill,
-  RiBookOpenFill,
-  RiCheckboxCircleFill,
-  RiFileTextFill,
-  RiFlashlightFill,
-  RiListCheck3,
-  RiMailFill,
-  RiPagesFill,
-  RiSeparator,
-} from '@usertour-packages/icons';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Button } from '@usertour-packages/button';
 import {
@@ -39,87 +27,9 @@ import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
 import { ResourceCenterBlocks } from './components/resource-center-blocks';
+import { BLOCK_TYPE_OPTIONS } from './resource-center-block-options';
 import type { ResourceCenterBlock } from '@usertour/types';
-
 const labelStyles = 'flex justify-start items-center space-x-1';
-
-type IconComponent = ElementType<{ className?: string }>;
-
-type BlockTypeOption = {
-  key: string;
-  value?: ResourceCenterBlockType;
-  label: string;
-  description: string;
-  icon: IconComponent;
-  disabled?: boolean;
-};
-
-const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
-  {
-    key: ResourceCenterBlockType.ACTION,
-    value: ResourceCenterBlockType.ACTION,
-    label: 'Action',
-    description: 'Link, Start flow, Custom JS',
-    icon: RiArrowRightCircleFill,
-  },
-  {
-    key: ResourceCenterBlockType.MESSAGE,
-    value: ResourceCenterBlockType.MESSAGE,
-    label: 'Message',
-    description: 'Announcement, General info',
-    icon: RiFileTextFill,
-  },
-  {
-    key: ResourceCenterBlockType.SUB_PAGE,
-    value: ResourceCenterBlockType.SUB_PAGE,
-    label: 'Sub-page',
-    description: 'Nested route with free-form content',
-    icon: RiPagesFill,
-  },
-  {
-    key: ResourceCenterBlockType.CONTACT,
-    value: ResourceCenterBlockType.CONTACT,
-    label: 'Contact',
-    description: 'Email, Phone, Live-chat',
-    icon: RiMailFill,
-  },
-  {
-    key: ResourceCenterBlockType.CONTENT_LIST,
-    value: ResourceCenterBlockType.CONTENT_LIST,
-    label: 'List of flows/checklists',
-    description: 'Start on demand',
-    icon: RiListCheck3,
-  },
-  {
-    key: ResourceCenterBlockType.CHECKLIST,
-    value: ResourceCenterBlockType.CHECKLIST,
-    label: 'Checklist',
-    description: 'Embed an active checklist',
-    icon: RiCheckboxCircleFill,
-  },
-  {
-    key: ResourceCenterBlockType.AI_ASSISTANT,
-    value: ResourceCenterBlockType.AI_ASSISTANT,
-    label: 'Adoption Agent',
-    description: 'Instant answers from Adoption agent',
-    icon: RiFlashlightFill,
-    disabled: true,
-  },
-  {
-    key: ResourceCenterBlockType.KNOWLEDGE_BASE,
-    value: ResourceCenterBlockType.KNOWLEDGE_BASE,
-    label: 'Knowledge base',
-    description: 'Search help articles',
-    icon: RiBookOpenFill,
-  },
-  {
-    key: ResourceCenterBlockType.DIVIDER,
-    value: ResourceCenterBlockType.DIVIDER,
-    label: 'Divider line',
-    description: 'Used to visually separate sections',
-    icon: RiSeparator,
-  },
-];
 
 const DEFAULT_MESSAGE_BLOCK_CONTENT = [
   {
