@@ -1,7 +1,6 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef } from 'react';
 import { cn } from '@usertour-packages/tailwind';
 import { useResourceCenterContext } from './context';
-import { RC_DEFAULTS } from './constants';
 import { ResourceCenterTrigger } from './resource-center-trigger';
 
 interface ResourceCenterFrameRootProps {
@@ -9,7 +8,6 @@ interface ResourceCenterFrameRootProps {
   isAnimating?: boolean;
   mode?: 'dom' | 'iframe';
   onLauncherSizeChange?: (rect: { width: number; height: number }) => void;
-  onContentSizeChange?: (rect: { width: number; height: number }) => void;
 }
 
 export const ResourceCenterFrameRoot = memo(
@@ -18,36 +16,9 @@ export const ResourceCenterFrameRoot = memo(
     isAnimating = false,
     mode = 'iframe',
     onLauncherSizeChange,
-    onContentSizeChange,
   }: ResourceCenterFrameRootProps) => {
-    const { isOpen, handleExpandedChange, themeSetting, animateFrame } = useResourceCenterContext();
+    const { isOpen, handleExpandedChange, animateFrame } = useResourceCenterContext();
     const rootRef = useRef<HTMLDivElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
-
-    const openWidth = themeSetting.resourceCenter?.normalWidth ?? RC_DEFAULTS.normalWidth;
-
-    // Synchronous measurement at openWidth when isOpen changes — before paint, before animation
-    useLayoutEffect(() => {
-      const el = contentRef.current;
-      if (!el || !isOpen) return;
-      // Temporarily force width to openWidth for accurate height measurement
-      const savedWidth = el.style.width;
-      el.style.width = `${openWidth}px`;
-      const height = el.offsetHeight;
-      el.style.width = savedWidth;
-      onContentSizeChange?.({ width: openWidth, height });
-    }, [isOpen, openWidth, onContentSizeChange]);
-
-    // ResizeObserver for content changes while panel is fully open (not during animation)
-    useEffect(() => {
-      const el = contentRef.current;
-      if (!el || !isOpen || isAnimating) return;
-      const observer = new ResizeObserver(() => {
-        onContentSizeChange?.({ width: el.offsetWidth, height: el.offsetHeight });
-      });
-      observer.observe(el);
-      return () => observer.disconnect();
-    }, [isOpen, isAnimating, onContentSizeChange]);
 
     useEffect(() => {
       const root = rootRef.current;
@@ -70,7 +41,7 @@ export const ResourceCenterFrameRoot = memo(
         className={cn(
           'group',
           'relative w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
-          mode === 'iframe' && 'min-h-screen',
+          mode === 'iframe' && 'h-screen',
           mode !== 'iframe' && 'h-full',
           'rounded-sdk-resource-center-launcher data-[state=open]:rounded-sdk-popper',
           'data-[animate-frame=true]:transition-[border-radius]',
@@ -90,7 +61,7 @@ export const ResourceCenterFrameRoot = memo(
             layout="inline"
           />
         </div>
-        <div ref={contentRef}>{children}</div>
+        <div className={cn('flex flex-col', isOpen && 'flex-1 min-h-0')}>{children}</div>
       </div>
     );
   },

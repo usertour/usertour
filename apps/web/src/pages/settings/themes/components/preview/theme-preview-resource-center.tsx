@@ -11,11 +11,46 @@ import {
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
+  ResourceCenterTabBar,
   ResourceCenterFooter,
 } from '@usertour-packages/widget';
-import { ResourceCenterBlockType, ResourceCenterData, ThemeTypesSetting } from '@usertour/types';
+import {
+  LauncherIconSource,
+  ResourceCenterBlockType,
+  ResourceCenterData,
+  ThemeTypesSetting,
+} from '@usertour/types';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 import { useEffect, useState } from 'react';
+
+// Helper to build a text content block for MESSAGE blocks
+const makeTextContent = (paragraphs: Array<{ text: string; bold?: boolean }>) =>
+  [
+    {
+      element: { type: 'group' },
+      children: [
+        {
+          element: {
+            type: 'column',
+            style: {},
+            width: { type: 'fill' },
+            justifyContent: 'justify-start',
+          },
+          children: [
+            {
+              element: {
+                data: paragraphs.map((p) => ({
+                  type: 'paragraph',
+                  children: [p.bold ? { bold: true, text: p.text } : { text: p.text }],
+                })),
+                type: 'text',
+              },
+            },
+          ],
+        },
+      ],
+    },
+  ] as any;
 
 const defaultResourceCenterPreviewData: ResourceCenterData = {
   buttonText: 'Help',
@@ -24,47 +59,10 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
     {
       id: 'preview-msg-1',
       type: ResourceCenterBlockType.MESSAGE,
-      content: [
-        {
-          element: { type: 'group' },
-          children: [
-            {
-              element: {
-                type: 'column',
-                style: {},
-                width: { type: 'fill' },
-                justifyContent: 'justify-start',
-              },
-              children: [
-                {
-                  element: {
-                    data: [
-                      {
-                        type: 'paragraph',
-                        children: [
-                          {
-                            bold: true,
-                            text: 'Welcome! 👋',
-                          },
-                        ],
-                      },
-                      {
-                        type: 'paragraph',
-                        children: [
-                          {
-                            text: 'Find guides, tutorials, and support resources here.',
-                          },
-                        ],
-                      },
-                    ],
-                    type: 'text',
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      ] as any,
+      content: makeTextContent([
+        { text: 'Welcome! 👋', bold: true },
+        { text: 'Find guides, tutorials, and support resources here.' },
+      ]),
       onlyShowTask: false,
       onlyShowTaskConditions: [],
     },
@@ -77,42 +75,75 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
     {
       id: 'preview-msg-2',
       type: ResourceCenterBlockType.MESSAGE,
-      content: [
-        {
-          element: { type: 'group' },
-          children: [
-            {
-              element: {
-                type: 'column',
-                style: {},
-                width: { type: 'fill' },
-                justifyContent: 'justify-start',
-              },
-              children: [
-                {
-                  element: {
-                    data: [
-                      {
-                        type: 'paragraph',
-                        children: [
-                          {
-                            text: '📖 Browse our knowledge base for answers.',
-                          },
-                        ],
-                      },
-                    ],
-                    type: 'text',
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      ] as any,
+      content: makeTextContent([{ text: 'Browse our knowledge base for answers.' }]),
       onlyShowTask: false,
       onlyShowTaskConditions: [],
     },
-  ],
+    {
+      id: 'preview-divider',
+      type: ResourceCenterBlockType.DIVIDER,
+      onlyShowTask: false,
+      onlyShowTaskConditions: [],
+    },
+    {
+      id: 'preview-action-1',
+      type: ResourceCenterBlockType.ACTION,
+      name: "What's new",
+      iconSource: LauncherIconSource.BUILTIN,
+      iconType: 'notification-line',
+      onlyShowTask: false,
+      onlyShowTaskConditions: [],
+    },
+    {
+      id: 'preview-action-2',
+      type: ResourceCenterBlockType.ACTION,
+      name: 'Send feedback',
+      iconSource: LauncherIconSource.BUILTIN,
+      iconType: 'chat1-line',
+      onlyShowTask: false,
+      onlyShowTaskConditions: [],
+    },
+    // Tab bar blocks (showInTabBar: true)
+    {
+      id: 'preview-subpage',
+      type: ResourceCenterBlockType.SUB_PAGE,
+      name: 'Sub page',
+      iconSource: LauncherIconSource.BUILTIN,
+      iconType: 'file-text-line',
+      content: makeTextContent([{ text: 'Sub page content preview.' }]),
+      showInHome: false,
+      showInTabBar: true,
+      onlyShowTask: false,
+      onlyShowTaskConditions: [],
+    },
+    {
+      id: 'preview-content-list',
+      type: ResourceCenterBlockType.CONTENT_LIST,
+      name: 'Guided tours',
+      iconSource: LauncherIconSource.BUILTIN,
+      iconType: 'play-line',
+      showSearchField: false,
+      contentItems: [],
+      showInHome: false,
+      showInTabBar: true,
+      onlyShowTask: false,
+      onlyShowTaskConditions: [],
+    },
+    {
+      id: 'preview-kb',
+      type: ResourceCenterBlockType.KNOWLEDGE_BASE,
+      name: 'Help',
+      iconSource: LauncherIconSource.BUILTIN,
+      iconType: 'question-line',
+      searchProvider: 'google' as any,
+      knowledgeBaseUrl: '',
+      defaultSearchQuery: '',
+      showInHome: false,
+      showInTabBar: true,
+      onlyShowTask: false,
+      onlyShowTaskConditions: [],
+    },
+  ] as any,
 };
 
 const previewChecklistData = {
@@ -214,6 +245,7 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
       <ResourceCenterBody>
         <ResourceCenterBlocks />
       </ResourceCenterBody>
+      <ResourceCenterTabBar />
       <ResourceCenterFooter />
     </>
   );

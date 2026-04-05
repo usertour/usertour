@@ -82,7 +82,11 @@ ResourceCenterBackButton.displayName = 'ResourceCenterBackButton';
 // ============================================================================
 
 export const ResourceCenterHeader = memo(() => {
-  const { data, isSecondaryPage } = useResourceCenterContext();
+  const { data, isSecondaryPage, activeTab, tabBarBlocks } = useResourceCenterContext();
+
+  // Determine the title for tab pages
+  const activeTabBlock = activeTab !== null ? tabBarBlocks.find((b) => b.id === activeTab) : null;
+  const isTabPage = activeTabBlock !== null && activeTabBlock !== undefined;
 
   return (
     <div
@@ -96,7 +100,7 @@ export const ResourceCenterHeader = memo(() => {
       {isSecondaryPage && <ResourceCenterBackButton />}
       {!isSecondaryPage && (
         <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">
-          {data.headerText}
+          {isTabPage ? activeTabBlock.name || data.headerText : data.headerText}
         </div>
       )}
       {isSecondaryPage && <div className="flex-1" />}

@@ -868,8 +868,8 @@ function parseSearchResults(provider: string, data: any): KnowledgeBaseArticle[]
 // ============================================================================
 
 export const ResourceCenterBody = memo(({ children }: { children: React.ReactNode }) => {
-  const { themeSetting } = useResourceCenterContext();
-  const rc = themeSetting.resourceCenter;
+  const { hasTabBar, isSecondaryPage } = useResourceCenterContext();
+  const bottomPadding = hasTabBar && !isSecondaryPage ? 104 : 16;
 
   return (
     <div
@@ -881,7 +881,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
         'group-data-[animating]:pointer-events-none group-data-[animating]:overflow-hidden',
       )}
       style={{
-        maxHeight: rc?.maxHeight ? `${rc.maxHeight}px` : undefined,
+        paddingBottom: `${bottomPadding}px`,
       }}
     >
       {children}
@@ -918,6 +918,7 @@ export const ResourceCenterBlocks = memo(
       activeContentList,
       navigateToContentList,
       onLiveChatClick,
+      hasTabBar,
     } = useResourceCenterContext();
 
     // When a sub-page is active, show its content instead of the block list
@@ -940,9 +941,23 @@ export const ResourceCenterBlocks = memo(
       return <ResourceCenterContentListContent />;
     }
 
+    // Filter blocks for the Home view: hide page-type blocks with showInHome=false
+    const visibleBlocks = hasTabBar
+      ? data.blocks.filter((block) => {
+          if (
+            block.type === ResourceCenterBlockType.SUB_PAGE ||
+            block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
+            block.type === ResourceCenterBlockType.CONTENT_LIST
+          ) {
+            return block.showInHome !== false;
+          }
+          return true;
+        })
+      : data.blocks;
+
     return (
       <>
-        {data.blocks.map((block) => {
+        {visibleBlocks.map((block) => {
           return (
             <Fragment key={block.id}>
               {block.type === ResourceCenterBlockType.MESSAGE && (
@@ -990,7 +1005,7 @@ export const ResourceCenterBlocks = memo(
           );
         })}
 
-        {data.blocks.length === 0 && (
+        {visibleBlocks.length === 0 && (
           <div className="py-8 text-center text-sm opacity-40">No blocks added yet</div>
         )}
       </>

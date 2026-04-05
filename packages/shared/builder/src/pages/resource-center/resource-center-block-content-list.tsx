@@ -223,6 +223,40 @@ const BlockContentListBody = () => {
             </div>
           </div>
 
+          {/* Show in home */}
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center justify-between space-x-2">
+              <Label htmlFor="show-in-home" className="font-normal">
+                Show in home
+              </Label>
+              <Switch
+                id="show-in-home"
+                className="data-[state=unchecked]:bg-input"
+                checked={currentBlock.showInHome !== false}
+                onCheckedChange={(value) =>
+                  setCurrentBlock((prev) => (prev ? { ...prev, showInHome: value } : null))
+                }
+              />
+            </div>
+          </div>
+
+          {/* Show in tab bar */}
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center justify-between space-x-2">
+              <Label htmlFor="show-in-tab-bar" className="font-normal">
+                Show in tab bar
+              </Label>
+              <Switch
+                id="show-in-tab-bar"
+                className="data-[state=unchecked]:bg-input"
+                checked={currentBlock.showInTabBar === true}
+                onCheckedChange={(value) =>
+                  setCurrentBlock((prev) => (prev ? { ...prev, showInTabBar: value } : null))
+                }
+              />
+            </div>
+          </div>
+
           {/* Flows/checklists to display */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between">

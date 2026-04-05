@@ -4,6 +4,7 @@ export type {
   ResourceCenterContextValue,
   ContactPageType,
   ContentListDisplayItem,
+  TabBarBlock,
 } from './context';
 
 // Root
@@ -47,6 +48,9 @@ export {
   ResourceCenterContentListContent,
 } from './resource-center-body';
 export type { KnowledgeBaseArticle } from './resource-center-body';
+
+// Tab Bar
+export { ResourceCenterTabBar } from './resource-center-tab-bar';
 
 // Footer
 export { ResourceCenterFooter } from './resource-center-footer';

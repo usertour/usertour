@@ -50,7 +50,6 @@ interface IFrameContentProps {
   mode?: 'dom' | 'iframe';
   isAnimating?: boolean;
   onLauncherSizeChange?: (rect: { width: number; height: number }) => void;
-  onContentSizeChange?: (rect: { width: number; height: number }) => void;
 }
 
 const IFrameContent = ({
@@ -59,7 +58,6 @@ const IFrameContent = ({
   mode,
   isAnimating = false,
   onLauncherSizeChange,
-  onContentSizeChange,
 }: IFrameContentProps) => {
   const { document } = useFrame();
 
@@ -75,7 +73,6 @@ const IFrameContent = ({
       mode={mode}
       isAnimating={isAnimating}
       onLauncherSizeChange={onLauncherSizeChange}
-      onContentSizeChange={onContentSizeChange}
     >
       {children}
     </ResourceCenterFrameRoot>
@@ -154,7 +151,6 @@ export const ResourceCenterPanel = forwardRef<
   const applyPosition = positionProp !== false;
 
   const [launcherSize, setLauncherSize] = useState<{ width: number; height: number } | null>(null);
-  const [contentSize, setContentSize] = useState<{ width: number; height: number } | null>(null);
 
   // Reset launcher measurement when content changes so the container
   // temporarily becomes `auto`-width, allowing correct re-measurement.
@@ -166,10 +162,6 @@ export const ResourceCenterPanel = forwardRef<
     (rect: { width: number; height: number }) => setLauncherSize(rect),
     [],
   );
-  const onContentSizeChange = useCallback(
-    (rect: { width: number; height: number }) => setContentSize(rect),
-    [],
-  );
 
   const closedWidth = closedWidthOverride
     ? `${closedWidthOverride}px`
@@ -177,15 +169,16 @@ export const ResourceCenterPanel = forwardRef<
       ? `${launcherSize.width}px`
       : 'auto';
 
-  const openHeight = animateFrame
+  // Fixed open height: calc(100vh - offset) capped at maxHeight
+  const offsetY = rc?.offsetY ?? RC_DEFAULTS.offsetY;
+  const maxHeight = rc?.maxHeight ?? 700;
+  const heightOffset = offsetY * 2 + closedHeight + 4;
+  const useFixedHeight = positionProp !== false;
+  const openFrameHeight = useFixedHeight
     ? openHeightOverride
       ? `${openHeightOverride}px`
-      : contentSize?.height
-        ? `${contentSize.height}px`
-        : undefined
-    : undefined;
-
-  const openFrameHeight = openHeight ?? (mode === 'iframe' ? `${closedHeight}px` : 'auto');
+      : `min(calc(100vh - ${heightOffset}px), ${maxHeight}px)`
+    : 'auto';
 
   const outerStyle: React.CSSProperties = {
     ...(applyPosition ? { zIndex, ...positionStyle } : {}),
@@ -218,7 +211,6 @@ export const ResourceCenterPanel = forwardRef<
               mode="iframe"
               isAnimating={isAnimating && animateFrame}
               onLauncherSizeChange={onLauncherSizeChange}
-              onContentSizeChange={onContentSizeChange}
             >
               {children}
             </IFrameContent>
@@ -244,7 +236,6 @@ export const ResourceCenterPanel = forwardRef<
               mode="dom"
               isAnimating={isAnimating && animateFrame}
               onLauncherSizeChange={onLauncherSizeChange}
-              onContentSizeChange={onContentSizeChange}
             >
               {children}
             </ResourceCenterFrameRoot>

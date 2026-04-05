@@ -17,6 +17,12 @@ export interface ContentListDisplayItem {
   name: string;
 }
 
+/** A block that supports showInTabBar */
+export type TabBarBlock =
+  | ResourceCenterSubPageBlock
+  | ResourceCenterKnowledgeBaseBlock
+  | ResourceCenterContentListBlock;
+
 export interface ResourceCenterContextValue {
   globalStyle: string;
   themeSetting: ThemeTypesSetting;
@@ -47,6 +53,14 @@ export interface ResourceCenterContextValue {
   contentListItems: ContentListDisplayItem[];
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
   navigateBack: () => void;
+  /** Tab bar blocks (blocks with showInTabBar=true). Empty when no tab bar. */
+  tabBarBlocks: TabBarBlock[];
+  /** Currently active tab block ID, or null for Home tab */
+  activeTab: string | null;
+  /** Navigate to a specific tab (block ID or null for Home) */
+  navigateToTab: (blockId: string | null) => void;
+  /** Whether the tab bar should be visible */
+  hasTabBar: boolean;
 }
 
 export const ResourceCenterRootContext = createContext<ResourceCenterContextValue | null>(null);

@@ -189,6 +189,8 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         iconSource: LauncherIconSource.BUILTIN,
         iconType: '',
         content: DEFAULT_MESSAGE_BLOCK_CONTENT,
+        showInHome: true,
+        showInTabBar: false,
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };
@@ -202,6 +204,8 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         searchProvider: KnowledgeBaseSearchProvider.GOOGLE,
         knowledgeBaseUrl: '',
         defaultSearchQuery: '',
+        showInHome: true,
+        showInTabBar: false,
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };
@@ -231,6 +235,8 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         iconType: '',
         showSearchField: true,
         contentItems: [],
+        showInHome: true,
+        showInTabBar: false,
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       };

@@ -68,6 +68,8 @@ export interface ResourceCenterSubPageBlock {
   iconType: string;
   iconUrl?: string;
   content: ContentEditorRoot[];
+  showInHome?: boolean;
+  showInTabBar?: boolean;
   onlyShowTask: boolean;
   onlyShowTaskConditions: RulesCondition[];
 }
@@ -89,6 +91,8 @@ export interface ResourceCenterKnowledgeBaseBlock {
   searchProvider: KnowledgeBaseSearchProvider;
   knowledgeBaseUrl: string;
   defaultSearchQuery: string;
+  showInHome?: boolean;
+  showInTabBar?: boolean;
   onlyShowTask: boolean;
   onlyShowTaskConditions: RulesCondition[];
 }
@@ -136,6 +140,8 @@ export interface ResourceCenterContentListBlock {
   iconUrl?: string;
   showSearchField: boolean;
   contentItems: ContentListItem[];
+  showInHome?: boolean;
+  showInTabBar?: boolean;
   onlyShowTask: boolean;
   onlyShowTaskConditions: RulesCondition[];
 }

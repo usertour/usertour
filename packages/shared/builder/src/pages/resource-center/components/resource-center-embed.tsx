@@ -13,6 +13,7 @@ import {
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
+  ResourceCenterTabBar,
   ResourceCenterFooter,
   useResourceCenterContext as useWidgetResourceCenterContext,
 } from '@usertour-packages/widget';
@@ -123,6 +124,7 @@ const ResourceCenterEmbedContent = ({
           contactPageEditSlot={contactPageEditSlot}
         />
       </ResourceCenterBody>
+      <ResourceCenterTabBar />
       <ResourceCenterFooter />
     </>
   );

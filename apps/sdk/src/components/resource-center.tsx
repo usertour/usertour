@@ -12,6 +12,7 @@ import {
   ResourceCenterHeader,
   ResourceCenterBody,
   ResourceCenterBlocks,
+  ResourceCenterTabBar,
   ResourceCenterFooter,
 } from '@usertour-packages/widget';
 import { useSyncExternalStore } from 'react';
@@ -149,6 +150,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
             <ResourceCenterBody>
               <ResourceCenterBlocks />
             </ResourceCenterBody>
+            <ResourceCenterTabBar />
             <ResourceCenterFooter />
           </ResourceCenterPanel>
         </ResourceCenterStyleProvider>
