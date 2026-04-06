@@ -14,6 +14,7 @@ import { cn } from '@usertour-packages/tailwind';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { useResourceCenterContext } from './context';
 import { IconsList } from '../launcher';
+import { ResourceCenterCloseButton } from './resource-center-header';
 
 // ============================================================================
 // Block — MESSAGE
@@ -868,23 +869,36 @@ function parseSearchResults(provider: string, data: any): KnowledgeBaseArticle[]
 // ============================================================================
 
 export const ResourceCenterBody = memo(({ children }: { children: React.ReactNode }) => {
-  const { hasTabBar, isSecondaryPage } = useResourceCenterContext();
-  const bottomPadding = hasTabBar && !isSecondaryPage ? 104 : 16;
+  const { isSecondaryPage, activeTab } = useResourceCenterContext();
+  const isHomePage = !isSecondaryPage && activeTab === null;
 
   return (
     <div
       className={cn(
-        'order-2 min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background p-4',
+        'order-2 min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
         'group-data-[animating]:pointer-events-none group-data-[animating]:overflow-hidden',
       )}
-      style={{
-        paddingBottom: `${bottomPadding}px`,
-      }}
     >
-      {children}
+      {isHomePage && (
+        <>
+          {/* Gradient background: header color fades into body background */}
+          <div className="relative overflow-hidden h-[520px] -mb-[520px]">
+            <div className="w-full h-full bg-sdk-resource-center-header-background/90" />
+            <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-sdk-background" />
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-sdk-background" />
+          </div>
+        </>
+      )}
+      {/* Close button — sticky top-right, floats over gradient */}
+      {isHomePage && (
+        <div className="sticky top-0 z-10 flex justify-end p-2">
+          <ResourceCenterCloseButton />
+        </div>
+      )}
+      <div className="relative p-4">{children}</div>
     </div>
   );
 });
@@ -957,50 +971,58 @@ export const ResourceCenterBlocks = memo(
 
     return (
       <>
-        {visibleBlocks.map((block) => {
+        {visibleBlocks.map((block, index) => {
           return (
             <Fragment key={block.id}>
-              {block.type === ResourceCenterBlockType.MESSAGE && (
-                <ResourceCenterMessageBlockView
-                  block={block}
-                  userAttributes={userAttributes}
-                  onContentClick={onContentClick}
-                  onBlockClick={onBlockClick}
-                  editSlot={messageEditSlots?.[block.id]}
-                />
-              )}
-              {block.type === ResourceCenterBlockType.CHECKLIST && (
-                <ResourceCenterChecklistBlockView slot={checklistSlot} />
-              )}
-              {block.type === ResourceCenterBlockType.DIVIDER && (
-                <ResourceCenterDividerBlockView block={block} />
-              )}
-              {block.type === ResourceCenterBlockType.ACTION && (
-                <ResourceCenterActionBlockView block={block} onActionBlockClick={onBlockClick} />
-              )}
-              {block.type === ResourceCenterBlockType.SUB_PAGE && (
-                <ResourceCenterSubPageBlockView block={block} onSubPageClick={navigateToSubPage} />
-              )}
-              {block.type === ResourceCenterBlockType.KNOWLEDGE_BASE && (
-                <ResourceCenterKnowledgeBaseBlockView
-                  block={block}
-                  onKnowledgeBaseClick={navigateToKnowledgeBase}
-                />
-              )}
-              {block.type === ResourceCenterBlockType.CONTACT && (
-                <ResourceCenterContactBlockView
-                  block={block}
-                  onContactEmailClick={(b) => navigateToContactPage(b, 'email')}
-                  onContactPhoneClick={(b) => navigateToContactPage(b, 'phone')}
-                  onContactLiveChatClick={onLiveChatClick}
-                />
-              )}
-              {block.type === ResourceCenterBlockType.CONTENT_LIST && (
-                <ResourceCenterContentListBlockView
-                  block={block}
-                  onContentListClick={navigateToContentList}
-                />
-              )}
+              <div
+                className="animate-sdk-rc-slide-in opacity-0"
+                style={{ animationDelay: `${index * 60}ms` }}
+              >
+                {block.type === ResourceCenterBlockType.MESSAGE && (
+                  <ResourceCenterMessageBlockView
+                    block={block}
+                    userAttributes={userAttributes}
+                    onContentClick={onContentClick}
+                    onBlockClick={onBlockClick}
+                    editSlot={messageEditSlots?.[block.id]}
+                  />
+                )}
+                {block.type === ResourceCenterBlockType.CHECKLIST && (
+                  <ResourceCenterChecklistBlockView slot={checklistSlot} />
+                )}
+                {block.type === ResourceCenterBlockType.DIVIDER && (
+                  <ResourceCenterDividerBlockView block={block} />
+                )}
+                {block.type === ResourceCenterBlockType.ACTION && (
+                  <ResourceCenterActionBlockView block={block} onActionBlockClick={onBlockClick} />
+                )}
+                {block.type === ResourceCenterBlockType.SUB_PAGE && (
+                  <ResourceCenterSubPageBlockView
+                    block={block}
+                    onSubPageClick={navigateToSubPage}
+                  />
+                )}
+                {block.type === ResourceCenterBlockType.KNOWLEDGE_BASE && (
+                  <ResourceCenterKnowledgeBaseBlockView
+                    block={block}
+                    onKnowledgeBaseClick={navigateToKnowledgeBase}
+                  />
+                )}
+                {block.type === ResourceCenterBlockType.CONTACT && (
+                  <ResourceCenterContactBlockView
+                    block={block}
+                    onContactEmailClick={(b) => navigateToContactPage(b, 'email')}
+                    onContactPhoneClick={(b) => navigateToContactPage(b, 'phone')}
+                    onContactLiveChatClick={onLiveChatClick}
+                  />
+                )}
+                {block.type === ResourceCenterBlockType.CONTENT_LIST && (
+                  <ResourceCenterContentListBlockView
+                    block={block}
+                    onContentListClick={navigateToContentList}
+                  />
+                )}
+              </div>
             </Fragment>
           );
         })}

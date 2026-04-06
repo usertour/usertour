@@ -81,8 +81,34 @@ ResourceCenterBackButton.displayName = 'ResourceCenterBackButton';
 // Header
 // ============================================================================
 
+/**
+ * Home page header — rendered inside Body so it scrolls with content.
+ * Matches Featurebase pattern: content area = header + blocks, all scrollable.
+ */
+export const ResourceCenterHomeHeader = memo(() => {
+  const { data } = useResourceCenterContext();
+
+  return (
+    <div className="p-2 flex items-center bg-sdk-resource-center-header-background rounded-t-[inherit]">
+      <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">
+        {data.headerText}
+      </div>
+      <ResourceCenterCloseButton />
+    </div>
+  );
+});
+
+ResourceCenterHomeHeader.displayName = 'ResourceCenterHomeHeader';
+
+/**
+ * Header — renders only on non-Home pages (tab pages, secondary pages).
+ * On Home, returns null because HomeHeader is rendered inside Body.
+ */
 export const ResourceCenterHeader = memo(() => {
   const { data, isSecondaryPage, activeTab, tabBarBlocks } = useResourceCenterContext();
+
+  const isHomePage = !isSecondaryPage && activeTab === null;
+  if (isHomePage) return null;
 
   // Determine the title for tab pages
   const activeTabBlock = activeTab !== null ? tabBarBlocks.find((b) => b.id === activeTab) : null;

@@ -10,7 +10,7 @@ export const ResourceCenterFooter = memo(() => {
   return (
     <div
       className={cn(
-        'order-3 shrink-0 bg-sdk-background text-xs opacity-50 hover:opacity-75 pl-2 py-1',
+        'order-4 shrink-0 bg-sdk-background text-xs opacity-50 hover:opacity-75 pl-2 py-1',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',

@@ -183,11 +183,24 @@ export const extendSdk = {
       '67%': { transform: 'scale(1.25)' },
       '100%': { transform: 'scale(1)' },
     },
+    'sdk-rc-slide-in': {
+      '0%, 30%': {
+        transform: 'translate3d(0, 12px, 0)',
+        opacity: '0.1',
+        filter: 'blur(2px)',
+      },
+      '100%': {
+        transform: 'translate3d(0, 0, 0)',
+        opacity: '1',
+        filter: 'blur(0)',
+      },
+    },
   },
   animation: {
     'accordion-down': 'accordion-down 0.2s ease-out',
     'accordion-up': 'accordion-up 0.2s ease-out',
     'pop-scale': 'pop-scale 500ms ease-out',
+    'sdk-rc-slide-in': 'sdk-rc-slide-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards',
   },
 };
 
