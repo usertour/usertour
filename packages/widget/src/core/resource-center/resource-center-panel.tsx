@@ -173,7 +173,7 @@ export const ResourceCenterPanel = forwardRef<
   const offsetY = rc?.offsetY ?? RC_DEFAULTS.offsetY;
   const maxHeight = rc?.maxHeight ?? 700;
   const heightOffset = offsetY * 2 + closedHeight + 4;
-  const useFixedHeight = positionProp !== false;
+  const useFixedHeight = positionProp !== false || openHeightOverride != null;
   const openFrameHeight = useFixedHeight
     ? openHeightOverride
       ? `${openHeightOverride}px`

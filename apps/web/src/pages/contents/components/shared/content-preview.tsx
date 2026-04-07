@@ -251,6 +251,9 @@ const ResourceCenterPreview = (props: {
   const themeSettings = currentTheme.settings;
   const { shouldShowMadeWith } = useSubscriptionContext();
 
+  const normalWidth = themeSettings.resourceCenter?.normalWidth ?? 410;
+  const previewHeight = Math.round(normalWidth * 1.4);
+
   return (
     <ResourceCenterRoot
       data={data}
@@ -261,7 +264,7 @@ const ResourceCenterPreview = (props: {
       showMadeWith={shouldShowMadeWith}
     >
       <ResourceCenterStyleProvider>
-        <ResourceCenterPanel mode="dom" position={false}>
+        <ResourceCenterPanel mode="dom" position={false} openHeightOverride={previewHeight}>
           <ResourceCenterHeader />
           <ResourceCenterBody>
             <ResourceCenterBlocks />
