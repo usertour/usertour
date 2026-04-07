@@ -162,6 +162,8 @@ import {
   RiCompassLine,
   RiCompassFill,
   RiInformation2Fill,
+  RiArrowRightSLine,
+  RiQuestionFill,
 } from '@remixicon/react';
 import { registerIcons } from './remix-icon';
 
@@ -356,4 +358,7 @@ registerIcons({
   'calendar-line': RiCalendarLine,
   'time-line': RiTimeLine,
   'global-line': RiGlobalLine,
+  // Misc
+  'arrow-right-s-line': RiArrowRightSLine,
+  'question-fill': RiQuestionFill,
 });

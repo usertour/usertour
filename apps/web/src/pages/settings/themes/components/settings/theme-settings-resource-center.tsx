@@ -50,6 +50,7 @@ export const ThemeSettingsResourceCenter = () => {
   };
 
   const headerBackground = resourceCenter.headerBackground;
+  const brandBackground = settings.brandColor.background;
 
   const updateHeaderBackground = (data: Partial<ResourceCenterHeaderBackground>) => {
     update({
@@ -216,6 +217,7 @@ export const ThemeSettingsResourceCenter = () => {
                 defaultColor={headerBackground.color}
                 showAutoButton={true}
                 isAutoColor={headerBackground.color === 'Auto'}
+                autoColor={brandBackground}
                 onChange={(value: string) => {
                   updateHeaderBackground({ color: value });
                 }}
@@ -230,6 +232,7 @@ export const ThemeSettingsResourceCenter = () => {
                   defaultColor={headerBackground.gradientFrom}
                   showAutoButton={true}
                   isAutoColor={headerBackground.gradientFrom === 'Auto'}
+                  autoColor={brandBackground}
                   onChange={(value: string) => {
                     updateHeaderBackground({ gradientFrom: value });
                   }}
@@ -241,6 +244,7 @@ export const ThemeSettingsResourceCenter = () => {
                   defaultColor={headerBackground.gradientTo}
                   showAutoButton={true}
                   isAutoColor={headerBackground.gradientTo === 'Auto'}
+                  autoColor={settings.brandColor.color}
                   onChange={(value: string) => {
                     updateHeaderBackground({ gradientTo: value });
                   }}

@@ -12,6 +12,7 @@ import type {
 } from '@usertour/types';
 import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
+import { RiArrowRightSLine } from '@usertour-packages/icons';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { useResourceCenterContext } from './context';
 import { IconsList } from '../launcher';
@@ -81,7 +82,7 @@ export const ResourceCenterMessageBlockView = memo(
     editSlot,
   }: ResourceCenterMessageBlockViewProps) => {
     if (editSlot) {
-      return <div className="p-2">{editSlot}</div>;
+      return <>{editSlot}</>;
     }
 
     const handleContentClick = async (element: any) => {
@@ -90,13 +91,11 @@ export const ResourceCenterMessageBlockView = memo(
     };
 
     return (
-      <div className="p-2">
-        <ContentEditorSerialize
-          contents={block.content}
-          onClick={handleContentClick}
-          userAttributes={userAttributes}
-        />
-      </div>
+      <ContentEditorSerialize
+        contents={block.content}
+        onClick={handleContentClick}
+        userAttributes={userAttributes}
+      />
     );
   },
 );
@@ -133,9 +132,7 @@ interface ResourceCenterDividerBlockViewProps {
 
 export const ResourceCenterDividerBlockView = memo(
   ({ block }: ResourceCenterDividerBlockViewProps) => {
-    return (
-      <div data-block-id={block.id} className="my-4 h-px overflow-hidden bg-sdk-foreground/10" />
-    );
+    return <div data-block-id={block.id} className="h-px overflow-hidden bg-sdk-foreground/10" />;
   },
 );
 
@@ -160,15 +157,17 @@ export const ResourceCenterActionBlockView = memo(
       <button
         type="button"
         data-block-id={block.id}
-        className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-sdk-hover cursor-pointer"
+        className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-foreground/5 cursor-pointer overflow-hidden"
         onClick={handleClick}
       >
+        <div className="absolute inset-0 bg-sdk-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
         <BlockIcon
           iconSource={block.iconSource}
           iconType={block.iconType}
           iconUrl={block.iconUrl}
+          className="relative"
         />
-        <span className="min-w-0 flex-1 truncate text-sdk-foreground">
+        <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">
           {block.name || 'Untitled action'}
         </span>
       </button>
@@ -203,11 +202,18 @@ export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowP
     <button
       type="button"
       data-block-id={block.id}
-      className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-sdk-hover cursor-pointer"
+      className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-foreground/5 cursor-pointer overflow-hidden"
       onClick={handleClick}
     >
-      <BlockIcon iconSource={block.iconSource} iconType={block.iconType} iconUrl={block.iconUrl} />
-      <span className="min-w-0 flex-1 truncate text-sdk-foreground">{label}</span>
+      <div className="absolute inset-0 bg-sdk-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
+      <BlockIcon
+        iconSource={block.iconSource}
+        iconType={block.iconType}
+        iconUrl={block.iconUrl}
+        className="relative"
+      />
+      <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">{label}</span>
+      <RiArrowRightSLine size={16} className="relative flex-shrink-0 text-sdk-foreground/40" />
     </button>
   );
 });
@@ -227,7 +233,7 @@ export const SubPageDetail = memo(({ block, editSlot }: SubPageDetailProps) => {
   const { userAttributes, onContentClick, onBlockClick } = useResourceCenterContext();
 
   if (editSlot) {
-    return <div className="p-2">{editSlot}</div>;
+    return <>{editSlot}</>;
   }
 
   const handleContentClick = async (element: any) => {
@@ -236,13 +242,11 @@ export const SubPageDetail = memo(({ block, editSlot }: SubPageDetailProps) => {
   };
 
   return (
-    <div className="p-2">
-      <ContentEditorSerialize
-        contents={block.content}
-        onClick={handleContentClick}
-        userAttributes={userAttributes}
-      />
-    </div>
+    <ContentEditorSerialize
+      contents={block.content}
+      onClick={handleContentClick}
+      userAttributes={userAttributes}
+    />
   );
 });
 
@@ -688,7 +692,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
         </div>
       )}
       {/* Scrollable inner container */}
-      <div className="relative h-full overflow-y-auto">
+      <div className="relative h-full overflow-y-auto overflow-x-hidden">
         {/* Background layer: absolute, overflows slightly to avoid edge gaps */}
         {isHomePage && (
           <div className="overflow-hidden absolute -inset-x-3 -top-3 pointer-events-none">
@@ -707,7 +711,10 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
         )}
         {/* Content: logo + children, scrolls together */}
         <div
-          className={cn('relative z-20 px-4 pb-4 animate-sdk-rc-slide-in', !isHomePage && 'pt-4')}
+          className={cn(
+            'relative z-20 px-4 pb-4 flex flex-col gap-2.5 animate-sdk-rc-slide-in',
+            !isHomePage && 'pt-4',
+          )}
         >
           {isHomePage && (
             <div className="mt-2 pl-2 flex items-center h-sdk-resource-center-header-button">
