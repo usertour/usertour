@@ -27,6 +27,7 @@ export type ResourceCenterThemeSettings = {
   transitionDuration: number;
   dividerLines: boolean;
   headerBackground: ResourceCenterHeaderBackground;
+  logoUrl: string;
 };
 
 export type ResourceCenterLauncherIconType =
@@ -479,6 +480,7 @@ export const defaultSettings: ThemeTypesSetting = {
       gradientTo: 'Auto',
       imageUrl: '',
     },
+    logoUrl: '',
   },
   resourceCenterLauncherButton: {
     iconType: 'default-question-mark',
@@ -745,6 +747,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
       gradientTo: 'Auto',
       imageUrl: '',
     },
+    logoUrl: '',
   },
   resourceCenterLauncherButton: {
     iconType: 'default-question-mark',

@@ -669,39 +669,58 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
     [themeSetting.resourceCenter?.headerBackground],
   );
 
+  const logoUrl = themeSetting.resourceCenter?.logoUrl;
+
   return (
     <div
       className={cn(
-        'order-2 min-h-0 min-w-0 flex-1 overflow-y-auto bg-sdk-background',
+        'relative order-2 min-h-0 min-w-0 flex-1 bg-sdk-background',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
         'group-data-[animating]:pointer-events-none group-data-[animating]:overflow-hidden',
       )}
     >
+      {/* Close button: absolute in outer container, does not scroll */}
       {isHomePage && (
-        <>
-          {/* Header background layer: color, gradient, or image based on theme */}
-          <div className="relative overflow-hidden h-[520px] -mb-[520px]">
-            <div
-              className={cn(
-                'w-full h-full',
-                !headerBackgroundStyle && 'bg-sdk-resource-center-header-background/90',
-              )}
-              style={headerBackgroundStyle}
-            />
-            <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-sdk-background" />
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-sdk-background" />
-          </div>
-        </>
-      )}
-      {/* Close button — sticky top-right, floats over gradient */}
-      {isHomePage && (
-        <div className="sticky top-0 z-10 flex justify-end p-2">
+        <div className="absolute top-2 right-2 z-30">
           <ResourceCenterCloseButton />
         </div>
       )}
-      <div className="relative p-4">{children}</div>
+      {/* Scrollable inner container */}
+      <div className="relative h-full overflow-y-auto">
+        {/* Background layer: absolute, overflows slightly to avoid edge gaps */}
+        {isHomePage && (
+          <div className="overflow-hidden absolute -inset-x-3 -top-3 pointer-events-none">
+            <div className="overflow-hidden relative w-full bg-gradient-to-b from-transparent h-[520px] to-sdk-background">
+              <div
+                className={cn(
+                  'w-full h-full',
+                  !headerBackgroundStyle && 'bg-sdk-resource-center-header-background/90',
+                )}
+                style={headerBackgroundStyle}
+              />
+              <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-sdk-background" />
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-sdk-background" />
+            </div>
+          </div>
+        )}
+        {/* Content: logo + children, scrolls together */}
+        <div className={cn('relative z-20 px-4 pb-4', !isHomePage && 'pt-4')}>
+          {isHomePage && (
+            <div className="mt-2 pl-2 flex items-center h-sdk-resource-center-header-button">
+              {logoUrl && (
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  className="h-7 w-7 object-cover rounded-full opacity-80"
+                />
+              )}
+            </div>
+          )}
+          {children}
+        </div>
+      </div>
     </div>
   );
 });

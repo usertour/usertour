@@ -57,14 +57,20 @@ export const ThemeSettingsResourceCenter = () => {
     });
   };
 
-  const { handleUpload, isUploading } = useAvatarUpload({
+  const { handleUpload: handleBgUpload, isUploading: isBgUploading } = useAvatarUpload({
     onUploadSuccess: (url) => {
       updateHeaderBackground({ imageUrl: url });
     },
   });
 
-  const handleImageUpload = useCallback(
-    (option: UploadOption) => {
+  const { handleUpload: handleLogoUploadRequest, isUploading: isLogoUploading } = useAvatarUpload({
+    onUploadSuccess: (url) => {
+      update({ logoUrl: url });
+    },
+  });
+
+  const validateAndUpload = useCallback(
+    (option: UploadOption, uploadFn: (option: UploadOption) => void) => {
       const file = option.file;
       if (!(file instanceof File)) {
         const error = new Error('Invalid file type');
@@ -84,14 +90,110 @@ export const ThemeSettingsResourceCenter = () => {
         return;
       }
 
-      handleUpload(option);
+      uploadFn(option);
     },
-    [handleUpload, toast],
+    [toast],
+  );
+
+  const handleImageUpload = useCallback(
+    (option: UploadOption) => validateAndUpload(option, handleBgUpload),
+    [validateAndUpload, handleBgUpload],
+  );
+
+  const handleLogoUpload = useCallback(
+    (option: UploadOption) => {
+      const file = option.file;
+      if (file instanceof File && file.size > 2 * 1024 * 1024) {
+        const error = new Error('File too large');
+        toast({ variant: 'destructive', title: 'Max file size is 2MB.' });
+        option.onError?.(error);
+        return;
+      }
+      validateAndUpload(option, handleLogoUploadRequest);
+    },
+    [validateAndUpload, handleLogoUploadRequest, toast],
   );
 
   return (
     <div className="flex flex-col space-y-4">
       <div className="py-[15px] px-5 space-y-3">
+        {/* Logo */}
+        <div>
+          <h4 className="text-sm font-medium mb-3">Logo</h4>
+          <div className="rounded-lg border bg-background p-4">
+            <div className="mb-3">
+              <p className="text-xs text-muted-foreground">
+                Recommended size: 60x60 pixels. Max file size: 2MB.
+              </p>
+            </div>
+
+            <Upload
+              accept={ACCEPT_IMAGE_TYPES}
+              customRequest={handleLogoUpload}
+              disabled={isViewOnly || isLogoUploading}
+              className="block min-w-0"
+            >
+              <div
+                className={`flex min-w-0 cursor-pointer flex-col items-center gap-3 rounded-md border-2 p-4 transition-colors ${
+                  isViewOnly || isLogoUploading
+                    ? 'cursor-not-allowed border-muted/50 bg-muted/30'
+                    : 'border-dashed border-muted bg-transparent'
+                }`}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-md bg-muted">
+                  <RiUpload2Fill className="text-muted-foreground/70" size={20} />
+                </div>
+                <Button
+                  variant="outline"
+                  className="whitespace-nowrap"
+                  disabled={isViewOnly || isLogoUploading}
+                >
+                  {isLogoUploading ? (
+                    <span className="inline-flex items-center">
+                      <SpinnerIcon className="mr-2 animate-spin" />
+                      Uploading
+                    </span>
+                  ) : (
+                    'Choose file'
+                  )}
+                </Button>
+              </div>
+            </Upload>
+
+            {resourceCenter.logoUrl && (
+              <div className="mt-4 flex min-w-0 items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="flex h-12 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/70">
+                    <img
+                      src={resourceCenter.logoUrl}
+                      alt="Logo"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-foreground">
+                      Uploaded logo
+                    </div>
+                    <div className="truncate break-all text-xs text-muted-foreground">
+                      {resourceCenter.logoUrl}
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  className="flex-none hover:bg-destructive/10"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => update({ logoUrl: '' })}
+                  disabled={isViewOnly}
+                >
+                  <RiDeleteBinFill className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Header Background */}
         <div>
           <h4 className="text-sm font-medium mb-3">Home header background</h4>
@@ -156,12 +258,12 @@ export const ThemeSettingsResourceCenter = () => {
                 <Upload
                   accept={ACCEPT_IMAGE_TYPES}
                   customRequest={handleImageUpload}
-                  disabled={isViewOnly || isUploading}
+                  disabled={isViewOnly || isBgUploading}
                   className="block min-w-0"
                 >
                   <div
                     className={`flex min-w-0 cursor-pointer flex-col items-center gap-3 rounded-md border-2 p-4 transition-colors ${
-                      isViewOnly || isUploading
+                      isViewOnly || isBgUploading
                         ? 'cursor-not-allowed border-muted/50 bg-muted/30'
                         : 'border-dashed border-muted bg-transparent'
                     }`}
@@ -172,9 +274,9 @@ export const ThemeSettingsResourceCenter = () => {
                     <Button
                       variant="outline"
                       className="whitespace-nowrap"
-                      disabled={isViewOnly || isUploading}
+                      disabled={isViewOnly || isBgUploading}
                     >
-                      {isUploading ? (
+                      {isBgUploading ? (
                         <span className="inline-flex items-center">
                           <SpinnerIcon className="mr-2 animate-spin" />
                           Uploading
