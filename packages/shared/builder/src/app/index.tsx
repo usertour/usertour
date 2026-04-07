@@ -50,7 +50,8 @@ const Container = () => {
   }
   if (
     currentMode.mode === BuilderMode.RESOURCE_CENTER ||
-    currentMode.mode === BuilderMode.RESOURCE_CENTER_BLOCK
+    currentMode.mode === BuilderMode.RESOURCE_CENTER_BLOCK ||
+    currentMode.mode === BuilderMode.RESOURCE_CENTER_TAB
   ) {
     return <ResourceCenterBuilder />;
   }

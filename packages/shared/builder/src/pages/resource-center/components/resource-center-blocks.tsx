@@ -223,7 +223,7 @@ export const ResourceCenterBlocks = () => {
   return (
     <>
       <div className="flex justify-between items-center space-x-1">
-        <h1 className="text-sm">Blocks</h1>
+        <h1 className="text-sm">{currentTab?.name ? `"${currentTab.name}" blocks` : 'Blocks'}</h1>
       </div>
       <DndContext
         sensors={sensors}

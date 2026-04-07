@@ -26,6 +26,7 @@ import { SidebarFooter } from '../sidebar/sidebar-footer';
 import { SidebarHeader } from '../sidebar/sidebar-header';
 import { SidebarTheme } from '../sidebar/sidebar-theme';
 import { ResourceCenterBlocks } from './components/resource-center-blocks';
+import { ResourceCenterTabs } from './components/resource-center-tabs';
 import { BLOCK_TYPE_OPTIONS } from './resource-center-block-options';
 import type { ResourceCenterBlock } from '@usertour/types';
 const labelStyles = 'flex justify-start items-center space-x-1';
@@ -132,11 +133,13 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
 };
 
 const ResourceCenterCoreBody = () => {
-  const { localData, zIndex, addBlock, updateLocalData } = useResourceCenterContext();
+  const { localData, zIndex, addBlock, updateLocalData, currentTabId } = useResourceCenterContext();
 
   if (!localData) {
     return null;
   }
+
+  const currentTab = localData.tabs.find((t) => t.id === currentTabId);
 
   const handleAddBlock = (type: ResourceCenterBlockType) => {
     const block = createBlock(type);
@@ -183,44 +186,52 @@ const ResourceCenterCoreBody = () => {
             />
           </div>
 
-          <ResourceCenterBlocks />
+          <ResourceCenterTabs />
 
-          {/* Add Block */}
-          <div>
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                <Button className="w-full" variant="secondary">
-                  <PlusCircledIcon className="mr-2" />
-                  Add block
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                sideOffset={6}
-                className="min-w-[280px]"
-                style={{ zIndex: zIndex + EXTENSION_SELECT }}
-              >
-                {BLOCK_TYPE_OPTIONS.map(
-                  ({ key, value, label, description, icon: Icon, disabled }) => {
-                    return (
-                      <DropdownMenuItem
-                        key={key}
-                        disabled={disabled}
-                        className="cursor-pointer min-w-[220px] gap-2 py-1.5 text-xs"
-                        onSelect={() => value && handleAddBlock(value)}
-                      >
-                        <Icon width={16} height={16} className="shrink-0 text-foreground" />
-                        <span className="min-w-0 leading-none">
-                          <span className="text-xs font-medium text-foreground">{label}</span>
-                          <span className="ml-1 text-xs text-muted-foreground">{description}</span>
-                        </span>
-                      </DropdownMenuItem>
-                    );
-                  },
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {currentTab && (
+            <>
+              <ResourceCenterBlocks />
+
+              {/* Add Block */}
+              <div>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="w-full" variant="secondary">
+                      <PlusCircledIcon className="mr-2" />
+                      Add block
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    sideOffset={6}
+                    className="min-w-[280px]"
+                    style={{ zIndex: zIndex + EXTENSION_SELECT }}
+                  >
+                    {BLOCK_TYPE_OPTIONS.map(
+                      ({ key, value, label, description, icon: Icon, disabled }) => {
+                        return (
+                          <DropdownMenuItem
+                            key={key}
+                            disabled={disabled}
+                            className="cursor-pointer min-w-[220px] gap-2 py-1.5 text-xs"
+                            onSelect={() => value && handleAddBlock(value)}
+                          >
+                            <Icon width={16} height={16} className="shrink-0 text-foreground" />
+                            <span className="min-w-0 leading-none">
+                              <span className="text-xs font-medium text-foreground">{label}</span>
+                              <span className="ml-1 text-xs text-muted-foreground">
+                                {description}
+                              </span>
+                            </span>
+                          </DropdownMenuItem>
+                        );
+                      },
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </>
+          )}
         </div>
       </ScrollArea>
     </CardContent>

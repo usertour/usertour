@@ -42,6 +42,9 @@ export interface ResourceCenterContextValue {
   removeTab: (tabId: string) => void;
   updateTab: (tabId: string, updates: Partial<ResourceCenterTab>) => void;
   reorderTabs: (startIndex: number, endIndex: number) => void;
+  editingTab: ResourceCenterTab | null;
+  setEditingTab: React.Dispatch<React.SetStateAction<ResourceCenterTab | null>>;
+  saveEditingTab: () => void;
 
   // Block management (operates on currentTabId's blocks)
   addBlock: (block: ResourceCenterBlock) => void;
@@ -123,6 +126,7 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
   const [localData, setLocalData] = useState<ResourceCenterData | null>(data);
   const [currentBlock, setCurrentBlock] = useState<ResourceCenterBlock | null>(null);
   const [currentTabId, setCurrentTabId] = useState<string | null>(null);
+  const [editingTab, setEditingTab] = useState<ResourceCenterTab | null>(null);
 
   // Auto-select first tab when data loads
   useEffect(() => {
@@ -241,6 +245,26 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
 
   // ── Block operations (scoped to currentTabId) ─────────────────────
 
+  const saveEditingTab = useCallback(() => {
+    if (!editingTab) return;
+    setAndSave((prev) => ({
+      ...prev,
+      tabs: prev.tabs.map((tab) =>
+        tab.id === editingTab.id
+          ? {
+              ...tab,
+              name: editingTab.name,
+              iconSource: editingTab.iconSource,
+              iconType: editingTab.iconType,
+              iconUrl: editingTab.iconUrl,
+            }
+          : tab,
+      ),
+    }));
+    setEditingTab(null);
+    setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER });
+  }, [editingTab, setCurrentMode, setAndSave]);
+
   const saveCurrentBlock = useCallback(() => {
     if (!currentBlock || !currentTabId) {
       return;
@@ -333,6 +357,9 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
     removeTab,
     updateTab,
     reorderTabs,
+    editingTab,
+    setEditingTab,
+    saveEditingTab,
     removeBlock,
     updateBlock,
     reorderBlocks,
