@@ -101,14 +101,20 @@ ResourceCenterHomeHeader.displayName = 'ResourceCenterHomeHeader';
 // ============================================================================
 
 export const ResourceCenterHeader = memo(() => {
-  const { data, showBackButton, currentPage, currentTab, nav } = useResourceCenterContext();
+  const { data, showBackButton, currentPage, autoExpandedPage, currentTab, nav } =
+    useResourceCenterContext();
 
-  // On Home tab with no detail page → no header (HomeHeader is inside Body)
-  const isHomePage = !showBackButton && nav.activeTabId === (data.tabs[0]?.id ?? '');
+  // On Home tab with no detail/auto-expanded page → no header (HomeHeader is inside Body)
+  const isHomePage =
+    !showBackButton && !autoExpandedPage && nav.activeTabId === (data.tabs[0]?.id ?? '');
   if (isHomePage) return null;
 
-  // Determine header title
-  const title = currentPage ? currentPage.block.name : (currentTab?.name ?? data.headerText);
+  // Determine header title: pushed page > auto-expanded page > tab name > fallback
+  const title = currentPage
+    ? currentPage.block.name
+    : autoExpandedPage
+      ? autoExpandedPage.block.name
+      : (currentTab?.name ?? data.headerText);
 
   return (
     <div

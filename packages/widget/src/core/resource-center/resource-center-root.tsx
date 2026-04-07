@@ -94,38 +94,17 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     (tabId: string) => {
       const tab = data.tabs.find((t) => t.id === tabId);
       if (!tab) return;
-
-      // If the tab has exactly one navigable block, auto-push its detail view
-      const navigableBlocks = tab.blocks.filter((b) => isNavigableBlockType(b.type));
-      if (navigableBlocks.length === 1) {
-        const block = navigableBlocks[0];
-        const entry = { type: block.type, block } as ResourceCenterPageEntry;
-        setNav({ activeTabId: tabId, pageStack: [entry] });
-
-        // Trigger content list fetch if needed
-        if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
-          onContentListNavigate?.(block as ResourceCenterContentListBlock);
-        }
-      } else {
-        setNav({ activeTabId: tabId, pageStack: [] });
-      }
+      setNav({ activeTabId: tabId, pageStack: [] });
     },
-    [data.tabs, onContentListNavigate],
+    [data.tabs],
   );
 
-  const push = useCallback(
-    (entry: ResourceCenterPageEntry) => {
-      // Trigger content list fetch if navigating to a content list
-      if (entry.type === ResourceCenterBlockType.CONTENT_LIST) {
-        onContentListNavigate?.(entry.block as ResourceCenterContentListBlock);
-      }
-      setNav((prev) => ({
-        ...prev,
-        pageStack: [...prev.pageStack, entry],
-      }));
-    },
-    [onContentListNavigate],
-  );
+  const push = useCallback((entry: ResourceCenterPageEntry) => {
+    setNav((prev) => ({
+      ...prev,
+      pageStack: [...prev.pageStack, entry],
+    }));
+  }, []);
 
   const pop = useCallback(() => {
     setNav((prev) => ({
@@ -153,6 +132,32 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   );
 
   const currentPage = nav.pageStack.length > 0 ? nav.pageStack[nav.pageStack.length - 1] : null;
+
+  // Auto-expand: if tab has exactly one block and it's navigable, show its detail view directly
+  // (without pushing to pageStack, so tab bar stays visible and no back button)
+  const autoExpandedPage = useMemo(() => {
+    if (currentPage) return null;
+    const blocks = currentTab?.blocks ?? [];
+    if (blocks.length === 1 && isNavigableBlockType(blocks[0].type)) {
+      return { type: blocks[0].type, block: blocks[0] } as ResourceCenterPageEntry;
+    }
+    return null;
+  }, [currentTab, currentPage]);
+
+  // Trigger content list fetch for auto-expanded or pushed content list pages
+  const activeContentListBlock =
+    autoExpandedPage?.type === ResourceCenterBlockType.CONTENT_LIST
+      ? (autoExpandedPage.block as ResourceCenterContentListBlock)
+      : currentPage?.type === ResourceCenterBlockType.CONTENT_LIST
+        ? (currentPage.block as ResourceCenterContentListBlock)
+        : null;
+
+  useEffect(() => {
+    if (activeContentListBlock) {
+      onContentListNavigate?.(activeContentListBlock);
+    }
+  }, [activeContentListBlock, onContentListNavigate]);
+
   const showTabBar = data.tabs.length > 1 && nav.pageStack.length === 0;
   const showBackButton = nav.pageStack.length > 0;
 
@@ -205,6 +210,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       actions,
       currentTab,
       currentPage,
+      autoExpandedPage,
       showTabBar,
       showBackButton,
       contentListItems: contentListItemsProp,
@@ -231,6 +237,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       actions,
       currentTab,
       currentPage,
+      autoExpandedPage,
       showTabBar,
       showBackButton,
       contentListItemsProp,

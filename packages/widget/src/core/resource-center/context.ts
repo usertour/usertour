@@ -50,6 +50,7 @@ export interface ResourceCenterContextValue {
   // Derived navigation state
   currentTab: ResourceCenterTab;
   currentPage: ResourceCenterPageEntry | null;
+  autoExpandedPage: ResourceCenterPageEntry | null;
   showTabBar: boolean;
   showBackButton: boolean;
 

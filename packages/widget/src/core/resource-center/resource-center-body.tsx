@@ -671,6 +671,7 @@ export const ResourceCenterBlocks = memo(
     const {
       currentTab,
       currentPage,
+      autoExpandedPage,
       userAttributes,
       onContentClick,
       onBlockClick,
@@ -678,12 +679,16 @@ export const ResourceCenterBlocks = memo(
       actions,
     } = useResourceCenterContext();
 
-    // If a detail page is active, render it
+    // If a detail page is pushed, render it
     if (currentPage) {
       return <DetailView page={currentPage} subPageEditSlot={subPageEditSlot} />;
     }
 
-    // Render the current tab's block list
+    // Auto-expanded tab: render detail view directly (tab bar stays, no back button)
+    if (autoExpandedPage) {
+      return <DetailView page={autoExpandedPage} subPageEditSlot={subPageEditSlot} />;
+    }
+
     const blocks = currentTab?.blocks ?? [];
 
     return (
