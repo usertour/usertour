@@ -5,7 +5,7 @@ import { Button } from '../../primitives';
 import { useResourceCenterContext } from './context';
 
 // ============================================================================
-// Close Button (was "Dropdown")
+// Close Button
 // ============================================================================
 
 export const ResourceCenterCloseButton = forwardRef<
@@ -45,15 +45,15 @@ export const ResourceCenterCloseButton = forwardRef<
 ResourceCenterCloseButton.displayName = 'ResourceCenterCloseButton';
 
 // ============================================================================
-// Back Button (shown when navigated into a sub-page)
+// Back Button
 // ============================================================================
 
 export const ResourceCenterBackButton = memo(() => {
-  const { navigateBack } = useResourceCenterContext();
+  const { actions } = useResourceCenterContext();
 
   const handleClick = useCallback(() => {
-    navigateBack();
-  }, [navigateBack]);
+    actions.pop();
+  }, [actions]);
 
   return (
     <Button
@@ -78,13 +78,9 @@ export const ResourceCenterBackButton = memo(() => {
 ResourceCenterBackButton.displayName = 'ResourceCenterBackButton';
 
 // ============================================================================
-// Header
+// Home Header — rendered inside Body so it scrolls with content
 // ============================================================================
 
-/**
- * Home page header — rendered inside Body so it scrolls with content.
- * Matches Featurebase pattern: content area = header + blocks, all scrollable.
- */
 export const ResourceCenterHomeHeader = memo(() => {
   const { data } = useResourceCenterContext();
 
@@ -100,19 +96,19 @@ export const ResourceCenterHomeHeader = memo(() => {
 
 ResourceCenterHomeHeader.displayName = 'ResourceCenterHomeHeader';
 
-/**
- * Header — renders only on non-Home pages (tab pages, secondary pages).
- * On Home, returns null because HomeHeader is rendered inside Body.
- */
-export const ResourceCenterHeader = memo(() => {
-  const { data, isSecondaryPage, activeTab, tabBarBlocks } = useResourceCenterContext();
+// ============================================================================
+// Header — renders on non-Home pages (tab pages, detail pages)
+// ============================================================================
 
-  const isHomePage = !isSecondaryPage && activeTab === null;
+export const ResourceCenterHeader = memo(() => {
+  const { data, showBackButton, currentPage, currentTab, nav } = useResourceCenterContext();
+
+  // On Home tab with no detail page → no header (HomeHeader is inside Body)
+  const isHomePage = !showBackButton && nav.activeTabId === (data.tabs[0]?.id ?? '');
   if (isHomePage) return null;
 
-  // Determine the title for tab pages
-  const activeTabBlock = activeTab !== null ? tabBarBlocks.find((b) => b.id === activeTab) : null;
-  const isTabPage = activeTabBlock !== null && activeTabBlock !== undefined;
+  // Determine header title
+  const title = currentPage ? currentPage.block.name : (currentTab?.name ?? data.headerText);
 
   return (
     <div
@@ -123,13 +119,13 @@ export const ResourceCenterHeader = memo(() => {
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
       )}
     >
-      {isSecondaryPage && <ResourceCenterBackButton />}
-      {!isSecondaryPage && (
+      {showBackButton && <ResourceCenterBackButton />}
+      {!showBackButton && (
         <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">
-          {isTabPage ? activeTabBlock.name || data.headerText : data.headerText}
+          {title}
         </div>
       )}
-      {isSecondaryPage && <div className="flex-1" />}
+      {showBackButton && <div className="flex-1" />}
       <ResourceCenterCloseButton />
     </div>
   );

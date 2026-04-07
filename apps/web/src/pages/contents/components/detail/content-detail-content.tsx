@@ -531,7 +531,7 @@ const ResourceCenterContentPreview = ({
     <>
       <ContentBadge>Launcher button text: {data.buttonText ?? ''}</ContentBadge>
       <ContentBadge>Header text: {data.headerText ?? ''}</ContentBadge>
-      <ContentBadge>Blocks: {data.blocks?.length ?? 0}</ContentBadge>
+      <ContentBadge>Tabs: {data.tabs?.length ?? 0}</ContentBadge>
       <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
     </>
   );

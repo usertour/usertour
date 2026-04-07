@@ -113,11 +113,11 @@ const BlockKnowledgeBaseBody = () => {
   };
 
   const handleOnlyShowChange = (value: boolean) => {
-    setCurrentBlock((prev) => (prev ? { ...prev, onlyShowTask: value } : null));
+    setCurrentBlock((prev) => (prev ? { ...prev, onlyShowBlock: value } : null));
   };
 
   const handleConditionsChange = (value: RulesCondition[]) => {
-    setCurrentBlock((prev) => (prev ? { ...prev, onlyShowTaskConditions: value } : null));
+    setCurrentBlock((prev) => (prev ? { ...prev, onlyShowBlockConditions: value } : null));
   };
 
   return (
@@ -190,40 +190,6 @@ const BlockKnowledgeBaseBody = () => {
             />
           </div>
 
-          {/* Show in home */}
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center justify-between space-x-2">
-              <Label htmlFor="show-in-home" className="font-normal">
-                Show in home
-              </Label>
-              <Switch
-                id="show-in-home"
-                className="data-[state=unchecked]:bg-input"
-                checked={currentBlock.showInHome !== false}
-                onCheckedChange={(value) =>
-                  setCurrentBlock((prev) => (prev ? { ...prev, showInHome: value } : null))
-                }
-              />
-            </div>
-          </div>
-
-          {/* Show in tab bar */}
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center justify-between space-x-2">
-              <Label htmlFor="show-in-tab-bar" className="font-normal">
-                Show in tab bar
-              </Label>
-              <Switch
-                id="show-in-tab-bar"
-                className="data-[state=unchecked]:bg-input"
-                checked={currentBlock.showInTabBar === true}
-                onCheckedChange={(value) =>
-                  setCurrentBlock((prev) => (prev ? { ...prev, showInTabBar: value } : null))
-                }
-              />
-            </div>
-          </div>
-
           {/* Only show block if... */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between space-x-2">
@@ -233,14 +199,14 @@ const BlockKnowledgeBaseBody = () => {
               <Switch
                 id="only-show-block"
                 className="data-[state=unchecked]:bg-input"
-                checked={currentBlock.onlyShowTask}
+                checked={currentBlock.onlyShowBlock}
                 onCheckedChange={handleOnlyShowChange}
               />
             </div>
-            {currentBlock.onlyShowTask && (
+            {currentBlock.onlyShowBlock && (
               <Rules
                 onDataChange={handleConditionsChange}
-                defaultConditions={currentBlock.onlyShowTaskConditions ?? []}
+                defaultConditions={currentBlock.onlyShowBlockConditions ?? []}
                 attributes={attributeList}
                 contents={[]}
                 segments={segmentList}

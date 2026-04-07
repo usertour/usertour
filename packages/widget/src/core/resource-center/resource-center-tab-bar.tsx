@@ -3,22 +3,25 @@ import { LauncherIconSource } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
 import { RiHomeFill } from '@usertour-packages/icons';
 import { useResourceCenterContext } from './context';
-import type { TabBarBlock } from './context';
+import type { ResourceCenterTab } from '@usertour/types';
 import { IconsList } from '../launcher';
 
-const TabBarIcon = memo(({ block }: { block: TabBarBlock }) => {
-  if (block.iconSource === LauncherIconSource.NONE) {
+// ============================================================================
+// Tab icon
+// ============================================================================
+
+const TabBarIcon = memo(({ tab }: { tab: ResourceCenterTab }) => {
+  if (tab.iconSource === LauncherIconSource.NONE) {
     return null;
   }
   if (
-    (block.iconSource === LauncherIconSource.UPLOAD ||
-      block.iconSource === LauncherIconSource.URL) &&
-    block.iconUrl
+    (tab.iconSource === LauncherIconSource.UPLOAD || tab.iconSource === LauncherIconSource.URL) &&
+    tab.iconUrl
   ) {
-    return <img src={block.iconUrl} alt="" className="size-5 flex-shrink-0 object-contain" />;
+    return <img src={tab.iconUrl} alt="" className="size-5 flex-shrink-0 object-contain" />;
   }
-  if (block.iconSource === LauncherIconSource.BUILTIN && block.iconType) {
-    const iconItem = IconsList.find((item) => item.name === block.iconType);
+  if (tab.iconSource === LauncherIconSource.BUILTIN && tab.iconType) {
+    const iconItem = IconsList.find((item) => item.name === tab.iconType);
     if (iconItem) {
       const Icon = iconItem.ICON;
       return <Icon size={20} className="flex-shrink-0" />;
@@ -29,6 +32,10 @@ const TabBarIcon = memo(({ block }: { block: TabBarBlock }) => {
 
 TabBarIcon.displayName = 'TabBarIcon';
 
+// ============================================================================
+// Tab bar styles
+// ============================================================================
+
 const tabItemBase = cn(
   'flex flex-1 flex-col items-center justify-center',
   'cursor-pointer overflow-hidden',
@@ -38,12 +45,21 @@ const tabItemBase = cn(
   'min-w-0 border-0 bg-transparent px-1.5',
 );
 
-export const ResourceCenterTabBar = memo(() => {
-  const { tabBarBlocks, activeTab, navigateToTab, hasTabBar, isSecondaryPage } =
-    useResourceCenterContext();
+// ============================================================================
+// Tab bar component
+// ============================================================================
 
-  // Hide when no tab bar configured or when on a secondary (deeper) page
-  if (!hasTabBar || isSecondaryPage) return null;
+export const ResourceCenterTabBar = memo(() => {
+  const { data, nav, actions, showTabBar } = useResourceCenterContext();
+
+  if (!showTabBar) return null;
+
+  const tabs = data.tabs;
+  const homeTab = tabs[0];
+  const otherTabs = tabs.slice(1);
+
+  // If there's only one tab (Home), no tab bar needed
+  if (otherTabs.length === 0) return null;
 
   return (
     <div
@@ -56,35 +72,37 @@ export const ResourceCenterTabBar = memo(() => {
     >
       <div className={cn('flex h-[60px] flex-row items-stretch justify-between', 'px-1')}>
         {/* Home tab */}
-        <button
-          type="button"
-          className={cn(
-            tabItemBase,
-            activeTab === null
-              ? 'text-sdk-btn-primary'
-              : 'text-sdk-foreground/40 hover:text-sdk-foreground/70',
-          )}
-          onClick={() => navigateToTab(null)}
-        >
-          <RiHomeFill size={20} className="flex-shrink-0" />
-          <span className="truncate max-w-full text-sm">Home</span>
-        </button>
-
-        {/* Dynamic tabs */}
-        {tabBarBlocks.map((block) => (
+        {homeTab && (
           <button
-            key={block.id}
             type="button"
             className={cn(
               tabItemBase,
-              activeTab === block.id
+              nav.activeTabId === homeTab.id
                 ? 'text-sdk-btn-primary'
                 : 'text-sdk-foreground/40 hover:text-sdk-foreground/70',
             )}
-            onClick={() => navigateToTab(block.id)}
+            onClick={() => actions.switchTab(homeTab.id)}
           >
-            <TabBarIcon block={block} />
-            <span className="truncate max-w-full text-sm">{block.name || 'Untitled'}</span>
+            <RiHomeFill size={20} className="flex-shrink-0" />
+            <span className="truncate max-w-full text-sm">Home</span>
+          </button>
+        )}
+
+        {/* Other tabs */}
+        {otherTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={cn(
+              tabItemBase,
+              nav.activeTabId === tab.id
+                ? 'text-sdk-btn-primary'
+                : 'text-sdk-foreground/40 hover:text-sdk-foreground/70',
+            )}
+            onClick={() => actions.switchTab(tab.id)}
+          >
+            <TabBarIcon tab={tab} />
+            <span className="truncate max-w-full text-sm">{tab.name || 'Untitled'}</span>
           </button>
         ))}
       </div>

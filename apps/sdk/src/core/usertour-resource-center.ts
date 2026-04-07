@@ -1,10 +1,8 @@
 import {
-  ContactLiveChatProvider,
   ContentEditorClickableElement,
   ContentEditorRoot,
   CustomContentSession,
   ResourceCenterBlockType,
-  ResourceCenterContactBlock,
   ResourceCenterContentListBlock,
   ResourceCenterData,
   ThemeTypesSetting,
@@ -38,8 +36,11 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     const themeSettings = store?.themeSettings;
     const checklist = this.getActivatedChecklist() ?? undefined;
 
+    // Check if any tab contains a checklist block
     const hasChecklistBlock =
-      resourceCenterData?.blocks?.some((block) => block.type === 'checklist') ?? false;
+      resourceCenterData?.tabs?.some((tab) =>
+        tab.blocks.some((block) => block.type === 'checklist'),
+      ) ?? false;
 
     if (!hasChecklistBlock || !checklist) {
       return {
@@ -126,7 +127,12 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
 
   async handleBlockClick(blockId: string): Promise<void> {
     const store = this.getStoreData();
-    const block = store?.resourceCenterData?.blocks?.find((b) => b.id === blockId);
+    // Search for block across all tabs
+    let block = null;
+    for (const tab of store?.resourceCenterData?.tabs ?? []) {
+      block = tab.blocks.find((b) => b.id === blockId);
+      if (block) break;
+    }
     if (!block || isDisplayOnlyBlockType(block.type)) {
       return;
     }
@@ -136,57 +142,6 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     // Handle clickedActions for ACTION blocks
     if (block.type === ResourceCenterBlockType.ACTION && block.clickedActions?.length > 0) {
       await this.handleActions(block.clickedActions);
-    }
-  }
-
-  handleLiveChatClick(block: ResourceCenterContactBlock): void {
-    try {
-      const provider = block.liveChatProvider;
-      switch (provider) {
-        case ContactLiveChatProvider.CRISP:
-          if (typeof (window as any).$crisp !== 'undefined') {
-            (window as any).$crisp.push(['do', 'chat:open']);
-          }
-          break;
-        case ContactLiveChatProvider.FRESHCHAT:
-          if (typeof (window as any).fcWidget !== 'undefined') {
-            (window as any).fcWidget.open();
-          }
-          break;
-        case ContactLiveChatProvider.HELP_SCOUT:
-          if (typeof (window as any).Beacon !== 'undefined') {
-            (window as any).Beacon('open');
-          }
-          break;
-        case ContactLiveChatProvider.HUBSPOT:
-          if (typeof (window as any).HubSpotConversations !== 'undefined') {
-            (window as any).HubSpotConversations.widget.open();
-          }
-          break;
-        case ContactLiveChatProvider.INTERCOM:
-          if (typeof (window as any).Intercom !== 'undefined') {
-            (window as any).Intercom('show');
-          }
-          break;
-        case ContactLiveChatProvider.ZENDESK_CLASSIC:
-          if (typeof (window as any).zE !== 'undefined') {
-            (window as any).zE('webWidget', 'open');
-          }
-          break;
-        case ContactLiveChatProvider.ZENDESK_MESSENGER:
-          if (typeof (window as any).zE !== 'undefined') {
-            (window as any).zE('messenger', 'open');
-          }
-          break;
-        case ContactLiveChatProvider.CUSTOM:
-          if (block.customLiveChatCode) {
-            const fn = new Function(block.customLiveChatCode);
-            fn();
-          }
-          break;
-      }
-    } catch (error) {
-      logger.error('Failed to open live chat:', error);
     }
   }
 
@@ -236,13 +191,15 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     _context: CustomStoreDataContext,
   ): Promise<Partial<ResourceCenterStore>> {
     const resourceCenterData = this.getResourceCenterData();
-    // Evaluate button conditions in message block contents
-    if (resourceCenterData?.blocks) {
-      for (const block of resourceCenterData.blocks) {
-        if (block.type === 'message' && block.content) {
-          block.content = (await this.evaluateButtonConditionsInData(
-            block.content as ContentEditorRoot[],
-          )) as typeof block.content;
+    // Evaluate button conditions in message block contents across all tabs
+    if (resourceCenterData?.tabs) {
+      for (const tab of resourceCenterData.tabs) {
+        for (const block of tab.blocks) {
+          if (block.type === 'message' && block.content) {
+            block.content = (await this.evaluateButtonConditionsInData(
+              block.content as ContentEditorRoot[],
+            )) as typeof block.content;
+          }
         }
       }
     }

@@ -696,7 +696,11 @@ export const buildResourceCenterClickedEventData = (
   }
 
   const resourceCenterData = session.version.data as unknown as ResourceCenterData;
-  const block = resourceCenterData?.blocks?.find((b) => b.id === blockId);
+  let block = null;
+  for (const tab of resourceCenterData?.tabs ?? []) {
+    block = tab.blocks.find((b) => b.id === blockId);
+    if (block) break;
+  }
   if (!block) {
     return null;
   }

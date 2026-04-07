@@ -376,6 +376,7 @@ export class ContentDataService {
     // Find all published versions with content, filtered by contentTypes in Prisma query
     const publishedContents = await this.prisma.content.findMany({
       where: {
+        deleted: false,
         contentOnEnvironments: {
           some: {
             environmentId: environment.id,

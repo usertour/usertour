@@ -2,9 +2,8 @@
 export { useResourceCenterContext } from './context';
 export type {
   ResourceCenterContextValue,
-  ContactPageType,
   ContentListDisplayItem,
-  TabBarBlock,
+  ResourceCenterNavigationActions,
 } from './context';
 
 // Root
@@ -38,14 +37,13 @@ export {
   ResourceCenterBlocks,
   ResourceCenterMessageBlockView,
   ResourceCenterChecklistBlockView,
-  ResourceCenterSubPageBlockView,
-  ResourceCenterSubPageContent,
-  ResourceCenterKnowledgeBaseBlockView,
-  ResourceCenterKnowledgeBaseContent,
-  ResourceCenterContactBlockView,
-  ResourceCenterContactPageContent,
-  ResourceCenterContentListBlockView,
-  ResourceCenterContentListContent,
+  ResourceCenterActionBlockView,
+  BlockIcon,
+  NavigableBlockRow,
+  SubPageDetail,
+  KnowledgeBaseDetail,
+  ContentListDetail,
+  DetailView,
 } from './resource-center-body';
 export type { KnowledgeBaseArticle } from './resource-center-body';
 

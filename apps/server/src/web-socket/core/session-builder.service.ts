@@ -446,11 +446,13 @@ export class SessionBuilderService {
     // Extract attribute codes from message blocks
     const attrCodes: string[] = [];
     const buttonAttrIds: string[] = [];
-    if (resourceCenterData?.blocks) {
-      for (const block of resourceCenterData.blocks) {
-        if (block.type === 'message' && block.content) {
-          attrCodes.push(...extractBannerAttrCodes(block.content));
-          buttonAttrIds.push(...extractButtonConditionAttributeIds({ contents: block.content }));
+    if (resourceCenterData?.tabs) {
+      for (const tab of resourceCenterData.tabs) {
+        for (const block of tab.blocks) {
+          if (block.type === 'message' && block.content) {
+            attrCodes.push(...extractBannerAttrCodes(block.content));
+            buttonAttrIds.push(...extractButtonConditionAttributeIds({ contents: block.content }));
+          }
         }
       }
     }

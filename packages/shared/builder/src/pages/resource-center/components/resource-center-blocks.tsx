@@ -10,7 +10,6 @@ import {
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -96,7 +95,6 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
       (block.type === ResourceCenterBlockType.ACTION ||
         block.type === ResourceCenterBlockType.SUB_PAGE ||
         block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
-        block.type === ResourceCenterBlockType.CONTACT ||
         block.type === ResourceCenterBlockType.CONTENT_LIST) &&
       block.name
         ? block.name
@@ -173,11 +171,16 @@ const SortableBlock = ({ id, onClick, block }: any) => {
 
 export const ResourceCenterBlocks = () => {
   const { setCurrentMode } = useBuilderContext();
-  const { localData, updateLocalData, setCurrentBlock, removeBlock } = useResourceCenterContext();
+  const { localData, currentTabId, setCurrentBlock, removeBlock, reorderBlocks } =
+    useResourceCenterContext();
 
   if (!localData) {
     return null;
   }
+
+  // Get current tab's blocks
+  const currentTab = localData.tabs.find((t) => t.id === currentTabId);
+  const blocks = currentTab?.blocks ?? [];
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
@@ -206,15 +209,16 @@ export const ResourceCenterBlocks = () => {
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (active && over && active.id !== over?.id) {
-      const from = localData.blocks.findIndex((block) => block.id === active.id);
-      const to = localData.blocks.findIndex((block) => block.id === over.id);
-      const newList = arrayMove(localData.blocks, from, to);
-      updateLocalData({ blocks: newList });
+      const from = blocks.findIndex((block) => block.id === active.id);
+      const to = blocks.findIndex((block) => block.id === over.id);
+      if (from !== -1 && to !== -1) {
+        reorderBlocks(from, to);
+      }
       setActiveId(null);
     }
   };
 
-  const activeBlock = localData.blocks.find((block) => block.id === activeId);
+  const activeBlock = blocks.find((block) => block.id === activeId);
 
   return (
     <>
@@ -227,8 +231,8 @@ export const ResourceCenterBlocks = () => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={localData.blocks} strategy={verticalListSortingStrategy}>
-          {localData.blocks.map((block) => (
+        <SortableContext items={blocks} strategy={verticalListSortingStrategy}>
+          {blocks.map((block) => (
             <SortableBlock id={block.id} onClick={handleOnClick} key={block.id} block={block} />
           ))}
         </SortableContext>

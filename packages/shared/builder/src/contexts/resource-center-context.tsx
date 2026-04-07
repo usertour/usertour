@@ -1,11 +1,13 @@
 import {
   ResourceCenterBlock,
   ResourceCenterData,
+  ResourceCenterTab,
   DEFAULT_RESOURCE_CENTER_DATA,
+  LauncherIconSource,
 } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
-import { deepmerge } from 'deepmerge-ts';
 import { isEqual } from 'lodash';
+import { uuidV4 } from '@usertour/helpers';
 import {
   ReactNode,
   createContext,
@@ -32,6 +34,16 @@ export interface ResourceCenterContextValue {
   localData: ResourceCenterData | null;
   update: (data: ResourceCenterData) => Promise<void>;
   updateLocalData: (updates: Partial<ResourceCenterData>) => void;
+
+  // Tab management
+  currentTabId: string | null;
+  setCurrentTabId: (tabId: string | null) => void;
+  addTab: (tab: ResourceCenterTab) => void;
+  removeTab: (tabId: string) => void;
+  updateTab: (tabId: string, updates: Partial<ResourceCenterTab>) => void;
+  reorderTabs: (startIndex: number, endIndex: number) => void;
+
+  // Block management (operates on currentTabId's blocks)
   addBlock: (block: ResourceCenterBlock) => void;
   removeBlock: (id: string) => void;
   updateBlock: (id: string, updates: Partial<ResourceCenterBlock>) => void;
@@ -45,6 +57,48 @@ export interface ResourceCenterContextValue {
 export const ResourceCenterContext = createContext<ResourceCenterContextValue | undefined>(
   undefined,
 );
+
+/** Helper: update blocks within a specific tab */
+function updateTabBlocks(
+  data: ResourceCenterData,
+  tabId: string,
+  updater: (blocks: ResourceCenterBlock[]) => ResourceCenterBlock[],
+): ResourceCenterData {
+  return {
+    ...data,
+    tabs: data.tabs.map((tab) =>
+      tab.id === tabId ? { ...tab, blocks: updater(tab.blocks) } : tab,
+    ),
+  };
+}
+
+/** Ensure data always has at least one tab (Home) */
+function ensureResourceCenterData(
+  raw: Partial<ResourceCenterData> & { blocks?: ResourceCenterBlock[] },
+): ResourceCenterData {
+  const merged: ResourceCenterData = {
+    buttonText: raw.buttonText ?? DEFAULT_RESOURCE_CENTER_DATA.buttonText,
+    headerText: raw.headerText ?? DEFAULT_RESOURCE_CENTER_DATA.headerText,
+    tabs: raw.tabs ?? DEFAULT_RESOURCE_CENTER_DATA.tabs,
+  };
+
+  if (merged.tabs.length > 0) {
+    return merged;
+  }
+
+  const homeTab: ResourceCenterTab = {
+    id: uuidV4(),
+    name: 'Home',
+    iconSource: LauncherIconSource.BUILTIN,
+    iconType: 'home-smile-2-line',
+    blocks: raw.blocks ?? [],
+  };
+
+  return {
+    ...merged,
+    tabs: [homeTab],
+  };
+}
 
 export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.Element {
   const { children } = props;
@@ -61,13 +115,21 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
     if (!currentVersion) {
       return null;
     }
-    return deepmerge(DEFAULT_RESOURCE_CENTER_DATA, currentVersion?.data ?? {});
+    return ensureResourceCenterData(currentVersion?.data ?? {});
   }, [currentVersion]);
 
   const { invoke: updateContentVersionMutation } = useUpdateContentVersionMutation();
   const { toast } = useToast();
   const [localData, setLocalData] = useState<ResourceCenterData | null>(data);
   const [currentBlock, setCurrentBlock] = useState<ResourceCenterBlock | null>(null);
+  const [currentTabId, setCurrentTabId] = useState<string | null>(null);
+
+  // Auto-select first tab when data loads
+  useEffect(() => {
+    if (localData?.tabs?.length && !currentTabId) {
+      setCurrentTabId(localData.tabs[0].id);
+    }
+  }, [localData, currentTabId]);
 
   const lastSavedDataRef = useRef<ResourceCenterData | null>(null);
 
@@ -106,130 +168,136 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
     }
   }, 500);
 
-  const updateLocalData = useCallback(
-    (updates: Partial<ResourceCenterData>) => {
+  /** Helper: set local data and trigger debounced save */
+  const setAndSave = useCallback(
+    (updater: (prev: ResourceCenterData) => ResourceCenterData) => {
       setLocalData((prev) => {
-        if (!prev) {
-          return null;
-        }
-        const newData = { ...prev, ...updates };
-
+        if (!prev) return null;
+        const newData = updater(prev);
         if (!isEqual(newData, lastSavedDataRef.current)) {
           debouncedSave(newData);
         }
-
         return newData;
       });
     },
     [debouncedSave],
   );
 
+  const updateLocalData = useCallback(
+    (updates: Partial<ResourceCenterData>) => {
+      setAndSave((prev) => ({ ...prev, ...updates }));
+    },
+    [setAndSave],
+  );
+
+  // ── Tab operations ────────────────────────────────────────────────
+
+  const addTab = useCallback(
+    (tab: ResourceCenterTab) => {
+      setAndSave((prev) => ({ ...prev, tabs: [...prev.tabs, tab] }));
+      setCurrentTabId(tab.id);
+    },
+    [setAndSave],
+  );
+
+  const removeTab = useCallback(
+    (tabId: string) => {
+      setAndSave((prev) => {
+        const newTabs = prev.tabs.filter((t) => t.id !== tabId);
+        return { ...prev, tabs: newTabs };
+      });
+      // If removing the current tab, switch to first tab
+      setCurrentTabId((prevTabId) => {
+        if (prevTabId === tabId) {
+          return localData?.tabs[0]?.id ?? null;
+        }
+        return prevTabId;
+      });
+    },
+    [setAndSave, localData],
+  );
+
+  const updateTab = useCallback(
+    (tabId: string, updates: Partial<ResourceCenterTab>) => {
+      setAndSave((prev) => ({
+        ...prev,
+        tabs: prev.tabs.map((tab) => (tab.id === tabId ? { ...tab, ...updates } : tab)),
+      }));
+    },
+    [setAndSave],
+  );
+
+  const reorderTabs = useCallback(
+    (startIndex: number, endIndex: number) => {
+      setAndSave((prev) => {
+        const tabs = [...prev.tabs];
+        const [removed] = tabs.splice(startIndex, 1);
+        tabs.splice(endIndex, 0, removed);
+        return { ...prev, tabs };
+      });
+    },
+    [setAndSave],
+  );
+
+  // ── Block operations (scoped to currentTabId) ─────────────────────
+
   const saveCurrentBlock = useCallback(() => {
-    if (!currentBlock) {
+    if (!currentBlock || !currentTabId) {
       return;
     }
-    setLocalData((prev) => {
-      if (!prev) {
-        return null;
-      }
-      const newData = {
-        ...prev,
-        blocks: prev.blocks.map((block) => (block.id === currentBlock.id ? currentBlock : block)),
-      };
-
-      if (!isEqual(newData, lastSavedDataRef.current)) {
-        debouncedSave(newData);
-      }
-
-      return newData;
-    });
+    setAndSave((prev) =>
+      updateTabBlocks(prev, currentTabId, (blocks) =>
+        blocks.map((block) => (block.id === currentBlock.id ? currentBlock : block)),
+      ),
+    );
     setCurrentMode({ mode: BuilderMode.RESOURCE_CENTER });
-  }, [currentBlock, setCurrentMode, debouncedSave]);
+  }, [currentBlock, currentTabId, setCurrentMode, setAndSave]);
 
   const addBlock = useCallback(
     (block: ResourceCenterBlock) => {
-      setLocalData((prev) => {
-        if (!prev) {
-          return null;
-        }
-        const newData = {
-          ...prev,
-          blocks: [...prev.blocks, block],
-        };
-
-        if (!isEqual(newData, lastSavedDataRef.current)) {
-          debouncedSave(newData);
-        }
-
-        return newData;
-      });
+      if (!currentTabId) return;
+      setAndSave((prev) => updateTabBlocks(prev, currentTabId, (blocks) => [...blocks, block]));
     },
-    [debouncedSave],
+    [currentTabId, setAndSave],
   );
 
   const removeBlock = useCallback(
     (id: string) => {
-      setLocalData((prev) => {
-        if (!prev) {
-          return null;
-        }
-        const newData = {
-          ...prev,
-          blocks: prev.blocks.filter((block) => block.id !== id),
-        };
-
-        if (!isEqual(newData, lastSavedDataRef.current)) {
-          debouncedSave(newData);
-        }
-
-        return newData;
-      });
+      if (!currentTabId) return;
+      setAndSave((prev) =>
+        updateTabBlocks(prev, currentTabId, (blocks) => blocks.filter((b) => b.id !== id)),
+      );
     },
-    [debouncedSave],
+    [currentTabId, setAndSave],
   );
 
   const updateBlock = useCallback(
     (id: string, updates: Partial<ResourceCenterBlock>) => {
-      setLocalData((prev) => {
-        if (!prev) {
-          return null;
-        }
-        const newData = {
-          ...prev,
-          blocks: prev.blocks.map((block) =>
+      if (!currentTabId) return;
+      setAndSave((prev) =>
+        updateTabBlocks(prev, currentTabId, (blocks) =>
+          blocks.map((block) =>
             block.id === id ? ({ ...block, ...updates } as ResourceCenterBlock) : block,
           ),
-        };
-
-        if (!isEqual(newData, lastSavedDataRef.current)) {
-          debouncedSave(newData);
-        }
-
-        return newData;
-      });
+        ),
+      );
     },
-    [debouncedSave],
+    [currentTabId, setAndSave],
   );
 
   const reorderBlocks = useCallback(
     (startIndex: number, endIndex: number) => {
-      setLocalData((prev) => {
-        if (!prev) {
-          return null;
-        }
-        const blocks = [...prev.blocks];
-        const [removed] = blocks.splice(startIndex, 1);
-        blocks.splice(endIndex, 0, removed);
-        const newData = { ...prev, blocks };
-
-        if (!isEqual(newData, lastSavedDataRef.current)) {
-          debouncedSave(newData);
-        }
-
-        return newData;
-      });
+      if (!currentTabId) return;
+      setAndSave((prev) =>
+        updateTabBlocks(prev, currentTabId, (blocks) => {
+          const newBlocks = [...blocks];
+          const [removed] = newBlocks.splice(startIndex, 1);
+          newBlocks.splice(endIndex, 0, removed);
+          return newBlocks;
+        }),
+      );
     },
-    [debouncedSave],
+    [currentTabId, setAndSave],
   );
 
   const flushSave = useCallback(async () => {
@@ -259,6 +327,12 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
     localData,
     update,
     updateLocalData,
+    currentTabId,
+    setCurrentTabId,
+    addTab,
+    removeTab,
+    updateTab,
+    reorderTabs,
     removeBlock,
     updateBlock,
     reorderBlocks,

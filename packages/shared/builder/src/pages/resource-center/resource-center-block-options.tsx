@@ -4,9 +4,7 @@ import {
   RiBookOpenFill,
   RiCheckboxCircleFill,
   RiFileTextFill,
-  RiFlashlightFill,
   RiListCheck3,
-  RiMailFill,
   RiPagesFill,
   RiSeparator,
 } from '@usertour-packages/icons';
@@ -28,10 +26,7 @@ export const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
   [ResourceCenterBlockType.MESSAGE]: 'Message',
   [ResourceCenterBlockType.DIVIDER]: 'Divider line',
   [ResourceCenterBlockType.SUB_PAGE]: 'Sub-page',
-  [ResourceCenterBlockType.CONTACT]: 'Contact',
   [ResourceCenterBlockType.CONTENT_LIST]: 'List of flows/checklists',
-  [ResourceCenterBlockType.AI_ASSISTANT]: 'AI Assistant',
-  [ResourceCenterBlockType.ANNOUNCEMENTS]: 'Announcements',
   [ResourceCenterBlockType.KNOWLEDGE_BASE]: 'Knowledge base',
   [ResourceCenterBlockType.CHECKLIST]: 'Checklist',
 };
@@ -59,13 +54,6 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     icon: RiPagesFill,
   },
   {
-    key: ResourceCenterBlockType.CONTACT,
-    value: ResourceCenterBlockType.CONTACT,
-    label: 'Contact',
-    description: 'Email, Phone, Live-chat',
-    icon: RiMailFill,
-  },
-  {
     key: ResourceCenterBlockType.CONTENT_LIST,
     value: ResourceCenterBlockType.CONTENT_LIST,
     label: 'List of flows/checklists',
@@ -78,14 +66,6 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     label: 'Checklist',
     description: 'Embed an active checklist',
     icon: RiCheckboxCircleFill,
-  },
-  {
-    key: ResourceCenterBlockType.AI_ASSISTANT,
-    value: ResourceCenterBlockType.AI_ASSISTANT,
-    label: 'Adoption Agent',
-    description: 'Instant answers from Adoption agent',
-    icon: RiFlashlightFill,
-    disabled: true,
   },
   {
     key: ResourceCenterBlockType.KNOWLEDGE_BASE,

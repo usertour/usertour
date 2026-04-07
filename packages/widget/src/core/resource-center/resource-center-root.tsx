@@ -1,10 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  ResourceCenterContactBlock,
   ResourceCenterContentListBlock,
   ResourceCenterData,
-  ResourceCenterKnowledgeBaseBlock,
-  ResourceCenterSubPageBlock,
+  ResourceCenterNavigationState,
+  ResourceCenterPageEntry,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
@@ -12,11 +11,19 @@ import { ResourceCenterBlockType } from '@usertour/types';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
 import {
   ResourceCenterRootContext,
-  type ContactPageType,
   type ContentListDisplayItem,
-  type TabBarBlock,
+  type ResourceCenterNavigationActions,
 } from './context';
 import { RC_DEFAULTS } from './constants';
+
+// ============================================================================
+// Helper: check if a block is navigable (has a detail view)
+// ============================================================================
+
+const isNavigableBlockType = (type: string): boolean =>
+  type === ResourceCenterBlockType.SUB_PAGE ||
+  type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
+  type === ResourceCenterBlockType.CONTENT_LIST;
 
 interface ResourceCenterRootProps {
   children: React.ReactNode;
@@ -34,7 +41,6 @@ interface ResourceCenterRootProps {
   onBlockClick?: (blockId: string) => Promise<void>;
   checklistSlot?: React.ReactNode;
   showMadeWith?: boolean;
-  onLiveChatClick?: (block: ResourceCenterContactBlock) => void;
   contentListItems?: ContentListDisplayItem[];
   onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
@@ -57,7 +63,6 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onBlockClick,
     checklistSlot,
     showMadeWith = true,
-    onLiveChatClick,
     contentListItems: contentListItemsProp = [],
     onContentListNavigate,
     onContentListItemClick,
@@ -66,112 +71,92 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
 
   const isOpen = expanded;
   const [isAnimating, setIsAnimating] = useState(false);
-  const [activeSubPage, setActiveSubPage] = useState<ResourceCenterSubPageBlock | null>(null);
-  const [activeKnowledgeBase, setActiveKnowledgeBase] =
-    useState<ResourceCenterKnowledgeBaseBlock | null>(null);
-  const [activeContactPage, setActiveContactPage] = useState<{
-    block: ResourceCenterContactBlock;
-    page: ContactPageType;
-  } | null>(null);
-  const [activeContentList, setActiveContentList] = useState<ResourceCenterContentListBlock | null>(
-    null,
-  );
-  const [activeTab, setActiveTab] = useState<string | null>(null);
   const animationTimerRef = useRef<number | null>(null);
 
-  // Compute tab bar blocks (blocks with showInTabBar=true)
-  const tabBarBlocks = useMemo(() => {
-    return data.blocks.filter(
-      (b): b is TabBarBlock =>
-        (b.type === ResourceCenterBlockType.SUB_PAGE ||
-          b.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
-          b.type === ResourceCenterBlockType.CONTENT_LIST) &&
-        b.showInTabBar === true,
-    );
-  }, [data.blocks]);
+  // ── Navigation state ────────────────────────────────────────────────
+  const defaultTabId = data.tabs[0]?.id ?? '';
 
-  const hasTabBar = tabBarBlocks.length > 0;
+  const [nav, setNav] = useState<ResourceCenterNavigationState>({
+    activeTabId: defaultTabId,
+    pageStack: [],
+  });
 
-  const navigateToSubPage = useCallback((block: ResourceCenterSubPageBlock) => {
-    setActiveSubPage(block);
-    setActiveKnowledgeBase(null);
-    setActiveContactPage(null);
-    setActiveContentList(null);
-  }, []);
+  // Reset navigation when data changes (e.g. tabs restructured)
+  useEffect(() => {
+    const tabExists = data.tabs.some((t) => t.id === nav.activeTabId);
+    if (!tabExists) {
+      setNav({ activeTabId: data.tabs[0]?.id ?? '', pageStack: [] });
+    }
+  }, [data.tabs, nav.activeTabId]);
 
-  const navigateToKnowledgeBase = useCallback((block: ResourceCenterKnowledgeBaseBlock) => {
-    setActiveKnowledgeBase(block);
-    setActiveSubPage(null);
-    setActiveContactPage(null);
-    setActiveContentList(null);
-  }, []);
+  // ── Navigation actions ──────────────────────────────────────────────
+  const switchTab = useCallback(
+    (tabId: string) => {
+      const tab = data.tabs.find((t) => t.id === tabId);
+      if (!tab) return;
 
-  const navigateToContactPage = useCallback(
-    (block: ResourceCenterContactBlock, page: ContactPageType) => {
-      setActiveContactPage({ block, page });
-      setActiveSubPage(null);
-      setActiveKnowledgeBase(null);
-      setActiveContentList(null);
+      // If the tab has exactly one navigable block, auto-push its detail view
+      const navigableBlocks = tab.blocks.filter((b) => isNavigableBlockType(b.type));
+      if (navigableBlocks.length === 1) {
+        const block = navigableBlocks[0];
+        const entry = { type: block.type, block } as ResourceCenterPageEntry;
+        setNav({ activeTabId: tabId, pageStack: [entry] });
+
+        // Trigger content list fetch if needed
+        if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
+          onContentListNavigate?.(block as ResourceCenterContentListBlock);
+        }
+      } else {
+        setNav({ activeTabId: tabId, pageStack: [] });
+      }
     },
-    [],
+    [data.tabs, onContentListNavigate],
   );
 
-  const navigateToContentList = useCallback(
-    (block: ResourceCenterContentListBlock) => {
-      setActiveContentList(block);
-      setActiveSubPage(null);
-      setActiveKnowledgeBase(null);
-      setActiveContactPage(null);
-      onContentListNavigate?.(block);
+  const push = useCallback(
+    (entry: ResourceCenterPageEntry) => {
+      // Trigger content list fetch if navigating to a content list
+      if (entry.type === ResourceCenterBlockType.CONTENT_LIST) {
+        onContentListNavigate?.(entry.block as ResourceCenterContentListBlock);
+      }
+      setNav((prev) => ({
+        ...prev,
+        pageStack: [...prev.pageStack, entry],
+      }));
     },
     [onContentListNavigate],
   );
 
-  const navigateToTab = useCallback(
-    (blockId: string | null) => {
-      // Clear any deeper navigation state
-      setActiveSubPage(null);
-      setActiveKnowledgeBase(null);
-      setActiveContactPage(null);
-      setActiveContentList(null);
-      setActiveTab(blockId);
+  const pop = useCallback(() => {
+    setNav((prev) => ({
+      ...prev,
+      pageStack: prev.pageStack.slice(0, -1),
+    }));
+  }, []);
 
-      // When navigating to a tab, auto-navigate to the block's content view
-      if (blockId !== null) {
-        const block = data.blocks.find((b) => b.id === blockId);
-        if (block) {
-          if (block.type === ResourceCenterBlockType.SUB_PAGE) {
-            setActiveSubPage(block as ResourceCenterSubPageBlock);
-          } else if (block.type === ResourceCenterBlockType.KNOWLEDGE_BASE) {
-            setActiveKnowledgeBase(block as ResourceCenterKnowledgeBaseBlock);
-          } else if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
-            const clBlock = block as ResourceCenterContentListBlock;
-            setActiveContentList(clBlock);
-            onContentListNavigate?.(clBlock);
-          }
-        }
-      }
-    },
-    [data.blocks, onContentListNavigate],
+  const popToRoot = useCallback(() => {
+    setNav((prev) => ({
+      ...prev,
+      pageStack: [],
+    }));
+  }, []);
+
+  const actions: ResourceCenterNavigationActions = useMemo(
+    () => ({ switchTab, push, pop, popToRoot }),
+    [switchTab, push, pop, popToRoot],
   );
 
-  const navigateBack = useCallback(() => {
-    // If on a tab (first-level page), back goes to Home
-    if (activeTab !== null) {
-      setActiveTab(null);
-      setActiveSubPage(null);
-      setActiveKnowledgeBase(null);
-      setActiveContactPage(null);
-      setActiveContentList(null);
-      return;
-    }
-    // Otherwise, clear the secondary page
-    setActiveSubPage(null);
-    setActiveKnowledgeBase(null);
-    setActiveContactPage(null);
-    setActiveContentList(null);
-  }, [activeTab]);
+  // ── Derived state ───────────────────────────────────────────────────
+  const currentTab = useMemo(
+    () => data.tabs.find((t) => t.id === nav.activeTabId) ?? data.tabs[0],
+    [data.tabs, nav.activeTabId],
+  );
 
+  const currentPage = nav.pageStack.length > 0 ? nav.pageStack[nav.pageStack.length - 1] : null;
+  const showTabBar = data.tabs.length > 1 && nav.pageStack.length === 0;
+  const showBackButton = nav.pageStack.length > 0;
+
+  // ── Animation ───────────────────────────────────────────────────────
   const handleExpandedChange = useCallback(
     async (open: boolean) => {
       const duration =
@@ -197,13 +182,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     };
   }, []);
 
-  // A page is "secondary" (shows back button, hides tab bar) when navigating
-  // to a sub-page/kb/contact/content-list from Home (i.e. not via a tab).
-  // Tab pages are first-level (no back button, tab bar visible).
-  const isSecondaryPage =
-    activeTab === null &&
-    !!(activeSubPage || activeKnowledgeBase || activeContactPage || activeContentList);
-
+  // ── Context value ───────────────────────────────────────────────────
   const contextValue = useMemo(
     () => ({
       globalStyle,
@@ -222,23 +201,14 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onBlockClick,
       checklistSlot,
       showMadeWith,
-      isSecondaryPage,
-      activeSubPage,
-      navigateToSubPage,
-      activeKnowledgeBase,
-      navigateToKnowledgeBase,
-      activeContactPage,
-      navigateToContactPage,
-      onLiveChatClick,
-      navigateBack,
-      activeContentList,
-      navigateToContentList,
+      nav,
+      actions,
+      currentTab,
+      currentPage,
+      showTabBar,
+      showBackButton,
       contentListItems: contentListItemsProp,
       onContentListItemClick,
-      tabBarBlocks,
-      activeTab,
-      navigateToTab,
-      hasTabBar,
     }),
     [
       globalStyle,
@@ -257,23 +227,14 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onBlockClick,
       checklistSlot,
       showMadeWith,
-      isSecondaryPage,
-      activeSubPage,
-      navigateToSubPage,
-      activeKnowledgeBase,
-      navigateToKnowledgeBase,
-      activeContactPage,
-      navigateToContactPage,
-      onLiveChatClick,
-      navigateBack,
-      activeContentList,
-      navigateToContentList,
+      nav,
+      actions,
+      currentTab,
+      currentPage,
+      showTabBar,
+      showBackButton,
       contentListItemsProp,
       onContentListItemClick,
-      tabBarBlocks,
-      activeTab,
-      navigateToTab,
-      hasTabBar,
     ],
   );
 

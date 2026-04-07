@@ -1,15 +1,16 @@
 import { createContext, useContext } from 'react';
 import type {
-  ResourceCenterContactBlock,
-  ResourceCenterContentListBlock,
   ResourceCenterData,
-  ResourceCenterKnowledgeBaseBlock,
-  ResourceCenterSubPageBlock,
+  ResourceCenterNavigationState,
+  ResourceCenterPageEntry,
+  ResourceCenterTab,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
 
-export type ContactPageType = 'email' | 'phone';
+// ============================================================================
+// Content list display item (resolved from ResourceCenterBlockContentItem)
+// ============================================================================
 
 export interface ContentListDisplayItem {
   contentId: string;
@@ -17,50 +18,65 @@ export interface ContentListDisplayItem {
   name: string;
 }
 
-/** A block that supports showInTabBar */
-export type TabBarBlock =
-  | ResourceCenterSubPageBlock
-  | ResourceCenterKnowledgeBaseBlock
-  | ResourceCenterContentListBlock;
+// ============================================================================
+// Navigation actions
+// ============================================================================
+
+export interface ResourceCenterNavigationActions {
+  /** Switch to a tab by ID. Clears the page stack. */
+  switchTab: (tabId: string) => void;
+  /** Push a detail page onto the stack. */
+  push: (entry: ResourceCenterPageEntry) => void;
+  /** Pop the top page off the stack. If stack is empty, does nothing. */
+  pop: () => void;
+  /** Clear the entire page stack, staying on the current tab. */
+  popToRoot: () => void;
+}
+
+// ============================================================================
+// Context value
+// ============================================================================
 
 export interface ResourceCenterContextValue {
-  globalStyle: string;
-  themeSetting: ThemeTypesSetting;
+  // Config
   data: ResourceCenterData;
-  launcherText?: string;
-  badgeCount: number;
-  uncompletedCount: number;
+  themeSetting: ThemeTypesSetting;
+  globalStyle: string;
+
+  // Navigation
+  nav: ResourceCenterNavigationState;
+  actions: ResourceCenterNavigationActions;
+
+  // Derived navigation state
+  currentTab: ResourceCenterTab;
+  currentPage: ResourceCenterPageEntry | null;
+  showTabBar: boolean;
+  showBackButton: boolean;
+
+  // UI state
   isOpen: boolean;
   isAnimating: boolean;
   animateFrame: boolean;
   handleExpandedChange: (expanded: boolean) => Promise<void>;
   zIndex: number;
+
+  // External data & callbacks
   userAttributes?: UserTourTypes.Attributes;
   onContentClick?: (element: any) => Promise<void>;
   onBlockClick?: (blockId: string) => Promise<void>;
+  onContentListItemClick?: (item: ContentListDisplayItem) => void;
+
+  // Content list
+  contentListItems: ContentListDisplayItem[];
+
+  // Slots
   checklistSlot?: React.ReactNode;
   showMadeWith: boolean;
-  isSecondaryPage: boolean;
-  activeSubPage: ResourceCenterSubPageBlock | null;
-  navigateToSubPage: (block: ResourceCenterSubPageBlock) => void;
-  activeKnowledgeBase: ResourceCenterKnowledgeBaseBlock | null;
-  navigateToKnowledgeBase: (block: ResourceCenterKnowledgeBaseBlock) => void;
-  activeContactPage: { block: ResourceCenterContactBlock; page: ContactPageType } | null;
-  navigateToContactPage: (block: ResourceCenterContactBlock, page: ContactPageType) => void;
-  onLiveChatClick?: (block: ResourceCenterContactBlock) => void;
-  activeContentList: ResourceCenterContentListBlock | null;
-  navigateToContentList: (block: ResourceCenterContentListBlock) => void;
-  contentListItems: ContentListDisplayItem[];
-  onContentListItemClick?: (item: ContentListDisplayItem) => void;
-  navigateBack: () => void;
-  /** Tab bar blocks (blocks with showInTabBar=true). Empty when no tab bar. */
-  tabBarBlocks: TabBarBlock[];
-  /** Currently active tab block ID, or null for Home tab */
-  activeTab: string | null;
-  /** Navigate to a specific tab (block ID or null for Home) */
-  navigateToTab: (blockId: string | null) => void;
-  /** Whether the tab bar should be visible */
-  hasTabBar: boolean;
+
+  // Launcher
+  launcherText?: string;
+  badgeCount: number;
+  uncompletedCount: number;
 }
 
 export const ResourceCenterRootContext = createContext<ResourceCenterContextValue | null>(null);

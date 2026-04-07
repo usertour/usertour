@@ -137,7 +137,6 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         userAttributes={userAttributes}
         onContentClick={resourceCenter.handleOnClick}
         onBlockClick={resourceCenter.handleBlockClick}
-        onLiveChatClick={resourceCenter.handleLiveChatClick}
         showMadeWith={!removeBranding}
         checklistSlot={checklistSlot}
         contentListItems={contentListItems ?? []}

@@ -23,6 +23,7 @@ import {
   ClickResourceCenterDto,
   ListResourceCenterBlockContentDto,
   ResourceCenterBlockContentItem,
+  ResourceCenterBlock,
   ResourceCenterBlockType,
   ContentDataType,
   ClientContext,
@@ -741,13 +742,17 @@ export class WebSocketV2Service {
     }
 
     const rcData = rcSession.version?.resourceCenter;
-    if (!rcData?.blocks) {
+    if (!rcData?.tabs) {
       return [];
     }
 
-    const block = rcData.blocks.find(
-      (b) => b.id === params.blockId && b.type === ResourceCenterBlockType.CONTENT_LIST,
-    );
+    let block: ResourceCenterBlock | undefined;
+    for (const tab of rcData.tabs) {
+      block = tab.blocks.find(
+        (b) => b.id === params.blockId && b.type === ResourceCenterBlockType.CONTENT_LIST,
+      );
+      if (block) break;
+    }
     if (!block || block.type !== ResourceCenterBlockType.CONTENT_LIST) {
       return [];
     }

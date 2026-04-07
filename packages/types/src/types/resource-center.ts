@@ -11,44 +11,44 @@ export enum ResourceCenterBlockType {
   MESSAGE = 'message',
   DIVIDER = 'divider',
   SUB_PAGE = 'sub-page',
-  CONTACT = 'contact',
   CONTENT_LIST = 'content-list',
-  AI_ASSISTANT = 'ai-assistant',
-  ANNOUNCEMENTS = 'announcements',
   KNOWLEDGE_BASE = 'knowledge-base',
   CHECKLIST = 'checklist',
+}
+
+// ============================================================================
+// Block Condition Fields (shared by all blocks — used by builder, ignored by widget)
+// ============================================================================
+
+export interface ResourceCenterBlockConditionFields {
+  onlyShowBlock: boolean;
+  onlyShowBlockConditions: RulesCondition[];
 }
 
 // ============================================================================
 // Block Definitions
 // ============================================================================
 
-export interface ResourceCenterMessageBlock {
+export interface ResourceCenterMessageBlock extends ResourceCenterBlockConditionFields {
   id: string;
   name?: string;
   type: ResourceCenterBlockType.MESSAGE;
   content: ContentEditorRoot[];
-  onlyShowTask: boolean;
-  onlyShowTaskConditions: RulesCondition[];
 }
 
-export interface ResourceCenterChecklistBlock {
+export interface ResourceCenterChecklistBlock extends ResourceCenterBlockConditionFields {
   id: string;
   name?: string;
   type: ResourceCenterBlockType.CHECKLIST;
-  onlyShowTask: boolean;
-  onlyShowTaskConditions: RulesCondition[];
 }
 
-export interface ResourceCenterDividerBlock {
+export interface ResourceCenterDividerBlock extends ResourceCenterBlockConditionFields {
   id: string;
   name?: string;
   type: ResourceCenterBlockType.DIVIDER;
-  onlyShowTask: boolean;
-  onlyShowTaskConditions: RulesCondition[];
 }
 
-export interface ResourceCenterActionBlock {
+export interface ResourceCenterActionBlock extends ResourceCenterBlockConditionFields {
   id: string;
   name: string;
   type: ResourceCenterBlockType.ACTION;
@@ -56,11 +56,9 @@ export interface ResourceCenterActionBlock {
   iconType: string;
   iconUrl?: string;
   clickedActions: RulesCondition[];
-  onlyShowTask: boolean;
-  onlyShowTaskConditions: RulesCondition[];
 }
 
-export interface ResourceCenterSubPageBlock {
+export interface ResourceCenterSubPageBlock extends ResourceCenterBlockConditionFields {
   id: string;
   name: string;
   type: ResourceCenterBlockType.SUB_PAGE;
@@ -68,10 +66,6 @@ export interface ResourceCenterSubPageBlock {
   iconType: string;
   iconUrl?: string;
   content: ContentEditorRoot[];
-  showInHome?: boolean;
-  showInTabBar?: boolean;
-  onlyShowTask: boolean;
-  onlyShowTaskConditions: RulesCondition[];
 }
 
 export enum KnowledgeBaseSearchProvider {
@@ -81,7 +75,7 @@ export enum KnowledgeBaseSearchProvider {
   ZENDESK = 'zendesk',
 }
 
-export interface ResourceCenterKnowledgeBaseBlock {
+export interface ResourceCenterKnowledgeBaseBlock extends ResourceCenterBlockConditionFields {
   id: string;
   name: string;
   type: ResourceCenterBlockType.KNOWLEDGE_BASE;
@@ -91,39 +85,6 @@ export interface ResourceCenterKnowledgeBaseBlock {
   searchProvider: KnowledgeBaseSearchProvider;
   knowledgeBaseUrl: string;
   defaultSearchQuery: string;
-  showInHome?: boolean;
-  showInTabBar?: boolean;
-  onlyShowTask: boolean;
-  onlyShowTaskConditions: RulesCondition[];
-}
-
-export enum ContactLiveChatProvider {
-  CRISP = 'crisp',
-  CUSTOM = 'custom',
-  FRESHCHAT = 'freshchat',
-  HELP_SCOUT = 'help-scout',
-  HUBSPOT = 'hubspot',
-  INTERCOM = 'intercom',
-  ZENDESK_CLASSIC = 'zendesk-classic',
-  ZENDESK_MESSENGER = 'zendesk-messenger',
-}
-
-export interface ResourceCenterContactBlock {
-  id: string;
-  name: string;
-  type: ResourceCenterBlockType.CONTACT;
-  iconSource: LauncherIconSource;
-  iconType: string;
-  iconUrl?: string;
-  emailEnabled: boolean;
-  emailContent: ContentEditorRoot[];
-  phoneEnabled: boolean;
-  phoneContent: ContentEditorRoot[];
-  liveChatEnabled: boolean;
-  liveChatProvider: ContactLiveChatProvider;
-  customLiveChatCode: string;
-  onlyShowTask: boolean;
-  onlyShowTaskConditions: RulesCondition[];
 }
 
 export interface ContentListItem {
@@ -131,7 +92,7 @@ export interface ContentListItem {
   contentType: 'flow' | 'checklist';
 }
 
-export interface ResourceCenterContentListBlock {
+export interface ResourceCenterContentListBlock extends ResourceCenterBlockConditionFields {
   id: string;
   name: string;
   type: ResourceCenterBlockType.CONTENT_LIST;
@@ -140,13 +101,9 @@ export interface ResourceCenterContentListBlock {
   iconUrl?: string;
   showSearchField: boolean;
   contentItems: ContentListItem[];
-  showInHome?: boolean;
-  showInTabBar?: boolean;
-  onlyShowTask: boolean;
-  onlyShowTaskConditions: RulesCondition[];
 }
 
-/** Union of all implemented block types. */
+/** Union of all block types. */
 export type ResourceCenterBlock =
   | ResourceCenterMessageBlock
   | ResourceCenterChecklistBlock
@@ -154,8 +111,26 @@ export type ResourceCenterBlock =
   | ResourceCenterActionBlock
   | ResourceCenterSubPageBlock
   | ResourceCenterKnowledgeBaseBlock
-  | ResourceCenterContactBlock
   | ResourceCenterContentListBlock;
+
+/** Navigable block types — blocks that push a detail view when clicked. */
+export type ResourceCenterNavigableBlock =
+  | ResourceCenterSubPageBlock
+  | ResourceCenterKnowledgeBaseBlock
+  | ResourceCenterContentListBlock;
+
+// ============================================================================
+// Tab
+// ============================================================================
+
+export interface ResourceCenterTab {
+  id: string;
+  name: string;
+  iconSource: LauncherIconSource;
+  iconType: string;
+  iconUrl?: string;
+  blocks: ResourceCenterBlock[];
+}
 
 // ============================================================================
 // Resource Center Data
@@ -164,14 +139,28 @@ export type ResourceCenterBlock =
 export interface ResourceCenterData {
   buttonText: string;
   headerText: string;
-  blocks: ResourceCenterBlock[];
+  tabs: ResourceCenterTab[];
 }
 
 export const DEFAULT_RESOURCE_CENTER_DATA: ResourceCenterData = {
   buttonText: 'Help',
   headerText: 'Resource Center',
-  blocks: [],
+  tabs: [],
 };
+
+// ============================================================================
+// Navigation (used by widget)
+// ============================================================================
+
+export type ResourceCenterPageEntry =
+  | { type: ResourceCenterBlockType.SUB_PAGE; block: ResourceCenterSubPageBlock }
+  | { type: ResourceCenterBlockType.KNOWLEDGE_BASE; block: ResourceCenterKnowledgeBaseBlock }
+  | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock };
+
+export interface ResourceCenterNavigationState {
+  activeTabId: string;
+  pageStack: ResourceCenterPageEntry[];
+}
 
 // ============================================================================
 // Theme Settings

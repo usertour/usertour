@@ -846,7 +846,9 @@ export class AnalyticsService {
     }
 
     const resourceCenterData = version.data as unknown as ResourceCenterData;
-    const blocks = (resourceCenterData.blocks || []).filter((b) => !isDisplayOnlyBlockType(b.type));
+    const blocks = (resourceCenterData.tabs ?? [])
+      .flatMap((tab) => tab.blocks)
+      .filter((b) => !isDisplayOnlyBlockType(b.type));
 
     const ret = [];
     for (const block of blocks) {

@@ -24,7 +24,6 @@ import {
   ContentDataType,
   ContentEditorElementType,
   ResourceCenterBlockType,
-  ResourceCenterContactBlock,
   ResourceCenterContentListBlock,
   ResourceCenterMessageBlock,
   ResourceCenterSubPageBlock,
@@ -41,7 +40,7 @@ const ResourceCenterEmbedContent = ({
 }: {
   messageEditSlots: Record<string, React.ReactNode>;
 }) => {
-  const { activeSubPage, activeContactPage } = useWidgetResourceCenterContext();
+  const { currentPage } = useWidgetResourceCenterContext();
   const { localData, updateBlock } = useResourceCenterContext();
   const { upload } = useAws();
   const { projectId } = useBuilderContext();
@@ -60,10 +59,16 @@ const ResourceCenterEmbedContent = ({
 
   // Build subPageEditSlot for the currently active sub-page
   const subPageEditSlot = useMemo(() => {
-    if (!activeSubPage || !localData) return undefined;
-    const block = localData.blocks.find(
-      (b) => b.id === activeSubPage.id && b.type === ResourceCenterBlockType.SUB_PAGE,
-    ) as ResourceCenterSubPageBlock | undefined;
+    if (!currentPage || currentPage.type !== ResourceCenterBlockType.SUB_PAGE || !localData)
+      return undefined;
+    // Find the block across all tabs
+    let block: ResourceCenterSubPageBlock | undefined;
+    for (const tab of localData.tabs) {
+      block = tab.blocks.find(
+        (b) => b.id === currentPage.block.id && b.type === ResourceCenterBlockType.SUB_PAGE,
+      ) as ResourceCenterSubPageBlock | undefined;
+      if (block) break;
+    }
     if (!block) return undefined;
     return (
       <ContentEditor
@@ -71,8 +76,8 @@ const ResourceCenterEmbedContent = ({
         customUploadRequest={handleCustomUploadRequest}
         initialValue={block.content}
         onValueChange={(value: ContentEditorRoot[]) => {
-          if (!isEqual(value, block.content)) {
-            updateBlock(block.id, { content: value } as any);
+          if (!isEqual(value, block!.content)) {
+            updateBlock(block!.id, { content: value } as any);
           }
         }}
         projectId={projectId}
@@ -80,39 +85,7 @@ const ResourceCenterEmbedContent = ({
         enabledElementTypes={enabledElementTypes}
       />
     );
-  }, [activeSubPage, localData, handleCustomUploadRequest, updateBlock, projectId, attributeList]);
-
-  // Build contactPageEditSlot for the currently active contact email/phone page
-  const contactPageEditSlot = useMemo(() => {
-    if (!activeContactPage || !localData) return undefined;
-    const block = localData.blocks.find(
-      (b) => b.id === activeContactPage.block.id && b.type === ResourceCenterBlockType.CONTACT,
-    ) as ResourceCenterContactBlock | undefined;
-    if (!block) return undefined;
-    const contentField = activeContactPage.page === 'email' ? 'emailContent' : 'phoneContent';
-    return (
-      <ContentEditor
-        zIndex={EXTENSION_CONTENT_POPPER}
-        customUploadRequest={handleCustomUploadRequest}
-        initialValue={block[contentField]}
-        onValueChange={(value: ContentEditorRoot[]) => {
-          if (!isEqual(value, block[contentField])) {
-            updateBlock(block.id, { [contentField]: value } as any);
-          }
-        }}
-        projectId={projectId}
-        attributes={attributeList}
-        enabledElementTypes={enabledElementTypes}
-      />
-    );
-  }, [
-    activeContactPage,
-    localData,
-    handleCustomUploadRequest,
-    updateBlock,
-    projectId,
-    attributeList,
-  ]);
+  }, [currentPage, localData, handleCustomUploadRequest, updateBlock, projectId, attributeList]);
 
   return (
     <>
@@ -121,7 +94,6 @@ const ResourceCenterEmbedContent = ({
         <ResourceCenterBlocks
           messageEditSlots={messageEditSlots}
           subPageEditSlot={subPageEditSlot}
-          contactPageEditSlot={contactPageEditSlot}
         />
       </ResourceCenterBody>
       <ResourceCenterTabBar />
@@ -211,28 +183,30 @@ export const ResourceCenterEmbed = () => {
     ContentEditorElementType.TEXT,
   ];
 
-  // Build messageEditSlots: one ContentEditor per MESSAGE block
+  // Build messageEditSlots: one ContentEditor per MESSAGE block across all tabs
   const messageEditSlots = useMemo(() => {
     if (!localData) return {};
     const slots: Record<string, React.ReactNode> = {};
-    for (const block of localData.blocks) {
-      if (block.type === ResourceCenterBlockType.MESSAGE) {
-        const msgBlock = block as ResourceCenterMessageBlock;
-        slots[block.id] = (
-          <ContentEditor
-            zIndex={EXTENSION_CONTENT_POPPER}
-            customUploadRequest={handleCustomUploadRequest}
-            initialValue={msgBlock.content}
-            onValueChange={(value: ContentEditorRoot[]) => {
-              if (!isEqual(value, msgBlock.content)) {
-                updateBlock(block.id, { content: value } as any);
-              }
-            }}
-            projectId={projectId}
-            attributes={attributeList}
-            enabledElementTypes={enabledElementTypes}
-          />
-        );
+    for (const tab of localData.tabs) {
+      for (const block of tab.blocks) {
+        if (block.type === ResourceCenterBlockType.MESSAGE) {
+          const msgBlock = block as ResourceCenterMessageBlock;
+          slots[block.id] = (
+            <ContentEditor
+              zIndex={EXTENSION_CONTENT_POPPER}
+              customUploadRequest={handleCustomUploadRequest}
+              initialValue={msgBlock.content}
+              onValueChange={(value: ContentEditorRoot[]) => {
+                if (!isEqual(value, msgBlock.content)) {
+                  updateBlock(block.id, { content: value } as any);
+                }
+              }}
+              projectId={projectId}
+              attributes={attributeList}
+              enabledElementTypes={enabledElementTypes}
+            />
+          );
+        }
       }
     }
     return slots;

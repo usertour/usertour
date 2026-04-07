@@ -1616,7 +1616,9 @@ export class UsertourCore extends Evented {
 
     const rcData = this.activatedResourceCenter?.getSnapshot()?.resourceCenterData;
     const embedded =
-      rcData?.blocks?.some((b) => b.type === ResourceCenterBlockType.CHECKLIST) ?? false;
+      rcData?.tabs?.some((tab) =>
+        tab.blocks.some((b) => b.type === ResourceCenterBlockType.CHECKLIST),
+      ) ?? false;
 
     checklist.setEmbeddedInResourceCenter(embedded);
   }

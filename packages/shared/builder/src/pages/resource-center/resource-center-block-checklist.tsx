@@ -54,11 +54,11 @@ const BlockChecklistBody = () => {
   }
 
   const handleOnlyShowChange = (value: boolean) => {
-    setCurrentBlock((prev) => (prev ? { ...prev, onlyShowTask: value } : null));
+    setCurrentBlock((prev) => (prev ? { ...prev, onlyShowBlock: value } : null));
   };
 
   const handleConditionsChange = (value: RulesCondition[]) => {
-    setCurrentBlock((prev) => (prev ? { ...prev, onlyShowTaskConditions: value } : null));
+    setCurrentBlock((prev) => (prev ? { ...prev, onlyShowBlockConditions: value } : null));
   };
 
   return (
@@ -81,14 +81,14 @@ const BlockChecklistBody = () => {
               <Switch
                 id="only-show-block"
                 className="data-[state=unchecked]:bg-input"
-                checked={currentBlock.onlyShowTask}
+                checked={currentBlock.onlyShowBlock}
                 onCheckedChange={handleOnlyShowChange}
               />
             </div>
-            {currentBlock.onlyShowTask && (
+            {currentBlock.onlyShowBlock && (
               <Rules
                 onDataChange={handleConditionsChange}
-                defaultConditions={currentBlock.onlyShowTaskConditions ?? []}
+                defaultConditions={currentBlock.onlyShowBlockConditions ?? []}
                 attributes={attributeList}
                 contents={contents}
                 segments={segmentList}

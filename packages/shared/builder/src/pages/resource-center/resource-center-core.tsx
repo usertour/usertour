@@ -14,7 +14,6 @@ import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Button } from '@usertour-packages/button';
 import {
-  ContactLiveChatProvider,
   ContentEditorRoot,
   KnowledgeBaseSearchProvider,
   LauncherIconSource,
@@ -63,22 +62,22 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         id,
         type: ResourceCenterBlockType.MESSAGE,
         content: DEFAULT_MESSAGE_BLOCK_CONTENT,
-        onlyShowTask: false,
-        onlyShowTaskConditions: [],
+        onlyShowBlock: false,
+        onlyShowBlockConditions: [],
       };
     case ResourceCenterBlockType.CHECKLIST:
       return {
         id,
         type: ResourceCenterBlockType.CHECKLIST,
-        onlyShowTask: false,
-        onlyShowTaskConditions: [],
+        onlyShowBlock: false,
+        onlyShowBlockConditions: [],
       };
     case ResourceCenterBlockType.DIVIDER:
       return {
         id,
         type: ResourceCenterBlockType.DIVIDER,
-        onlyShowTask: false,
-        onlyShowTaskConditions: [],
+        onlyShowBlock: false,
+        onlyShowBlockConditions: [],
       };
     case ResourceCenterBlockType.ACTION:
       return {
@@ -88,8 +87,8 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         iconSource: LauncherIconSource.BUILTIN,
         iconType: '',
         clickedActions: [],
-        onlyShowTask: false,
-        onlyShowTaskConditions: [],
+        onlyShowBlock: false,
+        onlyShowBlockConditions: [],
       };
     case ResourceCenterBlockType.SUB_PAGE:
       return {
@@ -99,10 +98,8 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         iconSource: LauncherIconSource.BUILTIN,
         iconType: '',
         content: DEFAULT_MESSAGE_BLOCK_CONTENT,
-        showInHome: true,
-        showInTabBar: false,
-        onlyShowTask: false,
-        onlyShowTaskConditions: [],
+        onlyShowBlock: false,
+        onlyShowBlockConditions: [],
       };
     case ResourceCenterBlockType.KNOWLEDGE_BASE:
       return {
@@ -114,27 +111,8 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         searchProvider: KnowledgeBaseSearchProvider.GOOGLE,
         knowledgeBaseUrl: '',
         defaultSearchQuery: '',
-        showInHome: true,
-        showInTabBar: false,
-        onlyShowTask: false,
-        onlyShowTaskConditions: [],
-      };
-    case ResourceCenterBlockType.CONTACT:
-      return {
-        id,
-        type: ResourceCenterBlockType.CONTACT,
-        name: '',
-        iconSource: LauncherIconSource.BUILTIN,
-        iconType: '',
-        emailEnabled: true,
-        emailContent: DEFAULT_MESSAGE_BLOCK_CONTENT,
-        phoneEnabled: true,
-        phoneContent: DEFAULT_MESSAGE_BLOCK_CONTENT,
-        liveChatEnabled: false,
-        liveChatProvider: ContactLiveChatProvider.INTERCOM,
-        customLiveChatCode: '',
-        onlyShowTask: false,
-        onlyShowTaskConditions: [],
+        onlyShowBlock: false,
+        onlyShowBlockConditions: [],
       };
     case ResourceCenterBlockType.CONTENT_LIST:
       return {
@@ -145,10 +123,8 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         iconType: '',
         showSearchField: true,
         contentItems: [],
-        showInHome: true,
-        showInTabBar: false,
-        onlyShowTask: false,
-        onlyShowTaskConditions: [],
+        onlyShowBlock: false,
+        onlyShowBlockConditions: [],
       };
     default:
       return null;
