@@ -10,7 +10,7 @@ import { IconsList } from '../launcher';
 // Tab icon
 // ============================================================================
 
-const TabBarIcon = memo(({ tab }: { tab: ResourceCenterTab }) => {
+const TabBarIcon = memo(({ tab, isActive }: { tab: ResourceCenterTab; isActive: boolean }) => {
   if (tab.iconSource === LauncherIconSource.NONE) {
     return null;
   }
@@ -18,7 +18,13 @@ const TabBarIcon = memo(({ tab }: { tab: ResourceCenterTab }) => {
     (tab.iconSource === LauncherIconSource.UPLOAD || tab.iconSource === LauncherIconSource.URL) &&
     tab.iconUrl
   ) {
-    return <img src={tab.iconUrl} alt="" className="size-5 flex-shrink-0 object-contain" />;
+    return (
+      <img
+        src={tab.iconUrl}
+        alt=""
+        className={cn('size-5 flex-shrink-0 object-contain', !isActive && 'opacity-40')}
+      />
+    );
   }
   if (tab.iconSource === LauncherIconSource.BUILTIN && tab.iconType) {
     const iconItem = IconsList.find((item) => item.name === tab.iconType);
@@ -101,7 +107,7 @@ export const ResourceCenterTabBar = memo(() => {
             )}
             onClick={() => actions.switchTab(tab.id)}
           >
-            <TabBarIcon tab={tab} />
+            <TabBarIcon tab={tab} isActive={nav.activeTabId === tab.id} />
             <span className="truncate max-w-full text-sm">{tab.name || 'Untitled'}</span>
           </button>
         ))}
