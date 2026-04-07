@@ -93,7 +93,7 @@ function ensureResourceCenterData(
     id: uuidV4(),
     name: 'Home',
     iconSource: LauncherIconSource.BUILTIN,
-    iconType: 'home-smile-2-line',
+    iconType: 'home-line',
     blocks: raw.blocks ?? [],
   };
 

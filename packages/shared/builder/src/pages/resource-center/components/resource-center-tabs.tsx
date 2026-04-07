@@ -225,7 +225,7 @@ export const ResourceCenterTabs = () => {
       id: uuidV4(),
       name: '',
       iconSource: LauncherIconSource.BUILTIN,
-      iconType: 'home-smile-2-line',
+      iconType: 'home-line',
       blocks: [],
     };
     addTab(tab);
