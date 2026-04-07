@@ -8,6 +8,7 @@ import {
 import { EDITOR_RICH_TOOLBAR } from '@usertour-packages/constants';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Transforms } from 'slate';
 import { useSlate } from 'slate-react';
 
@@ -120,12 +121,13 @@ export const EditorToolbar = memo(() => {
     return null;
   }
 
-  return (
+  return createPortal(
     <TooltipProvider>
       <ToolbarRoot
         ref={combinedRef}
         aria-label="Formatting options"
         className={TOOLBAR_CONTAINER}
+        onMouseDown={(e) => e.preventDefault()}
         style={{
           ...floatingStyles,
           zIndex: zIndex + EDITOR_RICH_TOOLBAR,
@@ -155,7 +157,8 @@ export const EditorToolbar = memo(() => {
           />
         )}
       </ToolbarRoot>
-    </TooltipProvider>
+    </TooltipProvider>,
+    document.body,
   );
 });
 
