@@ -706,7 +706,9 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
           </div>
         )}
         {/* Content: logo + children, scrolls together */}
-        <div className={cn('relative z-20 px-4 pb-4', !isHomePage && 'pt-4')}>
+        <div
+          className={cn('relative z-20 px-4 pb-4 animate-sdk-rc-slide-in', !isHomePage && 'pt-4')}
+        >
           {isHomePage && (
             <div className="mt-2 pl-2 flex items-center h-sdk-resource-center-header-button">
               {logoUrl && (
@@ -763,40 +765,35 @@ export const ResourceCenterBlocks = memo(
 
     return (
       <>
-        {blocks.map((block, index) => {
+        {blocks.map((block) => {
           return (
             <Fragment key={block.id}>
-              <div
-                className="animate-sdk-rc-slide-in opacity-0"
-                style={{ animationDelay: `${index * 60}ms` }}
-              >
-                {block.type === ResourceCenterBlockType.MESSAGE && (
-                  <ResourceCenterMessageBlockView
-                    block={block}
-                    userAttributes={userAttributes}
-                    onContentClick={onContentClick}
-                    onBlockClick={onBlockClick}
-                    editSlot={messageEditSlots?.[block.id]}
-                  />
-                )}
-                {block.type === ResourceCenterBlockType.CHECKLIST && (
-                  <ResourceCenterChecklistBlockView slot={checklistSlot} />
-                )}
-                {block.type === ResourceCenterBlockType.DIVIDER && (
-                  <ResourceCenterDividerBlockView block={block} />
-                )}
-                {block.type === ResourceCenterBlockType.ACTION && (
-                  <ResourceCenterActionBlockView block={block} onActionBlockClick={onBlockClick} />
-                )}
-                {(block.type === ResourceCenterBlockType.SUB_PAGE ||
-                  block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
-                  block.type === ResourceCenterBlockType.CONTENT_LIST) && (
-                  <NavigableBlockRow
-                    block={block as ResourceCenterNavigableBlock}
-                    onNavigate={actions.push}
-                  />
-                )}
-              </div>
+              {block.type === ResourceCenterBlockType.MESSAGE && (
+                <ResourceCenterMessageBlockView
+                  block={block}
+                  userAttributes={userAttributes}
+                  onContentClick={onContentClick}
+                  onBlockClick={onBlockClick}
+                  editSlot={messageEditSlots?.[block.id]}
+                />
+              )}
+              {block.type === ResourceCenterBlockType.CHECKLIST && (
+                <ResourceCenterChecklistBlockView slot={checklistSlot} />
+              )}
+              {block.type === ResourceCenterBlockType.DIVIDER && (
+                <ResourceCenterDividerBlockView block={block} />
+              )}
+              {block.type === ResourceCenterBlockType.ACTION && (
+                <ResourceCenterActionBlockView block={block} onActionBlockClick={onBlockClick} />
+              )}
+              {(block.type === ResourceCenterBlockType.SUB_PAGE ||
+                block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
+                block.type === ResourceCenterBlockType.CONTENT_LIST) && (
+                <NavigableBlockRow
+                  block={block as ResourceCenterNavigableBlock}
+                  onNavigate={actions.push}
+                />
+              )}
             </Fragment>
           );
         })}
