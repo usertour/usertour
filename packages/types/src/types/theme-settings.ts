@@ -1,9 +1,58 @@
 import { ContentModalPlacementData, ModalPosition } from './contents';
-import type {
-  ResourceCenterThemeSettings,
-  ResourceCenterLauncherButtonThemeSettings,
-  ResourceCenterUnreadBadgeThemeSettings,
-} from './resource-center';
+
+// ============================================================================
+// Resource Center Theme Settings (migrated from resource-center.ts)
+// ============================================================================
+
+export type ResourceCenterPlacement = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
+export type ResourceCenterHeaderBackgroundType = 'color' | 'gradient' | 'image';
+
+export type ResourceCenterHeaderBackground = {
+  type: ResourceCenterHeaderBackgroundType;
+  color: string;
+  gradientFrom: string;
+  gradientTo: string;
+  imageUrl: string;
+};
+
+export type ResourceCenterThemeSettings = {
+  placement: ResourceCenterPlacement;
+  offsetX: number;
+  offsetY: number;
+  normalWidth: number;
+  largeWidth: number;
+  maxHeight?: number;
+  zIndex?: number;
+  transitionDuration: number;
+  dividerLines: boolean;
+  headerBackground: ResourceCenterHeaderBackground;
+};
+
+export type ResourceCenterLauncherIconType =
+  | 'default-question-mark'
+  | 'plaintext-question-mark'
+  | 'custom';
+
+export type ResourceCenterLauncherTextMode =
+  | 'active-checklist-text'
+  | 'resource-center-text'
+  | 'no-text';
+
+export type ResourceCenterLauncherButtonThemeSettings = {
+  iconType: ResourceCenterLauncherIconType;
+  iconUrl?: string;
+  height: number;
+  imageHeight: number;
+  borderRadius: number | null;
+  textMode: ResourceCenterLauncherTextMode;
+  showRemainingTasks: boolean;
+};
+
+export type ResourceCenterUnreadBadgeThemeSettings = {
+  backgroundColor: string;
+  textColor: string;
+};
 
 export enum ProgressBarType {
   FULL_WIDTH = 'full-width',
@@ -423,6 +472,13 @@ export const defaultSettings: ThemeTypesSetting = {
     largeWidth: 480,
     transitionDuration: 450,
     dividerLines: true,
+    headerBackground: {
+      type: 'color',
+      color: 'Auto',
+      gradientFrom: 'Auto',
+      gradientTo: 'Auto',
+      imageUrl: '',
+    },
   },
   resourceCenterLauncherButton: {
     iconType: 'default-question-mark',
@@ -682,6 +738,13 @@ export const standardDarkSettings: ThemeTypesSetting = {
     largeWidth: 480,
     transitionDuration: 450,
     dividerLines: true,
+    headerBackground: {
+      type: 'color',
+      color: 'Auto',
+      gradientFrom: 'Auto',
+      gradientTo: 'Auto',
+      imageUrl: '',
+    },
   },
   resourceCenterLauncherButton: {
     iconType: 'default-question-mark',

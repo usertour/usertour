@@ -1,4 +1,4 @@
-import { Fragment, memo, useCallback, useMemo, useState } from 'react';
+import { CSSProperties, Fragment, memo, useCallback, useMemo, useState } from 'react';
 import type {
   ResourceCenterActionBlock,
   ResourceCenterContentListBlock,
@@ -620,9 +620,54 @@ function parseSearchResults(provider: string, data: any): KnowledgeBaseArticle[]
 // Body
 // ============================================================================
 
+/**
+ * Compute inline style for the header background layer based on theme settings.
+ * 'Auto' means use the existing CSS variable (no inline override).
+ */
+function getHeaderBackgroundStyle(
+  headerBackground:
+    | { type: string; color: string; gradientFrom: string; gradientTo: string; imageUrl: string }
+    | undefined,
+): CSSProperties | undefined {
+  if (!headerBackground) return undefined;
+
+  const resolveColor = (value: string): string | undefined =>
+    value === 'Auto' ? undefined : value;
+
+  switch (headerBackground.type) {
+    case 'color': {
+      const color = resolveColor(headerBackground.color);
+      return color ? { backgroundColor: color } : undefined;
+    }
+    case 'gradient': {
+      const from =
+        resolveColor(headerBackground.gradientFrom) ??
+        'var(--sdk-resource-center-header-background)';
+      const to = resolveColor(headerBackground.gradientTo) ?? 'var(--sdk-background)';
+      return { background: `linear-gradient(to bottom, ${from}, ${to})` };
+    }
+    case 'image': {
+      const url = headerBackground.imageUrl;
+      if (!url) return undefined;
+      return {
+        backgroundImage: `url(${url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    }
+    default:
+      return undefined;
+  }
+}
+
 export const ResourceCenterBody = memo(({ children }: { children: React.ReactNode }) => {
-  const { showBackButton, nav, data } = useResourceCenterContext();
+  const { showBackButton, nav, data, themeSetting } = useResourceCenterContext();
   const isHomePage = !showBackButton && nav.activeTabId === (data.tabs[0]?.id ?? '');
+
+  const headerBackgroundStyle = useMemo(
+    () => getHeaderBackgroundStyle(themeSetting.resourceCenter?.headerBackground),
+    [themeSetting.resourceCenter?.headerBackground],
+  );
 
   return (
     <div
@@ -636,9 +681,15 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
     >
       {isHomePage && (
         <>
-          {/* Gradient background: header color fades into body background */}
+          {/* Header background layer: color, gradient, or image based on theme */}
           <div className="relative overflow-hidden h-[520px] -mb-[520px]">
-            <div className="w-full h-full bg-sdk-resource-center-header-background/90" />
+            <div
+              className={cn(
+                'w-full h-full',
+                !headerBackgroundStyle && 'bg-sdk-resource-center-header-background/90',
+              )}
+              style={headerBackgroundStyle}
+            />
             <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-sdk-background" />
             <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-sdk-background" />
           </div>
