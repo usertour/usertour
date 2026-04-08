@@ -52,7 +52,12 @@ export const BlockIcon = memo(
       const iconItem = IconsList.find((item) => item.name === iconType);
       if (iconItem) {
         const Icon = iconItem.ICON;
-        return <Icon size={size} className={cn('flex-shrink-0 text-sdk-foreground', className)} />;
+        return (
+          <Icon
+            size={size}
+            className={cn('flex-shrink-0 text-sdk-resource-center-foreground', className)}
+          />
+        );
       }
     }
     return null;
@@ -132,7 +137,12 @@ interface ResourceCenterDividerBlockViewProps {
 
 export const ResourceCenterDividerBlockView = memo(
   ({ block }: ResourceCenterDividerBlockViewProps) => {
-    return <div data-block-id={block.id} className="h-px overflow-hidden bg-sdk-foreground/10" />;
+    return (
+      <div
+        data-block-id={block.id}
+        className="h-px overflow-hidden bg-sdk-resource-center-foreground/10"
+      />
+    );
   },
 );
 
@@ -157,17 +167,17 @@ export const ResourceCenterActionBlockView = memo(
       <button
         type="button"
         data-block-id={block.id}
-        className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-foreground/5 cursor-pointer overflow-hidden"
+        className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-resource-center-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-resource-center-foreground/5 cursor-pointer overflow-hidden"
         onClick={handleClick}
       >
-        <div className="absolute inset-0 bg-sdk-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-sdk-resource-center-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
         <BlockIcon
           iconSource={block.iconSource}
           iconType={block.iconType}
           iconUrl={block.iconUrl}
           className="relative"
         />
-        <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">
+        <span className="relative min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
           {block.name || 'Untitled action'}
         </span>
       </button>
@@ -202,18 +212,23 @@ export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowP
     <button
       type="button"
       data-block-id={block.id}
-      className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-foreground/5 cursor-pointer overflow-hidden"
+      className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-resource-center-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-resource-center-foreground/5 cursor-pointer overflow-hidden"
       onClick={handleClick}
     >
-      <div className="absolute inset-0 bg-sdk-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
+      <div className="absolute inset-0 bg-sdk-resource-center-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
       <BlockIcon
         iconSource={block.iconSource}
         iconType={block.iconType}
         iconUrl={block.iconUrl}
         className="relative"
       />
-      <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">{label}</span>
-      <RiArrowRightSLine size={16} className="relative flex-shrink-0 text-sdk-foreground/40" />
+      <span className="relative min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
+        {label}
+      </span>
+      <RiArrowRightSLine
+        size={16}
+        className="relative flex-shrink-0 text-sdk-resource-center-foreground/40"
+      />
     </button>
   );
 });
@@ -275,17 +290,23 @@ const KnowledgeBaseArticleItem = memo(({ article }: { article: KnowledgeBaseArti
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="currentColor"
-        className="h-5 w-5 flex-shrink-0 text-sdk-foreground/50 mt-0.5"
+        className="h-5 w-5 flex-shrink-0 text-sdk-resource-center-foreground/50 mt-0.5"
       >
         <path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM7 6V8H17V6H7ZM7 10V12H17V10H7ZM7 14V16H14V14H7Z" />
       </svg>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-sdk-foreground line-clamp-2">{article.title}</div>
+        <div className="text-sm font-medium text-sdk-resource-center-foreground line-clamp-2">
+          {article.title}
+        </div>
         {article.date && (
-          <div className="text-xs text-sdk-foreground/50 mt-0.5">{article.date}</div>
+          <div className="text-xs text-sdk-resource-center-foreground/50 mt-0.5">
+            {article.date}
+          </div>
         )}
         {article.snippet && (
-          <div className="text-xs text-sdk-foreground/70 mt-1 line-clamp-3">{article.snippet}</div>
+          <div className="text-xs text-sdk-resource-center-foreground/70 mt-1 line-clamp-3">
+            {article.snippet}
+          </div>
         )}
       </div>
     </a>
@@ -342,7 +363,7 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
     <div className="flex flex-col gap-3 p-2">
       {/* Title row with optional external link */}
       <div className="flex items-center justify-between px-1">
-        <span className="text-base font-semibold text-sdk-foreground">
+        <span className="text-base font-semibold text-sdk-resource-center-foreground">
           {block.name || 'Knowledge base'}
         </span>
         {externalUrl && (
@@ -350,7 +371,7 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
             href={externalUrl.startsWith('http') ? externalUrl : `https://${externalUrl}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sdk-foreground/50 hover:text-sdk-foreground"
+            className="text-sdk-resource-center-foreground/50 hover:text-sdk-resource-center-foreground"
             aria-label="Open knowledge base"
           >
             <svg
@@ -370,8 +391,8 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
         <input
           type="text"
           className={cn(
-            'w-full rounded-md border border-sdk-foreground/20 bg-sdk-background px-3 py-2 text-sm',
-            'text-sdk-foreground placeholder:text-sdk-foreground/40',
+            'w-full rounded-md border border-sdk-resource-center-foreground/20 bg-sdk-background px-3 py-2 text-sm',
+            'text-sdk-resource-center-foreground placeholder:text-sdk-resource-center-foreground/40',
             'outline-none focus:border-sdk-primary focus:ring-1 focus:ring-sdk-primary',
           )}
           placeholder="Search"
@@ -383,16 +404,20 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
 
       {/* Results */}
       {isSearching && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">Searching...</div>
+        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
+          Searching...
+        </div>
       )}
 
       {!isSearching && hasSearched && articles.length === 0 && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">No results found</div>
+        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
+          No results found
+        </div>
       )}
 
       {!isSearching && articles.length > 0 && (
         <div className="flex flex-col">
-          <div className="px-1 pb-1 text-xs font-medium text-sdk-foreground/50">
+          <div className="px-1 pb-1 text-xs font-medium text-sdk-resource-center-foreground/50">
             Suggested articles
           </div>
           {articles.map((article, idx) => (
@@ -402,7 +427,7 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
       )}
 
       {!isSearching && !hasSearched && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/40">
+        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/40">
           Search your knowledge base
         </div>
       )}
@@ -421,7 +446,7 @@ const ContentListFlowIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
     fill="currentColor"
-    className="h-5 w-5 flex-shrink-0 text-sdk-foreground/60"
+    className="h-5 w-5 flex-shrink-0 text-sdk-resource-center-foreground/60"
   >
     <path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM10 15.5L16 12L10 8.5V15.5Z" />
   </svg>
@@ -432,7 +457,7 @@ const ContentListChecklistIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
     fill="currentColor"
-    className="h-5 w-5 flex-shrink-0 text-sdk-foreground/60"
+    className="h-5 w-5 flex-shrink-0 text-sdk-resource-center-foreground/60"
   >
     <path d="M11 4H21V6H11V4ZM11 8H17V10H11V8ZM11 14H21V16H11V14ZM11 18H17V20H11V18ZM3 4H9V10H3V4ZM5 6V8H7V6H5ZM3 14H9V20H3V14ZM5 16V18H7V16H5Z" />
   </svg>
@@ -465,8 +490,8 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
           <input
             type="text"
             className={cn(
-              'w-full rounded-md border border-sdk-foreground/20 bg-sdk-background px-3 py-2 text-sm',
-              'text-sdk-foreground placeholder:text-sdk-foreground/40',
+              'w-full rounded-md border border-sdk-resource-center-foreground/20 bg-sdk-background px-3 py-2 text-sm',
+              'text-sdk-resource-center-foreground placeholder:text-sdk-resource-center-foreground/40',
               'outline-none focus:border-sdk-primary focus:ring-1 focus:ring-sdk-primary',
             )}
             placeholder="Search"
@@ -477,7 +502,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
       )}
 
       {filteredItems.length === 0 && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">
+        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
           {searchQuery.trim() ? 'No results found' : 'No items'}
         </div>
       )}
@@ -492,7 +517,9 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
               onClick={() => onContentListItemClick?.(item)}
             >
               {item.contentType === 'flow' ? <ContentListFlowIcon /> : <ContentListChecklistIcon />}
-              <span className="min-w-0 flex-1 truncate text-sdk-foreground">{item.name}</span>
+              <span className="min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
+                {item.name}
+              </span>
             </button>
           ))}
         </div>
@@ -646,7 +673,7 @@ function getHeaderBackgroundStyle(
     case 'gradient': {
       const from =
         resolveColor(headerBackground.gradientFrom) ??
-        'var(--sdk-resource-center-header-background)';
+        'hsl(var(--usertour-resource-center-primary-color))';
       const to = resolveColor(headerBackground.gradientTo) ?? 'var(--sdk-background)';
       return { background: `linear-gradient(to bottom, ${from}, ${to})` };
     }
@@ -678,7 +705,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
   return (
     <div
       className={cn(
-        'relative order-2 min-h-0 min-w-0 flex-1 bg-sdk-background',
+        'relative order-2 min-h-0 min-w-0 flex-1 bg-sdk-resource-center-background',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
@@ -696,16 +723,16 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
         {/* Background layer: absolute, overflows slightly to avoid edge gaps */}
         {isHomePage && (
           <div className="overflow-hidden absolute -inset-x-3 -top-3 pointer-events-none">
-            <div className="overflow-hidden relative w-full bg-gradient-to-b from-transparent h-[520px] to-sdk-background">
+            <div className="overflow-hidden relative w-full bg-gradient-to-b from-transparent h-[520px] to-sdk-resource-center-background">
               <div
                 className={cn(
                   'w-full h-full',
-                  !headerBackgroundStyle && 'bg-sdk-resource-center-header-background/90',
+                  !headerBackgroundStyle && 'bg-sdk-resource-center-primary/90',
                 )}
                 style={headerBackgroundStyle}
               />
-              <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-sdk-background" />
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-sdk-background" />
+              <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-sdk-resource-center-background" />
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-sdk-resource-center-background" />
             </div>
           </div>
         )}

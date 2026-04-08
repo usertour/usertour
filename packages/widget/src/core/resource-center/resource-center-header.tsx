@@ -85,7 +85,7 @@ export const ResourceCenterHomeHeader = memo(() => {
   const { data } = useResourceCenterContext();
 
   return (
-    <div className="p-2 flex items-center bg-sdk-resource-center-header-background rounded-t-[inherit]">
+    <div className="p-2 flex items-center bg-sdk-resource-center-primary rounded-t-[inherit]">
       <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">
         {data.headerText}
       </div>
@@ -119,7 +119,7 @@ export const ResourceCenterHeader = memo(() => {
   return (
     <div
       className={cn(
-        'order-1 shrink-0 p-2 flex items-center bg-sdk-resource-center-header-background rounded-t-[inherit]',
+        'order-1 shrink-0 p-2 flex items-center bg-sdk-resource-center-primary rounded-t-[inherit]',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',

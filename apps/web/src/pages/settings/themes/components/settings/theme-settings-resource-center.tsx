@@ -116,7 +116,7 @@ export const ThemeSettingsResourceCenter = () => {
   );
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col">
       <div className="py-[15px] px-5 space-y-3">
         {/* Logo */}
         <div>
@@ -327,9 +327,66 @@ export const ThemeSettingsResourceCenter = () => {
             )}
           </div>
         </div>
-
-        <div className="border-t border-border" />
-
+      </div>
+      <div className="border-t border-border" />
+      <div className="py-[15px] px-5 space-y-3">
+        {/* Colors */}
+        <div>
+          <h4 className="text-sm font-medium mb-3">Colors</h4>
+          <div className="space-y-3">
+            <ThemeSelectColor
+              text="Background"
+              name="resource-center-background-color"
+              defaultColor={resourceCenter.backgroundColor}
+              showAutoButton={true}
+              isAutoColor={resourceCenter.backgroundColor === 'Auto'}
+              autoColor={settings.mainColor.background}
+              onChange={(value: string) => {
+                update({ backgroundColor: value });
+              }}
+              disabled={isViewOnly}
+            />
+            <ThemeSelectColor
+              text="Font color"
+              name="resource-center-foreground-color"
+              defaultColor={resourceCenter.fontColor}
+              showAutoButton={true}
+              isAutoColor={resourceCenter.fontColor === 'Auto'}
+              autoColor={settings.mainColor.color}
+              onChange={(value: string) => {
+                update({ fontColor: value });
+              }}
+              disabled={isViewOnly}
+            />
+            <ThemeSelectColor
+              text="Primary"
+              name="resource-center-primary-color"
+              defaultColor={resourceCenter.primaryColor}
+              showAutoButton={true}
+              isAutoColor={resourceCenter.primaryColor === 'Auto'}
+              autoColor={brandBackground}
+              onChange={(value: string) => {
+                update({ primaryColor: value });
+              }}
+              disabled={isViewOnly}
+            />
+            <ThemeSelectColor
+              text="Header font color"
+              name="resource-center-primary-foreground-color"
+              defaultColor={resourceCenter.headerFontColor}
+              showAutoButton={true}
+              isAutoColor={resourceCenter.headerFontColor === 'Auto'}
+              autoColor={settings.brandColor.color}
+              onChange={(value: string) => {
+                update({ headerFontColor: value });
+              }}
+              disabled={isViewOnly}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="border-t border-border" />
+      <div className="py-[15px] px-5 space-y-3">
         <ThemeSettingSelect
           text="Placement"
           name="resource-center-placement"

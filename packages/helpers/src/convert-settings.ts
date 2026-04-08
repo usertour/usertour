@@ -290,6 +290,24 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.brandColor.color,
   );
 
+  // Resource center colors
+  data.resourceCenter!.backgroundColor = resolveAutoValue(
+    data.resourceCenter!.backgroundColor,
+    data.mainColor.background,
+  );
+  data.resourceCenter!.fontColor = resolveAutoValue(
+    data.resourceCenter!.fontColor,
+    data.mainColor.color,
+  );
+  data.resourceCenter!.primaryColor = resolveAutoValue(
+    data.resourceCenter!.primaryColor,
+    data.brandColor.background,
+  );
+  data.resourceCenter!.headerFontColor = resolveAutoValue(
+    data.resourceCenter!.headerFontColor,
+    data.brandColor.color,
+  );
+
   // Banner color: resolve base from brandColor, then derive hover/active via generateStateColors
   data.banner.textColor.color = resolveAutoValue(
     data.banner.textColor.color,
@@ -491,10 +509,12 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
       resourceCenterUnreadBadge.backgroundColor,
     ),
     '--usertour-resource-center-badge-foreground-color': resourceCenterUnreadBadge.textColor,
-    '--usertour-resource-center-header-background-color': hexToHSLString(
-      settings.brandColor.background,
+    '--usertour-resource-center-background-color': hexToHSLString(resourceCenter.backgroundColor),
+    '--usertour-resource-center-foreground-color': hexToHSLString(resourceCenter.fontColor),
+    '--usertour-resource-center-primary-color': hexToHSLString(resourceCenter.primaryColor),
+    '--usertour-resource-center-header-foreground-color': hexToHSLString(
+      resourceCenter.headerFontColor,
     ),
-    '--usertour-resource-center-header-foreground-color': hexToHSLString(settings.brandColor.color),
     '--usertour-resource-center-width': `${resourceCenter.normalWidth}px`,
     '--usertour-resource-center-large-width': `${resourceCenter.largeWidth}px`,
     '--usertour-resource-center-max-height': resourceCenter.maxHeight
