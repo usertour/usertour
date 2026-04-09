@@ -44,8 +44,8 @@ export const ThemeSettingsBasicColor = () => {
   };
   return (
     <div className="flex flex-col space-y-4">
-      <div className="py-[15px] px-5 space-y-3">
-        <div className="text-base">Brand colors</div>
+      <div className="py-4 px-5 space-y-3">
+        <h4 className="text-sm font-medium">Brand colors</h4>
         <div className="space-y-1">
           <div className="text-sm">Text</div>
           <div className="flex">
@@ -101,8 +101,8 @@ export const ThemeSettingsBasicColor = () => {
         </div>
       </div>
       <Separator />
-      <div className="py-[15px] px-5 space-y-3">
-        <div className="text-base">Main colors</div>
+      <div className="py-4 px-5 space-y-3">
+        <h4 className="text-sm font-medium">Main colors</h4>
         <div className="space-y-1">
           <div className="text-sm">Text</div>
           <div className="flex">

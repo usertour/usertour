@@ -3,6 +3,8 @@ import Upload from 'rc-upload';
 import { Button } from '@usertour-packages/button';
 import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour-packages/icons';
 import { useToast } from '@usertour-packages/use-toast';
+import { ColorPicker } from '@usertour-packages/shared-components';
+import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
 import { ThemeSettingSelect } from '@/components/molecules/theme/theme-setting-select';
 import type {
@@ -56,11 +58,14 @@ const validateImageDimensions = (file: File): Promise<void> =>
   });
 
 export const ThemeSettingsResourceCenterLauncher = () => {
-  const { settings, setSettings, isViewOnly } = useThemeSettingsContext();
+  const { settings, setSettings, finalSettings, isViewOnly } = useThemeSettingsContext();
   const { toast } = useToast();
 
   const launcher = settings.resourceCenterLauncherButton;
   if (!launcher) return null;
+
+  const launcherColor = launcher.color;
+  const resolvedColor = finalSettings?.resourceCenterLauncherButton?.color;
 
   const update = (data: Partial<typeof launcher>) => {
     setSettings((pre) => ({
@@ -76,7 +81,7 @@ export const ThemeSettingsResourceCenterLauncher = () => {
   });
 
   const handleCustomIconUpload = useCallback(
-    async (option: RcUploadOption) => {
+    (option: RcUploadOption) => {
       const file = option.file;
       if (!(file instanceof File)) {
         const error = new Error('Invalid file type');
@@ -96,21 +101,22 @@ export const ThemeSettingsResourceCenterLauncher = () => {
         return;
       }
 
-      try {
-        await validateImageDimensions(file);
-        handleUpload(option);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Invalid image file');
-        toast({ variant: 'destructive', title: error.message });
-        option.onError?.(error);
-      }
+      validateImageDimensions(file)
+        .then(() => {
+          handleUpload(option);
+        })
+        .catch((err) => {
+          const error = err instanceof Error ? err : new Error('Invalid image file');
+          toast({ variant: 'destructive', title: error.message });
+          option.onError?.(error);
+        });
     },
     [handleUpload, toast],
   );
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="py-[15px] px-5 space-y-3">
+      <div className="py-4 px-5 space-y-3">
         <ThemeSettingSelect
           text="Icon type"
           name="rc-launcher-icon-type"
@@ -251,6 +257,62 @@ export const ThemeSettingsResourceCenterLauncher = () => {
           defaultValue={String(launcher.showRemainingTasks)}
           onValueChange={(value: string) => {
             update({ showRemainingTasks: value === 'true' });
+          }}
+          disabled={isViewOnly}
+        />
+        <div className="flex flex-row w-full">
+          <div className="flex flex-col space-y-1 basis-1/3">
+            <div className="text-sm">Background</div>
+            <ColorPicker
+              defaultColor={launcherColor.background}
+              className="rounded-r-none"
+              showAutoButton={true}
+              isAutoColor={launcherColor.background === 'Auto'}
+              autoColor={resolvedColor?.background}
+              onChange={(color: string) => {
+                update({ color: { ...launcherColor, background: color } });
+              }}
+              disabled={isViewOnly}
+            />
+          </div>
+          <div className="flex flex-col space-y-1 basis-1/3">
+            <div className="text-sm">Hover</div>
+            <ColorPicker
+              defaultColor={launcherColor.hover}
+              className="rounded-none border-x-0"
+              showAutoButton={true}
+              isAutoColor={launcherColor.hover === 'Auto'}
+              autoColor={resolvedColor?.hover}
+              onChange={(color: string) => {
+                update({ color: { ...launcherColor, hover: color } });
+              }}
+              disabled={isViewOnly}
+            />
+          </div>
+          <div className="flex flex-col space-y-1 basis-1/3">
+            <div className="text-sm">Active</div>
+            <ColorPicker
+              defaultColor={launcherColor.active}
+              className="rounded-l-none"
+              showAutoButton={true}
+              isAutoColor={launcherColor.active === 'Auto'}
+              autoColor={resolvedColor?.active}
+              onChange={(color: string) => {
+                update({ color: { ...launcherColor, active: color } });
+              }}
+              disabled={isViewOnly}
+            />
+          </div>
+        </div>
+        <ThemeSelectColor
+          text="Font color"
+          name="rc-launcher-foreground-color"
+          defaultColor={launcherColor.foreground}
+          showAutoButton={true}
+          isAutoColor={launcherColor.foreground === 'Auto'}
+          autoColor={resolvedColor?.foreground}
+          onChange={(value: string) => {
+            update({ color: { ...launcherColor, foreground: value } });
           }}
           disabled={isViewOnly}
         />

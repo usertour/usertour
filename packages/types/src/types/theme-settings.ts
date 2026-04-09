@@ -52,6 +52,12 @@ export type ResourceCenterLauncherButtonThemeSettings = {
   borderRadius: number | null;
   textMode: ResourceCenterLauncherTextMode;
   showRemainingTasks: boolean;
+  color: {
+    background: string;
+    hover: string;
+    active: string;
+    foreground: string;
+  };
 };
 
 export type ResourceCenterUnreadBadgeThemeSettings = {
@@ -497,6 +503,12 @@ export const defaultSettings: ThemeTypesSetting = {
     borderRadius: null,
     textMode: 'active-checklist-text',
     showRemainingTasks: true,
+    color: {
+      background: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+      foreground: 'Auto',
+    },
   },
   resourceCenterUnreadBadge: {
     backgroundColor: '#ef4444',
@@ -768,6 +780,12 @@ export const standardDarkSettings: ThemeTypesSetting = {
     borderRadius: null,
     textMode: 'active-checklist-text',
     showRemainingTasks: true,
+    color: {
+      background: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+      foreground: 'Auto',
+    },
   },
   resourceCenterUnreadBadge: {
     backgroundColor: '#ef4444',

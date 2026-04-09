@@ -308,6 +308,22 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.brandColor.color,
   );
 
+  // Resource center launcher colors (cascade from resolved RC primary)
+  const rcPrimary = data.resourceCenter!.primaryColor;
+  const rcHeaderForeground = data.resourceCenter!.headerFontColor;
+  const rcLauncherColor = data.resourceCenterLauncherButton!.color;
+
+  rcLauncherColor.background = resolveAutoValue(rcLauncherColor.background, rcPrimary);
+  rcLauncherColor.foreground = resolveAutoValue(rcLauncherColor.foreground, rcHeaderForeground);
+
+  // Generate hover/active from resolved background
+  const rcLauncherStates = generateStateColors(
+    rcLauncherColor.background,
+    rcLauncherColor.foreground,
+  );
+  rcLauncherColor.hover = resolveAutoValue(rcLauncherColor.hover, rcLauncherStates.hover);
+  rcLauncherColor.active = resolveAutoValue(rcLauncherColor.active, rcLauncherStates.active);
+
   // Banner color: resolve base from brandColor, then derive hover/active via generateStateColors
   data.banner.textColor.color = resolveAutoValue(
     data.banner.textColor.color,
@@ -486,16 +502,16 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-checklist-trigger-font-weight': settings.checklistLauncher.fontWeight,
     '--usertour-checkmark-background-color': settings.checklist.checkmarkColor,
     '--usertour-resource-center-launcher-background-color': hexToHSLString(
-      settings.brandColor.background,
+      resourceCenterLauncherButton.color.background,
     ),
     '--usertour-resource-center-launcher-hover-background-color': hexToHSLString(
-      settings.brandColor.hover,
+      resourceCenterLauncherButton.color.hover,
     ),
     '--usertour-resource-center-launcher-active-background-color': hexToHSLString(
-      settings.brandColor.active,
+      resourceCenterLauncherButton.color.active,
     ),
     '--usertour-resource-center-launcher-foreground-color': hexToHSLString(
-      settings.brandColor.color,
+      resourceCenterLauncherButton.color.foreground,
     ),
     '--usertour-resource-center-launcher-border-radius':
       resourceCenterLauncherButton.borderRadius == null

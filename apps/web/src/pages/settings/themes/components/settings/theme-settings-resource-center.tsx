@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import Upload from 'rc-upload';
 import { Button } from '@usertour-packages/button';
 import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour-packages/icons';
+import { Separator } from '@usertour-packages/separator';
 import { useToast } from '@usertour-packages/use-toast';
 import { ThemeSelectColor } from '@/components/molecules/theme/theme-select-color';
 import { ThemeSettingInput } from '@/components/molecules/theme/theme-setting-input';
@@ -116,27 +117,152 @@ export const ThemeSettingsResourceCenter = () => {
   );
 
   return (
-    <div className="flex flex-col">
-      <div className="py-[15px] px-5 space-y-3">
+    <div className="flex flex-col space-y-4">
+      <div className="py-4 px-5 space-y-3">
         {/* Logo */}
-        <div>
-          <h4 className="text-sm font-medium mb-3">Logo</h4>
+        <h4 className="text-sm font-medium">Logo</h4>
+        <div className="rounded-lg border bg-background p-4">
+          <div className="mb-3">
+            <p className="text-xs text-muted-foreground">
+              Recommended size: 60x60 pixels. Max file size: 2MB.
+            </p>
+          </div>
+
+          <Upload
+            accept={ACCEPT_IMAGE_TYPES}
+            customRequest={handleLogoUpload}
+            disabled={isViewOnly || isLogoUploading}
+            className="block min-w-0"
+          >
+            <div
+              className={`flex min-w-0 cursor-pointer flex-col items-center gap-3 rounded-md border-2 p-4 transition-colors ${
+                isViewOnly || isLogoUploading
+                  ? 'cursor-not-allowed border-muted/50 bg-muted/30'
+                  : 'border-dashed border-muted bg-transparent'
+              }`}
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-md bg-muted">
+                <RiUpload2Fill className="text-muted-foreground/70" size={20} />
+              </div>
+              <Button
+                variant="outline"
+                className="whitespace-nowrap"
+                disabled={isViewOnly || isLogoUploading}
+              >
+                {isLogoUploading ? (
+                  <span className="inline-flex items-center">
+                    <SpinnerIcon className="mr-2 animate-spin" />
+                    Uploading
+                  </span>
+                ) : (
+                  'Choose file'
+                )}
+              </Button>
+            </div>
+          </Upload>
+
+          {resourceCenter.logoUrl && (
+            <div className="mt-4 flex min-w-0 items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <div className="flex h-12 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/70">
+                  <img
+                    src={resourceCenter.logoUrl}
+                    alt="Logo"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-foreground">Uploaded logo</div>
+                  <div className="truncate break-all text-xs text-muted-foreground">
+                    {resourceCenter.logoUrl}
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                className="flex-none hover:bg-destructive/10"
+                variant="ghost"
+                size="icon"
+                onClick={() => update({ logoUrl: '' })}
+                disabled={isViewOnly}
+              >
+                <RiDeleteBinFill className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Header Background */}
+        <h4 className="text-sm font-medium">Home header background</h4>
+        <ThemeSettingSelect
+          text="Type"
+          name="resource-center-header-bg-type"
+          items={headerBackgroundTypeItems}
+          tooltip="The background style for the resource center header area."
+          defaultValue={headerBackground.type}
+          onValueChange={(value: string) => {
+            updateHeaderBackground({ type: value as ResourceCenterHeaderBackgroundType });
+          }}
+          disabled={isViewOnly}
+        />
+        {headerBackground.type === 'color' && (
+          <ThemeSelectColor
+            text="Background color"
+            name="resource-center-header-bg-color"
+            defaultColor={headerBackground.color}
+            showAutoButton={true}
+            isAutoColor={headerBackground.color === 'Auto'}
+            autoColor={brandBackground}
+            onChange={(value: string) => {
+              updateHeaderBackground({ color: value });
+            }}
+            disabled={isViewOnly}
+          />
+        )}
+        {headerBackground.type === 'gradient' && (
+          <>
+            <ThemeSelectColor
+              text="Gradient from"
+              name="resource-center-header-bg-gradient-from"
+              defaultColor={headerBackground.gradientFrom}
+              showAutoButton={true}
+              isAutoColor={headerBackground.gradientFrom === 'Auto'}
+              autoColor={brandBackground}
+              onChange={(value: string) => {
+                updateHeaderBackground({ gradientFrom: value });
+              }}
+              disabled={isViewOnly}
+            />
+            <ThemeSelectColor
+              text="Gradient to"
+              name="resource-center-header-bg-gradient-to"
+              defaultColor={headerBackground.gradientTo}
+              showAutoButton={true}
+              isAutoColor={headerBackground.gradientTo === 'Auto'}
+              autoColor={settings.brandColor.color}
+              onChange={(value: string) => {
+                updateHeaderBackground({ gradientTo: value });
+              }}
+              disabled={isViewOnly}
+            />
+          </>
+        )}
+        {headerBackground.type === 'image' && (
           <div className="rounded-lg border bg-background p-4">
             <div className="mb-3">
-              <p className="text-xs text-muted-foreground">
-                Recommended size: 60x60 pixels. Max file size: 2MB.
-              </p>
+              <h4 className="text-sm font-medium text-foreground">Upload background image</h4>
+              <p className="text-xs text-muted-foreground">PNG/JPG/SVG</p>
             </div>
 
             <Upload
               accept={ACCEPT_IMAGE_TYPES}
-              customRequest={handleLogoUpload}
-              disabled={isViewOnly || isLogoUploading}
+              customRequest={handleImageUpload}
+              disabled={isViewOnly || isBgUploading}
               className="block min-w-0"
             >
               <div
                 className={`flex min-w-0 cursor-pointer flex-col items-center gap-3 rounded-md border-2 p-4 transition-colors ${
-                  isViewOnly || isLogoUploading
+                  isViewOnly || isBgUploading
                     ? 'cursor-not-allowed border-muted/50 bg-muted/30'
                     : 'border-dashed border-muted bg-transparent'
                 }`}
@@ -147,9 +273,9 @@ export const ThemeSettingsResourceCenter = () => {
                 <Button
                   variant="outline"
                   className="whitespace-nowrap"
-                  disabled={isViewOnly || isLogoUploading}
+                  disabled={isViewOnly || isBgUploading}
                 >
-                  {isLogoUploading ? (
+                  {isBgUploading ? (
                     <span className="inline-flex items-center">
                       <SpinnerIcon className="mr-2 animate-spin" />
                       Uploading
@@ -161,22 +287,22 @@ export const ThemeSettingsResourceCenter = () => {
               </div>
             </Upload>
 
-            {resourceCenter.logoUrl && (
+            {headerBackground.imageUrl && (
               <div className="mt-4 flex min-w-0 items-center justify-between gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <div className="flex h-12 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/70">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/70">
                     <img
-                      src={resourceCenter.logoUrl}
-                      alt="Logo"
-                      className="h-full w-full object-contain"
+                      src={headerBackground.imageUrl}
+                      alt="Header background"
+                      className="h-full w-full object-cover"
                     />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-foreground">
-                      Uploaded logo
+                      Uploaded image
                     </div>
                     <div className="truncate break-all text-xs text-muted-foreground">
-                      {resourceCenter.logoUrl}
+                      {headerBackground.imageUrl}
                     </div>
                   </div>
                 </div>
@@ -185,7 +311,7 @@ export const ThemeSettingsResourceCenter = () => {
                   className="flex-none hover:bg-destructive/10"
                   variant="ghost"
                   size="icon"
-                  onClick={() => update({ logoUrl: '' })}
+                  onClick={() => updateHeaderBackground({ imageUrl: '' })}
                   disabled={isViewOnly}
                 >
                   <RiDeleteBinFill className="h-4 w-4 text-destructive" />
@@ -193,200 +319,10 @@ export const ThemeSettingsResourceCenter = () => {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Header Background */}
-        <div>
-          <h4 className="text-sm font-medium mb-3">Home header background</h4>
-          <div className="space-y-3">
-            <ThemeSettingSelect
-              text="Type"
-              name="resource-center-header-bg-type"
-              items={headerBackgroundTypeItems}
-              tooltip="The background style for the resource center header area."
-              defaultValue={headerBackground.type}
-              onValueChange={(value: string) => {
-                updateHeaderBackground({ type: value as ResourceCenterHeaderBackgroundType });
-              }}
-              disabled={isViewOnly}
-            />
-            {headerBackground.type === 'color' && (
-              <ThemeSelectColor
-                text="Background color"
-                name="resource-center-header-bg-color"
-                defaultColor={headerBackground.color}
-                showAutoButton={true}
-                isAutoColor={headerBackground.color === 'Auto'}
-                autoColor={brandBackground}
-                onChange={(value: string) => {
-                  updateHeaderBackground({ color: value });
-                }}
-                disabled={isViewOnly}
-              />
-            )}
-            {headerBackground.type === 'gradient' && (
-              <>
-                <ThemeSelectColor
-                  text="Gradient from"
-                  name="resource-center-header-bg-gradient-from"
-                  defaultColor={headerBackground.gradientFrom}
-                  showAutoButton={true}
-                  isAutoColor={headerBackground.gradientFrom === 'Auto'}
-                  autoColor={brandBackground}
-                  onChange={(value: string) => {
-                    updateHeaderBackground({ gradientFrom: value });
-                  }}
-                  disabled={isViewOnly}
-                />
-                <ThemeSelectColor
-                  text="Gradient to"
-                  name="resource-center-header-bg-gradient-to"
-                  defaultColor={headerBackground.gradientTo}
-                  showAutoButton={true}
-                  isAutoColor={headerBackground.gradientTo === 'Auto'}
-                  autoColor={settings.brandColor.color}
-                  onChange={(value: string) => {
-                    updateHeaderBackground({ gradientTo: value });
-                  }}
-                  disabled={isViewOnly}
-                />
-              </>
-            )}
-            {headerBackground.type === 'image' && (
-              <div className="rounded-lg border bg-background p-4">
-                <div className="mb-3">
-                  <h4 className="text-sm font-medium text-foreground">Upload background image</h4>
-                  <p className="text-xs text-muted-foreground">PNG/JPG/SVG</p>
-                </div>
-
-                <Upload
-                  accept={ACCEPT_IMAGE_TYPES}
-                  customRequest={handleImageUpload}
-                  disabled={isViewOnly || isBgUploading}
-                  className="block min-w-0"
-                >
-                  <div
-                    className={`flex min-w-0 cursor-pointer flex-col items-center gap-3 rounded-md border-2 p-4 transition-colors ${
-                      isViewOnly || isBgUploading
-                        ? 'cursor-not-allowed border-muted/50 bg-muted/30'
-                        : 'border-dashed border-muted bg-transparent'
-                    }`}
-                  >
-                    <div className="flex h-14 w-14 items-center justify-center rounded-md bg-muted">
-                      <RiUpload2Fill className="text-muted-foreground/70" size={20} />
-                    </div>
-                    <Button
-                      variant="outline"
-                      className="whitespace-nowrap"
-                      disabled={isViewOnly || isBgUploading}
-                    >
-                      {isBgUploading ? (
-                        <span className="inline-flex items-center">
-                          <SpinnerIcon className="mr-2 animate-spin" />
-                          Uploading
-                        </span>
-                      ) : (
-                        'Choose file'
-                      )}
-                    </Button>
-                  </div>
-                </Upload>
-
-                {headerBackground.imageUrl && (
-                  <div className="mt-4 flex min-w-0 items-center justify-between gap-3">
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/70">
-                        <img
-                          src={headerBackground.imageUrl}
-                          alt="Header background"
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-foreground">
-                          Uploaded image
-                        </div>
-                        <div className="truncate break-all text-xs text-muted-foreground">
-                          {headerBackground.imageUrl}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      className="flex-none hover:bg-destructive/10"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => updateHeaderBackground({ imageUrl: '' })}
-                      disabled={isViewOnly}
-                    >
-                      <RiDeleteBinFill className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
-      <div className="border-t border-border" />
-      <div className="py-[15px] px-5 space-y-3">
-        {/* Colors */}
-        <div>
-          <h4 className="text-sm font-medium mb-3">Colors</h4>
-          <div className="space-y-3">
-            <ThemeSelectColor
-              text="Background"
-              name="resource-center-background-color"
-              defaultColor={resourceCenter.backgroundColor}
-              showAutoButton={true}
-              isAutoColor={resourceCenter.backgroundColor === 'Auto'}
-              autoColor={settings.mainColor.background}
-              onChange={(value: string) => {
-                update({ backgroundColor: value });
-              }}
-              disabled={isViewOnly}
-            />
-            <ThemeSelectColor
-              text="Font color"
-              name="resource-center-foreground-color"
-              defaultColor={resourceCenter.fontColor}
-              showAutoButton={true}
-              isAutoColor={resourceCenter.fontColor === 'Auto'}
-              autoColor={settings.mainColor.color}
-              onChange={(value: string) => {
-                update({ fontColor: value });
-              }}
-              disabled={isViewOnly}
-            />
-            <ThemeSelectColor
-              text="Primary"
-              name="resource-center-primary-color"
-              defaultColor={resourceCenter.primaryColor}
-              showAutoButton={true}
-              isAutoColor={resourceCenter.primaryColor === 'Auto'}
-              autoColor={brandBackground}
-              onChange={(value: string) => {
-                update({ primaryColor: value });
-              }}
-              disabled={isViewOnly}
-            />
-            <ThemeSelectColor
-              text="Header font color"
-              name="resource-center-primary-foreground-color"
-              defaultColor={resourceCenter.headerFontColor}
-              showAutoButton={true}
-              isAutoColor={resourceCenter.headerFontColor === 'Auto'}
-              autoColor={settings.brandColor.color}
-              onChange={(value: string) => {
-                update({ headerFontColor: value });
-              }}
-              disabled={isViewOnly}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="border-t border-border" />
-      <div className="py-[15px] px-5 space-y-3">
+      <Separator />
+      <div className="py-4 px-5 space-y-3">
         <ThemeSettingSelect
           text="Placement"
           name="resource-center-placement"
@@ -458,6 +394,54 @@ export const ThemeSettingsResourceCenter = () => {
           onChange={(value: string) => {
             const numValue = value === '' ? undefined : Number(value);
             update({ zIndex: numValue });
+          }}
+          disabled={isViewOnly}
+        />
+        <ThemeSelectColor
+          text="Background"
+          name="resource-center-background-color"
+          defaultColor={resourceCenter.backgroundColor}
+          showAutoButton={true}
+          isAutoColor={resourceCenter.backgroundColor === 'Auto'}
+          autoColor={settings.mainColor.background}
+          onChange={(value: string) => {
+            update({ backgroundColor: value });
+          }}
+          disabled={isViewOnly}
+        />
+        <ThemeSelectColor
+          text="Font color"
+          name="resource-center-foreground-color"
+          defaultColor={resourceCenter.fontColor}
+          showAutoButton={true}
+          isAutoColor={resourceCenter.fontColor === 'Auto'}
+          autoColor={settings.mainColor.color}
+          onChange={(value: string) => {
+            update({ fontColor: value });
+          }}
+          disabled={isViewOnly}
+        />
+        <ThemeSelectColor
+          text="Primary"
+          name="resource-center-primary-color"
+          defaultColor={resourceCenter.primaryColor}
+          showAutoButton={true}
+          isAutoColor={resourceCenter.primaryColor === 'Auto'}
+          autoColor={brandBackground}
+          onChange={(value: string) => {
+            update({ primaryColor: value });
+          }}
+          disabled={isViewOnly}
+        />
+        <ThemeSelectColor
+          text="Header font color"
+          name="resource-center-primary-foreground-color"
+          defaultColor={resourceCenter.headerFontColor}
+          showAutoButton={true}
+          isAutoColor={resourceCenter.headerFontColor === 'Auto'}
+          autoColor={settings.brandColor.color}
+          onChange={(value: string) => {
+            update({ headerFontColor: value });
           }}
           disabled={isViewOnly}
         />
