@@ -6,6 +6,7 @@ import {
   RiFileTextFill,
   RiListCheck3,
   RiPagesFill,
+  RiSendInsFill,
   RiSeparator,
 } from '@usertour-packages/icons';
 import { ResourceCenterBlockType } from '@usertour/types';
@@ -29,6 +30,7 @@ export const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
   [ResourceCenterBlockType.CONTENT_LIST]: 'List of flows/checklists',
   [ResourceCenterBlockType.KNOWLEDGE_BASE]: 'Knowledge base',
   [ResourceCenterBlockType.CHECKLIST]: 'Checklist',
+  [ResourceCenterBlockType.LIVE_CHAT]: 'Live chat',
 };
 
 export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
@@ -73,6 +75,13 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     label: 'Knowledge base',
     description: 'Search help articles',
     icon: RiBookOpenFill,
+  },
+  {
+    key: ResourceCenterBlockType.LIVE_CHAT,
+    value: ResourceCenterBlockType.LIVE_CHAT,
+    label: 'Live chat',
+    description: 'Open third-party live chat widget',
+    icon: RiSendInsFill,
   },
   {
     key: ResourceCenterBlockType.DIVIDER,

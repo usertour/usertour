@@ -8,6 +8,7 @@ import { ResourceCenterBlockAction } from './resource-center-block-action';
 import { ResourceCenterBlockSubPage } from './resource-center-block-sub-page';
 import { ResourceCenterBlockKnowledgeBase } from './resource-center-block-knowledge-base';
 import { ResourceCenterBlockContentList } from './resource-center-block-content-list';
+import { ResourceCenterBlockLiveChat } from './resource-center-block-live-chat';
 import { ResourceCenterTabSettings } from './resource-center-tab-settings';
 import { ResourceCenterEmbed } from './components/resource-center-embed';
 import { useResourceCenterContext } from '../../contexts';
@@ -43,6 +44,8 @@ export const ResourceCenterBuilder = () => {
         currentBlock?.type === ResourceCenterBlockType.CONTENT_LIST && (
           <ResourceCenterBlockContentList />
         )}
+      {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&
+        currentBlock?.type === ResourceCenterBlockType.LIVE_CHAT && <ResourceCenterBlockLiveChat />}
       <ResourceCenterEmbed />
     </>
   );

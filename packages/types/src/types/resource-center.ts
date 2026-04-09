@@ -14,6 +14,7 @@ export enum ResourceCenterBlockType {
   CONTENT_LIST = 'content-list',
   KNOWLEDGE_BASE = 'knowledge-base',
   CHECKLIST = 'checklist',
+  LIVE_CHAT = 'live-chat',
 }
 
 // ============================================================================
@@ -86,6 +87,28 @@ export interface ResourceCenterKnowledgeBaseBlock extends ResourceCenterBlockCon
   defaultSearchQuery: string;
 }
 
+export enum LiveChatProvider {
+  CRISP = 'crisp',
+  CUSTOM = 'custom',
+  FRESHCHAT = 'freshchat',
+  HELP_SCOUT = 'help-scout',
+  HUBSPOT = 'hubspot',
+  INTERCOM = 'intercom',
+  ZENDESK_CLASSIC = 'zendesk-classic',
+  ZENDESK_MESSENGER = 'zendesk-messenger',
+}
+
+export interface ResourceCenterLiveChatBlock extends ResourceCenterBlockConditionFields {
+  id: string;
+  name: string;
+  type: ResourceCenterBlockType.LIVE_CHAT;
+  iconSource: LauncherIconSource;
+  iconType: string;
+  iconUrl?: string;
+  liveChatProvider: LiveChatProvider;
+  customLiveChatCode: string;
+}
+
 export interface ContentListItem {
   contentId: string;
   contentType: 'flow' | 'checklist';
@@ -110,7 +133,8 @@ export type ResourceCenterBlock =
   | ResourceCenterActionBlock
   | ResourceCenterSubPageBlock
   | ResourceCenterKnowledgeBaseBlock
-  | ResourceCenterContentListBlock;
+  | ResourceCenterContentListBlock
+  | ResourceCenterLiveChatBlock;
 
 /** Navigable block types — blocks that push a detail view when clicked. */
 export type ResourceCenterNavigableBlock =

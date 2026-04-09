@@ -2,9 +2,11 @@ import {
   ContentEditorClickableElement,
   ContentEditorRoot,
   CustomContentSession,
+  LiveChatProvider,
   ResourceCenterBlockType,
   ResourceCenterContentListBlock,
   ResourceCenterData,
+  ResourceCenterLiveChatBlock,
   ThemeTypesSetting,
   ResourceCenterBlockContentItem,
   SearchKnowledgeBaseResult,
@@ -191,6 +193,93 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       });
     } catch (error) {
       logger.error('Failed to start content from content list:', error);
+    }
+  }
+
+  handleLiveChatClick = (block: ResourceCenterLiveChatBlock): void => {
+    try {
+      this.handleBlockClick(block.id);
+      this.expand(false);
+      this.openLiveChatWidget(block);
+      this.listenProviderClose(block, () => {
+        this.expand(true);
+      });
+    } catch (error) {
+      logger.error('Failed to open live chat:', error);
+    }
+  };
+
+  private openLiveChatWidget(block: ResourceCenterLiveChatBlock): void {
+    const w = window as any;
+    switch (block.liveChatProvider) {
+      case LiveChatProvider.CRISP:
+        w.$crisp?.push(['do', 'chat:open']);
+        break;
+      case LiveChatProvider.INTERCOM:
+        w.Intercom?.('show');
+        break;
+      case LiveChatProvider.ZENDESK_CLASSIC:
+        w.zE?.('webWidget', 'open');
+        break;
+      case LiveChatProvider.ZENDESK_MESSENGER:
+        w.zE?.('messenger', 'open');
+        break;
+      case LiveChatProvider.HUBSPOT:
+        w.HubSpotConversations?.widget?.open?.();
+        break;
+      case LiveChatProvider.FRESHCHAT:
+        if (w.FreshworksWidget) {
+          w.FreshworksWidget('open');
+        } else {
+          (w.fcWidget ?? w.fdWidget)?.open?.();
+        }
+        break;
+      case LiveChatProvider.HELP_SCOUT:
+        w.Beacon?.('open');
+        break;
+      case LiveChatProvider.CUSTOM:
+        if (block.customLiveChatCode) {
+          try {
+            new Function(block.customLiveChatCode)();
+          } catch (e) {
+            logger.error('Custom live chat code error:', e);
+          }
+        }
+        break;
+    }
+  }
+
+  private listenProviderClose(block: ResourceCenterLiveChatBlock, onClose: () => void): void {
+    const w = window as any;
+    switch (block.liveChatProvider) {
+      case LiveChatProvider.CRISP:
+        w.$crisp?.push(['on', 'chat:closed', onClose]);
+        break;
+      case LiveChatProvider.INTERCOM:
+        w.Intercom?.('onHide', onClose);
+        break;
+      case LiveChatProvider.ZENDESK_CLASSIC:
+        w.zE?.('webWidget:on', 'close', onClose);
+        break;
+      case LiveChatProvider.ZENDESK_MESSENGER:
+        w.zE?.('messenger:on', 'close', onClose);
+        break;
+      case LiveChatProvider.HUBSPOT:
+        w.HubSpotConversations?.on?.('widgetClosed', onClose);
+        break;
+      case LiveChatProvider.FRESHCHAT:
+        if (w.FreshworksWidget) {
+          w.FreshworksWidget('onClose', onClose);
+        } else {
+          (w.fcWidget ?? w.fdWidget)?.on?.('widget:closed', onClose);
+        }
+        break;
+      case LiveChatProvider.HELP_SCOUT:
+        w.Beacon?.('on', 'close', onClose);
+        break;
+      case LiveChatProvider.CUSTOM:
+        // Custom provider: no automatic close detection
+        break;
     }
   }
 

@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type {
   ResourceCenterData,
+  ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
   ResourceCenterPageEntry,
   ResourceCenterTab,
@@ -67,6 +68,7 @@ export interface ResourceCenterContextValue {
   onContentClick?: (element: any) => Promise<void>;
   onBlockClick?: (blockId: string) => Promise<void>;
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
+  onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
   onSearchKnowledgeBase?: (
     blockId: string,
     query: string,

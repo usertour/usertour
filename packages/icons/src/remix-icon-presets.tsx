@@ -60,6 +60,8 @@ import {
   RiChat1Line,
   RiChat1Fill,
   RiSendPlaneLine,
+  RiSendInsFill,
+  RiSendInsLine,
   RiReplyLine,
   RiRefreshLine,
   RiRestartLine,
@@ -229,6 +231,8 @@ registerIcons({
   'chat1-fill': RiChat1Fill,
   'send-line': RiSendPlaneLine,
   'send-plane-line': RiSendPlaneLine,
+  'send-ins-fill': RiSendInsFill,
+  'send-ins-line': RiSendInsLine,
   'reply-line': RiReplyLine,
   // Media
   'image-line': RiImageLine,

@@ -142,6 +142,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         contentListItems={contentListItems ?? []}
         onContentListNavigate={resourceCenter.handleContentListNavigate}
         onContentListItemClick={resourceCenter.handleContentListItemClick}
+        onLiveChatClick={resourceCenter.handleLiveChatClick}
         onSearchKnowledgeBase={(blockId, query, offset) =>
           resourceCenter.searchKnowledgeBase(blockId, query, offset)
         }

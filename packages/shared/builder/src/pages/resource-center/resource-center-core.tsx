@@ -17,6 +17,7 @@ import {
   ContentEditorRoot,
   KnowledgeBaseSearchProvider,
   LauncherIconSource,
+  LiveChatProvider,
   ResourceCenterBlockType,
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
@@ -124,6 +125,18 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         iconType: '',
         showSearchField: true,
         contentItems: [],
+        onlyShowBlock: false,
+        onlyShowBlockConditions: [],
+      };
+    case ResourceCenterBlockType.LIVE_CHAT:
+      return {
+        id,
+        type: ResourceCenterBlockType.LIVE_CHAT,
+        name: '',
+        iconSource: LauncherIconSource.BUILTIN,
+        iconType: 'send-ins-fill',
+        liveChatProvider: LiveChatProvider.CRISP,
+        customLiveChatCode: '',
         onlyShowBlock: false,
         onlyShowBlockConditions: [],
       };

@@ -38,6 +38,7 @@ export {
   ResourceCenterMessageBlockView,
   ResourceCenterChecklistBlockView,
   ResourceCenterActionBlockView,
+  ResourceCenterLiveChatBlockView,
   BlockIcon,
   NavigableBlockRow,
   SubPageDetail,

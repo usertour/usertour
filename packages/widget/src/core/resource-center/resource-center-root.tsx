@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ResourceCenterContentListBlock,
   ResourceCenterData,
+  ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
   ResourceCenterPageEntry,
   SearchKnowledgeBaseResult,
@@ -45,6 +46,7 @@ interface ResourceCenterRootProps {
   contentListItems?: ContentListDisplayItem[];
   onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
+  onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
   onSearchKnowledgeBase?: (
     blockId: string,
     query: string,
@@ -72,6 +74,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     contentListItems: contentListItemsProp = [],
     onContentListNavigate,
     onContentListItemClick,
+    onLiveChatClick,
     onSearchKnowledgeBase,
   } = props;
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
@@ -223,6 +226,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       showBackButton,
       contentListItems: contentListItemsProp,
       onContentListItemClick,
+      onLiveChatClick,
       onSearchKnowledgeBase,
     }),
     [
@@ -251,6 +255,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       showBackButton,
       contentListItemsProp,
       onContentListItemClick,
+      onLiveChatClick,
       onSearchKnowledgeBase,
     ],
   );

@@ -13,6 +13,7 @@ import type {
   ResourceCenterContentListBlock,
   ResourceCenterDividerBlock,
   ResourceCenterKnowledgeBaseBlock,
+  ResourceCenterLiveChatBlock,
   ResourceCenterMessageBlock,
   ResourceCenterNavigableBlock,
   ResourceCenterPageEntry,
@@ -196,6 +197,45 @@ export const ResourceCenterActionBlockView = memo(
 );
 
 ResourceCenterActionBlockView.displayName = 'ResourceCenterActionBlockView';
+
+// ============================================================================
+// Block — LIVE_CHAT
+// ============================================================================
+
+interface ResourceCenterLiveChatBlockViewProps {
+  block: ResourceCenterLiveChatBlock;
+  onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
+}
+
+export const ResourceCenterLiveChatBlockView = memo(
+  ({ block, onLiveChatClick }: ResourceCenterLiveChatBlockViewProps) => {
+    const handleClick = () => {
+      onLiveChatClick?.(block);
+    };
+
+    return (
+      <button
+        type="button"
+        data-block-id={block.id}
+        className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-resource-center-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-resource-center-foreground/5 cursor-pointer overflow-hidden"
+        onClick={handleClick}
+      >
+        <div className="absolute inset-0 bg-sdk-resource-center-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
+        <span className="relative min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
+          {block.name || 'Live chat'}
+        </span>
+        <BlockIcon
+          iconSource={block.iconSource}
+          iconType={block.iconType}
+          iconUrl={block.iconUrl}
+          className="relative text-sdk-resource-center-foreground/40"
+        />
+      </button>
+    );
+  },
+);
+
+ResourceCenterLiveChatBlockView.displayName = 'ResourceCenterLiveChatBlockView';
 
 // ============================================================================
 // NavigableBlockRow — unified row for sub-page, knowledge-base, content-list
@@ -743,6 +783,7 @@ export const ResourceCenterBlocks = memo(
       userAttributes,
       onContentClick,
       onBlockClick,
+      onLiveChatClick,
       checklistSlot,
       actions,
     } = useResourceCenterContext();
@@ -781,6 +822,9 @@ export const ResourceCenterBlocks = memo(
               )}
               {block.type === ResourceCenterBlockType.ACTION && (
                 <ResourceCenterActionBlockView block={block} onActionBlockClick={onBlockClick} />
+              )}
+              {block.type === ResourceCenterBlockType.LIVE_CHAT && (
+                <ResourceCenterLiveChatBlockView block={block} onLiveChatClick={onLiveChatClick} />
               )}
               {(block.type === ResourceCenterBlockType.SUB_PAGE ||
                 block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
