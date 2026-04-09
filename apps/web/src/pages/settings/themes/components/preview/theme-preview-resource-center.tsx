@@ -15,6 +15,7 @@ import {
   ResourceCenterFooter,
 } from '@usertour-packages/widget';
 import {
+  KnowledgeBaseSearchProvider,
   LauncherIconSource,
   ResourceCenterBlockType,
   ResourceCenterData,
@@ -160,7 +161,7 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
           name: 'Help',
           iconSource: LauncherIconSource.BUILTIN,
           iconType: 'question-line',
-          searchProvider: 'google' as any,
+          searchProvider: KnowledgeBaseSearchProvider.FRESHDESK,
           knowledgeBaseUrl: '',
           defaultSearchQuery: '',
           onlyShowBlock: false,

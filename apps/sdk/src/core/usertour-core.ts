@@ -1614,9 +1614,9 @@ export class UsertourCore extends Evented {
     const checklist = this.activatedChecklist;
     if (!checklist) return;
 
-    const rcData = this.activatedResourceCenter?.getSnapshot()?.resourceCenterData;
+    const resourceCenterData = this.activatedResourceCenter?.getSnapshot()?.resourceCenterData;
     const embedded =
-      rcData?.tabs?.some((tab) =>
+      resourceCenterData?.tabs?.some((tab) =>
         tab.blocks.some((b) => b.type === ResourceCenterBlockType.CHECKLIST),
       ) ?? false;
 

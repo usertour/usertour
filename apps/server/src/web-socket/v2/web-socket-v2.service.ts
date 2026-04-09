@@ -22,6 +22,8 @@ import {
   CloseResourceCenterDto,
   ClickResourceCenterDto,
   ListResourceCenterBlockContentDto,
+  SearchKnowledgeBaseDto,
+  SearchKnowledgeBaseResult,
   ResourceCenterBlockContentItem,
   ResourceCenterBlock,
   ResourceCenterBlockType,
@@ -40,6 +42,7 @@ import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
+import { KnowledgeBaseSearchService } from '../core/knowledge-base-search.service';
 import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 import { assignClientContext } from '@/utils/event-v2';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
@@ -67,6 +70,7 @@ export class WebSocketV2Service {
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
     private readonly socketDataService: SocketDataService,
+    private readonly knowledgeBaseSearchService: KnowledgeBaseSearchService,
   ) {}
 
   // ============================================================================
@@ -203,7 +207,7 @@ export class WebSocketV2Service {
     const { socket, socketData } = context;
     const { environment } = socketData;
 
-    const { externalUserId, attributes } = data;
+    const { externalUserId, attributes = {} } = data;
     const bizUser = await this.bizService.upsertBizUsers(
       this.prisma,
       externalUserId,
@@ -228,7 +232,7 @@ export class WebSocketV2Service {
     const { socket, socketData } = context;
     const { environment } = socketData;
 
-    const { externalCompanyId, externalUserId, attributes, membership } = data;
+    const { externalCompanyId, externalUserId, attributes = {}, membership = {} } = data;
     const bizCompany = await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,
@@ -360,13 +364,15 @@ export class WebSocketV2Service {
 
     // Cancel all sessions (cancelContent now supports all content types)
     await Promise.allSettled(
-      sessionsToCancel.map((session) => {
-        const context: ContentCancelContext = {
-          ...endContentContext,
-          sessionId: session.id,
-        };
-        return this.contentOrchestratorService.cancelContent(context);
-      }),
+      sessionsToCancel
+        .filter((session) => session.id != null)
+        .map((session) => {
+          const context: ContentCancelContext = {
+            ...endContentContext,
+            sessionId: session.id!,
+          };
+          return this.contentOrchestratorService.cancelContent(context);
+        }),
     );
 
     return true;
@@ -735,19 +741,19 @@ export class WebSocketV2Service {
     params: ListResourceCenterBlockContentDto,
   ): Promise<ResourceCenterBlockContentItem[]> {
     const { socketData } = context;
-    const rcSession = socketData.resourceCenterSession;
-    if (!rcSession) {
+    const resourceCenterSession = socketData.resourceCenterSession;
+    if (!resourceCenterSession) {
       this.logger.warn('No resource center session found');
       return [];
     }
 
-    const rcData = rcSession.version?.resourceCenter;
-    if (!rcData?.tabs) {
+    const resourceCenterData = resourceCenterSession.version?.resourceCenter;
+    if (!resourceCenterData?.tabs) {
       return [];
     }
 
     let block: ResourceCenterBlock | undefined;
-    for (const tab of rcData.tabs) {
+    for (const tab of resourceCenterData.tabs) {
       block = tab.blocks.find(
         (b) => b.id === params.blockId && b.type === ResourceCenterBlockType.CONTENT_LIST,
       );
@@ -777,6 +783,56 @@ export class WebSocketV2Service {
         contentType: item.contentType,
         name: contentNameMap.get(item.contentId) || '',
       }));
+  }
+
+  /**
+   * Search knowledge base articles via server-side proxy
+   * Calls third-party provider APIs with configured API keys
+   */
+  async searchKnowledgeBase(
+    context: WebSocketContext,
+    params: SearchKnowledgeBaseDto,
+  ): Promise<SearchKnowledgeBaseResult> {
+    const { socketData } = context;
+    const resourceCenterSession = socketData.resourceCenterSession;
+    if (!resourceCenterSession) {
+      this.logger.warn('No resource center session found');
+      return { articles: [], total: 0 };
+    }
+
+    const resourceCenterData = resourceCenterSession.version?.resourceCenter;
+    if (!resourceCenterData?.tabs) {
+      return { articles: [], total: 0 };
+    }
+
+    let block: ResourceCenterBlock | undefined;
+    for (const tab of resourceCenterData.tabs) {
+      block = tab.blocks.find(
+        (b) => b.id === params.blockId && b.type === ResourceCenterBlockType.KNOWLEDGE_BASE,
+      );
+      if (block) break;
+    }
+    if (!block || block.type !== ResourceCenterBlockType.KNOWLEDGE_BASE) {
+      return { articles: [], total: 0 };
+    }
+
+    const { searchProvider, knowledgeBaseUrl } = block;
+    const query = params.query.trim();
+    if (!query) {
+      return { articles: [], total: 0 };
+    }
+
+    try {
+      return await this.knowledgeBaseSearchService.search(
+        searchProvider,
+        knowledgeBaseUrl,
+        query,
+        params.offset,
+      );
+    } catch (error) {
+      this.logger.error(`Knowledge base search failed: ${error}`);
+      return { articles: [], total: 0 };
+    }
   }
 
   // ============================================================================

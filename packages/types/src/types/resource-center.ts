@@ -69,7 +69,6 @@ export interface ResourceCenterSubPageBlock extends ResourceCenterBlockCondition
 }
 
 export enum KnowledgeBaseSearchProvider {
-  GOOGLE = 'google',
   FRESHDESK = 'freshdesk',
   HUBSPOT = 'hubspot',
   ZENDESK = 'zendesk',

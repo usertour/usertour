@@ -296,6 +296,26 @@ export class ListResourceCenterBlockContentPayload {
   blockId: string;
 }
 
+/**
+ * Search knowledge base payload validator
+ */
+export class SearchKnowledgeBasePayload {
+  @IsString()
+  @MaxLength(255)
+  sessionId: string;
+
+  @IsString()
+  @MaxLength(255)
+  blockId: string;
+
+  @IsString()
+  @MaxLength(1000)
+  query: string;
+
+  @IsNumber()
+  offset: number;
+}
+
 // ============================================================================
 // Payload DTO Map
 // ============================================================================
@@ -325,5 +345,6 @@ export const payloadValidatorMap = new Map<ClientMessageKind, new () => object>(
   [ClientMessageKind.CLOSE_RESOURCE_CENTER, SessionOnlyPayload],
   [ClientMessageKind.CLICK_RESOURCE_CENTER, ClickResourceCenterPayload],
   [ClientMessageKind.LIST_RESOURCE_CENTER_BLOCK_CONTENT, ListResourceCenterBlockContentPayload],
+  [ClientMessageKind.SEARCH_KNOWLEDGE_BASE, SearchKnowledgeBasePayload],
   // BEGIN_BATCH, END_BATCH, END_ALL_CONTENT don't require payload validation
 ]);

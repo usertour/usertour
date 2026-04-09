@@ -45,7 +45,6 @@ export {
   ContentListDetail,
   DetailView,
 } from './resource-center-body';
-export type { KnowledgeBaseArticle } from './resource-center-body';
 
 // Tab Bar
 export { ResourceCenterTabBar } from './resource-center-tab-bar';

@@ -107,6 +107,17 @@ const config: Config = {
   globalConfig: {
     isSelfHostedMode: process.env.IS_SELF_HOSTED_MODE !== 'false',
   },
+  knowledgeBase: {
+    freshdesk: {
+      apiKey: process.env.FRESHDESK_API_KEY || '',
+    },
+    zendesk: {
+      apiKey: process.env.ZENDESK_API_KEY || '',
+    },
+    hubspot: {
+      apiKey: process.env.HUBSPOT_API_KEY || '',
+    },
+  },
   integration: {
     salesforce: {
       clientId: process.env.SALESFORCE_CLIENT_ID || '',

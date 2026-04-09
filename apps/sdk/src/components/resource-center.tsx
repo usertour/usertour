@@ -67,7 +67,7 @@ const useChecklistStore = (checklist: UsertourChecklist | undefined) => {
   return store;
 };
 
-/** Inline checklist content rendered inside the RC panel */
+/** Inline checklist content rendered inside the Resource Center panel */
 const EmbeddedChecklistSlot = ({ checklist }: { checklist: UsertourChecklist }) => {
   const store = useChecklistStore(checklist);
   if (!store) return null;
@@ -142,6 +142,9 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         contentListItems={contentListItems ?? []}
         onContentListNavigate={resourceCenter.handleContentListNavigate}
         onContentListItemClick={resourceCenter.handleContentListItemClick}
+        onSearchKnowledgeBase={(blockId, query, offset) =>
+          resourceCenter.searchKnowledgeBase(blockId, query, offset)
+        }
       >
         <ResourceCenterStyleProvider>
           <ResourceCenterPanel mode="iframe" assets={assets}>

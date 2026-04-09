@@ -70,6 +70,7 @@ export enum ClientMessageKind {
   CLOSE_RESOURCE_CENTER = 'CloseResourceCenter',
   CLICK_RESOURCE_CENTER = 'ClickResourceCenter',
   LIST_RESOURCE_CENTER_BLOCK_CONTENT = 'ListResourceCenterBlockContent',
+  SEARCH_KNOWLEDGE_BASE = 'SearchKnowledgeBase',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
   END_ALL_CONTENT = 'EndAllContent',
@@ -307,6 +308,33 @@ export type ResourceCenterBlockContentItem = {
   contentId: string;
   contentType: 'flow' | 'checklist';
   name: string;
+};
+
+/**
+ * Search knowledge base request
+ */
+export type SearchKnowledgeBaseDto = {
+  sessionId: string;
+  blockId: string;
+  query: string;
+  offset: number;
+};
+
+/**
+ * Search knowledge base response
+ */
+export type SearchKnowledgeBaseResult = {
+  articles: KnowledgeBaseArticleItem[];
+  total: number;
+};
+
+/**
+ * Knowledge base article item
+ */
+export type KnowledgeBaseArticleItem = {
+  title: string;
+  snippet: string;
+  url: string;
 };
 
 // ============================================================================

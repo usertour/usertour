@@ -148,6 +148,11 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
+      ClientMessageKind.SEARCH_KNOWLEDGE_BASE,
+      async (context, payload) => await this.service.searchKnowledgeBase(context, payload),
+    );
+
+    register(
       ClientMessageKind.END_BATCH,
       async (context, _payload) => await this.service.endBatch(context),
     );
@@ -209,9 +214,10 @@ export class WebSocketV2MessageHandler {
 
       return await handler.handle(context, payload);
     } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
       this.logger.error({
-        message: `Error handling message kind ${kind}: ${error.message}`,
-        stack: error.stack,
+        message: `Error handling message kind ${kind}: ${err.message}`,
+        stack: err.stack,
         socketId: socket.id,
         payload: payload,
       });

@@ -109,7 +109,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         name: '',
         iconSource: LauncherIconSource.BUILTIN,
         iconType: '',
-        searchProvider: KnowledgeBaseSearchProvider.GOOGLE,
+        searchProvider: KnowledgeBaseSearchProvider.FRESHDESK,
         knowledgeBaseUrl: '',
         defaultSearchQuery: '',
         onlyShowBlock: false,

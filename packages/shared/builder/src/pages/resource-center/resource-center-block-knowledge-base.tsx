@@ -36,10 +36,6 @@ const SEARCH_PROVIDER_OPTIONS = [
     label: 'Freshdesk - Public search',
   },
   {
-    value: KnowledgeBaseSearchProvider.GOOGLE,
-    label: 'Google Search',
-  },
-  {
     value: KnowledgeBaseSearchProvider.HUBSPOT,
     label: 'HubSpot - Public search',
   },

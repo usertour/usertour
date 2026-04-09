@@ -2,7 +2,7 @@ import { forwardRef, useState } from 'react';
 import type { AssetAttributes } from '@usertour-packages/frame';
 import { Frame } from '@usertour-packages/frame';
 import { useResourceCenterContext } from './context';
-import { RC_DEFAULTS, resourceCenterPlacementToPosition } from './constants';
+import { RESOURCE_CENTER_DEFAULTS, resourceCenterPlacementToPosition } from './constants';
 import { computePositionStyle } from '../utils/position';
 import { ResourceCenterTrigger } from './resource-center-trigger';
 import { useFrameGlobalStyle } from './hooks/use-frame-global-style';
@@ -28,13 +28,15 @@ export const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterL
   (props, ref) => {
     const { onClick, style, frameStyle } = props;
     const { themeSetting, zIndex } = useResourceCenterContext();
-    const rc = themeSetting.resourceCenter;
+    const resourceCenter = themeSetting.resourceCenter;
     const launcher = themeSetting.resourceCenterLauncherButton;
-    const launcherHeight = launcher?.height ?? RC_DEFAULTS.launcherHeight;
+    const launcherHeight = launcher?.height ?? RESOURCE_CENTER_DEFAULTS.launcherHeight;
     const positionStyle = computePositionStyle(
-      resourceCenterPlacementToPosition(rc?.placement ?? RC_DEFAULTS.placement),
-      rc?.offsetX ?? RC_DEFAULTS.offsetX,
-      rc?.offsetY ?? RC_DEFAULTS.offsetY,
+      resourceCenterPlacementToPosition(
+        resourceCenter?.placement ?? RESOURCE_CENTER_DEFAULTS.placement,
+      ),
+      resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX,
+      resourceCenter?.offsetY ?? RESOURCE_CENTER_DEFAULTS.offsetY,
     );
 
     return (
@@ -76,13 +78,15 @@ export const ResourceCenterLauncherFrame = forwardRef<
   const { globalStyle, themeSetting, zIndex } = useResourceCenterContext();
   const [launcherRect, setLauncherRect] = useState<{ width: number; height: number } | null>(null);
 
-  const rc = themeSetting.resourceCenter;
+  const resourceCenter = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
-  const launcherHeight = launcher?.height ?? RC_DEFAULTS.launcherHeight;
+  const launcherHeight = launcher?.height ?? RESOURCE_CENTER_DEFAULTS.launcherHeight;
   const style = computePositionStyle(
-    resourceCenterPlacementToPosition(rc?.placement ?? RC_DEFAULTS.placement),
-    rc?.offsetX ?? RC_DEFAULTS.offsetX,
-    rc?.offsetY ?? RC_DEFAULTS.offsetY,
+    resourceCenterPlacementToPosition(
+      resourceCenter?.placement ?? RESOURCE_CENTER_DEFAULTS.placement,
+    ),
+    resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX,
+    resourceCenter?.offsetY ?? RESOURCE_CENTER_DEFAULTS.offsetY,
   );
   const width = launcherRect?.width ? `${launcherRect.width}px` : undefined;
 

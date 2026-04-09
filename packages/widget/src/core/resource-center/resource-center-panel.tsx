@@ -10,7 +10,7 @@ import type { AssetAttributes } from '@usertour-packages/frame';
 import { Frame, useFrame } from '@usertour-packages/frame';
 import { cn } from '@usertour-packages/tailwind';
 import { useResourceCenterContext } from './context';
-import { RC_DEFAULTS } from './constants';
+import { RESOURCE_CENTER_DEFAULTS } from './constants';
 import { useResourceCenterPositionStyle } from './hooks/use-resource-center-position-style';
 import { ResourceCenterAnchor } from './resource-center-anchor';
 import { ResourceCenterFrameRoot } from './resource-center-frame-root';
@@ -144,10 +144,10 @@ export const ResourceCenterPanel = forwardRef<
   } = useResourceCenterContext();
   const positionStyle = useResourceCenterPositionStyle();
 
-  const rc = themeSetting.resourceCenter;
+  const resourceCenter = themeSetting.resourceCenter;
   const launcher = themeSetting.resourceCenterLauncherButton;
-  const closedHeight = launcher?.height ?? RC_DEFAULTS.launcherHeight;
-  const openWidth = `${rc?.normalWidth ?? RC_DEFAULTS.normalWidth}px`;
+  const closedHeight = launcher?.height ?? RESOURCE_CENTER_DEFAULTS.launcherHeight;
+  const openWidth = `${resourceCenter?.normalWidth ?? RESOURCE_CENTER_DEFAULTS.normalWidth}px`;
   const applyPosition = positionProp !== false;
 
   const [launcherSize, setLauncherSize] = useState<{ width: number; height: number } | null>(null);
@@ -170,8 +170,8 @@ export const ResourceCenterPanel = forwardRef<
       : 'auto';
 
   // Fixed open height: calc(100vh - offset) capped at maxHeight
-  const offsetY = rc?.offsetY ?? RC_DEFAULTS.offsetY;
-  const maxHeight = rc?.maxHeight ?? 700;
+  const offsetY = resourceCenter?.offsetY ?? RESOURCE_CENTER_DEFAULTS.offsetY;
+  const maxHeight = resourceCenter?.maxHeight ?? 700;
   const heightOffset = offsetY * 2 + closedHeight + 4;
   const useFixedHeight = positionProp !== false || openHeightOverride != null;
   const openFrameHeight = useFixedHeight

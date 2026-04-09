@@ -1,6 +1,6 @@
 import type { ResourceCenterPlacement } from '@usertour/types';
 
-export const RC_DEFAULTS = {
+export const RESOURCE_CENTER_DEFAULTS = {
   launcherHeight: 60,
   offsetX: 20,
   offsetY: 20,
@@ -18,4 +18,4 @@ const PLACEMENT_TO_POSITION: Record<ResourceCenterPlacement, string> = {
 };
 
 export const resourceCenterPlacementToPosition = (placement: ResourceCenterPlacement): string =>
-  PLACEMENT_TO_POSITION[placement] ?? PLACEMENT_TO_POSITION[RC_DEFAULTS.placement];
+  PLACEMENT_TO_POSITION[placement] ?? PLACEMENT_TO_POSITION[RESOURCE_CENTER_DEFAULTS.placement];

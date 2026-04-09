@@ -4,6 +4,7 @@ import type {
   ResourceCenterData,
   ResourceCenterNavigationState,
   ResourceCenterPageEntry,
+  SearchKnowledgeBaseResult,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
@@ -14,7 +15,7 @@ import {
   type ContentListDisplayItem,
   type ResourceCenterNavigationActions,
 } from './context';
-import { RC_DEFAULTS } from './constants';
+import { RESOURCE_CENTER_DEFAULTS } from './constants';
 
 // ============================================================================
 // Helper: check if a block is navigable (has a detail view)
@@ -44,6 +45,11 @@ interface ResourceCenterRootProps {
   contentListItems?: ContentListDisplayItem[];
   onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
+  onSearchKnowledgeBase?: (
+    blockId: string,
+    query: string,
+    offset: number,
+  ) => Promise<SearchKnowledgeBaseResult>;
 }
 
 export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
@@ -66,6 +72,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     contentListItems: contentListItemsProp = [],
     onContentListNavigate,
     onContentListItemClick,
+    onSearchKnowledgeBase,
   } = props;
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
 
@@ -165,7 +172,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const handleExpandedChange = useCallback(
     async (open: boolean) => {
       const duration =
-        themeSetting.resourceCenter?.transitionDuration ?? RC_DEFAULTS.transitionDuration;
+        themeSetting.resourceCenter?.transitionDuration ??
+        RESOURCE_CENTER_DEFAULTS.transitionDuration;
 
       setIsAnimating(true);
       if (animationTimerRef.current != null) {
@@ -215,6 +223,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       showBackButton,
       contentListItems: contentListItemsProp,
       onContentListItemClick,
+      onSearchKnowledgeBase,
     }),
     [
       globalStyle,
@@ -242,6 +251,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       showBackButton,
       contentListItemsProp,
       onContentListItemClick,
+      onSearchKnowledgeBase,
     ],
   );
 

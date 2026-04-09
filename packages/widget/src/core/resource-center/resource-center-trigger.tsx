@@ -4,7 +4,7 @@ import { useSize } from '@usertour-packages/react-use-size';
 import { cn } from '@usertour-packages/tailwind';
 import { Button } from '../../primitives';
 import { useResourceCenterContext } from './context';
-import { RC_DEFAULTS } from './constants';
+import { RESOURCE_CENTER_DEFAULTS } from './constants';
 
 // ============================================================================
 // Launcher Icon
@@ -22,14 +22,16 @@ export const ResourceCenterLauncherIcon = memo(
     imageHeight?: number;
     launcherHeight?: number;
   }) => {
-    const h = imageHeight ?? RC_DEFAULTS.imageHeight;
+    const h = imageHeight ?? RESOURCE_CENTER_DEFAULTS.imageHeight;
     if (iconType === 'custom' && iconUrl) {
       return (
         <img src={iconUrl} alt="" style={{ height: h, width: 'auto', objectFit: 'contain' }} />
       );
     }
     if (iconType === 'plaintext-question-mark') {
-      const textSize = Math.round((launcherHeight ?? RC_DEFAULTS.launcherHeight) * 0.6);
+      const textSize = Math.round(
+        (launcherHeight ?? RESOURCE_CENTER_DEFAULTS.launcherHeight) * 0.6,
+      );
       return (
         <span className="leading-none" style={{ fontSize: textSize }}>
           ?
@@ -117,7 +119,7 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
       'text-sdk-resource-center-launcher-foreground font-sdk-resource-center-launcher',
     );
 
-    const launcherHeight = launcher?.height ?? RC_DEFAULTS.launcherHeight;
+    const launcherHeight = launcher?.height ?? RESOURCE_CENTER_DEFAULTS.launcherHeight;
 
     return (
       <Button

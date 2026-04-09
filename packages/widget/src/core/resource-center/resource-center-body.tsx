@@ -1,4 +1,13 @@
-import { CSSProperties, Fragment, memo, useCallback, useMemo, useState } from 'react';
+import {
+  CSSProperties,
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type {
   ResourceCenterActionBlock,
   ResourceCenterContentListBlock,
@@ -8,6 +17,7 @@ import type {
   ResourceCenterNavigableBlock,
   ResourceCenterPageEntry,
   ResourceCenterSubPageBlock,
+  KnowledgeBaseArticleItem as KnowledgeBaseArticle,
   UserTourTypes,
 } from '@usertour/types';
 import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
@@ -271,14 +281,7 @@ SubPageDetail.displayName = 'SubPageDetail';
 // Knowledge Base — search result article item
 // ============================================================================
 
-export interface KnowledgeBaseArticle {
-  title: string;
-  snippet: string;
-  url: string;
-  date?: string;
-}
-
-const KnowledgeBaseArticleItem = memo(({ article }: { article: KnowledgeBaseArticle }) => {
+const KnowledgeBaseArticleRow = memo(({ article }: { article: KnowledgeBaseArticle }) => {
   return (
     <a
       href={article.url}
@@ -298,11 +301,6 @@ const KnowledgeBaseArticleItem = memo(({ article }: { article: KnowledgeBaseArti
         <div className="text-sm font-medium text-sdk-resource-center-foreground line-clamp-2">
           {article.title}
         </div>
-        {article.date && (
-          <div className="text-xs text-sdk-resource-center-foreground/50 mt-0.5">
-            {article.date}
-          </div>
-        )}
         {article.snippet && (
           <div className="text-xs text-sdk-resource-center-foreground/70 mt-1 line-clamp-3">
             {article.snippet}
@@ -313,7 +311,7 @@ const KnowledgeBaseArticleItem = memo(({ article }: { article: KnowledgeBaseArti
   );
 });
 
-KnowledgeBaseArticleItem.displayName = 'KnowledgeBaseArticleItem';
+KnowledgeBaseArticleRow.displayName = 'KnowledgeBaseArticleRow';
 
 // ============================================================================
 // Knowledge Base detail view
@@ -324,29 +322,77 @@ interface KnowledgeBaseDetailProps {
 }
 
 export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) => {
+  const { onSearchKnowledgeBase } = useResourceCenterContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [articles, setArticles] = useState<KnowledgeBaseArticle[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [total, setTotal] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const hasMore = articles.length < total;
 
   const handleSearch = useCallback(
     async (query: string) => {
-      if (!query.trim()) return;
+      if (!query.trim() || !onSearchKnowledgeBase) return;
       setIsSearching(true);
       setHasSearched(true);
+      setArticles([]);
+      setTotal(0);
       try {
-        const results = await fetchKnowledgeBaseArticles(
-          block.searchProvider,
-          block.knowledgeBaseUrl,
-          query.trim(),
-        );
-        setArticles(results);
+        const result = await onSearchKnowledgeBase(block.id, query.trim(), 0);
+        setArticles(result.articles);
+        setTotal(result.total);
       } finally {
         setIsSearching(false);
       }
     },
-    [block.searchProvider, block.knowledgeBaseUrl],
+    [block.id, onSearchKnowledgeBase],
   );
+
+  // Auto-search with defaultSearchQuery on mount
+  useEffect(() => {
+    if (block.defaultSearchQuery) {
+      setSearchQuery(block.defaultSearchQuery);
+    }
+  }, [block.id]);
+
+  // Debounced auto-search on input change
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setArticles([]);
+      setTotal(0);
+      setHasSearched(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      handleSearch(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const loadMore = useCallback(async () => {
+    if (!onSearchKnowledgeBase || isLoadingMore || !hasMore || !searchQuery.trim()) return;
+    setIsLoadingMore(true);
+    try {
+      const result = await onSearchKnowledgeBase(block.id, searchQuery.trim(), articles.length);
+      setArticles((prev) => [...prev, ...result.articles]);
+      setTotal(result.total);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [block.id, onSearchKnowledgeBase, isLoadingMore, hasMore, searchQuery, articles.length]);
+
+  // Infinite scroll handler
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || isLoadingMore || !hasMore) return;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    if (scrollHeight - scrollTop - clientHeight < 100) {
+      loadMore();
+    }
+  }, [loadMore, isLoadingMore, hasMore]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -416,13 +462,22 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
       )}
 
       {!isSearching && articles.length > 0 && (
-        <div className="flex flex-col">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex flex-col overflow-y-auto"
+        >
           <div className="px-1 pb-1 text-xs font-medium text-sdk-resource-center-foreground/50">
             Suggested articles
           </div>
           {articles.map((article, idx) => (
-            <KnowledgeBaseArticleItem key={`${article.url}-${idx}`} article={article} />
+            <KnowledgeBaseArticleRow key={`${article.url}-${idx}`} article={article} />
           ))}
+          {isLoadingMore && (
+            <div className="py-2 text-center text-xs text-sdk-resource-center-foreground/50">
+              Loading more...
+            </div>
+          )}
         </div>
       )}
 
@@ -553,99 +608,6 @@ export const DetailView = memo(({ page, subPageEditSlot }: DetailViewProps) => {
 });
 
 DetailView.displayName = 'DetailView';
-
-// ============================================================================
-// Knowledge Base — search API helper
-// ============================================================================
-
-async function fetchKnowledgeBaseArticles(
-  provider: string,
-  baseUrl: string,
-  query: string,
-): Promise<KnowledgeBaseArticle[]> {
-  try {
-    const normalizedUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
-    const encodedQuery = encodeURIComponent(query);
-
-    let apiUrl: string;
-
-    switch (provider) {
-      case 'freshdesk': {
-        apiUrl = `${normalizedUrl}/api/v2/search/solutions?term=${encodedQuery}`;
-        break;
-      }
-      case 'zendesk': {
-        const baseForApi = normalizedUrl.replace(/\/$/, '');
-        apiUrl = `${baseForApi}/api/v2/help_center/articles/search.json?query=${encodedQuery}`;
-        break;
-      }
-      case 'hubspot': {
-        apiUrl = `${normalizedUrl}/api/v2/kb/search?query=${encodedQuery}`;
-        break;
-      }
-      default: {
-        const siteUrl = normalizedUrl.replace(/^https?:\/\//, '');
-        apiUrl = `https://www.googleapis.com/customsearch/v1?q=site:${siteUrl}+${encodedQuery}`;
-        break;
-      }
-    }
-
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
-    return parseSearchResults(provider, data);
-  } catch {
-    return [];
-  }
-}
-
-function parseSearchResults(provider: string, data: any): KnowledgeBaseArticle[] {
-  try {
-    switch (provider) {
-      case 'freshdesk': {
-        const items = Array.isArray(data) ? data : (data?.results ?? []);
-        return items.slice(0, 10).map((item: any) => ({
-          title: item.title ?? '',
-          snippet: item.description ?? item.desc_un_html ?? '',
-          url: item.url ?? '#',
-          date: item.updated_at ? new Date(item.updated_at).toLocaleDateString() : undefined,
-        }));
-      }
-      case 'zendesk': {
-        const results = data?.results ?? [];
-        return results.slice(0, 10).map((item: any) => ({
-          title: item.title ?? '',
-          snippet: item.snippet ?? item.body?.substring(0, 200) ?? '',
-          url: item.html_url ?? '#',
-          date: item.updated_at ? new Date(item.updated_at).toLocaleDateString() : undefined,
-        }));
-      }
-      case 'hubspot': {
-        const results = data?.results ?? data?.objects ?? [];
-        return results.slice(0, 10).map((item: any) => ({
-          title: item.title ?? item.name ?? '',
-          snippet: item.description ?? item.metaDescription ?? '',
-          url: item.url ?? '#',
-          date: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : undefined,
-        }));
-      }
-      default: {
-        const items = data?.items ?? [];
-        return items.slice(0, 10).map((item: any) => ({
-          title: item.title ?? '',
-          snippet: item.snippet ?? '',
-          url: item.link ?? '#',
-          date: undefined,
-        }));
-      }
-    }
-  } catch {
-    return [];
-  }
-}
 
 // ============================================================================
 // Body

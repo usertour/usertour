@@ -7,6 +7,7 @@ import {
   ResourceCenterData,
   ThemeTypesSetting,
   ResourceCenterBlockContentItem,
+  SearchKnowledgeBaseResult,
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
@@ -160,6 +161,25 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       logger.error('Failed to fetch content list items:', error);
       this.updateStore({ contentListItems: [] });
       return [];
+    }
+  }
+
+  async searchKnowledgeBase(
+    blockId: string,
+    query: string,
+    offset: number,
+  ): Promise<SearchKnowledgeBaseResult> {
+    const sessionId = this.getSessionId();
+    try {
+      return await this.socketService.searchKnowledgeBase({
+        sessionId,
+        blockId,
+        query,
+        offset,
+      });
+    } catch (error) {
+      logger.error('Failed to search knowledge base:', error);
+      return { articles: [], total: 0 };
     }
   }
 

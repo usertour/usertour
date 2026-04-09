@@ -1,19 +1,21 @@
 import { useMemo } from 'react';
 import { useResourceCenterContext } from '../context';
-import { RC_DEFAULTS, resourceCenterPlacementToPosition } from '../constants';
+import { RESOURCE_CENTER_DEFAULTS, resourceCenterPlacementToPosition } from '../constants';
 import { computePositionStyle } from '../../utils/position';
 
 export function useResourceCenterPositionStyle() {
   const { themeSetting } = useResourceCenterContext();
-  const rc = themeSetting.resourceCenter;
+  const resourceCenter = themeSetting.resourceCenter;
 
   return useMemo(
     () =>
       computePositionStyle(
-        resourceCenterPlacementToPosition(rc?.placement ?? RC_DEFAULTS.placement),
-        rc?.offsetX ?? RC_DEFAULTS.offsetX,
-        rc?.offsetY ?? RC_DEFAULTS.offsetY,
+        resourceCenterPlacementToPosition(
+          resourceCenter?.placement ?? RESOURCE_CENTER_DEFAULTS.placement,
+        ),
+        resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX,
+        resourceCenter?.offsetY ?? RESOURCE_CENTER_DEFAULTS.offsetY,
       ),
-    [rc?.placement, rc?.offsetX, rc?.offsetY],
+    [resourceCenter?.placement, resourceCenter?.offsetX, resourceCenter?.offsetY],
   );
 }
