@@ -116,14 +116,10 @@ export class UsertourLiveChatManager {
         w.zE?.('webWidget', 'hide');
         break;
       case LiveChatProvider.ZENDESK_MESSENGER:
-        w.zE?.('messenger', 'hide');
+        // Zendesk Messenger has no native hide API; launcher is controlled by open/close only
         break;
       case LiveChatProvider.FRESHCHAT:
-        if (w.FreshworksWidget) {
-          w.FreshworksWidget('hide', 'launcher');
-        } else {
-          (w.fcWidget ?? w.fdWidget)?.hide?.();
-        }
+        // Freshchat has no reliable hide-launcher-only API; open/close manages visibility
         break;
       case LiveChatProvider.HELP_SCOUT:
         w.Beacon?.('config', { display: { style: 'manual' } });
@@ -140,12 +136,15 @@ export class UsertourLiveChatManager {
     const w = window as any;
     switch (block.liveChatProvider) {
       case LiveChatProvider.CRISP:
+        w.$crisp?.push(['do', 'chat:show']);
         w.$crisp?.push(['do', 'chat:open']);
         break;
       case LiveChatProvider.INTERCOM:
+        w.Intercom?.('update', { hide_default_launcher: false });
         w.Intercom?.('show');
         break;
       case LiveChatProvider.ZENDESK_CLASSIC:
+        w.zE?.('webWidget', 'show');
         w.zE?.('webWidget', 'open');
         break;
       case LiveChatProvider.ZENDESK_MESSENGER:
@@ -159,6 +158,7 @@ export class UsertourLiveChatManager {
         }
         break;
       case LiveChatProvider.HELP_SCOUT:
+        w.Beacon?.('config', { display: { style: 'icon' } });
         w.Beacon?.('open');
         break;
       case LiveChatProvider.CUSTOM:
@@ -179,15 +179,16 @@ export class UsertourLiveChatManager {
     const w = window as any;
     switch (block.liveChatProvider) {
       case LiveChatProvider.CRISP:
-        w.$crisp?.push(['do', 'chat:close']);
         w.$crisp?.push(['do', 'chat:hide']);
+        w.$crisp?.push(['do', 'chat:close']);
         break;
       case LiveChatProvider.INTERCOM:
+        w.Intercom?.('update', { hide_default_launcher: true });
         w.Intercom?.('hide');
         break;
       case LiveChatProvider.ZENDESK_CLASSIC:
-        w.zE?.('webWidget', 'close');
         w.zE?.('webWidget', 'hide');
+        w.zE?.('webWidget', 'close');
         break;
       case LiveChatProvider.ZENDESK_MESSENGER:
         w.zE?.('messenger', 'close');
@@ -200,11 +201,12 @@ export class UsertourLiveChatManager {
         }
         break;
       case LiveChatProvider.HELP_SCOUT:
+        w.Beacon?.('config', { display: { style: 'manual' } });
         w.Beacon?.('close');
         break;
       case LiveChatProvider.HUBSPOT:
-        w.HubSpotConversations?.widget?.close?.();
         this.setHubSpotVisibility('hidden');
+        w.HubSpotConversations?.widget?.close?.();
         break;
       case LiveChatProvider.CUSTOM:
         break;
