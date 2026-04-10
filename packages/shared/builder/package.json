@@ -73,6 +73,8 @@
     "@usertour-packages/tooltip": "workspace:^",
     "@usertour/types": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
+    "@codemirror/lang-javascript": "^6.2.2",
+    "@uiw/react-codemirror": "^4.23.0",
     "animejs": "^3.2.1",
     "apollo3-cache-persist": "^0.14.1",
     "axios": "^1.6.0",

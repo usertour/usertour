@@ -19,7 +19,8 @@ import {
 import { Rules } from '@usertour-packages/shared-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
-import { Textarea } from '@usertour-packages/textarea';
+import { javascript } from '@codemirror/lang-javascript';
+import CodeMirror from '@uiw/react-codemirror';
 import {
   LauncherIconSource,
   LiveChatProvider,
@@ -90,11 +91,13 @@ const BlockLiveChatBody = () => {
     return null;
   }
 
-  const handleInputChange =
-    (field: 'name' | 'customLiveChatCode') =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setCurrentBlock((prev) => (prev ? { ...prev, [field]: e.target.value } : null));
-    };
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCurrentBlock((prev) => (prev ? { ...prev, name: e.target.value } : null));
+  };
+
+  const handleCustomCodeChange = (value: string) => {
+    setCurrentBlock((prev) => (prev ? { ...prev, customLiveChatCode: value } : null));
+  };
 
   const handleIconChange = (updates: {
     iconType?: string;
@@ -153,7 +156,7 @@ const BlockLiveChatBody = () => {
               className="bg-background-900"
               value={currentBlock.name}
               placeholder="None"
-              onChange={handleInputChange('name')}
+              onChange={handleNameChange}
             />
           </div>
 
@@ -178,13 +181,13 @@ const BlockLiveChatBody = () => {
           {/* Custom code (only for custom provider) */}
           {currentBlock.liveChatProvider === LiveChatProvider.CUSTOM && (
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="live-chat-custom-code">Custom JavaScript code</Label>
-              <Textarea
-                id="live-chat-custom-code"
-                className="bg-background-900 font-mono text-xs min-h-[100px]"
+              <Label>Custom JavaScript code</Label>
+              <CodeMirror
                 value={currentBlock.customLiveChatCode}
-                placeholder="// Code to open your live chat widget"
-                onChange={handleInputChange('customLiveChatCode')}
+                height="200px"
+                basicSetup={{ lineNumbers: false }}
+                extensions={[javascript({ jsx: false, typescript: false })]}
+                onChange={handleCustomCodeChange}
               />
               <p className="text-xs text-muted-foreground">
                 This JavaScript code will be executed when the user clicks the block.
