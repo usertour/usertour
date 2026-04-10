@@ -769,12 +769,26 @@ export class WebSocketV2Service {
     }
 
     const contentIds = contentItems.map((item) => item.contentId);
-    const contents = await this.prisma.content.findMany({
-      where: { id: { in: contentIds }, deleted: false },
-      select: { id: true, name: true, type: true },
+    const environmentId = socketData.environment.id;
+
+    // Query contents that are published in the current environment
+    const publishedContents = await this.prisma.contentOnEnvironment.findMany({
+      where: {
+        contentId: { in: contentIds },
+        environmentId,
+        published: true,
+      },
+      select: {
+        contentId: true,
+        content: { select: { id: true, name: true, type: true, deleted: true } },
+      },
     });
 
-    const contentNameMap = new Map(contents.map((c) => [c.id, c.name || '']));
+    const contentNameMap = new Map(
+      publishedContents
+        .filter((c) => !c.content.deleted)
+        .map((c) => [c.contentId, c.content.name || '']),
+    );
 
     return contentItems
       .filter((item) => contentNameMap.has(item.contentId))
