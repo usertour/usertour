@@ -196,18 +196,31 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     }
   }
 
+  private liveChatCleanup: (() => void) | null = null;
+
   handleLiveChatClick = (block: ResourceCenterLiveChatBlock): void => {
     try {
       this.handleBlockClick(block.id);
       this.expand(false);
-      this.openLiveChatWidget(block);
-      this.listenProviderClose(block, () => {
-        this.expand(true);
-      });
+
+      // Clean up previous live chat listener if any
+      this.liveChatCleanup?.();
+      this.liveChatCleanup = null;
+
+      if (block.liveChatProvider === LiveChatProvider.HUBSPOT) {
+        this.liveChatCleanup = this.initHubSpot(() => this.expand(true));
+      } else {
+        this.openLiveChatWidget(block);
+        this.liveChatCleanup = this.listenProviderClose(block, () => {
+          this.expand(true);
+        });
+      }
     } catch (error) {
       logger.error('Failed to open live chat:', error);
     }
   };
+
+  // ── Generic providers (non-HubSpot) ────────────────────────────────
 
   private openLiveChatWidget(block: ResourceCenterLiveChatBlock): void {
     const w = window as any;
@@ -223,9 +236,6 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
         break;
       case LiveChatProvider.ZENDESK_MESSENGER:
         w.zE?.('messenger', 'open');
-        break;
-      case LiveChatProvider.HUBSPOT:
-        w.HubSpotConversations?.widget?.open?.();
         break;
       case LiveChatProvider.FRESHCHAT:
         if (w.FreshworksWidget) {
@@ -249,38 +259,109 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     }
   }
 
-  private listenProviderClose(block: ResourceCenterLiveChatBlock, onClose: () => void): void {
+  private listenProviderClose(
+    block: ResourceCenterLiveChatBlock,
+    onClose: () => void,
+  ): (() => void) | null {
     const w = window as any;
     switch (block.liveChatProvider) {
       case LiveChatProvider.CRISP:
         w.$crisp?.push(['on', 'chat:closed', onClose]);
-        break;
+        return () => w.$crisp?.push(['off', 'chat:closed']);
       case LiveChatProvider.INTERCOM:
         w.Intercom?.('onHide', onClose);
-        break;
+        return null;
       case LiveChatProvider.ZENDESK_CLASSIC:
         w.zE?.('webWidget:on', 'close', onClose);
-        break;
+        return () => w.zE?.('webWidget:on', 'close', () => {});
       case LiveChatProvider.ZENDESK_MESSENGER:
         w.zE?.('messenger:on', 'close', onClose);
-        break;
-      case LiveChatProvider.HUBSPOT:
-        w.HubSpotConversations?.on?.('widgetClosed', onClose);
-        break;
+        return () => w.zE?.('messenger:on', 'close', () => {});
       case LiveChatProvider.FRESHCHAT:
         if (w.FreshworksWidget) {
           w.FreshworksWidget('onClose', onClose);
         } else {
           (w.fcWidget ?? w.fdWidget)?.on?.('widget:closed', onClose);
         }
-        break;
+        return null;
       case LiveChatProvider.HELP_SCOUT:
         w.Beacon?.('on', 'close', onClose);
-        break;
-      case LiveChatProvider.CUSTOM:
-        // Custom provider: no automatic close detection
-        break;
+        return () => w.Beacon?.('off', 'close');
+      default:
+        return null;
     }
+  }
+
+  // ── HubSpot: MutationObserver + CSS visibility + ready polling ─────
+
+  private initHubSpot(onClose: () => void): () => void {
+    const w = window as any;
+    let pollTimer: number | null = null;
+    let observer: MutationObserver | null = null;
+    let disposed = false;
+
+    const CONTAINER_ID = 'hubspot-messages-iframe-container';
+
+    const showHubSpotWidget = () => {
+      document
+        .getElementById(CONTAINER_ID)
+        ?.style.setProperty('visibility', 'visible', 'important');
+    };
+
+    const hideHubSpotWidget = () => {
+      document.getElementById(CONTAINER_ID)?.style.setProperty('visibility', 'hidden', 'important');
+    };
+
+    const setup = () => {
+      const container = document.getElementById(CONTAINER_ID);
+      if (!w.HubSpotConversations || !container) return;
+
+      // API and DOM both ready — stop polling
+      if (pollTimer != null) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      if (disposed) return;
+
+      // Open the chat
+      showHubSpotWidget();
+      w.HubSpotConversations.widget.open();
+
+      // Detect close via MutationObserver on .hs-shadow-container.active
+      let isOpen = true;
+      const checkState = () => {
+        const active = !!container.querySelector('.hs-shadow-container.active');
+        if (isOpen && !active) {
+          isOpen = false;
+          hideHubSpotWidget();
+          onClose();
+        } else if (!isOpen && active) {
+          isOpen = true;
+        }
+      };
+
+      observer = new MutationObserver(checkState);
+      observer.observe(container, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['class'],
+      });
+    };
+
+    // Poll every 100ms until HubSpotConversations + DOM are ready
+    pollTimer = window.setInterval(setup, 100);
+    setup(); // try immediately
+
+    // Cleanup
+    return () => {
+      disposed = true;
+      if (pollTimer != null) {
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      observer?.disconnect();
+      observer = null;
+    };
   }
 
   isExpandable(): boolean {
