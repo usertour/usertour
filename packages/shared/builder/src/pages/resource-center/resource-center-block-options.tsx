@@ -5,8 +5,8 @@ import {
   RiCheckboxCircleFill,
   RiFileTextFill,
   RiListCheck3,
+  RiMessage3Fill,
   RiPagesFill,
-  RiSendInsFill,
   RiSeparator,
 } from '@usertour-packages/icons';
 import { ResourceCenterBlockType } from '@usertour/types';
@@ -81,7 +81,7 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     value: ResourceCenterBlockType.LIVE_CHAT,
     label: 'Live chat',
     description: 'Open third-party live chat widget',
-    icon: RiSendInsFill,
+    icon: RiMessage3Fill,
   },
   {
     key: ResourceCenterBlockType.DIVIDER,
