@@ -39,6 +39,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     linkUrlDecorator,
     assets,
     contentListItems,
+    liveChatActive,
   } = store;
 
   if (!resourceCenterData || !openState) return null;
@@ -54,6 +55,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     linkUrlDecorator,
     assets,
     contentListItems,
+    liveChatActive,
   };
 };
 
@@ -114,9 +116,11 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
     linkUrlDecorator,
     assets,
     contentListItems,
+    liveChatActive,
   } = store;
 
   if (!themeSettings || !resourceCenterData) return <></>;
+  if (liveChatActive) return <></>;
 
   const { checklist, launcherText, badgeCount, uncompletedCount } =
     resourceCenter.getChecklistPresentation();

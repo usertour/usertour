@@ -201,19 +201,21 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   handleLiveChatClick = (block: ResourceCenterLiveChatBlock): void => {
     try {
       this.handleBlockClick(block.id);
-      this.expand(false);
+      this.updateStore({ liveChatActive: true });
 
       // Clean up previous live chat listener if any
       this.liveChatCleanup?.();
       this.liveChatCleanup = null;
 
+      const onProviderClose = () => {
+        this.updateStore({ liveChatActive: false });
+      };
+
       if (block.liveChatProvider === LiveChatProvider.HUBSPOT) {
-        this.liveChatCleanup = this.initHubSpot(() => this.expand(true));
+        this.liveChatCleanup = this.initHubSpot(onProviderClose);
       } else {
         this.openLiveChatWidget(block);
-        this.liveChatCleanup = this.listenProviderClose(block, () => {
-          this.expand(true);
-        });
+        this.liveChatCleanup = this.listenProviderClose(block, onProviderClose);
       }
     } catch (error) {
       logger.error('Failed to open live chat:', error);

@@ -56,4 +56,5 @@ export type ResourceCenterStore = BaseStore & {
   resourceCenterData?: ResourceCenterData;
   expanded: boolean;
   contentListItems?: ResourceCenterBlockContentItem[];
+  liveChatActive?: boolean;
 };
