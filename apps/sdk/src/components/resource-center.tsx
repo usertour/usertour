@@ -120,7 +120,6 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
   } = store;
 
   if (!themeSettings || !resourceCenterData) return <></>;
-  if (liveChatActive) return <></>;
 
   const { checklist, launcherText, badgeCount, uncompletedCount } =
     resourceCenter.getChecklistPresentation();
@@ -138,6 +137,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         expanded={expanded}
         onExpandedChange={resourceCenter.expand}
         zIndex={zIndex}
+        hidden={liveChatActive === true}
         userAttributes={userAttributes}
         onContentClick={resourceCenter.handleOnClick}
         onBlockClick={resourceCenter.handleBlockClick}

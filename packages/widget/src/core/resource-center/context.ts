@@ -62,6 +62,8 @@ export interface ResourceCenterContextValue {
   animateFrame: boolean;
   handleExpandedChange: (expanded: boolean) => Promise<void>;
   zIndex: number;
+  /** When true, the entire RC panel is visually hidden (CSS visibility:hidden) but stays mounted */
+  hidden: boolean;
 
   // External data & callbacks
   userAttributes?: UserTourTypes.Attributes;

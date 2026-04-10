@@ -56,5 +56,8 @@ export type ResourceCenterStore = BaseStore & {
   resourceCenterData?: ResourceCenterData;
   expanded: boolean;
   contentListItems?: ResourceCenterBlockContentItem[];
+  /** When true, the RC panel is visually hidden (a live chat provider is active) */
   liveChatActive?: boolean;
+  /** Tracks whether the live chat provider widget is currently open (for future unread UI) */
+  liveChatProviderOpen?: boolean;
 };

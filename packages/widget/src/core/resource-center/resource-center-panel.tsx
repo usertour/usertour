@@ -141,6 +141,7 @@ export const ResourceCenterPanel = forwardRef<
     launcherText,
     uncompletedCount,
     badgeCount,
+    hidden,
   } = useResourceCenterContext();
   const positionStyle = useResourceCenterPositionStyle();
 
@@ -182,6 +183,7 @@ export const ResourceCenterPanel = forwardRef<
 
   const outerStyle: React.CSSProperties = {
     ...(applyPosition ? { zIndex, ...positionStyle } : {}),
+    ...(hidden ? { visibility: 'hidden' as const, pointerEvents: 'none' as const } : {}),
   };
 
   const frameSizeStyle = {

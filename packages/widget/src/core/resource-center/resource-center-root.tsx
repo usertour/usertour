@@ -38,6 +38,8 @@ interface ResourceCenterRootProps {
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => Promise<void>;
   zIndex: number;
+  /** Visually hide the entire RC (CSS visibility:hidden) while keeping it mounted */
+  hidden?: boolean;
   userAttributes?: UserTourTypes.Attributes;
   onContentClick?: (element: any) => Promise<void>;
   onBlockClick?: (blockId: string) => Promise<void>;
@@ -65,6 +67,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     expanded = false,
     onExpandedChange,
     zIndex,
+    hidden = false,
     themeSettings,
     userAttributes,
     onContentClick,
@@ -212,6 +215,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       animateFrame,
       handleExpandedChange,
       zIndex,
+      hidden,
       userAttributes,
       onContentClick,
       onBlockClick,
@@ -241,6 +245,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       animateFrame,
       handleExpandedChange,
       zIndex,
+      hidden,
       userAttributes,
       onContentClick,
       onBlockClick,
