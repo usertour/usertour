@@ -32,6 +32,7 @@ import {
   useSegmentListQuery,
 } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import {
   ContentDataType,
   ContentListItem,
@@ -214,7 +215,12 @@ const BlockContentListBody = () => {
           {/* Flows/checklists to display */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Flows/checklists to display</Label>
+              <div className="flex items-center gap-1">
+                <Label>Content</Label>
+                <QuestionTooltip>
+                  <p>Only flows and checklists can be added.</p>
+                </QuestionTooltip>
+              </div>
             </div>
             <hr className="border-t" />
 
