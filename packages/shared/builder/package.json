@@ -57,6 +57,7 @@
     "@usertour-packages/react-compose-refs": "workspace:^",
     "@usertour-packages/react-use-size": "workspace:^",
     "@usertour-packages/scroll-area": "workspace:^",
+    "@usertour-packages/skeleton": "workspace:^",
     "@usertour-packages/widget": "workspace:^",
     "@usertour-packages/select": "workspace:^",
     "@usertour-packages/separator": "workspace:^",

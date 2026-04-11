@@ -24,6 +24,7 @@ import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
+import { Skeleton } from '@usertour-packages/skeleton';
 import { Rules } from '@usertour-packages/shared-components';
 import {
   useContentListQuery,
@@ -76,13 +77,15 @@ const BlockContentListBody = () => {
   const { eventList } = useListEventsQuery(projectId);
   const [addOpen, setAddOpen] = useState(false);
 
-  const { contents: flowContents } = useContentListQuery({
+  const { contents: flowContents, loading: flowsLoading } = useContentListQuery({
     query: { environmentId, type: ContentDataType.FLOW },
   });
 
-  const { contents: checklistContents } = useContentListQuery({
+  const { contents: checklistContents, loading: checklistsLoading } = useContentListQuery({
     query: { environmentId, type: ContentDataType.CHECKLIST },
   });
+
+  const contentListLoading = flowsLoading || checklistsLoading;
 
   if (!currentBlock || currentBlock.type !== ResourceCenterBlockType.CONTENT_LIST) {
     return null;
@@ -231,34 +234,40 @@ const BlockContentListBody = () => {
             <hr className="border-t" />
 
             {/* Selected items list */}
-            {currentBlock.contentItems.map((item: ContentListItem) => {
-              const info = contentMap.get(item.contentId);
-              return (
-                <div
-                  key={item.contentId}
-                  className="relative group border-b hover:bg-muted"
-                  style={{ marginTop: '0' }}
-                >
-                  <div className="flex items-center gap-2 p-2">
-                    {item.contentType === 'flow' ? (
-                      <FlowIcon width={16} height={16} className="flex-shrink-0" />
-                    ) : (
-                      <ChecklistIcon width={16} height={16} className="flex-shrink-0" />
-                    )}
-                    <span className="truncate text-sm">{info?.name || item.contentId}</span>
+            {contentListLoading
+              ? currentBlock.contentItems.map((item: ContentListItem) => (
+                  <div key={item.contentId} className="p-2" style={{ marginTop: '0' }}>
+                    <Skeleton className="h-4 w-full" />
                   </div>
-                  <div className="absolute top-1/2 right-2 transform -translate-y-1/2 hidden group-hover:flex items-center justify-center">
-                    <Button
-                      variant={'ghost'}
-                      className="mr-1 w-6 h-6 p-1 rounded cursor-pointer"
-                      onClick={() => handleRemoveContent(item.contentId)}
+                ))
+              : currentBlock.contentItems.map((item: ContentListItem) => {
+                  const info = contentMap.get(item.contentId);
+                  return (
+                    <div
+                      key={item.contentId}
+                      className="relative group border-b hover:bg-muted"
+                      style={{ marginTop: '0' }}
                     >
-                      <CloseIcon width={16} height={16} />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+                      <div className="flex items-center gap-2 p-2">
+                        {item.contentType === 'flow' ? (
+                          <FlowIcon width={16} height={16} className="flex-shrink-0" />
+                        ) : (
+                          <ChecklistIcon width={16} height={16} className="flex-shrink-0" />
+                        )}
+                        <span className="truncate text-sm">{info?.name || item.contentId}</span>
+                      </div>
+                      <div className="absolute top-1/2 right-2 transform -translate-y-1/2 hidden group-hover:flex items-center justify-center">
+                        <Button
+                          variant={'ghost'}
+                          className="mr-1 w-6 h-6 p-1 rounded cursor-pointer"
+                          onClick={() => handleRemoveContent(item.contentId)}
+                        >
+                          <CloseIcon width={16} height={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
 
             {/* Add content button / popover */}
             <Popover open={addOpen} onOpenChange={setAddOpen}>
