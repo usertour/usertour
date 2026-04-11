@@ -211,21 +211,6 @@ const BlockContentListBody = () => {
             />
           </div>
 
-          {/* Show search field */}
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center justify-between space-x-2">
-              <Label htmlFor="show-search-field" className="font-normal">
-                Show search field
-              </Label>
-              <Switch
-                id="show-search-field"
-                className="data-[state=unchecked]:bg-input"
-                checked={currentBlock.showSearchField}
-                onCheckedChange={handleShowSearchFieldChange}
-              />
-            </div>
-          </div>
-
           {/* Flows/checklists to display */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center justify-between">
@@ -340,6 +325,21 @@ const BlockContentListBody = () => {
                 × Remove all flows/checklists
               </div>
             )}
+          </div>
+
+          {/* Show search field */}
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center justify-between space-x-2">
+              <Label htmlFor="show-search-field" className="font-normal">
+                Show search field
+              </Label>
+              <Switch
+                id="show-search-field"
+                className="data-[state=unchecked]:bg-input"
+                checked={currentBlock.showSearchField}
+                onCheckedChange={handleShowSearchFieldChange}
+              />
+            </div>
           </div>
 
           {/* Only show block if... */}
