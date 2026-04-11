@@ -335,9 +335,7 @@ const ResourceCenterProgressColumn = ({
 
   const isOpened = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.RESOURCE_CENTER_OPENED);
   const isDismissed = !!bizEvent.find(
-    (e) =>
-      e?.event?.codeName === BizEvents.RESOURCE_CENTER_CLOSED ||
-      e?.event?.codeName === BizEvents.RESOURCE_CENTER_DISMISSED,
+    (e) => e?.event?.codeName === BizEvents.RESOURCE_CENTER_DISMISSED,
   );
 
   if (!isOpened && !isDismissed) {
