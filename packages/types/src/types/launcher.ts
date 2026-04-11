@@ -55,6 +55,7 @@ export enum LauncherIconSource {
   BUILTIN = 'builtin',
   UPLOAD = 'upload',
   URL = 'url',
+  INHERIT = 'inherit',
 }
 
 export type LauncherData = {

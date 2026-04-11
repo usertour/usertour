@@ -308,6 +308,11 @@ export type ResourceCenterBlockContentItem = {
   contentId: string;
   contentType: 'flow' | 'checklist';
   name: string;
+  iconSource?: string;
+  iconType?: string;
+  iconUrl?: string;
+  navigateUrl?: unknown[];
+  navigateOpenType?: 'same' | 'new';
 };
 
 /**

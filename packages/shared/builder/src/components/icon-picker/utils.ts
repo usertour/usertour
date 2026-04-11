@@ -6,6 +6,9 @@ import { TAB_VALUES } from './constants';
  * Get initial tab based on icon source
  */
 export const getInitialTab = (iconSource: LauncherIconSource): string => {
+  if (iconSource === LauncherIconSource.INHERIT) {
+    return TAB_VALUES.INHERIT;
+  }
   if (iconSource === LauncherIconSource.NONE) {
     return TAB_VALUES.NONE;
   }
@@ -22,6 +25,9 @@ export const getInitialTab = (iconSource: LauncherIconSource): string => {
  * Get active text based on icon source and type
  */
 export const getActiveText = (iconSource: LauncherIconSource, iconType: string): string => {
+  if (iconSource === LauncherIconSource.INHERIT) {
+    return 'Default';
+  }
   if (iconSource === LauncherIconSource.NONE) {
     return 'No icon';
   }

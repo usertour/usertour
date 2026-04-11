@@ -167,7 +167,35 @@ import {
   RiArrowRightSLine,
   RiQuestionFill,
 } from '@remixicon/react';
+import type { RemixiconComponentType } from '@remixicon/react';
+import React from 'react';
+import { FlowIcon, ChecklistIcon, LauncherIcon, BannerIcon } from './icon';
 import { registerIcons } from './remix-icon';
+
+/**
+ * Wrap a custom SVG icon component (width/height props) to match RemixiconComponentType (size prop).
+ */
+const wrapCustomIcon = (
+  Icon: React.ForwardRefExoticComponent<any>,
+  displayName: string,
+): RemixiconComponentType => {
+  const Wrapped: RemixiconComponentType = ({ size = 24, color, className, ...rest }) => (
+    <Icon
+      width={size}
+      height={size}
+      className={className}
+      style={color ? { color } : undefined}
+      {...rest}
+    />
+  );
+  (Wrapped as any).displayName = displayName;
+  return Wrapped;
+};
+
+const FlowIconWrapped = wrapCustomIcon(FlowIcon, 'FlowIconWrapped');
+const ChecklistIconWrapped = wrapCustomIcon(ChecklistIcon, 'ChecklistIconWrapped');
+const LauncherIconWrapped = wrapCustomIcon(LauncherIcon, 'LauncherIconWrapped');
+const BannerIconWrapped = wrapCustomIcon(BannerIcon, 'BannerIconWrapped');
 
 // Register common icons for easy access
 // Users can register more icons as needed using registerIcon() or registerIcons()
@@ -365,4 +393,9 @@ registerIcons({
   // Misc
   'arrow-right-s-line': RiArrowRightSLine,
   'question-fill': RiQuestionFill,
+  // Custom content type icons
+  'flow-icon': FlowIconWrapped,
+  'checklist-icon': ChecklistIconWrapped,
+  'launcher-icon': LauncherIconWrapped,
+  'banner-icon': BannerIconWrapped,
 });

@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { DragHandleDots2Icon, GearIcon } from '@radix-ui/react-icons';
+import { RiDraggable, RiSettings3Line } from '@usertour-packages/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -104,8 +104,9 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>(
       >
         <div className="flex items-center justify-between">
           <div className="grow inline-flex items-center text-sm">
-            <DragHandleDots2Icon
-              className="h-4 w-4 shrink-0 cursor-move -mr-0.5"
+            <RiDraggable
+              size={16}
+              className="shrink-0 cursor-move -mr-0.5"
               {...listeners}
               onClick={(e) => e.stopPropagation()}
             />
@@ -125,7 +126,7 @@ const TabContent = forwardRef<HTMLDivElement, TabContentProps>(
                     className="p-1 h-fit"
                     onClick={() => onClick?.('edit', tab)}
                   >
-                    <GearIcon className="h-4 w-4" />
+                    <RiSettings3Line size={16} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Edit</TooltipContent>

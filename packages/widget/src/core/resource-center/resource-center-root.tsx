@@ -165,11 +165,13 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
         ? (currentPage.block as ResourceCenterContentListBlock)
         : null;
 
+  const activeContentListBlockId = activeContentListBlock?.id ?? null;
   useEffect(() => {
-    if (activeContentListBlock) {
+    if (activeContentListBlock && activeContentListBlockId) {
       onContentListNavigate?.(activeContentListBlock);
     }
-  }, [activeContentListBlock, onContentListNavigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeContentListBlockId]);
 
   const showTabBar = data.tabs.length > 1 && nav.pageStack.length === 0;
   const showBackButton = nav.pageStack.length > 0;

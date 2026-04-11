@@ -17,7 +17,6 @@ import {
   ResourceCenterFooter,
   useResourceCenterContext as useWidgetResourceCenterContext,
 } from '@usertour-packages/widget';
-import type { ContentListDisplayItem } from '@usertour-packages/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
 import { useContentListQuery } from '@usertour-packages/shared-hooks';
 import {
@@ -137,23 +136,37 @@ export const ResourceCenterEmbed = () => {
   }, [flowContents, checklistContents]);
 
   // Track which content list block is currently active for preview
-  const [previewContentListItems, setPreviewContentListItems] = useState<ContentListDisplayItem[]>(
-    [],
-  );
+  const [activeContentListBlockId, setActiveContentListBlockId] = useState<string | null>(null);
 
-  const handleContentListNavigate = useCallback(
-    (block: ResourceCenterContentListBlock) => {
-      const items: ContentListDisplayItem[] = block.contentItems
-        .filter((item) => contentNameMap.has(item.contentId))
-        .map((item) => ({
-          contentId: item.contentId,
-          contentType: item.contentType,
-          name: contentNameMap.get(item.contentId) || '',
-        }));
-      setPreviewContentListItems(items);
-    },
-    [contentNameMap],
-  );
+  const handleContentListNavigate = useCallback((block: ResourceCenterContentListBlock) => {
+    setActiveContentListBlockId(block.id);
+  }, []);
+
+  // Derive preview items reactively from localData + activeContentListBlockId
+  const previewContentListItems = useMemo(() => {
+    if (!activeContentListBlockId || !localData) return [];
+    let block: ResourceCenterContentListBlock | undefined;
+    for (const tab of localData.tabs) {
+      const found = tab.blocks.find(
+        (b) => b.id === activeContentListBlockId && b.type === ResourceCenterBlockType.CONTENT_LIST,
+      );
+      if (found) {
+        block = found as ResourceCenterContentListBlock;
+        break;
+      }
+    }
+    if (!block) return [];
+    return block.contentItems
+      .filter((item) => contentNameMap.has(item.contentId))
+      .map((item) => ({
+        contentId: item.contentId,
+        contentType: item.contentType,
+        name: contentNameMap.get(item.contentId) || '',
+        iconSource: item.iconSource,
+        iconType: item.iconType,
+        iconUrl: item.iconUrl,
+      }));
+  }, [activeContentListBlockId, localData, contentNameMap]);
 
   useEffect(() => {
     if (!themeList) {

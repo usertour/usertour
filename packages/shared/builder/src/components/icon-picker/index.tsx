@@ -24,17 +24,27 @@ export const IconPicker = ({
   iconUrl,
   zIndex,
   showNoIcon = false,
+  showInherit = false,
   onChange,
 }: IconPickerProps) => {
   const [open, setOpen] = useState(false);
-  const hasNoIconTab = showNoIcon;
-  const popoverWidthClassName = hasNoIconTab ? 'w-[360px]' : 'w-72';
+  const hasBothExtraTabs = showNoIcon && showInherit;
+  const popoverWidthClassName = hasBothExtraTabs ? 'w-80' : 'w-72';
 
   const activeText = getActiveText(iconSource, type);
 
   const { activeTab, handleTabChange } = useIconTab({
     iconSource,
   });
+
+  const handleInherit = useCallback(() => {
+    onChange({
+      iconType: '',
+      iconSource: LauncherIconSource.INHERIT,
+      iconUrl: undefined,
+    });
+    setOpen(false);
+  }, [onChange]);
 
   const handleNoIcon = useCallback(() => {
     onChange({
@@ -91,6 +101,10 @@ export const IconPicker = ({
 
   const handleTabValueChange = useCallback(
     (value: string) => {
+      if (value === TAB_VALUES.INHERIT) {
+        handleInherit();
+        return;
+      }
       if (value === TAB_VALUES.NONE) {
         handleNoIcon();
         return;
@@ -98,7 +112,7 @@ export const IconPicker = ({
 
       handleTabChange(value);
     },
-    [handleNoIcon, handleTabChange],
+    [handleInherit, handleNoIcon, handleTabChange],
   );
 
   return (
@@ -123,11 +137,21 @@ export const IconPicker = ({
           <div className={cn('bg-background space-y-3 rounded p-4', popoverWidthClassName)}>
             <Tabs value={activeTab} onValueChange={handleTabValueChange}>
               <UnderlineTabsList>
-                <UnderlineTabsTrigger value="builtin">Built-in icon</UnderlineTabsTrigger>
-                <UnderlineTabsTrigger value="upload">Upload icon</UnderlineTabsTrigger>
-                <UnderlineTabsTrigger value="url">Enter URL</UnderlineTabsTrigger>
-                {showNoIcon && <UnderlineTabsTrigger value="none">No icon</UnderlineTabsTrigger>}
+                {showInherit && (
+                  <UnderlineTabsTrigger value="inherit">Default</UnderlineTabsTrigger>
+                )}
+                <UnderlineTabsTrigger value="builtin">Built-in</UnderlineTabsTrigger>
+                <UnderlineTabsTrigger value="upload">Upload</UnderlineTabsTrigger>
+                <UnderlineTabsTrigger value="url">URL</UnderlineTabsTrigger>
+                {showNoIcon && <UnderlineTabsTrigger value="none">None</UnderlineTabsTrigger>}
               </UnderlineTabsList>
+              {showInherit && (
+                <UnderlineTabsContent value="inherit">
+                  <div className="py-4 text-center text-sm text-muted-foreground">
+                    Uses the list's default icon for this content type.
+                  </div>
+                </UnderlineTabsContent>
+              )}
               {showNoIcon && (
                 <UnderlineTabsContent value="none">
                   <div className="py-4 text-center text-sm text-muted-foreground">

@@ -8,6 +8,7 @@ export interface IconPickerProps {
   iconUrl?: string;
   zIndex: number;
   showNoIcon?: boolean;
+  showInherit?: boolean;
   onChange: (updates: {
     iconType?: string;
     iconSource?: LauncherIconSource;

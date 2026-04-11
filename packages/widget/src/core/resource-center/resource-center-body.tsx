@@ -25,7 +25,7 @@ import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
 import { RiArrowRightSLine } from '@usertour-packages/icons';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
-import { useResourceCenterContext } from './context';
+import { useResourceCenterContext, type ContentListDisplayItem } from './context';
 import { IconsList } from '../launcher';
 import { ResourceCenterCloseButton } from './resource-center-header';
 
@@ -533,38 +533,64 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
 KnowledgeBaseDetail.displayName = 'KnowledgeBaseDetail';
 
 // ============================================================================
-// Content List — flow/checklist item icons
-// ============================================================================
-
-const ContentListFlowIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className="h-5 w-5 flex-shrink-0 text-sdk-resource-center-foreground/60"
-  >
-    <path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM10 15.5L16 12L10 8.5V15.5Z" />
-  </svg>
-);
-
-const ContentListChecklistIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className="h-5 w-5 flex-shrink-0 text-sdk-resource-center-foreground/60"
-  >
-    <path d="M11 4H21V6H11V4ZM11 8H17V10H11V8ZM11 14H21V16H11V14ZM11 18H17V20H11V18ZM3 4H9V10H3V4ZM5 6V8H7V6H5ZM3 14H9V20H3V14ZM5 16V18H7V16H5Z" />
-  </svg>
-);
-
-// ============================================================================
 // Content List detail view
 // ============================================================================
 
 interface ContentListDetailProps {
   block: ResourceCenterContentListBlock;
 }
+
+/** Resolve the icon for a content list item: per-item custom > block default by type */
+const ContentListItemIcon = memo(
+  ({
+    item,
+    block,
+  }: {
+    item: ContentListDisplayItem;
+    block: ResourceCenterContentListBlock;
+  }) => {
+    const source = item.iconSource as LauncherIconSource | undefined;
+
+    // INHERIT, undefined, or missing → use block-level default by content type
+    if (!source || source === LauncherIconSource.INHERIT) {
+      if (item.contentType === 'flow') {
+        return (
+          <BlockIcon
+            iconSource={block.flowIconSource}
+            iconType={block.flowIconType}
+            iconUrl={block.flowIconUrl}
+            size={20}
+          />
+        );
+      }
+      return (
+        <BlockIcon
+          iconSource={block.checklistIconSource}
+          iconType={block.checklistIconType}
+          iconUrl={block.checklistIconUrl}
+          size={20}
+        />
+      );
+    }
+
+    // NONE → no icon
+    if (source === LauncherIconSource.NONE) {
+      return null;
+    }
+
+    // Custom icon (BUILTIN / UPLOAD / URL)
+    return (
+      <BlockIcon
+        iconSource={source}
+        iconType={item.iconType ?? ''}
+        iconUrl={item.iconUrl}
+        size={20}
+      />
+    );
+  },
+);
+
+ContentListItemIcon.displayName = 'ContentListItemIcon';
 
 export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
   const { contentListItems, onContentListItemClick } = useResourceCenterContext();
@@ -611,7 +637,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
               className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-sdk-hover cursor-pointer"
               onClick={() => onContentListItemClick?.(item)}
             >
-              {item.contentType === 'flow' ? <ContentListFlowIcon /> : <ContentListChecklistIcon />}
+              <ContentListItemIcon item={item} block={block} />
               <span className="min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
                 {item.name}
               </span>

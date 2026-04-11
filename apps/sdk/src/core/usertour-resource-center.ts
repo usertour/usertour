@@ -17,9 +17,10 @@ import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-compo
 import { logger } from '@/utils';
 import { CommonActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
-import { isDisplayOnlyBlockType, storage } from '@usertour/helpers';
+import { isConditionsActived, isDisplayOnlyBlockType, storage } from '@usertour/helpers';
 import { UsertourChecklist } from '@/core/usertour-checklist';
 import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
+import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 
 type ResourceCenterChecklistPresentation = {
   checklist?: UsertourChecklist;
@@ -164,8 +165,40 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
         sessionId,
         blockId: block.id,
       });
-      this.updateStore({ contentListItems: items });
-      return items;
+
+      // Enrich server response with per-item config (icon, navigate URL) from block data
+      const configMap = new Map(block.contentItems.map((ci) => [ci.contentId, ci]));
+      const enrichedItems: ResourceCenterBlockContentItem[] = items.map((item) => {
+        const config = configMap.get(item.contentId);
+        if (!config) return item;
+        return {
+          ...item,
+          ...(config.iconSource && { iconSource: config.iconSource }),
+          ...(config.iconType && { iconType: config.iconType }),
+          ...(config.iconUrl && { iconUrl: config.iconUrl }),
+          ...(config.navigateUrl && { navigateUrl: config.navigateUrl }),
+          ...(config.navigateOpenType && { navigateOpenType: config.navigateOpenType }),
+        };
+      });
+
+      // Filter items by "only list item if..." conditions
+      const evaluator = rulesEvaluatorManager.getEvaluator(this.getContentId());
+      const sessionAttributes = this.getSessionAttributes();
+      const visibleItems: ResourceCenterBlockContentItem[] = [];
+      for (const item of enrichedItems) {
+        const config = configMap.get(item.contentId);
+        if (config?.onlyShowItem && config.onlyShowItemConditions?.length > 0) {
+          const evaluated = await evaluator.evaluate(
+            config.onlyShowItemConditions,
+            sessionAttributes,
+          );
+          if (!isConditionsActived(evaluated)) continue;
+        }
+        visibleItems.push(item);
+      }
+
+      this.updateStore({ contentListItems: visibleItems });
+      return visibleItems;
     } catch (error) {
       logger.error('Failed to fetch content list items:', error);
       this.updateStore({ contentListItems: [] });
@@ -198,6 +231,14 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
         contentId: item.contentId,
         startReason: contentStartReason.START_FROM_ACTION,
       });
+
+      // Navigate to URL if configured on this item
+      if (item.navigateUrl && item.navigateUrl.length > 0) {
+        this.handleNavigate({
+          value: item.navigateUrl,
+          openType: item.navigateOpenType ?? 'same',
+        });
+      }
     } catch (error) {
       logger.error('Failed to start content from content list:', error);
     }

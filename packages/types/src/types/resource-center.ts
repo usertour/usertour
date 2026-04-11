@@ -112,6 +112,13 @@ export interface ResourceCenterLiveChatBlock extends ResourceCenterBlockConditio
 export interface ContentListItem {
   contentId: string;
   contentType: 'flow' | 'checklist';
+  iconSource?: LauncherIconSource;
+  iconType?: string;
+  iconUrl?: string;
+  navigateUrl?: unknown[];
+  navigateOpenType?: 'same' | 'new';
+  onlyShowItem: boolean;
+  onlyShowItemConditions: RulesCondition[];
 }
 
 export interface ResourceCenterContentListBlock extends ResourceCenterBlockConditionFields {
@@ -121,6 +128,12 @@ export interface ResourceCenterContentListBlock extends ResourceCenterBlockCondi
   iconSource: LauncherIconSource;
   iconType: string;
   iconUrl?: string;
+  flowIconSource: LauncherIconSource;
+  flowIconType: string;
+  flowIconUrl?: string;
+  checklistIconSource: LauncherIconSource;
+  checklistIconType: string;
+  checklistIconUrl?: string;
   showSearchField: boolean;
   contentItems: ContentListItem[];
 }

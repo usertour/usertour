@@ -796,6 +796,11 @@ export class WebSocketV2Service {
         contentId: item.contentId,
         contentType: item.contentType,
         name: contentNameMap.get(item.contentId) || '',
+        ...(item.iconSource && { iconSource: item.iconSource }),
+        ...(item.iconType && { iconType: item.iconType }),
+        ...(item.iconUrl && { iconUrl: item.iconUrl }),
+        ...(item.navigateUrl && { navigateUrl: item.navigateUrl }),
+        ...(item.navigateOpenType && { navigateOpenType: item.navigateOpenType }),
       }));
   }
 
