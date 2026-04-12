@@ -414,4 +414,5 @@ registerIcons({
   'checklist-icon': ChecklistIconWrapped,
   'launcher-icon': LauncherIconWrapped,
   'banner-icon': BannerIconWrapped,
+  'resource-center-icon': RiQuestionFill,
 });

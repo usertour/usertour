@@ -26,7 +26,7 @@ import {
   FlowIcon,
   LauncherIcon,
   ChecklistIcon,
-  ResourceCenterIcon,
+  RiQuestionFill,
   SpinnerIcon,
 } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
@@ -119,7 +119,7 @@ const ContentColumn = ({
       case ContentDataType.BANNER:
         return <BannerIcon className={iconClassName} />;
       case ContentDataType.RESOURCE_CENTER:
-        return <ResourceCenterIcon className={iconClassName} />;
+        return <RiQuestionFill className={iconClassName} />;
       default:
         return null;
     }

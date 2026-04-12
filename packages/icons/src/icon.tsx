@@ -1152,28 +1152,6 @@ export const LauncherIcon = React.forwardRef<SVGSVGElement, IconProps>(
   },
 );
 
-export const ResourceCenterIcon = React.forwardRef<SVGSVGElement, IconProps>(
-  ({ ...props }, forwardedRef) => {
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="currentColor"
-        {...props}
-        ref={forwardedRef}
-      >
-        <rect x="0" y="0" width="16" height="16" fill="#FFFFFF" />
-        <path
-          d="M0.313965 11.0391L0.313965 6.72686C0.313965 3.09686 3.25396 0.15686 6.88397 0.15686L9.12397 0.15686C12.754 0.15686 15.684 3.09686 15.684 6.72686L15.684 8.16756L15.6866 8.16756L15.6866 11.0476C15.6866 12.6276 14.3966 13.9176 12.8166 13.9176L12.6106 13.9176L12.6106 13.9177L12.5981 13.9177C11.5742 13.9177 10.6264 14.2371 9.84877 14.7821L9.08696 15.5439C8.48593 16.1449 7.51013 16.1449 6.90909 15.5439L6.13242 14.7672C5.40379 14.2625 4.52769 13.9549 3.58056 13.9208L3.58056 13.9191L3.18396 13.9191C1.59396 13.9191 0.313965 12.6291 0.313965 11.0391ZM9.16146 9.73536L9.15146 9.73536C8.09146 9.73536 7.23146 8.88536 7.23146 7.82536C7.23146 6.76536 8.09146 5.90536 9.15146 5.90536L9.16146 5.90536C10.2215 5.90536 11.0715 6.76536 11.0715 7.82536C11.0715 8.87536 10.2115 9.73536 9.16146 9.73536Z"
-          fillRule="evenodd"
-        />
-      </svg>
-    );
-  },
-);
-
 export const BannerIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (
