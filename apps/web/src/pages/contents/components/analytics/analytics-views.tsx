@@ -165,7 +165,7 @@ const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
 );
 
 const ResourceCenterAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
-  <div className="grid gap-4 md:grid-cols-2">
+  <div className="grid gap-4 md:grid-cols-3">
     <AnalyticsCard
       title="Unique user interactions"
       tooltip="Unique users who opened the resource center."
@@ -173,9 +173,18 @@ const ResourceCenterAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) =>
       icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
     />
     <AnalyticsCard
-      title="Clicks"
+      title="Unique clickers"
       tooltip="Unique users who clicked a block in the resource center."
       value={analyticsData?.uniqueCompletions || 0}
+      icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+    <AnalyticsCard
+      title="Click-through rate"
+      tooltip="Percentage of users who opened the resource center and clicked a block."
+      value={calculateCompletionRate(
+        analyticsData?.uniqueCompletions || 0,
+        analyticsData?.uniqueViews || 0,
+      )}
       icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
     />
   </div>

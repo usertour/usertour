@@ -65,7 +65,7 @@ const generateChartConfig = (
           color: 'hsl(var(--chart-1))',
         },
         uniqueCompletions: {
-          label: 'Clicks',
+          label: 'Clickers',
           color: 'hsl(var(--chart-2))',
         },
       };
