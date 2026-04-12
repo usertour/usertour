@@ -13,7 +13,7 @@ import { Event, RulesCondition } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { Button } from '@usertour-packages/button';
-import { RiFlashlightFill } from '@usertour-packages/icons';
+import { EventTrackerIcon } from '@usertour-packages/icons';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useToast } from '@usertour-packages/use-toast';
 import {
@@ -74,7 +74,7 @@ const TrackerEventSelector = ({
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-3">
               <div className="mt-0.5 flex-none rounded-md bg-primary/10 p-2">
-                <RiFlashlightFill className="h-4 w-4 text-primary" />
+                <EventTrackerIcon className="h-4 w-4 text-primary" />
               </div>
               <div className="min-w-0 w-full overflow-hidden">
                 <div className="font-medium text-sm truncate max-w-full">

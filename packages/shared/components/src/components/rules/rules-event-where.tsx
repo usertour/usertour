@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { RiFlashlightFill, GroupIcon, PlusIcon } from '@usertour-packages/icons';
+import { EventTrackerIcon, GroupIcon, PlusIcon } from '@usertour-packages/icons';
 import { RulesCondition, RulesType } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { ReactNode } from 'react';
@@ -110,7 +110,7 @@ const WhereAddDropdown = memo(({ onSelect, isSubGroup = false }: WhereAddDropdow
       {
         type: RulesType.EVENT_ATTR,
         text: 'Event attribute',
-        icon: <RiFlashlightFill size={16} className="mx-1" />,
+        icon: <EventTrackerIcon size={16} className="mx-1" />,
       },
     ];
     if (!isSubGroup) {

@@ -2315,3 +2315,6 @@ export const ForbidFillIcon = React.forwardRef<SVGSVGElement, IconProps>(
 );
 
 ForbidFillIcon.displayName = 'ForbidFillIcon';
+
+export { RiQuestionFill as ResourceCenterIcon } from '@remixicon/react';
+export { RiFlashlightFill as EventTrackerIcon } from '@remixicon/react';

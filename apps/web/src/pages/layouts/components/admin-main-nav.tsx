@@ -8,8 +8,8 @@ import {
   LauncherIcon,
   SettingsIcon,
   BannerIcon,
-  RiFlashlightFill,
-  RiQuestionFill,
+  EventTrackerIcon,
+  ResourceCenterIcon,
 } from '@usertour-packages/icons';
 import { TooltipContent } from '@usertour-packages/tooltip';
 import { TooltipTrigger } from '@usertour-packages/tooltip';
@@ -61,14 +61,14 @@ const navigations = [
     href: '/trackers',
     contentType: 'trackers',
     routeIds: ['trackers'],
-    icon: RiFlashlightFill,
+    icon: EventTrackerIcon,
   },
   {
     name: 'Resource Centers',
     href: '/resource-centers',
     contentType: 'resource-centers',
     routeIds: ['resource-centers'],
-    icon: RiQuestionFill,
+    icon: ResourceCenterIcon,
   },
   {
     name: 'Users',

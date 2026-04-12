@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useEventListContext } from '@/contexts/event-list-context';
-import { EyeNoneIcon, RiFlashlightFill } from '@usertour-packages/icons';
+import { EyeNoneIcon, EventTrackerIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import {
   BannerContainer,
@@ -318,7 +318,7 @@ const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) 
   return (
     <div className="flex flex-col items-center justify-center h-full w-full gap-3 px-6">
       <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-        <RiFlashlightFill className="w-5 h-5 text-primary" />
+        <EventTrackerIcon className="w-5 h-5 text-primary" />
       </div>
       <div className="flex flex-col items-center gap-1 text-center w-full max-w-[260px]">
         <span className="text-sm font-medium text-foreground truncate max-w-full">

@@ -14,7 +14,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { RiFlashlightFill } from '@usertour-packages/icons';
+import { EventTrackerIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
@@ -575,7 +575,7 @@ export const RulesEvent = (props: RulesEventProps) => {
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
             <RulesPopover onOpenChange={handleOpenChange} open={open}>
-              <RulesPopoverTriggerWrapper icon={<RiFlashlightFill size={16} />}>
+              <RulesPopoverTriggerWrapper icon={<EventTrackerIcon size={16} />}>
                 {summary}
               </RulesPopoverTriggerWrapper>
               <RulesPopoverContent className="w-[420px]">

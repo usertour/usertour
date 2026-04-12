@@ -400,7 +400,6 @@ registerIcons({
   'global-line': RiGlobalLine,
   // Misc
   'arrow-right-s-line': RiArrowRightSLine,
-  'question-fill': RiQuestionFill,
   // Resource Center block type icons
   'arrow-right-circle-fill': RiArrowRightCircleFill,
   'checkbox-circle-fill': RiCheckboxCircleFill,

@@ -9,7 +9,7 @@ import { PlusIcon, TaskClickedIcon } from '@usertour-packages/icons';
 import {
   ContentIcon,
   ElementIcon,
-  RiFlashlightFill,
+  EventTrackerIcon,
   GroupIcon,
   PagesIcon,
   SegmentIcon,
@@ -53,7 +53,7 @@ export const RULES_ITEMS = [
   {
     type: RulesType.EVENT,
     text: 'Event',
-    IconElement: RiFlashlightFill,
+    IconElement: EventTrackerIcon,
     RulesElement: RulesEvent,
   },
   {
