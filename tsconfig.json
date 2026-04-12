@@ -20,6 +20,6 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["apps", "packages"],
+  "include": ["packages"],
   "exclude": ["**/node_modules", "**/template*", "**/dist"]
 }
