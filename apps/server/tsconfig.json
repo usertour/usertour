@@ -11,6 +11,7 @@
     "outDir": "./dist",
     "incremental": true,
     "esModuleInterop": true,
+    "strict": false,
     "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"]
