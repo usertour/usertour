@@ -1,6 +1,7 @@
 import type { ContentEditorRoot } from './editor';
 import type { RulesCondition } from './config';
 import type { LauncherIconSource } from './launcher';
+import type { RichTextNode } from './common';
 
 // ============================================================================
 // Block Type Enum
@@ -51,7 +52,7 @@ export interface ResourceCenterDividerBlock extends ResourceCenterBlockCondition
 
 export interface ResourceCenterActionBlock extends ResourceCenterBlockConditionFields {
   id: string;
-  name: string;
+  name: RichTextNode[];
   type: ResourceCenterBlockType.ACTION;
   iconSource: LauncherIconSource;
   iconType: string;
@@ -61,7 +62,7 @@ export interface ResourceCenterActionBlock extends ResourceCenterBlockConditionF
 
 export interface ResourceCenterSubPageBlock extends ResourceCenterBlockConditionFields {
   id: string;
-  name: string;
+  name: RichTextNode[];
   type: ResourceCenterBlockType.SUB_PAGE;
   iconSource: LauncherIconSource;
   iconType: string;
@@ -77,7 +78,7 @@ export enum KnowledgeBaseSearchProvider {
 
 export interface ResourceCenterKnowledgeBaseBlock extends ResourceCenterBlockConditionFields {
   id: string;
-  name: string;
+  name: RichTextNode[];
   type: ResourceCenterBlockType.KNOWLEDGE_BASE;
   iconSource: LauncherIconSource;
   iconType: string;
@@ -100,7 +101,7 @@ export enum LiveChatProvider {
 
 export interface ResourceCenterLiveChatBlock extends ResourceCenterBlockConditionFields {
   id: string;
-  name: string;
+  name: RichTextNode[];
   type: ResourceCenterBlockType.LIVE_CHAT;
   iconSource: LauncherIconSource;
   iconType: string;
@@ -115,7 +116,7 @@ export interface ContentListItem {
   iconSource?: LauncherIconSource;
   iconType?: string;
   iconUrl?: string;
-  navigateUrl?: unknown[];
+  navigateUrl?: RichTextNode[];
   navigateOpenType?: 'same' | 'new';
   onlyShowItem: boolean;
   onlyShowItemConditions: RulesCondition[];
@@ -123,7 +124,7 @@ export interface ContentListItem {
 
 export interface ResourceCenterContentListBlock extends ResourceCenterBlockConditionFields {
   id: string;
-  name: string;
+  name: RichTextNode[];
   type: ResourceCenterBlockType.CONTENT_LIST;
   iconSource: LauncherIconSource;
   iconType: string;

@@ -21,7 +21,6 @@ import {
   RiSettings3Line,
   SpinnerIcon,
 } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
@@ -49,6 +48,7 @@ import {
   ResourceCenterBlockType,
   ResourceCenterContentListBlock,
   RulesCondition,
+  type RichTextNode,
 } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
@@ -170,8 +170,8 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
     return null;
   }
 
-  const handleInputChange = (field: 'name') => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentBlock((prev) => (prev ? { ...prev, [field]: e.target.value } : null));
+  const handleNameChange = (value: Descendant[]) => {
+    setCurrentBlock((prev) => (prev ? ({ ...prev, name: value } as typeof prev) : null));
   };
 
   const handleIconChange = (updates: {
@@ -324,13 +324,16 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
 
           {/* Name */}
           <div className="flex flex-col space-y-2">
-            <Label htmlFor="content-list-block-name">Name</Label>
-            <Input
-              id="content-list-block-name"
-              className="bg-background-900"
-              value={currentBlock.name}
-              placeholder="Guided tours"
-              onChange={handleInputChange('name')}
+            <Label>Name</Label>
+            <PopperEditorMini
+              zIndex={zIndex + EXTENSION_SELECT}
+              initialValue={
+                (currentBlock.name as Descendant[]) ?? [
+                  { type: 'paragraph', children: [{ text: '' }] },
+                ]
+              }
+              onValueChange={handleNameChange}
+              attributes={attributeList}
             />
           </div>
 
@@ -629,8 +632,8 @@ const ContentListItemEditorBody = ({ itemIndex }: ContentListItemEditorBodyProps
     });
   };
 
-  const handleNavigateUrlChange = (value: unknown[]) => {
-    updateItem({ navigateUrl: value, navigateOpenType: 'same' });
+  const handleNavigateUrlChange = (value: Descendant[]) => {
+    updateItem({ navigateUrl: value as unknown as RichTextNode[], navigateOpenType: 'same' });
   };
 
   const handleOnlyShowItemChange = (value: boolean) => {

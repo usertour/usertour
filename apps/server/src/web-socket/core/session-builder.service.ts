@@ -22,6 +22,7 @@ import {
   extractBannerAttrCodes,
   extractButtonConditionAttributeIds,
   extractAttributeIdsFromConditions,
+  extractResourceCenterBlockNameAttrCodes,
 } from '@/utils/content-utils';
 import { CustomContentSession, SessionTheme, SessionStep, SessionAttribute } from '@usertour/types';
 import {
@@ -443,18 +444,18 @@ export class SessionBuilderService {
     const { environment, externalUserId, externalCompanyId } = socketData;
     const resourceCenterData = customContentVersion.data as unknown as ResourceCenterData;
 
-    // Extract attribute codes from message blocks
+    // Extract attribute codes from message blocks and block names
     const attrCodes: string[] = [];
     const buttonAttrIds: string[] = [];
     if (resourceCenterData?.tabs) {
-      for (const tab of resourceCenterData.tabs) {
-        for (const block of tab.blocks) {
-          if (block.type === 'message' && block.content) {
-            attrCodes.push(...extractBannerAttrCodes(block.content));
-            buttonAttrIds.push(...extractButtonConditionAttributeIds({ contents: block.content }));
-          }
+      const allBlocks = resourceCenterData.tabs.flatMap((tab) => tab.blocks);
+      for (const block of allBlocks) {
+        if (block.type === 'message' && block.content) {
+          attrCodes.push(...extractBannerAttrCodes(block.content));
+          buttonAttrIds.push(...extractButtonConditionAttributeIds({ contents: block.content }));
         }
       }
+      attrCodes.push(...extractResourceCenterBlockNameAttrCodes(allBlocks));
     }
 
     const attributes = await this.extractAttributes(

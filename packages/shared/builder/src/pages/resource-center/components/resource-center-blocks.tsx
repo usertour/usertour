@@ -36,6 +36,7 @@ import {
   TooltipTrigger,
 } from '@usertour-packages/tooltip';
 import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
+import { serializeBlockName } from '@usertour/helpers';
 import { forwardRef, useState } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../../contexts';
 import {
@@ -91,15 +92,15 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
   ({ onClick, listeners = {}, attributes = {}, block, style }, ref) => {
     const typeLabel = BLOCK_TYPE_LABELS[block.type] ?? block.type;
     const BlockTypeIcon = getResourceCenterBlockTypeIcon(block.type);
-    const label =
-      (block.type === ResourceCenterBlockType.ACTION ||
-        block.type === ResourceCenterBlockType.SUB_PAGE ||
-        block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
-        block.type === ResourceCenterBlockType.CONTENT_LIST ||
-        block.type === ResourceCenterBlockType.LIVE_CHAT) &&
-      block.name
-        ? block.name
-        : typeLabel;
+    const nameText =
+      block.type === ResourceCenterBlockType.ACTION ||
+      block.type === ResourceCenterBlockType.SUB_PAGE ||
+      block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
+      block.type === ResourceCenterBlockType.CONTENT_LIST ||
+      block.type === ResourceCenterBlockType.LIVE_CHAT
+        ? serializeBlockName(block.name)
+        : '';
+    const label = nameText || typeLabel;
     return (
       <div
         ref={ref}

@@ -5,9 +5,9 @@ import { Button } from '@usertour-packages/button';
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
 import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
-import { ContentActions } from '@usertour-packages/shared-editor';
+import { ContentActions, PopperEditorMini } from '@usertour-packages/shared-editor';
+import type { Descendant } from '@usertour-packages/shared-editor';
 import { SpinnerIcon } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Rules } from '@usertour-packages/shared-components';
@@ -60,8 +60,8 @@ const BlockActionBody = () => {
     return null;
   }
 
-  const handleInputChange = (field: 'name') => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentBlock((prev) => (prev ? { ...prev, [field]: e.target.value } : null));
+  const handleNameChange = (value: Descendant[]) => {
+    setCurrentBlock((prev) => (prev ? ({ ...prev, name: value } as typeof prev) : null));
   };
 
   const handleIconChange = (updates: {
@@ -111,13 +111,16 @@ const BlockActionBody = () => {
 
           {/* Name */}
           <div className="flex flex-col space-y-2">
-            <Label htmlFor="action-block-name">Name</Label>
-            <Input
-              id="action-block-name"
-              className="bg-background-900"
-              value={currentBlock.name}
-              placeholder="None"
-              onChange={handleInputChange('name')}
+            <Label>Name</Label>
+            <PopperEditorMini
+              zIndex={zIndex + EXTENSION_SELECT}
+              initialValue={
+                (currentBlock.name as Descendant[]) ?? [
+                  { type: 'paragraph', children: [{ text: '' }] },
+                ]
+              }
+              onValueChange={handleNameChange}
+              attributes={attributeList}
             />
           </div>
 

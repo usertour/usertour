@@ -7,7 +7,12 @@ import {
   ContentDataType,
   ResourceCenterData,
 } from '@usertour/types';
-import { isDisplayOnlyBlockType, isEmptyString, isNullish } from '@usertour/helpers';
+import {
+  isDisplayOnlyBlockType,
+  isEmptyString,
+  isNullish,
+  serializeBlockName,
+} from '@usertour/helpers';
 import {
   Step,
   BizEventWithEvent,
@@ -713,7 +718,7 @@ export const buildResourceCenterClickedEventData = (
   return {
     ...buildResourceCenterBaseEventData(session),
     [EventAttributes.RESOURCE_CENTER_BLOCK_ID]: block.id,
-    [EventAttributes.RESOURCE_CENTER_BLOCK_NAME]: block.name ?? '',
+    [EventAttributes.RESOURCE_CENTER_BLOCK_NAME]: serializeBlockName(block.name),
   };
 };
 

@@ -1309,6 +1309,21 @@ export const extractBannerAttrCodes = (contents: ContentEditorRoot[] | undefined
 };
 
 /**
+ * Extracts user attribute codes from resource center block names (RichTextNode[] format)
+ * @param blocks - Array of resource center blocks
+ * @returns Array of attribute codes found in block names
+ */
+export const extractResourceCenterBlockNameAttrCodes = (blocks: { name?: unknown }[]): string[] => {
+  const attrCodes: string[] = [];
+  for (const block of blocks) {
+    if (block.name && Array.isArray(block.name)) {
+      attrCodes.push(...extractAttrCodesRecursively(block.name));
+    }
+  }
+  return attrCodes;
+};
+
+/**
  * Extracts user attribute codes from launcher data
  * @param launcher - The launcher data
  * @returns Array of unique user attribute codes

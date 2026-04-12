@@ -26,6 +26,7 @@ import { cn } from '@usertour-packages/tailwind';
 import { RiArrowRightSLine } from '@usertour-packages/icons';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { useResourceCenterContext, type ContentListDisplayItem } from './context';
+import { serializeBlockName } from '@usertour/helpers';
 import { IconsList } from '../launcher';
 import { ResourceCenterCloseButton } from './resource-center-header';
 
@@ -170,6 +171,7 @@ interface ResourceCenterActionBlockViewProps {
 
 export const ResourceCenterActionBlockView = memo(
   ({ block, onActionBlockClick }: ResourceCenterActionBlockViewProps) => {
+    const { userAttributes } = useResourceCenterContext();
     const handleClick = async () => {
       onActionBlockClick?.(block.id);
     };
@@ -189,7 +191,7 @@ export const ResourceCenterActionBlockView = memo(
           className="relative"
         />
         <span className="relative min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
-          {block.name || 'Untitled action'}
+          {serializeBlockName(block.name, userAttributes) || 'Untitled action'}
         </span>
       </button>
     );
@@ -209,6 +211,7 @@ interface ResourceCenterLiveChatBlockViewProps {
 
 export const ResourceCenterLiveChatBlockView = memo(
   ({ block, onLiveChatClick }: ResourceCenterLiveChatBlockViewProps) => {
+    const { userAttributes } = useResourceCenterContext();
     const handleClick = () => {
       onLiveChatClick?.(block);
     };
@@ -222,7 +225,7 @@ export const ResourceCenterLiveChatBlockView = memo(
       >
         <div className="absolute inset-0 bg-sdk-resource-center-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
         <span className="relative min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
-          {block.name || 'Live chat'}
+          {serializeBlockName(block.name, userAttributes) || 'Live chat'}
         </span>
         <BlockIcon
           iconSource={block.iconSource}
@@ -247,16 +250,18 @@ interface NavigableBlockRowProps {
 }
 
 export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowProps) => {
+  const { userAttributes } = useResourceCenterContext();
   const handleClick = () => {
     onNavigate({ type: block.type, block } as ResourceCenterPageEntry);
   };
 
+  const nameText = serializeBlockName(block.name, userAttributes);
   const label =
     block.type === ResourceCenterBlockType.SUB_PAGE
-      ? block.name || 'Untitled sub-page'
+      ? nameText || 'Untitled sub-page'
       : block.type === ResourceCenterBlockType.KNOWLEDGE_BASE
-        ? block.name || 'Knowledge base'
-        : block.name || 'Content list';
+        ? nameText || 'Knowledge base'
+        : nameText || 'Content list';
 
   return (
     <button
@@ -362,7 +367,7 @@ interface KnowledgeBaseDetailProps {
 }
 
 export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) => {
-  const { onSearchKnowledgeBase } = useResourceCenterContext();
+  const { onSearchKnowledgeBase, userAttributes } = useResourceCenterContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [articles, setArticles] = useState<KnowledgeBaseArticle[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -450,7 +455,7 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
       {/* Title row with optional external link */}
       <div className="flex items-center justify-between px-1">
         <span className="text-base font-semibold text-sdk-resource-center-foreground">
-          {block.name || 'Knowledge base'}
+          {serializeBlockName(block.name, userAttributes) || 'Knowledge base'}
         </span>
         {externalUrl && (
           <a

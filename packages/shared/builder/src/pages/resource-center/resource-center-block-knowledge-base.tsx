@@ -6,6 +6,8 @@ import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packag
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
 import { useAttributeListContext } from '@usertour-packages/contexts';
 import { SpinnerIcon } from '@usertour-packages/icons';
+import { PopperEditorMini } from '@usertour-packages/shared-editor';
+import type { Descendant } from '@usertour-packages/shared-editor';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
@@ -81,10 +83,14 @@ const BlockKnowledgeBaseBody = () => {
   }
 
   const handleInputChange =
-    (field: 'name' | 'knowledgeBaseUrl' | 'defaultSearchQuery') =>
+    (field: 'knowledgeBaseUrl' | 'defaultSearchQuery') =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setCurrentBlock((prev) => (prev ? { ...prev, [field]: e.target.value } : null));
     };
+
+  const handleNameChange = (value: Descendant[]) => {
+    setCurrentBlock((prev) => (prev ? ({ ...prev, name: value } as typeof prev) : null));
+  };
 
   const handleIconChange = (updates: {
     iconType?: string;
@@ -135,13 +141,16 @@ const BlockKnowledgeBaseBody = () => {
 
           {/* Name */}
           <div className="flex flex-col space-y-2">
-            <Label htmlFor="kb-block-name">Name</Label>
-            <Input
-              id="kb-block-name"
-              className="bg-background-900"
-              value={currentBlock.name}
-              placeholder="None"
-              onChange={handleInputChange('name')}
+            <Label>Name</Label>
+            <PopperEditorMini
+              zIndex={zIndex + EXTENSION_SELECT}
+              initialValue={
+                (currentBlock.name as Descendant[]) ?? [
+                  { type: 'paragraph', children: [{ text: '' }] },
+                ]
+              }
+              onValueChange={handleNameChange}
+              attributes={attributeList}
             />
           </div>
 

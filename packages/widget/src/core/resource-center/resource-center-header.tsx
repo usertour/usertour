@@ -3,6 +3,7 @@ import { ArrowLeftIcon, DropDownIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import { Button } from '../../primitives';
 import { useResourceCenterContext } from './context';
+import { serializeBlockName } from '@usertour/helpers';
 
 // ============================================================================
 // Close Button
@@ -101,7 +102,7 @@ ResourceCenterHomeHeader.displayName = 'ResourceCenterHomeHeader';
 // ============================================================================
 
 export const ResourceCenterHeader = memo(() => {
-  const { data, showBackButton, currentPage, autoExpandedPage, currentTab, nav } =
+  const { data, showBackButton, currentPage, autoExpandedPage, currentTab, nav, userAttributes } =
     useResourceCenterContext();
 
   // On Home tab with no detail/auto-expanded page → no header (HomeHeader is inside Body)
@@ -111,9 +112,9 @@ export const ResourceCenterHeader = memo(() => {
 
   // Determine header title: pushed page > auto-expanded page > tab name > fallback
   const title = currentPage
-    ? currentPage.block.name
+    ? serializeBlockName(currentPage.block.name, userAttributes)
     : autoExpandedPage
-      ? autoExpandedPage.block.name
+      ? serializeBlockName(autoExpandedPage.block.name, userAttributes)
       : (currentTab?.name ?? data.headerText);
 
   return (

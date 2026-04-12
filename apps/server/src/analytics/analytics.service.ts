@@ -13,7 +13,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
 import { extractStepQuestion, numberQuestionTypes } from '@/utils/content-question';
-import { isDisplayOnlyBlockType } from '@usertour/helpers';
+import { isDisplayOnlyBlockType, serializeBlockName } from '@usertour/helpers';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
 import { PaginationConnection } from '@/common/openapi/pagination';
@@ -867,7 +867,7 @@ export class AnalyticsService {
         isDistinct: false,
       });
       ret.push({
-        name: block.name ?? '',
+        name: serializeBlockName(block.name),
         blockId: block.id,
         analytics: {
           uniqueClicks,

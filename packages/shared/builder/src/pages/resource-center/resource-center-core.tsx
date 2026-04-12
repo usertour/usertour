@@ -85,7 +85,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.ACTION,
-        name: '',
+        name: [{ type: 'paragraph', children: [{ text: '' }] }],
         iconSource: LauncherIconSource.BUILTIN,
         iconType: 'arrow-right-circle-fill',
         clickedActions: [],
@@ -96,7 +96,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.SUB_PAGE,
-        name: '',
+        name: [{ type: 'paragraph', children: [{ text: '' }] }],
         iconSource: LauncherIconSource.BUILTIN,
         iconType: 'pages-fill',
         content: DEFAULT_MESSAGE_BLOCK_CONTENT,
@@ -107,7 +107,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.KNOWLEDGE_BASE,
-        name: '',
+        name: [{ type: 'paragraph', children: [{ text: 'Knowledge base' }] }],
         iconSource: LauncherIconSource.BUILTIN,
         iconType: 'book-open-fill',
         searchProvider: KnowledgeBaseSearchProvider.FRESHDESK,
@@ -120,7 +120,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.CONTENT_LIST,
-        name: '',
+        name: [{ type: 'paragraph', children: [{ text: 'Guided tours' }] }],
         iconSource: LauncherIconSource.BUILTIN,
         iconType: 'list-check3',
         flowIconSource: LauncherIconSource.BUILTIN,
@@ -136,7 +136,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.LIVE_CHAT,
-        name: '',
+        name: [{ type: 'paragraph', children: [{ text: 'Ask a question' }] }],
         iconSource: LauncherIconSource.BUILTIN,
         iconType: 'message3-fill',
         liveChatProvider: LiveChatProvider.CRISP,
