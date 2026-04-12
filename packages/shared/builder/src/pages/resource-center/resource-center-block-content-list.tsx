@@ -28,6 +28,7 @@ import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Skeleton } from '@usertour-packages/skeleton';
 import { Rules } from '@usertour-packages/shared-components';
 import { PopperEditorMini } from '@usertour-packages/shared-editor';
+import type { Descendant } from '@usertour-packages/shared-editor';
 import {
   useContentListQuery,
   useListEventsQuery,
@@ -678,7 +679,11 @@ const ContentListItemEditorBody = ({ itemIndex }: ContentListItemEditorBodyProps
             </div>
             <PopperEditorMini
               zIndex={zIndex + EXTENSION_SELECT}
-              initialValue={(item.navigateUrl as any) ?? []}
+              initialValue={
+                (item.navigateUrl as Descendant[]) ?? [
+                  { type: 'paragraph', children: [{ text: '' }] },
+                ]
+              }
               onValueChange={handleNavigateUrlChange}
               attributes={attributeList}
             />

@@ -20,6 +20,7 @@ export const UserAttrButton = memo(({ className }: UserAttrButtonProps) => {
     <Button
       variant="ghost"
       onClick={handleClick}
+      onMouseDown={(e) => e.preventDefault()}
       className={cn('h-auto px-2 rounded-l-none self-stretch', className)}
     >
       <UserIcon height={16} width={16} />
