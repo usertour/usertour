@@ -29,6 +29,15 @@ export const AnalyticsBlocks = () => {
     0,
   );
 
+  // Find max values for bar scaling
+  const maxUniqueClicks = Math.max(...blocks.map((b) => b.analytics.uniqueClicks), 1);
+  const maxTotalClicks = Math.max(...blocks.map((b) => b.analytics.totalClicks), 1);
+
+  // Sort by total clicks descending
+  const sortedBlocks = [...blocks].sort(
+    (a, b) => b.analytics.totalClicks - a.analytics.totalClicks,
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -37,59 +46,61 @@ export const AnalyticsBlocks = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="flex justify-center gap-8 mb-4 text-sm">
+          <div>
+            <span className="font-semibold text-lg">{totalUniqueClicks}</span>{' '}
+            <span className="text-muted-foreground">unique clicks</span>
+          </div>
+          <div>
+            <span className="font-semibold text-lg">{totalTotalClicks}</span>{' '}
+            <span className="text-muted-foreground">total clicks</span>
+          </div>
+        </div>
         <Table className="table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead className="w-72">Block</TableHead>
               <TableHead className="text-right w-32">Unique clicks</TableHead>
+              <TableHead />
               <TableHead className="text-right w-32">Total clicks</TableHead>
-              <TableHead className="w-6" />
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {blocks.length > 0 ? (
-              <>
-                <TableRow className="font-medium bg-muted/50">
-                  <TableCell className="py-[1px]">All blocks</TableCell>
-                  <TableCell className="py-[1px] text-right">{totalUniqueClicks}</TableCell>
-                  <TableCell className="py-[1px] text-right">{totalTotalClicks}</TableCell>
-                  <TableCell className="py-[1px] px-0 w-6" />
-                  <TableCell className="py-[1px] px-0" />
-                </TableRow>
-                {blocks.map((block: AnalyticsViewsByBlock) => {
-                  const uniqueBar =
-                    totalUniqueClicks > 0
-                      ? Math.round((block.analytics.uniqueClicks / totalUniqueClicks) * 100)
-                      : 0;
-                  const totalBar =
-                    totalTotalClicks > 0
-                      ? Math.round((block.analytics.totalClicks / totalTotalClicks) * 100)
-                      : 0;
-                  return (
-                    <TableRow key={block.blockId}>
-                      <TableCell className="py-[1px] overflow-hidden">
-                        <div className="min-w-0">
-                          <span className="truncate block">{block.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-[1px] text-right">
-                        {block.analytics.uniqueClicks}
-                      </TableCell>
-                      <TableCell className="py-[1px] text-right">
-                        {block.analytics.totalClicks}
-                      </TableCell>
-                      <TableCell className="py-[1px] px-0 w-6" />
-                      <TableCell className="py-[1px] px-0">
-                        <div className="flex flex-col gap-0.5">
-                          <div className="h-4 bg-chart-1/50" style={{ width: `${uniqueBar}%` }} />
-                          <div className="h-4 bg-chart-1" style={{ width: `${totalBar}%` }} />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </>
+            {sortedBlocks.length > 0 ? (
+              sortedBlocks.map((block: AnalyticsViewsByBlock) => {
+                const uniqueBar = Math.round(
+                  (block.analytics.uniqueClicks / maxUniqueClicks) * 100,
+                );
+                const totalBar = Math.round((block.analytics.totalClicks / maxTotalClicks) * 100);
+                return (
+                  <TableRow key={block.blockId}>
+                    <TableCell className="py-[1px] overflow-hidden">
+                      <div className="min-w-0">
+                        <span className="truncate block">{block.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-[1px] text-right">
+                      {block.analytics.uniqueClicks}
+                    </TableCell>
+                    <TableCell className="py-[1px] px-0">
+                      <div
+                        className="h-9 bg-gradient-to-r from-success/50 to-success"
+                        style={{ width: `${uniqueBar}%` }}
+                      />
+                    </TableCell>
+                    <TableCell className="py-[1px] text-right">
+                      {block.analytics.totalClicks}
+                    </TableCell>
+                    <TableCell className="py-[1px] px-0">
+                      <div
+                        className="h-9 bg-gradient-to-r from-chart-1/50 to-chart-1"
+                        style={{ width: `${totalBar}%` }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">

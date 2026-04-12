@@ -795,12 +795,11 @@ export class AnalyticsService {
           })
         : 0;
       const totalClicks = clickEvent
-        ? await this.aggregationByItem({
+        ? await this.countTotalEvents({
             ...taskCondition,
             eventId: clickEvent.id,
             key: 'checklist_task_id',
             value: item.id,
-            isDistinct: false,
           })
         : 0;
       ret.push({
@@ -862,10 +861,7 @@ export class AnalyticsService {
         ...blockCondition,
         isDistinct: true,
       });
-      const totalClicks = await this.aggregationByItem({
-        ...blockCondition,
-        isDistinct: false,
-      });
+      const totalClicks = await this.countTotalEvents(blockCondition);
       ret.push({
         name: serializeBlockName(block.name),
         blockId: block.id,
@@ -1064,7 +1060,7 @@ export class AnalyticsService {
     if (!isDistinct) {
       // Count total sessions
       const data = await this.prisma.$queryRaw`
-      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
+      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -1081,6 +1077,21 @@ export class AnalyticsService {
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
         `;
+    return Number.parseInt(data[0].count.toString());
+  }
+
+  async countTotalEvents(condition: Omit<ItemAnalyticsConditions, 'isDistinct'>) {
+    const { contentId, eventId, startDateStr, endDateStr, key, value, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw`
+      SELECT Count(*) from "BizEvent"
+        left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
+        AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
+        AND "BizEvent"."data" ->> ${key} = ${String(value)}
+    `;
     return Number.parseInt(data[0].count.toString());
   }
 
