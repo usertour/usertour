@@ -333,10 +333,10 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
             />
           </div>
 
-          {/* Default flow icon */}
+          {/* Default icon for flows */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-1">
-              <Label>Default flow icon</Label>
+              <Label>Default icon for flows</Label>
               <QuestionTooltip>
                 <p>Icon shown for flow items unless overridden per item.</p>
               </QuestionTooltip>
@@ -351,10 +351,10 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
             />
           </div>
 
-          {/* Default checklist icon */}
+          {/* Default icon for checklists */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-1">
-              <Label>Default checklist icon</Label>
+              <Label>Default icon for checklists</Label>
               <QuestionTooltip>
                 <p>Icon shown for checklist items unless overridden per item.</p>
               </QuestionTooltip>
@@ -644,13 +644,13 @@ const ContentListItemEditorBody = ({ itemIndex }: ContentListItemEditorBodyProps
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
-          {/* Custom icon */}
+          {/* Custom icon for this item */}
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-1">
-              <Label>Icon</Label>
+              <Label>Custom icon for this item</Label>
               <QuestionTooltip>
                 <p>
-                  Override the default icon for this item. Select "No icon" to use the block
+                  Override the default icon for this item. Select "Default" to use the block
                   default.
                 </p>
               </QuestionTooltip>
