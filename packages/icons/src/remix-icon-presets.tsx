@@ -166,6 +166,14 @@ import {
   RiInformation2Fill,
   RiArrowRightSLine,
   RiQuestionFill,
+  // Resource Center block type icons
+  RiArrowRightCircleFill,
+  RiPagesFill,
+  RiListCheck3,
+  RiCheckboxCircleFill,
+  RiBookOpenFill,
+  RiMessage3Fill,
+  RiSeparator,
 } from '@remixicon/react';
 import type { RemixiconComponentType } from '@remixicon/react';
 import React from 'react';
@@ -393,6 +401,14 @@ registerIcons({
   // Misc
   'arrow-right-s-line': RiArrowRightSLine,
   'question-fill': RiQuestionFill,
+  // Resource Center block type icons
+  'arrow-right-circle-fill': RiArrowRightCircleFill,
+  'checkbox-circle-fill': RiCheckboxCircleFill,
+  'pages-fill': RiPagesFill,
+  'list-check3': RiListCheck3,
+  'book-open-fill': RiBookOpenFill,
+  'message3-fill': RiMessage3Fill,
+  separator: RiSeparator,
   // Custom content type icons
   'flow-icon': FlowIconWrapped,
   'checklist-icon': ChecklistIconWrapped,
