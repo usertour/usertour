@@ -45,30 +45,30 @@ const LIVE_CHAT_PROVIDER_OPTIONS = [
 
 const PROVIDER_DESCRIPTIONS: Partial<Record<LiveChatProvider, string>> = {
   [LiveChatProvider.CRISP]:
-    "The resource center lets users explore help resources before reaching out via chat. Crisp's default launcher will be hidden automatically. Clicking the chat block temporarily hides the resource center and opens the Crisp chat window. The resource center returns once the chat is closed.",
+    "Crisp's default launcher will be hidden automatically. When the user clicks this block, the resource center will close and the Crisp chat window will open. The resource center will reappear once the user closes the chat.",
   [LiveChatProvider.FRESHCHAT]:
-    "Users can browse self-help content in the resource center before starting a live conversation. Freshchat's default launcher will be hidden automatically. Clicking the chat block opens Freshchat while the resource center steps aside temporarily, reappearing after the chat ends.",
+    "Freshchat's default chat button will be hidden automatically. When the user clicks this block, the resource center will close and Freshchat will open. The resource center will reappear once the user closes the chat.",
   [LiveChatProvider.HELP_SCOUT]:
-    "The resource center provides a self-service hub where users can find answers before contacting support. Help Scout Beacon's default launcher will be hidden automatically. Clicking the chat block hides the resource center and opens Help Scout Beacon, which restores the resource center when closed.",
+    "Help Scout Beacon's default launcher will be hidden automatically. When the user clicks this block, the resource center will close and Help Scout Beacon will open. The resource center will reappear once the user closes the Beacon.",
   [LiveChatProvider.HUBSPOT]:
-    "With the resource center, users get a chance to help themselves before initiating a chat. HubSpot's default chat launcher will be hidden automatically. Clicking the chat block temporarily replaces the resource center with the HubSpot chat widget, which restores the resource center when closed.",
+    "HubSpot's default chat widget will be hidden automatically. When the user clicks this block, the resource center will close and the HubSpot chat widget will open. The resource center will reappear once the user closes the chat.",
   [LiveChatProvider.INTERCOM]:
-    "The resource center serves as the first point of contact, letting users find help on their own. Intercom's default Messenger launcher will be hidden automatically. Clicking the chat block opens Intercom Messenger while the resource center steps aside, returning after the conversation ends.",
+    "Intercom's default Messenger launcher will be hidden automatically. When the user clicks this block, the resource center will close and Intercom Messenger will open. The resource center will reappear once the user closes the Messenger.",
   [LiveChatProvider.ZENDESK_CLASSIC]:
-    "The resource center allows users to search for answers before opening a support conversation. Zendesk Classic's default launcher will be hidden automatically. Clicking the chat block temporarily hides the resource center and brings up the Zendesk Classic widget. The resource center reappears once the widget is closed.",
+    "Zendesk Classic's default launcher will be hidden automatically. When the user clicks this block, the resource center will close and the Zendesk Classic widget will open. The resource center will reappear once the user closes the widget.",
   [LiveChatProvider.ZENDESK_MESSENGER]:
-    "The resource center acts as a central help hub, giving users self-service options before starting a conversation. Zendesk Messenger's default launcher will be hidden automatically. Clicking the chat block opens the Zendesk Messenger while the resource center hides temporarily, reappearing when the messenger is closed.",
+    "Zendesk Messenger's default launcher will be hidden automatically. When the user clicks this block, the resource center will close and Zendesk Messenger will open. The resource center will reappear once the user closes the Messenger.",
   [LiveChatProvider.CUSTOM]:
-    'When the chat block is clicked, the custom JavaScript code below will be executed. Use it to open your live chat messenger.',
+    'When the user clicks this block, the custom JavaScript code below will be executed. Use it to open your live chat messenger.',
 };
 
 const PROVIDER_NOTES: Partial<Record<LiveChatProvider, ReactNode>> = {
   [LiveChatProvider.ZENDESK_MESSENGER]: (
     <>
-      Zendesk&apos;s built-in Web Widget launcher must be disabled separately. Navigate to{' '}
+      You also need to disable the built-in Web Widget launcher manually. Go to{' '}
       <strong>Settings &rarr; Channels &rarr; Messaging &rarr; Your messenger &rarr; Style</strong>{' '}
-      and set <strong>Shape</strong> to <strong>Custom launcher</strong>. This change may take a few
-      minutes to take effect.
+      and set <strong>Shape</strong> to <strong>Custom launcher</strong>. It may take a few minutes
+      to take effect.
     </>
   ),
 };
@@ -80,16 +80,15 @@ interface ProviderFlashWarning {
 
 const PROVIDER_FLASH_WARNINGS: Partial<Record<LiveChatProvider, ProviderFlashWarning>> = {
   [LiveChatProvider.CRISP]: {
-    text: 'If Crisp loads before Usertour in your app, you may see the Crisp launcher briefly flash before it gets hidden. To prevent this, add the following code right after your Crisp installation snippet:',
+    text: 'The Crisp launcher may briefly flash on screen if Crisp loads before Usertour. To prevent this, add the following right after your Crisp installation snippet:',
     code: `<script>\n  $crisp.push(['do', 'chat:hide'])\n</script>`,
   },
   [LiveChatProvider.FRESHCHAT]: {
     text: (
       <>
-        <strong>Important:</strong> Freshchat always shows its chat button by default. To work well
-        with the resource center, the chat button must be turned off in your Freshchat installation
-        snippet. Please set <code className="rounded bg-yellow-100 px-1">hideChatButton: true</code>
-        , like this:
+        <strong>Important:</strong> Freshchat shows its chat button by default. You need to disable
+        it in your Freshchat installation snippet by setting{' '}
+        <code className="rounded bg-yellow-100 px-1">hideChatButton: true</code>:
       </>
     ),
     code: 'window.fcWidget.init({\n  // ...other settings\n  config: {\n    headerProperty: {\n      hideChatButton: true\n    }\n  }\n});',
@@ -97,23 +96,22 @@ const PROVIDER_FLASH_WARNINGS: Partial<Record<LiveChatProvider, ProviderFlashWar
   [LiveChatProvider.HELP_SCOUT]: {
     text: (
       <>
-        If Help Scout loads before Usertour in your app, you may see the Help Scout launcher briefly
-        flash before it gets hidden. We recommend setting <strong>Button style</strong> to{' '}
-        <strong>Hidden</strong> in your Help Scout account under{' '}
-        <strong>Settings &rarr; Beacons &rarr; Your beacon</strong>.
+        The Help Scout launcher may briefly flash on screen if Help Scout loads before Usertour. To
+        prevent this, set <strong>Button style</strong> to <strong>Hidden</strong> in your Help
+        Scout account under <strong>Settings &rarr; Beacons &rarr; Your beacon</strong>.
       </>
     ),
   },
   [LiveChatProvider.HUBSPOT]: {
-    text: 'If HubSpot loads before Usertour in your app, you may see the HubSpot chat widget briefly flash before it gets hidden. Add the following code snippet to your page to prevent this:',
+    text: 'The HubSpot chat widget may briefly flash on screen if HubSpot loads before Usertour. To prevent this, add the following to your page:',
     code: '<style>\n#hubspot-messages-iframe-container {\n  visibility: hidden;\n}\n</style>',
   },
   [LiveChatProvider.INTERCOM]: {
-    text: 'If Intercom loads before Usertour in your app, you may see the Intercom launcher briefly flash before it gets hidden. Add the following to your Intercom snippet to prevent this:',
+    text: 'The Intercom launcher may briefly flash on screen if Intercom loads before Usertour. To prevent this, add the following to your Intercom snippet:',
     code: 'window.intercomSettings = {\n  // ...other settings\n  hide_default_launcher: true\n};',
   },
   [LiveChatProvider.ZENDESK_CLASSIC]: {
-    text: 'If Zendesk Classic initializes before Usertour, its launcher may appear briefly. To avoid this, place the following snippet right after your Zendesk embed code:',
+    text: 'The Zendesk Classic launcher may briefly flash on screen if it loads before Usertour. To prevent this, add the following right after your Zendesk embed code:',
     code: `<script type="text/javascript">\n  zE('webWidget', 'hide');\n</script>`,
   },
 };
