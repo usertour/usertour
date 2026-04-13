@@ -9,3 +9,4 @@ export * from './utils/helper';
 export { ContentActions } from './actions';
 export { contentTypesConfig } from './utils/config';
 export { AttributeCreateForm } from './form/attribute-create-form';
+export { CodeEditor } from './code-editor';

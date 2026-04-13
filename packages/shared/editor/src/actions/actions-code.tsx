@@ -1,9 +1,8 @@
-import { javascript } from '@codemirror/lang-javascript';
 import { CodeIcon } from '@radix-ui/react-icons';
-import CodeMirror from '@uiw/react-codemirror';
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
 import { getCodeError } from '@usertour/helpers';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { CodeEditor } from '../code-editor';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';
 import {
@@ -68,21 +67,6 @@ const useCodeErrorHandling = (value: string, open: boolean, index: number) => {
   );
 
   return { openError, errorInfo, handleOpenChange };
-};
-
-// Memoized CodeMirror component for better performance
-const CodeEditor = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
-  const extensions = useMemo(() => [javascript({ jsx: false, typescript: false })], []);
-
-  return (
-    <CodeMirror
-      value={value}
-      height="200px"
-      basicSetup={{ lineNumbers: false }}
-      extensions={extensions}
-      onChange={onChange}
-    />
-  );
 };
 
 // Memoized display text component

@@ -1,12 +1,12 @@
 'use client';
 
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
+import { ChevronLeftIcon, InfoCircledIcon, ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
 import { useAttributeListContext } from '@usertour-packages/contexts';
 import { SpinnerIcon } from '@usertour-packages/icons';
-import { PopperEditorMini } from '@usertour-packages/shared-editor';
+import { PopperEditorMini, CodeEditor } from '@usertour-packages/shared-editor';
 import type { Descendant } from '@usertour-packages/shared-editor';
 import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
@@ -20,14 +20,13 @@ import {
 import { Rules } from '@usertour-packages/shared-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
-import { javascript } from '@codemirror/lang-javascript';
-import CodeMirror from '@uiw/react-codemirror';
 import {
   LauncherIconSource,
   LiveChatProvider,
   ResourceCenterBlockType,
   RulesCondition,
 } from '@usertour/types';
+import type { ReactNode } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
@@ -44,17 +43,79 @@ const LIVE_CHAT_PROVIDER_OPTIONS = [
   { value: LiveChatProvider.CUSTOM, label: 'Custom' },
 ];
 
-const PROVIDER_HINTS: Partial<Record<LiveChatProvider, string>> = {
-  [LiveChatProvider.CRISP]: 'Make sure the Crisp chat widget script is installed on your site.',
-  [LiveChatProvider.FRESHCHAT]: 'Make sure the Freshchat widget script is installed on your site.',
+const PROVIDER_DESCRIPTIONS: Partial<Record<LiveChatProvider, string>> = {
+  [LiveChatProvider.CRISP]:
+    "The resource center lets users explore help resources before reaching out via chat. Crisp's default launcher will be hidden automatically. Clicking the chat block temporarily hides the resource center and opens the Crisp chat window. The resource center returns once the chat is closed.",
+  [LiveChatProvider.FRESHCHAT]:
+    "Users can browse self-help content in the resource center before starting a live conversation. Freshchat's default launcher will be hidden automatically. Clicking the chat block opens Freshchat while the resource center steps aside temporarily, reappearing after the chat ends.",
   [LiveChatProvider.HELP_SCOUT]:
-    'Make sure the Help Scout Beacon script is installed on your site.',
-  [LiveChatProvider.HUBSPOT]: 'Make sure the HubSpot chat widget script is installed on your site.',
-  [LiveChatProvider.INTERCOM]: 'Make sure the Intercom Messenger script is installed on your site.',
+    "The resource center provides a self-service hub where users can find answers before contacting support. Help Scout Beacon's default launcher will be hidden automatically. Clicking the chat block hides the resource center and opens Help Scout Beacon, which restores the resource center when closed.",
+  [LiveChatProvider.HUBSPOT]:
+    "With the resource center, users get a chance to help themselves before initiating a chat. HubSpot's default chat launcher will be hidden automatically. Clicking the chat block temporarily replaces the resource center with the HubSpot chat widget, which restores the resource center when closed.",
+  [LiveChatProvider.INTERCOM]:
+    "The resource center serves as the first point of contact, letting users find help on their own. Intercom's default Messenger launcher will be hidden automatically. Clicking the chat block opens Intercom Messenger while the resource center steps aside, returning after the conversation ends.",
   [LiveChatProvider.ZENDESK_CLASSIC]:
-    'Make sure the Zendesk Web Widget (Classic) script is installed on your site.',
+    "The resource center allows users to search for answers before opening a support conversation. Zendesk Classic's default launcher will be hidden automatically. Clicking the chat block temporarily hides the resource center and brings up the Zendesk Classic widget. The resource center reappears once the widget is closed.",
   [LiveChatProvider.ZENDESK_MESSENGER]:
-    'Make sure the Zendesk Messaging script is installed on your site.',
+    "The resource center acts as a central help hub, giving users self-service options before starting a conversation. Zendesk Messenger's default launcher will be hidden automatically. Clicking the chat block opens the Zendesk Messenger while the resource center hides temporarily, reappearing when the messenger is closed.",
+  [LiveChatProvider.CUSTOM]:
+    'When the chat block is clicked, the custom JavaScript code below will be executed. Use it to open your live chat messenger.',
+};
+
+const PROVIDER_NOTES: Partial<Record<LiveChatProvider, ReactNode>> = {
+  [LiveChatProvider.ZENDESK_MESSENGER]: (
+    <>
+      Zendesk&apos;s built-in Web Widget launcher must be disabled separately. Navigate to{' '}
+      <strong>Settings &rarr; Channels &rarr; Messaging &rarr; Your messenger &rarr; Style</strong>{' '}
+      and set <strong>Shape</strong> to <strong>Custom launcher</strong>. This change may take a few
+      minutes to take effect.
+    </>
+  ),
+};
+
+interface ProviderFlashWarning {
+  text: ReactNode;
+  code?: string;
+}
+
+const PROVIDER_FLASH_WARNINGS: Partial<Record<LiveChatProvider, ProviderFlashWarning>> = {
+  [LiveChatProvider.CRISP]: {
+    text: 'If Crisp loads before Usertour in your app, you may see the Crisp launcher briefly flash before it gets hidden. To prevent this, add the following code right after your Crisp installation snippet:',
+    code: `<script>\n  $crisp.push(['do', 'chat:hide'])\n</script>`,
+  },
+  [LiveChatProvider.FRESHCHAT]: {
+    text: (
+      <>
+        <strong>Important:</strong> Freshchat always shows its chat button by default. To work well
+        with the resource center, the chat button must be turned off in your Freshchat installation
+        snippet. Please set <code className="rounded bg-yellow-100 px-1">hideChatButton: true</code>
+        , like this:
+      </>
+    ),
+    code: 'window.fcWidget.init({\n  // ...other settings\n  config: {\n    headerProperty: {\n      hideChatButton: true\n    }\n  }\n});',
+  },
+  [LiveChatProvider.HELP_SCOUT]: {
+    text: (
+      <>
+        If Help Scout loads before Usertour in your app, you may see the Help Scout launcher briefly
+        flash before it gets hidden. We recommend setting <strong>Button style</strong> to{' '}
+        <strong>Hidden</strong> in your Help Scout account under{' '}
+        <strong>Settings &rarr; Beacons &rarr; Your beacon</strong>.
+      </>
+    ),
+  },
+  [LiveChatProvider.HUBSPOT]: {
+    text: 'If HubSpot loads before Usertour in your app, you may see the HubSpot chat widget briefly flash before it gets hidden. Add the following code snippet to your page to prevent this:',
+    code: '<style>\n#hubspot-messages-iframe-container {\n  visibility: hidden;\n}\n</style>',
+  },
+  [LiveChatProvider.INTERCOM]: {
+    text: 'If Intercom loads before Usertour in your app, you may see the Intercom launcher briefly flash before it gets hidden. Add the following to your Intercom snippet to prevent this:',
+    code: 'window.intercomSettings = {\n  // ...other settings\n  hide_default_launcher: true\n};',
+  },
+  [LiveChatProvider.ZENDESK_CLASSIC]: {
+    text: 'If Zendesk Classic initializes before Usertour, its launcher may appear briefly. To avoid this, place the following snippet right after your Zendesk embed code:',
+    code: `<script type="text/javascript">\n  zE('webWidget', 'hide');\n</script>`,
+  },
 };
 
 const BlockLiveChatHeader = () => {
@@ -130,7 +191,8 @@ const BlockLiveChatBody = () => {
     setCurrentBlock((prev) => (prev ? { ...prev, onlyShowBlockConditions: value } : null));
   };
 
-  const hint = PROVIDER_HINTS[currentBlock.liveChatProvider];
+  const description = PROVIDER_DESCRIPTIONS[currentBlock.liveChatProvider];
+  const flashWarning = PROVIDER_FLASH_WARNINGS[currentBlock.liveChatProvider];
 
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
@@ -179,18 +241,47 @@ const BlockLiveChatBody = () => {
                 ))}
               </SelectContent>
             </Select>
-            {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
           </div>
+
+          {/* Provider description */}
+          {description && (
+            <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <InfoCircledIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+              <p className="text-sm text-blue-800">{description}</p>
+            </div>
+          )}
+
+          {/* Provider note (blue info, e.g. Zendesk Messenger config) */}
+          {PROVIDER_NOTES[currentBlock.liveChatProvider] && (
+            <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <InfoCircledIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+              <div className="text-sm text-blue-800">
+                {PROVIDER_NOTES[currentBlock.liveChatProvider]}
+              </div>
+            </div>
+          )}
+
+          {/* Flash warning */}
+          {flashWarning && (
+            <div className="flex items-start space-x-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 min-w-0">
+              <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
+              <div className="text-sm text-yellow-800 min-w-0">
+                <div>{flashWarning.text}</div>
+                {flashWarning.code && (
+                  <pre className="mt-2 rounded bg-white/80 border border-yellow-200 p-2 text-xs text-foreground whitespace-pre-wrap break-all">
+                    <code>{flashWarning.code}</code>
+                  </pre>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Custom code (only for custom provider) */}
           {currentBlock.liveChatProvider === LiveChatProvider.CUSTOM && (
             <div className="flex flex-col space-y-2">
               <Label>Custom JavaScript code</Label>
-              <CodeMirror
-                value={currentBlock.customLiveChatCode}
-                height="200px"
-                basicSetup={{ lineNumbers: false }}
-                extensions={[javascript({ jsx: false, typescript: false })]}
+              <CodeEditor
+                value={currentBlock.customLiveChatCode ?? ''}
                 onChange={handleCustomCodeChange}
               />
               <p className="text-xs text-muted-foreground">
