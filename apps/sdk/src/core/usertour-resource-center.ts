@@ -267,6 +267,10 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     return store?.expanded === false;
   }
 
+  setLauncherHidden(hidden: boolean): void {
+    this.updateStore({ launcherHidden: hidden });
+  }
+
   protected getZIndex(themeSettings?: ThemeTypesSetting): number {
     const themeZIndex = themeSettings?.resourceCenter?.zIndex;
     if (themeZIndex != null) {

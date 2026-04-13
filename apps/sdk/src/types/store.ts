@@ -60,4 +60,6 @@ export type ResourceCenterStore = BaseStore & {
   liveChatActive?: boolean;
   /** Tracks whether the live chat provider widget is currently open (for future unread UI) */
   liveChatProviderOpen?: boolean;
+  /** When true, the default launcher is hidden (set via SDK API) */
+  launcherHidden?: boolean;
 };

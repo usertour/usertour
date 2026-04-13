@@ -68,6 +68,16 @@ export interface Usertour {
   // setServerEndpoint(serverEndpoint: string | null | undefined): void;
 
   disableEvalJs(): void;
+
+  openResourceCenter: () => void;
+
+  closeResourceCenter: () => void;
+
+  toggleResourceCenter: () => void;
+
+  setResourceCenterLauncherHidden: (hidden: boolean) => void;
+
+  getResourceCenterState: () => ResourceCenterState | null;
 }
 
 export interface Attributes {

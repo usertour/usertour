@@ -93,6 +93,8 @@ export interface ResourceCenterContextValue {
   launcherText?: string;
   badgeCount: number;
   uncompletedCount: number;
+  /** When true, the default launcher is hidden (set via SDK API) */
+  launcherHidden: boolean;
 }
 
 export const ResourceCenterRootContext = createContext<ResourceCenterContextValue | null>(null);

@@ -54,6 +54,8 @@ interface ResourceCenterRootProps {
     query: string,
     offset: number,
   ) => Promise<SearchKnowledgeBaseResult>;
+  /** When true, the default launcher is hidden (set via SDK API) */
+  launcherHidden?: boolean;
 }
 
 export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
@@ -79,6 +81,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onContentListItemClick,
     onLiveChatClick,
     onSearchKnowledgeBase,
+    launcherHidden = false,
   } = props;
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
 
@@ -234,6 +237,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onContentListItemClick,
       onLiveChatClick,
       onSearchKnowledgeBase,
+      launcherHidden,
     }),
     [
       globalStyle,
@@ -264,6 +268,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onContentListItemClick,
       onLiveChatClick,
       onSearchKnowledgeBase,
+      launcherHidden,
     ],
   );
 

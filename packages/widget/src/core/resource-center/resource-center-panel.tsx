@@ -142,6 +142,7 @@ export const ResourceCenterPanel = forwardRef<
     uncompletedCount,
     badgeCount,
     hidden,
+    launcherHidden,
   } = useResourceCenterContext();
   const positionStyle = useResourceCenterPositionStyle();
 
@@ -181,9 +182,12 @@ export const ResourceCenterPanel = forwardRef<
       : `min(calc(100vh - ${heightOffset}px), ${maxHeight}px)`
     : 'auto';
 
+  // Hide entire panel when launcher is hidden and resource center is closed
+  const shouldHide = hidden || (launcherHidden && !isOpen);
+
   const outerStyle: React.CSSProperties = {
     ...(applyPosition ? { zIndex, ...positionStyle } : {}),
-    ...(hidden ? { visibility: 'hidden' as const, pointerEvents: 'none' as const } : {}),
+    ...(shouldHide ? { visibility: 'hidden' as const, pointerEvents: 'none' as const } : {}),
   };
 
   const frameSizeStyle = {

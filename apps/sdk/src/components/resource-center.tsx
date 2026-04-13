@@ -40,6 +40,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     assets,
     contentListItems,
     liveChatActive,
+    launcherHidden,
   } = store;
 
   if (!resourceCenterData || !openState) return null;
@@ -56,6 +57,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     assets,
     contentListItems,
     liveChatActive,
+    launcherHidden,
   };
 };
 
@@ -117,6 +119,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
     assets,
     contentListItems,
     liveChatActive,
+    launcherHidden,
   } = store;
 
   if (!themeSettings || !resourceCenterData) return <></>;
@@ -138,6 +141,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onExpandedChange={resourceCenter.expand}
         zIndex={zIndex}
         hidden={liveChatActive === true}
+        launcherHidden={launcherHidden === true}
         userAttributes={userAttributes}
         onContentClick={resourceCenter.handleOnClick}
         onBlockClick={resourceCenter.handleBlockClick}

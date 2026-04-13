@@ -515,6 +515,44 @@ export class UsertourCore extends Evented {
     this.evalJsDisabled = true;
   }
 
+  // ── Resource Center public API ───────────────────────────────────────
+
+  openResourceCenter(): void {
+    this.activatedResourceCenter?.expand(true);
+  }
+
+  closeResourceCenter(): void {
+    this.activatedResourceCenter?.expand(false);
+  }
+
+  toggleResourceCenter(): void {
+    const store = this.activatedResourceCenter?.getSnapshot();
+    if (store) {
+      this.activatedResourceCenter?.expand(!store.expanded);
+    }
+  }
+
+  setResourceCenterLauncherHidden(hidden: boolean): void {
+    this.activatedResourceCenter?.setLauncherHidden(hidden);
+  }
+
+  getResourceCenterState(): UserTourTypes.ResourceCenterState | null {
+    if (!this.activatedResourceCenter) {
+      return null;
+    }
+    const store = this.activatedResourceCenter.getSnapshot();
+    if (!store) {
+      return null;
+    }
+    const presentation = this.activatedResourceCenter.getChecklistPresentation();
+    return {
+      isOpen: store.expanded,
+      hasChecklist: presentation.checklist !== undefined,
+      uncompletedChecklistTaskCount: presentation.uncompletedCount,
+      unreadAnnouncementCount: 0,
+    };
+  }
+
   /**
    * Sets a URL filter function to sanitize URLs before they are used for conditions and page tracking
    * @param urlFilter - Function taking a URL string and returning a filtered URL string, or null to use default behavior

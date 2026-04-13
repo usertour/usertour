@@ -172,6 +172,26 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       app.registerCustomInput(cssSelector, getValue);
     },
 
+    openResourceCenter: () => {
+      app.openResourceCenter();
+    },
+
+    closeResourceCenter: () => {
+      app.closeResourceCenter();
+    },
+
+    toggleResourceCenter: () => {
+      app.toggleResourceCenter();
+    },
+
+    setResourceCenterLauncherHidden: (hidden: boolean) => {
+      app.setResourceCenterLauncherHidden(hidden);
+    },
+
+    getResourceCenterState: () => {
+      return app.getResourceCenterState();
+    },
+
     on: (eventName: string, _listener: (...args: any[]) => void) => {
       // Intentionally empty - reserved for future event system
       logger.warn('on method is not yet implemented', { eventName });
