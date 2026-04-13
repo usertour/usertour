@@ -26,11 +26,17 @@ import {
   ResourceCenterBlockType,
   RulesCondition,
 } from '@usertour/types';
+import { isRichTextEmpty } from '@usertour/helpers';
 import type { ReactNode } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
 import { IconPicker } from '../../components/icon-picker';
+import {
+  ContentError,
+  ContentErrorAnchor,
+  ContentErrorContent,
+} from '../../components/content-error';
 
 const LIVE_CHAT_PROVIDER_OPTIONS = [
   { value: LiveChatProvider.CRISP, label: 'Crisp' },
@@ -140,7 +146,7 @@ const BlockLiveChatHeader = () => {
 };
 
 const BlockLiveChatBody = () => {
-  const { currentBlock, setCurrentBlock, zIndex } = useResourceCenterContext();
+  const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
   const { attributeList } = useAttributeListContext();
   const { environmentId, projectId } = useBuilderContext();
   const { token } = useToken();
@@ -210,19 +216,26 @@ const BlockLiveChatBody = () => {
           </div>
 
           {/* Name */}
-          <div className="flex flex-col space-y-2">
-            <Label>Name</Label>
-            <PopperEditorMini
-              zIndex={zIndex + EXTENSION_SELECT}
-              initialValue={
-                (currentBlock.name as Descendant[]) ?? [
-                  { type: 'paragraph', children: [{ text: '' }] },
-                ]
-              }
-              onValueChange={handleNameChange}
-              attributes={attributeList}
-            />
-          </div>
+          <ContentError open={isShowError && isRichTextEmpty(currentBlock.name)}>
+            <div className="flex flex-col space-y-2">
+              <Label>Name</Label>
+              <ContentErrorAnchor>
+                <PopperEditorMini
+                  zIndex={zIndex + EXTENSION_SELECT}
+                  initialValue={
+                    (currentBlock.name as Descendant[]) ?? [
+                      { type: 'paragraph', children: [{ text: '' }] },
+                    ]
+                  }
+                  onValueChange={handleNameChange}
+                  attributes={attributeList}
+                />
+              </ContentErrorAnchor>
+            </div>
+            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+              Name is required
+            </ContentErrorContent>
+          </ContentError>
 
           {/* Live chat provider */}
           <div className="flex flex-col space-y-2">
@@ -276,16 +289,25 @@ const BlockLiveChatBody = () => {
 
           {/* Custom code (only for custom provider) */}
           {currentBlock.liveChatProvider === LiveChatProvider.CUSTOM && (
-            <div className="flex flex-col space-y-2">
-              <Label>Custom JavaScript code</Label>
-              <CodeEditor
-                value={currentBlock.customLiveChatCode ?? ''}
-                onChange={handleCustomCodeChange}
-              />
-              <p className="text-xs text-muted-foreground">
-                This JavaScript code will be executed when the user clicks the block.
-              </p>
-            </div>
+            <ContentError
+              open={isShowError && (currentBlock.customLiveChatCode ?? '').trim() === ''}
+            >
+              <div className="flex flex-col space-y-2">
+                <Label>Custom JavaScript code</Label>
+                <ContentErrorAnchor>
+                  <CodeEditor
+                    value={currentBlock.customLiveChatCode ?? ''}
+                    onChange={handleCustomCodeChange}
+                  />
+                </ContentErrorAnchor>
+                <p className="text-xs text-muted-foreground">
+                  This JavaScript code will be executed when the user clicks the block.
+                </p>
+              </div>
+              <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+                Custom JavaScript code is required
+              </ContentErrorContent>
+            </ContentError>
           )}
 
           {/* Only show block if... */}

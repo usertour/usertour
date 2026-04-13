@@ -12,6 +12,11 @@ import { LauncherIconSource } from '@usertour/types';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { SidebarContainer } from '../sidebar';
 import { IconPicker } from '../../components/icon-picker';
+import {
+  ContentError,
+  ContentErrorAnchor,
+  ContentErrorContent,
+} from '../../components/content-error';
 
 const TabSettingsHeader = () => {
   const { setCurrentMode } = useBuilderContext();
@@ -37,7 +42,7 @@ const TabSettingsHeader = () => {
 };
 
 const TabSettingsBody = () => {
-  const { editingTab, setEditingTab, zIndex } = useResourceCenterContext();
+  const { editingTab, setEditingTab, zIndex, isShowError } = useResourceCenterContext();
 
   if (!editingTab) {
     return null;
@@ -68,16 +73,23 @@ const TabSettingsBody = () => {
       <ScrollArea className="h-full">
         <div className="flex-col space-y-3 p-4">
           {/* Name */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="tab-name">Name</Label>
-            <Input
-              id="tab-name"
-              className="bg-background-900"
-              value={editingTab.name}
-              placeholder="Tab name"
-              onChange={handleNameChange}
-            />
-          </div>
+          <ContentError open={isShowError && editingTab.name.trim() === ''}>
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="tab-name">Name</Label>
+              <ContentErrorAnchor>
+                <Input
+                  id="tab-name"
+                  className="bg-background-900"
+                  value={editingTab.name}
+                  placeholder="Tab name"
+                  onChange={handleNameChange}
+                />
+              </ContentErrorAnchor>
+            </div>
+            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+              Tab name is required
+            </ContentErrorContent>
+          </ContentError>
 
           {/* Icon */}
           <div className="flex flex-col space-y-2">

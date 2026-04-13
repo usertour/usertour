@@ -1,13 +1,15 @@
 import {
   ResourceCenterBlock,
+  ResourceCenterBlockType,
   ResourceCenterData,
   ResourceCenterTab,
   DEFAULT_RESOURCE_CENTER_DATA,
   LauncherIconSource,
+  LiveChatProvider,
 } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { isEqual } from 'lodash';
-import { uuidV4 } from '@usertour/helpers';
+import { uuidV4, isRichTextEmpty } from '@usertour/helpers';
 import {
   ReactNode,
   createContext,
@@ -55,11 +57,35 @@ export interface ResourceCenterContextValue {
   currentBlock: ResourceCenterBlock | null;
   saveCurrentBlock: () => void;
   flushSave: () => Promise<void>;
+  isShowError: boolean;
 }
 
 export const ResourceCenterContext = createContext<ResourceCenterContextValue | undefined>(
   undefined,
 );
+
+/** Validate block required fields before save. Returns true if valid. */
+function isBlockValid(block: ResourceCenterBlock): boolean {
+  switch (block.type) {
+    case ResourceCenterBlockType.ACTION:
+    case ResourceCenterBlockType.SUB_PAGE:
+    case ResourceCenterBlockType.CONTENT_LIST:
+      return !isRichTextEmpty(block.name);
+    case ResourceCenterBlockType.KNOWLEDGE_BASE:
+      return !isRichTextEmpty(block.name) && block.knowledgeBaseUrl.trim() !== '';
+    case ResourceCenterBlockType.LIVE_CHAT:
+      if (isRichTextEmpty(block.name)) return false;
+      if (
+        block.liveChatProvider === LiveChatProvider.CUSTOM &&
+        (block.customLiveChatCode ?? '').trim() === ''
+      ) {
+        return false;
+      }
+      return true;
+    default:
+      return true;
+  }
+}
 
 /** Helper: update blocks within a specific tab */
 function updateTabBlocks(
@@ -127,6 +153,12 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
   const [currentBlock, setCurrentBlock] = useState<ResourceCenterBlock | null>(null);
   const [currentTabId, setCurrentTabId] = useState<string | null>(null);
   const [editingTab, setEditingTab] = useState<ResourceCenterTab | null>(null);
+  const [isShowError, setIsShowError] = useState(false);
+
+  // Reset error state when switching blocks or tabs
+  useEffect(() => {
+    setIsShowError(false);
+  }, [currentBlock?.id, editingTab?.id]);
 
   // Auto-select first tab when data loads
   useEffect(() => {
@@ -247,6 +279,11 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
 
   const saveEditingTab = useCallback(() => {
     if (!editingTab) return;
+    if (editingTab.name.trim() === '') {
+      setIsShowError(true);
+      return;
+    }
+    setIsShowError(false);
     setAndSave((prev) => ({
       ...prev,
       tabs: prev.tabs.map((tab) =>
@@ -269,6 +306,11 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
     if (!currentBlock || !currentTabId) {
       return;
     }
+    if (!isBlockValid(currentBlock)) {
+      setIsShowError(true);
+      return;
+    }
+    setIsShowError(false);
     setAndSave((prev) =>
       updateTabBlocks(prev, currentTabId, (blocks) =>
         blocks.map((block) => (block.id === currentBlock.id ? currentBlock : block)),
@@ -368,6 +410,7 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
     addBlock,
     saveCurrentBlock,
     flushSave,
+    isShowError,
   };
 
   return <ResourceCenterContext.Provider value={value}>{children}</ResourceCenterContext.Provider>;

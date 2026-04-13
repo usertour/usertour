@@ -19,10 +19,16 @@ import {
   ResourceCenterBlockType,
   RulesCondition,
 } from '@usertour/types';
+import { isRichTextEmpty } from '@usertour/helpers';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
 import { IconPicker } from '../../components/icon-picker';
+import {
+  ContentError,
+  ContentErrorAnchor,
+  ContentErrorContent,
+} from '../../components/content-error';
 
 const BlockActionHeader = () => {
   const { setCurrentMode } = useBuilderContext();
@@ -48,7 +54,7 @@ const BlockActionHeader = () => {
 };
 
 const BlockActionBody = () => {
-  const { currentBlock, setCurrentBlock, zIndex } = useResourceCenterContext();
+  const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
   const { attributeList } = useAttributeListContext();
   const { contents } = useContentListContext();
   const { environmentId, projectId } = useBuilderContext();
@@ -110,19 +116,26 @@ const BlockActionBody = () => {
           </div>
 
           {/* Name */}
-          <div className="flex flex-col space-y-2">
-            <Label>Name</Label>
-            <PopperEditorMini
-              zIndex={zIndex + EXTENSION_SELECT}
-              initialValue={
-                (currentBlock.name as Descendant[]) ?? [
-                  { type: 'paragraph', children: [{ text: '' }] },
-                ]
-              }
-              onValueChange={handleNameChange}
-              attributes={attributeList}
-            />
-          </div>
+          <ContentError open={isShowError && isRichTextEmpty(currentBlock.name)}>
+            <div className="flex flex-col space-y-2">
+              <Label>Name</Label>
+              <ContentErrorAnchor>
+                <PopperEditorMini
+                  zIndex={zIndex + EXTENSION_SELECT}
+                  initialValue={
+                    (currentBlock.name as Descendant[]) ?? [
+                      { type: 'paragraph', children: [{ text: '' }] },
+                    ]
+                  }
+                  onValueChange={handleNameChange}
+                  attributes={attributeList}
+                />
+              </ContentErrorAnchor>
+            </div>
+            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+              Name is required
+            </ContentErrorContent>
+          </ContentError>
 
           {/* When block is clicked */}
           <div className="flex flex-col space-y-2">

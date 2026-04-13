@@ -27,10 +27,16 @@ import {
   ResourceCenterBlockType,
   RulesCondition,
 } from '@usertour/types';
+import { isRichTextEmpty } from '@usertour/helpers';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
 import { IconPicker } from '../../components/icon-picker';
+import {
+  ContentError,
+  ContentErrorAnchor,
+  ContentErrorContent,
+} from '../../components/content-error';
 
 const SEARCH_PROVIDER_OPTIONS = [
   {
@@ -71,7 +77,7 @@ const BlockKnowledgeBaseHeader = () => {
 };
 
 const BlockKnowledgeBaseBody = () => {
-  const { currentBlock, setCurrentBlock, zIndex } = useResourceCenterContext();
+  const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
   const { attributeList } = useAttributeListContext();
   const { environmentId, projectId } = useBuilderContext();
   const { token } = useToken();
@@ -140,19 +146,26 @@ const BlockKnowledgeBaseBody = () => {
           </div>
 
           {/* Name */}
-          <div className="flex flex-col space-y-2">
-            <Label>Name</Label>
-            <PopperEditorMini
-              zIndex={zIndex + EXTENSION_SELECT}
-              initialValue={
-                (currentBlock.name as Descendant[]) ?? [
-                  { type: 'paragraph', children: [{ text: '' }] },
-                ]
-              }
-              onValueChange={handleNameChange}
-              attributes={attributeList}
-            />
-          </div>
+          <ContentError open={isShowError && isRichTextEmpty(currentBlock.name)}>
+            <div className="flex flex-col space-y-2">
+              <Label>Name</Label>
+              <ContentErrorAnchor>
+                <PopperEditorMini
+                  zIndex={zIndex + EXTENSION_SELECT}
+                  initialValue={
+                    (currentBlock.name as Descendant[]) ?? [
+                      { type: 'paragraph', children: [{ text: '' }] },
+                    ]
+                  }
+                  onValueChange={handleNameChange}
+                  attributes={attributeList}
+                />
+              </ContentErrorAnchor>
+            </div>
+            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+              Name is required
+            </ContentErrorContent>
+          </ContentError>
 
           {/* Knowledge base search provider */}
           <div className="flex flex-col space-y-2">
@@ -172,16 +185,23 @@ const BlockKnowledgeBaseBody = () => {
           </div>
 
           {/* Knowledge base URL */}
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="kb-url">Knowledge base URL</Label>
-            <Input
-              id="kb-url"
-              className="bg-background-900"
-              value={currentBlock.knowledgeBaseUrl}
-              placeholder="Example: help.company.com/hc/en-us"
-              onChange={handleInputChange('knowledgeBaseUrl')}
-            />
-          </div>
+          <ContentError open={isShowError && currentBlock.knowledgeBaseUrl.trim() === ''}>
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="kb-url">Knowledge base URL</Label>
+              <ContentErrorAnchor>
+                <Input
+                  id="kb-url"
+                  className="bg-background-900"
+                  value={currentBlock.knowledgeBaseUrl}
+                  placeholder="Example: help.company.com/hc/en-us"
+                  onChange={handleInputChange('knowledgeBaseUrl')}
+                />
+              </ContentErrorAnchor>
+            </div>
+            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+              Knowledge base URL is required
+            </ContentErrorContent>
+          </ContentError>
 
           {/* Default search query */}
           <div className="flex flex-col space-y-2">

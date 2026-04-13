@@ -8,6 +8,7 @@ import type {
   ContentEditorRootColumn,
   ContentEditorRootElement,
   LauncherData,
+  RichTextNode,
   Step,
   StepTrigger,
 } from '@usertour/types';
@@ -356,6 +357,16 @@ export const duplicateStep = <T extends StepLike>(
     trigger: trigger ? duplicateTriggers(trigger as StepTrigger[]) : [],
     target: duplicateTarget(target as Step['target']),
   } as Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId'>;
+};
+
+/** Check if a rich text node array is empty (no visible text content). */
+export const isRichTextEmpty = (nodes: RichTextNode[] | undefined): boolean => {
+  if (!nodes || nodes.length === 0) return true;
+  return nodes.every((node) => {
+    if ('text' in node) return String(node.text ?? '').trim() === '';
+    if ('children' in node) return isRichTextEmpty(node.children as RichTextNode[]);
+    return true;
+  });
 };
 
 /** Display-only block types that do not emit click analytics. */

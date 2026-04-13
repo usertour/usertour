@@ -50,11 +50,17 @@ import {
   RulesCondition,
   type RichTextNode,
 } from '@usertour/types';
+import { isRichTextEmpty } from '@usertour/helpers';
 import { useCallback, useMemo, useState } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
 import { IconPicker } from '../../components/icon-picker';
+import {
+  ContentError,
+  ContentErrorAnchor,
+  ContentErrorContent,
+} from '../../components/content-error';
 import { IconsList } from '@usertour-packages/widget';
 
 // ============================================================================
@@ -148,7 +154,7 @@ interface BlockContentListBodyProps {
 }
 
 const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
-  const { currentBlock, setCurrentBlock, zIndex } = useResourceCenterContext();
+  const { currentBlock, setCurrentBlock, zIndex, isShowError } = useResourceCenterContext();
   const { attributeList } = useAttributeListContext();
   const { environmentId, projectId } = useBuilderContext();
   const { token } = useToken();
@@ -323,19 +329,26 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
           </div>
 
           {/* Name */}
-          <div className="flex flex-col space-y-2">
-            <Label>Name</Label>
-            <PopperEditorMini
-              zIndex={zIndex + EXTENSION_SELECT}
-              initialValue={
-                (currentBlock.name as Descendant[]) ?? [
-                  { type: 'paragraph', children: [{ text: '' }] },
-                ]
-              }
-              onValueChange={handleNameChange}
-              attributes={attributeList}
-            />
-          </div>
+          <ContentError open={isShowError && isRichTextEmpty(currentBlock.name)}>
+            <div className="flex flex-col space-y-2">
+              <Label>Name</Label>
+              <ContentErrorAnchor>
+                <PopperEditorMini
+                  zIndex={zIndex + EXTENSION_SELECT}
+                  initialValue={
+                    (currentBlock.name as Descendant[]) ?? [
+                      { type: 'paragraph', children: [{ text: '' }] },
+                    ]
+                  }
+                  onValueChange={handleNameChange}
+                  attributes={attributeList}
+                />
+              </ContentErrorAnchor>
+            </div>
+            <ContentErrorContent style={{ zIndex: zIndex + EXTENSION_SELECT }}>
+              Name is required
+            </ContentErrorContent>
+          </ContentError>
 
           {/* Default icon for flows */}
           <div className="flex flex-col space-y-2">
