@@ -1,7 +1,6 @@
 import type { ElementType } from 'react';
 import {
   RiArrowRightCircleFill,
-  // RiBookOpenFill,
   RiCheckboxCircleFill,
   RiFileTextFill,
   RiListCheck3,
@@ -69,13 +68,6 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     description: 'Embed an active checklist',
     icon: RiCheckboxCircleFill,
   },
-  // {
-  //   key: ResourceCenterBlockType.KNOWLEDGE_BASE,
-  //   value: ResourceCenterBlockType.KNOWLEDGE_BASE,
-  //   label: 'Knowledge base',
-  //   description: 'Search help articles',
-  //   icon: RiBookOpenFill,
-  // },
   {
     key: ResourceCenterBlockType.LIVE_CHAT,
     value: ResourceCenterBlockType.LIVE_CHAT,
