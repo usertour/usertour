@@ -65,18 +65,18 @@ const navigations = [
     icon: EventTrackerIcon,
   },
   {
-    name: 'Resource Centers',
-    href: '/resource-centers',
-    contentType: 'resource-centers',
-    routeIds: ['resource-centers'],
-    icon: ResourceCenterIcon,
-  },
-  {
     name: 'Announcements',
     href: '/announcements',
     contentType: 'announcements',
     routeIds: ['announcements'],
     icon: AnnouncementIcon,
+  },
+  {
+    name: 'Resource Centers',
+    href: '/resource-centers',
+    contentType: 'resource-centers',
+    routeIds: ['resource-centers'],
+    icon: ResourceCenterIcon,
   },
   {
     name: 'Users',
