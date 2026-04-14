@@ -815,7 +815,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
                   <div className="flex justify-end mt-2">
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 text-sm text-sdk-primary hover:text-sdk-primary/80 cursor-pointer"
+                      className="inline-flex items-center gap-1 text-sm text-sdk-resource-center-primary rounded-md px-2 py-1 hover:bg-sdk-resource-center-foreground/10 active:bg-sdk-resource-center-foreground/24 cursor-pointer"
                       onClick={() => handleReadMore(item)}
                     >
                       {item.moreButtonText || 'Read more'}
