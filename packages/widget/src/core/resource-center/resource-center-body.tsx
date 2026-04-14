@@ -661,23 +661,49 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
 ContentListDetail.displayName = 'ContentListDetail';
 
 // ============================================================================
-// Announcement — list + detail views
+// Announcement — list view
 // ============================================================================
+
+/**
+ * Format a date string into a human-readable label like "Tuesday, Apr 14".
+ */
+const formatAnnouncementDate = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+/**
+ * Group announcements by date label and return groups in order.
+ */
+const groupAnnouncementsByDate = (items: AnnouncementListItem[]) => {
+  const groups: { label: string; items: AnnouncementListItem[] }[] = [];
+  let currentLabel = '';
+  for (const item of items) {
+    const label = item.time ? formatAnnouncementDate(item.time) : '';
+    if (label !== currentLabel) {
+      currentLabel = label;
+      groups.push({ label, items: [] });
+    }
+    groups[groups.length - 1].items.push(item);
+  }
+  return groups;
+};
 
 interface AnnouncementListDetailProps {
   block: ResourceCenterAnnouncementBlock;
 }
 
 export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailProps) => {
-  const { onListAnnouncements, onGetAnnouncement, onMarkAnnouncementSeen, userAttributes } =
+  const { onListAnnouncements, onMarkAnnouncementSeen, actions, userAttributes } =
     useResourceCenterContext();
   const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [truncated, setTruncated] = useState(false);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementDetailType | null>(
-    null,
-  );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Initial load
@@ -717,89 +743,27 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
     }
   }, [loadMore, isLoadingMore, truncated]);
 
-  // Click announcement
-  const handleAnnouncementClick = useCallback(
-    async (item: AnnouncementListItem) => {
-      if (!onGetAnnouncement) return;
-      const detail = await onGetAnnouncement(item.id);
-      if (detail) {
-        setSelectedAnnouncement(detail);
-        // Mark as seen
-        if (!item.seen) {
-          onMarkAnnouncementSeen?.(item.id, item.versionId);
-          setAnnouncements((prev) =>
-            prev.map((a) => (a.id === item.id ? { ...a, seen: true } : a)),
-          );
-        }
+  // Click "Read more" — push detail page onto stack
+  const handleReadMore = useCallback(
+    (item: AnnouncementListItem) => {
+      // Mark as seen
+      if (!item.seen) {
+        onMarkAnnouncementSeen?.(item.id, item.versionId);
+        setAnnouncements((prev) => prev.map((a) => (a.id === item.id ? { ...a, seen: true } : a)));
       }
+      actions.push({
+        type: 'announcement_detail',
+        block,
+        announcementId: item.id,
+      });
     },
-    [onGetAnnouncement, onMarkAnnouncementSeen],
+    [actions, block, onMarkAnnouncementSeen],
   );
 
-  // Go back from detail to list
-  const handleBack = useCallback(() => {
-    setSelectedAnnouncement(null);
-  }, []);
+  const dateGroups = useMemo(() => groupAnnouncementsByDate(announcements), [announcements]);
 
-  // Render detail view
-  if (selectedAnnouncement) {
-    return (
-      <div className="flex flex-col gap-3 p-2">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="flex items-center gap-1 px-1 text-sm text-sdk-resource-center-foreground/60 hover:text-sdk-resource-center-foreground cursor-pointer"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="h-4 w-4"
-          >
-            <path d="M7.82843 10.9999H20V12.9999H7.82843L13.1924 18.3638L11.7782 19.778L4 11.9999L11.7782 4.22168L13.1924 5.63589L7.82843 10.9999Z" />
-          </svg>
-          Back
-        </button>
-
-        <div className="px-1">
-          <h3 className="text-base font-semibold text-sdk-resource-center-foreground">
-            {selectedAnnouncement.title}
-          </h3>
-          {selectedAnnouncement.time && (
-            <div className="text-xs text-sdk-resource-center-foreground/50 mt-1">
-              {new Date(selectedAnnouncement.time).toLocaleDateString()}
-            </div>
-          )}
-        </div>
-
-        <div className="px-1 text-sm text-sdk-resource-center-foreground">
-          <ContentEditorSerialize
-            contents={selectedAnnouncement.content as any}
-            userAttributes={userAttributes}
-          />
-        </div>
-
-        {selectedAnnouncement.moreContent && (
-          <div className="px-1 text-sm text-sdk-resource-center-foreground">
-            <ContentEditorSerialize
-              contents={selectedAnnouncement.moreContent as any}
-              userAttributes={userAttributes}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Render list view
   return (
-    <div className="flex flex-col gap-2 p-2" ref={scrollContainerRef} onScroll={handleScroll}>
-      <div className="flex items-center px-1">
-        <span className="text-base font-semibold text-sdk-resource-center-foreground">
-          {serializeBlockName(block.name, userAttributes) || 'Announcements'}
-        </span>
-      </div>
-
+    <div className="flex flex-col p-4" ref={scrollContainerRef} onScroll={handleScroll}>
       {isLoading && (
         <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
           Loading...
@@ -813,25 +777,55 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
       )}
 
       {!isLoading &&
-        announcements.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className="flex w-full flex-col gap-1 rounded-lg border border-sdk-resource-center-foreground/[8%] bg-sdk-background p-3 text-left text-sm transition-colors hover:bg-sdk-hover cursor-pointer"
-            onClick={() => handleAnnouncementClick(item)}
-          >
-            <div className="flex items-center gap-2">
-              {!item.seen && <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-primary" />}
-              <span className="min-w-0 flex-1 font-medium text-sdk-resource-center-foreground truncate">
-                {item.title}
-              </span>
-            </div>
-            {item.time && (
-              <span className="text-xs text-sdk-resource-center-foreground/50">
-                {new Date(item.time).toLocaleDateString()}
-              </span>
+        dateGroups.map((group) => (
+          <div key={group.label}>
+            {/* Date separator */}
+            {group.label && (
+              <div className="flex items-center gap-3 my-3">
+                <div className="flex-1 h-px bg-sdk-resource-center-foreground/15" />
+                <span className="text-xs text-sdk-resource-center-foreground/50 whitespace-nowrap">
+                  {group.label}
+                </span>
+                <div className="flex-1 h-px bg-sdk-resource-center-foreground/15" />
+              </div>
             )}
-          </button>
+
+            {group.items.map((item) => (
+              <div key={item.id} className="mb-4">
+                {/* Title */}
+                <div className="flex items-center gap-2">
+                  {!item.seen && (
+                    <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-primary" />
+                  )}
+                  <h3 className="text-base font-bold text-sdk-resource-center-foreground">
+                    {item.title}
+                  </h3>
+                </div>
+
+                {/* Intro content */}
+                <div className="text-sm text-sdk-resource-center-foreground mt-1">
+                  <ContentEditorSerialize
+                    contents={item.content as any}
+                    userAttributes={userAttributes}
+                  />
+                </div>
+
+                {/* Read more button */}
+                {item.moreEnabled && (
+                  <div className="flex justify-end mt-2">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 text-sm text-sdk-primary hover:text-sdk-primary/80 cursor-pointer"
+                      onClick={() => handleReadMore(item)}
+                    >
+                      {item.moreButtonText || 'Read more'}
+                      <span className="text-xs">→</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         ))}
 
       {isLoadingMore && (
@@ -844,6 +838,71 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
 });
 
 AnnouncementListDetail.displayName = 'AnnouncementListDetail';
+
+// ============================================================================
+// Announcement — detail view (pushed onto page stack, has Back header)
+// ============================================================================
+
+interface AnnouncementDetailViewProps {
+  announcementId: string;
+}
+
+export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDetailViewProps) => {
+  const { onGetAnnouncement, onMarkAnnouncementSeen, userAttributes } = useResourceCenterContext();
+  const [detail, setDetail] = useState<AnnouncementDetailType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!onGetAnnouncement) return;
+    setIsLoading(true);
+    onGetAnnouncement(announcementId)
+      .then((result) => {
+        setDetail(result);
+        if (result && !result.seen) {
+          onMarkAnnouncementSeen?.(result.id, result.versionId);
+        }
+      })
+      .finally(() => setIsLoading(false));
+  }, [onGetAnnouncement, onMarkAnnouncementSeen, announcementId]);
+
+  if (isLoading) {
+    return (
+      <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!detail) return null;
+
+  return (
+    <div className="flex flex-col gap-3 p-4">
+      <div>
+        <h3 className="text-base font-bold text-sdk-resource-center-foreground">{detail.title}</h3>
+        {detail.time && (
+          <div className="text-xs text-sdk-resource-center-foreground/50 mt-1">
+            {formatAnnouncementDate(detail.time)}
+          </div>
+        )}
+      </div>
+
+      <div className="text-sm text-sdk-resource-center-foreground">
+        <ContentEditorSerialize contents={detail.content as any} userAttributes={userAttributes} />
+      </div>
+
+      {detail.moreContent && (
+        <div className="text-sm text-sdk-resource-center-foreground">
+          <ContentEditorSerialize
+            contents={detail.moreContent as any}
+            userAttributes={userAttributes}
+          />
+        </div>
+      )}
+    </div>
+  );
+});
+
+AnnouncementDetailView.displayName = 'AnnouncementDetailView';
 
 // ============================================================================
 // DetailView — switch on page type (replaces 4 if-cascades)
@@ -864,6 +923,8 @@ export const DetailView = memo(({ page, subPageEditSlot }: DetailViewProps) => {
       return <ContentListDetail block={page.block} />;
     case ResourceCenterBlockType.ANNOUNCEMENT:
       return <AnnouncementListDetail block={page.block} />;
+    case 'announcement_detail':
+      return <AnnouncementDetailView announcementId={page.announcementId} />;
     default:
       return null;
   }

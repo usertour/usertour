@@ -203,11 +203,18 @@ export const DEFAULT_RESOURCE_CENTER_DATA: ResourceCenterData = {
 // Navigation (used by widget)
 // ============================================================================
 
+export type ResourceCenterAnnouncementDetailPage = {
+  type: 'announcement_detail';
+  block: ResourceCenterAnnouncementBlock;
+  announcementId: string;
+};
+
 export type ResourceCenterPageEntry =
   | { type: ResourceCenterBlockType.SUB_PAGE; block: ResourceCenterSubPageBlock }
   | { type: ResourceCenterBlockType.KNOWLEDGE_BASE; block: ResourceCenterKnowledgeBaseBlock }
   | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock }
-  | { type: ResourceCenterBlockType.ANNOUNCEMENT; block: ResourceCenterAnnouncementBlock };
+  | { type: ResourceCenterBlockType.ANNOUNCEMENT; block: ResourceCenterAnnouncementBlock }
+  | ResourceCenterAnnouncementDetailPage;
 
 export interface ResourceCenterNavigationState {
   activeTabId: string;
