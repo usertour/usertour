@@ -16,6 +16,7 @@ export enum ResourceCenterBlockType {
   KNOWLEDGE_BASE = 'knowledge-base',
   CHECKLIST = 'checklist',
   LIVE_CHAT = 'live-chat',
+  ANNOUNCEMENT = 'announcement',
 }
 
 // ============================================================================
@@ -110,6 +111,17 @@ export interface ResourceCenterLiveChatBlock extends ResourceCenterBlockConditio
   customLiveChatCode: string;
 }
 
+export interface ResourceCenterAnnouncementBlock extends ResourceCenterBlockConditionFields {
+  id: string;
+  name: RichTextNode[];
+  type: ResourceCenterBlockType.ANNOUNCEMENT;
+  iconSource: LauncherIconSource;
+  iconType: string;
+  iconUrl?: string;
+  /** Number of unread announcements (populated by server at session build time) */
+  unreadCount?: number;
+}
+
 export interface ContentListItem {
   contentId: string;
   contentType: 'flow' | 'checklist';
@@ -148,13 +160,15 @@ export type ResourceCenterBlock =
   | ResourceCenterSubPageBlock
   | ResourceCenterKnowledgeBaseBlock
   | ResourceCenterContentListBlock
-  | ResourceCenterLiveChatBlock;
+  | ResourceCenterLiveChatBlock
+  | ResourceCenterAnnouncementBlock;
 
 /** Navigable block types — blocks that push a detail view when clicked. */
 export type ResourceCenterNavigableBlock =
   | ResourceCenterSubPageBlock
   | ResourceCenterKnowledgeBaseBlock
-  | ResourceCenterContentListBlock;
+  | ResourceCenterContentListBlock
+  | ResourceCenterAnnouncementBlock;
 
 // ============================================================================
 // Tab
@@ -192,7 +206,8 @@ export const DEFAULT_RESOURCE_CENTER_DATA: ResourceCenterData = {
 export type ResourceCenterPageEntry =
   | { type: ResourceCenterBlockType.SUB_PAGE; block: ResourceCenterSubPageBlock }
   | { type: ResourceCenterBlockType.KNOWLEDGE_BASE; block: ResourceCenterKnowledgeBaseBlock }
-  | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock };
+  | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock }
+  | { type: ResourceCenterBlockType.ANNOUNCEMENT; block: ResourceCenterAnnouncementBlock };
 
 export interface ResourceCenterNavigationState {
   activeTabId: string;

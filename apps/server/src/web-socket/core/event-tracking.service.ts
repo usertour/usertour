@@ -317,6 +317,87 @@ export class EventTrackingService {
     });
   }
 
+  /**
+   * Track a content event directly (no BizSession required).
+   * Fetches bizUser / content / version / event, builds data via the provided builder,
+   * filters by allowed attributes, and creates a BizEvent.
+   */
+  async trackDirectContentEvent(params: {
+    environment: Environment;
+    externalUserId: string;
+    clientContext: ClientContext;
+    contentId: string;
+    versionId: string;
+    eventCodeName: BizEvents;
+    buildEventData: (
+      content: { id: string; name: string },
+      version: { id: string; sequence: number; data: unknown },
+    ) => Record<string, any>;
+    extraAllowedAttributes?: string[];
+    bizCompanyId?: string;
+  }): Promise<boolean> {
+    const {
+      environment,
+      externalUserId,
+      clientContext,
+      contentId,
+      versionId,
+      eventCodeName,
+      buildEventData,
+      extraAllowedAttributes = [],
+      bizCompanyId,
+    } = params;
+    const { id: environmentId } = environment;
+
+    return await this.prisma.$transaction(async (tx) => {
+      const [bizUser, content, version, event] = await Promise.all([
+        tx.bizUser.findFirst({
+          where: { externalId: externalUserId, environmentId },
+        }),
+        tx.content.findUnique({
+          where: { id: contentId },
+          select: { id: true, name: true },
+        }),
+        tx.version.findUnique({
+          where: { id: versionId },
+          select: { id: true, sequence: true, data: true },
+        }),
+        tx.event.findFirst({
+          where: { codeName: eventCodeName, projectId: environment.projectId },
+        }),
+      ]);
+
+      if (!bizUser || !content || !version || !event) {
+        return false;
+      }
+
+      const rawData = buildEventData(content, version);
+      const eventData = assignClientContext(rawData, clientContext);
+
+      const filteredData = await this.filterEventDataByAttributes(
+        event.id,
+        eventData,
+        extraAllowedAttributes,
+      );
+      if (!filteredData) {
+        return false;
+      }
+
+      await tx.bizEvent.create({
+        data: {
+          bizUserId: bizUser.id,
+          eventId: event.id,
+          data: filteredData,
+          contentId,
+          versionId,
+          bizCompanyId: bizCompanyId ?? null,
+        },
+      });
+
+      return true;
+    });
+  }
+
   // ============================================================================
   // Session Query Methods
   // ============================================================================

@@ -97,7 +97,8 @@ const BlockContent = forwardRef<HTMLDivElement, BlockContentProps>(
       block.type === ResourceCenterBlockType.SUB_PAGE ||
       block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
       block.type === ResourceCenterBlockType.CONTENT_LIST ||
-      block.type === ResourceCenterBlockType.LIVE_CHAT
+      block.type === ResourceCenterBlockType.LIVE_CHAT ||
+      block.type === ResourceCenterBlockType.ANNOUNCEMENT
         ? serializeBlockName(block.name)
         : '';
     const label = nameText || typeLabel;

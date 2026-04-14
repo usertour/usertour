@@ -3,13 +3,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
   BannerData,
+  BizEvents,
   ChecklistData,
   ContentDataType,
   LauncherData,
+  ResourceCenterBlockType,
   ResourceCenterData,
   ThemeTypesSetting,
   ThemeVariation,
 } from '@usertour/types';
+import type { ResourceCenterAnnouncementBlock } from '@usertour/types';
 import {
   extractStepTriggerAttributeIds,
   extractStepContentAttrCodes,
@@ -466,8 +469,90 @@ export class SessionBuilderService {
       attrCodes,
     );
     session.attributes = attributes;
+
+    // Populate unreadCount for announcement blocks
+    await this.populateAnnouncementUnreadCounts(resourceCenterData, environment, externalUserId);
+
     session.version.resourceCenter = resourceCenterData;
     return session;
+  }
+
+  /**
+   * Populate unreadCount on each announcement block in the resource center data.
+   * Counts published announcements with distribution='badge' that the user has not seen.
+   */
+  private async populateAnnouncementUnreadCounts(
+    resourceCenterData: ResourceCenterData,
+    environment: Environment,
+    externalUserId: string,
+  ): Promise<void> {
+    const announcementBlocks: ResourceCenterAnnouncementBlock[] = [];
+    for (const tab of resourceCenterData.tabs ?? []) {
+      for (const block of tab.blocks) {
+        if (block.type === ResourceCenterBlockType.ANNOUNCEMENT) {
+          announcementBlocks.push(block as ResourceCenterAnnouncementBlock);
+        }
+      }
+    }
+    if (announcementBlocks.length === 0) return;
+
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: { externalId: String(externalUserId), environmentId: environment.id },
+      select: { id: true },
+    });
+    if (!bizUser) {
+      for (const block of announcementBlocks) {
+        block.unreadCount = 0;
+      }
+      return;
+    }
+
+    // Get all published announcements with distribution='badge'
+    const publishedAnnouncements = await this.prisma.contentOnEnvironment.findMany({
+      where: {
+        environmentId: environment.id,
+        published: true,
+        content: { type: ContentDataType.ANNOUNCEMENT, deleted: false },
+      },
+      include: {
+        publishedVersion: { select: { id: true, data: true } },
+      },
+    });
+
+    // Filter to badge-level announcements
+    const badgeContentIds = publishedAnnouncements
+      .filter((item) => {
+        const data = item.publishedVersion?.data as Record<string, any> | null;
+        return data?.distribution === 'badge';
+      })
+      .map((item) => item.contentId);
+
+    if (badgeContentIds.length === 0) {
+      for (const block of announcementBlocks) {
+        block.unreadCount = 0;
+      }
+      return;
+    }
+
+    // Get seen announcement IDs
+    const seenEvents = await this.prisma.bizEvent.findMany({
+      where: {
+        bizUserId: bizUser.id,
+        contentId: { in: badgeContentIds },
+        event: {
+          codeName: BizEvents.ANNOUNCEMENT_SEEN,
+          project: { environments: { some: { id: environment.id } } },
+        },
+      },
+      select: { contentId: true },
+      distinct: ['contentId'],
+    });
+    const seenSet = new Set(seenEvents.filter((e) => e.contentId).map((e) => e.contentId!));
+
+    const unreadCount = badgeContentIds.filter((id) => !seenSet.has(id)).length;
+    for (const block of announcementBlocks) {
+      block.unreadCount = unreadCount;
+    }
   }
 
   /**

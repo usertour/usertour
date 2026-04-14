@@ -1243,13 +1243,17 @@ export const TooltipIcon = React.forwardRef<SVGSVGElement, IconProps>(
   },
 );
 
-export const ModelIcon = React.forwardRef<SVGSVGElement, IconProps>(
-  ({ ...props }, forwardedRef) => {
+export const ModelIcon = React.forwardRef<SVGSVGElement, IconProps & { size?: number }>(
+  ({ size, width, height, ...props }, forwardedRef) => {
+    const w = size ?? width ?? 24;
+    const h = size ?? height ?? 24;
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="currentColor"
+        width={w}
+        height={h}
         {...props}
         ref={forwardedRef}
       >
@@ -2316,5 +2320,30 @@ export const ForbidFillIcon = React.forwardRef<SVGSVGElement, IconProps>(
 
 ForbidFillIcon.displayName = 'ForbidFillIcon';
 
+export const BadgeDistributionIcon = React.forwardRef<SVGSVGElement, IconProps & { size?: number }>(
+  ({ size, width, height, ...props }, forwardedRef) => {
+    const w = size ?? width ?? 24;
+    const h = size ?? height ?? 24;
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="120 120 560 560"
+        fill="currentColor"
+        width={w}
+        height={h}
+        {...props}
+        ref={forwardedRef}
+      >
+        <g transform="translate(0,800) scale(0.1,-0.1)">
+          <path d="M3801 6359 c-1018 -91 -1871 -826 -2104 -1814 -83 -350 -83 -737 -1 -1085 163 -693 619 -1264 1264 -1584 452 -224 981 -297 1470 -205 638 122 1201 497 1557 1040 365 557 475 1266 297 1919 -148 541 -504 1030 -979 1343 -449 295 -983 432 -1504 386z m355 -1648 c23 -10 54 -36 70 -57 l29 -37 3 -624 c2 -606 2 -624 -18 -662 -67 -133 -258 -125 -321 14 -17 37 -19 75 -19 503 0 254 -2 462 -4 462 -2 0 -55 -18 -116 -40 -130 -46 -159 -49 -214 -16 -53 31 -86 89 -86 150 0 54 16 89 57 128 33 32 487 197 543 197 19 0 54 -8 76 -18z" />
+        </g>
+      </svg>
+    );
+  },
+);
+
+BadgeDistributionIcon.displayName = 'BadgeDistributionIcon';
+
 export { RiQuestionFill as ResourceCenterIcon } from '@remixicon/react';
 export { RiFlashlightFill as EventTrackerIcon } from '@remixicon/react';
+export { RiSendInsFill as AnnouncementIcon } from '@remixicon/react';

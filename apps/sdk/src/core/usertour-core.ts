@@ -549,7 +549,7 @@ export class UsertourCore extends Evented {
       isOpen: store.expanded,
       hasChecklist: presentation.checklist !== undefined,
       uncompletedChecklistTaskCount: presentation.uncompletedCount,
-      unreadAnnouncementCount: 0,
+      unreadAnnouncementCount: presentation.badgeCount,
     };
   }
 

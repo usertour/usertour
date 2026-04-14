@@ -6,6 +6,8 @@ import type {
   ResourceCenterPageEntry,
   ResourceCenterTab,
   SearchKnowledgeBaseResult,
+  ListAnnouncementsResult,
+  AnnouncementDetail,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
@@ -84,6 +86,11 @@ export interface ResourceCenterContextValue {
 
   // Content list
   contentListItems: ContentListDisplayItem[];
+
+  // Announcements
+  onListAnnouncements?: (cursor: string | null) => Promise<ListAnnouncementsResult>;
+  onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
+  onMarkAnnouncementSeen?: (contentId: string, versionId: string) => Promise<boolean>;
 
   // Slots
   checklistSlot?: React.ReactNode;

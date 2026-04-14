@@ -23,7 +23,12 @@ import {
 import { createContent } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { getErrorMessage } from '@usertour/helpers';
-import { Content, ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
+import {
+  Content,
+  ContentDataType,
+  DEFAULT_CHECKLIST_DATA,
+  DEFAULT_ANNOUNCEMENT_DATA,
+} from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -50,6 +55,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const CONTENT_TYPE_INITIAL_DATA: Partial<Record<ContentDataType, unknown>> = {
   [ContentDataType.CHECKLIST]: DEFAULT_CHECKLIST_DATA,
+  [ContentDataType.ANNOUNCEMENT]: DEFAULT_ANNOUNCEMENT_DATA,
 };
 
 const defaultValues: Partial<FormValues> = {

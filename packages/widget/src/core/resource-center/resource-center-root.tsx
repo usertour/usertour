@@ -6,6 +6,8 @@ import type {
   ResourceCenterNavigationState,
   ResourceCenterPageEntry,
   SearchKnowledgeBaseResult,
+  ListAnnouncementsResult,
+  AnnouncementDetail,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
@@ -25,7 +27,8 @@ import { RESOURCE_CENTER_DEFAULTS } from './constants';
 const isNavigableBlockType = (type: string): boolean =>
   type === ResourceCenterBlockType.SUB_PAGE ||
   type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
-  type === ResourceCenterBlockType.CONTENT_LIST;
+  type === ResourceCenterBlockType.CONTENT_LIST ||
+  type === ResourceCenterBlockType.ANNOUNCEMENT;
 
 interface ResourceCenterRootProps {
   children: React.ReactNode;
@@ -54,6 +57,9 @@ interface ResourceCenterRootProps {
     query: string,
     offset: number,
   ) => Promise<SearchKnowledgeBaseResult>;
+  onListAnnouncements?: (cursor: string | null) => Promise<ListAnnouncementsResult>;
+  onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
+  onMarkAnnouncementSeen?: (contentId: string, versionId: string) => Promise<boolean>;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden?: boolean;
 }
@@ -81,6 +87,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onContentListItemClick,
     onLiveChatClick,
     onSearchKnowledgeBase,
+    onListAnnouncements,
+    onGetAnnouncement,
+    onMarkAnnouncementSeen,
     launcherHidden = false,
   } = props;
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
@@ -237,6 +246,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onContentListItemClick,
       onLiveChatClick,
       onSearchKnowledgeBase,
+      onListAnnouncements,
+      onGetAnnouncement,
+      onMarkAnnouncementSeen,
       launcherHidden,
     }),
     [
@@ -268,6 +280,9 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       onContentListItemClick,
       onLiveChatClick,
       onSearchKnowledgeBase,
+      onListAnnouncements,
+      onGetAnnouncement,
+      onMarkAnnouncementSeen,
       launcherHidden,
     ],
   );

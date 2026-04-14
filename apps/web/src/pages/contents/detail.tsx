@@ -9,6 +9,7 @@ const SUPPORTED_CONTENT_TYPES = [
   ContentTypeName.BANNERS,
   ContentTypeName.TRACKERS,
   ContentTypeName.RESOURCE_CENTERS,
+  ContentTypeName.ANNOUNCEMENTS,
 ] as const;
 
 export const ContentDetail = () => {

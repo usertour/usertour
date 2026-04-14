@@ -154,6 +154,11 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onSearchKnowledgeBase={(blockId, query, offset) =>
           resourceCenter.searchKnowledgeBase(blockId, query, offset)
         }
+        onListAnnouncements={(cursor) => resourceCenter.listAnnouncements(cursor)}
+        onGetAnnouncement={(contentId) => resourceCenter.getAnnouncement(contentId)}
+        onMarkAnnouncementSeen={(contentId, versionId) =>
+          resourceCenter.markAnnouncementSeen(contentId, versionId)
+        }
       >
         <ResourceCenterStyleProvider>
           <ResourceCenterPanel mode="iframe" assets={assets}>

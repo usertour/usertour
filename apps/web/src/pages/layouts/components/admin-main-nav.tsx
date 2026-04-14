@@ -10,6 +10,7 @@ import {
   BannerIcon,
   EventTrackerIcon,
   ResourceCenterIcon,
+  AnnouncementIcon,
 } from '@usertour-packages/icons';
 import { TooltipContent } from '@usertour-packages/tooltip';
 import { TooltipTrigger } from '@usertour-packages/tooltip';
@@ -69,6 +70,13 @@ const navigations = [
     contentType: 'resource-centers',
     routeIds: ['resource-centers'],
     icon: ResourceCenterIcon,
+  },
+  {
+    name: 'Announcements',
+    href: '/announcements',
+    contentType: 'announcements',
+    routeIds: ['announcements'],
+    icon: AnnouncementIcon,
   },
   {
     name: 'Users',

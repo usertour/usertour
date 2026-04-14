@@ -64,7 +64,7 @@ const renderToolbarItem = (item: ToolbarItemConfig) => {
  * - Optimized with React.memo and memoized callbacks
  */
 export const EditorToolbar = memo(() => {
-  const { zIndex } = usePopperEditorContext();
+  const { zIndex, container } = usePopperEditorContext();
   const editor = useSlate();
   const overflowRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLElement | null>(null);
@@ -77,7 +77,7 @@ export const EditorToolbar = memo(() => {
   const { isVisible, floatingStyles, refs } = useFloatingToolbar();
 
   // Responsive layout management
-  const { visibleItems, overflowItems, showOverflow, measureRef, containerRef } =
+  const { visibleItems, overflowItems, showOverflow, measureRef } =
     useResponsiveToolbar(TOOLBAR_ITEMS);
 
   // Combine measureRef with floating refs
@@ -92,11 +92,10 @@ export const EditorToolbar = memo(() => {
     [measureRef, refs],
   );
 
-  // Keep editorRef in sync with toolbar's parent element
-  // Update only when containerRef changes to avoid unnecessary updates
+  // Keep editorRef in sync with the actual editor container from context
   useEffect(() => {
-    editorRef.current = containerRef.current?.parentElement ?? null;
-  }, [containerRef]);
+    editorRef.current = container;
+  }, [container]);
 
   // Handle click outside to close toolbar (by deselecting)
   const handleClickOutside = useCallback(() => {

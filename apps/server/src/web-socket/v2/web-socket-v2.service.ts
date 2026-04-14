@@ -35,6 +35,13 @@ import {
   ClientCondition,
   CustomContentSession,
   BizAttributeTypes,
+  ListAnnouncementsDto,
+  ListAnnouncementsResult,
+  GetAnnouncementDto,
+  AnnouncementDetail,
+  MarkAnnouncementSeenDto,
+  AnnouncementListItem,
+  AnnouncementData,
 } from '@usertour/types';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { Socket, Server } from 'socket.io';
@@ -44,7 +51,7 @@ import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { KnowledgeBaseSearchService } from '../core/knowledge-base-search.service';
 import { buildExternalUserRoomId } from '@/utils/websocket-utils';
-import { assignClientContext } from '@/utils/event-v2';
+import { assignClientContext, buildAnnouncementSeenEventData } from '@/utils/event-v2';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { getAttributeType, isNull, isValidISO8601 } from '@usertour/helpers';
 
@@ -1055,5 +1062,228 @@ export class WebSocketV2Service {
         `Failed to cancel all content sessions for content ${contentId}: ${(error as Error).message}`,
       );
     }
+  }
+
+  // ============================================================================
+  // Announcement Methods
+  // ============================================================================
+
+  private static readonly ANNOUNCEMENT_PAGE_SIZE = 20;
+
+  /**
+   * List announcements with cursor-based pagination.
+   * Returns published announcements in the current environment, ordered by publish time descending.
+   */
+  async listAnnouncements(
+    context: WebSocketContext,
+    params: ListAnnouncementsDto,
+  ): Promise<ListAnnouncementsResult> {
+    const { socketData } = context;
+    const environmentId = socketData.environment.id;
+    const bizUserId = await this.resolveBizUserId(socketData);
+    if (!bizUserId) {
+      return {
+        announcements: [],
+        pageSize: WebSocketV2Service.ANNOUNCEMENT_PAGE_SIZE,
+        truncated: false,
+      };
+    }
+
+    const pageSize = WebSocketV2Service.ANNOUNCEMENT_PAGE_SIZE;
+
+    // Build cursor condition
+    const cursorCondition = params.cursor
+      ? {
+          publishedAt: {
+            lt: await this.getAnnouncementPublishedAt(params.cursor, environmentId),
+          },
+        }
+      : {};
+
+    // Query published announcements
+    const contentOnEnvironments = await this.prisma.contentOnEnvironment.findMany({
+      where: {
+        environmentId,
+        published: true,
+        content: {
+          type: ContentDataType.ANNOUNCEMENT,
+          deleted: false,
+        },
+        ...cursorCondition,
+      },
+      include: {
+        content: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        publishedVersion: {
+          select: {
+            id: true,
+            data: true,
+          },
+        },
+      },
+      orderBy: { publishedAt: 'desc' },
+      take: pageSize + 1, // fetch one extra to determine if truncated
+    });
+
+    const truncated = contentOnEnvironments.length > pageSize;
+    const items = truncated ? contentOnEnvironments.slice(0, pageSize) : contentOnEnvironments;
+
+    // Batch lookup seen status
+    const contentIds = items.map((item) => item.content.id);
+    const seenSet = await this.getSeenAnnouncementIds(bizUserId, contentIds, environmentId);
+
+    const announcements: AnnouncementListItem[] = items
+      .filter((item) => item.publishedVersion)
+      .map((item) => {
+        const data = (item.publishedVersion!.data ?? {}) as unknown as AnnouncementData;
+        return {
+          id: item.content.id,
+          versionId: item.publishedVersion!.id,
+          title: item.content.name,
+          content: data.introContent ?? [],
+          moreEnabled: data.enableReadMore ?? false,
+          moreButtonText: data.readMoreLabel ?? 'Read more',
+          level: data.distribution ?? 'silent',
+          seen: seenSet.has(item.content.id),
+          time: item.publishedAt?.toISOString() ?? '',
+        };
+      });
+
+    return { announcements, pageSize, truncated };
+  }
+
+  /**
+   * Get a single announcement with full detail content.
+   */
+  async getAnnouncement(
+    context: WebSocketContext,
+    params: GetAnnouncementDto,
+  ): Promise<AnnouncementDetail | null> {
+    const { socketData } = context;
+    const environmentId = socketData.environment.id;
+    const bizUserId = await this.resolveBizUserId(socketData);
+
+    const contentOnEnv = await this.prisma.contentOnEnvironment.findFirst({
+      where: {
+        environmentId,
+        contentId: params.contentId,
+        published: true,
+        content: {
+          type: ContentDataType.ANNOUNCEMENT,
+          deleted: false,
+        },
+      },
+      include: {
+        content: { select: { id: true, name: true } },
+        publishedVersion: { select: { id: true, data: true } },
+      },
+    });
+
+    if (!contentOnEnv?.publishedVersion) {
+      return null;
+    }
+
+    const data = (contentOnEnv.publishedVersion.data ?? {}) as unknown as AnnouncementData;
+    const seen = bizUserId
+      ? (
+          await this.getSeenAnnouncementIds(bizUserId, [contentOnEnv.content.id], environmentId)
+        ).has(contentOnEnv.content.id)
+      : false;
+
+    return {
+      id: contentOnEnv.content.id,
+      versionId: contentOnEnv.publishedVersion.id,
+      title: contentOnEnv.content.name,
+      content: data.introContent ?? [],
+      moreEnabled: data.enableReadMore ?? false,
+      moreButtonText: data.readMoreLabel ?? 'Read more',
+      level: data.distribution ?? 'silent',
+      seen,
+      time: contentOnEnv.publishedAt?.toISOString() ?? '',
+      moreContent: data.enableReadMore ? (data.detailContent ?? null) : null,
+    };
+  }
+
+  /**
+   * Mark an announcement as seen by firing the announcement_seen analytics event.
+   * The seen status is derived from BizEvent records — no separate table needed.
+   */
+  async markAnnouncementSeen(
+    context: WebSocketContext,
+    params: MarkAnnouncementSeenDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+
+    try {
+      const { environment, externalUserId, clientContext, bizCompanyId } = socketData;
+      await this.eventTrackingService.trackDirectContentEvent({
+        environment,
+        externalUserId,
+        clientContext,
+        contentId: params.contentId,
+        versionId: params.versionId,
+        eventCodeName: BizEvents.ANNOUNCEMENT_SEEN,
+        buildEventData: (content, version) =>
+          buildAnnouncementSeenEventData(content, version, 'resource_center'),
+        bizCompanyId,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to track announcement_seen event: ${(error as Error).message}`);
+      return false;
+    }
+
+    return true;
+  }
+
+  // ============================================================================
+  // Announcement Helper Methods
+  // ============================================================================
+
+  private async resolveBizUserId(socketData: SocketData): Promise<string | null> {
+    const bizUser = await this.prisma.bizUser.findFirst({
+      where: {
+        externalId: String(socketData.externalUserId),
+        environmentId: socketData.environment.id,
+      },
+      select: { id: true },
+    });
+    return bizUser?.id ?? null;
+  }
+
+  private async getAnnouncementPublishedAt(
+    contentId: string,
+    environmentId: string,
+  ): Promise<Date | undefined> {
+    const record = await this.prisma.contentOnEnvironment.findFirst({
+      where: { contentId, environmentId },
+      select: { publishedAt: true },
+    });
+    return record?.publishedAt ?? undefined;
+  }
+
+  private async getSeenAnnouncementIds(
+    bizUserId: string,
+    contentIds: string[],
+    environmentId: string,
+  ): Promise<Set<string>> {
+    if (contentIds.length === 0) return new Set();
+
+    const seenEvents = await this.prisma.bizEvent.findMany({
+      where: {
+        bizUserId,
+        contentId: { in: contentIds },
+        event: {
+          codeName: BizEvents.ANNOUNCEMENT_SEEN,
+          project: { environments: { some: { id: environmentId } } },
+        },
+      },
+      select: { contentId: true },
+      distinct: ['contentId'],
+    });
+    return new Set(seenEvents.filter((e) => e.contentId).map((e) => e.contentId!));
   }
 }

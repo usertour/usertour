@@ -123,7 +123,6 @@ export const ContentListLayout = memo(
       }
     }, [contentLength, isPublishedView, refetchDraftCount, refetchPublishedCount]);
 
-    const hasContent = contentState === 'data';
     const displayTitle = `${isPublishedView ? 'Published' : 'Draft'} ${title.toLowerCase()}`;
 
     // Default filtered empty messages based on title
@@ -205,7 +204,7 @@ export const ContentListLayout = memo(
               <p className="text-sm text-muted-foreground">{description}</p>
             </div>
           </div>
-          {hasContent && (
+          {contentState !== 'loading' && contentState !== 'empty' && (
             <CreateButton
               onClick={openCreateFormHandler}
               disabled={isViewOnly}

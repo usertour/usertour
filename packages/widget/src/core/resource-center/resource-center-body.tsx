@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type {
   ResourceCenterActionBlock,
+  ResourceCenterAnnouncementBlock,
   ResourceCenterContentListBlock,
   ResourceCenterDividerBlock,
   ResourceCenterKnowledgeBaseBlock,
@@ -19,6 +20,8 @@ import type {
   ResourceCenterPageEntry,
   ResourceCenterSubPageBlock,
   KnowledgeBaseArticleItem as KnowledgeBaseArticle,
+  AnnouncementListItem,
+  AnnouncementDetail as AnnouncementDetailType,
   UserTourTypes,
 } from '@usertour/types';
 import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
@@ -256,12 +259,13 @@ export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowP
   };
 
   const nameText = serializeBlockName(block.name, userAttributes);
-  const label =
-    block.type === ResourceCenterBlockType.SUB_PAGE
-      ? nameText || 'Untitled sub-page'
-      : block.type === ResourceCenterBlockType.KNOWLEDGE_BASE
-        ? nameText || 'Knowledge base'
-        : nameText || 'Content list';
+  const fallbackLabels: Partial<Record<ResourceCenterBlockType, string>> = {
+    [ResourceCenterBlockType.SUB_PAGE]: 'Untitled sub-page',
+    [ResourceCenterBlockType.KNOWLEDGE_BASE]: 'Knowledge base',
+    [ResourceCenterBlockType.CONTENT_LIST]: 'Content list',
+    [ResourceCenterBlockType.ANNOUNCEMENT]: 'Announcements',
+  };
+  const label = nameText || fallbackLabels[block.type] || block.type;
 
   return (
     <button
@@ -657,6 +661,191 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
 ContentListDetail.displayName = 'ContentListDetail';
 
 // ============================================================================
+// Announcement — list + detail views
+// ============================================================================
+
+interface AnnouncementListDetailProps {
+  block: ResourceCenterAnnouncementBlock;
+}
+
+export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailProps) => {
+  const { onListAnnouncements, onGetAnnouncement, onMarkAnnouncementSeen, userAttributes } =
+    useResourceCenterContext();
+  const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [truncated, setTruncated] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementDetailType | null>(
+    null,
+  );
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Initial load
+  useEffect(() => {
+    if (!onListAnnouncements) return;
+    setIsLoading(true);
+    onListAnnouncements(null)
+      .then((result) => {
+        setAnnouncements(result.announcements);
+        setTruncated(result.truncated);
+      })
+      .finally(() => setIsLoading(false));
+  }, [onListAnnouncements]);
+
+  // Load more
+  const loadMore = useCallback(async () => {
+    if (!onListAnnouncements || isLoadingMore || !truncated) return;
+    const lastItem = announcements[announcements.length - 1];
+    if (!lastItem) return;
+    setIsLoadingMore(true);
+    try {
+      const result = await onListAnnouncements(lastItem.id);
+      setAnnouncements((prev) => [...prev, ...result.announcements]);
+      setTruncated(result.truncated);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [onListAnnouncements, isLoadingMore, truncated, announcements]);
+
+  // Infinite scroll
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || isLoadingMore || !truncated) return;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    if (scrollHeight - scrollTop - clientHeight < 100) {
+      loadMore();
+    }
+  }, [loadMore, isLoadingMore, truncated]);
+
+  // Click announcement
+  const handleAnnouncementClick = useCallback(
+    async (item: AnnouncementListItem) => {
+      if (!onGetAnnouncement) return;
+      const detail = await onGetAnnouncement(item.id);
+      if (detail) {
+        setSelectedAnnouncement(detail);
+        // Mark as seen
+        if (!item.seen) {
+          onMarkAnnouncementSeen?.(item.id, item.versionId);
+          setAnnouncements((prev) =>
+            prev.map((a) => (a.id === item.id ? { ...a, seen: true } : a)),
+          );
+        }
+      }
+    },
+    [onGetAnnouncement, onMarkAnnouncementSeen],
+  );
+
+  // Go back from detail to list
+  const handleBack = useCallback(() => {
+    setSelectedAnnouncement(null);
+  }, []);
+
+  // Render detail view
+  if (selectedAnnouncement) {
+    return (
+      <div className="flex flex-col gap-3 p-2">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="flex items-center gap-1 px-1 text-sm text-sdk-resource-center-foreground/60 hover:text-sdk-resource-center-foreground cursor-pointer"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="h-4 w-4"
+          >
+            <path d="M7.82843 10.9999H20V12.9999H7.82843L13.1924 18.3638L11.7782 19.778L4 11.9999L11.7782 4.22168L13.1924 5.63589L7.82843 10.9999Z" />
+          </svg>
+          Back
+        </button>
+
+        <div className="px-1">
+          <h3 className="text-base font-semibold text-sdk-resource-center-foreground">
+            {selectedAnnouncement.title}
+          </h3>
+          {selectedAnnouncement.time && (
+            <div className="text-xs text-sdk-resource-center-foreground/50 mt-1">
+              {new Date(selectedAnnouncement.time).toLocaleDateString()}
+            </div>
+          )}
+        </div>
+
+        <div className="px-1 text-sm text-sdk-resource-center-foreground">
+          <ContentEditorSerialize
+            contents={selectedAnnouncement.content as any}
+            userAttributes={userAttributes}
+          />
+        </div>
+
+        {selectedAnnouncement.moreContent && (
+          <div className="px-1 text-sm text-sdk-resource-center-foreground">
+            <ContentEditorSerialize
+              contents={selectedAnnouncement.moreContent as any}
+              userAttributes={userAttributes}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Render list view
+  return (
+    <div className="flex flex-col gap-2 p-2" ref={scrollContainerRef} onScroll={handleScroll}>
+      <div className="flex items-center px-1">
+        <span className="text-base font-semibold text-sdk-resource-center-foreground">
+          {serializeBlockName(block.name, userAttributes) || 'Announcements'}
+        </span>
+      </div>
+
+      {isLoading && (
+        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
+          Loading...
+        </div>
+      )}
+
+      {!isLoading && announcements.length === 0 && (
+        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
+          No announcements yet
+        </div>
+      )}
+
+      {!isLoading &&
+        announcements.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className="flex w-full flex-col gap-1 rounded-lg border border-sdk-resource-center-foreground/[8%] bg-sdk-background p-3 text-left text-sm transition-colors hover:bg-sdk-hover cursor-pointer"
+            onClick={() => handleAnnouncementClick(item)}
+          >
+            <div className="flex items-center gap-2">
+              {!item.seen && <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-primary" />}
+              <span className="min-w-0 flex-1 font-medium text-sdk-resource-center-foreground truncate">
+                {item.title}
+              </span>
+            </div>
+            {item.time && (
+              <span className="text-xs text-sdk-resource-center-foreground/50">
+                {new Date(item.time).toLocaleDateString()}
+              </span>
+            )}
+          </button>
+        ))}
+
+      {isLoadingMore && (
+        <div className="py-2 text-center text-xs text-sdk-resource-center-foreground/50">
+          Loading more...
+        </div>
+      )}
+    </div>
+  );
+});
+
+AnnouncementListDetail.displayName = 'AnnouncementListDetail';
+
+// ============================================================================
 // DetailView — switch on page type (replaces 4 if-cascades)
 // ============================================================================
 
@@ -673,6 +862,8 @@ export const DetailView = memo(({ page, subPageEditSlot }: DetailViewProps) => {
       return <KnowledgeBaseDetail block={page.block} />;
     case ResourceCenterBlockType.CONTENT_LIST:
       return <ContentListDetail block={page.block} />;
+    case ResourceCenterBlockType.ANNOUNCEMENT:
+      return <AnnouncementListDetail block={page.block} />;
     default:
       return null;
   }
@@ -859,7 +1050,8 @@ export const ResourceCenterBlocks = memo(
               )}
               {(block.type === ResourceCenterBlockType.SUB_PAGE ||
                 block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
-                block.type === ResourceCenterBlockType.CONTENT_LIST) && (
+                block.type === ResourceCenterBlockType.CONTENT_LIST ||
+                block.type === ResourceCenterBlockType.ANNOUNCEMENT) && (
                 <NavigableBlockRow
                   block={block as ResourceCenterNavigableBlock}
                   onNavigate={actions.push}
