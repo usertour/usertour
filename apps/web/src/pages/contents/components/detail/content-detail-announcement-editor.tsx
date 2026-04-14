@@ -358,122 +358,125 @@ const AnnouncementSettingsColumn = () => {
         />
       </div>
 
-      {/* Announcement time */}
-      <div className="px-4 py-4 space-y-3 shadow bg-white rounded-lg">
-        <span className="text-sm font-semibold">Announcement time</span>
-        <Popover onOpenChange={handlePublishPopoverChange}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'w-full justify-start text-left font-normal h-9',
-                !scheduledDate && 'text-muted-foreground',
-              )}
-              disabled={isViewOnly}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {scheduledDate ? format(scheduledDate, 'PPP HH:mm') : 'Immediately'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <div className="flex">
-              <div className="border-r">
-                <Calendar
-                  mode="single"
-                  selected={localPublishDate ?? undefined}
-                  onSelect={handlePublishDateChange}
-                  initialFocus
-                />
-              </div>
-              <div className="relative self-stretch" style={{ width: 130 }}>
-                <div className="absolute inset-0 py-2 px-1">
-                  <TimePicker value={localPublishDate} onChange={handlePublishTimeChange} />
+      {/* Settings */}
+      <div className="px-4 py-4 space-y-5 shadow bg-white rounded-lg">
+        {/* Announcement time */}
+        <div className="space-y-2">
+          <span className="text-sm font-semibold">Announcement time</span>
+          <Popover onOpenChange={handlePublishPopoverChange}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-full justify-start text-left font-normal h-9',
+                  !scheduledDate && 'text-muted-foreground',
+                )}
+                disabled={isViewOnly}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {scheduledDate ? format(scheduledDate, 'PPP HH:mm') : 'Immediately'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <div className="flex">
+                <div className="border-r">
+                  <Calendar
+                    mode="single"
+                    selected={localPublishDate ?? undefined}
+                    onSelect={handlePublishDateChange}
+                    initialFocus
+                  />
+                </div>
+                <div className="relative self-stretch" style={{ width: 130 }}>
+                  <div className="absolute inset-0 py-2 px-1">
+                    <TimePicker value={localPublishDate} onChange={handlePublishTimeChange} />
+                  </div>
                 </div>
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
-      {/* Theme selector */}
-      <div className="px-4 py-4 space-y-3 shadow bg-white rounded-lg">
-        <span className="text-sm font-semibold">Theme</span>
-        <Select
-          value={version.themeId ?? ''}
-          onValueChange={handleThemeChange}
-          disabled={isViewOnly}
-        >
-          <SelectTrigger className="justify-start flex h-9">
-            <CubeIcon className="flex-none mr-2" />
-            <div className="grow text-left">
-              <SelectValue placeholder="Select theme" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            {themeList?.map((theme: Theme) => (
-              <SelectItem value={theme.id} key={theme.id}>
-                {theme.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Distribution */}
-      <div className="px-4 py-4 space-y-3 shadow bg-white rounded-lg">
-        <span className="text-sm font-semibold">Distribution</span>
-        <div className="space-y-4">
+        {/* Theme */}
+        <div className="space-y-2">
+          <span className="text-sm font-semibold">Theme</span>
           <Select
-            value={announcementData.distribution}
-            onValueChange={handleDistributionChange}
+            value={version.themeId ?? ''}
+            onValueChange={handleThemeChange}
             disabled={isViewOnly}
           >
-            <SelectTrigger className="justify-start flex h-8">
-              {(() => {
-                const selected = DISTRIBUTION_OPTIONS.find(
-                  (o) => o.value === announcementData.distribution,
-                );
-                if (!selected) return <SelectValue />;
-                const Icon = selected.icon;
-                const iconCls = 'iconClassName' in selected ? selected.iconClassName : undefined;
-                return (
-                  <>
-                    <Icon size={16} className={cn('text-current flex-none', iconCls)} />
-                    <div className="grow text-left ml-2">
-                      <SelectValue asChild>
-                        <span>{selected.label}</span>
-                      </SelectValue>
-                    </div>
-                  </>
-                );
-              })()}
+            <SelectTrigger className="justify-start flex h-9">
+              <CubeIcon className="flex-none mr-2" />
+              <div className="grow text-left">
+                <SelectValue placeholder="Select theme" />
+              </div>
             </SelectTrigger>
             <SelectContent>
-              {DISTRIBUTION_OPTIONS.map((option) => {
-                const Icon = option.icon;
-                const iconCls = 'iconClassName' in option ? option.iconClassName : undefined;
-                return (
-                  <SelectItem key={option.value} value={option.value} className="cursor-pointer">
-                    <div className="flex flex-col">
-                      <div className="flex flex-row space-x-1 items-center">
-                        <Icon size={16} className={cn('text-current', iconCls)} />
-                        <span className="text-xs font-bold">{option.label}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">{option.description}</div>
-                    </div>
-                  </SelectItem>
-                );
-              })}
+              {themeList?.map((theme: Theme) => (
+                <SelectItem value={theme.id} key={theme.id}>
+                  {theme.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+        </div>
 
-          {announcementData.distribution === AnnouncementDistribution.BOOSTED && (
-            <AnnouncementBoostedSettings
-              config={announcementData.boostedConfig}
-              onChange={handleBoostedConfigChange}
+        {/* Distribution */}
+        <div className="space-y-2">
+          <span className="text-sm font-semibold">Distribution</span>
+          <div className="space-y-4">
+            <Select
+              value={announcementData.distribution}
+              onValueChange={handleDistributionChange}
               disabled={isViewOnly}
-            />
-          )}
+            >
+              <SelectTrigger className="justify-start flex h-8">
+                {(() => {
+                  const selected = DISTRIBUTION_OPTIONS.find(
+                    (o) => o.value === announcementData.distribution,
+                  );
+                  if (!selected) return <SelectValue />;
+                  const Icon = selected.icon;
+                  const iconCls = 'iconClassName' in selected ? selected.iconClassName : undefined;
+                  return (
+                    <>
+                      <Icon size={16} className={cn('text-current flex-none', iconCls)} />
+                      <div className="grow text-left ml-2">
+                        <SelectValue asChild>
+                          <span>{selected.label}</span>
+                        </SelectValue>
+                      </div>
+                    </>
+                  );
+                })()}
+              </SelectTrigger>
+              <SelectContent>
+                {DISTRIBUTION_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  const iconCls = 'iconClassName' in option ? option.iconClassName : undefined;
+                  return (
+                    <SelectItem key={option.value} value={option.value} className="cursor-pointer">
+                      <div className="flex flex-col">
+                        <div className="flex flex-row space-x-1 items-center">
+                          <Icon size={16} className={cn('text-current', iconCls)} />
+                          <span className="text-xs font-bold">{option.label}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">{option.description}</div>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+
+            {announcementData.distribution === AnnouncementDistribution.BOOSTED && (
+              <AnnouncementBoostedSettings
+                config={announcementData.boostedConfig}
+                onChange={handleBoostedConfigChange}
+                disabled={isViewOnly}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
