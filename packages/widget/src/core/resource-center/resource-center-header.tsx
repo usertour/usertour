@@ -124,12 +124,15 @@ export const ResourceCenterHeader = memo(() => {
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
       )}
     >
-      {showBackButton && <ResourceCenterBackButton />}
-      {!showBackButton && (
-        <div className="text-sdk-brand-foreground flex-1 pl-4 text-lg">{title}</div>
-      )}
-      {showBackButton && <div className="flex-1" />}
-      <ResourceCenterCloseButton />
+      <div className="w-24 shrink-0 flex items-center">
+        {showBackButton ? <ResourceCenterBackButton /> : <div className="pl-4" />}
+      </div>
+      <div className="flex-1 min-w-0 px-2 text-sdk-brand-foreground text-lg truncate text-center">
+        {title}
+      </div>
+      <div className="w-24 shrink-0 flex items-center justify-end">
+        <ResourceCenterCloseButton />
+      </div>
     </div>
   );
 });
