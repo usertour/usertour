@@ -517,9 +517,10 @@ const AnnouncementContentColumn = () => {
     [queryOembed],
   );
 
-  // Local state for text inputs to keep them responsive during debounced saves
+  // Local state to keep UI responsive during debounced saves
   const [localTitle, setLocalTitle] = useState(announcementData.title);
   const [localReadMoreLabel, setLocalReadMoreLabel] = useState(announcementData.readMoreLabel);
+  const [localEnableReadMore, setLocalEnableReadMore] = useState(announcementData.enableReadMore);
 
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -540,6 +541,7 @@ const AnnouncementContentColumn = () => {
 
   const handleEnableReadMoreChange = useCallback(
     (checked: boolean) => {
+      setLocalEnableReadMore(checked);
       const newData = { ...dataRef.current, enableReadMore: checked };
       debouncedSaveVersionData(newData);
     },
@@ -632,16 +634,17 @@ const AnnouncementContentColumn = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Read more</CardTitle>
             <Switch
-              checked={announcementData.enableReadMore}
+              checked={localEnableReadMore}
               onCheckedChange={handleEnableReadMoreChange}
               disabled={isViewOnly}
+              className="data-[state=unchecked]:bg-input"
             />
           </div>
           <p className="text-xs text-muted-foreground">
             Enable a detail page that users can navigate to from the announcement list.
           </p>
         </CardHeader>
-        {announcementData.enableReadMore && (
+        {localEnableReadMore && (
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="announcement-read-more-label" className="text-sm">
