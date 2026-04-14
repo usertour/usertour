@@ -175,6 +175,21 @@ const ResourceCenterCoreBody = () => {
     }
   };
 
+  // Collect block types that already exist across all tabs and only allow one instance
+  const allExistingBlockTypes = new Set(
+    localData.tabs.flatMap((tab) => tab.blocks.map((block) => block.type)),
+  );
+  const singletonBlockTypes: ResourceCenterBlockType[] = [
+    ResourceCenterBlockType.ANNOUNCEMENT,
+    ResourceCenterBlockType.CHECKLIST,
+  ];
+  const hiddenBlockTypes = new Set(
+    singletonBlockTypes.filter((type) => allExistingBlockTypes.has(type)),
+  );
+  const filteredBlockOptions = BLOCK_TYPE_OPTIONS.filter(
+    (option) => !option.value || !hiddenBlockTypes.has(option.value),
+  );
+
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
       <ScrollArea className="h-full">
@@ -234,7 +249,7 @@ const ResourceCenterCoreBody = () => {
                     className="min-w-[280px]"
                     style={{ zIndex: zIndex + EXTENSION_SELECT }}
                   >
-                    {BLOCK_TYPE_OPTIONS.map(
+                    {filteredBlockOptions.map(
                       ({ key, value, label, description, icon: Icon, disabled }) => {
                         return (
                           <DropdownMenuItem
