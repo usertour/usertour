@@ -40,7 +40,7 @@ export const ResourceCenterFrameRoot = memo(
         data-animate-frame={animateFrame ? 'true' : 'false'}
         className={cn(
           'group',
-          'relative w-full flex flex-col overflow-hidden text-sdk-resource-center-foreground bg-sdk-resource-center-background',
+          'relative w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
           mode === 'iframe' && 'h-screen',
           mode !== 'iframe' && 'h-full',
           'rounded-sdk-resource-center-launcher data-[state=open]:rounded-sdk-popper',

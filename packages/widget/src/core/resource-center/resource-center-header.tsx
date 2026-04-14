@@ -18,9 +18,9 @@ export const ResourceCenterCloseButton = forwardRef<
 
   const buttonClassName = cn(
     'rounded-lg inline-flex h-sdk-resource-center-header-button aspect-square items-center justify-center p-2',
-    'text-sdk-resource-center-header-foreground',
-    'hover:bg-sdk-resource-center-header-foreground/10',
-    'active:bg-sdk-resource-center-header-foreground/24',
+    'text-sdk-brand-foreground',
+    'hover:bg-sdk-brand-foreground/10',
+    'active:bg-sdk-brand-foreground/24',
     'outline-none cursor-pointer',
     className,
   );
@@ -61,9 +61,9 @@ export const ResourceCenterBackButton = memo(() => {
       variant="custom"
       className={cn(
         'rounded-lg inline-flex h-sdk-resource-center-header-button items-center justify-center gap-2 p-2',
-        'text-sdk-resource-center-header-foreground',
-        'hover:bg-sdk-resource-center-header-foreground/10',
-        'active:bg-sdk-resource-center-header-foreground/24',
+        'text-sdk-brand-foreground',
+        'hover:bg-sdk-brand-foreground/10',
+        'active:bg-sdk-brand-foreground/24',
         'outline-none cursor-pointer',
         'px-3',
       )}
@@ -86,10 +86,8 @@ export const ResourceCenterHomeHeader = memo(() => {
   const { data } = useResourceCenterContext();
 
   return (
-    <div className="p-2 flex items-center bg-sdk-resource-center-primary rounded-t-[inherit]">
-      <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">
-        {data.headerText}
-      </div>
+    <div className="p-2 flex items-center bg-sdk-brand-background rounded-t-[inherit]">
+      <div className="text-sdk-brand-foreground flex-1 pl-4 text-lg">{data.headerText}</div>
       <ResourceCenterCloseButton />
     </div>
   );
@@ -120,7 +118,7 @@ export const ResourceCenterHeader = memo(() => {
   return (
     <div
       className={cn(
-        'order-1 shrink-0 p-2 flex items-center bg-sdk-resource-center-primary rounded-t-[inherit]',
+        'order-1 shrink-0 p-2 flex items-center bg-sdk-brand-background rounded-t-[inherit]',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
@@ -128,9 +126,7 @@ export const ResourceCenterHeader = memo(() => {
     >
       {showBackButton && <ResourceCenterBackButton />}
       {!showBackButton && (
-        <div className="text-sdk-resource-center-header-foreground flex-1 pl-4 text-lg">
-          {title}
-        </div>
+        <div className="text-sdk-brand-foreground flex-1 pl-4 text-lg">{title}</div>
       )}
       {showBackButton && <div className="flex-1" />}
       <ResourceCenterCloseButton />

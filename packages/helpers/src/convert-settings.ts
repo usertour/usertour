@@ -290,27 +290,9 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.brandColor.color,
   );
 
-  // Resource center colors
-  data.resourceCenter!.backgroundColor = resolveAutoValue(
-    data.resourceCenter!.backgroundColor,
-    data.mainColor.background,
-  );
-  data.resourceCenter!.fontColor = resolveAutoValue(
-    data.resourceCenter!.fontColor,
-    data.mainColor.color,
-  );
-  data.resourceCenter!.primaryColor = resolveAutoValue(
-    data.resourceCenter!.primaryColor,
-    data.brandColor.background,
-  );
-  data.resourceCenter!.headerFontColor = resolveAutoValue(
-    data.resourceCenter!.headerFontColor,
-    data.brandColor.color,
-  );
-
-  // Resource center launcher colors (cascade from resolved RC primary)
-  const rcPrimary = data.resourceCenter!.primaryColor;
-  const rcHeaderForeground = data.resourceCenter!.headerFontColor;
+  // Resource center launcher colors (cascade from brand colors)
+  const rcPrimary = data.brandColor.background;
+  const rcHeaderForeground = data.brandColor.color;
   const rcLauncherColor = data.resourceCenterLauncherButton!.color;
 
   rcLauncherColor.background = resolveAutoValue(rcLauncherColor.background, rcPrimary);
@@ -412,6 +394,8 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
   const cssMapping: any = {
     '--usertour-background': hexToHSLString(settings.mainColor.background),
     '--usertour-foreground': hexToHSLString(settings.mainColor.color),
+    '--usertour-brand-background-color': hexToHSLString(settings.brandColor.background),
+    '--usertour-brand-foreground-color': hexToHSLString(settings.brandColor.color),
     '--usertour-brand-active-background-color': hexToHSLString(settings.brandColor.active),
     '--usertour-brand-hover-background-color': hexToHSLString(settings.brandColor.hover),
     '--usertour-font-family': settings.font.fontFamily,
@@ -525,12 +509,6 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
       resourceCenterUnreadBadge.backgroundColor,
     ),
     '--usertour-resource-center-badge-foreground-color': resourceCenterUnreadBadge.textColor,
-    '--usertour-resource-center-background-color': hexToHSLString(resourceCenter.backgroundColor),
-    '--usertour-resource-center-foreground-color': hexToHSLString(resourceCenter.fontColor),
-    '--usertour-resource-center-primary-color': hexToHSLString(resourceCenter.primaryColor),
-    '--usertour-resource-center-header-foreground-color': hexToHSLString(
-      resourceCenter.headerFontColor,
-    ),
     '--usertour-resource-center-width': `${resourceCenter.normalWidth}px`,
     '--usertour-resource-center-large-width': `${resourceCenter.largeWidth}px`,
     '--usertour-resource-center-max-height': resourceCenter.maxHeight

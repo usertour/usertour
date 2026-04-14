@@ -70,7 +70,7 @@ export const ResourceCenterTabBar = memo(() => {
   return (
     <div
       className={cn(
-        'order-3 shrink-0 border-t border-sdk-resource-center-foreground/10',
+        'order-3 shrink-0 border-t border-sdk-foreground/10',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
@@ -84,8 +84,8 @@ export const ResourceCenterTabBar = memo(() => {
             className={cn(
               tabItemBase,
               nav.activeTabId === homeTab.id
-                ? 'text-sdk-resource-center-primary'
-                : 'text-sdk-resource-center-foreground/40 hover:text-sdk-resource-center-foreground/70',
+                ? 'text-sdk-brand-background'
+                : 'text-sdk-foreground/40 hover:text-sdk-foreground/70',
             )}
             onClick={() => actions.switchTab(homeTab.id)}
           >
@@ -102,8 +102,8 @@ export const ResourceCenterTabBar = memo(() => {
             className={cn(
               tabItemBase,
               nav.activeTabId === tab.id
-                ? 'text-sdk-resource-center-primary'
-                : 'text-sdk-resource-center-foreground/40 hover:text-sdk-resource-center-foreground/70',
+                ? 'text-sdk-brand-background'
+                : 'text-sdk-foreground/40 hover:text-sdk-foreground/70',
             )}
             onClick={() => actions.switchTab(tab.id)}
           >

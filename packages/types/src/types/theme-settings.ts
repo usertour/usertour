@@ -27,10 +27,6 @@ export type ResourceCenterThemeSettings = {
   transitionDuration: number;
   dividerLines: boolean;
   headerBackground: ResourceCenterHeaderBackground;
-  backgroundColor: string;
-  fontColor: string;
-  primaryColor: string;
-  headerFontColor: string;
   logoUrl: string;
 };
 
@@ -490,10 +486,6 @@ export const defaultSettings: ThemeTypesSetting = {
       gradientTo: 'Auto',
       imageUrl: '',
     },
-    backgroundColor: 'Auto',
-    fontColor: 'Auto',
-    primaryColor: 'Auto',
-    headerFontColor: 'Auto',
     logoUrl: '',
   },
   resourceCenterLauncherButton: {
@@ -767,10 +759,6 @@ export const standardDarkSettings: ThemeTypesSetting = {
       gradientTo: 'Auto',
       imageUrl: '',
     },
-    backgroundColor: 'Auto',
-    fontColor: 'Auto',
-    primaryColor: 'Auto',
-    headerFontColor: 'Auto',
     logoUrl: '',
   },
   resourceCenterLauncherButton: {

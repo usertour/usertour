@@ -24,6 +24,8 @@ const sdkColors = [
   'sdk-progress',
   'sdk-question',
   // Brand colors
+  'sdk-brand-background',
+  'sdk-brand-foreground',
   'sdk-brand-hover',
   'sdk-brand-active',
   // Checklist colors
@@ -41,10 +43,6 @@ const sdkColors = [
   'sdk-resource-center-launcher-foreground',
   'sdk-resource-center-badge-background',
   'sdk-resource-center-badge-foreground',
-  'sdk-resource-center-background',
-  'sdk-resource-center-foreground',
-  'sdk-resource-center-header-foreground',
-  'sdk-resource-center-primary',
   // Button primary colors
   'sdk-btn-primary',
   'sdk-btn-primary-hover',

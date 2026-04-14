@@ -10,7 +10,7 @@ export const ResourceCenterFooter = memo(() => {
   return (
     <div
       className={cn(
-        'order-4 shrink-0 bg-sdk-resource-center-background text-xs opacity-50 hover:opacity-75 py-2 flex justify-center',
+        'order-4 shrink-0 bg-sdk-background text-xs opacity-50 hover:opacity-75 py-2 flex justify-center',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
@@ -18,7 +18,7 @@ export const ResourceCenterFooter = memo(() => {
     >
       <a
         href="https://www.usertour.io?utm_source=made-with-usertour&utm_medium=link&utm_campaign=made-with-usertour-widget"
-        className="!text-sdk-resource-center-foreground !no-underline flex flex-row space-x-0.5 items-center !font-sans"
+        className="!text-sdk-foreground !no-underline flex flex-row space-x-0.5 items-center !font-sans"
         target="_blank"
         rel="noopener noreferrer"
       >

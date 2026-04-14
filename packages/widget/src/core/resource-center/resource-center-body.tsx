@@ -67,12 +67,7 @@ export const BlockIcon = memo(
       const iconItem = IconsList.find((item) => item.name === iconType);
       if (iconItem) {
         const Icon = iconItem.ICON;
-        return (
-          <Icon
-            size={size}
-            className={cn('flex-shrink-0 text-sdk-resource-center-foreground', className)}
-          />
-        );
+        return <Icon size={size} className={cn('flex-shrink-0 text-sdk-foreground', className)} />;
       }
     }
     return null;
@@ -152,12 +147,7 @@ interface ResourceCenterDividerBlockViewProps {
 
 export const ResourceCenterDividerBlockView = memo(
   ({ block }: ResourceCenterDividerBlockViewProps) => {
-    return (
-      <div
-        data-block-id={block.id}
-        className="h-px overflow-hidden bg-sdk-resource-center-foreground/10"
-      />
-    );
+    return <div data-block-id={block.id} className="h-px overflow-hidden bg-sdk-foreground/10" />;
   },
 );
 
@@ -183,17 +173,17 @@ export const ResourceCenterActionBlockView = memo(
       <button
         type="button"
         data-block-id={block.id}
-        className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-resource-center-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-resource-center-foreground/5 cursor-pointer overflow-hidden"
+        className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-foreground/5 cursor-pointer overflow-hidden"
         onClick={handleClick}
       >
-        <div className="absolute inset-0 bg-sdk-resource-center-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-sdk-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
         <BlockIcon
           iconSource={block.iconSource}
           iconType={block.iconType}
           iconUrl={block.iconUrl}
           className="relative"
         />
-        <span className="relative min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
+        <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">
           {serializeBlockName(block.name, userAttributes) || 'Untitled action'}
         </span>
       </button>
@@ -223,18 +213,18 @@ export const ResourceCenterLiveChatBlockView = memo(
       <button
         type="button"
         data-block-id={block.id}
-        className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-resource-center-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-resource-center-foreground/5 cursor-pointer overflow-hidden"
+        className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-foreground/5 cursor-pointer overflow-hidden"
         onClick={handleClick}
       >
-        <div className="absolute inset-0 bg-sdk-resource-center-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
-        <span className="relative min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
+        <div className="absolute inset-0 bg-sdk-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
+        <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">
           {serializeBlockName(block.name, userAttributes) || 'Live chat'}
         </span>
         <BlockIcon
           iconSource={block.iconSource}
           iconType={block.iconType}
           iconUrl={block.iconUrl}
-          className="relative text-sdk-resource-center-foreground/40"
+          className="relative text-sdk-foreground/40"
         />
       </button>
     );
@@ -271,23 +261,18 @@ export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowP
     <button
       type="button"
       data-block-id={block.id}
-      className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-resource-center-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-resource-center-foreground/5 cursor-pointer overflow-hidden"
+      className="group/block relative flex w-full items-center gap-3 rounded-lg border border-sdk-foreground/[8%] bg-sdk-background py-4 px-3 text-left text-sm shadow-sm shadow-sdk-foreground/5 cursor-pointer overflow-hidden"
       onClick={handleClick}
     >
-      <div className="absolute inset-0 bg-sdk-resource-center-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
+      <div className="absolute inset-0 bg-sdk-foreground/[5%] opacity-0 group-hover/block:opacity-100 transition-opacity" />
       <BlockIcon
         iconSource={block.iconSource}
         iconType={block.iconType}
         iconUrl={block.iconUrl}
         className="relative"
       />
-      <span className="relative min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
-        {label}
-      </span>
-      <RiArrowRightSLine
-        size={16}
-        className="relative flex-shrink-0 text-sdk-resource-center-foreground/40"
-      />
+      <span className="relative min-w-0 flex-1 truncate text-sdk-foreground">{label}</span>
+      <RiArrowRightSLine size={16} className="relative flex-shrink-0 text-sdk-foreground/40" />
     </button>
   );
 });
@@ -342,18 +327,14 @@ const KnowledgeBaseArticleRow = memo(({ article }: { article: KnowledgeBaseArtic
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="currentColor"
-        className="h-5 w-5 flex-shrink-0 text-sdk-resource-center-foreground/50 mt-0.5"
+        className="h-5 w-5 flex-shrink-0 text-sdk-foreground/50 mt-0.5"
       >
         <path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM7 6V8H17V6H7ZM7 10V12H17V10H7ZM7 14V16H14V14H7Z" />
       </svg>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-sdk-resource-center-foreground line-clamp-2">
-          {article.title}
-        </div>
+        <div className="text-sm font-medium text-sdk-foreground line-clamp-2">{article.title}</div>
         {article.snippet && (
-          <div className="text-xs text-sdk-resource-center-foreground/70 mt-1 line-clamp-3">
-            {article.snippet}
-          </div>
+          <div className="text-xs text-sdk-foreground/70 mt-1 line-clamp-3">{article.snippet}</div>
         )}
       </div>
     </a>
@@ -458,7 +439,7 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
     <div className="flex flex-col gap-3 p-2">
       {/* Title row with optional external link */}
       <div className="flex items-center justify-between px-1">
-        <span className="text-base font-semibold text-sdk-resource-center-foreground">
+        <span className="text-base font-semibold text-sdk-foreground">
           {serializeBlockName(block.name, userAttributes) || 'Knowledge base'}
         </span>
         {externalUrl && (
@@ -466,7 +447,7 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
             href={externalUrl.startsWith('http') ? externalUrl : `https://${externalUrl}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sdk-resource-center-foreground/50 hover:text-sdk-resource-center-foreground"
+            className="text-sdk-foreground/50 hover:text-sdk-foreground"
             aria-label="Open knowledge base"
           >
             <svg
@@ -486,8 +467,8 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
         <input
           type="text"
           className={cn(
-            'w-full rounded-md border border-sdk-resource-center-foreground/20 bg-sdk-background px-3 py-2 text-sm',
-            'text-sdk-resource-center-foreground placeholder:text-sdk-resource-center-foreground/40',
+            'w-full rounded-md border border-sdk-foreground/20 bg-sdk-background px-3 py-2 text-sm',
+            'text-sdk-foreground placeholder:text-sdk-foreground/40',
             'outline-none focus:border-sdk-primary focus:ring-1 focus:ring-sdk-primary',
           )}
           placeholder="Search"
@@ -499,15 +480,11 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
 
       {/* Results */}
       {isSearching && (
-        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
-          Searching...
-        </div>
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">Searching...</div>
       )}
 
       {!isSearching && hasSearched && articles.length === 0 && (
-        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
-          No results found
-        </div>
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">No results found</div>
       )}
 
       {!isSearching && articles.length > 0 && (
@@ -516,22 +493,20 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
           onScroll={handleScroll}
           className="flex flex-col overflow-y-auto"
         >
-          <div className="px-1 pb-1 text-xs font-medium text-sdk-resource-center-foreground/50">
+          <div className="px-1 pb-1 text-xs font-medium text-sdk-foreground/50">
             Suggested articles
           </div>
           {articles.map((article, idx) => (
             <KnowledgeBaseArticleRow key={`${article.url}-${idx}`} article={article} />
           ))}
           {isLoadingMore && (
-            <div className="py-2 text-center text-xs text-sdk-resource-center-foreground/50">
-              Loading more...
-            </div>
+            <div className="py-2 text-center text-xs text-sdk-foreground/50">Loading more...</div>
           )}
         </div>
       )}
 
       {!isSearching && !hasSearched && (
-        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/40">
+        <div className="py-4 text-center text-sm text-sdk-foreground/40">
           Search your knowledge base
         </div>
       )}
@@ -620,8 +595,8 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
           <input
             type="text"
             className={cn(
-              'w-full rounded-md border border-sdk-resource-center-foreground/20 bg-sdk-background px-3 py-2 text-sm',
-              'text-sdk-resource-center-foreground placeholder:text-sdk-resource-center-foreground/40',
+              'w-full rounded-md border border-sdk-foreground/20 bg-sdk-background px-3 py-2 text-sm',
+              'text-sdk-foreground placeholder:text-sdk-foreground/40',
               'outline-none focus:border-sdk-primary focus:ring-1 focus:ring-sdk-primary',
             )}
             placeholder="Search"
@@ -632,7 +607,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
       )}
 
       {filteredItems.length === 0 && (
-        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">
           {searchQuery.trim() ? 'No results found' : 'No items'}
         </div>
       )}
@@ -647,9 +622,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
               onClick={() => onContentListItemClick?.(item)}
             >
               <ContentListItemIcon item={item} block={block} />
-              <span className="min-w-0 flex-1 truncate text-sdk-resource-center-foreground">
-                {item.name}
-              </span>
+              <span className="min-w-0 flex-1 truncate text-sdk-foreground">{item.name}</span>
             </button>
           ))}
         </div>
@@ -765,15 +738,11 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
   return (
     <div className="flex flex-col p-4" ref={scrollContainerRef} onScroll={handleScroll}>
       {isLoading && (
-        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
-          Loading...
-        </div>
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>
       )}
 
       {!isLoading && announcements.length === 0 && (
-        <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
-          No announcements yet
-        </div>
+        <div className="py-4 text-center text-sm text-sdk-foreground/50">No announcements yet</div>
       )}
 
       {!isLoading &&
@@ -782,11 +751,11 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
             {/* Date separator */}
             {group.label && (
               <div className="flex items-center gap-3 my-3">
-                <div className="flex-1 h-px bg-sdk-resource-center-foreground/15" />
-                <span className="text-xs text-sdk-resource-center-foreground/50 whitespace-nowrap">
+                <div className="flex-1 h-px bg-sdk-foreground/15" />
+                <span className="text-xs text-sdk-foreground/50 whitespace-nowrap">
                   {group.label}
                 </span>
-                <div className="flex-1 h-px bg-sdk-resource-center-foreground/15" />
+                <div className="flex-1 h-px bg-sdk-foreground/15" />
               </div>
             )}
 
@@ -797,13 +766,11 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
                   {!item.seen && (
                     <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-primary" />
                   )}
-                  <h3 className="text-base font-bold text-sdk-resource-center-foreground">
-                    {item.title}
-                  </h3>
+                  <h3 className="text-base font-bold text-sdk-foreground">{item.title}</h3>
                 </div>
 
                 {/* Intro content */}
-                <div className="text-sm text-sdk-resource-center-foreground mt-1">
+                <div className="text-sm text-sdk-foreground mt-1">
                   <ContentEditorSerialize
                     contents={item.content as any}
                     userAttributes={userAttributes}
@@ -815,7 +782,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
                   <div className="flex justify-end mt-2">
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 text-sm text-sdk-resource-center-primary rounded-md px-2 py-1 hover:bg-sdk-resource-center-foreground/10 active:bg-sdk-resource-center-foreground/24 cursor-pointer"
+                      className="inline-flex items-center gap-1 text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover active:bg-sdk-active cursor-pointer"
                       onClick={() => handleReadMore(item)}
                     >
                       {item.moreButtonText || 'Read more'}
@@ -829,9 +796,7 @@ export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailPro
         ))}
 
       {isLoadingMore && (
-        <div className="py-2 text-center text-xs text-sdk-resource-center-foreground/50">
-          Loading more...
-        </div>
+        <div className="py-2 text-center text-xs text-sdk-foreground/50">Loading more...</div>
       )}
     </div>
   );
@@ -866,11 +831,7 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
   }, [onGetAnnouncement, onMarkAnnouncementSeen, announcementId]);
 
   if (isLoading) {
-    return (
-      <div className="py-4 text-center text-sm text-sdk-resource-center-foreground/50">
-        Loading...
-      </div>
-    );
+    return <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>;
   }
 
   if (!detail) return null;
@@ -878,20 +839,20 @@ export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDeta
   return (
     <div className="flex flex-col gap-3 p-4">
       <div>
-        <h3 className="text-base font-bold text-sdk-resource-center-foreground">{detail.title}</h3>
+        <h3 className="text-base font-bold text-sdk-foreground">{detail.title}</h3>
         {detail.time && (
-          <div className="text-xs text-sdk-resource-center-foreground/50 mt-1">
+          <div className="text-xs text-sdk-foreground/50 mt-1">
             {formatAnnouncementDate(detail.time)}
           </div>
         )}
       </div>
 
-      <div className="text-sm text-sdk-resource-center-foreground">
+      <div className="text-sm text-sdk-foreground">
         <ContentEditorSerialize contents={detail.content as any} userAttributes={userAttributes} />
       </div>
 
       {detail.moreContent && (
-        <div className="text-sm text-sdk-resource-center-foreground">
+        <div className="text-sm text-sdk-foreground">
           <ContentEditorSerialize
             contents={detail.moreContent as any}
             userAttributes={userAttributes}
@@ -958,7 +919,7 @@ function getHeaderBackgroundStyle(
     case 'gradient': {
       const from =
         resolveColor(headerBackground.gradientFrom) ??
-        'hsl(var(--usertour-resource-center-primary-color))';
+        'hsl(var(--usertour-brand-background-color))';
       const to = resolveColor(headerBackground.gradientTo) ?? 'var(--sdk-background)';
       return { background: `linear-gradient(to bottom, ${from}, ${to})` };
     }
@@ -990,7 +951,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
   return (
     <div
       className={cn(
-        'relative order-2 min-h-0 min-w-0 flex-1 bg-sdk-resource-center-background',
+        'relative order-2 min-h-0 min-w-0 flex-1 bg-sdk-background',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
@@ -1008,16 +969,16 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
         {/* Background layer: absolute, overflows slightly to avoid edge gaps */}
         {isHomePage && (
           <div className="overflow-hidden absolute -inset-x-3 -top-3 pointer-events-none">
-            <div className="overflow-hidden relative w-full bg-gradient-to-b from-transparent h-[520px] to-sdk-resource-center-background">
+            <div className="overflow-hidden relative w-full bg-gradient-to-b from-transparent h-[520px] to-sdk-background">
               <div
                 className={cn(
                   'w-full h-full',
-                  !headerBackgroundStyle && 'bg-sdk-resource-center-primary/90',
+                  !headerBackgroundStyle && 'bg-sdk-brand-background/90',
                 )}
                 style={headerBackgroundStyle}
               />
-              <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-sdk-resource-center-background" />
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-sdk-resource-center-background" />
+              <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-sdk-background" />
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-sdk-background" />
             </div>
           </div>
         )}

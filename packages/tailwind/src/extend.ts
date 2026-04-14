@@ -13,6 +13,8 @@ export const extendSdk = {
       progress: 'var(--usertour-progress-bar-color)',
       question: 'hsl(var(--usertour-question-color))',
       brand: {
+        background: 'hsl(var(--usertour-brand-background-color))',
+        foreground: 'hsl(var(--usertour-brand-foreground-color))',
         hover: 'hsl(var(--usertour-brand-hover-background-color))',
         active: 'hsl(var(--usertour-brand-active-background-color))',
       },
@@ -26,7 +28,6 @@ export const extendSdk = {
         checkmark: 'var(--usertour-checkmark-background-color)',
       },
       'resource-center': {
-        background: 'hsl(var(--usertour-resource-center-background-color))',
         launcher: {
           background: 'hsl(var(--usertour-resource-center-launcher-background-color))',
           hover: 'hsl(var(--usertour-resource-center-launcher-hover-background-color))',
@@ -37,9 +38,6 @@ export const extendSdk = {
           background: 'var(--usertour-resource-center-badge-background-color)',
           foreground: 'var(--usertour-resource-center-badge-foreground-color)',
         },
-        foreground: 'hsl(var(--usertour-resource-center-foreground-color))',
-        'header-foreground': 'hsl(var(--usertour-resource-center-header-foreground-color))',
-        primary: 'hsl(var(--usertour-resource-center-primary-color))',
       },
       banner: {
         DEFAULT: 'hsl(var(--usertour-banner-background-color))',
