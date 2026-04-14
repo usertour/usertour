@@ -47,7 +47,12 @@ import {
   RiRocketFill,
   RiLayoutTop2Fill,
 } from '@usertour-packages/icons';
-import { CubeIcon } from '@radix-ui/react-icons';
+import { CalendarIcon, CubeIcon } from '@radix-ui/react-icons';
+import { Calendar } from '@usertour-packages/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
+import { Button } from '@usertour-packages/button';
+import { format, parseISO } from 'date-fns';
+import { TimePicker } from '@/components/molecules/time-picker';
 import { useToast } from '@usertour-packages/use-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import {
@@ -346,6 +351,45 @@ const AnnouncementSettingsColumn = () => {
     [saveData],
   );
 
+  const publishDate = announcementData.publishTime ? parseISO(announcementData.publishTime) : null;
+
+  // Local state for the publish time picker — only save on popover close
+  const [localPublishDate, setLocalPublishDate] = useState<Date | null>(publishDate);
+  const localPublishDateRef = useRef(localPublishDate);
+  localPublishDateRef.current = localPublishDate;
+
+  const handlePublishDateChange = useCallback((date: Date | undefined) => {
+    if (!date) {
+      setLocalPublishDate(null);
+      return;
+    }
+    const current = localPublishDateRef.current ?? new Date();
+    date.setHours(current.getHours(), current.getMinutes(), 0, 0);
+    setLocalPublishDate(date);
+  }, []);
+
+  const handlePublishTimeChange = useCallback((date: Date) => {
+    const current = localPublishDateRef.current ?? new Date();
+    current.setHours(date.getHours(), date.getMinutes(), 0, 0);
+    setLocalPublishDate(new Date(current));
+  }, []);
+
+  const handlePublishPopoverChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        // Sync local state when opening
+        setLocalPublishDate(publishDate);
+      } else {
+        // Save on close
+        const newPublishTime = localPublishDateRef.current?.toISOString() ?? null;
+        if (newPublishTime !== dataRef.current.publishTime) {
+          saveData({ ...dataRef.current, publishTime: newPublishTime });
+        }
+      }
+    },
+    [publishDate, saveData],
+  );
+
   const handleThemeChange = useCallback(
     async (themeId: string) => {
       if (!version) return;
@@ -368,34 +412,6 @@ const AnnouncementSettingsColumn = () => {
 
   return (
     <div className="flex flex-col space-y-6 flex-none w-[420px]">
-      {/* Theme selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Theme</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Select
-            value={version.themeId ?? ''}
-            onValueChange={handleThemeChange}
-            disabled={isViewOnly}
-          >
-            <SelectTrigger className="justify-start flex h-9">
-              <CubeIcon className="flex-none mr-2" />
-              <div className="grow text-left">
-                <SelectValue placeholder="Select theme" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {themeList?.map((theme: Theme) => (
-                <SelectItem value={theme.id} key={theme.id}>
-                  {theme.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
       {/* Auto-start rules */}
       <div className="px-4 py-6 space-y-3 shadow bg-white rounded-lg">
         <ContentDetailAutoStartRules
@@ -423,12 +439,34 @@ const AnnouncementSettingsColumn = () => {
         />
       </div>
 
+      {/* Theme selector */}
+      <div className="px-4 py-4 space-y-3 shadow bg-white rounded-lg">
+        <span className="text-sm font-semibold">Theme</span>
+        <Select
+          value={version.themeId ?? ''}
+          onValueChange={handleThemeChange}
+          disabled={isViewOnly}
+        >
+          <SelectTrigger className="justify-start flex h-9">
+            <CubeIcon className="flex-none mr-2" />
+            <div className="grow text-left">
+              <SelectValue placeholder="Select theme" />
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            {themeList?.map((theme: Theme) => (
+              <SelectItem value={theme.id} key={theme.id}>
+                {theme.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Distribution */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Distribution</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="px-4 py-4 space-y-3 shadow bg-white rounded-lg">
+        <span className="text-sm font-semibold">Distribution</span>
+        <div className="space-y-4">
           <Select
             value={announcementData.distribution}
             onValueChange={handleDistributionChange}
@@ -480,8 +518,45 @@ const AnnouncementSettingsColumn = () => {
               disabled={isViewOnly}
             />
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Announcement time */}
+      <div className="px-4 py-4 space-y-3 shadow bg-white rounded-lg">
+        <span className="text-sm font-semibold">Announcement time</span>
+        <Popover onOpenChange={handlePublishPopoverChange}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                'w-full justify-start text-left font-normal h-9',
+                !publishDate && 'text-muted-foreground',
+              )}
+              disabled={isViewOnly}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {publishDate ? format(publishDate, 'PPP HH:mm') : 'Immediately'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <div className="flex">
+              <div className="border-r">
+                <Calendar
+                  mode="single"
+                  selected={localPublishDate ?? undefined}
+                  onSelect={handlePublishDateChange}
+                  initialFocus
+                />
+              </div>
+              <div className="relative self-stretch" style={{ width: 130 }}>
+                <div className="absolute inset-0 py-2 px-1">
+                  <TimePicker value={localPublishDate} onChange={handlePublishTimeChange} />
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 };
