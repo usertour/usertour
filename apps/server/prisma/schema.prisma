@@ -263,6 +263,7 @@ model Version {
   createdAt             DateTime                @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime                @updatedAt @db.Timestamptz(6)
   publishedAt           DateTime?               @db.Timestamptz(6)
+  scheduledAt           DateTime?               @db.Timestamptz(6)
   deleted               Boolean                 @default(false)
   sequence              Int                     @default(0)
   theme                 Theme?                  @relation(fields: [themeId], references: [id])

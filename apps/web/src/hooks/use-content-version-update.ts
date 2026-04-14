@@ -190,6 +190,42 @@ export const useContentVersionUpdate = () => {
     ],
   );
 
+  /**
+   * Update scheduledAt with published-fork safety.
+   */
+  const saveVersionScheduledAt = useCallback(
+    async (scheduledAt: Date | null) => {
+      if (!version || !content) return;
+      try {
+        setIsSaving(true);
+
+        const editableVersionId = await ensureEditableVersionId();
+        await mutation({
+          variables: {
+            versionId: editableVersionId,
+            content: { scheduledAt },
+          },
+        });
+
+        await Promise.all([refetchContent(), refetchVersion()]);
+      } catch (error) {
+        toast({ variant: 'destructive', title: getErrorMessage(error) });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [
+      version,
+      content,
+      mutation,
+      ensureEditableVersionId,
+      refetchContent,
+      refetchVersion,
+      setIsSaving,
+      toast,
+    ],
+  );
+
   return {
     updateVersion,
     debouncedUpdateVersion,
@@ -197,5 +233,6 @@ export const useContentVersionUpdate = () => {
     saveVersionData,
     debouncedSaveVersionData,
     saveVersionTheme,
+    saveVersionScheduledAt,
   };
 };

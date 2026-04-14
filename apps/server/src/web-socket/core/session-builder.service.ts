@@ -507,12 +507,15 @@ export class SessionBuilderService {
       return;
     }
 
-    // Get all published announcements with distribution='badge'
+    // Get all published announcements with distribution='badge' (only those whose scheduledAt has passed or is null)
     const publishedAnnouncements = await this.prisma.contentOnEnvironment.findMany({
       where: {
         environmentId: environment.id,
         published: true,
         content: { type: ContentDataType.ANNOUNCEMENT, deleted: false },
+        publishedVersion: {
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+        },
       },
       include: {
         publishedVersion: { select: { id: true, data: true } },

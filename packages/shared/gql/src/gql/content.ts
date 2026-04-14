@@ -286,6 +286,7 @@ export const getContentVersion = gql`
       config
       createdAt
       updatedAt
+      scheduledAt
       data
       steps {
         id

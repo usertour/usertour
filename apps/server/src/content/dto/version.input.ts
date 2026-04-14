@@ -12,6 +12,9 @@ export class VersionInput {
 
   @Field(() => GraphQLJSON, { nullable: true })
   data?: JsonValue;
+
+  @Field(() => Date, { nullable: true })
+  scheduledAt?: Date;
 }
 
 @InputType()

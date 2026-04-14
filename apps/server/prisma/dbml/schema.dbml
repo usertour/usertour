@@ -224,6 +224,7 @@ Table Version {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   publishedAt DateTime
+  scheduledAt DateTime
   deleted Boolean [not null, default: false]
   sequence Int [not null, default: 0]
   theme Theme

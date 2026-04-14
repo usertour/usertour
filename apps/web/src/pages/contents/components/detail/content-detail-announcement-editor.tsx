@@ -46,7 +46,7 @@ import { CalendarIcon, CubeIcon } from '@radix-ui/react-icons';
 import { Calendar } from '@usertour-packages/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { Button } from '@usertour-packages/button';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { TimePicker } from '@/components/molecules/time-picker';
 import {
   ContentDetailAutoStartRules,
@@ -237,7 +237,8 @@ const AnnouncementSettingsColumn = () => {
   const { version } = useContentVersionContext();
   const { content } = useContentDetailContext();
   const { isViewOnly } = useAppContext();
-  const { debouncedUpdateVersion, saveVersionData, saveVersionTheme } = useContentVersionUpdate();
+  const { debouncedUpdateVersion, saveVersionData, saveVersionTheme, saveVersionScheduledAt } =
+    useContentVersionUpdate();
   const { themeList } = useThemeListContext();
 
   const config = buildConfig(version?.config);
@@ -280,10 +281,10 @@ const AnnouncementSettingsColumn = () => {
     [saveVersionData],
   );
 
-  const publishDate = announcementData.publishTime ? parseISO(announcementData.publishTime) : null;
+  const scheduledDate = version?.scheduledAt ? new Date(version.scheduledAt) : null;
 
   // Local state for the publish time picker — only save on popover close
-  const [localPublishDate, setLocalPublishDate] = useState<Date | null>(publishDate);
+  const [localPublishDate, setLocalPublishDate] = useState<Date | null>(scheduledDate);
   const localPublishDateRef = useRef(localPublishDate);
   localPublishDateRef.current = localPublishDate;
 
@@ -307,16 +308,18 @@ const AnnouncementSettingsColumn = () => {
     (open: boolean) => {
       if (open) {
         // Sync local state when opening
-        setLocalPublishDate(publishDate);
+        setLocalPublishDate(scheduledDate);
       } else {
         // Save on close
-        const newPublishTime = localPublishDateRef.current?.toISOString() ?? null;
-        if (newPublishTime !== dataRef.current.publishTime) {
-          saveVersionData({ ...dataRef.current, publishTime: newPublishTime });
+        const newScheduledAt = localPublishDateRef.current ?? null;
+        const currentScheduledAt = scheduledDate?.toISOString() ?? null;
+        const newScheduledAtIso = newScheduledAt?.toISOString() ?? null;
+        if (newScheduledAtIso !== currentScheduledAt) {
+          saveVersionScheduledAt(newScheduledAt);
         }
       }
     },
-    [publishDate, saveVersionData],
+    [scheduledDate, saveVersionScheduledAt],
   );
 
   const handleThemeChange = useCallback(
@@ -364,12 +367,12 @@ const AnnouncementSettingsColumn = () => {
               variant="outline"
               className={cn(
                 'w-full justify-start text-left font-normal h-9',
-                !publishDate && 'text-muted-foreground',
+                !scheduledDate && 'text-muted-foreground',
               )}
               disabled={isViewOnly}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {publishDate ? format(publishDate, 'PPP HH:mm') : 'Immediately'}
+              {scheduledDate ? format(scheduledDate, 'PPP HH:mm') : 'Immediately'}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -580,7 +583,7 @@ const AnnouncementContentColumn = () => {
   if (!version) return null;
 
   return (
-    <div className="flex flex-col space-y-6 grow">
+    <div className="flex flex-col space-y-6 grow min-w-[560px]">
       {/* Title */}
       <Card>
         <CardHeader>

@@ -1100,7 +1100,8 @@ export class WebSocketV2Service {
         }
       : {};
 
-    // Query published announcements
+    // Query published announcements (only those whose scheduledAt has passed or is null)
+    const now = new Date();
     const contentOnEnvironments = await this.prisma.contentOnEnvironment.findMany({
       where: {
         environmentId,
@@ -1108,6 +1109,9 @@ export class WebSocketV2Service {
         content: {
           type: ContentDataType.ANNOUNCEMENT,
           deleted: false,
+        },
+        publishedVersion: {
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: now } }],
         },
         ...cursorCondition,
       },
@@ -1122,6 +1126,7 @@ export class WebSocketV2Service {
           select: {
             id: true,
             data: true,
+            scheduledAt: true,
           },
         },
       },
@@ -1149,7 +1154,7 @@ export class WebSocketV2Service {
           moreButtonText: data.readMoreLabel ?? 'Read more',
           level: data.distribution ?? 'silent',
           seen: seenSet.has(item.content.id),
-          time: item.publishedAt?.toISOString() ?? '',
+          time: (item.publishedVersion!.scheduledAt ?? item.publishedAt)?.toISOString() ?? '',
         };
       });
 
@@ -1176,10 +1181,13 @@ export class WebSocketV2Service {
           type: ContentDataType.ANNOUNCEMENT,
           deleted: false,
         },
+        publishedVersion: {
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+        },
       },
       include: {
         content: { select: { id: true, name: true } },
-        publishedVersion: { select: { id: true, data: true } },
+        publishedVersion: { select: { id: true, data: true, scheduledAt: true } },
       },
     });
 
@@ -1203,7 +1211,9 @@ export class WebSocketV2Service {
       moreButtonText: data.readMoreLabel ?? 'Read more',
       level: data.distribution ?? 'silent',
       seen,
-      time: contentOnEnv.publishedAt?.toISOString() ?? '',
+      time:
+        (contentOnEnv.publishedVersion!.scheduledAt ?? contentOnEnv.publishedAt)?.toISOString() ??
+        '',
       moreContent: data.enableReadMore ? (data.detailContent ?? null) : null,
     };
   }

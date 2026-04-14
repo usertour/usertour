@@ -72,4 +72,7 @@ export class Version extends BaseModel {
 
   @Field(() => GraphQLJSON, { nullable: true })
   data?: JsonObject;
+
+  @Field(() => Date, { nullable: true })
+  scheduledAt?: Date;
 }

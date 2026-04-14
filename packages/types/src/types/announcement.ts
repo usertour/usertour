@@ -49,8 +49,6 @@ export interface AnnouncementData {
   distribution: AnnouncementDistribution;
   /** Boosted config (only when distribution is BOOSTED). */
   boostedConfig?: AnnouncementBoostedConfig;
-  /** Publish time (ISO string). null = publish immediately. */
-  publishTime?: string | null;
 }
 
 export const DEFAULT_ANNOUNCEMENT_DATA: AnnouncementData = {

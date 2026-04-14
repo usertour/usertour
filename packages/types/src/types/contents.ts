@@ -149,6 +149,7 @@ export type ContentVersion = {
   sequence: number;
   type: string;
   steps?: Step[];
+  scheduledAt?: string | null;
 };
 
 export type ContentOnEnvironment = {

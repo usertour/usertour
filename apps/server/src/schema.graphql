@@ -1329,6 +1329,7 @@ type Version {
   createdAt: DateTime!
   data: JSON
   id: ID!
+  scheduledAt: DateTime
   sequence: Int!
   steps: [Step!]
   themeId: String
@@ -1345,6 +1346,7 @@ input VersionIdInput {
 input VersionInput {
   config: JSON
   data: JSON
+  scheduledAt: DateTime
   themeId: String
 }
 
