@@ -537,6 +537,7 @@ const AnnouncementContentColumn = () => {
 
   const handleIntroContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
+      if (JSON.stringify(value) === JSON.stringify(dataRef.current.introContent)) return;
       const newData = { ...dataRef.current, introContent: value };
       debouncedSaveData(newData);
     },
@@ -561,6 +562,7 @@ const AnnouncementContentColumn = () => {
 
   const handleDetailContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
+      if (JSON.stringify(value) === JSON.stringify(dataRef.current.detailContent)) return;
       const newData = { ...dataRef.current, detailContent: value };
       debouncedSaveData(newData);
     },
