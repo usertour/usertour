@@ -20,7 +20,8 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
     return null;
   }
 
-  const isTracker = contentType === ContentDataType.TRACKER;
+  const isEventBased =
+    contentType === ContentDataType.TRACKER || contentType === ContentDataType.ANNOUNCEMENT;
 
   return (
     <>
@@ -35,8 +36,8 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
               {contentType === ContentDataType.FLOW && <AnalyticsQuestion contentId={contentId} />}
               {contentType === ContentDataType.CHECKLIST && <AnalyticsTasks />}
               {contentType === ContentDataType.RESOURCE_CENTER && <AnalyticsBlocks />}
-              {isTracker && <AnalyticsTrackerUsers contentId={contentId} />}
-              {!isTracker && <AnalyticsSessions />}
+              {isEventBased && <AnalyticsTrackerUsers contentId={contentId} />}
+              {!isEventBased && <AnalyticsSessions />}
             </div>
           </div>
         </BizSessionProvider>

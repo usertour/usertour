@@ -25,6 +25,7 @@ import {
 } from '@usertour-packages/select';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { DownloadIcon } from 'lucide-react';
+import { ContentDataType } from '@usertour/types';
 import { endOfDay, startOfDay, formatDistanceToNow } from 'date-fns';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
@@ -108,6 +109,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
   const { content } = useContentDetailContext();
   const client = useApolloClient();
   const { toast } = useToast();
+  const isAnnouncement = content?.type === ContentDataType.ANNOUNCEMENT;
 
   const [pageSize, setPageSize] = useState(10);
   const [pageIndex, setPageIndex] = useState(0);
@@ -163,7 +165,9 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
       setIsExporting(true);
       toast({
         title: 'Starting export...',
-        description: 'Preparing tracker user data for CSV.',
+        description: isAnnouncement
+          ? 'Preparing announcement viewer data for CSV.'
+          : 'Preparing tracker user data for CSV.',
       });
 
       const allUsers: TrackerUserNode[] = [];
@@ -197,27 +201,40 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
         after = endCursor;
       }
 
-      const headers = [
-        'User: ID',
-        'User: Name',
-        'User: Email',
-        'Company: ID',
-        'Company: Name',
-        'First tracked (UTC)',
-        'Last tracked at (UTC)',
-        'Events',
-      ];
+      const headers = isAnnouncement
+        ? ['User: ID', 'User: Name', 'User: Email', 'Company: ID', 'Company: Name', 'Seen at (UTC)']
+        : [
+            'User: ID',
+            'User: Name',
+            'User: Email',
+            'Company: ID',
+            'Company: Name',
+            'First tracked (UTC)',
+            'Last tracked at (UTC)',
+            'Events',
+          ];
 
-      const rows = allUsers.map((user) => [
-        user.bizUser?.externalId || '',
-        (user.bizUser?.data?.name as string) || '',
-        (user.bizUser?.data?.email as string) || '',
-        user.bizCompany?.externalId || '',
-        (user.bizCompany?.data?.name as string) || '',
-        formatUTCDate(user.firstTrackedAt),
-        formatUTCDate(user.lastTrackedAt),
-        user.eventsCount ?? 0,
-      ]);
+      const rows = allUsers.map((user) =>
+        isAnnouncement
+          ? [
+              user.bizUser?.externalId || '',
+              (user.bizUser?.data?.name as string) || '',
+              (user.bizUser?.data?.email as string) || '',
+              user.bizCompany?.externalId || '',
+              (user.bizCompany?.data?.name as string) || '',
+              formatUTCDate(user.firstTrackedAt),
+            ]
+          : [
+              user.bizUser?.externalId || '',
+              (user.bizUser?.data?.name as string) || '',
+              (user.bizUser?.data?.email as string) || '',
+              user.bizCompany?.externalId || '',
+              (user.bizCompany?.data?.name as string) || '',
+              formatUTCDate(user.firstTrackedAt),
+              formatUTCDate(user.lastTrackedAt),
+              user.eventsCount ?? 0,
+            ],
+      );
 
       const csvContent = [
         headers.map(toCSVCell).join(','),
@@ -227,7 +244,9 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
         ? formatLocalDateForFilename(new Date(dateRange.from))
         : 'all';
       const toLabel = dateRange?.to ? formatLocalDateForFilename(new Date(dateRange.to)) : 'all';
-      const filename = `Usertour-${sanitizeFileName(content?.name || 'tracker')}-events-${fromLabel}_to_${toLabel}.csv`;
+      const defaultName = isAnnouncement ? 'announcement' : 'tracker';
+      const suffix = isAnnouncement ? 'views' : 'events';
+      const filename = `Usertour-${sanitizeFileName(content?.name || defaultName)}-${suffix}-${fromLabel}_to_${toLabel}.csv`;
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -248,7 +267,9 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
       console.error('Tracker CSV export failed:', error);
       toast({
         title: 'Export failed',
-        description: 'An error occurred while exporting tracker users.',
+        description: isAnnouncement
+          ? 'An error occurred while exporting announcement viewers.'
+          : 'An error occurred while exporting tracker users.',
         variant: 'destructive',
       });
     } finally {
@@ -261,6 +282,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
     dateRange?.to,
     environment?.id,
     exportQuery,
+    isAnnouncement,
     isExporting,
     toast,
   ]);
@@ -298,7 +320,11 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
     <Card>
       <CardHeader>
         <CardTitle className="space-between flex flex-row items-center">
-          <div className="grow">Users that tracked this event</div>
+          <div className="grow">
+            {content?.type === ContentDataType.ANNOUNCEMENT
+              ? 'Users that saw this announcement'
+              : 'Users that tracked this event'}
+          </div>
           <Button
             variant="ghost"
             className="h-8 text-primary hover:text-primary"
@@ -315,8 +341,9 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
           <ListSkeleton length={pageSize} />
         ) : users.length === 0 ? (
           <div className="text-sm text-muted-foreground py-8 text-center">
-            Tracker event data will appear here once the tracker is published and events are being
-            tracked.
+            {isAnnouncement
+              ? 'Viewer data will appear here once the announcement is published and seen by users.'
+              : 'Tracker event data will appear here once the tracker is published and events are being tracked.'}
           </div>
         ) : (
           <div className="space-y-4">
@@ -325,9 +352,15 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-2/5">User</TableHead>
-                    <TableHead>First tracked</TableHead>
-                    <TableHead>Last tracked</TableHead>
-                    <TableHead className="text-right">Events</TableHead>
+                    {isAnnouncement ? (
+                      <TableHead>Seen at</TableHead>
+                    ) : (
+                      <>
+                        <TableHead>First tracked</TableHead>
+                        <TableHead>Last tracked</TableHead>
+                        <TableHead className="text-right">Events</TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -376,17 +409,27 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          {formatDistanceToNow(new Date(user.firstTrackedAt), {
-                            addSuffix: true,
-                          })}
-                        </TableCell>
-                        <TableCell>
-                          {formatDistanceToNow(new Date(user.lastTrackedAt), {
-                            addSuffix: true,
-                          })}
-                        </TableCell>
-                        <TableCell className="text-right">{user.eventsCount}</TableCell>
+                        {isAnnouncement ? (
+                          <TableCell>
+                            {formatDistanceToNow(new Date(user.firstTrackedAt), {
+                              addSuffix: true,
+                            })}
+                          </TableCell>
+                        ) : (
+                          <>
+                            <TableCell>
+                              {formatDistanceToNow(new Date(user.firstTrackedAt), {
+                                addSuffix: true,
+                              })}
+                            </TableCell>
+                            <TableCell>
+                              {formatDistanceToNow(new Date(user.lastTrackedAt), {
+                                addSuffix: true,
+                              })}
+                            </TableCell>
+                            <TableCell className="text-right">{user.eventsCount}</TableCell>
+                          </>
+                        )}
                       </TableRow>
                     );
                   })}
