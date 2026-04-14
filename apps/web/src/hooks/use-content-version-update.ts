@@ -16,6 +16,79 @@ export const useContentVersionUpdate = () => {
   const [createVersion] = useMutation(createContentVersion);
   const { toast } = useToast();
 
+  /**
+   * If the current version is published, fork it and return the new editable
+   * version ID. Otherwise return the current version ID directly.
+   */
+  const ensureEditableVersionId = useCallback(
+    async (configOverride?: ContentConfigObject): Promise<string> => {
+      if (!version || !content) throw new Error('Missing version or content');
+
+      if (!isVersionPublished(content, version.id)) {
+        return version.id;
+      }
+
+      const result = await createVersion({
+        variables: {
+          data: {
+            versionId: version.id,
+            config: configOverride ?? version.config,
+          },
+        },
+      });
+
+      const newVersionId = result.data?.createContentVersion?.id;
+      if (!newVersionId) throw new Error('Failed to create new version');
+      return newVersionId;
+    },
+    [version, content, createVersion],
+  );
+
+  /**
+   * Save version data (the `data` JSON field) with published-fork safety.
+   * Fork first if published, then write newData into the editable version.
+   */
+  const saveVersionData = useCallback(
+    async (newData: unknown) => {
+      if (!version || !content) return;
+      try {
+        setIsSaving(true);
+
+        const editableVersionId = await ensureEditableVersionId();
+        await mutation({
+          variables: {
+            versionId: editableVersionId,
+            content: {
+              themeId: version.themeId,
+              data: newData,
+              config: version.config,
+            },
+          },
+        });
+
+        await Promise.all([refetchContent(), refetchVersion()]);
+      } catch (error) {
+        toast({ variant: 'destructive', title: getErrorMessage(error) });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [
+      version,
+      content,
+      mutation,
+      ensureEditableVersionId,
+      refetchContent,
+      refetchVersion,
+      setIsSaving,
+      toast,
+    ],
+  );
+
+  const debouncedSaveVersionData = useDebouncedCallback((newData: unknown) => {
+    saveVersionData(newData);
+  }, 800);
+
   const processVersion = useCallback(
     async (cfg: ContentConfigObject) => {
       if (!cfg || !version || !content) {
@@ -23,22 +96,11 @@ export const useContentVersionUpdate = () => {
       }
 
       try {
-        // Check if we need to create a new version (when published version is being edited)
+        const editableVersionId = await ensureEditableVersionId(cfg);
 
-        if (isVersionPublished(content, version.id)) {
-          const { data } = await createVersion({
-            variables: {
-              data: {
-                versionId: version.id,
-                config: cfg,
-              },
-            },
-          });
-
-          if (!data?.createContentVersion?.id) {
-            throw new Error('Failed to create new version');
-          }
-        } else {
+        // If we forked, config was already set during fork — done.
+        // If not forked, we need to update config explicitly.
+        if (editableVersionId === version.id) {
           const { data } = await mutation({
             variables: {
               versionId: version.id,
@@ -55,15 +117,14 @@ export const useContentVersionUpdate = () => {
           }
         }
 
-        // Refresh data after successful operation
         await Promise.all([refetchContent(), refetchVersion()]);
         return true;
       } catch (error) {
         console.error('Failed to process version:', error);
-        throw error; // Re-throw to let updateVersion handle it
+        throw error;
       }
     },
-    [version, content, createVersion, mutation, refetchContent, refetchVersion],
+    [version, content, ensureEditableVersionId, mutation, refetchContent, refetchVersion],
   );
 
   const updateVersion = useCallback(
@@ -93,8 +154,48 @@ export const useContentVersionUpdate = () => {
     updateVersion(cfg);
   }, 500);
 
+  /**
+   * Update themeId with published-fork safety.
+   */
+  const saveVersionTheme = useCallback(
+    async (themeId: string) => {
+      if (!version || !content) return;
+      try {
+        setIsSaving(true);
+
+        const editableVersionId = await ensureEditableVersionId();
+        await mutation({
+          variables: {
+            versionId: editableVersionId,
+            content: { themeId },
+          },
+        });
+
+        await Promise.all([refetchContent(), refetchVersion()]);
+      } catch (error) {
+        toast({ variant: 'destructive', title: getErrorMessage(error) });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [
+      version,
+      content,
+      mutation,
+      ensureEditableVersionId,
+      refetchContent,
+      refetchVersion,
+      setIsSaving,
+      toast,
+    ],
+  );
+
   return {
     updateVersion,
     debouncedUpdateVersion,
+    ensureEditableVersionId,
+    saveVersionData,
+    debouncedSaveVersionData,
+    saveVersionTheme,
   };
 };

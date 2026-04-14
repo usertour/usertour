@@ -6,16 +6,11 @@ import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 import { useContentVersionTheme } from '@/hooks/use-content-version-theme';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
-import { isVersionPublished } from '@/utils/content';
-import { useLazyQuery, useMutation } from '@apollo/client';
-import {
-  createContentVersion,
-  queryOembedInfo,
-  updateContentVersion,
-} from '@usertour-packages/gql';
+import { useLazyQuery } from '@apollo/client';
+import { queryOembedInfo } from '@usertour-packages/gql';
 import { useAws } from '@usertour-packages/builder/src/hooks/use-aws';
 import { ContentEditor } from '@usertour-packages/shared-editor';
-import { buildConfig, getErrorMessage } from '@usertour/helpers';
+import { buildConfig } from '@usertour/helpers';
 import {
   AnnouncementBoostedConfig,
   AnnouncementBoostedType,
@@ -53,8 +48,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popo
 import { Button } from '@usertour-packages/button';
 import { format, parseISO } from 'date-fns';
 import { TimePicker } from '@/components/molecules/time-picker';
-import { useToast } from '@usertour-packages/use-toast';
-import { useDebouncedCallback } from 'use-debounce';
 import {
   ContentDetailAutoStartRules,
   ContentDetailAutoStartRulesType,
@@ -237,82 +230,18 @@ const AnnouncementBoostedSettings = ({
 };
 
 // ============================================================================
-// Hook: useAnnouncementDataUpdate
-// ============================================================================
-
-/**
- * Hook to save AnnouncementData (version.data) with debounce.
- * Follows the same version-fork pattern as the tracker editor:
- * if the current version is published, create a new version; otherwise update in place.
- */
-const useAnnouncementDataUpdate = () => {
-  const { version, refetch: refetchVersion, setIsSaving } = useContentVersionContext();
-  const { content, refetch: refetchContent } = useContentDetailContext();
-  const [mutation] = useMutation(updateContentVersion);
-  const [createVersion] = useMutation(createContentVersion);
-  const { toast } = useToast();
-
-  const saveData = useCallback(
-    async (newData: AnnouncementData) => {
-      if (!version || !content) return;
-      try {
-        setIsSaving(true);
-
-        if (isVersionPublished(content, version.id)) {
-          await createVersion({
-            variables: {
-              data: {
-                versionId: version.id,
-                config: version.config,
-              },
-            },
-          });
-        } else {
-          await mutation({
-            variables: {
-              versionId: version.id,
-              content: {
-                themeId: version.themeId,
-                data: newData,
-                config: version.config,
-              },
-            },
-          });
-        }
-
-        await Promise.all([refetchContent(), refetchVersion()]);
-      } catch (error) {
-        toast({ variant: 'destructive', title: getErrorMessage(error) });
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [version, content, mutation, createVersion, refetchContent, refetchVersion, setIsSaving, toast],
-  );
-
-  const debouncedSaveData = useDebouncedCallback((newData: AnnouncementData) => {
-    saveData(newData);
-  }, 800);
-
-  return { saveData, debouncedSaveData };
-};
-
-// ============================================================================
 // Left Column: Settings
 // ============================================================================
 
 const AnnouncementSettingsColumn = () => {
-  const { version, refetch: refetchVersion } = useContentVersionContext();
-  const { content, refetch: refetchContent } = useContentDetailContext();
+  const { version } = useContentVersionContext();
+  const { content } = useContentDetailContext();
   const { isViewOnly } = useAppContext();
-  const { debouncedUpdateVersion } = useContentVersionUpdate();
+  const { debouncedUpdateVersion, saveVersionData, saveVersionTheme } = useContentVersionUpdate();
   const { themeList } = useThemeListContext();
-  const [updateVersionMutation] = useMutation(updateContentVersion);
-  const { toast } = useToast();
 
   const config = buildConfig(version?.config);
   const announcementData = (version?.data ?? DEFAULT_ANNOUNCEMENT_DATA) as AnnouncementData;
-  const { saveData } = useAnnouncementDataUpdate();
 
   // Use a ref to hold the latest data to avoid stale closures in callbacks
   const dataRef = useRef(announcementData);
@@ -338,17 +267,17 @@ const AnnouncementSettingsColumn = () => {
       if (distribution === AnnouncementDistribution.BOOSTED && !newData.boostedConfig) {
         newData.boostedConfig = { ...DEFAULT_BOOSTED_CONFIG };
       }
-      saveData(newData);
+      saveVersionData(newData);
     },
-    [saveData],
+    [saveVersionData],
   );
 
   const handleBoostedConfigChange = useCallback(
     (config: AnnouncementBoostedConfig) => {
       const newData = { ...dataRef.current, boostedConfig: config };
-      saveData(newData);
+      saveVersionData(newData);
     },
-    [saveData],
+    [saveVersionData],
   );
 
   const publishDate = announcementData.publishTime ? parseISO(announcementData.publishTime) : null;
@@ -383,29 +312,16 @@ const AnnouncementSettingsColumn = () => {
         // Save on close
         const newPublishTime = localPublishDateRef.current?.toISOString() ?? null;
         if (newPublishTime !== dataRef.current.publishTime) {
-          saveData({ ...dataRef.current, publishTime: newPublishTime });
+          saveVersionData({ ...dataRef.current, publishTime: newPublishTime });
         }
       }
     },
-    [publishDate, saveData],
+    [publishDate, saveVersionData],
   );
 
   const handleThemeChange = useCallback(
-    async (themeId: string) => {
-      if (!version) return;
-      try {
-        await updateVersionMutation({
-          variables: {
-            versionId: version.id,
-            content: { themeId },
-          },
-        });
-        await Promise.all([refetchContent(), refetchVersion()]);
-      } catch (error) {
-        toast({ variant: 'destructive', title: getErrorMessage(error) });
-      }
-    },
-    [version, updateVersionMutation, refetchContent, refetchVersion, toast],
+    (themeId: string) => saveVersionTheme(themeId),
+    [saveVersionTheme],
   );
 
   if (!version || !content) return null;
@@ -574,7 +490,7 @@ const AnnouncementContentColumn = () => {
   const { project } = useAppContext();
 
   const announcementData = (version?.data ?? DEFAULT_ANNOUNCEMENT_DATA) as AnnouncementData;
-  const { debouncedSaveData } = useAnnouncementDataUpdate();
+  const { debouncedSaveVersionData } = useContentVersionUpdate();
   const { globalStyle } = useContentVersionTheme();
 
   // Use a ref to hold the latest data for stable callbacks
@@ -605,43 +521,43 @@ const AnnouncementContentColumn = () => {
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setLocalTitle(e.target.value);
-      debouncedSaveData({ ...dataRef.current, title: e.target.value });
+      debouncedSaveVersionData({ ...dataRef.current, title: e.target.value });
     },
-    [debouncedSaveData],
+    [debouncedSaveVersionData],
   );
 
   const handleIntroContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
       if (JSON.stringify(value) === JSON.stringify(dataRef.current.introContent)) return;
       const newData = { ...dataRef.current, introContent: value };
-      debouncedSaveData(newData);
+      debouncedSaveVersionData(newData);
     },
-    [debouncedSaveData],
+    [debouncedSaveVersionData],
   );
 
   const handleEnableReadMoreChange = useCallback(
     (checked: boolean) => {
       const newData = { ...dataRef.current, enableReadMore: checked };
-      debouncedSaveData(newData);
+      debouncedSaveVersionData(newData);
     },
-    [debouncedSaveData],
+    [debouncedSaveVersionData],
   );
 
   const handleReadMoreLabelChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setLocalReadMoreLabel(e.target.value);
-      debouncedSaveData({ ...dataRef.current, readMoreLabel: e.target.value });
+      debouncedSaveVersionData({ ...dataRef.current, readMoreLabel: e.target.value });
     },
-    [debouncedSaveData],
+    [debouncedSaveVersionData],
   );
 
   const handleDetailContentChange = useCallback(
     (value: ContentEditorRoot[]) => {
       if (JSON.stringify(value) === JSON.stringify(dataRef.current.detailContent)) return;
       const newData = { ...dataRef.current, detailContent: value };
-      debouncedSaveData(newData);
+      debouncedSaveVersionData(newData);
     },
-    [debouncedSaveData],
+    [debouncedSaveVersionData],
   );
 
   // Apply theme CSS variables to the content editor wrappers

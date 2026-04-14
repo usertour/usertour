@@ -4,18 +4,13 @@ import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { EventCreateDialog } from '@/components/events/event-create-dialog';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
-import { useMutation } from '@apollo/client';
-import { updateContentVersion } from '@usertour-packages/gql';
-import { isVersionPublished } from '@/utils/content';
-import { createContentVersion } from '@usertour-packages/gql';
-import { buildConfig, getErrorMessage } from '@usertour/helpers';
+import { buildConfig } from '@usertour/helpers';
 import { Event, RulesCondition } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { Button } from '@usertour-packages/button';
 import { EventTrackerIcon } from '@usertour-packages/icons';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { useToast } from '@usertour-packages/use-toast';
 import {
   ContentDetailAutoStartRules,
   ContentDetailAutoStartRulesType,
@@ -171,13 +166,10 @@ const TrackerEventSelector = ({
 // ============================================================================
 
 export const ContentDetailTrackerEditor = () => {
-  const { version, refetch: refetchVersion, setIsSaving } = useContentVersionContext();
-  const { content, refetch: refetchContent } = useContentDetailContext();
+  const { version } = useContentVersionContext();
+  const { content } = useContentDetailContext();
   const { isViewOnly } = useAppContext();
-  const { toast } = useToast();
-  const [mutation] = useMutation(updateContentVersion);
-  const [createVersion] = useMutation(createContentVersion);
-  const { debouncedUpdateVersion } = useContentVersionUpdate();
+  const { debouncedUpdateVersion, saveVersionData } = useContentVersionUpdate();
 
   const config = buildConfig(version?.config);
   const versionData = (version?.data ?? {}) as Record<string, any>;
@@ -186,52 +178,10 @@ export const ContentDetailTrackerEditor = () => {
   // Handle event selection change - update version data
   const handleEventSelect = useCallback(
     async (eventId: string | undefined) => {
-      if (!version || !content) return;
-      try {
-        setIsSaving(true);
-        const newData = { ...versionData, eventId: eventId ?? null };
-
-        if (isVersionPublished(content, version.id)) {
-          await createVersion({
-            variables: {
-              data: {
-                versionId: version.id,
-                config: version.config,
-              },
-            },
-          });
-        } else {
-          await mutation({
-            variables: {
-              versionId: version.id,
-              content: {
-                themeId: version.themeId,
-                data: newData,
-                config: version.config,
-              },
-            },
-          });
-        }
-
-        await Promise.all([refetchContent(), refetchVersion()]);
-        toast({ variant: 'success', title: 'Event selection updated.' });
-      } catch (error) {
-        toast({ variant: 'destructive', title: getErrorMessage(error) });
-      } finally {
-        setIsSaving(false);
-      }
+      const newData = { ...versionData, eventId: eventId ?? null };
+      await saveVersionData(newData);
     },
-    [
-      version,
-      content,
-      versionData,
-      mutation,
-      createVersion,
-      refetchContent,
-      refetchVersion,
-      setIsSaving,
-      toast,
-    ],
+    [versionData, saveVersionData],
   );
 
   // Handle conditions change - update config
