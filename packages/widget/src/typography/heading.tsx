@@ -11,6 +11,7 @@ type HeadingTag = 'h1' | 'h2';
 // Note: line-height is included in text-sdk-h1/h2 via fontSize config
 const HEADING_BASE_STYLES = [
   'font-sdk-bold',
+  'text-sdk-foreground',
   'min-h-sdk-line-height',
   'shrink-0',
   'whitespace-pre-wrap',
