@@ -1148,7 +1148,7 @@ export class WebSocketV2Service {
         return {
           id: item.content.id,
           versionId: item.publishedVersion!.id,
-          title: item.content.name,
+          title: data.title,
           content: data.introContent ?? [],
           moreEnabled: data.enableReadMore ?? false,
           moreButtonText: data.readMoreLabel ?? 'Read more',
@@ -1205,7 +1205,7 @@ export class WebSocketV2Service {
     return {
       id: contentOnEnv.content.id,
       versionId: contentOnEnv.publishedVersion.id,
-      title: contentOnEnv.content.name,
+      title: data.title,
       content: data.introContent ?? [],
       moreEnabled: data.enableReadMore ?? false,
       moreButtonText: data.readMoreLabel ?? 'Read more',
