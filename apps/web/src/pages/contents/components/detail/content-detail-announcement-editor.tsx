@@ -355,6 +355,43 @@ const AnnouncementSettingsColumn = () => {
         />
       </div>
 
+      {/* Announcement time */}
+      <div className="px-4 py-4 space-y-3 shadow bg-white rounded-lg">
+        <span className="text-sm font-semibold">Announcement time</span>
+        <Popover onOpenChange={handlePublishPopoverChange}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                'w-full justify-start text-left font-normal h-9',
+                !publishDate && 'text-muted-foreground',
+              )}
+              disabled={isViewOnly}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {publishDate ? format(publishDate, 'PPP HH:mm') : 'Immediately'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <div className="flex">
+              <div className="border-r">
+                <Calendar
+                  mode="single"
+                  selected={localPublishDate ?? undefined}
+                  onSelect={handlePublishDateChange}
+                  initialFocus
+                />
+              </div>
+              <div className="relative self-stretch" style={{ width: 130 }}>
+                <div className="absolute inset-0 py-2 px-1">
+                  <TimePicker value={localPublishDate} onChange={handlePublishTimeChange} />
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
       {/* Theme selector */}
       <div className="px-4 py-4 space-y-3 shadow bg-white rounded-lg">
         <span className="text-sm font-semibold">Theme</span>
@@ -435,43 +472,6 @@ const AnnouncementSettingsColumn = () => {
             />
           )}
         </div>
-      </div>
-
-      {/* Announcement time */}
-      <div className="px-4 py-4 space-y-3 shadow bg-white rounded-lg">
-        <span className="text-sm font-semibold">Announcement time</span>
-        <Popover onOpenChange={handlePublishPopoverChange}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'w-full justify-start text-left font-normal h-9',
-                !publishDate && 'text-muted-foreground',
-              )}
-              disabled={isViewOnly}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {publishDate ? format(publishDate, 'PPP HH:mm') : 'Immediately'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <div className="flex">
-              <div className="border-r">
-                <Calendar
-                  mode="single"
-                  selected={localPublishDate ?? undefined}
-                  onSelect={handlePublishDateChange}
-                  initialFocus
-                />
-              </div>
-              <div className="relative self-stretch" style={{ width: 130 }}>
-                <div className="absolute inset-0 py-2 px-1">
-                  <TimePicker value={localPublishDate} onChange={handlePublishTimeChange} />
-                </div>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
       </div>
     </div>
   );
