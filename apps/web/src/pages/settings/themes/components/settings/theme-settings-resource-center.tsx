@@ -31,6 +31,7 @@ const placementItems = [
 ];
 
 const headerBackgroundTypeItems = [
+  { name: 'None', value: 'none' },
   { name: 'Color', value: 'color' },
   { name: 'Gradient', value: 'gradient' },
   { name: 'Image', value: 'image' },
@@ -119,79 +120,6 @@ export const ThemeSettingsResourceCenter = () => {
   return (
     <div className="flex flex-col space-y-4">
       <div className="py-4 px-5 space-y-3">
-        {/* Logo */}
-        <h4 className="text-sm font-medium">Logo</h4>
-        <div className="rounded-lg border bg-background p-4">
-          <div className="mb-3">
-            <p className="text-xs text-muted-foreground">
-              Recommended size: 60x60 pixels. Max file size: 2MB.
-            </p>
-          </div>
-
-          <Upload
-            accept={ACCEPT_IMAGE_TYPES}
-            customRequest={handleLogoUpload}
-            disabled={isViewOnly || isLogoUploading}
-            className="block min-w-0"
-          >
-            <div
-              className={`flex min-w-0 cursor-pointer flex-col items-center gap-3 rounded-md border-2 p-4 transition-colors ${
-                isViewOnly || isLogoUploading
-                  ? 'cursor-not-allowed border-muted/50 bg-muted/30'
-                  : 'border-dashed border-muted bg-transparent'
-              }`}
-            >
-              <div className="flex h-14 w-14 items-center justify-center rounded-md bg-muted">
-                <RiUpload2Fill className="text-muted-foreground/70" size={20} />
-              </div>
-              <Button
-                variant="outline"
-                className="whitespace-nowrap"
-                disabled={isViewOnly || isLogoUploading}
-              >
-                {isLogoUploading ? (
-                  <span className="inline-flex items-center">
-                    <SpinnerIcon className="mr-2 animate-spin" />
-                    Uploading
-                  </span>
-                ) : (
-                  'Choose file'
-                )}
-              </Button>
-            </div>
-          </Upload>
-
-          {resourceCenter.logoUrl && (
-            <div className="mt-4 flex min-w-0 items-center justify-between gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="flex h-12 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/70">
-                  <img
-                    src={resourceCenter.logoUrl}
-                    alt="Logo"
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-foreground">Uploaded logo</div>
-                  <div className="truncate break-all text-xs text-muted-foreground">
-                    {resourceCenter.logoUrl}
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                className="flex-none hover:bg-destructive/10"
-                variant="ghost"
-                size="icon"
-                onClick={() => update({ logoUrl: '' })}
-                disabled={isViewOnly}
-              >
-                <RiDeleteBinFill className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-          )}
-        </div>
-
         {/* Header Background */}
         <h4 className="text-sm font-medium">Home header background</h4>
         <ThemeSettingSelect
@@ -319,6 +247,84 @@ export const ThemeSettingsResourceCenter = () => {
               </div>
             )}
           </div>
+        )}
+        {/* Logo — only shown when header background is not none */}
+        {headerBackground.type !== 'none' && (
+          <>
+            <h4 className="text-sm font-medium">Logo</h4>
+            <div className="rounded-lg border bg-background p-4">
+              <div className="mb-3">
+                <p className="text-xs text-muted-foreground">
+                  Recommended size: 60x60 pixels. Max file size: 2MB.
+                </p>
+              </div>
+
+              <Upload
+                accept={ACCEPT_IMAGE_TYPES}
+                customRequest={handleLogoUpload}
+                disabled={isViewOnly || isLogoUploading}
+                className="block min-w-0"
+              >
+                <div
+                  className={`flex min-w-0 cursor-pointer flex-col items-center gap-3 rounded-md border-2 p-4 transition-colors ${
+                    isViewOnly || isLogoUploading
+                      ? 'cursor-not-allowed border-muted/50 bg-muted/30'
+                      : 'border-dashed border-muted bg-transparent'
+                  }`}
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-md bg-muted">
+                    <RiUpload2Fill className="text-muted-foreground/70" size={20} />
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="whitespace-nowrap"
+                    disabled={isViewOnly || isLogoUploading}
+                  >
+                    {isLogoUploading ? (
+                      <span className="inline-flex items-center">
+                        <SpinnerIcon className="mr-2 animate-spin" />
+                        Uploading
+                      </span>
+                    ) : (
+                      'Choose file'
+                    )}
+                  </Button>
+                </div>
+              </Upload>
+
+              {resourceCenter.logoUrl && (
+                <div className="mt-4 flex min-w-0 items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex h-12 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/70">
+                      <img
+                        src={resourceCenter.logoUrl}
+                        alt="Logo"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-foreground">
+                        Uploaded logo
+                      </div>
+                      <div className="truncate break-all text-xs text-muted-foreground">
+                        {resourceCenter.logoUrl}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    className="flex-none hover:bg-destructive/10"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => update({ logoUrl: '' })}
+                    disabled={isViewOnly}
+                  >
+                    <RiDeleteBinFill className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
       <Separator />

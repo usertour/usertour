@@ -81,24 +81,7 @@ export const ResourceCenterBackButton = memo(() => {
 ResourceCenterBackButton.displayName = 'ResourceCenterBackButton';
 
 // ============================================================================
-// Home Header — rendered inside Body so it scrolls with content
-// ============================================================================
-
-export const ResourceCenterHomeHeader = memo(() => {
-  const { data } = useResourceCenterContext();
-
-  return (
-    <div className="p-2 flex items-center bg-sdk-brand-background rounded-t-[inherit]">
-      <div className="text-sdk-brand-foreground flex-1 pl-4 text-lg">{data.headerText}</div>
-      <ResourceCenterCloseButton />
-    </div>
-  );
-});
-
-ResourceCenterHomeHeader.displayName = 'ResourceCenterHomeHeader';
-
-// ============================================================================
-// Header — renders on non-Home pages (tab pages, detail pages)
+// Header — renders on all pages (Home, tab pages, detail pages)
 // ============================================================================
 
 export const ResourceCenterHeader = memo(() => {
@@ -112,7 +95,10 @@ export const ResourceCenterHeader = memo(() => {
     userAttributes,
     searchQuery,
     setSearchQuery,
+    themeSetting,
   } = useResourceCenterContext();
+
+  const isHeaderNone = themeSetting.resourceCenter?.headerBackground?.type === 'none';
 
   // Determine if search should be shown for the active page
   const activePage = currentPage ?? autoExpandedPage;
@@ -125,12 +111,30 @@ export const ResourceCenterHeader = memo(() => {
     return false;
   }, [activePage]);
 
-  // On Home tab with no detail/auto-expanded page → no header (HomeHeader is inside Body)
   const isHomePage =
     !showBackButton && !autoExpandedPage && nav.activeTabId === (data.tabs[0]?.id ?? '');
-  if (isHomePage) return null;
 
-  // Determine header title: pushed page > auto-expanded page > tab name > fallback
+  // Home page: only show header when background type is 'none'
+  if (isHomePage && !isHeaderNone) return null;
+
+  // Home + none: left-aligned headerText + close button, using brand colors (same as tab page)
+  if (isHomePage && isHeaderNone) {
+    return (
+      <div
+        className={cn(
+          'order-1 shrink-0 p-2 flex items-center bg-sdk-brand-background rounded-t-[inherit]',
+          'group-data-[animate-frame=true]:transition-opacity',
+          'group-data-[animate-frame=true]:duration-sdk-resource-center',
+          'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
+        )}
+      >
+        <div className="flex-1 pl-4 text-sdk-brand-foreground text-lg">{data.headerText}</div>
+        <ResourceCenterCloseButton />
+      </div>
+    );
+  }
+
+  // Non-Home pages: back/title/close layout
   const title = currentPage
     ? serializeBlockName(currentPage.block.name, userAttributes)
     : autoExpandedPage

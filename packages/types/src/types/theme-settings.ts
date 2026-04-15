@@ -6,7 +6,7 @@ import { ContentModalPlacementData, ModalPosition } from './contents';
 
 export type ResourceCenterPlacement = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
-export type ResourceCenterHeaderBackgroundType = 'color' | 'gradient' | 'image';
+export type ResourceCenterHeaderBackgroundType = 'none' | 'color' | 'gradient' | 'image';
 
 export type ResourceCenterHeaderBackground = {
   type: ResourceCenterHeaderBackgroundType;

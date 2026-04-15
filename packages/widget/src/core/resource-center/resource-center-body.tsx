@@ -903,6 +903,8 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
   );
 
   const logoUrl = themeSetting.resourceCenter?.logoUrl;
+  const headerBackgroundType = themeSetting.resourceCenter?.headerBackground?.type;
+  const isHeaderNone = headerBackgroundType === 'none';
 
   return (
     <div
@@ -914,8 +916,8 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
         'group-data-[animating]:pointer-events-none group-data-[animating]:overflow-hidden',
       )}
     >
-      {/* Close button: absolute in outer container, does not scroll */}
-      {isHomePage && (
+      {/* Close button: absolute in outer container, does not scroll (hidden when 'none' — header handles it) */}
+      {isHomePage && !isHeaderNone && (
         <div className="absolute top-2 right-2 z-30">
           <ResourceCenterCloseButton />
         </div>
@@ -923,7 +925,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
       {/* Scrollable inner container */}
       <div className="relative h-full overflow-y-auto overflow-x-hidden">
         {/* Background layer: absolute, overflows slightly to avoid edge gaps */}
-        {isHomePage && (
+        {isHomePage && !isHeaderNone && (
           <div className="overflow-hidden absolute -inset-x-3 -top-3 pointer-events-none">
             <div className="overflow-hidden relative w-full bg-gradient-to-b from-transparent h-[520px] to-sdk-background">
               <div
@@ -945,7 +947,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
             !isHomePage && 'pt-4',
           )}
         >
-          {isHomePage && (
+          {isHomePage && !isHeaderNone && (
             <div className="mt-2 pl-2 flex items-center h-sdk-resource-center-header-button">
               {logoUrl && (
                 <img
