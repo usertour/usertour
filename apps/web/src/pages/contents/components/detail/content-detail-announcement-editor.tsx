@@ -598,51 +598,48 @@ const AnnouncementContentColumn = () => {
 
   return (
     <div className="flex flex-col space-y-6 grow min-w-[560px]">
-      {/* Title */}
+      {/* Content: Title + Intro */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Title</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ErrorTooltip open={!localTitle.trim()}>
-            <ErrorTooltipAnchor asChild>
-              <Input
-                value={localTitle}
-                onChange={handleTitleChange}
-                placeholder="Enter announcement title"
-                disabled={isViewOnly}
-              />
-            </ErrorTooltipAnchor>
-            <ErrorTooltipContent side="right" align="center">
-              Title is required.
-            </ErrorTooltipContent>
-          </ErrorTooltip>
-        </CardContent>
-      </Card>
-
-      {/* Intro Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Intro content</CardTitle>
+          <CardTitle className="text-base">Content</CardTitle>
           <p className="text-xs text-muted-foreground">
             Displayed in the resource center announcement list.
           </p>
         </CardHeader>
-        <CardContent>
-          <div
-            ref={introEditorRef}
-            className="border rounded-md p-3 min-h-[120px] usertour-widget-root"
-          >
-            <ContentEditor
-              zIndex={10002}
-              customUploadRequest={handleCustomUploadRequest}
-              initialValue={initialIntroContent}
-              onValueChange={handleIntroContentChange}
-              projectId={projectId}
-              attributes={attributeList}
-              enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
-              getOembedInfo={getOembedInfo}
-            />
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-sm">Title</Label>
+            <ErrorTooltip open={!localTitle.trim()}>
+              <ErrorTooltipAnchor asChild>
+                <Input
+                  value={localTitle}
+                  onChange={handleTitleChange}
+                  placeholder="Enter announcement title"
+                  disabled={isViewOnly}
+                />
+              </ErrorTooltipAnchor>
+              <ErrorTooltipContent side="right" align="center">
+                Title is required.
+              </ErrorTooltipContent>
+            </ErrorTooltip>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Intro</Label>
+            <div
+              ref={introEditorRef}
+              className="border rounded-md p-3 min-h-[120px] usertour-widget-root"
+            >
+              <ContentEditor
+                zIndex={10002}
+                customUploadRequest={handleCustomUploadRequest}
+                initialValue={initialIntroContent}
+                onValueChange={handleIntroContentChange}
+                projectId={projectId}
+                attributes={attributeList}
+                enabledElementTypes={ANNOUNCEMENT_ELEMENT_TYPES}
+                getOembedInfo={getOembedInfo}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
