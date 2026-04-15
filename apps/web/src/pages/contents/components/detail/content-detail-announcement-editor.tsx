@@ -53,6 +53,11 @@ import {
   ContentDetailAutoStartRulesType,
 } from './content-detail-autostart-rules';
 import { RulesType } from '@usertour/types';
+import {
+  ErrorTooltip,
+  ErrorTooltipAnchor,
+  ErrorTooltipContent,
+} from '@usertour-packages/shared-components';
 
 const ANNOUNCEMENT_FILTER_ITEMS = [RulesType.USER_ATTR, RulesType.SEGMENT, RulesType.TIME];
 
@@ -599,12 +604,19 @@ const AnnouncementContentColumn = () => {
           <CardTitle className="text-base">Title</CardTitle>
         </CardHeader>
         <CardContent>
-          <Input
-            value={localTitle}
-            onChange={handleTitleChange}
-            placeholder="Enter announcement title"
-            disabled={isViewOnly}
-          />
+          <ErrorTooltip open={!localTitle.trim()}>
+            <ErrorTooltipAnchor asChild>
+              <Input
+                value={localTitle}
+                onChange={handleTitleChange}
+                placeholder="Enter announcement title"
+                disabled={isViewOnly}
+              />
+            </ErrorTooltipAnchor>
+            <ErrorTooltipContent side="right" align="center">
+              Title is required.
+            </ErrorTooltipContent>
+          </ErrorTooltip>
         </CardContent>
       </Card>
 

@@ -101,11 +101,15 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
     const { name } = formValues;
     setIsLoading(true);
     try {
+      let data = initialData;
+      if (contentType === ContentDataType.ANNOUNCEMENT && data) {
+        data = { ...(data as Record<string, unknown>), title: name };
+      }
       const variables = {
         name,
         environmentId: environment?.id,
         type: contentTypeMeta.dataType,
-        ...(initialData != null && { data: initialData }),
+        ...(data != null && { data }),
       };
       const ret = await createContentMutation({ variables });
       if (!ret.data?.createContent?.id) {

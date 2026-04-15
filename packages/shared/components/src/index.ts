@@ -15,6 +15,12 @@ export { defaultRulesItems } from './components/rules';
 export { ColorPicker, ColorPickerPanel } from './components/color-picker';
 export type { ColorPickerProps, ColorPickerPanelProps } from './components/color-picker';
 export {
+  ErrorTooltip,
+  ErrorTooltipContent,
+  ErrorTooltipTrigger,
+  ErrorTooltipAnchor,
+} from './components/error-tooltip';
+export {
   ScaledPreviewContainer,
   AutoScaledPreviewContainer,
   useScaledPreview,
