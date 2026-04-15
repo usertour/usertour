@@ -52,6 +52,9 @@ import {
   ContentDetailAutoStartRules,
   ContentDetailAutoStartRulesType,
 } from './content-detail-autostart-rules';
+import { RulesType } from '@usertour/types';
+
+const ANNOUNCEMENT_FILTER_ITEMS = [RulesType.USER_ATTR, RulesType.SEGMENT, RulesType.TIME];
 
 // ============================================================================
 // Constants
@@ -347,6 +350,7 @@ const AnnouncementSettingsColumn = () => {
           showWait={false}
           showPriority={false}
           disabled={isViewOnly}
+          filterItems={ANNOUNCEMENT_FILTER_ITEMS}
           featureTooltip={
             <>
               Show the announcement if the user matches the given condition. If the user doesn't
