@@ -188,6 +188,14 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const showTabBar = data.tabs.length > 1 && nav.pageStack.length === 0;
   const showBackButton = nav.pageStack.length > 0;
 
+  // ── Search state ───────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Reset search when navigation changes
+  useEffect(() => {
+    setSearchQuery('');
+  }, [nav.activeTabId, nav.pageStack.length]);
+
   // ── Animation ───────────────────────────────────────────────────────
   const handleExpandedChange = useCallback(
     async (open: boolean) => {
@@ -242,6 +250,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       autoExpandedPage,
       showTabBar,
       showBackButton,
+      searchQuery,
+      setSearchQuery,
       contentListItems: contentListItemsProp,
       onContentListItemClick,
       onLiveChatClick,
@@ -276,6 +286,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       autoExpandedPage,
       showTabBar,
       showBackButton,
+      searchQuery,
+      setSearchQuery,
       contentListItemsProp,
       onContentListItemClick,
       onLiveChatClick,

@@ -1,6 +1,8 @@
-import { forwardRef, memo, useCallback, type HTMLAttributes } from 'react';
+import { forwardRef, memo, useCallback, useMemo, type HTMLAttributes } from 'react';
 import { ArrowLeftIcon, DropDownIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
+import { ResourceCenterBlockType } from '@usertour/types';
+import type { ResourceCenterContentListBlock } from '@usertour/types';
 import { Button } from '../../primitives';
 import { useResourceCenterContext } from './context';
 import { serializeBlockName } from '@usertour/helpers';
@@ -100,8 +102,28 @@ ResourceCenterHomeHeader.displayName = 'ResourceCenterHomeHeader';
 // ============================================================================
 
 export const ResourceCenterHeader = memo(() => {
-  const { data, showBackButton, currentPage, autoExpandedPage, currentTab, nav, userAttributes } =
-    useResourceCenterContext();
+  const {
+    data,
+    showBackButton,
+    currentPage,
+    autoExpandedPage,
+    currentTab,
+    nav,
+    userAttributes,
+    searchQuery,
+    setSearchQuery,
+  } = useResourceCenterContext();
+
+  // Determine if search should be shown for the active page
+  const activePage = currentPage ?? autoExpandedPage;
+  const showSearch = useMemo(() => {
+    if (!activePage) return false;
+    if (activePage.type === ResourceCenterBlockType.KNOWLEDGE_BASE) return true;
+    if (activePage.type === ResourceCenterBlockType.CONTENT_LIST) {
+      return (activePage.block as ResourceCenterContentListBlock).showSearchField;
+    }
+    return false;
+  }, [activePage]);
 
   // On Home tab with no detail/auto-expanded page → no header (HomeHeader is inside Body)
   const isHomePage =
@@ -118,21 +140,38 @@ export const ResourceCenterHeader = memo(() => {
   return (
     <div
       className={cn(
-        'order-1 shrink-0 p-2 flex items-center bg-sdk-brand-background rounded-t-[inherit]',
+        'order-1 shrink-0 p-2 flex flex-col bg-sdk-brand-background rounded-t-[inherit]',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
       )}
     >
-      <div className="w-24 shrink-0 flex items-center">
-        {showBackButton ? <ResourceCenterBackButton /> : <div className="pl-4" />}
+      <div className="flex items-center">
+        <div className="w-24 shrink-0 flex items-center">
+          {showBackButton ? <ResourceCenterBackButton /> : <div className="pl-4" />}
+        </div>
+        <div className="flex-1 min-w-0 px-2 text-sdk-brand-foreground text-lg truncate text-center">
+          {title}
+        </div>
+        <div className="w-24 shrink-0 flex items-center justify-end">
+          <ResourceCenterCloseButton />
+        </div>
       </div>
-      <div className="flex-1 min-w-0 px-2 text-sdk-brand-foreground text-lg truncate text-center">
-        {title}
-      </div>
-      <div className="w-24 shrink-0 flex items-center justify-end">
-        <ResourceCenterCloseButton />
-      </div>
+      {showSearch && (
+        <div className="px-2 pb-1 pt-1">
+          <input
+            type="text"
+            className={cn(
+              'w-full rounded-lg border border-sdk-brand-foreground/20 bg-sdk-brand-foreground/10 px-3 py-2 text-sm',
+              'text-sdk-brand-foreground placeholder:text-sdk-brand-foreground/50',
+              'outline-none',
+            )}
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      )}
     </div>
   );
 });

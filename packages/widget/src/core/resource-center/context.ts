@@ -92,6 +92,10 @@ export interface ResourceCenterContextValue {
   onGetAnnouncement?: (contentId: string) => Promise<AnnouncementDetail | null>;
   onMarkAnnouncementSeen?: (contentId: string, versionId: string) => Promise<boolean>;
 
+  // Search
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+
   // Slots
   checklistSlot?: React.ReactNode;
   showMadeWith: boolean;

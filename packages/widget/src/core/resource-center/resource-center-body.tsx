@@ -352,8 +352,8 @@ interface KnowledgeBaseDetailProps {
 }
 
 export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) => {
-  const { onSearchKnowledgeBase, userAttributes } = useResourceCenterContext();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { onSearchKnowledgeBase, userAttributes, searchQuery, setSearchQuery } =
+    useResourceCenterContext();
   const [articles, setArticles] = useState<KnowledgeBaseArticle[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -381,7 +381,7 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
     [block.id, onSearchKnowledgeBase],
   );
 
-  // Auto-search with defaultSearchQuery on mount
+  // Auto-fill defaultSearchQuery on mount
   useEffect(() => {
     if (block.defaultSearchQuery) {
       setSearchQuery(block.defaultSearchQuery);
@@ -424,15 +424,6 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
     }
   }, [loadMore, isLoadingMore, hasMore]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        handleSearch(searchQuery);
-      }
-    },
-    [handleSearch, searchQuery],
-  );
-
   const externalUrl = block.knowledgeBaseUrl;
 
   return (
@@ -460,22 +451,6 @@ export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) =>
             </svg>
           </a>
         )}
-      </div>
-
-      {/* Search input */}
-      <div className="px-1">
-        <input
-          type="text"
-          className={cn(
-            'w-full rounded-md border border-sdk-foreground/20 bg-sdk-background px-3 py-2 text-sm',
-            'text-sdk-foreground placeholder:text-sdk-foreground/40',
-            'outline-none focus:border-sdk-primary focus:ring-1 focus:ring-sdk-primary',
-          )}
-          placeholder="Search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
       </div>
 
       {/* Results */}
@@ -577,35 +552,16 @@ const ContentListItemIcon = memo(
 ContentListItemIcon.displayName = 'ContentListItemIcon';
 
 export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
-  const { contentListItems, onContentListItemClick } = useResourceCenterContext();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { contentListItems, onContentListItemClick, searchQuery } = useResourceCenterContext();
 
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return contentListItems;
+    if (!block.showSearchField || !searchQuery.trim()) return contentListItems;
     const query = searchQuery.trim().toLowerCase();
     return contentListItems.filter((item) => item.name.toLowerCase().includes(query));
-  }, [contentListItems, searchQuery]);
-
-  const showSearch = block.showSearchField;
+  }, [contentListItems, searchQuery, block.showSearchField]);
 
   return (
     <div className="flex flex-col gap-3 p-2">
-      {showSearch && (
-        <div className="px-1">
-          <input
-            type="text"
-            className={cn(
-              'w-full rounded-md border border-sdk-foreground/20 bg-sdk-background px-3 py-2 text-sm',
-              'text-sdk-foreground placeholder:text-sdk-foreground/40',
-              'outline-none focus:border-sdk-primary focus:ring-1 focus:ring-sdk-primary',
-            )}
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      )}
-
       {filteredItems.length === 0 && (
         <div className="py-4 text-center text-sm text-sdk-foreground/50">
           {searchQuery.trim() ? 'No results found' : 'No items'}
