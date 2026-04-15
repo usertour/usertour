@@ -577,7 +577,7 @@ const AnnouncementContentColumn = () => {
       if (introEditorRef.current) introEditorRef.current.style.cssText = globalStyle;
       if (detailEditorRef.current) detailEditorRef.current.style.cssText = globalStyle;
     }
-  }, [globalStyle]);
+  }, [globalStyle, localEnableReadMore]);
 
   const projectId = project?.id ?? '';
 
