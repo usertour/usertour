@@ -151,15 +151,24 @@ export const ResourceCenterHeader = memo(() => {
       )}
     >
       <div className="flex items-center">
-        <div className="w-24 shrink-0 flex items-center">
-          {showBackButton ? <ResourceCenterBackButton /> : <div className="pl-4" />}
-        </div>
-        <div className="flex-1 min-w-0 px-2 text-sdk-brand-foreground text-lg truncate text-center">
-          {title}
-        </div>
-        <div className="w-24 shrink-0 flex items-center justify-end">
-          <ResourceCenterCloseButton />
-        </div>
+        {showBackButton ? (
+          <>
+            <div className="w-24 shrink-0 flex items-center">
+              <ResourceCenterBackButton />
+            </div>
+            <div className="flex-1 min-w-0 px-2 text-sdk-brand-foreground text-lg truncate text-center">
+              {title}
+            </div>
+            <div className="w-24 shrink-0 flex items-center justify-end">
+              <ResourceCenterCloseButton />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex-1 pl-4 text-sdk-brand-foreground text-lg truncate">{title}</div>
+            <ResourceCenterCloseButton />
+          </>
+        )}
       </div>
       {showSearch && (
         <div className="px-2 pb-1 pt-1">
