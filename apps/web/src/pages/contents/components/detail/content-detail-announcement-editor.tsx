@@ -58,6 +58,7 @@ import {
   ErrorTooltipAnchor,
   ErrorTooltipContent,
 } from '@usertour-packages/shared-components';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 
 const ANNOUNCEMENT_FILTER_ITEMS = [RulesType.USER_ATTR, RulesType.SEGMENT, RulesType.TIME];
 
@@ -371,7 +372,12 @@ const AnnouncementSettingsColumn = () => {
       <div className="px-4 py-4 space-y-5 shadow bg-white rounded-lg">
         {/* Announcement time */}
         <div className="space-y-2">
-          <span className="text-sm font-semibold">Announcement time</span>
+          <div className="flex items-center">
+            <span className="text-sm font-semibold">Announcement time</span>
+            <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+              Schedule when the announcement becomes visible. Leave empty to publish immediately.
+            </QuestionTooltip>
+          </div>
           <Popover onOpenChange={handlePublishPopoverChange}>
             <PopoverTrigger asChild>
               <Button
@@ -408,7 +414,12 @@ const AnnouncementSettingsColumn = () => {
 
         {/* Theme */}
         <div className="space-y-2">
-          <span className="text-sm font-semibold">Theme</span>
+          <div className="flex items-center">
+            <span className="text-sm font-semibold">Theme</span>
+            <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+              The visual theme applied to the announcement content in the resource center.
+            </QuestionTooltip>
+          </div>
           <Select
             value={version.themeId ?? ''}
             onValueChange={handleThemeChange}
@@ -432,7 +443,13 @@ const AnnouncementSettingsColumn = () => {
 
         {/* Distribution */}
         <div className="space-y-2">
-          <span className="text-sm font-semibold">Distribution</span>
+          <div className="flex items-center">
+            <span className="text-sm font-semibold">Distribution</span>
+            <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+              How users are notified about this announcement. Silent adds it to the list quietly,
+              Badge shows an unread indicator, Boosted proactively displays it to users.
+            </QuestionTooltip>
+          </div>
           <div className="space-y-4">
             <Select
               value={announcementData.distribution}
@@ -602,13 +619,15 @@ const AnnouncementContentColumn = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Content</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Displayed in the resource center announcement list.
-          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-sm">Title</Label>
+            <div className="flex items-center">
+              <Label className="text-sm">Title</Label>
+              <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+                The announcement title displayed in the resource center list and detail page.
+              </QuestionTooltip>
+            </div>
             <ErrorTooltip open={!localTitle.trim()}>
               <ErrorTooltipAnchor asChild>
                 <Input
@@ -624,7 +643,12 @@ const AnnouncementContentColumn = () => {
             </ErrorTooltip>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-sm">Intro</Label>
+            <div className="flex items-center">
+              <Label className="text-sm">Intro</Label>
+              <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+                A brief summary shown in the announcement list within the resource center.
+              </QuestionTooltip>
+            </div>
             <div
               ref={introEditorRef}
               className="border rounded-md p-3 min-h-[120px] usertour-widget-root"
@@ -648,7 +672,12 @@ const AnnouncementContentColumn = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Read more</CardTitle>
+            <div className="flex items-center">
+              <CardTitle className="text-base">Read more</CardTitle>
+              <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+                Enable a detail page that users can navigate to from the announcement list.
+              </QuestionTooltip>
+            </div>
             <Switch
               checked={localEnableReadMore}
               onCheckedChange={handleEnableReadMoreChange}
@@ -656,16 +685,18 @@ const AnnouncementContentColumn = () => {
               className="data-[state=unchecked]:bg-input"
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Enable a detail page that users can navigate to from the announcement list.
-          </p>
         </CardHeader>
         {localEnableReadMore && (
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="announcement-read-more-label" className="text-sm">
-                Button label
-              </Label>
+              <div className="flex items-center">
+                <Label htmlFor="announcement-read-more-label" className="text-sm">
+                  Button label
+                </Label>
+                <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+                  The text displayed on the button that opens the detail page.
+                </QuestionTooltip>
+              </div>
               <Input
                 id="announcement-read-more-label"
                 value={localReadMoreLabel}
@@ -675,7 +706,12 @@ const AnnouncementContentColumn = () => {
               />
             </div>
             <div className="space-y-1.5">
-              <span className="text-sm font-medium">Detail content</span>
+              <div className="flex items-center">
+                <span className="text-sm font-medium">Detail content</span>
+                <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
+                  The full content displayed when a user clicks "Read more" on the announcement.
+                </QuestionTooltip>
+              </div>
               <div
                 ref={detailEditorRef}
                 className="border rounded-md p-3 min-h-[120px] usertour-widget-root"

@@ -48,7 +48,9 @@ const QuestionTooltip = ({ children, className, contentClassName }: QuestionTool
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
-        <QuestionMarkCircledIcon className={cn('cursor-help w-4 h-4', className)} />
+        <QuestionMarkCircledIcon
+          className={cn('cursor-help w-4 h-4 text-muted-foreground', className)}
+        />
       </TooltipTrigger>
       <TooltipContent className={cn('max-w-xs', contentClassName)}>{children}</TooltipContent>
     </Tooltip>
