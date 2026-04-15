@@ -322,8 +322,8 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
         <CardTitle className="space-between flex flex-row items-center">
           <div className="grow">
             {content?.type === ContentDataType.ANNOUNCEMENT
-              ? 'Users that saw this announcement'
-              : 'Users that tracked this event'}
+              ? 'Users who viewed this announcement'
+              : 'Users who tracked this event'}
           </div>
           <Button
             variant="ghost"
