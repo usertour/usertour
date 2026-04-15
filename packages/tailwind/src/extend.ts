@@ -140,6 +140,7 @@ export const extendSdk = {
   },
   minWidth: {
     'sdk-button': 'var(--usertour-button-min-width)',
+    'sdk-resource-center': 'var(--usertour-resource-center-width)',
   },
   minHeight: {
     'sdk-line-height': 'var(--usertour-line-height)',

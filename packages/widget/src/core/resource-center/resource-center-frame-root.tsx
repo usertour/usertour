@@ -61,7 +61,9 @@ export const ResourceCenterFrameRoot = memo(
             layout="inline"
           />
         </div>
-        <div className={cn('flex flex-col', isOpen && 'flex-1 min-h-0')}>{children}</div>
+        <div className={cn('flex flex-col min-w-sdk-resource-center', isOpen && 'flex-1 min-h-0')}>
+          {children}
+        </div>
       </div>
     );
   },
