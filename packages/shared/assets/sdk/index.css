@@ -292,22 +292,17 @@ _:future,
 .usertour-widget-resource-center-frame--open {
   border-radius: var(--usertour-widget-popper-border-radius);
 }
-.usertour-widget-resource-center-launcher-unread-badge {
+.usertour-widget-unread-badge {
   position: absolute;
-  top: calc(
-    0.3 * var(--usertour-resource-center-launcher-border-radius) - 12px
-  );
-  right: calc(
-    0.3 * var(--usertour-resource-center-launcher-border-radius) - 12px
-  );
+  top: calc(0.3 * var(--usertour-resource-center-launcher-border-radius) - 12px);
+  right: calc(0.3 * var(--usertour-resource-center-launcher-border-radius) - 12px);
   width: 24px;
   height: 24px;
   border-radius: 12px;
-  animation: usertour-widget-resource-center-launcher-unread-badge-scale-in
-      250ms cubic-bezier(1, 2.5, 0.8, 0.5)
+  animation:
+    usertour-widget-unread-badge-scale-in 250ms cubic-bezier(1, 2.5, 0.8, 0.5)
       var(--usertour-resource-center-transition-duration) backwards,
-    usertour-widget-resource-center-launcher-unread-badge-flash 350ms
-      cubic-bezier(0, 1, 1, 1)
+    usertour-widget-unread-badge-flash 350ms cubic-bezier(0, 1, 1, 1)
       var(--usertour-resource-center-transition-duration) backwards;
 }
 .usertour-widget-resource-center-toast {
@@ -384,7 +379,7 @@ _:future,
 }
 
 /* Resource Center */
-@keyframes usertour-widget-resource-center-launcher-unread-badge-scale-in {
+@keyframes usertour-widget-unread-badge-scale-in {
   0% {
     transform: scale(0);
   }
@@ -392,7 +387,7 @@ _:future,
     transform: scale(1);
   }
 }
-@keyframes usertour-widget-resource-center-launcher-unread-badge-flash {
+@keyframes usertour-widget-unread-badge-flash {
   0% {
     box-shadow: 0 0 0 0
       rgba(var(--usertour-resource-center-badge-background-color-rgb), 0.35);

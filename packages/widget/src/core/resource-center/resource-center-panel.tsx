@@ -224,7 +224,7 @@ export const ResourceCenterPanel = forwardRef<
           {shouldShowBadge && (
             <Frame
               assets={assets}
-              className="usertour-widget-resource-center-launcher-unread-badge usertour-widget-shadow"
+              className="usertour-widget-unread-badge usertour-widget-shadow"
               defaultStyle={{ border: 'none' }}
             >
               <BadgeFrameContent globalStyle={globalStyle} count={badgeCount ?? 0} />
@@ -247,7 +247,7 @@ export const ResourceCenterPanel = forwardRef<
             </ResourceCenterFrameRoot>
           </div>
           {shouldShowBadge && (
-            <div className="usertour-widget-resource-center-launcher-unread-badge usertour-widget-shadow">
+            <div className="usertour-widget-unread-badge usertour-widget-shadow">
               <ResourceCenterBadge count={badgeCount ?? 0} />
             </div>
           )}
