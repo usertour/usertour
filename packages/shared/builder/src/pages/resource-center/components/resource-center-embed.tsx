@@ -24,7 +24,7 @@ import {
   ContentEditorElementType,
   ResourceCenterBlockType,
   ResourceCenterContentListBlock,
-  ResourceCenterMessageBlock,
+  ResourceCenterRichTextBlock,
   ResourceCenterSubPageBlock,
   Theme,
 } from '@usertour/types';
@@ -202,15 +202,15 @@ export const ResourceCenterEmbed = () => {
     const slots: Record<string, React.ReactNode> = {};
     for (const tab of localData.tabs) {
       for (const block of tab.blocks) {
-        if (block.type === ResourceCenterBlockType.MESSAGE) {
-          const msgBlock = block as ResourceCenterMessageBlock;
+        if (block.type === ResourceCenterBlockType.RICH_TEXT) {
+          const richTextBlock = block as ResourceCenterRichTextBlock;
           slots[block.id] = (
             <ContentEditor
               zIndex={EXTENSION_CONTENT_POPPER}
               customUploadRequest={handleCustomUploadRequest}
-              initialValue={msgBlock.content}
+              initialValue={richTextBlock.content}
               onValueChange={(value: ContentEditorRoot[]) => {
-                if (!isEqual(value, msgBlock.content)) {
+                if (!isEqual(value, richTextBlock.content)) {
                   updateBlock(block.id, { content: value } as any);
                 }
               }}

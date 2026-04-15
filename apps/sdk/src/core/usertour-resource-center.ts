@@ -57,7 +57,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     // Check if any tab contains a checklist block
     const hasChecklistBlock =
       resourceCenterData?.tabs?.some((tab) =>
-        tab.blocks.some((block) => block.type === 'checklist'),
+        tab.blocks.some((block) => block.type === ResourceCenterBlockType.CHECKLIST),
       ) ?? false;
 
     if (!hasChecklistBlock || !checklist) {
@@ -330,7 +330,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     if (resourceCenterData?.tabs) {
       for (const tab of resourceCenterData.tabs) {
         for (const block of tab.blocks) {
-          if (block.type === 'message' && block.content) {
+          if (block.type === ResourceCenterBlockType.RICH_TEXT && block.content) {
             block.content = (await this.evaluateButtonConditionsInData(
               block.content as ContentEditorRoot[],
             )) as typeof block.content;

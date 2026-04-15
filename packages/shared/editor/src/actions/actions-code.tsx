@@ -1,7 +1,7 @@
 import { CodeIcon } from '@radix-ui/react-icons';
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
 import { getCodeError } from '@usertour/helpers';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CodeEditor } from '../code-editor';
 import { useActionsGroupContext } from '../contexts/actions-group-context';
 import { useContentActionsContext } from '../contexts/content-actions-context';

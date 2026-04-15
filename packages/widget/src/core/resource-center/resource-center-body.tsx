@@ -15,7 +15,7 @@ import type {
   ResourceCenterDividerBlock,
   ResourceCenterKnowledgeBaseBlock,
   ResourceCenterLiveChatBlock,
-  ResourceCenterMessageBlock,
+  ResourceCenterRichTextBlock,
   ResourceCenterNavigableBlock,
   ResourceCenterPageEntry,
   ResourceCenterSubPageBlock,
@@ -77,25 +77,25 @@ export const BlockIcon = memo(
 BlockIcon.displayName = 'BlockIcon';
 
 // ============================================================================
-// Block — MESSAGE
+// Block — RICH_TEXT
 // ============================================================================
 
-interface ResourceCenterMessageBlockViewProps {
-  block: ResourceCenterMessageBlock;
+interface ResourceCenterRichTextBlockViewProps {
+  block: ResourceCenterRichTextBlock;
   userAttributes?: UserTourTypes.Attributes;
   onContentClick?: (element: any) => Promise<void>;
   onBlockClick?: (blockId: string) => Promise<void>;
   editSlot?: React.ReactNode;
 }
 
-export const ResourceCenterMessageBlockView = memo(
+export const ResourceCenterRichTextBlockView = memo(
   ({
     block,
     userAttributes,
     onContentClick,
     onBlockClick,
     editSlot,
-  }: ResourceCenterMessageBlockViewProps) => {
+  }: ResourceCenterRichTextBlockViewProps) => {
     if (editSlot) {
       return <>{editSlot}</>;
     }
@@ -115,7 +115,7 @@ export const ResourceCenterMessageBlockView = memo(
   },
 );
 
-ResourceCenterMessageBlockView.displayName = 'ResourceCenterMessageBlockView';
+ResourceCenterRichTextBlockView.displayName = 'ResourceCenterRichTextBlockView';
 
 // ============================================================================
 // Block — CHECKLIST (slot)
@@ -1007,8 +1007,8 @@ export const ResourceCenterBlocks = memo(
         {blocks.map((block) => {
           return (
             <Fragment key={block.id}>
-              {block.type === ResourceCenterBlockType.MESSAGE && (
-                <ResourceCenterMessageBlockView
+              {block.type === ResourceCenterBlockType.RICH_TEXT && (
+                <ResourceCenterRichTextBlockView
                   block={block}
                   userAttributes={userAttributes}
                   onContentClick={onContentClick}

@@ -59,10 +59,10 @@ const DEFAULT_MESSAGE_BLOCK_CONTENT = [
 const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null => {
   const id = uuidV4();
   switch (type) {
-    case ResourceCenterBlockType.MESSAGE:
+    case ResourceCenterBlockType.RICH_TEXT:
       return {
         id,
-        type: ResourceCenterBlockType.MESSAGE,
+        type: ResourceCenterBlockType.RICH_TEXT,
         content: DEFAULT_MESSAGE_BLOCK_CONTENT,
         onlyShowBlock: false,
         onlyShowBlockConditions: [],

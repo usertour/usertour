@@ -35,7 +35,7 @@ export {
 export {
   ResourceCenterBody,
   ResourceCenterBlocks,
-  ResourceCenterMessageBlockView,
+  ResourceCenterRichTextBlockView,
   ResourceCenterChecklistBlockView,
   ResourceCenterActionBlockView,
   ResourceCenterLiveChatBlockView,

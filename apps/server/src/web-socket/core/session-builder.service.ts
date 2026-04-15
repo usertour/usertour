@@ -453,7 +453,7 @@ export class SessionBuilderService {
     if (resourceCenterData?.tabs) {
       const allBlocks = resourceCenterData.tabs.flatMap((tab) => tab.blocks);
       for (const block of allBlocks) {
-        if (block.type === 'message' && block.content) {
+        if (block.type === ResourceCenterBlockType.RICH_TEXT && block.content) {
           attrCodes.push(...extractBannerAttrCodes(block.content));
           buttonAttrIds.push(...extractButtonConditionAttributeIds({ contents: block.content }));
         }

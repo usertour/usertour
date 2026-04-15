@@ -66,7 +66,7 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
       blocks: [
         {
           id: 'preview-msg-1',
-          type: ResourceCenterBlockType.MESSAGE,
+          type: ResourceCenterBlockType.RICH_TEXT,
           content: [
             {
               element: { type: 'group' },

@@ -9,7 +9,7 @@ import type { RichTextNode } from './common';
 
 export enum ResourceCenterBlockType {
   ACTION = 'action',
-  MESSAGE = 'message',
+  RICH_TEXT = 'richtext',
   DIVIDER = 'divider',
   SUB_PAGE = 'sub-page',
   CONTENT_LIST = 'content-list',
@@ -32,10 +32,10 @@ export interface ResourceCenterBlockConditionFields {
 // Block Definitions
 // ============================================================================
 
-export interface ResourceCenterMessageBlock extends ResourceCenterBlockConditionFields {
+export interface ResourceCenterRichTextBlock extends ResourceCenterBlockConditionFields {
   id: string;
   name?: string;
-  type: ResourceCenterBlockType.MESSAGE;
+  type: ResourceCenterBlockType.RICH_TEXT;
   content: ContentEditorRoot[];
 }
 
@@ -153,7 +153,7 @@ export interface ResourceCenterContentListBlock extends ResourceCenterBlockCondi
 
 /** Union of all block types. */
 export type ResourceCenterBlock =
-  | ResourceCenterMessageBlock
+  | ResourceCenterRichTextBlock
   | ResourceCenterChecklistBlock
   | ResourceCenterDividerBlock
   | ResourceCenterActionBlock

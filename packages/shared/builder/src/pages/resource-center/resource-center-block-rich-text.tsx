@@ -12,7 +12,7 @@ import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Rules } from '@usertour-packages/shared-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
-import { RulesCondition } from '@usertour/types';
+import { ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
@@ -34,7 +34,7 @@ const BlockMessageHeader = () => {
         >
           <ChevronLeftIcon className="h-6 w-6" />
         </Button>
-        <span className="truncate">Message block</span>
+        <span className="truncate">Rich text block</span>
       </CardTitle>
     </CardHeader>
   );
@@ -49,7 +49,7 @@ const BlockMessageBody = () => {
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
 
-  if (!currentBlock || currentBlock.type !== 'message') {
+  if (!currentBlock || currentBlock.type !== ResourceCenterBlockType.RICH_TEXT) {
     return null;
   }
 
@@ -68,7 +68,7 @@ const BlockMessageBody = () => {
           <div className="flex items-start space-x-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
             <InfoCircledIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
             <p className="text-sm text-blue-800">
-              Edit message content by clicking on the content area in the preview.
+              Edit rich text content by clicking on the content area in the preview.
             </p>
           </div>
           <div className="flex flex-col space-y-2">
@@ -114,7 +114,7 @@ const BlockMessageFooter = () => {
   );
 };
 
-export const ResourceCenterBlockMessage = () => {
+export const ResourceCenterBlockRichText = () => {
   return (
     <SidebarContainer>
       <BlockMessageHeader />
@@ -124,4 +124,4 @@ export const ResourceCenterBlockMessage = () => {
   );
 };
 
-ResourceCenterBlockMessage.displayName = 'ResourceCenterBlockMessage';
+ResourceCenterBlockRichText.displayName = 'ResourceCenterBlockRichText';
