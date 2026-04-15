@@ -561,7 +561,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
   }, [contentListItems, searchQuery, block.showSearchField]);
 
   return (
-    <div className="flex flex-col gap-3 p-2">
+    <div className="flex flex-col gap-3">
       {filteredItems.length === 0 && (
         <div className="py-4 text-center text-sm text-sdk-foreground/50">
           {searchQuery.trim() ? 'No results found' : 'No items'}
