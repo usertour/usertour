@@ -381,6 +381,16 @@ export const ThemeSettingsResourceCenter = () => {
           disabled={isViewOnly}
         />
         <ThemeSettingInput
+          text="Max height"
+          name="resource-center-max-height"
+          tooltip="Maximum height of the resource center panel in pixels."
+          defaultValue={String(resourceCenter.maxHeight ?? 700)}
+          onChange={(value: string) => {
+            update({ maxHeight: Number(value) });
+          }}
+          disabled={isViewOnly}
+        />
+        <ThemeSettingInput
           text="Transition duration"
           name="resource-center-transition-duration"
           tooltip="The duration of the panel open/close animation in milliseconds."
