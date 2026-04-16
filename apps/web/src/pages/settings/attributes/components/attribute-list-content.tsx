@@ -11,6 +11,8 @@ import {
 } from '@usertour-packages/table';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
+import { Badge } from '@usertour-packages/badge';
+import { RiShieldCheckFill } from '@usertour-packages/icons';
 import { AttributeListAction } from './attribute-list-action';
 
 interface AttributeListContentProps {
@@ -53,16 +55,25 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
             attributes?.map((attribute: Attribute) => (
               <TableRow className="cursor-pointer" key={attribute.id} onClick={() => {}}>
                 <TableCell className="truncate">
-                  {attribute.description ? (
-                    <div className="flex flex-col">
-                      <span className="truncate">{attribute.displayName}</span>
+                  <div className="flex flex-col">
+                    <span className="flex items-center gap-1.5 truncate">
+                      {attribute.displayName}
+                      {attribute.predefined && (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
+                        >
+                          <RiShieldCheckFill className="h-3 w-3 text-foreground" />
+                          System
+                        </Badge>
+                      )}
+                    </span>
+                    {attribute.description && (
                       <span className="text-xs text-muted-foreground truncate">
                         {attribute.description}
                       </span>
-                    </div>
-                  ) : (
-                    attribute.displayName
-                  )}
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="truncate">{attribute.codeName}</TableCell>
                 <TableCell className="hidden sm:table-cell">

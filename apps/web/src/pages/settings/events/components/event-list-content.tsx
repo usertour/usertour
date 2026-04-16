@@ -10,6 +10,8 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { format } from 'date-fns';
+import { Badge } from '@usertour-packages/badge';
+import { RiShieldCheckFill } from '@usertour-packages/icons';
 import { EventListAction } from './event-list-action';
 
 export const EventListContent = () => {
@@ -37,16 +39,25 @@ export const EventListContent = () => {
               .map((event: Event) => (
                 <TableRow className="cursor-pointer" key={event.id} onClick={() => {}}>
                   <TableCell className="truncate">
-                    {event.description ? (
-                      <div className="flex flex-col">
-                        <span className="truncate">{event.displayName}</span>
+                    <div className="flex flex-col">
+                      <span className="flex items-center gap-1.5 truncate">
+                        {event.displayName}
+                        {event.predefined && (
+                          <Badge
+                            variant="secondary"
+                            className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
+                          >
+                            <RiShieldCheckFill className="h-3 w-3 text-foreground" />
+                            System
+                          </Badge>
+                        )}
+                      </span>
+                      {event.description && (
                         <span className="text-xs text-muted-foreground truncate">
                           {event.description}
                         </span>
-                      </div>
-                    ) : (
-                      event.displayName
-                    )}
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="truncate">{event.codeName}</TableCell>
                   <TableCell className="hidden lg:table-cell">
