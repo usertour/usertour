@@ -62,18 +62,16 @@ export const ResourceCenterBackButton = memo(() => {
     <Button
       variant="custom"
       className={cn(
-        'rounded-lg inline-flex h-sdk-resource-center-header-button items-center justify-center gap-2 p-2',
+        'rounded-lg inline-flex h-sdk-resource-center-header-button aspect-square items-center justify-center p-2',
         'text-sdk-brand-foreground',
         'hover:bg-sdk-brand-foreground/10',
         'active:bg-sdk-brand-foreground/24',
         'outline-none cursor-pointer',
-        'px-3',
       )}
       onClick={handleClick}
       aria-label="Back"
     >
-      <ArrowLeftIcon height={18} width={18} />
-      <span className="text-sm font-medium leading-none">Back</span>
+      <ArrowLeftIcon height={24} width={24} />
     </Button>
   );
 });
@@ -128,7 +126,12 @@ export const ResourceCenterHeader = memo(() => {
           'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
         )}
       >
-        <div className="flex-1 pl-4 text-sdk-brand-foreground text-lg">{data.headerText}</div>
+        <div className="shrink-0">
+          <ResourceCenterCloseButton className="invisible" aria-hidden />
+        </div>
+        <div className="flex-1 min-w-0 px-2 text-sdk-brand-foreground text-lg truncate text-center">
+          {data.headerText}
+        </div>
         <ResourceCenterCloseButton />
       </div>
     );
@@ -152,23 +155,16 @@ export const ResourceCenterHeader = memo(() => {
     >
       <div className="flex items-center">
         {showBackButton ? (
-          <>
-            <div className="w-24 shrink-0 flex items-center">
-              <ResourceCenterBackButton />
-            </div>
-            <div className="flex-1 min-w-0 px-2 text-sdk-brand-foreground text-lg truncate text-center">
-              {title}
-            </div>
-            <div className="w-24 shrink-0 flex items-center justify-end">
-              <ResourceCenterCloseButton />
-            </div>
-          </>
+          <ResourceCenterBackButton />
         ) : (
-          <>
-            <div className="flex-1 pl-4 text-sdk-brand-foreground text-lg truncate">{title}</div>
-            <ResourceCenterCloseButton />
-          </>
+          <div className="shrink-0">
+            <ResourceCenterCloseButton className="invisible" aria-hidden />
+          </div>
         )}
+        <div className="flex-1 min-w-0 px-2 text-sdk-brand-foreground text-lg truncate text-center">
+          {title}
+        </div>
+        <ResourceCenterCloseButton />
       </div>
       {showSearch && (
         <div className="px-2 pb-1 pt-1">
