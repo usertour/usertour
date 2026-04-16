@@ -19,6 +19,7 @@ import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { Button } from '../primitives';
 import { useSettingsStyles } from './hooks/use-settings-styles';
 import { cn } from '@usertour-packages/tailwind';
+import { WidgetAnimation } from './class-names';
 
 const BANNER_DEFAULT_HEIGHT_PX = 56;
 
@@ -104,9 +105,9 @@ export function getBannerWrapperStyle(
   }
 
   if (data?.animateWhenEmbedAppears) {
-    style.animationName = 'usertour-widget-banner-animate-in';
-    style.animationDuration = '400ms';
-    style.animationTimingFunction = 'ease-in-out';
+    style.animationName = WidgetAnimation.bannerReveal;
+    style.animationDuration = '320ms';
+    style.animationTimingFunction = 'cubic-bezier(0.22, 1, 0.36, 1)';
   }
 
   return style;

@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { useResourceCenterContext } from './context';
+import { WidgetClass } from '../class-names';
 
 export const ResourceCenterStyleProvider = forwardRef<
   HTMLDivElement,
@@ -14,7 +15,7 @@ export const ResourceCenterStyleProvider = forwardRef<
   });
 
   return (
-    <div ref={composedRefs} className="usertour-widget-chrome usertour-widget-root">
+    <div ref={composedRefs} className={`${WidgetClass.stage} ${WidgetClass.root}`}>
       {children}
     </div>
   );

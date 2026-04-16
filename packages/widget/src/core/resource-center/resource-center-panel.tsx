@@ -16,6 +16,7 @@ import { ResourceCenterAnchor } from './resource-center-anchor';
 import { ResourceCenterFrameRoot } from './resource-center-frame-root';
 import { ResourceCenterBadge } from './resource-center-trigger';
 import { useFrameGlobalStyle } from './hooks/use-frame-global-style';
+import { WidgetClass } from '../class-names';
 
 // ============================================================================
 // Frame class name helper (outside iframe — uses CSS class)
@@ -23,11 +24,9 @@ import { useFrameGlobalStyle } from './hooks/use-frame-global-style';
 
 const getFrameClassName = (isOpen: boolean, isAnimating: boolean) =>
   cn(
-    'usertour-widget-resource-center-frame usertour-widget-shadow',
-    isAnimating && 'usertour-widget-resource-center-frame--animating',
-    isOpen
-      ? 'usertour-widget-resource-center-frame--open'
-      : 'usertour-widget-resource-center-frame--closed',
+    `${WidgetClass.resourceCenterFrame} ${WidgetClass.elevation}`,
+    isAnimating && WidgetClass.resourceCenterFrameResizing,
+    isOpen ? WidgetClass.resourceCenterFrameExpanded : WidgetClass.resourceCenterFrameCompact,
   );
 
 // ============================================================================
@@ -224,7 +223,7 @@ export const ResourceCenterPanel = forwardRef<
           {shouldShowBadge && (
             <Frame
               assets={assets}
-              className="usertour-widget-unread-badge usertour-widget-shadow"
+              className={`${WidgetClass.indicator} ${WidgetClass.elevation}`}
               defaultStyle={{ border: 'none' }}
             >
               <BadgeFrameContent globalStyle={globalStyle} count={badgeCount ?? 0} />
@@ -247,7 +246,7 @@ export const ResourceCenterPanel = forwardRef<
             </ResourceCenterFrameRoot>
           </div>
           {shouldShowBadge && (
-            <div className="usertour-widget-unread-badge usertour-widget-shadow">
+            <div className={`${WidgetClass.indicator} ${WidgetClass.elevation}`}>
               <ResourceCenterBadge count={badgeCount ?? 0} />
             </div>
           )}

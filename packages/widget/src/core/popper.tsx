@@ -10,6 +10,7 @@ import { positionModal, getReClippingRect, getViewportRect } from './utils/backd
 import { computePositionStyle } from './utils/position';
 import { cn } from '@usertour-packages/tailwind';
 import { Align, ProgressBarType, Side } from '@usertour/types';
+import { WidgetClass } from './class-names';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';
 import { POPPER_NAME, PopperProvider, usePopperContext } from './popper-context';
@@ -133,7 +134,7 @@ const PopperContainer = forwardRef<HTMLDivElement, PopperContentProps>(({ childr
   }, [containerRef.current, globalStyle, isIframeMode, shouldShow]);
 
   return (
-    <div className="usertour-widget-chrome usertour-widget-root" ref={composedRefs}>
+    <div className={`${WidgetClass.stage} ${WidgetClass.root}`} ref={composedRefs}>
       {children}
     </div>
   );
@@ -148,7 +149,7 @@ const PopperContentFrame = forwardRef<HTMLDivElement, PopperContentProps>(({ chi
 
   return (
     <>
-      <Frame assets={assets} className="usertour-widget-popper__frame" onLoad={handleFrameLoad}>
+      <Frame assets={assets} className={WidgetClass.surfaceViewport} onLoad={handleFrameLoad}>
         <PopperContentInFrame onOpenChange={onOpenChange} globalStyle={globalStyle}>
           {children}
         </PopperContentInFrame>
@@ -184,24 +185,24 @@ const PopperOverlay = forwardRef<HTMLDivElement, PopperOverlayProps>((props, _) 
   return (
     <>
       <div
-        className="usertour-widget-popper-backdrop usertour-widget-popper-backdrop--visible"
+        className={`${WidgetClass.spotlight} ${WidgetClass.spotlightVisible}`}
         style={backdropStyle}
         ref={backdropRef}
       />
       <div
-        className="usertour-widget-popper-block usertour-widget-popper-block--top usertour-widget-popper-block--visible"
+        className={`${WidgetClass.curtain} ${WidgetClass.curtainTop} ${WidgetClass.curtainVisible}`}
         style={{ ...backdrop?.top }}
       />
       <div
-        className="usertour-widget-popper-block usertour-widget-popper-block--right usertour-widget-popper-block--visible"
+        className={`${WidgetClass.curtain} ${WidgetClass.curtainRight} ${WidgetClass.curtainVisible}`}
         style={backdrop?.right}
       />
       <div
-        className="usertour-widget-popper-block usertour-widget-popper-block--bottom usertour-widget-popper-block--visible"
+        className={`${WidgetClass.curtain} ${WidgetClass.curtainBottom} ${WidgetClass.curtainVisible}`}
         style={backdrop?.bottom}
       />
       <div
-        className="usertour-widget-popper-block usertour-widget-popper-block--left usertour-widget-popper-block--visible"
+        className={`${WidgetClass.curtain} ${WidgetClass.curtainLeft} ${WidgetClass.curtainVisible}`}
         style={backdrop?.left}
       />
     </>
@@ -248,15 +249,15 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
   return (
     <>
       <div
-        className="usertour-widget-popper usertour-widget-shadow"
+        className={`${WidgetClass.surface} ${WidgetClass.elevation}`}
         ref={finalComposedRefs}
         data-usertour-popper-content-wrapper=""
         data-usertour-popper-data-placement={placedSide}
         style={inlineStyle}
         dir={dir}
       >
-        <div className="usertour-widget-popper-outline">
-          <div className="usertour-widget-popper__frame-wrapper">{children}</div>
+        <div className={WidgetClass.surfaceShell}>
+          <div className={WidgetClass.surfaceFrame}>{children}</div>
         </div>
         <span
           ref={arrowRef}
@@ -326,13 +327,13 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
       <>
         {enabledBackdrop && (
           <div
-            className="usertour-widget-backdrop"
+            className={WidgetClass.overlay}
             style={{ position: 'fixed', visibility: 'visible', zIndex: context.zIndex }}
             onClick={onBackdropClick}
           />
         )}
         <div
-          className="usertour-widget-popper usertour-widget-shadow"
+          className={`${WidgetClass.surface} ${WidgetClass.elevation}`}
           ref={composedRefs}
           data-usertour-popper-content-wrapper=""
           style={{
@@ -342,8 +343,8 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
           }}
           dir={dir}
         >
-          <div className="usertour-widget-popper-outline">
-            <div className="usertour-widget-popper__frame-wrapper">{children}</div>
+          <div className={WidgetClass.surfaceShell}>
+            <div className={WidgetClass.surfaceFrame}>{children}</div>
           </div>
         </div>
       </>
@@ -383,7 +384,7 @@ const PopperContent = forwardRef<HTMLDivElement, PopperContentProps>((props, _) 
 
   return (
     <>
-      <div ref={setRef} className="usertour-widget-popper-frame-root text-sdk-foreground">
+      <div ref={setRef} className={`${WidgetClass.surfacePanel} text-sdk-foreground`}>
         {children}
       </div>
     </>
@@ -459,21 +460,21 @@ const PopperStaticContent = forwardRef<HTMLDivElement, PopperStaticContentProps>
 
     return (
       <div
-        className={cn('usertour-widget-popper usertour-widget-shadow', className)}
+        className={cn(`${WidgetClass.surface} ${WidgetClass.elevation}`, className)}
         dir="ltr"
         style={customStyle}
         ref={forwardedRef}
       >
         <div
-          className="usertour-widget-popper-outline"
+          className={WidgetClass.surfaceShell}
           style={{
             width,
             height,
             overflow: 'hidden',
           }}
         >
-          <div className="usertour-widget-popper__frame-wrapper">
-            <div className="usertour-widget-popper-frame-root text-sdk-foreground">{children}</div>
+          <div className={WidgetClass.surfaceFrame}>
+            <div className={`${WidgetClass.surfacePanel} text-sdk-foreground`}>{children}</div>
           </div>
         </div>
         {showArrow && (

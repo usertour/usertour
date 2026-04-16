@@ -6,6 +6,7 @@ import { RESOURCE_CENTER_DEFAULTS, resourceCenterPlacementToPosition } from './c
 import { computePositionStyle } from '../utils/position';
 import { ResourceCenterTrigger } from './resource-center-trigger';
 import { useFrameGlobalStyle } from './hooks/use-frame-global-style';
+import { WidgetClass } from '../class-names';
 
 const getLauncherBorderRadius = (
   borderRadius: number | null | undefined,
@@ -42,7 +43,7 @@ export const ResourceCenterLauncher = forwardRef<HTMLDivElement, ResourceCenterL
     return (
       <div
         ref={ref}
-        className="usertour-widget-resource-center-launcher usertour-widget-shadow"
+        className={`${WidgetClass.resourceCenterLauncher} ${WidgetClass.elevation}`}
         style={{
           zIndex,
           ...positionStyle,
@@ -94,7 +95,7 @@ export const ResourceCenterLauncherFrame = forwardRef<
     <Frame
       assets={assets}
       ref={ref}
-      className="usertour-widget-resource-center-launcher usertour-widget-shadow"
+      className={`${WidgetClass.resourceCenterLauncher} ${WidgetClass.elevation}`}
       defaultStyle={{
         zIndex,
         ...style,

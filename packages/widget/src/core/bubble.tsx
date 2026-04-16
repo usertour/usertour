@@ -14,6 +14,7 @@ import { type AvatarComponent } from '@usertour-packages/icons';
 import { computePositionStyle } from './utils/position';
 import { usePopperContext } from './popper-context';
 import { useBubbleExpandAnimation } from './hooks';
+import { WidgetClass } from './class-names';
 
 /* -------------------------------------------------------------------------------------------------
  * Type Definitions
@@ -190,13 +191,13 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
       <>
         {enabledBackdrop && (
           <div
-            className="usertour-widget-backdrop"
+            className={WidgetClass.overlay}
             style={{ position: 'fixed', visibility: 'visible', zIndex }}
             onClick={onBackdropClick}
           />
         )}
         <div
-          className={cn('usertour-widget-popper usertour-widget-shadow', className)}
+          className={cn(`${WidgetClass.surface} ${WidgetClass.elevation}`, className)}
           ref={composedRefs}
           data-usertour-popper-content-wrapper=""
           style={{
@@ -208,12 +209,12 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
         >
           <div
             className={cn(
-              'usertour-widget-popper-outline relative',
-              !isContentVisible && 'usertour-widget-popper-outline--minimized',
+              `${WidgetClass.surfaceShell} relative`,
+              !isContentVisible && WidgetClass.surfaceShellMinimized,
             )}
             style={outlineStyle}
           >
-            <div className="usertour-widget-popper__frame-wrapper">{children}</div>
+            <div className={WidgetClass.surfaceFrame}>{children}</div>
             {showAvatar && (
               <PopperAvatarNotch
                 vertical={vertical}
@@ -292,14 +293,14 @@ const PopperStaticBubble = forwardRef<HTMLDivElement, PopperStaticBubbleProps>(
 
     return (
       <div
-        className={cn('usertour-widget-popper usertour-widget-shadow', className)}
+        className={cn(`${WidgetClass.surface} ${WidgetClass.elevation}`, className)}
         ref={forwardedRef}
         dir={dir}
         style={{ width }}
       >
-        <div className="usertour-widget-popper-outline relative" style={outlineStyle}>
-          <div className="usertour-widget-popper__frame-wrapper">
-            <div className="usertour-widget-popper-frame-root text-sdk-foreground">{children}</div>
+        <div className={`${WidgetClass.surfaceShell} relative`} style={outlineStyle}>
+          <div className={WidgetClass.surfaceFrame}>
+            <div className={`${WidgetClass.surfacePanel} text-sdk-foreground`}>{children}</div>
           </div>
           {showAvatar && (
             <PopperAvatarNotch
@@ -565,8 +566,8 @@ const PopperBubbleAvatarWrapper = (props: PopperBubbleAvatarWrapperProps) => {
     );
   }
 
-  // In non-iframe mode, add usertour-widget-bubble__avatar class for pointer-events: all
-  // since parent .usertour-widget-popper has pointer-events: none
+  // In non-iframe mode, add bubble__avatar class for pointer-events: all
+  // since parent .usertour-widget-surface has pointer-events: none
   return (
     <PopperBubbleAvatar
       src={src}
