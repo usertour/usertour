@@ -40,6 +40,7 @@ import {
 } from '@usertour-packages/tooltip';
 import { LauncherIconSource, ResourceCenterTab } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
+import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { forwardRef, useState } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../../contexts';
 import { getActiveIcon } from '../../../components/icon-picker/utils';
@@ -254,7 +255,23 @@ export const ResourceCenterTabs = () => {
   return (
     <>
       <div className="flex justify-between items-center space-x-1">
-        <h1 className="text-sm">Tabs</h1>
+        <h1 className="text-sm flex items-center gap-1">
+          Tabs
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <QuestionMarkCircledIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>
+                  If a tab contains only one navigable block (such as Sub-page, List of
+                  flows/checklists, or Announcements), its detail view will be displayed directly
+                  without requiring a click.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </h1>
       </div>
       <DndContext
         sensors={sensors}
