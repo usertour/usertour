@@ -941,12 +941,7 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
           </div>
         )}
         {/* Content: logo + children, scrolls together */}
-        <div
-          className={cn(
-            'relative z-20 px-4 pb-4 flex flex-col gap-2.5 animate-sdk-rc-slide-in',
-            !isHomePage && 'pt-4',
-          )}
-        >
+        <div className={cn('relative z-20 px-4 pb-4 flex flex-col gap-2.5', !isHomePage && 'pt-4')}>
           {isHomePage && !isHeaderNone && (
             <div className="mt-2 pl-2 flex items-center h-sdk-resource-center-header-button">
               {logoUrl && (
