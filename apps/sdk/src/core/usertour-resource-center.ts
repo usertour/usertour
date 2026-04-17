@@ -17,9 +17,8 @@ import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-compo
 import { logger } from '@/utils';
 import { CommonActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
-import { isConditionsActived, isDisplayOnlyBlockType, storage } from '@usertour/helpers';
+import { isDisplayOnlyBlockType, storage } from '@usertour/helpers';
 import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
-import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
   protected initializeActionHandlers(): void {
@@ -51,7 +50,10 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   async update(session: CustomContentSession): Promise<void> {
     this.updateSession(session);
     await this.refreshStoreData();
-    await this.show();
+    const data = this.getStoreData()?.resourceCenterData;
+    if (data) {
+      this.liveChatManager.configure(data);
+    }
   }
 
   async handleDismiss(): Promise<void> {
@@ -117,7 +119,8 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
         blockId: block.id,
       });
 
-      // Enrich server response with per-item config (icon, navigate URL) from block data
+      // Enrich server response with per-item config (icon, navigate URL) from block data.
+      // Server already filters items by onlyShowItemConditions, so we trust its list.
       const configMap = new Map(block.contentItems.map((ci) => [ci.contentId, ci]));
       const enrichedItems: ResourceCenterBlockContentItem[] = items.map((item) => {
         const config = configMap.get(item.contentId);
@@ -132,24 +135,8 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
         };
       });
 
-      // Filter items by "only list item if..." conditions
-      const evaluator = rulesEvaluatorManager.getEvaluator(this.getContentId());
-      const sessionAttributes = this.getSessionAttributes();
-      const visibleItems: ResourceCenterBlockContentItem[] = [];
-      for (const item of enrichedItems) {
-        const config = configMap.get(item.contentId);
-        if (config?.onlyShowItem && config.onlyShowItemConditions?.length > 0) {
-          const evaluated = await evaluator.evaluate(
-            config.onlyShowItemConditions,
-            sessionAttributes,
-          );
-          if (!isConditionsActived(evaluated)) continue;
-        }
-        visibleItems.push(item);
-      }
-
-      this.updateStore({ contentListItems: visibleItems });
-      return visibleItems;
+      this.updateStore({ contentListItems: enrichedItems });
+      return enrichedItems;
     } catch (error) {
       logger.error('Failed to fetch content list items:', error);
       this.updateStore({ contentListItems: [] });

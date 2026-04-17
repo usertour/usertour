@@ -15,7 +15,9 @@ import {
   ChecklistData,
   ChecklistInitialDisplay,
   LauncherData,
+  ContentListItem,
   ResourceCenterBlock,
+  ResourceCenterBlockType,
   ResourceCenterData,
   ResourceCenterTab,
   SessionAttribute,
@@ -1544,9 +1546,11 @@ export const evaluateChecklistItems = async (
 };
 
 /**
- * Evaluate onlyShowBlock conditions for each resource-center block and drop
- * blocks whose conditions don't match. Blocks without the toggle enabled
- * (or with an empty condition list) are always kept.
+ * Evaluate onlyShowBlock / onlyShowItem conditions across the resource center
+ * and annotate each block/item with `isVisible`. Blocks/items are NOT removed —
+ * visibility is applied later at activation time (mirroring Checklist). Keeping
+ * the full tree here lets the track-condition extractor see every
+ * client-evaluable condition even when siblings are currently hidden.
  */
 export const evaluateResourceCenterBlocksWithContext = async (
   resourceCenterData: ResourceCenterData,
@@ -1583,13 +1587,31 @@ export const evaluateResourceCenterBlocksWithContext = async (
     return isConditionsActived(evaluated);
   };
 
+  const isItemVisible = async (item: ContentListItem): Promise<boolean> => {
+    if (!item.onlyShowItem || !item.onlyShowItemConditions?.length) {
+      return true;
+    }
+    const evaluated = await evaluateRulesConditions(item.onlyShowItemConditions, options);
+    return isConditionsActived(evaluated);
+  };
+
+  const annotateBlock = async (block: ResourceCenterBlock): Promise<ResourceCenterBlock> => {
+    const isVisible = await isBlockVisible(block);
+    if (block.type !== ResourceCenterBlockType.CONTENT_LIST) {
+      return { ...block, isVisible } as ResourceCenterBlock;
+    }
+    const contentItems: ContentListItem[] = [];
+    for (const item of block.contentItems ?? []) {
+      contentItems.push({ ...item, isVisible: await isItemVisible(item) });
+    }
+    return { ...block, isVisible, contentItems };
+  };
+
   const tabs: ResourceCenterTab[] = [];
   for (const tab of resourceCenterData.tabs) {
     const blocks: ResourceCenterBlock[] = [];
     for (const block of tab.blocks ?? []) {
-      if (await isBlockVisible(block)) {
-        blocks.push(block);
-      }
+      blocks.push(await annotateBlock(block));
     }
     tabs.push({ ...tab, blocks });
   }
@@ -1682,6 +1704,56 @@ export const extractChecklistTrackConditions = (
           ...trackConditionBase,
           condition,
         });
+      }
+    }
+  }
+
+  return trackConditions;
+};
+
+/**
+ * Extracts client-evaluable track conditions from a resource center session.
+ * Walks all blocks and content-list items (regardless of `isVisible`), mirroring
+ * the Checklist pattern where the session keeps the full tree and visibility is
+ * applied only at activation time.
+ */
+export const extractResourceCenterTrackConditions = (
+  customContentSession: CustomContentSession,
+  allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
+): TrackCondition[] => {
+  const trackConditions: TrackCondition[] = [];
+  const contentId = customContentSession.content.id;
+  const contentType = customContentSession.content.type as ContentDataType;
+  const versionId = customContentSession.version.id;
+
+  if (contentType !== ContentDataType.RESOURCE_CENTER) {
+    return trackConditions;
+  }
+
+  const resourceCenterData = customContentSession.version.resourceCenter;
+  if (!resourceCenterData?.tabs?.length) {
+    return trackConditions;
+  }
+
+  const trackConditionBase = { contentId, contentType, versionId };
+
+  for (const tab of resourceCenterData.tabs) {
+    for (const block of tab.blocks ?? []) {
+      if (block.onlyShowBlock && block.onlyShowBlockConditions?.length > 0) {
+        const blockConditions = flattenConditions(block.onlyShowBlockConditions, allowedTypes);
+        for (const condition of blockConditions) {
+          trackConditions.push({ ...trackConditionBase, condition });
+        }
+      }
+      if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
+        for (const item of block.contentItems ?? []) {
+          if (item.onlyShowItem && item.onlyShowItemConditions?.length > 0) {
+            const itemConditions = flattenConditions(item.onlyShowItemConditions, allowedTypes);
+            for (const condition of itemConditions) {
+              trackConditions.push({ ...trackConditionBase, condition });
+            }
+          }
+        }
       }
     }
   }

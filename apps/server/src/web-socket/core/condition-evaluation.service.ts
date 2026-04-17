@@ -10,6 +10,7 @@ import {
   RulesCondition,
   ChecklistData,
   ContentConditionLogic,
+  ResourceCenterBlockType,
   ResourceCenterData,
   RulesType,
   RulesEvaluationOptions,
@@ -179,10 +180,18 @@ export class ConditionEvaluationService {
             const onlyShowBlockConditions = block.onlyShowBlockConditions
               ? await this.evaluateRulesConditions(block.onlyShowBlockConditions, context)
               : [];
-            return {
-              ...block,
-              onlyShowBlockConditions,
-            };
+            if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
+              const contentItems = await Promise.all(
+                (block.contentItems ?? []).map(async (item) => {
+                  const onlyShowItemConditions = item.onlyShowItemConditions
+                    ? await this.evaluateRulesConditions(item.onlyShowItemConditions, context)
+                    : [];
+                  return { ...item, onlyShowItemConditions };
+                }),
+              );
+              return { ...block, onlyShowBlockConditions, contentItems };
+            }
+            return { ...block, onlyShowBlockConditions };
           }),
         );
         return { ...tab, blocks };

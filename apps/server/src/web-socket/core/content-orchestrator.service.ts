@@ -9,6 +9,7 @@ import {
   StartContentOptions,
   CustomContentSession,
   ClientCondition,
+  ResourceCenterBlockType,
 } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
@@ -21,6 +22,7 @@ import {
   extractClientConditionWaitTimers,
   extractChecklistNewCompletedItems,
   extractChecklistTrackConditions,
+  extractResourceCenterTrackConditions,
   hasContentSessionChanges,
   findCurrentStepCvid,
   canSendChecklistCompletedEvent,
@@ -1098,6 +1100,8 @@ export class ContentOrchestratorService {
     );
     // Extract tracking conditions for checklist conditions
     const checklistConditions = extractChecklistTrackConditions(session);
+    // Extract tracking conditions for resource center blocks/items
+    const resourceCenterConditions = extractResourceCenterTrackConditions(session);
     const cancelSession = isActivedHideRules(customContentVersion);
 
     return {
@@ -1105,6 +1109,7 @@ export class ContentOrchestratorService {
       session,
       hideConditions,
       checklistConditions,
+      resourceCenterConditions,
       cancelSession,
       reason: 'Content session created successfully',
     };
@@ -1123,6 +1128,7 @@ export class ContentOrchestratorService {
       session,
       hideConditions = [],
       checklistConditions = [],
+      resourceCenterConditions = [],
       forceGoToStep = false,
       isActivateOtherSockets = true,
     } = result;
@@ -1130,7 +1136,11 @@ export class ContentOrchestratorService {
     if (!session) {
       return false;
     }
-    const trackConditions = [...hideConditions, ...checklistConditions];
+    const trackConditions = [
+      ...hideConditions,
+      ...checklistConditions,
+      ...resourceCenterConditions,
+    ];
 
     const roomId = buildExternalUserRoomId(environment.id, externalUserId);
     const activateSessionParams = {
@@ -1311,6 +1321,24 @@ export class ContentOrchestratorService {
       trackConditions,
       cleanupContentTypes: [ContentDataType.RESOURCE_CENTER],
     };
+
+    const resourceCenterData = session.version.resourceCenter;
+    if (resourceCenterData) {
+      const tabs = resourceCenterData.tabs.map((tab) => ({
+        ...tab,
+        blocks: tab.blocks
+          .filter((block) => block.isVisible !== false)
+          .map((block) =>
+            block.type === ResourceCenterBlockType.CONTENT_LIST
+              ? {
+                  ...block,
+                  contentItems: block.contentItems.filter((item) => item.isVisible !== false),
+                }
+              : block,
+          ),
+      }));
+      session.version.resourceCenter = { ...resourceCenterData, tabs };
+    }
 
     return await this.socketOperationService.activateResourceCenterSession(
       socket as unknown as Socket,

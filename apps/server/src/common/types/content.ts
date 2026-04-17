@@ -82,6 +82,7 @@ export interface ContentStartResult {
   hideConditions?: TrackCondition[];
   retrackConditions?: TrackCondition[];
   checklistConditions?: TrackCondition[];
+  resourceCenterConditions?: TrackCondition[];
   waitTimers?: ConditionWaitTimer[];
   reason?: string;
   forceGoToStep?: boolean;

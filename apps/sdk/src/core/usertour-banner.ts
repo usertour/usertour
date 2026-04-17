@@ -58,7 +58,21 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
   async update(session: CustomContentSession): Promise<void> {
     this.updateSession(session);
     await this.refreshStoreData();
-    await this.show();
+    const store = this.getStoreData();
+    if (!store?.bannerData) {
+      return;
+    }
+    const placement = store.bannerData.embedPlacement ?? BannerEmbedPlacement.TOP_OF_PAGE;
+    const requiresElement = BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT.includes(placement);
+    if (requiresElement) {
+      this.setupElementWatcher(store);
+      return;
+    }
+    if (this.watcher) {
+      this.watcher.destroy();
+      this.watcher = null;
+      this.updateStore({ targetElement: undefined });
+    }
   }
 
   async handleDismiss(): Promise<void> {

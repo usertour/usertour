@@ -24,6 +24,7 @@ export enum ResourceCenterBlockType {
 export interface ResourceCenterBlockConditionFields {
   onlyShowBlock: boolean;
   onlyShowBlockConditions: RulesCondition[];
+  isVisible?: boolean;
 }
 
 // ============================================================================
@@ -113,6 +114,7 @@ export interface ContentListItem {
   navigateOpenType?: 'same' | 'new';
   onlyShowItem: boolean;
   onlyShowItemConditions: RulesCondition[];
+  isVisible?: boolean;
 }
 
 export interface ResourceCenterContentListBlock extends ResourceCenterBlockConditionFields {
