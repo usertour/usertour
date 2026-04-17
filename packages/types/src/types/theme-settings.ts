@@ -489,7 +489,7 @@ export const defaultSettings: ThemeTypesSetting = {
     height: 60,
     imageHeight: 50,
     borderRadius: null,
-    textMode: 'resource-center-text',
+    textMode: 'no-text',
     color: {
       background: 'Auto',
       hover: 'Auto',
@@ -759,7 +759,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
     height: 60,
     imageHeight: 50,
     borderRadius: null,
-    textMode: 'resource-center-text',
+    textMode: 'no-text',
     color: {
       background: 'Auto',
       hover: 'Auto',
