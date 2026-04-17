@@ -525,21 +525,21 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Flow Session ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'A single instance of one user engaging with one flow',
+    description: "A user's session viewing this flow",
   },
   {
     codeName: EventAttributes.FLOW_START_REASON,
     displayName: 'Flow Start Reason',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'Reason that triggered the flow to begin',
+    description: 'Why the flow started',
   },
   {
     codeName: EventAttributes.FLOW_END_REASON,
     displayName: 'Flow End Reason',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'Reason that caused the flow to finish',
+    description: 'Why the flow ended',
   },
   {
     codeName: EventAttributes.FLOW_STEP_ID,
@@ -567,7 +567,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Flow Step Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: 'Sequential number of the Usertour flow step',
+    description: 'Position of the Usertour flow step',
   },
   {
     codeName: EventAttributes.FLOW_STEP_PROGRESS,
@@ -588,7 +588,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Flow Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: 'Sequential number of the Usertour flow version',
+    description: 'Number of the Usertour flow version',
   },
   {
     codeName: EventAttributes.LAUNCHER_ID,
@@ -609,7 +609,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Launcher Session ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'A single instance of one user engaging with one launcher',
+    description: "A user's session viewing this launcher",
   },
   {
     codeName: EventAttributes.LAUNCHER_VERSION_ID,
@@ -623,7 +623,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Launcher Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: 'Sequential number of the Usertour launcher version',
+    description: 'Number of the Usertour launcher version',
   },
   {
     codeName: EventAttributes.BANNER_ID,
@@ -644,7 +644,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Banner Session ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'A single instance of one user engaging with one banner',
+    description: "A user's session viewing this banner",
   },
   {
     codeName: EventAttributes.BANNER_VERSION_ID,
@@ -658,7 +658,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Banner Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: 'Sequential number of the Usertour banner version',
+    description: 'Number of the Usertour banner version',
   },
   {
     codeName: EventAttributes.CHECKLIST_ID,
@@ -679,7 +679,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Checklist Session ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'A single instance of one user engaging with one checklist',
+    description: "A user's session viewing this checklist",
   },
   {
     codeName: EventAttributes.CHECKLIST_VERSION_ID,
@@ -693,21 +693,21 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Checklist Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: 'Sequential number of the Usertour checklist version',
+    description: 'Number of the Usertour checklist version',
   },
   {
     codeName: EventAttributes.CHECKLIST_END_REASON,
     displayName: 'Checklist End Reason',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'Reason that caused the checklist to finish',
+    description: 'Why the checklist ended',
   },
   {
     codeName: EventAttributes.CHECKLIST_START_REASON,
     displayName: 'Checklist Start Reason',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'Reason that triggered the checklist to begin',
+    description: 'Why the checklist started',
   },
   {
     codeName: EventAttributes.CHECKLIST_TASK_CVID,
@@ -715,7 +715,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
     description:
-      'Cross-version identifier of the Usertour checklist task — a pseudo-ID that remains stable across versions',
+      "Stable identifier of the Usertour checklist task that doesn't change across versions",
   },
   {
     codeName: EventAttributes.CHECKLIST_TASK_ID,
@@ -750,7 +750,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Resource Center Session ID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'A single instance of one user engaging with one resource center',
+    description: "A user's session viewing this resource center",
   },
   {
     codeName: EventAttributes.RESOURCE_CENTER_VERSION_ID,
@@ -764,7 +764,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Resource Center Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: 'Sequential number of the Usertour resource center version',
+    description: 'Number of the Usertour resource center version',
   },
   {
     codeName: EventAttributes.RESOURCE_CENTER_BLOCK_ID,
@@ -806,7 +806,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Event Tracker Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: 'Sequential number of the Usertour event tracker version',
+    description: 'Number of the Usertour event tracker version',
   },
   {
     codeName: EventAttributes.ANNOUNCEMENT_ID,
@@ -834,21 +834,21 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Announcement Version Number',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.Number,
-    description: 'Sequential number of the Usertour announcement version',
+    description: 'Number of the Usertour announcement version',
   },
   {
     codeName: EventAttributes.ANNOUNCEMENT_LEVEL,
     displayName: 'Announcement Level',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'Delivery level of the announcement (silent, badge)',
+    description: 'How the announcement was delivered (silent, badge)',
   },
   {
     codeName: EventAttributes.ANNOUNCEMENT_SOURCE,
     displayName: 'Announcement Source',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description: 'Source surface from which the announcement was viewed (e.g. resource_center)',
+    description: 'Where the announcement was shown (e.g. resource_center)',
   },
   {
     codeName: EventAttributes.LIST_ANSWER,
@@ -904,8 +904,7 @@ const defaultAttributes: Partial<Attribute>[] = [
     displayName: 'Question CVID',
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
-    description:
-      'Cross-version identifier of the question — a pseudo-ID that remains stable across versions',
+    description: "Stable identifier of the question that doesn't change across versions",
   },
   {
     codeName: EventAttributes.QUESTION_NAME,
