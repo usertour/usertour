@@ -34,10 +34,6 @@ export const extendSdk = {
           active: 'hsl(var(--usertour-resource-center-launcher-active-background-color))',
           foreground: 'hsl(var(--usertour-resource-center-launcher-foreground-color))',
         },
-        badge: {
-          background: 'var(--usertour-resource-center-badge-background-color)',
-          foreground: 'var(--usertour-resource-center-badge-foreground-color)',
-        },
       },
       banner: {
         DEFAULT: 'hsl(var(--usertour-banner-background-color))',

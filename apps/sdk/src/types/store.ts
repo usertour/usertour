@@ -56,7 +56,7 @@ export type ResourceCenterStore = BaseStore & {
   contentListItems?: ResourceCenterBlockContentItem[];
   /** When true, the RC panel is visually hidden (a live chat provider is active) */
   liveChatActive?: boolean;
-  /** Tracks whether the live chat provider widget is currently open (for future unread UI) */
+  /** Tracks whether the live chat provider widget is currently open */
   liveChatProviderOpen?: boolean;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden?: boolean;

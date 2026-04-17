@@ -91,8 +91,6 @@ export interface ResourceCenterContextValue {
 
   showMadeWith: boolean;
 
-  // Launcher
-  badgeCount: number;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden: boolean;
 }

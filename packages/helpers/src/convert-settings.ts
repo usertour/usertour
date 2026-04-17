@@ -388,8 +388,6 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
   const resourceCenter = (settings.resourceCenter ?? defaultSettings.resourceCenter)!;
   const resourceCenterLauncherButton = (settings.resourceCenterLauncherButton ??
     defaultSettings.resourceCenterLauncherButton)!;
-  const resourceCenterUnreadBadge = (settings.resourceCenterUnreadBadge ??
-    defaultSettings.resourceCenterUnreadBadge)!;
 
   const cssMapping: any = {
     '--usertour-background': hexToHSLString(settings.mainColor.background),
@@ -504,11 +502,6 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-resource-center-launcher-font-weight': settings.font.fontWeightBold,
     '--usertour-resource-center-launcher-height': `${resourceCenterLauncherButton.height}px`,
     '--usertour-resource-center-launcher-icon-size': `${resourceCenterLauncherButton.imageHeight}px`,
-    '--usertour-resource-center-badge-background-color': resourceCenterUnreadBadge.backgroundColor,
-    '--usertour-resource-center-badge-background-color-rgb': hexToRGBStr(
-      resourceCenterUnreadBadge.backgroundColor,
-    ),
-    '--usertour-resource-center-badge-foreground-color': resourceCenterUnreadBadge.textColor,
     '--usertour-resource-center-width': `${resourceCenter.normalWidth}px`,
     '--usertour-resource-center-large-width': `${resourceCenter.largeWidth}px`,
     '--usertour-resource-center-max-height': resourceCenter.maxHeight

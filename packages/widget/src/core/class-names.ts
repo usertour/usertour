@@ -56,9 +56,6 @@ export const WidgetClass = {
   resourceCenterFrameExpanded: `${PREFIX}-resource-center-frame--expanded`,
   resourceCenterLauncher: `${PREFIX}-resource-center-launcher`,
 
-  // Indicator (unread badge)
-  indicator: `${PREFIX}-indicator`,
-
   // Bubble avatar
   bubbleAvatar: `${PREFIX}-bubble__avatar`,
   bubbleAvatarMinimizable: `${PREFIX}-bubble__avatar--minimizable`,
@@ -72,7 +69,5 @@ export const WidgetAnimation = {
   stageReveal: `${PREFIX}-stage-reveal`,
   beaconHalo: `${PREFIX}-beacon-halo`,
   bannerReveal: `${PREFIX}-banner-reveal`,
-  indicatorEnter: `${PREFIX}-indicator-enter`,
-  indicatorRipple: `${PREFIX}-indicator-ripple`,
   resourceCenterReveal: `${PREFIX}-resource-center-reveal`,
 } as const;

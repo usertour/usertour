@@ -7,8 +7,6 @@ import { RESOURCE_CENTER_DEFAULTS } from './constants';
 import { useResourceCenterPositionStyle } from './hooks/use-resource-center-position-style';
 import { ResourceCenterAnchor } from './resource-center-anchor';
 import { ResourceCenterFrameRoot } from './resource-center-frame-root';
-import { ResourceCenterBadge } from './resource-center-trigger';
-import { useFrameGlobalStyle } from './hooks/use-frame-global-style';
 import { WidgetClass } from '../class-names';
 
 // ============================================================================
@@ -72,21 +70,6 @@ const IFrameContent = ({
 };
 
 // ============================================================================
-// Badge iframe inner content
-// ============================================================================
-
-const BadgeFrameContent = ({
-  globalStyle,
-  count,
-}: {
-  globalStyle?: string;
-  count: number;
-}) => {
-  useFrameGlobalStyle(globalStyle);
-  return <ResourceCenterBadge count={count} />;
-};
-
-// ============================================================================
 // ResourceCenterPanel — unified component (mode: dom | iframe)
 // ============================================================================
 
@@ -130,7 +113,6 @@ export const ResourceCenterPanel = forwardRef<
     isAnimating,
     themeSetting,
     animateFrame,
-    badgeCount,
     hidden,
     launcherHidden,
   } = useResourceCenterContext();
@@ -184,58 +166,35 @@ export const ResourceCenterPanel = forwardRef<
     getFrameClassName(isOpen, isAnimating && animateFrame),
     allowOverflow && '!overflow-visible',
   );
-  const shouldShowBadge = !isOpen && (badgeCount ?? 0) > 0;
 
   return (
     <ResourceCenterAnchor ref={ref as React.Ref<HTMLDivElement>} style={outerStyle} {...restProps}>
       {mode === 'iframe' ? (
-        <>
-          <Frame
-            assets={assets}
-            ref={ref as React.Ref<HTMLIFrameElement>}
-            className={frameClassName}
-            defaultStyle={frameSizeStyle}
+        <Frame
+          assets={assets}
+          ref={ref as React.Ref<HTMLIFrameElement>}
+          className={frameClassName}
+          defaultStyle={frameSizeStyle}
+        >
+          <IFrameContent
+            globalStyle={globalStyle}
+            mode="iframe"
+            isAnimating={isAnimating && animateFrame}
+            onLauncherSizeChange={onLauncherSizeChange}
           >
-            <IFrameContent
-              globalStyle={globalStyle}
-              mode="iframe"
-              isAnimating={isAnimating && animateFrame}
-              onLauncherSizeChange={onLauncherSizeChange}
-            >
-              {children}
-            </IFrameContent>
-          </Frame>
-          {shouldShowBadge && (
-            <Frame
-              assets={assets}
-              className={`${WidgetClass.indicator} ${WidgetClass.elevation}`}
-              defaultStyle={{ border: 'none' }}
-            >
-              <BadgeFrameContent globalStyle={globalStyle} count={badgeCount ?? 0} />
-            </Frame>
-          )}
-        </>
+            {children}
+          </IFrameContent>
+        </Frame>
       ) : (
-        <>
-          <div
-            className={frameClassName}
-            style={frameSizeStyle}
-            role={isOpen ? 'dialog' : undefined}
+        <div className={frameClassName} style={frameSizeStyle} role={isOpen ? 'dialog' : undefined}>
+          <ResourceCenterFrameRoot
+            mode="dom"
+            isAnimating={isAnimating && animateFrame}
+            onLauncherSizeChange={onLauncherSizeChange}
           >
-            <ResourceCenterFrameRoot
-              mode="dom"
-              isAnimating={isAnimating && animateFrame}
-              onLauncherSizeChange={onLauncherSizeChange}
-            >
-              {children}
-            </ResourceCenterFrameRoot>
-          </div>
-          {shouldShowBadge && (
-            <div className={`${WidgetClass.indicator} ${WidgetClass.elevation}`}>
-              <ResourceCenterBadge count={badgeCount ?? 0} />
-            </div>
-          )}
-        </>
+            {children}
+          </ResourceCenterFrameRoot>
+        </div>
       )}
     </ResourceCenterAnchor>
   );

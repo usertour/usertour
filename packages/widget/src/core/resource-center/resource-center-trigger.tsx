@@ -45,33 +45,6 @@ export const ResourceCenterLauncherIcon = memo(
 ResourceCenterLauncherIcon.displayName = 'ResourceCenterLauncherIcon';
 
 // ============================================================================
-// Badge
-// ============================================================================
-
-interface ResourceCenterBadgeProps {
-  count: number;
-}
-
-export const ResourceCenterBadge = memo(({ count }: ResourceCenterBadgeProps) => {
-  if (count <= 0) return null;
-
-  return (
-    <div
-      className={cn(
-        'flex items-center justify-center cursor-pointer',
-        'size-6 rounded-full',
-        'text-xs font-bold',
-        'bg-sdk-resource-center-badge-background text-sdk-resource-center-badge-foreground',
-      )}
-    >
-      {count}
-    </div>
-  );
-});
-
-ResourceCenterBadge.displayName = 'ResourceCenterBadge';
-
-// ============================================================================
 // Trigger (the launcher button content)
 // ============================================================================
 

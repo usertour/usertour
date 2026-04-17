@@ -41,8 +41,6 @@ const sdkColors = [
   'sdk-resource-center-launcher-hover',
   'sdk-resource-center-launcher-active',
   'sdk-resource-center-launcher-foreground',
-  'sdk-resource-center-badge-background',
-  'sdk-resource-center-badge-foreground',
   // Button primary colors
   'sdk-btn-primary',
   'sdk-btn-primary-hover',

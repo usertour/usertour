@@ -52,11 +52,6 @@ export type ResourceCenterLauncherButtonThemeSettings = {
   };
 };
 
-export type ResourceCenterUnreadBadgeThemeSettings = {
-  backgroundColor: string;
-  textColor: string;
-};
-
 export enum ProgressBarType {
   FULL_WIDTH = 'full-width',
   NARROW = 'narrow',
@@ -232,7 +227,6 @@ export type ThemeTypesSetting = {
   };
   resourceCenter?: ResourceCenterThemeSettings;
   resourceCenterLauncherButton?: ResourceCenterLauncherButtonThemeSettings;
-  resourceCenterUnreadBadge?: ResourceCenterUnreadBadgeThemeSettings;
 };
 
 export const defaultSettings: ThemeTypesSetting = {
@@ -503,10 +497,6 @@ export const defaultSettings: ThemeTypesSetting = {
       foreground: 'Auto',
     },
   },
-  resourceCenterUnreadBadge: {
-    backgroundColor: '#ef4444',
-    textColor: '#ffffff',
-  },
 };
 
 export const standardDarkSettings: ThemeTypesSetting = {
@@ -776,9 +766,5 @@ export const standardDarkSettings: ThemeTypesSetting = {
       active: 'Auto',
       foreground: 'Auto',
     },
-  },
-  resourceCenterUnreadBadge: {
-    backgroundColor: '#ef4444',
-    textColor: '#ffffff',
   },
 };

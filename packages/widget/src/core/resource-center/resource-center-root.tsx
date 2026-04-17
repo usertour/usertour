@@ -31,7 +31,6 @@ interface ResourceCenterRootProps {
   children: React.ReactNode;
   themeSettings: ThemeTypesSetting;
   data: ResourceCenterData;
-  badgeCount?: number;
   animateFrame?: boolean;
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => Promise<void>;
@@ -59,7 +58,6 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const {
     children,
     data,
-    badgeCount = 0,
     animateFrame = true,
     expanded = false,
     onExpandedChange,
@@ -214,7 +212,6 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       globalStyle,
       themeSetting,
       data,
-      badgeCount,
       isOpen,
       isAnimating,
       animateFrame,
@@ -244,7 +241,6 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       globalStyle,
       themeSetting,
       data,
-      badgeCount,
       isOpen,
       isAnimating,
       animateFrame,

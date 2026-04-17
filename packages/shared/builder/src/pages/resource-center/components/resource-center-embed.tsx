@@ -227,7 +227,6 @@ export const ResourceCenterEmbed = () => {
     <ResourceCenterRoot
       data={localData}
       themeSettings={theme.settings}
-      badgeCount={0}
       animateFrame={false}
       expanded={expanded}
       onExpandedChange={async (open: boolean) => {

@@ -26,7 +26,6 @@ import { ThemeSettingsAvatar } from './settings/theme-settings-avatar';
 import { ThemeSettingsBanner } from './settings/theme-settings-banner';
 import { ThemeSettingsResourceCenter } from './settings/theme-settings-resource-center';
 import { ThemeSettingsResourceCenterLauncher } from './settings/theme-settings-resource-center-launcher';
-import { ThemeSettingsResourceCenterBadge } from './settings/theme-settings-resource-center-badge';
 import { ConditionalVariationsPanel } from './conditional-variations-panel';
 
 const AccordionItem = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
@@ -239,12 +238,6 @@ export const ThemeSettingsAccordionContent = () => (
       <AccordionTrigger>Resource center launcher</AccordionTrigger>
       <AccordionContent>
         <ThemeSettingsResourceCenterLauncher />
-      </AccordionContent>
-    </AccordionItem>
-    <AccordionItem value="resource-center-badge">
-      <AccordionTrigger>Resource center unread badge</AccordionTrigger>
-      <AccordionContent>
-        <ThemeSettingsResourceCenterBadge />
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="launcher-beacon">
