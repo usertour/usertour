@@ -1314,15 +1314,30 @@ export const extractBannerAttrCodes = (contents: ContentEditorRoot[] | undefined
 };
 
 /**
- * Extracts user attribute codes from resource center block names (RichTextNode[] format)
- * @param blocks - Array of resource center blocks
- * @returns Array of attribute codes found in block names
+ * Extracts every user-attribute code referenced across a resource-center block tree:
+ * block names (RichTextNode[]), RICH_TEXT / SUB_PAGE content (ContentEditorRoot[]),
+ * and CONTENT_LIST item navigateUrl (RichTextNode[]). Used to preload session.attributes
+ * so the SDK can resolve user-attribute placeholders without a round trip.
  */
-export const extractResourceCenterBlockNameAttrCodes = (blocks: { name?: unknown }[]): string[] => {
+export const extractResourceCenterAttrCodes = (blocks: ResourceCenterBlock[]): string[] => {
   const attrCodes: string[] = [];
   for (const block of blocks) {
-    if (block.name && Array.isArray(block.name)) {
-      attrCodes.push(...extractAttrCodesRecursively(block.name));
+    if (Array.isArray((block as { name?: unknown }).name)) {
+      attrCodes.push(...extractAttrCodesRecursively((block as { name: unknown[] }).name));
+    }
+    if (
+      (block.type === ResourceCenterBlockType.RICH_TEXT ||
+        block.type === ResourceCenterBlockType.SUB_PAGE) &&
+      block.content
+    ) {
+      attrCodes.push(...extractUserAttrCodes(block.content as ContentEditorRoot[]));
+    }
+    if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
+      for (const item of block.contentItems ?? []) {
+        if (Array.isArray(item.navigateUrl)) {
+          attrCodes.push(...extractAttrCodesRecursively(item.navigateUrl));
+        }
+      }
     }
   }
   return attrCodes;
