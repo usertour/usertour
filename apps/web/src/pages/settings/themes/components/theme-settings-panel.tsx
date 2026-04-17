@@ -46,7 +46,7 @@ const AccordionTrigger = forwardRef(({ children, className, ...props }: any, for
   <Accordion.Header className="flex">
     <Accordion.Trigger
       className={cn(
-        'text-foreground bg-white hover:bg-blue-50 data-[state=open]:bg-blue-50 group flex flex-1 items-center justify-between px-5 text-base leading-none h-10 outline-none cursor-pointer',
+        'text-foreground bg-white hover:bg-blue-50 data-[state=open]:bg-blue-50 group flex flex-1 items-center justify-between px-5 text-sm leading-none h-10 outline-none cursor-pointer',
         className,
       )}
       {...props}
