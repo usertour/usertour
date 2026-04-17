@@ -926,19 +926,28 @@ const defaultAttributes: Partial<Attribute>[] = [
 const initializationAttributes = async (tx: Prisma.TransactionClient, projectId: string) => {
   const predefined = true;
 
-  // Get existing attributes
   const existingAttributes = await tx.attribute.findMany({
     where: { projectId, predefined: true },
     select: { codeName: true },
   });
   const existingCodeNames = new Set(existingAttributes.map((a) => a.codeName));
 
-  // Filter out existing attributes
   const newAttributes = defaultAttributes.filter((attr) => !existingCodeNames.has(attr.codeName));
+  const existingDefaults = defaultAttributes.filter((attr) => existingCodeNames.has(attr.codeName));
 
   if (newAttributes.length > 0) {
-    return await tx.attribute.createMany({
+    await tx.attribute.createMany({
       data: newAttributes.map((attr) => ({ ...attr, projectId, predefined })),
+    });
+  }
+
+  for (const attr of existingDefaults) {
+    await tx.attribute.updateMany({
+      where: { projectId, predefined: true, codeName: attr.codeName },
+      data: {
+        displayName: attr.displayName,
+        description: attr.description,
+      },
     });
   }
 };
