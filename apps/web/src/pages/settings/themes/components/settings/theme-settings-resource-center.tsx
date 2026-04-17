@@ -31,7 +31,6 @@ const placementItems = [
 ];
 
 const headerBackgroundTypeItems = [
-  { name: 'None', value: 'none' },
   { name: 'Color', value: 'color' },
   { name: 'Gradient', value: 'gradient' },
   { name: 'Image', value: 'image' },

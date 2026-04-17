@@ -482,7 +482,7 @@ export const defaultSettings: ThemeTypesSetting = {
     transitionDuration: 450,
     dividerLines: true,
     headerBackground: {
-      type: 'none',
+      type: 'color',
       color: 'Auto',
       gradientFrom: 'Auto',
       gradientTo: 'Auto',
@@ -756,7 +756,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
     transitionDuration: 450,
     dividerLines: true,
     headerBackground: {
-      type: 'none',
+      type: 'color',
       color: 'Auto',
       gradientFrom: 'Auto',
       gradientTo: 'Auto',
