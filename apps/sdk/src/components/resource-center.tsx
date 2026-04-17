@@ -1,10 +1,4 @@
 import {
-  ChecklistItems,
-  ChecklistProgress,
-  ChecklistDismiss,
-  ChecklistRoot,
-  ChecklistPopperContentBody,
-  ContentEditorSerialize,
   LinkDecoratorContext,
   ResourceCenterPanel,
   ResourceCenterRoot,
@@ -16,7 +10,6 @@ import {
   ResourceCenterFooter,
 } from '@usertour-packages/widget';
 import { useSyncExternalStore } from 'react';
-import { UsertourChecklist } from '@/core/usertour-checklist';
 import { UsertourResourceCenter } from '@/core/usertour-resource-center';
 
 type ResourceCenterWidgetProps = {
@@ -61,48 +54,6 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
   };
 };
 
-/** Subscribe to one checklist's store and return its data if active */
-const useChecklistStore = (checklist: UsertourChecklist | undefined) => {
-  const store = useSyncExternalStore(
-    checklist?.subscribe ?? (() => () => {}),
-    checklist?.getSnapshot ?? (() => undefined),
-  );
-  if (!store?.checklistData || !store.openState) return null;
-  return store;
-};
-
-/** Inline checklist content rendered inside the Resource Center panel */
-const EmbeddedChecklistSlot = ({ checklist }: { checklist: UsertourChecklist }) => {
-  const store = useChecklistStore(checklist);
-  if (!store) return null;
-
-  const { checklistData, themeSettings, userAttributes } = store;
-  if (!checklistData || !themeSettings) return null;
-
-  return (
-    <ChecklistRoot
-      data={checklistData}
-      themeSettings={themeSettings}
-      embedded={true}
-      expanded={true}
-      onExpandedChange={checklist.handleExpandedChange}
-      onDismiss={checklist.handleDismiss}
-      zIndex={0}
-    >
-      <ChecklistPopperContentBody>
-        <ContentEditorSerialize
-          contents={checklistData.content}
-          onClick={checklist.handleOnClick}
-          userAttributes={userAttributes}
-        />
-        <ChecklistProgress />
-        <ChecklistItems onClick={checklist.handleItemClick} disabledUpdate={true} />
-        <ChecklistDismiss onAutoDismiss={checklist.handleAutoDismiss} />
-      </ChecklistPopperContentBody>
-    </ChecklistRoot>
-  );
-};
-
 export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetProps) => {
   const store = useResourceCenterStore(resourceCenter);
 
@@ -124,19 +75,14 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
 
   if (!themeSettings || !resourceCenterData) return <></>;
 
-  const { checklist, launcherText, badgeCount, uncompletedCount } =
-    resourceCenter.getChecklistPresentation();
-
-  const checklistSlot = checklist ? <EmbeddedChecklistSlot checklist={checklist} /> : undefined;
+  const badgeCount = resourceCenter.getAnnouncementBadgeCount();
 
   return (
     <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
       <ResourceCenterRoot
         data={resourceCenterData}
         themeSettings={themeSettings}
-        launcherText={launcherText}
         badgeCount={badgeCount}
-        uncompletedCount={uncompletedCount}
         expanded={expanded}
         onExpandedChange={resourceCenter.expand}
         zIndex={zIndex}
@@ -146,7 +92,6 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onContentClick={resourceCenter.handleOnClick}
         onBlockClick={resourceCenter.handleBlockClick}
         showMadeWith={!removeBranding}
-        checklistSlot={checklistSlot}
         contentListItems={contentListItems ?? []}
         onContentListNavigate={resourceCenter.handleContentListNavigate}
         onContentListItemClick={resourceCenter.handleContentListItemClick}

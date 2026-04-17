@@ -96,14 +96,10 @@ export interface ResourceCenterContextValue {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
-  // Slots
-  checklistSlot?: React.ReactNode;
   showMadeWith: boolean;
 
   // Launcher
-  launcherText?: string;
   badgeCount: number;
-  uncompletedCount: number;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden: boolean;
 }

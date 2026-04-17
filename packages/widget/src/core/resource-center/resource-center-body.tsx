@@ -118,26 +118,6 @@ export const ResourceCenterRichTextBlockView = memo(
 ResourceCenterRichTextBlockView.displayName = 'ResourceCenterRichTextBlockView';
 
 // ============================================================================
-// Block — CHECKLIST (slot)
-// ============================================================================
-
-interface ResourceCenterChecklistBlockViewProps {
-  slot?: React.ReactNode;
-}
-
-export const ResourceCenterChecklistBlockView = memo(
-  ({ slot }: ResourceCenterChecklistBlockViewProps) => {
-    if (slot) {
-      return <div className="p-2">{slot}</div>;
-    }
-
-    return <></>;
-  },
-);
-
-ResourceCenterChecklistBlockView.displayName = 'ResourceCenterChecklistBlockView';
-
-// ============================================================================
 // Block — DIVIDER
 // ============================================================================
 
@@ -981,7 +961,6 @@ export const ResourceCenterBlocks = memo(
       onContentClick,
       onBlockClick,
       onLiveChatClick,
-      checklistSlot,
       actions,
     } = useResourceCenterContext();
 
@@ -1010,9 +989,6 @@ export const ResourceCenterBlocks = memo(
                   onBlockClick={onBlockClick}
                   editSlot={messageEditSlots?.[block.id]}
                 />
-              )}
-              {block.type === ResourceCenterBlockType.CHECKLIST && (
-                <ResourceCenterChecklistBlockView slot={checklistSlot} />
               )}
               {block.type === ResourceCenterBlockType.DIVIDER && (
                 <ResourceCenterDividerBlockView block={block} />

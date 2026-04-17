@@ -1,12 +1,6 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
 import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
 import {
-  ChecklistDismiss,
-  ChecklistItems,
-  ChecklistPopperContentBody,
-  ChecklistProgress,
-  ChecklistRoot,
-  ContentEditorSerialize,
   ResourceCenterRoot,
   ResourceCenterStyleProvider,
   ResourceCenterPanel,
@@ -123,7 +117,7 @@ export const ResourceCenterEmbed = () => {
     query: { environmentId, type: ContentDataType.CHECKLIST },
   });
 
-  // Build a name lookup map for all content
+  // Build a name lookup map for flows and checklists
   const contentNameMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const c of flowContents) {
@@ -229,119 +223,11 @@ export const ResourceCenterEmbed = () => {
     return null;
   }
 
-  const previewChecklistSlot = (
-    <ChecklistRoot
-      data={
-        {
-          buttonText: 'Getting started',
-          content: [
-            {
-              element: { type: 'group' },
-              children: [
-                {
-                  element: {
-                    type: 'column',
-                    style: {},
-                    width: { type: 'fill' },
-                    justifyContent: 'justify-start',
-                  },
-                  children: [
-                    {
-                      element: {
-                        data: [
-                          {
-                            type: 'paragraph',
-                            children: [{ text: 'Complete these steps to get value quickly.' }],
-                          },
-                        ],
-                        type: 'text',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ] as any,
-          items: [
-            {
-              id: 'preview-task-1',
-              name: 'Install SDK',
-              description: 'Add the script to your app',
-              type: 'click-and-complete',
-              completed: false,
-              hidden: false,
-              dismiss: false,
-            },
-            {
-              id: 'preview-task-2',
-              name: 'Publish content',
-              description: 'Ship your first experience',
-              type: 'click-and-complete',
-              completed: true,
-              hidden: false,
-              dismiss: false,
-            },
-          ],
-        } as any
-      }
-      themeSettings={theme.settings}
-      embedded={true}
-      expanded={true}
-      zIndex={0}
-    >
-      <ChecklistPopperContentBody>
-        <ContentEditorSerialize
-          contents={
-            [
-              {
-                element: { type: 'group' },
-                children: [
-                  {
-                    element: {
-                      type: 'column',
-                      style: {},
-                      width: { type: 'fill' },
-                      justifyContent: 'justify-start',
-                    },
-                    children: [
-                      {
-                        element: {
-                          data: [
-                            {
-                              type: 'paragraph',
-                              children: [{ text: 'Complete these steps to get value quickly.' }],
-                            },
-                          ],
-                          type: 'text',
-                        },
-                      },
-                    ],
-                  },
-                ],
-              },
-            ] as any
-          }
-        />
-        <ChecklistProgress />
-        <ChecklistItems disabledUpdate={true} />
-        <ChecklistDismiss />
-      </ChecklistPopperContentBody>
-    </ChecklistRoot>
-  );
-
-  const previewUncompletedCount = 1;
-  const previewLauncherUncompletedCount = theme.settings.resourceCenterLauncherButton
-    ?.showRemainingTasks
-    ? previewUncompletedCount
-    : 0;
-
   return (
     <ResourceCenterRoot
       data={localData}
       themeSettings={theme.settings}
-      launcherText="Getting started"
       badgeCount={0}
-      uncompletedCount={previewLauncherUncompletedCount}
       animateFrame={false}
       expanded={expanded}
       onExpandedChange={async (open: boolean) => {
@@ -349,7 +235,6 @@ export const ResourceCenterEmbed = () => {
       }}
       zIndex={10000}
       showMadeWith={shouldShowMadeWith}
-      checklistSlot={previewChecklistSlot}
       contentListItems={previewContentListItems}
       onContentListNavigate={handleContentListNavigate}
     >

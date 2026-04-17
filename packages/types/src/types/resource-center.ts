@@ -14,7 +14,6 @@ export enum ResourceCenterBlockType {
   SUB_PAGE = 'sub-page',
   CONTENT_LIST = 'content-list',
   KNOWLEDGE_BASE = 'knowledge-base',
-  CHECKLIST = 'checklist',
   LIVE_CHAT = 'live-chat',
   ANNOUNCEMENT = 'announcement',
 }
@@ -37,12 +36,6 @@ export interface ResourceCenterRichTextBlock extends ResourceCenterBlockConditio
   name?: string;
   type: ResourceCenterBlockType.RICH_TEXT;
   content: ContentEditorRoot[];
-}
-
-export interface ResourceCenterChecklistBlock extends ResourceCenterBlockConditionFields {
-  id: string;
-  name?: string;
-  type: ResourceCenterBlockType.CHECKLIST;
 }
 
 export interface ResourceCenterDividerBlock extends ResourceCenterBlockConditionFields {
@@ -154,7 +147,6 @@ export interface ResourceCenterContentListBlock extends ResourceCenterBlockCondi
 /** Union of all block types. */
 export type ResourceCenterBlock =
   | ResourceCenterRichTextBlock
-  | ResourceCenterChecklistBlock
   | ResourceCenterDividerBlock
   | ResourceCenterActionBlock
   | ResourceCenterSubPageBlock

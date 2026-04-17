@@ -1,11 +1,4 @@
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useState,
-  type HTMLAttributes,
-} from 'react';
+import { forwardRef, useCallback, useLayoutEffect, useState, type HTMLAttributes } from 'react';
 import type { AssetAttributes } from '@usertour-packages/frame';
 import { Frame, useFrame } from '@usertour-packages/frame';
 import { cn } from '@usertour-packages/tailwind';
@@ -137,8 +130,6 @@ export const ResourceCenterPanel = forwardRef<
     isAnimating,
     themeSetting,
     animateFrame,
-    launcherText,
-    uncompletedCount,
     badgeCount,
     hidden,
     launcherHidden,
@@ -152,12 +143,6 @@ export const ResourceCenterPanel = forwardRef<
   const applyPosition = positionProp !== false;
 
   const [launcherSize, setLauncherSize] = useState<{ width: number; height: number } | null>(null);
-
-  // Reset launcher measurement when content changes so the container
-  // temporarily becomes `auto`-width, allowing correct re-measurement.
-  useEffect(() => {
-    setLauncherSize(null);
-  }, [launcherText, uncompletedCount]);
 
   const onLauncherSizeChange = useCallback(
     (rect: { width: number; height: number }) => setLauncherSize(rect),

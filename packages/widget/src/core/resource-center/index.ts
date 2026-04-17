@@ -36,7 +36,6 @@ export {
   ResourceCenterBody,
   ResourceCenterBlocks,
   ResourceCenterRichTextBlockView,
-  ResourceCenterChecklistBlockView,
   ResourceCenterActionBlockView,
   ResourceCenterLiveChatBlockView,
   BlockIcon,

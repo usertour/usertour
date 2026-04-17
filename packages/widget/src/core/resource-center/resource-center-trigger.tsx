@@ -84,7 +84,7 @@ interface ResourceCenterTriggerProps {
 export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCenterTriggerProps>(
   (props, ref) => {
     const { onClick, onSizeChange, layout = 'fill' } = props;
-    const { themeSetting, data, launcherText, uncompletedCount } = useResourceCenterContext();
+    const { themeSetting, data } = useResourceCenterContext();
     const launcher = themeSetting.resourceCenterLauncherButton;
 
     const [contentRef, setContentRef] = useState<HTMLDivElement | null>(null);
@@ -96,13 +96,8 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
       }
     }, [rect, onSizeChange]);
 
-    const showChecklistInfo = uncompletedCount > 0;
-    const showChecklistText =
-      launcher?.textMode === 'active-checklist-text' && showChecklistInfo && !!launcherText;
     const showResourceCenterText =
       launcher?.textMode === 'resource-center-text' && !!data.buttonText;
-    const showChecklistDivider = showChecklistInfo;
-    const showGapAfterChecklistCount = showChecklistText;
 
     const buttonClassName = cn(
       'rounded-sdk-resource-center-launcher flex bg-transparent',
@@ -131,28 +126,12 @@ export const ResourceCenterTrigger = forwardRef<HTMLButtonElement, ResourceCente
         }}
         className={buttonClassName}
         onClick={onClick}
-        aria-label={`Open ${data.buttonText}${uncompletedCount > 0 ? ` (${uncompletedCount} remaining)` : ''}`}
+        aria-label={`Open ${data.buttonText}`}
       >
         <div
           ref={setContentRef}
           className="flex items-center whitespace-nowrap px-sdk-resource-center-launcher"
         >
-          {uncompletedCount > 0 && (
-            <span
-              className={cn(
-                'flex h-8 min-w-8 items-center justify-center rounded-full bg-sdk-resource-center-launcher-foreground/10 px-2 text-sm font-bold text-sdk-resource-center-launcher-foreground',
-                showGapAfterChecklistCount && 'mr-sdk-resource-center-launcher-gap',
-              )}
-            >
-              {uncompletedCount}
-            </span>
-          )}
-          {showChecklistText && (
-            <span className="text-sm font-semibold whitespace-nowrap">{launcherText}</span>
-          )}
-          {showChecklistDivider && (
-            <span className="mx-sdk-resource-center-launcher-divider h-sdk-line-height w-px bg-sdk-resource-center-launcher-foreground/20" />
-          )}
           {showResourceCenterText && (
             <span className="mr-sdk-resource-center-launcher-gap text-sm font-semibold whitespace-nowrap">
               {data.buttonText}

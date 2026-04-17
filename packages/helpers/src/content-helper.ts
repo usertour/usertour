@@ -371,6 +371,4 @@ export const isRichTextEmpty = (nodes: RichTextNode[] | undefined): boolean => {
 
 /** Display-only block types that do not emit click analytics. */
 export const isDisplayOnlyBlockType = (type: ResourceCenterBlockType): boolean =>
-  type === ResourceCenterBlockType.RICH_TEXT ||
-  type === ResourceCenterBlockType.CHECKLIST ||
-  type === ResourceCenterBlockType.DIVIDER;
+  type === ResourceCenterBlockType.RICH_TEXT || type === ResourceCenterBlockType.DIVIDER;

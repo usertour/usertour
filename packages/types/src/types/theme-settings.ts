@@ -35,10 +35,7 @@ export type ResourceCenterLauncherIconType =
   | 'plaintext-question-mark'
   | 'custom';
 
-export type ResourceCenterLauncherTextMode =
-  | 'active-checklist-text'
-  | 'resource-center-text'
-  | 'no-text';
+export type ResourceCenterLauncherTextMode = 'resource-center-text' | 'no-text';
 
 export type ResourceCenterLauncherButtonThemeSettings = {
   iconType: ResourceCenterLauncherIconType;
@@ -47,7 +44,6 @@ export type ResourceCenterLauncherButtonThemeSettings = {
   imageHeight: number;
   borderRadius: number | null;
   textMode: ResourceCenterLauncherTextMode;
-  showRemainingTasks: boolean;
   color: {
     background: string;
     hover: string;
@@ -91,6 +87,8 @@ export enum ModalBackdropClickBehavior {
   DO_NOTHING = 'do-nothing',
   DISMISS_FLOW = 'dismiss-flow',
 }
+
+export type BannerAnimationTiming = 'smooth' | 'snappy' | 'gentle' | 'linear';
 
 export type ThemeTypesSettingsColor = {
   background: string;
@@ -174,6 +172,8 @@ export type ThemeTypesSetting = {
     backgroundColor: ThemeTypesSettingsColor;
     textColor: ThemeTypesSettingsColor;
     padding: number;
+    animationDuration: number;
+    animationTiming: BannerAnimationTiming;
   };
   checklistLauncher: {
     borderRadius: number;
@@ -376,6 +376,8 @@ export const defaultSettings: ThemeTypesSetting = {
       active: 'Auto',
     },
     padding: 8,
+    animationDuration: 320,
+    animationTiming: 'smooth',
   },
   mainColor: {
     color: '#0f172a',
@@ -493,8 +495,7 @@ export const defaultSettings: ThemeTypesSetting = {
     height: 60,
     imageHeight: 50,
     borderRadius: null,
-    textMode: 'active-checklist-text',
-    showRemainingTasks: true,
+    textMode: 'resource-center-text',
     color: {
       background: 'Auto',
       hover: 'Auto',
@@ -649,6 +650,8 @@ export const standardDarkSettings: ThemeTypesSetting = {
       active: 'Auto',
     },
     padding: 8,
+    animationDuration: 320,
+    animationTiming: 'smooth',
   },
   mainColor: {
     color: '#ffffff',
@@ -766,8 +769,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
     height: 60,
     imageHeight: 50,
     borderRadius: null,
-    textMode: 'active-checklist-text',
-    showRemainingTasks: true,
+    textMode: 'resource-center-text',
     color: {
       background: 'Auto',
       hover: 'Auto',

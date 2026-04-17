@@ -67,7 +67,6 @@ export const WidgetClass = {
 
   // Banner
   banner: `${PREFIX}-banner`,
-  bannerAnimate: `${PREFIX}-banner--animate`,
   bannerFrame: `${PREFIX}-banner-frame`,
 } as const;
 

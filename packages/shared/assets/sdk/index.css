@@ -312,11 +312,6 @@
   display: flex;
   justify-content: center;
 }
-.usertour-widget-banner--animate {
-  animation-name: usertour-widget-banner-reveal;
-  animation-duration: 320ms;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
 .usertour-widget-banner-frame {
   display: block;
   min-width: 0;

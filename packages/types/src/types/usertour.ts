@@ -130,8 +130,6 @@ export interface StartOptions {
 
 export interface ResourceCenterState {
   isOpen: boolean;
-  hasChecklist: boolean;
-  uncompletedChecklistTaskCount: number;
   unreadAnnouncementCount: number;
 }
 

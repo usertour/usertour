@@ -18,8 +18,6 @@ const getLauncherBorderRadius = (
 // ============================================================================
 
 interface ResourceCenterLauncherProps {
-  uncompletedCount?: number;
-  launcherText?: string;
   onClick?: () => void;
   style?: React.CSSProperties;
   frameStyle?: React.CSSProperties;
@@ -67,15 +65,13 @@ ResourceCenterLauncher.displayName = 'ResourceCenterLauncher';
 
 interface ResourceCenterLauncherFrameProps {
   assets: AssetAttributes[] | undefined;
-  uncompletedCount?: number;
-  launcherText?: string;
 }
 
 export const ResourceCenterLauncherFrame = forwardRef<
   HTMLIFrameElement,
   ResourceCenterLauncherFrameProps
 >((props, ref) => {
-  const { assets, uncompletedCount, launcherText } = props;
+  const { assets } = props;
   const { globalStyle, themeSetting, zIndex } = useResourceCenterContext();
   const [launcherRect, setLauncherRect] = useState<{ width: number; height: number } | null>(null);
 
@@ -104,12 +100,7 @@ export const ResourceCenterLauncherFrame = forwardRef<
         borderRadius: getLauncherBorderRadius(launcher?.borderRadius, launcherHeight),
       }}
     >
-      <ResourceCenterLauncherInFrame
-        globalStyle={globalStyle}
-        onSizeChange={setLauncherRect}
-        uncompletedCount={uncompletedCount}
-        launcherText={launcherText}
-      />
+      <ResourceCenterLauncherInFrame globalStyle={globalStyle} onSizeChange={setLauncherRect} />
     </Frame>
   );
 });
@@ -123,8 +114,6 @@ ResourceCenterLauncherFrame.displayName = 'ResourceCenterLauncherFrame';
 interface ResourceCenterLauncherInFrameProps {
   globalStyle?: string;
   onSizeChange?: (rect: { width: number; height: number }) => void;
-  uncompletedCount?: number;
-  launcherText?: string;
 }
 
 const ResourceCenterLauncherInFrame = (props: ResourceCenterLauncherInFrameProps) => {

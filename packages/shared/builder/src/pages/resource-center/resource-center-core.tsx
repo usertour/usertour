@@ -67,13 +67,6 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         onlyShowBlock: false,
         onlyShowBlockConditions: [],
       };
-    case ResourceCenterBlockType.CHECKLIST:
-      return {
-        id,
-        type: ResourceCenterBlockType.CHECKLIST,
-        onlyShowBlock: false,
-        onlyShowBlockConditions: [],
-      };
     case ResourceCenterBlockType.DIVIDER:
       return {
         id,
@@ -179,10 +172,7 @@ const ResourceCenterCoreBody = () => {
   const allExistingBlockTypes = new Set(
     localData.tabs.flatMap((tab) => tab.blocks.map((block) => block.type)),
   );
-  const singletonBlockTypes: ResourceCenterBlockType[] = [
-    ResourceCenterBlockType.ANNOUNCEMENT,
-    ResourceCenterBlockType.CHECKLIST,
-  ];
+  const singletonBlockTypes: ResourceCenterBlockType[] = [ResourceCenterBlockType.ANNOUNCEMENT];
   const hiddenBlockTypes = new Set(
     singletonBlockTypes.filter((type) => allExistingBlockTypes.has(type)),
   );

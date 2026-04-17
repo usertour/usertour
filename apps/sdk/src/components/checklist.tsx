@@ -63,7 +63,7 @@ const useChecklistStore = (checklist: UsertourChecklist) => {
     linkUrlDecorator,
   } = store;
 
-  if (!checklistData || !openState || store.embeddedInResourceCenter) {
+  if (!checklistData || !openState) {
     return null;
   }
 

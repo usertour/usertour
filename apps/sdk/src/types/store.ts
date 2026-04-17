@@ -35,8 +35,6 @@ export type TourStore = BaseStore & {
 export type ChecklistStore = BaseStore & {
   checklistData?: ChecklistData;
   expanded: boolean;
-  /** When true, standalone checklist UI is hidden because it's embedded in a resource center */
-  embeddedInResourceCenter: boolean;
 };
 
 // Launcher store type

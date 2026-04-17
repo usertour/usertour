@@ -1,7 +1,6 @@
 import type { ElementType } from 'react';
 import {
   RiArrowRightCircleFill,
-  RiCheckboxCircleFill,
   RiFileTextFill,
   RiListCheck3,
   RiMessage3Fill,
@@ -29,7 +28,6 @@ export const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
   [ResourceCenterBlockType.SUB_PAGE]: 'Sub-page',
   [ResourceCenterBlockType.CONTENT_LIST]: 'List of flows/checklists',
   [ResourceCenterBlockType.KNOWLEDGE_BASE]: 'Knowledge base',
-  [ResourceCenterBlockType.CHECKLIST]: 'Checklist',
   [ResourceCenterBlockType.LIVE_CHAT]: 'Live chat',
   [ResourceCenterBlockType.ANNOUNCEMENT]: 'Announcements',
 };
@@ -62,13 +60,6 @@ export const BLOCK_TYPE_OPTIONS: BlockTypeOption[] = [
     label: 'List of flows/checklists',
     description: 'Start content on demand',
     icon: RiListCheck3,
-  },
-  {
-    key: ResourceCenterBlockType.CHECKLIST,
-    value: ResourceCenterBlockType.CHECKLIST,
-    label: 'Checklist',
-    description: 'Show an active checklist inline',
-    icon: RiCheckboxCircleFill,
   },
   {
     key: ResourceCenterBlockType.LIVE_CHAT,

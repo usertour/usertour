@@ -24,7 +24,6 @@ const ACCEPT_FILE_TYPES = 'image/svg+xml,image/png,image/jpeg';
 const MIN_ICON_SIZE = 60;
 
 const textModeItems = [
-  { name: 'Active checklist text', value: 'active-checklist-text' },
   { name: 'Resource center text', value: 'resource-center-text' },
   { name: 'No text', value: 'no-text' },
 ];
@@ -243,20 +242,6 @@ export const ThemeSettingsResourceCenterLauncher = () => {
           defaultValue={launcher.textMode}
           onValueChange={(value: string) => {
             update({ textMode: value as ResourceCenterLauncherTextMode });
-          }}
-          disabled={isViewOnly}
-        />
-        <ThemeSettingSelect
-          text="Show remaining tasks"
-          name="rc-launcher-show-remaining-tasks"
-          items={[
-            { name: 'Show', value: 'true' },
-            { name: 'Hide', value: 'false' },
-          ]}
-          tooltip="Whether to show the number of remaining checklist tasks."
-          defaultValue={String(launcher.showRemainingTasks)}
-          onValueChange={(value: string) => {
-            update({ showRemainingTasks: value === 'true' });
           }}
           disabled={isViewOnly}
         />

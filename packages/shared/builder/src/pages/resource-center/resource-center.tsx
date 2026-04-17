@@ -2,7 +2,6 @@ import { BuilderMode, useBuilderContext } from '../../contexts';
 import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
 import { ResourceCenterCore } from './resource-center-core';
 import { ResourceCenterBlockRichText } from './resource-center-block-rich-text';
-import { ResourceCenterBlockChecklist } from './resource-center-block-checklist';
 import { ResourceCenterBlockDivider } from './resource-center-block-divider';
 import { ResourceCenterBlockAction } from './resource-center-block-action';
 import { ResourceCenterBlockSubPage } from './resource-center-block-sub-page';
@@ -27,10 +26,6 @@ export const ResourceCenterBuilder = () => {
       {currentMode?.mode === BuilderMode.RESOURCE_CENTER_TAB && <ResourceCenterTabSettings />}
       {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&
         currentBlock?.type === ResourceCenterBlockType.RICH_TEXT && <ResourceCenterBlockRichText />}
-      {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&
-        currentBlock?.type === ResourceCenterBlockType.CHECKLIST && (
-          <ResourceCenterBlockChecklist />
-        )}
       {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&
         currentBlock?.type === ResourceCenterBlockType.DIVIDER && <ResourceCenterBlockDivider />}
       {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&

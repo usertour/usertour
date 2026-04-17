@@ -21,30 +21,16 @@ import { logger } from '@/utils';
 import { CommonActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
 import { isConditionsActived, isDisplayOnlyBlockType, storage } from '@usertour/helpers';
-import { UsertourChecklist } from '@/core/usertour-checklist';
 import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
 import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 
-type ResourceCenterChecklistPresentation = {
-  checklist?: UsertourChecklist;
-  launcherText?: string;
-  badgeCount: number;
-  uncompletedCount: number;
-};
-
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
-  getActivatedChecklist(): UsertourChecklist | null {
-    return this.instance.activatedChecklist;
-  }
-
-  getChecklistPresentation(): ResourceCenterChecklistPresentation {
+  getAnnouncementBadgeCount(): number {
     const store = this.getStoreData();
     const resourceCenterData = store?.resourceCenterData;
-    const themeSettings = store?.themeSettings;
-    const checklist = this.getActivatedChecklist() ?? undefined;
 
     // Sum unreadCount from all announcement blocks across all tabs
-    const badgeCount =
+    return (
       resourceCenterData?.tabs?.reduce((total, tab) => {
         return tab.blocks.reduce((sum, block) => {
           if (block.type === ResourceCenterBlockType.ANNOUNCEMENT) {
@@ -52,37 +38,8 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
           }
           return sum;
         }, total);
-      }, 0) ?? 0;
-
-    // Check if any tab contains a checklist block
-    const hasChecklistBlock =
-      resourceCenterData?.tabs?.some((tab) =>
-        tab.blocks.some((block) => block.type === ResourceCenterBlockType.CHECKLIST),
-      ) ?? false;
-
-    if (!hasChecklistBlock || !checklist) {
-      return {
-        checklist: undefined,
-        launcherText: undefined,
-        badgeCount,
-        uncompletedCount: 0,
-      };
-    }
-
-    const checklistStore = checklist.getSnapshot();
-    const items =
-      checklistStore?.checklistData?.items?.filter(
-        (item) => item?.isVisible !== false && !item?.isCompleted,
-      ) ?? [];
-
-    return {
-      checklist,
-      launcherText: checklistStore?.checklistData?.buttonText,
-      badgeCount,
-      uncompletedCount: themeSettings?.resourceCenterLauncherButton?.showRemainingTasks
-        ? items.length
-        : 0,
-    };
+      }, 0) ?? 0
+    );
   }
 
   protected initializeActionHandlers(): void {
