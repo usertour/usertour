@@ -10,7 +10,6 @@ import {
 } from 'react';
 import type {
   ResourceCenterActionBlock,
-  ResourceCenterAnnouncementBlock,
   ResourceCenterContentListBlock,
   ResourceCenterDividerBlock,
   ResourceCenterKnowledgeBaseBlock,
@@ -20,8 +19,6 @@ import type {
   ResourceCenterPageEntry,
   ResourceCenterSubPageBlock,
   KnowledgeBaseArticleItem as KnowledgeBaseArticle,
-  AnnouncementListItem,
-  AnnouncementDetail as AnnouncementDetailType,
   UserTourTypes,
 } from '@usertour/types';
 import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
@@ -233,7 +230,6 @@ export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowP
     [ResourceCenterBlockType.SUB_PAGE]: 'Untitled sub-page',
     [ResourceCenterBlockType.KNOWLEDGE_BASE]: 'Knowledge base',
     [ResourceCenterBlockType.CONTENT_LIST]: 'Content list',
-    [ResourceCenterBlockType.ANNOUNCEMENT]: 'Announcements',
   };
   const label = nameText || fallbackLabels[block.type] || block.type;
 
@@ -570,239 +566,7 @@ export const ContentListDetail = memo(({ block }: ContentListDetailProps) => {
 ContentListDetail.displayName = 'ContentListDetail';
 
 // ============================================================================
-// Announcement — list view
-// ============================================================================
-
-/**
- * Format a date string into a human-readable label like "Tuesday, Apr 14".
- */
-const formatAnnouncementDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-/**
- * Group announcements by date label and return groups in order.
- */
-const groupAnnouncementsByDate = (items: AnnouncementListItem[]) => {
-  const groups: { label: string; items: AnnouncementListItem[] }[] = [];
-  let currentLabel = '';
-  for (const item of items) {
-    const label = item.time ? formatAnnouncementDate(item.time) : '';
-    if (label !== currentLabel) {
-      currentLabel = label;
-      groups.push({ label, items: [] });
-    }
-    groups[groups.length - 1].items.push(item);
-  }
-  return groups;
-};
-
-interface AnnouncementListDetailProps {
-  block: ResourceCenterAnnouncementBlock;
-}
-
-export const AnnouncementListDetail = memo(({ block }: AnnouncementListDetailProps) => {
-  const { onListAnnouncements, onMarkAnnouncementSeen, actions, userAttributes } =
-    useResourceCenterContext();
-  const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [truncated, setTruncated] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // Initial load
-  useEffect(() => {
-    if (!onListAnnouncements) return;
-    setIsLoading(true);
-    onListAnnouncements(null)
-      .then((result) => {
-        setAnnouncements(result.announcements);
-        setTruncated(result.truncated);
-      })
-      .finally(() => setIsLoading(false));
-  }, [onListAnnouncements]);
-
-  // Load more
-  const loadMore = useCallback(async () => {
-    if (!onListAnnouncements || isLoadingMore || !truncated) return;
-    const lastItem = announcements[announcements.length - 1];
-    if (!lastItem) return;
-    setIsLoadingMore(true);
-    try {
-      const result = await onListAnnouncements(lastItem.id);
-      setAnnouncements((prev) => [...prev, ...result.announcements]);
-      setTruncated(result.truncated);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [onListAnnouncements, isLoadingMore, truncated, announcements]);
-
-  // Infinite scroll
-  const handleScroll = useCallback(() => {
-    const container = scrollContainerRef.current;
-    if (!container || isLoadingMore || !truncated) return;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    if (scrollHeight - scrollTop - clientHeight < 100) {
-      loadMore();
-    }
-  }, [loadMore, isLoadingMore, truncated]);
-
-  // Click "Read more" — push detail page onto stack
-  const handleReadMore = useCallback(
-    (item: AnnouncementListItem) => {
-      // Mark as seen
-      if (!item.seen) {
-        onMarkAnnouncementSeen?.(item.id, item.versionId);
-        setAnnouncements((prev) => prev.map((a) => (a.id === item.id ? { ...a, seen: true } : a)));
-      }
-      actions.push({
-        type: 'announcement_detail',
-        block,
-        announcementId: item.id,
-      });
-    },
-    [actions, block, onMarkAnnouncementSeen],
-  );
-
-  const dateGroups = useMemo(() => groupAnnouncementsByDate(announcements), [announcements]);
-
-  return (
-    <div className="flex flex-col p-4" ref={scrollContainerRef} onScroll={handleScroll}>
-      {isLoading && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>
-      )}
-
-      {!isLoading && announcements.length === 0 && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">No announcements yet</div>
-      )}
-
-      {!isLoading &&
-        dateGroups.map((group) => (
-          <div key={group.label}>
-            {/* Date separator */}
-            {group.label && (
-              <div className="flex items-center gap-3 my-3">
-                <div className="flex-1 h-px bg-sdk-foreground/15" />
-                <span className="text-xs text-sdk-foreground/50 whitespace-nowrap">
-                  {group.label}
-                </span>
-                <div className="flex-1 h-px bg-sdk-foreground/15" />
-              </div>
-            )}
-
-            {group.items.map((item) => (
-              <div key={item.id} className="mb-4">
-                {/* Title */}
-                <div className="flex items-center gap-2">
-                  {!item.seen && (
-                    <span className="flex-shrink-0 h-2 w-2 rounded-full bg-sdk-primary" />
-                  )}
-                  <h3 className="text-base font-bold text-sdk-foreground">{item.title}</h3>
-                </div>
-
-                {/* Intro content */}
-                <div className="text-sm text-sdk-foreground mt-1">
-                  <ContentEditorSerialize
-                    contents={item.content as any}
-                    userAttributes={userAttributes}
-                  />
-                </div>
-
-                {/* Read more button */}
-                {item.moreEnabled && (
-                  <div className="flex justify-end mt-2">
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-sm text-sdk-brand-background rounded-md px-2 py-1 hover:bg-sdk-hover active:bg-sdk-active cursor-pointer"
-                      onClick={() => handleReadMore(item)}
-                    >
-                      {item.moreButtonText || 'Read more'}
-                      <span className="text-xs">→</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ))}
-
-      {isLoadingMore && (
-        <div className="py-2 text-center text-xs text-sdk-foreground/50">Loading more...</div>
-      )}
-    </div>
-  );
-});
-
-AnnouncementListDetail.displayName = 'AnnouncementListDetail';
-
-// ============================================================================
-// Announcement — detail view (pushed onto page stack, has Back header)
-// ============================================================================
-
-interface AnnouncementDetailViewProps {
-  announcementId: string;
-}
-
-export const AnnouncementDetailView = memo(({ announcementId }: AnnouncementDetailViewProps) => {
-  const { onGetAnnouncement, onMarkAnnouncementSeen, userAttributes } = useResourceCenterContext();
-  const [detail, setDetail] = useState<AnnouncementDetailType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!onGetAnnouncement) return;
-    setIsLoading(true);
-    onGetAnnouncement(announcementId)
-      .then((result) => {
-        setDetail(result);
-        if (result && !result.seen) {
-          onMarkAnnouncementSeen?.(result.id, result.versionId);
-        }
-      })
-      .finally(() => setIsLoading(false));
-  }, [onGetAnnouncement, onMarkAnnouncementSeen, announcementId]);
-
-  if (isLoading) {
-    return <div className="py-4 text-center text-sm text-sdk-foreground/50">Loading...</div>;
-  }
-
-  if (!detail) return null;
-
-  return (
-    <div className="flex flex-col gap-3 p-4">
-      <div>
-        <h3 className="text-base font-bold text-sdk-foreground">{detail.title}</h3>
-        {detail.time && (
-          <div className="text-xs text-sdk-foreground/50 mt-1">
-            {formatAnnouncementDate(detail.time)}
-          </div>
-        )}
-      </div>
-
-      <div className="text-sm text-sdk-foreground">
-        <ContentEditorSerialize contents={detail.content as any} userAttributes={userAttributes} />
-      </div>
-
-      {detail.moreContent && (
-        <div className="text-sm text-sdk-foreground">
-          <ContentEditorSerialize
-            contents={detail.moreContent as any}
-            userAttributes={userAttributes}
-          />
-        </div>
-      )}
-    </div>
-  );
-});
-
-AnnouncementDetailView.displayName = 'AnnouncementDetailView';
-
-// ============================================================================
-// DetailView — switch on page type (replaces 4 if-cascades)
+// DetailView — switch on page type
 // ============================================================================
 
 interface DetailViewProps {
@@ -818,10 +582,6 @@ export const DetailView = memo(({ page, subPageEditSlot }: DetailViewProps) => {
       return <KnowledgeBaseDetail block={page.block} />;
     case ResourceCenterBlockType.CONTENT_LIST:
       return <ContentListDetail block={page.block} />;
-    case ResourceCenterBlockType.ANNOUNCEMENT:
-      return <AnnouncementListDetail block={page.block} />;
-    case 'announcement_detail':
-      return <AnnouncementDetailView announcementId={page.announcementId} />;
     default:
       return null;
   }
@@ -1001,8 +761,7 @@ export const ResourceCenterBlocks = memo(
               )}
               {(block.type === ResourceCenterBlockType.SUB_PAGE ||
                 block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
-                block.type === ResourceCenterBlockType.CONTENT_LIST ||
-                block.type === ResourceCenterBlockType.ANNOUNCEMENT) && (
+                block.type === ResourceCenterBlockType.CONTENT_LIST) && (
                 <NavigableBlockRow
                   block={block as ResourceCenterNavigableBlock}
                   onNavigate={actions.push}

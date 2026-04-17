@@ -147,22 +147,6 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
       />
     ),
   },
-  announcements: {
-    title: 'Announcements',
-    description: (
-      <ContentDescription text="Share product updates, release notes, and news with your users through the Resource Center." />
-    ),
-    emptyTitle: 'No announcements added',
-    emptyDescription: 'You have not added any announcements. Add one below.',
-    createButtonText: 'Create Announcement',
-    createForm: ({ isOpen, onClose }) => (
-      <ContentCreateForm
-        contentType={ContentDataType.ANNOUNCEMENT}
-        isOpen={isOpen}
-        onClose={onClose}
-      />
-    ),
-  },
 };
 
 // Support 'content' as alias for 'flows'

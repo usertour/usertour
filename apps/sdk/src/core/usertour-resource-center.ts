@@ -7,11 +7,8 @@ import {
   ResourceCenterData,
   ResourceCenterLiveChatBlock,
   ThemeTypesSetting,
-  ResourceCenterAnnouncementBlock,
   ResourceCenterBlockContentItem,
   SearchKnowledgeBaseResult,
-  ListAnnouncementsResult,
-  AnnouncementDetail,
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
@@ -25,23 +22,6 @@ import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
 import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
-  getAnnouncementBadgeCount(): number {
-    const store = this.getStoreData();
-    const resourceCenterData = store?.resourceCenterData;
-
-    // Sum unreadCount from all announcement blocks across all tabs
-    return (
-      resourceCenterData?.tabs?.reduce((total, tab) => {
-        return tab.blocks.reduce((sum, block) => {
-          if (block.type === ResourceCenterBlockType.ANNOUNCEMENT) {
-            return sum + ((block as ResourceCenterAnnouncementBlock).unreadCount ?? 0);
-          }
-          return sum;
-        }, total);
-      }, 0) ?? 0
-    );
-  }
-
   protected initializeActionHandlers(): void {
     this.registerActionHandlers([new CommonActionHandler()]);
   }
@@ -212,35 +192,6 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       }
     } catch (error) {
       logger.error('Failed to start content from content list:', error);
-    }
-  }
-
-  // ── Announcement operations ──────────────────────────────────────────
-
-  async listAnnouncements(cursor: string | null): Promise<ListAnnouncementsResult> {
-    try {
-      return await this.socketService.listAnnouncements({ cursor });
-    } catch (error) {
-      logger.error('Failed to list announcements:', error);
-      return { announcements: [], pageSize: 0, truncated: false };
-    }
-  }
-
-  async getAnnouncement(contentId: string): Promise<AnnouncementDetail | null> {
-    try {
-      return await this.socketService.getAnnouncement({ contentId });
-    } catch (error) {
-      logger.error('Failed to get announcement:', error);
-      return null;
-    }
-  }
-
-  async markAnnouncementSeen(contentId: string, versionId: string): Promise<boolean> {
-    try {
-      return await this.socketService.markAnnouncementSeen({ contentId, versionId });
-    } catch (error) {
-      logger.error('Failed to mark announcement seen:', error);
-      return false;
     }
   }
 

@@ -17,7 +17,6 @@ export * from './types/launcher';
 export * from './types/banner';
 export * from './types/checklist';
 export * from './types/resource-center';
-export * from './types/announcement';
 export * from './types/team';
 export * from './types/subscription';
 export * from './types/integrations';

@@ -137,16 +137,6 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         onlyShowBlock: false,
         onlyShowBlockConditions: [],
       };
-    case ResourceCenterBlockType.ANNOUNCEMENT:
-      return {
-        id,
-        type: ResourceCenterBlockType.ANNOUNCEMENT,
-        name: [{ type: 'paragraph', children: [{ text: 'Announcements' }] }],
-        iconSource: LauncherIconSource.BUILTIN,
-        iconType: 'send-ins-fill',
-        onlyShowBlock: false,
-        onlyShowBlockConditions: [],
-      };
     default:
       return null;
   }
@@ -167,18 +157,6 @@ const ResourceCenterCoreBody = () => {
       addBlock(block);
     }
   };
-
-  // Collect block types that already exist across all tabs and only allow one instance
-  const allExistingBlockTypes = new Set(
-    localData.tabs.flatMap((tab) => tab.blocks.map((block) => block.type)),
-  );
-  const singletonBlockTypes: ResourceCenterBlockType[] = [ResourceCenterBlockType.ANNOUNCEMENT];
-  const hiddenBlockTypes = new Set(
-    singletonBlockTypes.filter((type) => allExistingBlockTypes.has(type)),
-  );
-  const filteredBlockOptions = BLOCK_TYPE_OPTIONS.filter(
-    (option) => !option.value || !hiddenBlockTypes.has(option.value),
-  );
 
   return (
     <CardContent className="bg-background-900 grow p-0 overflow-hidden">
@@ -239,7 +217,7 @@ const ResourceCenterCoreBody = () => {
                     className="min-w-[280px]"
                     style={{ zIndex: zIndex + EXTENSION_SELECT }}
                   >
-                    {filteredBlockOptions.map(
+                    {BLOCK_TYPE_OPTIONS.map(
                       ({ key, value, label, description, icon: Icon, disabled }) => {
                         return (
                           <DropdownMenuItem

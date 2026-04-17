@@ -20,8 +20,7 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
     return null;
   }
 
-  const isEventBased =
-    contentType === ContentDataType.TRACKER || contentType === ContentDataType.ANNOUNCEMENT;
+  const isEventBased = contentType === ContentDataType.TRACKER;
 
   return (
     <>

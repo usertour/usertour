@@ -51,13 +51,6 @@ export const CONTENT_TYPE_META: Record<ContentDataType, ContentTypeMeta> = {
     builderPathSegment: 'resource-centers',
     hasBuilder: true,
   },
-  [ContentDataType.ANNOUNCEMENT]: {
-    dataType: ContentDataType.ANNOUNCEMENT,
-    singular: 'announcement',
-    plural: 'announcements',
-    builderPathSegment: 'announcements',
-    hasBuilder: false,
-  },
 };
 
 export const getContentTypeMeta = (type?: ContentDataType | null): ContentTypeMeta =>

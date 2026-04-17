@@ -132,19 +132,18 @@ export const ContentDetailHeader = () => {
               </div>
             )}
             {/* <ContentOpenBuilder content={content} /> */}
-            {content.type !== ContentDataType.TRACKER &&
-              content.type !== ContentDataType.ANNOUNCEMENT && (
-                <Button
-                  type="button"
-                  variant={'outline'}
-                  onClick={() => openBuilder(content, contentType)}
-                  className="flex-none"
-                  disabled={isViewOnly || isSaving}
-                >
-                  <EnterIcon className="mr-2" />
-                  Edit In Builder
-                </Button>
-              )}
+            {content.type !== ContentDataType.TRACKER && (
+              <Button
+                type="button"
+                variant={'outline'}
+                onClick={() => openBuilder(content, contentType)}
+                className="flex-none"
+                disabled={isViewOnly || isSaving}
+              >
+                <EnterIcon className="mr-2" />
+                Edit In Builder
+              </Button>
+            )}
             <Button
               disabled={isPublishDisabled}
               onClick={() => {

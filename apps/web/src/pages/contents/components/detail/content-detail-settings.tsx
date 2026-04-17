@@ -20,9 +20,6 @@ const getAutoStartRulesName = (contentType: ContentDataType) => {
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     return 'Show resource center if...';
   }
-  if (contentType === ContentDataType.ANNOUNCEMENT) {
-    return 'Only show announcement if...';
-  }
   return `Auto-start ${contentType} if...`;
 };
 
@@ -30,7 +27,6 @@ const SHOW_ONLY_CONTENT_TYPES = [
   ContentDataType.LAUNCHER,
   ContentDataType.BANNER,
   ContentDataType.RESOURCE_CENTER,
-  ContentDataType.ANNOUNCEMENT,
 ];
 
 const AutoStartTooltips = (contentType: ContentDataType) => {
@@ -40,9 +36,7 @@ const AutoStartTooltips = (contentType: ContentDataType) => {
         ? 'banner'
         : contentType === ContentDataType.RESOURCE_CENTER
           ? 'resource center'
-          : contentType === ContentDataType.ANNOUNCEMENT
-            ? 'announcement'
-            : 'launcher';
+          : 'launcher';
     return (
       <>
         Show the {contentLabel} if the user matches the given condition. If the user doesn't match

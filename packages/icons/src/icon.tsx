@@ -2346,4 +2346,3 @@ BadgeDistributionIcon.displayName = 'BadgeDistributionIcon';
 
 export { RiQuestionFill as ResourceCenterIcon } from '@remixicon/react';
 export { RiFlashlightFill as EventTrackerIcon } from '@remixicon/react';
-export { RiSendInsFill as AnnouncementIcon } from '@remixicon/react';

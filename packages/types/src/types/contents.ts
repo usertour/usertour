@@ -28,7 +28,6 @@ export enum ContentDataType {
   BANNER = 'banner',
   TRACKER = 'tracker',
   RESOURCE_CENTER = 'resource-center',
-  ANNOUNCEMENT = 'announcement',
 }
 
 export enum ContentTypeName {
@@ -38,7 +37,6 @@ export enum ContentTypeName {
   RESOURCE_CENTERS = 'resource-centers',
   BANNERS = 'banners',
   TRACKERS = 'trackers',
-  ANNOUNCEMENTS = 'announcements',
 }
 
 export enum LauncherDataType {

@@ -109,7 +109,6 @@ export enum BizEvents {
   RESOURCE_CENTER_DISMISSED = 'resource_center_dismissed',
   EVENT_TRACKER_COMPLETED = 'event_tracker_completed',
   QUESTION_ANSWERED = 'question_answered',
-  ANNOUNCEMENT_SEEN = 'announcement_seen',
 }
 
 export enum EventAttributes {
@@ -164,13 +163,6 @@ export enum EventAttributes {
   EVENT_TRACKER_NAME = 'event_tracker_name',
   EVENT_TRACKER_VERSION_ID = 'event_tracker_version_id',
   EVENT_TRACKER_VERSION_NUMBER = 'event_tracker_version_number',
-  // Announcement attributes
-  ANNOUNCEMENT_ID = 'announcement_id',
-  ANNOUNCEMENT_NAME = 'announcement_name',
-  ANNOUNCEMENT_VERSION_ID = 'announcement_version_id',
-  ANNOUNCEMENT_VERSION_NUMBER = 'announcement_version_number',
-  ANNOUNCEMENT_LEVEL = 'announcement_level',
-  ANNOUNCEMENT_SOURCE = 'announcement_source',
   // Common attributes
   PAGE_URL = 'page_url',
   VIEWPORT_WIDTH = 'viewport_width',

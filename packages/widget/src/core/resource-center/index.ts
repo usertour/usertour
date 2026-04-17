@@ -43,7 +43,6 @@ export {
   SubPageDetail,
   KnowledgeBaseDetail,
   ContentListDetail,
-  AnnouncementListDetail,
   DetailView,
 } from './resource-center-body';
 

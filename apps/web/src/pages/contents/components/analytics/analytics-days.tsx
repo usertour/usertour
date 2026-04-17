@@ -34,18 +34,6 @@ const generateChartConfig = (
         },
       };
     }
-    if (contentType === ContentDataType.ANNOUNCEMENT) {
-      return {
-        totalViews: {
-          label: 'Views',
-          color: 'hsl(var(--chart-1))',
-        },
-        uniqueViews: {
-          label: 'Unique views',
-          color: 'hsl(var(--chart-2))',
-        },
-      };
-    }
     if (contentType === ContentDataType.LAUNCHER) {
       return {
         uniqueViews: {
@@ -305,8 +293,7 @@ export const AnalyticsDays = () => {
   const showRateTab =
     contentType !== ContentDataType.BANNER &&
     contentType !== ContentDataType.TRACKER &&
-    contentType !== ContentDataType.RESOURCE_CENTER &&
-    contentType !== ContentDataType.ANNOUNCEMENT;
+    contentType !== ContentDataType.RESOURCE_CENTER;
 
   return (
     <>

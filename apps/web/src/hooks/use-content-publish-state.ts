@@ -3,7 +3,7 @@ import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { isPublishedInAllEnvironments } from '@/utils/content';
-import { ContentDataType, type AnnouncementData } from '@usertour/types';
+import { ContentDataType } from '@usertour/types';
 import { useMemo } from 'react';
 
 export const useContentPublishState = () => {
@@ -19,11 +19,6 @@ export const useContentPublishState = () => {
 
     if (isViewOnly || isSaving) {
       return true;
-    }
-
-    if (content?.type === ContentDataType.ANNOUNCEMENT) {
-      const announcementData = (version?.data ?? {}) as AnnouncementData;
-      return !announcementData.title?.trim();
     }
 
     if (content?.type !== ContentDataType.TRACKER) {

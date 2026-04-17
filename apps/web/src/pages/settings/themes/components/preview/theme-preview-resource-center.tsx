@@ -13,40 +13,9 @@ import {
   ResourceCenterBlockType,
   ResourceCenterData,
   ThemeTypesSetting,
-  type ListAnnouncementsResult,
-  type AnnouncementDetail,
 } from '@usertour/types';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
-import { useCallback, useEffect, useState } from 'react';
-
-// Helper to build a text content block for MESSAGE blocks
-const makeTextContent = (paragraphs: Array<{ text: string; bold?: boolean }>) =>
-  [
-    {
-      element: { type: 'group' },
-      children: [
-        {
-          element: {
-            type: 'column',
-            style: {},
-            width: { type: 'fill' },
-            justifyContent: 'justify-start',
-          },
-          children: [
-            {
-              element: {
-                data: paragraphs.map((p) => ({
-                  type: 'paragraph',
-                  children: [p.bold ? { bold: true, text: p.text } : { text: p.text }],
-                })),
-                type: 'text',
-              },
-            },
-          ],
-        },
-      ],
-    },
-  ] as any;
+import { useEffect, useState } from 'react';
 
 const defaultResourceCenterPreviewData: ResourceCenterData = {
   buttonText: 'Help',
@@ -145,23 +114,6 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
         },
       ],
     },
-    {
-      id: 'preview-news-tab',
-      name: 'News',
-      iconSource: LauncherIconSource.BUILTIN,
-      iconType: 'notification-line',
-      blocks: [
-        {
-          id: 'preview-announcement',
-          type: ResourceCenterBlockType.ANNOUNCEMENT,
-          name: [{ type: 'paragraph', children: [{ text: 'Announcements' }] }],
-          iconSource: LauncherIconSource.BUILTIN,
-          iconType: 'megaphone-line',
-          onlyShowBlock: false,
-          onlyShowBlockConditions: [],
-        },
-      ],
-    },
   ] as any,
 };
 
@@ -178,46 +130,6 @@ const previewContentListItems = [
   },
 ];
 
-const previewAnnouncementItems = [
-  {
-    id: 'preview-ann-1',
-    versionId: 'v1',
-    title: 'New dashboard redesign',
-    content: makeTextContent([
-      { text: 'We have completely redesigned the dashboard for a better experience.' },
-    ]),
-    moreEnabled: true,
-    moreButtonText: 'Read more',
-    level: 'badge',
-    seen: false,
-    time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'preview-ann-2',
-    versionId: 'v1',
-    title: 'API v2 is now available',
-    content: makeTextContent([
-      { text: 'Check out the new API endpoints and improved performance.' },
-    ]),
-    moreEnabled: false,
-    moreButtonText: 'Read more',
-    level: 'silent',
-    seen: true,
-    time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'preview-ann-3',
-    versionId: 'v1',
-    title: 'Bug fixes and improvements',
-    content: makeTextContent([{ text: 'Various bug fixes and stability improvements.' }]),
-    moreEnabled: false,
-    moreButtonText: 'Read more',
-    level: 'silent',
-    seen: true,
-    time: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-] as any;
-
 interface ThemePreviewResourceCenterProps {
   expanded?: boolean;
   settings?: ThemeTypesSetting;
@@ -232,23 +144,6 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
   useEffect(() => {
     setExpandedState(expanded);
   }, [expanded]);
-
-  const handleListAnnouncements = useCallback(
-    async (): Promise<ListAnnouncementsResult> => ({
-      announcements: previewAnnouncementItems,
-      pageSize: 10,
-      truncated: false,
-    }),
-    [],
-  );
-
-  const handleGetAnnouncement = useCallback(
-    async (contentId: string): Promise<AnnouncementDetail | null> => {
-      const item = previewAnnouncementItems.find((a: any) => a.id === contentId);
-      return item ? { ...item, moreContent: null } : null;
-    },
-    [],
-  );
 
   if (!settings) return null;
 
@@ -268,7 +163,6 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
       <ResourceCenterRoot
         data={defaultResourceCenterPreviewData}
         themeSettings={settings}
-        badgeCount={0}
         expanded={expandedState}
         onExpandedChange={async (open: boolean) => {
           setExpandedState(open);
@@ -276,8 +170,6 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
         zIndex={10000}
         showMadeWith={shouldShowMadeWith}
         contentListItems={previewContentListItems}
-        onListAnnouncements={handleListAnnouncements}
-        onGetAnnouncement={handleGetAnnouncement}
       >
         <ResourceCenterStyleProvider>
           <ResourceCenterPanel mode="dom" openHeightOverride={600}>

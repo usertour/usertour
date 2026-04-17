@@ -75,14 +75,11 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
 
   if (!themeSettings || !resourceCenterData) return <></>;
 
-  const badgeCount = resourceCenter.getAnnouncementBadgeCount();
-
   return (
     <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>
       <ResourceCenterRoot
         data={resourceCenterData}
         themeSettings={themeSettings}
-        badgeCount={badgeCount}
         expanded={expanded}
         onExpandedChange={resourceCenter.expand}
         zIndex={zIndex}
@@ -98,11 +95,6 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         onLiveChatClick={resourceCenter.handleLiveChatClick}
         onSearchKnowledgeBase={(blockId, query, offset) =>
           resourceCenter.searchKnowledgeBase(blockId, query, offset)
-        }
-        onListAnnouncements={(cursor) => resourceCenter.listAnnouncements(cursor)}
-        onGetAnnouncement={(contentId) => resourceCenter.getAnnouncement(contentId)}
-        onMarkAnnouncementSeen={(contentId, versionId) =>
-          resourceCenter.markAnnouncementSeen(contentId, versionId)
         }
       >
         <ResourceCenterStyleProvider>

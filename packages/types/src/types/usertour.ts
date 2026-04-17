@@ -130,7 +130,6 @@ export interface StartOptions {
 
 export interface ResourceCenterState {
   isOpen: boolean;
-  unreadAnnouncementCount: number;
 }
 
 // interface ScrollPadding {

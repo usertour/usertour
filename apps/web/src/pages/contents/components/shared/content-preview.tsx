@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useEventListContext } from '@/contexts/event-list-context';
-import { EyeNoneIcon, EventTrackerIcon, AnnouncementIcon } from '@usertour-packages/icons';
+import { EyeNoneIcon, EventTrackerIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import {
   BannerContainer,
@@ -36,13 +36,10 @@ import {
 } from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import {
-  AnnouncementData,
-  AnnouncementDistribution,
   AvatarType,
   BannerData,
   ChecklistData,
   ContentVersion,
-  DEFAULT_ANNOUNCEMENT_DATA,
   DEFAULT_BANNER_DATA,
   LauncherData,
   ProgressBarPosition,
@@ -337,32 +334,6 @@ const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) 
   );
 };
 
-const DISTRIBUTION_LABELS: Record<AnnouncementDistribution, string> = {
-  [AnnouncementDistribution.SILENT]: 'Silent',
-  [AnnouncementDistribution.BADGE]: 'Badge',
-  [AnnouncementDistribution.BOOSTED]: 'Boosted',
-};
-
-const AnnouncementPreview = ({ currentVersion }: { currentVersion: ContentVersion }) => {
-  const data = (currentVersion.data ?? DEFAULT_ANNOUNCEMENT_DATA) as AnnouncementData;
-  const title = data.title || 'Untitled announcement';
-  const distribution = data.distribution ?? AnnouncementDistribution.SILENT;
-
-  return (
-    <div className="flex flex-col items-center justify-center h-full w-full gap-3 px-6">
-      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-        <AnnouncementIcon className="w-5 h-5 text-primary" />
-      </div>
-      <div className="flex flex-col items-center gap-1 text-center w-full max-w-[260px]">
-        <span className="text-sm font-medium text-foreground truncate max-w-full">{title}</span>
-        <span className="text-xs text-muted-foreground">
-          {DISTRIBUTION_LABELS[distribution]} distribution
-        </span>
-      </div>
-    </div>
-  );
-};
-
 export {
   FlowPreview,
   LauncherPreview,
@@ -370,7 +341,6 @@ export {
   ResourceCenterPreview,
   BannerPreviewContent,
   TrackerPreview,
-  AnnouncementPreview,
   EmptyContentPreview,
   ScaledPreviewContainer,
 };

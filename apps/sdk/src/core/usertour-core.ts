@@ -545,7 +545,6 @@ export class UsertourCore extends Evented {
     }
     return {
       isOpen: store.expanded,
-      unreadAnnouncementCount: this.activatedResourceCenter.getAnnouncementBadgeCount(),
     };
   }
 

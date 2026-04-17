@@ -6,7 +6,6 @@ import {
   ClientContext,
   ContentDataType,
   ResourceCenterData,
-  AnnouncementData,
 } from '@usertour/types';
 import {
   isDisplayOnlyBlockType,
@@ -829,35 +828,5 @@ export const buildTrackerCompletedEventData = (
     [EventAttributes.EVENT_TRACKER_NAME]: content.name,
     [EventAttributes.EVENT_TRACKER_VERSION_ID]: version.id,
     [EventAttributes.EVENT_TRACKER_VERSION_NUMBER]: version.sequence,
-  };
-};
-
-// ============================================================================
-// Announcement Event Data Builders
-// ============================================================================
-
-/**
- * Build event data for announcement seen events.
- * Announcements do not use BizSession — event data is built directly
- * from content and version records, similar to the tracker pattern.
- * @param content - The announcement content record
- * @param version - The announcement version record (with data containing AnnouncementData)
- * @param source - Where the announcement was seen (e.g. 'resource_center')
- * @returns Announcement seen event data
- */
-export const buildAnnouncementSeenEventData = (
-  content: { id: string; name: string },
-  version: { id: string; sequence: number; data: unknown },
-  source: string,
-): Record<string, any> => {
-  const announcementData = version.data as AnnouncementData | undefined;
-
-  return {
-    [EventAttributes.ANNOUNCEMENT_ID]: content.id,
-    [EventAttributes.ANNOUNCEMENT_NAME]: content.name,
-    [EventAttributes.ANNOUNCEMENT_VERSION_ID]: version.id,
-    [EventAttributes.ANNOUNCEMENT_VERSION_NUMBER]: version.sequence,
-    [EventAttributes.ANNOUNCEMENT_LEVEL]: announcementData?.distribution ?? 'silent',
-    [EventAttributes.ANNOUNCEMENT_SOURCE]: source,
   };
 };

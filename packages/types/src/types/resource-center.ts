@@ -15,7 +15,6 @@ export enum ResourceCenterBlockType {
   CONTENT_LIST = 'content-list',
   KNOWLEDGE_BASE = 'knowledge-base',
   LIVE_CHAT = 'live-chat',
-  ANNOUNCEMENT = 'announcement',
 }
 
 // ============================================================================
@@ -104,17 +103,6 @@ export interface ResourceCenterLiveChatBlock extends ResourceCenterBlockConditio
   customLiveChatCode: string;
 }
 
-export interface ResourceCenterAnnouncementBlock extends ResourceCenterBlockConditionFields {
-  id: string;
-  name: RichTextNode[];
-  type: ResourceCenterBlockType.ANNOUNCEMENT;
-  iconSource: LauncherIconSource;
-  iconType: string;
-  iconUrl?: string;
-  /** Number of unread announcements (populated by server at session build time) */
-  unreadCount?: number;
-}
-
 export interface ContentListItem {
   contentId: string;
   contentType: 'flow' | 'checklist';
@@ -152,15 +140,13 @@ export type ResourceCenterBlock =
   | ResourceCenterSubPageBlock
   | ResourceCenterKnowledgeBaseBlock
   | ResourceCenterContentListBlock
-  | ResourceCenterLiveChatBlock
-  | ResourceCenterAnnouncementBlock;
+  | ResourceCenterLiveChatBlock;
 
 /** Navigable block types — blocks that push a detail view when clicked. */
 export type ResourceCenterNavigableBlock =
   | ResourceCenterSubPageBlock
   | ResourceCenterKnowledgeBaseBlock
-  | ResourceCenterContentListBlock
-  | ResourceCenterAnnouncementBlock;
+  | ResourceCenterContentListBlock;
 
 // ============================================================================
 // Tab
@@ -195,18 +181,10 @@ export const DEFAULT_RESOURCE_CENTER_DATA: ResourceCenterData = {
 // Navigation (used by widget)
 // ============================================================================
 
-export type ResourceCenterAnnouncementDetailPage = {
-  type: 'announcement_detail';
-  block: ResourceCenterAnnouncementBlock;
-  announcementId: string;
-};
-
 export type ResourceCenterPageEntry =
   | { type: ResourceCenterBlockType.SUB_PAGE; block: ResourceCenterSubPageBlock }
   | { type: ResourceCenterBlockType.KNOWLEDGE_BASE; block: ResourceCenterKnowledgeBaseBlock }
-  | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock }
-  | { type: ResourceCenterBlockType.ANNOUNCEMENT; block: ResourceCenterAnnouncementBlock }
-  | ResourceCenterAnnouncementDetailPage;
+  | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock };
 
 export interface ResourceCenterNavigationState {
   activeTabId: string;

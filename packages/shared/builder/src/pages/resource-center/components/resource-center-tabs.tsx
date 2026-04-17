@@ -264,9 +264,9 @@ export const ResourceCenterTabs = () => {
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>
-                  If a tab contains only one navigable block (such as Sub-page, List of
-                  flows/checklists, or Announcements), its detail view will be displayed directly
-                  without requiring a click.
+                  If a tab contains only one navigable block (such as Sub-page or List of
+                  flows/checklists), its detail view will be displayed directly without requiring a
+                  click.
                 </p>
               </TooltipContent>
             </Tooltip>
