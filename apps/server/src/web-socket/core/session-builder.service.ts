@@ -17,6 +17,7 @@ import {
   extractThemeVariationsAttributeIds,
   getAttributeValue,
   evaluateChecklistItemsWithContext,
+  evaluateResourceCenterBlocksWithContext,
   extractLauncherAttrCodes,
   isExpandPending,
   extractChecklistAttrCodes,
@@ -442,8 +443,14 @@ export class SessionBuilderService {
     customContentVersion: CustomContentVersion,
     socketData: SocketData,
   ): Promise<CustomContentSession> {
-    const { environment, externalUserId, externalCompanyId } = socketData;
-    const resourceCenterData = customContentVersion.data as unknown as ResourceCenterData;
+    const { environment, externalUserId, externalCompanyId, clientContext, clientConditions } =
+      socketData;
+    const rawResourceCenterData = customContentVersion.data as unknown as ResourceCenterData;
+    const resourceCenterData = await evaluateResourceCenterBlocksWithContext(
+      rawResourceCenterData,
+      clientContext,
+      clientConditions,
+    );
 
     // Extract attribute codes from message blocks and block names
     const attrCodes: string[] = [];

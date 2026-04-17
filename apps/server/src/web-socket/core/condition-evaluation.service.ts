@@ -10,6 +10,7 @@ import {
   RulesCondition,
   ChecklistData,
   ContentConditionLogic,
+  ResourceCenterData,
   RulesType,
   RulesEvaluationOptions,
   StepTrigger,
@@ -155,6 +156,40 @@ export class ConditionEvaluationService {
     );
 
     return { ...data, items };
+  }
+
+  /**
+   * Evaluate resource center conditions and return updated tabs/blocks
+   * @param data - Resource center data containing tabs and blocks
+   * @param context - Condition evaluation context
+   * @returns Updated resource center data with evaluated onlyShowBlockConditions
+   */
+  async evaluateResourceCenterConditions(
+    data: ResourceCenterData,
+    context: ConditionEvaluationContext,
+  ): Promise<ResourceCenterData> {
+    if (!data?.tabs?.length) {
+      return data;
+    }
+
+    const tabs = await Promise.all(
+      data.tabs.map(async (tab) => {
+        const blocks = await Promise.all(
+          (tab.blocks ?? []).map(async (block) => {
+            const onlyShowBlockConditions = block.onlyShowBlockConditions
+              ? await this.evaluateRulesConditions(block.onlyShowBlockConditions, context)
+              : [];
+            return {
+              ...block,
+              onlyShowBlockConditions,
+            };
+          }),
+        );
+        return { ...tab, blocks };
+      }),
+    );
+
+    return { ...data, tabs };
   }
 
   /**

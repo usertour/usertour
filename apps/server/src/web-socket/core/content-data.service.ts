@@ -20,6 +20,7 @@ import {
   ContentConfigObject,
   ChecklistData,
   ContentDataType,
+  ResourceCenterData,
   RulesCondition,
   ThemeVariation,
 } from '@usertour/types';
@@ -770,6 +771,14 @@ export class ContentDataService {
         context,
       );
       return checklistData as unknown as JsonValue;
+    }
+    if (content.type === ContentDataType.RESOURCE_CENTER) {
+      const resourceCenterData =
+        await this.conditionEvaluationService.evaluateResourceCenterConditions(
+          version.data as unknown as ResourceCenterData,
+          context,
+        );
+      return resourceCenterData as unknown as JsonValue;
     }
     return version.data ?? null;
   }

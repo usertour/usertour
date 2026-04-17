@@ -15,6 +15,9 @@ import {
   ChecklistData,
   ChecklistInitialDisplay,
   LauncherData,
+  ResourceCenterBlock,
+  ResourceCenterData,
+  ResourceCenterTab,
   SessionAttribute,
   SessionTheme,
   SessionStep,
@@ -1541,6 +1544,60 @@ export const evaluateChecklistItems = async (
 };
 
 /**
+ * Evaluate onlyShowBlock conditions for each resource-center block and drop
+ * blocks whose conditions don't match. Blocks without the toggle enabled
+ * (or with an empty condition list) are always kept.
+ */
+export const evaluateResourceCenterBlocksWithContext = async (
+  resourceCenterData: ResourceCenterData,
+  clientContext: ClientContext,
+  clientConditions?: ClientCondition[],
+): Promise<ResourceCenterData> => {
+  if (!resourceCenterData?.tabs?.length) {
+    return resourceCenterData;
+  }
+
+  const activatedIds = clientConditions
+    ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === true)
+    .map((clientCondition: ClientCondition) => clientCondition.conditionId);
+
+  const deactivatedIds = clientConditions
+    ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === false)
+    .map((clientCondition: ClientCondition) => clientCondition.conditionId);
+
+  const options: RulesEvaluationOptions = {
+    typeControl: {
+      [RulesType.CURRENT_PAGE]: true,
+      [RulesType.TIME]: true,
+    },
+    clientContext,
+    activatedIds,
+    deactivatedIds,
+  };
+
+  const isBlockVisible = async (block: ResourceCenterBlock): Promise<boolean> => {
+    if (!block.onlyShowBlock || !block.onlyShowBlockConditions?.length) {
+      return true;
+    }
+    const evaluated = await evaluateRulesConditions(block.onlyShowBlockConditions, options);
+    return isConditionsActived(evaluated);
+  };
+
+  const tabs: ResourceCenterTab[] = [];
+  for (const tab of resourceCenterData.tabs) {
+    const blocks: ResourceCenterBlock[] = [];
+    for (const block of tab.blocks ?? []) {
+      if (await isBlockVisible(block)) {
+        blocks.push(block);
+      }
+    }
+    tabs.push({ ...tab, blocks });
+  }
+
+  return { ...resourceCenterData, tabs };
+};
+
+/**
  * Evaluates checklist items with client conditions
  * Extracts activated and deactivated condition IDs from client conditions
  * and evaluates checklist items with proper condition context
@@ -1980,6 +2037,14 @@ export const hasContentSessionChanges = (
   }
 
   if (hasLauncherDataChanges(oldVersion.launcher, newVersion.launcher)) {
+    return true;
+  }
+
+  if (!isEqual(oldVersion.resourceCenter, newVersion.resourceCenter)) {
+    return true;
+  }
+
+  if (!isEqual(oldVersion.banner, newVersion.banner)) {
     return true;
   }
 
