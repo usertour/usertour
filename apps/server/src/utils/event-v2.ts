@@ -702,11 +702,16 @@ export const buildResourceCenterClickedEventData = (
 
   const resourceCenterData = session.version.data as unknown as ResourceCenterData;
   let block = null;
+  let parentTab = null;
   for (const tab of resourceCenterData?.tabs ?? []) {
-    block = tab.blocks.find((b) => b.id === blockId);
-    if (block) break;
+    const found = tab.blocks.find((b) => b.id === blockId);
+    if (found) {
+      block = found;
+      parentTab = tab;
+      break;
+    }
   }
-  if (!block) {
+  if (!block || !parentTab) {
     return null;
   }
 
@@ -717,6 +722,8 @@ export const buildResourceCenterClickedEventData = (
 
   return {
     ...buildResourceCenterBaseEventData(session),
+    [EventAttributes.RESOURCE_CENTER_TAB_ID]: parentTab.id,
+    [EventAttributes.RESOURCE_CENTER_TAB_NAME]: parentTab.name,
     [EventAttributes.RESOURCE_CENTER_BLOCK_ID]: block.id,
     [EventAttributes.RESOURCE_CENTER_BLOCK_NAME]: serializeBlockName(block.name),
   };

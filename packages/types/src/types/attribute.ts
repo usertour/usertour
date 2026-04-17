@@ -158,6 +158,8 @@ export enum EventAttributes {
   RESOURCE_CENTER_VERSION_NUMBER = 'resource_center_version_number',
   RESOURCE_CENTER_BLOCK_ID = 'resource_center_block_id',
   RESOURCE_CENTER_BLOCK_NAME = 'resource_center_block_name',
+  RESOURCE_CENTER_TAB_ID = 'resource_center_tab_id',
+  RESOURCE_CENTER_TAB_NAME = 'resource_center_tab_name',
   // Event tracker attributes
   EVENT_TRACKER_ID = 'event_tracker_id',
   EVENT_TRACKER_NAME = 'event_tracker_name',
