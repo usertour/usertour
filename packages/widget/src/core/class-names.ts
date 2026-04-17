@@ -20,7 +20,6 @@ export const WidgetClass = {
 
   // Overlay (full-screen backdrop)
   overlay: `${PREFIX}-overlay`,
-  overlayVisible: `${PREFIX}-overlay--visible`,
 
   // Spotlight (element highlight)
   spotlight: `${PREFIX}-spotlight`,
@@ -56,7 +55,6 @@ export const WidgetClass = {
   resourceCenterFrameCompact: `${PREFIX}-resource-center-frame--compact`,
   resourceCenterFrameExpanded: `${PREFIX}-resource-center-frame--expanded`,
   resourceCenterLauncher: `${PREFIX}-resource-center-launcher`,
-  resourceCenterToast: `${PREFIX}-resource-center-toast`,
 
   // Indicator (unread badge)
   indicator: `${PREFIX}-indicator`,
@@ -74,7 +72,6 @@ export const WidgetAnimation = {
   stageReveal: `${PREFIX}-stage-reveal`,
   beaconHalo: `${PREFIX}-beacon-halo`,
   bannerReveal: `${PREFIX}-banner-reveal`,
-  embedReveal: `${PREFIX}-embed-reveal`,
   indicatorEnter: `${PREFIX}-indicator-enter`,
   indicatorRipple: `${PREFIX}-indicator-ripple`,
   resourceCenterReveal: `${PREFIX}-resource-center-reveal`,
