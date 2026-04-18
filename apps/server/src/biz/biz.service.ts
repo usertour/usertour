@@ -24,7 +24,7 @@ import {
 import { Segment, SegmentBizType, SegmentDataType } from './models/segment.model';
 import { ParamsError, UnknownError } from '@/common/errors';
 import { getDefaultColumns } from '@/common/initialization/initialization';
-import { BizAttributeTypes } from '@usertour/types';
+import { BizAttributeTypes, ColumnSetting } from '@usertour/types';
 import { IntegrationSource } from '@/common/types/integration';
 import isEqual from 'fast-deep-equal';
 import {
@@ -34,6 +34,29 @@ import {
   isNull,
   isValidISO8601,
 } from '@usertour/helpers';
+
+// Legacy data in DB may be stored as Record<string, boolean>; new shape is ColumnSetting[].
+// Normalize at the service boundary so callers always see the array shape.
+function normalizeSegmentColumns(raw: unknown): ColumnSetting[] {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(
+        (item): item is { codeName: string; visible: boolean } =>
+          item != null &&
+          typeof item === 'object' &&
+          typeof (item as { codeName?: unknown }).codeName === 'string' &&
+          typeof (item as { visible?: unknown }).visible === 'boolean',
+      )
+      .map((item) => ({ codeName: item.codeName, visible: item.visible }));
+  }
+  if (typeof raw === 'object') {
+    return Object.entries(raw as Record<string, unknown>)
+      .filter(([, v]) => typeof v === 'boolean')
+      .map(([codeName, visible]) => ({ codeName, visible: visible as boolean }));
+  }
+  return [];
+}
 
 @Injectable()
 export class BizService {
@@ -65,6 +88,8 @@ export class BizService {
     const segmentData = { ...data, projectId: environment.projectId };
     if (!segmentData.columns && segmentData.bizType) {
       segmentData.columns = getDefaultColumns(segmentData.bizType as SegmentBizType);
+    } else if (segmentData.columns) {
+      segmentData.columns = normalizeSegmentColumns(segmentData.columns);
     }
 
     return await this.prisma.segment.create({
@@ -98,15 +123,21 @@ export class BizService {
   }
 
   async getSegment(id: string) {
-    return await this.prisma.segment.findUnique({
+    const segment = await this.prisma.segment.findUnique({
       where: { id },
     });
+    if (!segment) return null;
+    return { ...segment, columns: normalizeSegmentColumns(segment.columns) };
   }
 
   async updateSegment({ id, ...updates }: UpdateSegment) {
+    const data: Record<string, unknown> = { ...updates };
+    if (updates.columns !== undefined) {
+      data.columns = normalizeSegmentColumns(updates.columns);
+    }
     return await this.prisma.segment.update({
       where: { id },
-      data: { ...updates },
+      data,
     });
   }
 
@@ -138,10 +169,14 @@ export class BizService {
     if (!environment) {
       throw new ParamsError('Environment not found');
     }
-    return await this.prisma.segment.findMany({
+    const segments = await this.prisma.segment.findMany({
       where: { projectId: environment.projectId },
       orderBy: { createdAt: 'asc' },
     });
+    return segments.map((segment) => ({
+      ...segment,
+      columns: normalizeSegmentColumns(segment.columns),
+    }));
   }
 
   async createBizUserOnSegment(data: BizUserOnSegmentInput[]) {

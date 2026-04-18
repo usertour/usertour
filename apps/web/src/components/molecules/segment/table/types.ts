@@ -1,7 +1,7 @@
 'use client';
 
 import { ColumnDef, Table, Updater } from '@tanstack/react-table';
-import { Segment } from '@usertour/types';
+import { ColumnSetting, Segment } from '@usertour/types';
 
 // Generic table props interface
 export interface DataTableProps<TData> {
@@ -32,6 +32,10 @@ export interface DataTableProps<TData> {
   // Column visibility
   columnVisibility: Record<string, boolean>;
   onColumnVisibilityChange: (updaterOrValue: Updater<Record<string, boolean>>) => void;
+
+  // Column order
+  columnOrder?: string[];
+  onColumnOrderChange?: (updaterOrValue: Updater<string[]>) => void;
 
   // Filtering
   columnFilters: Array<{ id: string; value: unknown }>;
@@ -71,7 +75,8 @@ export interface DataTableColumnHeaderProps {
 // View options props interface
 export interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
-  onColumnVisibilityChange?: (columnId: string, visible: boolean) => Promise<void>;
+  // Called with the full ColumnSetting[] (ordered) on every toggle/reorder; caller persists it.
+  onColumnsChange?: (columns: ColumnSetting[]) => Promise<void> | void;
   disabled?: boolean;
 }
 

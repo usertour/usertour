@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { Attribute } from '@usertour/types';
+import { Attribute, ColumnSetting } from '@usertour/types';
 import { DynamicColumnConfig, TableStyles } from './types';
 import { DataTableColumnHeader } from './data-table-column-header';
 import { formatAttributeValue } from '@/utils/common';
@@ -57,6 +57,7 @@ export const createDynamicColumn = <TData,>(
     cell: createColumnCell(attribute.codeName, attribute.dataType, options?.cellClassName),
     enableSorting: false,
     enableHiding: true,
+    meta: { displayName },
   };
 };
 
@@ -88,13 +89,42 @@ export const useDynamicTableColumns = <TData,>(
 // Build column visibility state from attributes and segment configuration
 export const buildColumnVisibility = (
   attributes: Attribute[],
-  segmentColumns?: Record<string, boolean>,
+  segmentColumns?: ColumnSetting[] | null,
 ): Record<string, boolean> => {
+  const settingMap = new Map(
+    (segmentColumns ?? []).map(({ codeName, visible }) => [codeName, visible]),
+  );
   const visibility: Record<string, boolean> = {};
 
   for (const attribute of attributes) {
-    visibility[attribute.codeName] = !!segmentColumns?.[attribute.codeName];
+    visibility[attribute.codeName] = !!settingMap.get(attribute.codeName);
   }
 
   return visibility;
+};
+
+// Build column order from segment configuration; attributes not yet in segment.columns go to the end.
+export const buildColumnOrder = (
+  attributes: Attribute[],
+  segmentColumns?: ColumnSetting[] | null,
+  staticColumnIds: string[] = [],
+): string[] => {
+  const attrCodeNames = new Set(attributes.map((a) => a.codeName));
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+
+  for (const { codeName } of segmentColumns ?? []) {
+    if (attrCodeNames.has(codeName) && !seen.has(codeName)) {
+      ordered.push(codeName);
+      seen.add(codeName);
+    }
+  }
+  for (const attribute of attributes) {
+    if (!seen.has(attribute.codeName)) {
+      ordered.push(attribute.codeName);
+      seen.add(attribute.codeName);
+    }
+  }
+
+  return [...staticColumnIds, ...ordered];
 };

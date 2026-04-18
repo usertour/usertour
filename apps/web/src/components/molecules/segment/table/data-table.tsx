@@ -48,6 +48,8 @@ export function DataTable<TData>({
   onRowSelectionChange,
   columnVisibility,
   onColumnVisibilityChange,
+  columnOrder,
+  onColumnOrderChange,
   columnFilters,
   onColumnFiltersChange,
   onRowClick,
@@ -61,10 +63,11 @@ export function DataTable<TData>({
       sorting,
       pagination,
       columnVisibility,
+      columnOrder,
       rowSelection,
       columnFilters,
     }),
-    [sorting, pagination, columnVisibility, rowSelection, columnFilters],
+    [sorting, pagination, columnVisibility, columnOrder, rowSelection, columnFilters],
   );
 
   const table = useReactTable({
@@ -79,6 +82,7 @@ export function DataTable<TData>({
     onPaginationChange,
     onColumnFiltersChange,
     onColumnVisibilityChange,
+    onColumnOrderChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),

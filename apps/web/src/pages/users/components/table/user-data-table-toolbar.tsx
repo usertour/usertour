@@ -11,7 +11,7 @@ import { WebZIndex } from '@usertour-packages/constants';
 import { Rules } from '@usertour-packages/shared-components';
 import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
-import { AttributeBizTypes, RulesCondition, Segment } from '@usertour/types';
+import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 import { AddUserManualSegment } from '../operations';
 import { UserSegmentCreateDialog } from '../dialogs';
@@ -54,14 +54,14 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
   const [mutation] = useMutation(updateSegment);
   const { toast } = useToast();
 
-  const updateSegmentColumn = useCallback(
-    async (name: string, value: boolean) => {
+  const updateSegmentColumns = useCallback(
+    async (columns: ColumnSetting[]) => {
       if (!currentSegment) {
         return;
       }
       const data = {
         id: currentSegment.id,
-        columns: { ...currentSegment.columns, [name]: value },
+        columns,
       };
       try {
         const ret = await mutation({ variables: { data } });
@@ -158,7 +158,7 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
         </div>
         <DataTableViewOptions
           table={table}
-          onColumnVisibilityChange={updateSegmentColumn}
+          onColumnsChange={updateSegmentColumns}
           disabled={isViewOnly}
         />
 

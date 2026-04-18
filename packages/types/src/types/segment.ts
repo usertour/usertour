@@ -1,3 +1,8 @@
+export type ColumnSetting = {
+  codeName: string;
+  visible: boolean;
+};
+
 export type Segment = {
   id: string;
   bizType: string;
@@ -5,7 +10,7 @@ export type Segment = {
   name: string;
   dataType: string;
   data: any;
-  columns: any;
+  columns: ColumnSetting[] | null;
   createdAt: string;
   predefined: boolean;
 };

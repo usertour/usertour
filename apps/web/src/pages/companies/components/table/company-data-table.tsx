@@ -5,6 +5,7 @@ import { useCompanyListContext } from '@/contexts/company-list-context';
 import {
   ColumnFiltersState,
   SortingState,
+  Updater,
   VisibilityState,
   useReactTable,
   getCoreRowModel,
@@ -23,6 +24,7 @@ import {
   DataTablePagination,
   useDynamicTableColumns,
   buildColumnVisibility,
+  buildColumnOrder,
 } from '@/components/molecules/segment/table';
 import { CompanyDataTableToolbar } from './company-data-table-toolbar';
 import { useCompanyTableColumns } from '@/hooks/use-company-table-columns';
@@ -52,14 +54,36 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
     columns,
   );
 
-  // Column visibility state
-  const baseColumnVisibility = React.useMemo(() => {
-    const attrList =
-      attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.Company) || [];
-    return buildColumnVisibility(attrList, segment.columns);
-  }, [attributeList, segment.columns]);
+  // Static column ids (checkbox, etc.) that must lead the order regardless of segment config
+  const staticColumnIds = React.useMemo(
+    () => columns.map((c) => c.id).filter((id): id is string => !!id),
+    [columns],
+  );
+
+  // Column visibility + order state derived from segment
+  const companyAttrList = React.useMemo(
+    () => attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.Company) || [],
+    [attributeList],
+  );
+
+  const baseColumnVisibility = React.useMemo(
+    () => buildColumnVisibility(companyAttrList, segment.columns),
+    [companyAttrList, segment.columns],
+  );
+
+  const baseColumnOrder = React.useMemo(
+    () => buildColumnOrder(companyAttrList, segment.columns, staticColumnIds),
+    [companyAttrList, segment.columns, staticColumnIds],
+  );
 
   const [userColumnVisibility, setUserColumnVisibility] = React.useState<VisibilityState>({});
+  const [userColumnOrder, setUserColumnOrder] = React.useState<string[] | undefined>(undefined);
+
+  // Reset local overrides when segment changes
+  React.useEffect(() => {
+    setUserColumnVisibility({});
+    setUserColumnOrder(undefined);
+  }, [segment.id]);
 
   const columnVisibility = React.useMemo(
     () => ({
@@ -67,6 +91,18 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
       ...userColumnVisibility,
     }),
     [baseColumnVisibility, userColumnVisibility],
+  );
+
+  const columnOrder = userColumnOrder ?? baseColumnOrder;
+
+  const handleColumnOrderChange = React.useCallback(
+    (updaterOrValue: Updater<string[]>) => {
+      setUserColumnOrder((prev) => {
+        const current = prev ?? baseColumnOrder;
+        return typeof updaterOrValue === 'function' ? updaterOrValue(current) : updaterOrValue;
+      });
+    },
+    [baseColumnOrder],
   );
 
   // State management for table
@@ -80,10 +116,11 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
       sorting,
       pagination,
       columnVisibility,
+      columnOrder,
       rowSelection,
       columnFilters,
     }),
-    [sorting, pagination, columnVisibility, rowSelection, columnFilters],
+    [sorting, pagination, columnVisibility, columnOrder, rowSelection, columnFilters],
   );
 
   // Create the table instance
@@ -99,6 +136,7 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setUserColumnVisibility,
+    onColumnOrderChange: handleColumnOrderChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -137,6 +175,8 @@ export const CompanyDataTable = ({ segment }: CompanyDataTableProps) => {
         onRowSelectionChange={setRowSelection}
         columnVisibility={columnVisibility}
         onColumnVisibilityChange={setUserColumnVisibility}
+        columnOrder={columnOrder}
+        onColumnOrderChange={handleColumnOrderChange}
         columnFilters={columnFilters}
         onColumnFiltersChange={setColumnFilters}
         onRowClick={handleRowClick}

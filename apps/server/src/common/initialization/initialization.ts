@@ -4,6 +4,7 @@ import { InitThemeInput } from '@/themes/dto/theme.input';
 import { Attribute, Prisma } from '@prisma/client';
 import {
   BizEvents,
+  ColumnSetting,
   EventAttributes,
   UserAttributes,
   CompanyAttributes,
@@ -881,27 +882,17 @@ const defaultAttributes: Partial<Attribute>[] = [
 ];
 
 const initializationAttributes = async (tx: Prisma.TransactionClient, projectId: string) => {
-  const predefined = true;
-
-  const existingAttributes = await tx.attribute.findMany({
-    where: { projectId, predefined: true },
-    select: { codeName: true },
-  });
-  const existingCodeNames = new Set(existingAttributes.map((a) => a.codeName));
-
-  const newAttributes = defaultAttributes.filter((attr) => !existingCodeNames.has(attr.codeName));
-  const existingDefaults = defaultAttributes.filter((attr) => existingCodeNames.has(attr.codeName));
-
-  if (newAttributes.length > 0) {
-    await tx.attribute.createMany({
-      data: newAttributes.map((attr) => ({ ...attr, projectId, predefined })),
-    });
-  }
-
-  for (const attr of existingDefaults) {
-    await tx.attribute.updateMany({
-      where: { projectId, predefined: true, codeName: attr.codeName },
-      data: {
+  for (const attr of defaultAttributes) {
+    await tx.attribute.upsert({
+      where: {
+        projectId_bizType_codeName: {
+          projectId,
+          bizType: attr.bizType,
+          codeName: attr.codeName,
+        },
+      },
+      create: { ...attr, projectId, predefined: true },
+      update: {
         displayName: attr.displayName,
         description: attr.description,
       },
@@ -986,27 +977,27 @@ export interface DefaultSegmentInput {
   bizType: SegmentBizType;
   dataType: SegmentDataType;
   data: any[];
-  columns?: Record<string, boolean>;
+  columns?: ColumnSetting[];
 }
 
 /**
  * Generate default columns configuration based on segment bizType
  */
-export function getDefaultColumns(bizType: SegmentBizType): Record<string, boolean> {
+export function getDefaultColumns(bizType: SegmentBizType): ColumnSetting[] {
   if (bizType === SegmentBizType.USER) {
-    return {
-      [UserAttributes.EMAIL]: true,
-      [UserAttributes.LAST_SEEN_AT]: true,
-      [UserAttributes.SIGNED_UP_AT]: true,
-    };
+    return [
+      { codeName: UserAttributes.EMAIL, visible: true },
+      { codeName: UserAttributes.LAST_SEEN_AT, visible: true },
+      { codeName: UserAttributes.SIGNED_UP_AT, visible: true },
+    ];
   }
   if (bizType === SegmentBizType.COMPANY) {
-    return {
-      [CompanyAttributes.LAST_SEEN_AT]: true,
-      [CompanyAttributes.SIGNED_UP_AT]: true,
-    };
+    return [
+      { codeName: CompanyAttributes.LAST_SEEN_AT, visible: true },
+      { codeName: CompanyAttributes.SIGNED_UP_AT, visible: true },
+    ];
   }
-  return {};
+  return [];
 }
 
 /**
