@@ -3,6 +3,7 @@ import { useContentVersionListContext } from '@/contexts/content-version-list-co
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { Separator } from '@usertour-packages/separator';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useEffect, useMemo } from 'react';
@@ -28,21 +29,13 @@ const groupVersionsByDay = (versions: ContentVersion[]): VersionGroup[] => {
   return Array.from(groups.values());
 };
 
-const buildPinnedIdSet = (content: ReturnType<typeof useContentDetailContext>['content']) => {
-  const ids = new Set<string>();
-  if (content?.editedVersionId) ids.add(content.editedVersionId);
-  for (const coe of content?.contentOnEnvironments ?? []) {
-    if (coe.published && coe.publishedVersion) {
-      ids.add(coe.publishedVersion.id);
-    }
-  }
-  return ids;
-};
-
-const buildLiveChipsMap = (
+const buildAllChipsMap = (
   content: ReturnType<typeof useContentDetailContext>['content'],
 ): Map<string, VersionRowChip[]> => {
   const map = new Map<string, VersionRowChip[]>();
+  if (content?.editedVersionId) {
+    map.set(content.editedVersionId, [{ kind: 'draft' }]);
+  }
   for (const coe of content?.contentOnEnvironments ?? []) {
     if (!coe.published || !coe.publishedVersion) continue;
     const chip: VersionRowChip = {
@@ -70,20 +63,20 @@ export const VersionHistoryList = () => {
     }
   }, [inView, hasNextPage, loading, loadingMore, fetchNextPage]);
 
-  const pinnedIds = useMemo(() => buildPinnedIdSet(content), [content]);
-  const liveChipsMap = useMemo(() => buildLiveChipsMap(content), [content]);
+  const chipsMap = useMemo(() => buildAllChipsMap(content), [content]);
 
-  const historyVersions = useMemo(
-    () => versionList.filter((v: ContentVersion) => !pinnedIds.has(v.id)),
-    [versionList, pinnedIds],
-  );
-
-  const groupedHistory = useMemo(() => groupVersionsByDay(historyVersions), [historyVersions]);
+  const groupedHistory = useMemo(() => groupVersionsByDay(versionList), [versionList]);
 
   if (loading) {
     return (
       <div className="flex flex-col p-4 shadow bg-white rounded-lg space-y-4 w-full">
-        <h3 className="text-lg font-medium">History</h3>
+        <h3 className="text-lg font-medium flex items-center gap-1">
+          Version history
+          <QuestionTooltip>
+            A timeline of every version, including your current draft and anything currently live.
+            Restore or review past versions from here.
+          </QuestionTooltip>
+        </h3>
         <Separator />
         <ListSkeleton length={6} />
       </div>
@@ -93,16 +86,22 @@ export const VersionHistoryList = () => {
   return (
     <div className="flex flex-col p-4 shadow bg-white rounded-lg space-y-4 w-full">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">History</h3>
+        <h3 className="text-lg font-medium flex items-center gap-1">
+          Version history
+          <QuestionTooltip>
+            A timeline of every version, including your current draft and anything currently live.
+            Restore or review past versions from here.
+          </QuestionTooltip>
+        </h3>
         {totalCount > 0 && (
           <span className="text-sm text-muted-foreground">{totalCount} versions</span>
         )}
       </div>
       <Separator />
 
-      {historyVersions.length === 0 && !hasNextPage ? (
+      {versionList.length === 0 && !hasNextPage ? (
         <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
-          No older versions.
+          No versions yet.
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -114,7 +113,7 @@ export const VersionHistoryList = () => {
                   <VersionRow
                     key={version.id}
                     version={version}
-                    chips={liveChipsMap.get(version.id) ?? []}
+                    chips={chipsMap.get(version.id) ?? []}
                     createdDisplay="timeOnly"
                   />
                 ))}
@@ -126,7 +125,7 @@ export const VersionHistoryList = () => {
 
       <div ref={sentinelRef} className="flex h-10 items-center justify-center">
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
-        {!hasNextPage && historyVersions.length > 0 && (
+        {!hasNextPage && versionList.length > 0 && (
           <span className="text-xs text-muted-foreground">End of history</span>
         )}
       </div>

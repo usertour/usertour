@@ -146,7 +146,7 @@ export const VersionRow = ({
         <>
           {timeCell}
           {versionCell}
-          <div />
+          {chipsCell ?? <div />}
           {actionsCell}
         </>
       ) : (
