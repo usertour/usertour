@@ -11,7 +11,7 @@ export const AnalyticsSessions = () => {
       <Card>
         <CardHeader>
           <CardTitle className="space-between flex flex-row  items-center">
-            <div className="grow">Recent sessions</div>
+            <div className="grow">Sessions</div>
             <ExportDropdownMenu>
               <Button variant="ghost" className="h-8 text-primary hover:text-primary">
                 <DownloadIcon className="mr-1 w-4 h-4" />
