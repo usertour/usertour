@@ -34,6 +34,13 @@ const groupBlocksByTab = (blocks: AnalyticsViewsByBlock[]): TabGroup[] => {
     .sort((a, b) => b.totalClicks - a.totalClicks);
 };
 
+const getRankDotClass = (rank: number, isIdle: boolean) => {
+  if (isIdle) return 'bg-muted-foreground/20';
+  if (rank === 0) return 'bg-primary';
+  if (rank <= 2) return 'bg-primary/60';
+  return 'bg-muted-foreground/30';
+};
+
 export const AnalyticsBlocks = () => {
   const { analyticsData, loading } = useAnalyticsContext();
 
@@ -43,7 +50,6 @@ export const AnalyticsBlocks = () => {
 
   const blocks = analyticsData?.viewsByBlock ?? [];
   const groups = groupBlocksByTab(blocks);
-  const maxTotalClicks = Math.max(...blocks.map((b) => b.analytics.totalClicks), 1);
   const hasAnyClicks = blocks.some((b) => b.analytics.totalClicks > 0);
 
   return (
@@ -56,46 +62,51 @@ export const AnalyticsBlocks = () => {
           <div className="space-y-6">
             {groups.map((group) => (
               <div key={group.tabId}>
-                <div className="flex items-baseline justify-between border-b pb-2 mb-3">
+                <div className="flex items-baseline justify-between border-b pb-2 mb-2">
                   <span className="font-semibold text-sm">{group.tabName}</span>
                   <span className="text-xs text-muted-foreground">
                     {group.totalClicks} total {group.totalClicks === 1 ? 'click' : 'clicks'}
                   </span>
                 </div>
-                <div className="space-y-1.5">
-                  {group.blocks.map((block) => {
-                    const barWidth = Math.max(
-                      (block.analytics.totalClicks / maxTotalClicks) * 100,
-                      block.analytics.totalClicks > 0 ? 2 : 0,
-                    );
+                <div className="grid grid-cols-[auto_1fr_auto_auto] items-center text-[11px] text-muted-foreground px-2 pb-1">
+                  <span className="w-2 mr-3" />
+                  <span>Block</span>
+                  <span className="text-right min-w-[56px]">% of tab</span>
+                  <span className="text-right min-w-[96px]">Clickers / clicks</span>
+                </div>
+                <div>
+                  {group.blocks.map((block, idx) => {
+                    const { uniqueClicks, totalClicks } = block.analytics;
+                    const isIdle = totalClicks === 0;
+                    const share =
+                      group.totalClicks > 0 ? (totalClicks / group.totalClicks) * 100 : 0;
                     return (
                       <div
                         key={block.blockId}
-                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-center gap-4 py-1"
+                        className={`grid grid-cols-[auto_1fr_auto_auto] items-center rounded-md px-2 py-2 transition-colors hover:bg-muted/50 ${
+                          isIdle ? 'opacity-50' : ''
+                        }`}
                       >
+                        <span
+                          className={`h-2 w-2 rounded-full mr-3 shrink-0 ${getRankDotClass(
+                            idx,
+                            isIdle,
+                          )}`}
+                        />
                         <span className="truncate text-sm">{block.name}</span>
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className="h-full bg-primary/80 rounded-full transition-all"
-                            style={{ width: `${barWidth}%` }}
-                          />
-                        </div>
-                        <div className="text-sm tabular-nums text-right min-w-[80px]">
-                          <span className="font-medium">{block.analytics.uniqueClicks}</span>
-                          <span className="text-muted-foreground">
-                            {' '}
-                            / {block.analytics.totalClicks}
-                          </span>
-                        </div>
+                        <span className="text-sm tabular-nums font-medium text-right min-w-[56px]">
+                          {share.toFixed(0)}%
+                        </span>
+                        <span className="text-sm tabular-nums text-right min-w-[96px]">
+                          <span className="font-medium">{uniqueClicks}</span>
+                          <span className="text-muted-foreground"> / {totalClicks}</span>
+                        </span>
                       </div>
                     );
                   })}
                 </div>
               </div>
             ))}
-            <div className="text-xs text-muted-foreground text-right pt-2">
-              unique clickers / total clicks
-            </div>
           </div>
         ) : (
           <div className="h-32 flex items-center justify-center text-sm text-muted-foreground">
