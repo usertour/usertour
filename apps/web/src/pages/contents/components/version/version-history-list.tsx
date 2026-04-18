@@ -4,9 +4,29 @@ import { ListSkeleton } from '@/components/molecules/skeleton';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { Separator } from '@usertour-packages/separator';
 import { ContentVersion } from '@usertour/types';
+import { format, isToday, isYesterday } from 'date-fns';
 import { useEffect, useMemo } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { VersionRow, VersionRowChip } from './version-row';
+
+type VersionGroup = { key: string; label: string; versions: ContentVersion[] };
+
+const groupVersionsByDay = (versions: ContentVersion[]): VersionGroup[] => {
+  const groups = new Map<string, VersionGroup>();
+  for (const version of versions) {
+    const date = new Date(version.createdAt ?? Date.now());
+    const key = format(date, 'yyyy-MM-dd');
+    let label: string;
+    if (isToday(date)) label = 'Today';
+    else if (isYesterday(date)) label = 'Yesterday';
+    else label = format(date, 'PP');
+
+    const existing = groups.get(key);
+    if (existing) existing.versions.push(version);
+    else groups.set(key, { key, label, versions: [version] });
+  }
+  return Array.from(groups.values());
+};
 
 const buildPinnedIdSet = (content: ReturnType<typeof useContentDetailContext>['content']) => {
   const ids = new Set<string>();
@@ -58,6 +78,8 @@ export const VersionHistoryList = () => {
     [versionList, pinnedIds],
   );
 
+  const groupedHistory = useMemo(() => groupVersionsByDay(historyVersions), [historyVersions]);
+
   if (loading) {
     return (
       <div className="flex flex-col p-4 shadow bg-white rounded-lg space-y-4 w-full">
@@ -78,28 +100,35 @@ export const VersionHistoryList = () => {
       </div>
       <Separator />
 
-      <div className="flex flex-col divide-y divide-border/60">
-        {historyVersions.length === 0 && !hasNextPage ? (
-          <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
-            No older versions.
-          </div>
-        ) : (
-          historyVersions.map((version) => (
-            <VersionRow
-              key={version.id}
-              version={version}
-              chips={liveChipsMap.get(version.id) ?? []}
-              showCreatedLabel
-            />
-          ))
-        )}
-
-        <div ref={sentinelRef} className="flex h-10 items-center justify-center">
-          {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
-          {!hasNextPage && historyVersions.length > 0 && (
-            <span className="text-xs text-muted-foreground">End of history</span>
-          )}
+      {historyVersions.length === 0 && !hasNextPage ? (
+        <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+          No older versions.
         </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {groupedHistory.map((group) => (
+            <div key={group.key} className="flex flex-col">
+              <div className="px-3 py-2 text-sm font-semibold">{group.label}</div>
+              <div className="flex flex-col divide-y divide-border/60">
+                {group.versions.map((version) => (
+                  <VersionRow
+                    key={version.id}
+                    version={version}
+                    chips={liveChipsMap.get(version.id) ?? []}
+                    createdDisplay="timeOnly"
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div ref={sentinelRef} className="flex h-10 items-center justify-center">
+        {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
+        {!hasNextPage && historyVersions.length > 0 && (
+          <span className="text-xs text-muted-foreground">End of history</span>
+        )}
       </div>
     </div>
   );
