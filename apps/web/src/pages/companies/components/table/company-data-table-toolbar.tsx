@@ -139,6 +139,20 @@ export const CompanyDataTableToolbar = ({
   return (
     <>
       <div className="flex items-center justify-between">
+        <Rules
+          onDataChange={handleDataChange}
+          defaultConditions={JSON.parse(JSON.stringify(currentSegment.data || []))}
+          isHorizontal={true}
+          isShowIf={false}
+          key={currentSegment.id}
+          filterItems={['group', 'user-attr']}
+          addButtonText={t('common.addFilter')}
+          attributes={filteredAttributes}
+          disabled={isViewOnly}
+          baseZIndex={WebZIndex.RULES}
+        />
+      </div>
+      <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
             placeholder={t('common.search')}
@@ -163,20 +177,6 @@ export const CompanyDataTableToolbar = ({
           isOpen={open}
           onClose={handleOnClose}
           environmentId={environment?.id}
-        />
-      </div>
-      <div className="flex items-center justify-between">
-        <Rules
-          onDataChange={handleDataChange}
-          defaultConditions={JSON.parse(JSON.stringify(currentSegment.data || []))}
-          isHorizontal={true}
-          isShowIf={false}
-          key={currentSegment.id}
-          filterItems={['group', 'user-attr']}
-          addButtonText={t('common.addFilter')}
-          attributes={filteredAttributes}
-          disabled={isViewOnly}
-          baseZIndex={WebZIndex.RULES}
         />
       </div>
       {hasSelection() && (
