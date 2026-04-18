@@ -6,68 +6,138 @@ import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ColumnDef, Row } from '@tanstack/react-table';
 import { BizSession, ContentDataType } from '@usertour/types';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { DataTableColumnHeader } from './data-table-column-header';
 import {
-  BannerProgressColumn,
-  ChecklistProgressColumn,
-  FlowProgressColumn,
-  LauncherProgressColumn,
-  ResourceCenterProgressColumn,
-} from '@/components/molecules/session';
+  BannerProgressCell,
+  ChecklistProgressCell,
+  FlowProgressCell,
+  LauncherProgressCell,
+  ResourceCenterProgressCell,
+  SessionStatusBadge,
+} from '@/components/molecules/session-analytics';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 import { Link } from 'react-router-dom';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 
-const ProgressColumn = (props: Row<BizSession>) => {
+const ProgressCell = (props: Row<BizSession>) => {
   const { content } = useContentDetailContext();
   const { eventList } = useEventListContext();
   const { version } = useContentVersionContext();
   const contentType = content?.type;
 
   if (!eventList || !content || !version) {
-    return <></>;
+    return null;
   }
 
   if (contentType === ContentDataType.CHECKLIST) {
     return (
-      <ChecklistProgressColumn original={props.original} eventList={eventList} version={version} />
+      <ChecklistProgressCell original={props.original} eventList={eventList} version={version} />
     );
   }
-
   if (contentType === ContentDataType.FLOW) {
-    return <FlowProgressColumn original={props.original} eventList={eventList} />;
+    return <FlowProgressCell original={props.original} eventList={eventList} />;
   }
   if (contentType === ContentDataType.LAUNCHER) {
-    return <LauncherProgressColumn original={props.original} eventList={eventList} />;
+    return <LauncherProgressCell />;
   }
   if (contentType === ContentDataType.BANNER) {
-    return <BannerProgressColumn original={props.original} eventList={eventList} />;
+    return <BannerProgressCell />;
   }
   if (contentType === ContentDataType.RESOURCE_CENTER) {
-    return <ResourceCenterProgressColumn original={props.original} eventList={eventList} />;
+    return <ResourceCenterProgressCell />;
   }
-
-  return <></>;
+  return null;
 };
 
-const CreateAtColumn = ({ original }: Row<BizSession>) => {
+const StatusCell = ({ original }: Row<BizSession>) => {
+  const { content } = useContentDetailContext();
+  if (!content?.type) return null;
+  return <SessionStatusBadge original={original} contentType={content.type} />;
+};
+
+const LastActivityCell = ({ original }: Row<BizSession>) => {
   const { bizEvent, createdAt } = original;
 
-  // If no events, show creation time
-  if (!bizEvent?.length) {
-    return (
-      <div className="flex space-x-2">
-        {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
-      </div>
+  const lastTime = bizEvent?.length
+    ? new Date(Math.max(...bizEvent.map((event) => new Date(event.createdAt).getTime())))
+    : new Date(createdAt);
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="text-sm text-muted-foreground cursor-default">
+            {formatDistanceToNow(lastTime, { addSuffix: true })}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{format(lastTime, 'PPpp')}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const UserCell = ({ original }: Row<BizSession>) => {
+  const { environment } = useAppContext();
+
+  const bizUser = original.bizUser;
+  const bizCompany = original.bizCompany;
+  const email = bizUser?.data?.email || '';
+  const name = bizUser?.data?.name || '';
+  const externalId = bizUser?.externalId || '';
+
+  const primaryText = name || email || externalId;
+  const showEmail = email && primaryText !== email ? email : null;
+  const companyName = bizCompany?.data?.name || bizCompany?.externalId || bizCompany?.id || '';
+
+  const secondaryParts: React.ReactNode[] = [];
+  if (showEmail) {
+    secondaryParts.push(
+      <span key="email" className="truncate">
+        {showEmail}
+      </span>,
+    );
+  }
+  if (companyName && bizCompany?.id) {
+    secondaryParts.push(
+      <Link
+        key="company"
+        to={`/env/${environment?.id}/company/${bizCompany.id}`}
+        className="truncate hover:text-primary hover:underline underline-offset-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {companyName}
+      </Link>,
     );
   }
 
-  // Get the most recent event time using Math.max
-  const lastEventTime = Math.max(...bizEvent.map((event) => new Date(event.createdAt).getTime()));
-
   return (
-    <div className="flex space-x-2">
-      {formatDistanceToNow(new Date(lastEventTime), { addSuffix: true })}
+    <div className="flex items-center gap-3 min-w-0">
+      <UserAvatar email={email} name={name} size="md" />
+      <div className="flex flex-col min-w-0">
+        <Link
+          to={`/env/${environment?.id}/user/${bizUser?.id ?? original.bizUserId}`}
+          className="text-sm font-medium truncate hover:text-primary hover:underline underline-offset-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {primaryText}
+        </Link>
+        {secondaryParts.length > 0 && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+            {secondaryParts.map((part, idx) => (
+              <span key={idx} className="flex items-center gap-1.5 min-w-0">
+                {idx > 0 && <span className="shrink-0">·</span>}
+                {part}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -76,76 +146,26 @@ export const columns: ColumnDef<BizSession>[] = [
   {
     accessorKey: 'bizUserId',
     header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
-    cell: ({ row }) => {
-      const { environment } = useAppContext();
-
-      const bizUser = row.original.bizUser;
-      const bizCompany = row.original.bizCompany;
-      const email = bizUser?.data?.email || '';
-      const name = bizUser?.data?.name || '';
-      const externalId = bizUser?.externalId || '';
-
-      // Display name or email if available, otherwise show externalId
-      const primaryText = name || email || externalId;
-
-      // Second line: show email only if it differs from primaryText
-      const showSecondLine = email && primaryText !== email ? email : null;
-
-      // Get company display name
-      const companyName = bizCompany?.data?.name || bizCompany?.externalId || bizCompany?.id || '';
-
-      return (
-        <div className="flex items-center gap-2">
-          <UserAvatar email={email} name={name} size="sm" />
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              <Link
-                to={`/env/${environment?.id}/user/${row.getValue('bizUserId')}`}
-                className="font-medium hover:text-primary hover:underline underline-offset-4"
-              >
-                {primaryText}
-              </Link>
-              {companyName && bizCompany?.id && (
-                <span className="text-muted-foreground text-xs">
-                  from{' '}
-                  <Link
-                    to={`/env/${environment?.id}/company/${bizCompany.id}`}
-                    className="hover:text-primary hover:underline underline-offset-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {companyName}
-                  </Link>
-                </span>
-              )}
-            </div>
-            {showSecondLine && (
-              <span className="text-muted-foreground text-xs">{showSecondLine}</span>
-            )}
-          </div>
-        </div>
-      );
-    },
+    cell: ({ row }) => <UserCell {...row} />,
     enableSorting: false,
     enableHiding: true,
   },
   {
+    id: 'status',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    cell: ({ row }) => <StatusCell {...row} />,
+    enableSorting: false,
+  },
+  {
     accessorKey: 'progress',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Progress" />,
-    cell: ({ row }) => {
-      const { environment } = useAppContext();
-
-      return (
-        <Link to={`/env/${environment?.id}/session/${row.original.id}`}>
-          <ProgressColumn {...row} />
-        </Link>
-      );
-    },
+    cell: ({ row }) => <ProgressCell {...row} />,
     enableSorting: false,
   },
   {
     accessorKey: 'createdAt',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Last activity" />,
-    cell: ({ row }) => <CreateAtColumn {...row} />,
+    cell: ({ row }) => <LastActivityCell {...row} />,
     enableSorting: false,
   },
 ];

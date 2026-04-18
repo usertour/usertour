@@ -23,8 +23,10 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 
+import { useAppContext } from '@/contexts/app-context';
 import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
@@ -32,6 +34,14 @@ import { Button } from '@usertour-packages/button';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { ContentDataType } from '@usertour/types';
+import { InboxIcon } from 'lucide-react';
+
+const columnWidthClass: Record<string, string> = {
+  bizUserId: 'w-[38%] min-w-[220px]',
+  status: 'w-[120px]',
+  progress: 'w-[22%] min-w-[140px]',
+  createdAt: 'w-[160px]',
+};
 
 export const BizSessionsDataTable = () => {
   const [rowSelection, setRowSelection] = useState({});
@@ -40,6 +50,8 @@ export const BizSessionsDataTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { setPagination, pagination, pageCount, bizSessions, refetch, loading } =
     useBizSessionContext();
+  const { environment } = useAppContext();
+  const navigate = useNavigate();
 
   const table = useReactTable({
     data: bizSessions,
@@ -67,7 +79,6 @@ export const BizSessionsDataTable = () => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Show loading skeleton when data is loading
   if (loading) {
     return (
       <div className="space-y-4">
@@ -85,15 +96,16 @@ export const BizSessionsDataTable = () => {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
+                  const widthClass = columnWidthClass[header.column.id] ?? '';
                   return (
-                    <TableHead key={header.id} className="w-1/3">
+                    <TableHead key={header.id} className={widthClass}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
                 })}
-                <TableHead />
+                <TableHead className="w-[48px]" />
               </TableRow>
             ))}
           </TableHeader>
@@ -102,12 +114,11 @@ export const BizSessionsDataTable = () => {
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id || `row-${Math.random()}`}
-                  className="h-10"
+                  className="group h-14 cursor-pointer"
                   onClick={() => {
-                    // editHandler(
-                    //   row.getValue("environmentId"),
-                    //   row.getValue("id")
-                    // );
+                    if (environment?.id) {
+                      navigate(`/env/${environment.id}/session/${row.original.id}`);
+                    }
                   }}
                   data-state={row.getIsSelected() && 'selected'}
                 >
@@ -116,7 +127,10 @@ export const BizSessionsDataTable = () => {
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
-                  <TableCell key={`action-${row.id || Math.random()}`}>
+                  <TableCell
+                    key={`action-${row.id || Math.random()}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <SessionActionDropdownMenu
                       session={row.original}
                       showViewResponse={row.original.content?.type === ContentDataType.FLOW}
@@ -129,7 +143,7 @@ export const BizSessionsDataTable = () => {
                     >
                       <Button
                         variant="ghost"
-                        className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+                        className="flex h-8 w-8 p-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 data-[state=open]:bg-muted transition-opacity"
                       >
                         <DotsHorizontalIcon className="h-4 w-4" />
                       </Button>
@@ -139,8 +153,11 @@ export const BizSessionsDataTable = () => {
               ))
             ) : (
               <TableRow key="no-results">
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                <TableCell colSpan={columns.length + 1} className="h-40 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                    <InboxIcon className="h-8 w-8 opacity-60" />
+                    <span className="text-sm">No sessions in this range.</span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
