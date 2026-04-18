@@ -58,6 +58,8 @@ export type AnalyticsViewsByTask = {
 export type AnalyticsViewsByBlock = {
   name: string;
   blockId: string;
+  tabId: string;
+  tabName: string;
   analytics: {
     uniqueClicks: number;
     totalClicks: number;

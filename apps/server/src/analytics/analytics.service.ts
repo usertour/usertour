@@ -845,12 +845,12 @@ export class AnalyticsService {
     }
 
     const resourceCenterData = version.data as unknown as ResourceCenterData;
-    const blocks = (resourceCenterData.tabs ?? [])
-      .flatMap((tab) => tab.blocks)
-      .filter((b) => !isDisplayOnlyBlockType(b.type));
+    const blocksWithTab = (resourceCenterData.tabs ?? []).flatMap((tab) =>
+      tab.blocks.filter((b) => !isDisplayOnlyBlockType(b.type)).map((block) => ({ block, tab })),
+    );
 
     const ret = [];
-    for (const block of blocks) {
+    for (const { block, tab } of blocksWithTab) {
       const blockCondition = {
         ...condition,
         eventId: clickEvent.id,
@@ -865,6 +865,8 @@ export class AnalyticsService {
       ret.push({
         name: serializeBlockName(block.name),
         blockId: block.id,
+        tabId: tab.id,
+        tabName: tab.name,
         analytics: {
           uniqueClicks,
           totalClicks,

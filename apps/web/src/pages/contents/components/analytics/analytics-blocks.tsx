@@ -1,16 +1,38 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
-
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
 import { AnalyticsViewsByBlock } from '@usertour/types';
 import { AnalyticsTasksSkeleton } from './analytics-skeleton';
+
+type TabGroup = {
+  tabId: string;
+  tabName: string;
+  totalClicks: number;
+  blocks: AnalyticsViewsByBlock[];
+};
+
+const groupBlocksByTab = (blocks: AnalyticsViewsByBlock[]): TabGroup[] => {
+  const groups = new Map<string, TabGroup>();
+  for (const block of blocks) {
+    const existing = groups.get(block.tabId);
+    if (existing) {
+      existing.blocks.push(block);
+      existing.totalClicks += block.analytics.totalClicks;
+    } else {
+      groups.set(block.tabId, {
+        tabId: block.tabId,
+        tabName: block.tabName,
+        totalClicks: block.analytics.totalClicks,
+        blocks: [block],
+      });
+    }
+  }
+  return Array.from(groups.values())
+    .map((group) => ({
+      ...group,
+      blocks: [...group.blocks].sort((a, b) => b.analytics.totalClicks - a.analytics.totalClicks),
+    }))
+    .sort((a, b) => b.totalClicks - a.totalClicks);
+};
 
 export const AnalyticsBlocks = () => {
   const { analyticsData, loading } = useAnalyticsContext();
@@ -20,96 +42,66 @@ export const AnalyticsBlocks = () => {
   }
 
   const blocks = analyticsData?.viewsByBlock ?? [];
-  const totalUniqueClicks = blocks.reduce(
-    (sum: number, b: AnalyticsViewsByBlock) => sum + b.analytics.uniqueClicks,
-    0,
-  );
-  const totalTotalClicks = blocks.reduce(
-    (sum: number, b: AnalyticsViewsByBlock) => sum + b.analytics.totalClicks,
-    0,
-  );
-
-  // Find max values for bar scaling
-  const maxUniqueClicks = Math.max(...blocks.map((b) => b.analytics.uniqueClicks), 1);
+  const groups = groupBlocksByTab(blocks);
   const maxTotalClicks = Math.max(...blocks.map((b) => b.analytics.totalClicks), 1);
-
-  // Sort by total clicks descending
-  const sortedBlocks = [...blocks].sort(
-    (a, b) => b.analytics.totalClicks - a.analytics.totalClicks,
-  );
+  const hasAnyClicks = blocks.some((b) => b.analytics.totalClicks > 0);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex flex-row items-center justify-between">
-          <div className="grow">Click breakdown</div>
-        </CardTitle>
+        <CardTitle>Clicks by block</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-center gap-8 mb-4 text-sm">
-          <div>
-            <span className="font-semibold text-lg">{totalUniqueClicks}</span>{' '}
-            <span className="text-muted-foreground">unique clicks</span>
-          </div>
-          <div>
-            <span className="font-semibold text-lg">{totalTotalClicks}</span>{' '}
-            <span className="text-muted-foreground">total clicks</span>
-          </div>
-        </div>
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-72">Block</TableHead>
-              <TableHead className="text-right w-32">Unique clicks</TableHead>
-              <TableHead />
-              <TableHead className="text-right w-32">Total clicks</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedBlocks.length > 0 ? (
-              sortedBlocks.map((block: AnalyticsViewsByBlock) => {
-                const uniqueBar = Math.round(
-                  (block.analytics.uniqueClicks / maxUniqueClicks) * 100,
-                );
-                const totalBar = Math.round((block.analytics.totalClicks / maxTotalClicks) * 100);
-                return (
-                  <TableRow key={block.blockId}>
-                    <TableCell className="py-[1px] overflow-hidden">
-                      <div className="min-w-0">
-                        <span className="truncate block">{block.name}</span>
+        {hasAnyClicks ? (
+          <div className="space-y-6">
+            {groups.map((group) => (
+              <div key={group.tabId}>
+                <div className="flex items-baseline justify-between border-b pb-2 mb-3">
+                  <span className="font-semibold text-sm">{group.tabName}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {group.totalClicks} total {group.totalClicks === 1 ? 'click' : 'clicks'}
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {group.blocks.map((block) => {
+                    const barWidth = Math.max(
+                      (block.analytics.totalClicks / maxTotalClicks) * 100,
+                      block.analytics.totalClicks > 0 ? 2 : 0,
+                    );
+                    return (
+                      <div
+                        key={block.blockId}
+                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] items-center gap-4 py-1"
+                      >
+                        <span className="truncate text-sm">{block.name}</span>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full bg-primary/80 rounded-full transition-all"
+                            style={{ width: `${barWidth}%` }}
+                          />
+                        </div>
+                        <div className="text-sm tabular-nums text-right min-w-[80px]">
+                          <span className="font-medium">{block.analytics.uniqueClicks}</span>
+                          <span className="text-muted-foreground">
+                            {' '}
+                            / {block.analytics.totalClicks}
+                          </span>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="py-[1px] text-right">
-                      {block.analytics.uniqueClicks}
-                    </TableCell>
-                    <TableCell className="py-[1px] px-0">
-                      <div
-                        className="h-9 bg-gradient-to-r from-success/50 to-success"
-                        style={{ width: `${uniqueBar}%` }}
-                      />
-                    </TableCell>
-                    <TableCell className="py-[1px] text-right">
-                      {block.analytics.totalClicks}
-                    </TableCell>
-                    <TableCell className="py-[1px] px-0">
-                      <div
-                        className="h-9 bg-gradient-to-r from-chart-1/50 to-chart-1"
-                        style={{ width: `${totalBar}%` }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div className="text-xs text-muted-foreground text-right pt-2">
+              unique clickers / total clicks
+            </div>
+          </div>
+        ) : (
+          <div className="h-32 flex items-center justify-center text-sm text-muted-foreground">
+            No clicks yet.
+          </div>
+        )}
       </CardContent>
     </Card>
   );
