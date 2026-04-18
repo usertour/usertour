@@ -143,7 +143,7 @@ export const BizSessionsDataTable = () => {
                     >
                       <Button
                         variant="ghost"
-                        className="flex h-8 w-8 p-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 data-[state=open]:bg-muted transition-opacity"
+                        className="flex h-8 w-8 p-0 text-muted-foreground opacity-60 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 data-[state=open]:bg-muted transition-opacity"
                       >
                         <DotsHorizontalIcon className="h-4 w-4" />
                       </Button>

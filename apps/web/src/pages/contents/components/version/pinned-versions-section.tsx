@@ -67,7 +67,7 @@ export const PinnedVersionsSection = () => {
       <Separator />
       <div className="flex flex-col divide-y divide-border/60">
         {entries.map(({ version, chips }) => (
-          <VersionRow key={version.id} version={version} chips={chips} />
+          <VersionRow key={version.id} version={version} chips={chips} showCreatedLabel />
         ))}
       </div>
     </div>

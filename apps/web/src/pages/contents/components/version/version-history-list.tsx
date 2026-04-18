@@ -89,6 +89,7 @@ export const VersionHistoryList = () => {
               key={version.id}
               version={version}
               chips={liveChipsMap.get(version.id) ?? []}
+              showCreatedLabel
             />
           ))
         )}
