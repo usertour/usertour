@@ -220,8 +220,9 @@ interface NavigableBlockRowProps {
 }
 
 export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowProps) => {
-  const { userAttributes } = useResourceCenterContext();
+  const { userAttributes, onBlockClick } = useResourceCenterContext();
   const handleClick = () => {
+    onBlockClick?.(block.id);
     onNavigate({ type: block.type, block } as ResourceCenterPageEntry);
   };
 
