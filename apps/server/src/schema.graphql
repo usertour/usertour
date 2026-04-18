@@ -345,6 +345,7 @@ type Content {
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   deleted: Boolean!
+  editedVersion: Version
   editedVersionId: String
   environmentId: String!
   id: ID!
@@ -939,7 +940,7 @@ type Query {
   listAccessTokens(environmentId: String!): [AccessToken!]!
   listAttributeOnEvents(eventId: String!): [AttributeOnEvent!]!
   listAttributes(bizType: Int!, projectId: String!): [Attribute!]!
-  listContentVersions(contentId: String!): [Version!]!
+  listContentVersions(after: String, before: String, contentId: String!, first: Int, last: Int, skip: Int): VersionConnection!
   listEvents(projectId: String!): [Events!]!
   listIntegrations(environmentId: String!): [Integration!]!
   listLocalizations(projectId: String!): [Localization!]!
@@ -1336,6 +1337,17 @@ type Version {
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
+}
+
+type VersionConnection {
+  edges: [VersionEdge!]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type VersionEdge {
+  cursor: String!
+  node: Version!
 }
 
 input VersionIdInput {

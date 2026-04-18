@@ -19,6 +19,14 @@ export const getContent = gql`
       publishedVersion {
         id
         sequence
+        createdAt
+        updatedAt
+      }
+      editedVersion {
+        id
+        sequence
+        createdAt
+        updatedAt
       }
       steps {
         id
@@ -47,6 +55,8 @@ export const getContent = gql`
         publishedVersion {
           id
           sequence
+          createdAt
+          updatedAt
         }
       }
     }
@@ -309,21 +319,38 @@ export const getContentVersion = gql`
 `;
 
 export const listContentVersions = gql`
-  query listContentVersions($contentId: String!) {
-    listContentVersions(contentId: $contentId) {
-      id
-      sequence
-      contentId
-      themeId
-      createdAt
-      updatedAt
-      config
-      steps {
-        id
-        cvid
-        name
-        versionId
-        sequence
+  query listContentVersions(
+    $contentId: String!
+    $first: Int
+    $last: Int
+    $after: String
+    $before: String
+  ) {
+    listContentVersions(
+      contentId: $contentId
+      first: $first
+      last: $last
+      after: $after
+      before: $before
+    ) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          sequence
+          contentId
+          themeId
+          createdAt
+          updatedAt
+          config
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
       }
     }
   }

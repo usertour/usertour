@@ -307,11 +307,21 @@ export class ContentService {
     });
   }
 
-  async listContentVersions(contentId: string) {
-    return await this.prisma.version.findMany({
-      where: { contentId },
-      orderBy: { sequence: 'desc' },
-    });
+  async listContentVersions(
+    contentId: string,
+    pagination: { first?: number; last?: number; before?: string; after?: string },
+  ) {
+    const where = { contentId };
+    return await findManyCursorConnection(
+      (args) =>
+        this.prisma.version.findMany({
+          where,
+          orderBy: { sequence: 'desc' },
+          ...args,
+        }),
+      () => this.prisma.version.count({ where }),
+      pagination,
+    );
   }
 
   async publishedContentVersion(versionId: string, environmentId: string) {

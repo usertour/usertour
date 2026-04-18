@@ -36,19 +36,14 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const { toast } = useToast();
   const { environmentList } = useEnvironmentListContext();
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
-  const [version, setVersion] = React.useState<ContentVersion>();
   const { content, refetch } = useContentDetailContext();
   const contentTypeMeta = getContentTypeMeta(content?.type);
 
   const contentVersion = useQuery(getContentVersion, {
     variables: { versionId },
+    skip: !open,
   });
-
-  React.useEffect(() => {
-    if (contentVersion?.data?.getContentVersion) {
-      setVersion(contentVersion.data.getContentVersion);
-    }
-  }, [contentVersion?.data]);
+  const version: ContentVersion | undefined = contentVersion?.data?.getContentVersion;
 
   React.useEffect(() => {
     if (open) {

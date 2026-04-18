@@ -62,6 +62,9 @@ export class Content extends BaseModel {
   @Field(() => String, { nullable: true })
   editedVersionId?: string;
 
+  @Field(() => Version, { nullable: true })
+  editedVersion?: Version;
+
   @Field(() => Date)
   publishedAt: Date;
 

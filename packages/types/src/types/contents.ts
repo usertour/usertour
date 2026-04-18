@@ -175,6 +175,7 @@ export type Content = {
     };
   };
   publishedVersion?: ContentVersion;
+  editedVersion?: ContentVersion;
   buildUrl?: string;
   published?: boolean;
   createdAt?: string;
