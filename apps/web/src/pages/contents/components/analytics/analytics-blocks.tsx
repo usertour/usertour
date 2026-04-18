@@ -1,5 +1,6 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { AnalyticsViewsByBlock } from '@usertour/types';
 import { AnalyticsTasksSkeleton } from './analytics-skeleton';
 
@@ -55,7 +56,14 @@ export const AnalyticsBlocks = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Clicks by block</CardTitle>
+        <CardTitle className="flex items-center gap-1">
+          Clicks by block
+          <QuestionTooltip>
+            Clicks grouped by tab and block within this resource center. "% of tab" is the block's
+            share of its tab's total clicks; "Clickers / clicks" shows unique users who clicked
+            versus total click events.
+          </QuestionTooltip>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {hasAnyClicks ? (
