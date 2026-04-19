@@ -36,6 +36,7 @@ export const useCompanyTableColumns = (): ColumnDef<BizCompany>[] => {
         enableHiding: false,
       },
       {
+        id: 'externalId',
         accessorKey: 'externalId',
         header: ({ column }: any) => (
           <DataTableColumnHeader column={column} title={t('companies.table.company')} />

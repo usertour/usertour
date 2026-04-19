@@ -38,6 +38,7 @@ export const useUserTableColumns = (): ColumnDef<BizUser>[] => {
         enableHiding: false,
       },
       {
+        id: 'externalId',
         accessorKey: 'externalId',
         header: ({ column }: any) => (
           <DataTableColumnHeader column={column} title={t('users.table.user')} />
