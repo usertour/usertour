@@ -156,6 +156,10 @@ const DividerRow = ({
   };
 
   if (!visible) {
+    // Required mount — not decorative. The DIVIDER_ID sentinel must stay inside
+    // SortableContext's items array to keep the shown/hidden split stable, and
+    // useSortable's node ref must be attached to a real DOM element for it to
+    // register as a drop target (enabling cross-section drops into empty hidden).
     return <div ref={setNodeRef} style={style} aria-hidden className="h-0" />;
   }
 
@@ -194,17 +198,20 @@ export function DataTableViewOptions<TData>({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const currentOrder = table.getState().columnOrder ?? [];
-  const hideableIds = React.useMemo(
-    () => collectHideableIds(table),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [table, currentOrder.join('|')],
+  // `table.getState().columnOrder` may be a new array reference each render even when its
+  // contents are unchanged. Serialize once to a stable key, then derive a memoized array
+  // so downstream memos get a reference-stable dep without having to eslint-disable.
+  const columnOrderKey = (table.getState().columnOrder ?? []).join('|');
+  const currentOrder = React.useMemo(
+    () => (columnOrderKey === '' ? [] : columnOrderKey.split('|')),
+    [columnOrderKey],
   );
+
+  const hideableIds = React.useMemo(() => collectHideableIds(table), [table]);
 
   const staticColumnIds = React.useMemo(
     () => currentOrder.filter((id) => !hideableIds.has(id)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentOrder.join('|'), hideableIds],
+    [currentOrder, hideableIds],
   );
 
   const sortableIds: string[] = React.useMemo(() => {
@@ -223,31 +230,20 @@ export function DataTableViewOptions<TData>({
       }
     }
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentOrder.join('|'), table, hideableIds]);
+  }, [currentOrder, table, hideableIds]);
 
   const columnVisibility = table.getState().columnVisibility;
-  const visibilityKey = React.useMemo(
-    () =>
-      Object.entries(columnVisibility)
-        .map(([k, v]) => `${k}:${v ? 1 : 0}`)
-        .sort()
-        .join('|'),
-    [columnVisibility],
-  );
 
   const baseItems: string[] = React.useMemo(() => {
     const shown: string[] = [];
     const hidden: string[] = [];
     for (const id of sortableIds) {
-      const column = table.getColumn(id);
-      if (!column) continue;
-      if (column.getIsVisible()) shown.push(id);
+      // TanStack Table: absent entry defaults to visible; only explicit `false` hides.
+      if (columnVisibility[id] !== false) shown.push(id);
       else hidden.push(id);
     }
     return [...shown, DIVIDER_ID, ...hidden];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortableIds, table, visibilityKey]);
+  }, [sortableIds, columnVisibility]);
 
   const { shownSlice, hiddenSlice } = React.useMemo(() => {
     const dividerIndex = baseItems.indexOf(DIVIDER_ID);
