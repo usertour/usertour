@@ -164,14 +164,15 @@ const DividerRow = ({
       <div className="flex items-center justify-between px-2 py-1">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         {actionLabel && onAction && (
-          <button
+          <Button
             type="button"
-            className="text-xs text-primary hover:underline disabled:opacity-50"
+            variant="ghost"
+            className="h-auto px-1.5 py-0.5 text-xs text-primary hover:text-primary"
             onClick={onAction}
             disabled={actionDisabled}
           >
             {actionLabel}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -430,7 +431,7 @@ export function DataTableViewOptions<TData>({
         }}
       >
         <div className="flex flex-col">
-          <div className="p-2 border-b">
+          <div className="p-2">
             <Input
               placeholder="Search columns..."
               value={search}
@@ -458,14 +459,15 @@ export function DataTableViewOptions<TData>({
                         <span className="text-xs font-medium text-muted-foreground">
                           Shown in table
                         </span>
-                        <button
+                        <Button
                           type="button"
-                          className="text-xs text-primary hover:underline disabled:opacity-50"
+                          variant="ghost"
+                          className="h-auto px-1.5 py-0.5 text-xs text-primary hover:text-primary"
                           onClick={handleHideAll}
                           disabled={!dragEnabled}
                         >
                           Hide all
-                        </button>
+                        </Button>
                       </div>
                       {filteredShown.length === 0 ? (
                         <div className="px-2 py-3 text-xs text-muted-foreground italic">
