@@ -360,37 +360,13 @@ export function DataTableViewOptions<TData>({
       const oldIndex = baseItems.indexOf(String(active.id));
       if (oldIndex < 0) return;
 
-      let newIndex: number;
-
-      if (over.id === DIVIDER_ID) {
-        // Dropping onto the boundary. arrayMove(items, oldIndex, dividerIdx) is symmetric:
-        // - hidden → divider (oldIndex > dividerIdx): item lands just BEFORE divider → becomes last shown.
-        // - shown  → divider (oldIndex < dividerIdx): after splice, divider shifts left by 1, and
-        //   inserting at dividerIdx places the item just AFTER divider → becomes first hidden.
-        const dividerIdx = baseItems.indexOf(DIVIDER_ID);
-        if (dividerIdx < 0) return;
-        newIndex = dividerIdx;
-      } else {
-        const overIndex = baseItems.indexOf(String(over.id));
-        if (overIndex < 0) return;
-
-        // Direction-aware insertion relative to the over item.
-        const activeRect = active.rect.current.translated;
-        const overRect = over.rect;
-        newIndex = overIndex;
-        if (activeRect) {
-          const activeMid = activeRect.top + activeRect.height / 2;
-          const overMid = overRect.top + overRect.height / 2;
-          const droppedAfter = activeMid > overMid;
-          if (oldIndex < overIndex) {
-            // moving down: default `to = overIndex` places AFTER over (post-shift).
-            newIndex = droppedAfter ? overIndex : Math.max(0, overIndex - 1);
-          } else {
-            // moving up: default `to = overIndex` places BEFORE over.
-            newIndex = droppedAfter ? overIndex + 1 : overIndex;
-          }
-        }
-      }
+      // Plain arrayMove(items, oldIndex, newIndex) — matches verticalListSortingStrategy's
+      // animation semantics, so the final position always equals what the user saw while
+      // dragging. Cross-section drops aim at the DIVIDER sentinel; everything else aims at
+      // the over item.
+      const newIndex =
+        over.id === DIVIDER_ID ? baseItems.indexOf(DIVIDER_ID) : baseItems.indexOf(String(over.id));
+      if (newIndex < 0) return;
 
       const final = arrayMove(baseItems, oldIndex, newIndex);
       if (!final.includes(DIVIDER_ID)) return;
