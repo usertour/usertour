@@ -4,21 +4,16 @@ import * as React from 'react';
 import { Table } from '@tanstack/react-table';
 import { Button } from '@usertour-packages/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@usertour-packages/command';
+import { Input } from '@usertour-packages/input';
 import { RiDraggable, RiEyeLine, RiEyeOffLine, RiLayoutColumnLine } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  UniqueIdentifier,
   closestCenter,
   useSensor,
   useSensors,
@@ -33,6 +28,11 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { ColumnSetting } from '@usertour/types';
 import { DataTableViewOptionsProps } from './types';
+
+// Sentinel item that marks the boundary between shown and hidden columns within the
+// single SortableContext. It's a non-draggable, non-droppable "anchor" — items above it
+// are shown, items below are hidden.
+const DIVIDER_ID = '__column_visibility_divider__';
 
 function getDisplayName(column: {
   id: string;
@@ -51,78 +51,45 @@ function collectHideableIds(table: Table<any>): Set<string> {
   );
 }
 
-function buildColumnSettings(
-  table: Table<any>,
-  orderedIds: string[],
-  override?: { id: string; visible: boolean },
-): ColumnSetting[] {
-  const hideableIds = collectHideableIds(table);
-  const settings: ColumnSetting[] = [];
-  const seen = new Set<string>();
-
-  for (const id of orderedIds) {
-    if (!hideableIds.has(id) || seen.has(id)) continue;
-    seen.add(id);
-    const column = table.getColumn(id);
-    if (!column) continue;
-    const visible = override && override.id === id ? override.visible : column.getIsVisible();
-    settings.push({ codeName: id, visible });
-  }
-  for (const column of table.getAllColumns()) {
-    if (hideableIds.has(column.id) && !seen.has(column.id)) {
-      seen.add(column.id);
-      const visible =
-        override && override.id === column.id ? override.visible : column.getIsVisible();
-      settings.push({ codeName: column.id, visible });
-    }
-  }
-  return settings;
-}
-
-interface SortableColumnRowProps {
+interface RowInfo {
   id: string;
   displayName: string;
+}
+
+interface SortableRowProps {
+  row: RowInfo;
   visible: boolean;
   dragEnabled: boolean;
   disabled?: boolean;
   onToggle: () => void;
 }
 
-const SortableColumnRow = ({
-  id,
-  displayName,
-  visible,
-  dragEnabled,
-  disabled,
-  onToggle,
-}: SortableColumnRowProps) => {
+const SortableRow = ({ row, visible, dragEnabled, disabled, onToggle }: SortableRowProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id,
+    id: row.id,
+    disabled: !dragEnabled,
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+    position: isDragging ? 'relative' : undefined,
   };
 
   return (
-    <CommandItem
+    <div
       ref={setNodeRef}
       style={style}
-      value={id}
-      onSelect={() => {
-        if (!disabled) onToggle();
-      }}
       className={cn(
-        'flex items-center gap-2 cursor-pointer',
+        'flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm bg-popover hover:bg-accent',
+        isDragging && 'shadow-md ring-1 ring-border',
         disabled && 'opacity-50 pointer-events-none',
       )}
     >
       {dragEnabled ? (
         <span
-          className="flex shrink-0 cursor-grab"
-          onClick={(e) => e.stopPropagation()}
+          className="flex shrink-0 cursor-grab touch-none select-none active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
@@ -131,13 +98,69 @@ const SortableColumnRow = ({
       ) : (
         <span className="h-4 w-4 shrink-0" />
       )}
-      <span className="flex-1 truncate text-sm">{displayName}</span>
-      {visible ? (
-        <RiEyeLine className="h-4 w-4 shrink-0" />
-      ) : (
-        <RiEyeOffLine className="h-4 w-4 shrink-0 text-muted-foreground" />
-      )}
-    </CommandItem>
+      <span
+        className="flex-1 truncate cursor-pointer"
+        onClick={() => {
+          if (!disabled) onToggle();
+        }}
+      >
+        {row.displayName}
+      </span>
+      <button
+        type="button"
+        className="shrink-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!disabled) onToggle();
+        }}
+        aria-label={visible ? 'Hide column' : 'Show column'}
+      >
+        {visible ? (
+          <RiEyeLine className="h-4 w-4" />
+        ) : (
+          <RiEyeOffLine className="h-4 w-4 text-muted-foreground" />
+        )}
+      </button>
+    </div>
+  );
+};
+
+interface DividerRowProps {
+  label: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  actionDisabled?: boolean;
+}
+
+const DividerRow = ({ label, actionLabel, onAction, actionDisabled }: DividerRowProps) => {
+  // Registered as a sortable item so it occupies a known position, but fully disabled —
+  // it can't be dragged or be a drop target.
+  const { setNodeRef, transform, transition } = useSortable({
+    id: DIVIDER_ID,
+    disabled: true,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="mt-2 border-t pt-2">
+      <div className="flex items-center justify-between px-2 py-1">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        {actionLabel && onAction && (
+          <button
+            type="button"
+            className="text-xs text-primary hover:underline disabled:opacity-50"
+            onClick={onAction}
+            disabled={actionDisabled}
+          >
+            {actionLabel}
+          </button>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -147,7 +170,9 @@ export function DataTableViewOptions<TData>({
   disabled = false,
 }: DataTableViewOptionsProps<TData>) {
   const [search, setSearch] = React.useState('');
-  const dragEnabled = search.trim() === '';
+  const [activeId, setActiveId] = React.useState<UniqueIdentifier | null>(null);
+
+  const dragEnabled = search.trim() === '' && !disabled;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -155,72 +180,183 @@ export function DataTableViewOptions<TData>({
   );
 
   const currentOrder = table.getState().columnOrder ?? [];
-  const hideableIds = collectHideableIds(table);
+  const hideableIds = React.useMemo(
+    () => collectHideableIds(table),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [table, currentOrder.join('|')],
+  );
 
-  // Build sortable id list in tanstack order, filtered to hideable; unknown hideable cols appended.
-  const sortableIds: string[] = [];
-  const seenSortable = new Set<string>();
-  for (const id of currentOrder) {
-    if (hideableIds.has(id) && !seenSortable.has(id)) {
-      sortableIds.push(id);
-      seenSortable.add(id);
+  const staticColumnIds = React.useMemo(
+    () => currentOrder.filter((id) => !hideableIds.has(id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentOrder.join('|'), hideableIds],
+  );
+
+  const sortableIds: string[] = React.useMemo(() => {
+    const result: string[] = [];
+    const seen = new Set<string>();
+    for (const id of currentOrder) {
+      if (hideableIds.has(id) && !seen.has(id)) {
+        result.push(id);
+        seen.add(id);
+      }
     }
-  }
-  for (const column of table.getAllColumns()) {
-    if (hideableIds.has(column.id) && !seenSortable.has(column.id)) {
-      sortableIds.push(column.id);
-      seenSortable.add(column.id);
+    for (const column of table.getAllColumns()) {
+      if (hideableIds.has(column.id) && !seen.has(column.id)) {
+        result.push(column.id);
+        seen.add(column.id);
+      }
     }
-  }
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrder.join('|'), table, hideableIds]);
+
+  const columnVisibility = table.getState().columnVisibility;
+  const visibilityKey = React.useMemo(
+    () =>
+      Object.entries(columnVisibility)
+        .map(([k, v]) => `${k}:${v ? 1 : 0}`)
+        .sort()
+        .join('|'),
+    [columnVisibility],
+  );
+
+  const baseItems: string[] = React.useMemo(() => {
+    const shown: string[] = [];
+    const hidden: string[] = [];
+    for (const id of sortableIds) {
+      const column = table.getColumn(id);
+      if (!column) continue;
+      if (column.getIsVisible()) shown.push(id);
+      else hidden.push(id);
+    }
+    return [...shown, DIVIDER_ID, ...hidden];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortableIds, table, visibilityKey]);
+
+  const { shownSlice, hiddenSlice } = React.useMemo(() => {
+    const dividerIndex = baseItems.indexOf(DIVIDER_ID);
+    if (dividerIndex < 0) return { shownSlice: [] as string[], hiddenSlice: [] as string[] };
+    return {
+      shownSlice: baseItems.slice(0, dividerIndex),
+      hiddenSlice: baseItems.slice(dividerIndex + 1),
+    };
+  }, [baseItems]);
+
+  const columnLookup = React.useMemo(() => {
+    const byId = new Map<string, ReturnType<typeof table.getColumn>>();
+    for (const column of table.getAllColumns()) {
+      byId.set(column.id, column);
+    }
+    return byId;
+  }, [table]);
+
+  const getRow = React.useCallback(
+    (id: string): RowInfo | null => {
+      const column = columnLookup.get(id);
+      if (!column) return null;
+      return { id, displayName: getDisplayName(column) };
+    },
+    [columnLookup],
+  );
+
+  const matchesSearch = React.useCallback(
+    (id: string): boolean => {
+      const needle = search.trim().toLowerCase();
+      if (!needle) return true;
+      const row = getRow(id);
+      if (!row) return false;
+      return (
+        row.displayName.toLowerCase().includes(needle) || row.id.toLowerCase().includes(needle)
+      );
+    },
+    [search, getRow],
+  );
+
+  const filteredShown = React.useMemo(
+    () => shownSlice.filter(matchesSearch),
+    [shownSlice, matchesSearch],
+  );
+  const filteredHidden = React.useMemo(
+    () => hiddenSlice.filter(matchesSearch),
+    [hiddenSlice, matchesSearch],
+  );
+
+  const commit = React.useCallback(
+    async (finalItems: string[]) => {
+      const dividerIndex = finalItems.indexOf(DIVIDER_ID);
+      if (dividerIndex < 0) return;
+      const shown = finalItems.slice(0, dividerIndex);
+      const hidden = finalItems.slice(dividerIndex + 1);
+      const shownSet = new Set(shown);
+      for (const id of [...shown, ...hidden]) {
+        const column = table.getColumn(id);
+        if (!column) continue;
+        const shouldBeVisible = shownSet.has(id);
+        if (column.getIsVisible() !== shouldBeVisible) {
+          column.toggleVisibility(shouldBeVisible);
+        }
+      }
+      table.setColumnOrder([...staticColumnIds, ...shown, ...hidden]);
+      if (onColumnsChange) {
+        const settings: ColumnSetting[] = [
+          ...shown.map((id) => ({ codeName: id, visible: true })),
+          ...hidden.map((id) => ({ codeName: id, visible: false })),
+        ];
+        await onColumnsChange(settings);
+      }
+    },
+    [table, staticColumnIds, onColumnsChange],
+  );
 
   const handleToggle = React.useCallback(
     async (id: string) => {
       if (disabled) return;
-      const column = table.getColumn(id);
-      if (!column) return;
-      const nextVisible = !column.getIsVisible();
-      column.toggleVisibility(nextVisible);
-      if (onColumnsChange) {
-        const latestOrder = table.getState().columnOrder ?? [];
-        await onColumnsChange(
-          buildColumnSettings(table, latestOrder, { id, visible: nextVisible }),
-        );
-      }
+      const inShown = shownSlice.includes(id);
+      const next = inShown
+        ? [...shownSlice.filter((x) => x !== id), DIVIDER_ID, ...hiddenSlice, id]
+        : [...shownSlice, id, DIVIDER_ID, ...hiddenSlice.filter((x) => x !== id)];
+      await commit(next);
     },
-    [table, onColumnsChange, disabled],
+    [disabled, shownSlice, hiddenSlice, commit],
   );
+
+  const handleHideAll = React.useCallback(async () => {
+    if (disabled || shownSlice.length === 0) return;
+    await commit([DIVIDER_ID, ...hiddenSlice, ...shownSlice]);
+  }, [disabled, shownSlice, hiddenSlice, commit]);
+
+  const handleShowAll = React.useCallback(async () => {
+    if (disabled || hiddenSlice.length === 0) return;
+    await commit([...shownSlice, ...hiddenSlice, DIVIDER_ID]);
+  }, [disabled, shownSlice, hiddenSlice, commit]);
+
+  const handleDragStart = React.useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id);
+  }, []);
 
   const handleDragEnd = React.useCallback(
     async (event: DragEndEvent) => {
       const { active, over } = event;
+      setActiveId(null);
       if (!over || active.id === over.id) return;
-      const oldIndex = sortableIds.indexOf(active.id as string);
-      const newIndex = sortableIds.indexOf(over.id as string);
+      if (active.id === DIVIDER_ID || over.id === DIVIDER_ID) return;
+
+      const oldIndex = baseItems.indexOf(String(active.id));
+      const newIndex = baseItems.indexOf(String(over.id));
       if (oldIndex < 0 || newIndex < 0) return;
 
-      const nextSortable = arrayMove(sortableIds, oldIndex, newIndex);
-      const staticIds = currentOrder.filter((id) => !hideableIds.has(id));
-      const nextFullOrder = [...staticIds, ...nextSortable];
-
-      table.setColumnOrder(nextFullOrder);
-      if (onColumnsChange) {
-        await onColumnsChange(buildColumnSettings(table, nextFullOrder));
-      }
+      const final = arrayMove(baseItems, oldIndex, newIndex);
+      if (!final.includes(DIVIDER_ID)) return;
+      await commit(final);
     },
-    [sortableIds, currentOrder, hideableIds, table, onColumnsChange],
+    [baseItems, commit],
   );
 
-  const commandFilter = React.useCallback(
-    (value: string, q: string) => {
-      const column = table.getColumn(value);
-      if (!column) return 0;
-      const needle = q.toLowerCase();
-      const displayName = getDisplayName(column).toLowerCase();
-      const codeName = column.id.toLowerCase();
-      return displayName.includes(needle) || codeName.includes(needle) ? 1 : 0;
-    },
-    [table],
-  );
+  const handleDragCancel = React.useCallback(() => setActiveId(null), []);
+
+  const isDragging = activeId !== null;
+  const nothingMatches = filteredShown.length === 0 && filteredHidden.length === 0;
 
   return (
     <Popover>
@@ -235,38 +371,114 @@ export function DataTableViewOptions<TData>({
           Customize Columns
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 p-0">
-        <Command filter={commandFilter}>
-          <CommandInput placeholder="Search columns..." value={search} onValueChange={setSearch} />
-          <CommandList>
-            <CommandEmpty>No columns found.</CommandEmpty>
-            <CommandGroup>
+      <PopoverContent
+        align="end"
+        className="w-80 p-0"
+        onInteractOutside={(e) => {
+          if (isDragging) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isDragging) e.preventDefault();
+        }}
+        onPointerDownOutside={(e) => {
+          if (isDragging) e.preventDefault();
+        }}
+      >
+        <div className="flex flex-col">
+          <div className="p-2 border-b">
+            <Input
+              placeholder="Search columns..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8"
+            />
+          </div>
+          <div className="max-h-[360px] overflow-y-auto">
+            {nothingMatches && search ? (
+              <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                No columns found.
+              </div>
+            ) : (
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
               >
-                <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-                  {sortableIds.map((id) => {
-                    const column = table.getColumn(id);
-                    if (!column) return null;
-                    return (
-                      <SortableColumnRow
-                        key={id}
-                        id={id}
-                        displayName={getDisplayName(column)}
-                        visible={column.getIsVisible()}
-                        dragEnabled={dragEnabled}
-                        disabled={disabled}
-                        onToggle={() => handleToggle(id)}
-                      />
-                    );
-                  })}
+                <SortableContext items={baseItems} strategy={verticalListSortingStrategy}>
+                  <div className="px-2 py-2">
+                    <div className="flex items-center justify-between px-2 py-1">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Shown in table
+                      </span>
+                      {shownSlice.length > 0 && (
+                        <button
+                          type="button"
+                          className="text-xs text-primary hover:underline disabled:opacity-50"
+                          onClick={handleHideAll}
+                          disabled={!dragEnabled}
+                        >
+                          Hide all
+                        </button>
+                      )}
+                    </div>
+                    {filteredShown.length === 0 ? (
+                      <div className="px-2 py-3 text-xs text-muted-foreground italic">
+                        {search ? 'No matches' : 'Drag items here to show'}
+                      </div>
+                    ) : (
+                      filteredShown.map((id) => {
+                        const row = getRow(id);
+                        if (!row) return null;
+                        return (
+                          <SortableRow
+                            key={id}
+                            row={row}
+                            visible
+                            dragEnabled={dragEnabled}
+                            disabled={disabled}
+                            onToggle={() => handleToggle(id)}
+                          />
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <DividerRow
+                    label="Hidden in table"
+                    actionLabel={hiddenSlice.length > 0 ? 'Show all' : undefined}
+                    onAction={hiddenSlice.length > 0 ? handleShowAll : undefined}
+                    actionDisabled={!dragEnabled}
+                  />
+
+                  <div className="px-2 pb-2">
+                    {filteredHidden.length === 0 ? (
+                      <div className="px-2 py-3 text-xs text-muted-foreground italic">
+                        {search ? 'No matches' : 'Drag items here to hide'}
+                      </div>
+                    ) : (
+                      filteredHidden.map((id) => {
+                        const row = getRow(id);
+                        if (!row) return null;
+                        return (
+                          <SortableRow
+                            key={id}
+                            row={row}
+                            visible={false}
+                            dragEnabled={dragEnabled}
+                            disabled={disabled}
+                            onToggle={() => handleToggle(id)}
+                          />
+                        );
+                      })
+                    )}
+                  </div>
                 </SortableContext>
               </DndContext>
-            </CommandGroup>
-          </CommandList>
-        </Command>
+            )}
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   );
