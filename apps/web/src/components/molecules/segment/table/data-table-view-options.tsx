@@ -133,11 +133,12 @@ interface DividerRowProps {
 }
 
 const DividerRow = ({ label, actionLabel, onAction, actionDisabled }: DividerRowProps) => {
-  // Registered as a sortable item so it occupies a known position, but fully disabled —
-  // it can't be dragged or be a drop target.
+  // Droppable but not draggable. It must be droppable so closestCenter can target it when
+  // the cursor is in the gap between the last shown row and the first hidden row —
+  // otherwise that gap becomes a dead zone where drops land on the wrong side.
   const { setNodeRef, transform, transition } = useSortable({
     id: DIVIDER_ID,
-    disabled: true,
+    disabled: { draggable: true },
   });
 
   const style: React.CSSProperties = {
@@ -340,11 +341,42 @@ export function DataTableViewOptions<TData>({
       const { active, over } = event;
       setActiveId(null);
       if (!over || active.id === over.id) return;
-      if (active.id === DIVIDER_ID || over.id === DIVIDER_ID) return;
+      if (active.id === DIVIDER_ID) return;
 
       const oldIndex = baseItems.indexOf(String(active.id));
-      const newIndex = baseItems.indexOf(String(over.id));
-      if (oldIndex < 0 || newIndex < 0) return;
+      if (oldIndex < 0) return;
+
+      let newIndex: number;
+
+      if (over.id === DIVIDER_ID) {
+        // Dropping onto the boundary. arrayMove(items, oldIndex, dividerIdx) is symmetric:
+        // - hidden → divider (oldIndex > dividerIdx): item lands just BEFORE divider → becomes last shown.
+        // - shown  → divider (oldIndex < dividerIdx): after splice, divider shifts left by 1, and
+        //   inserting at dividerIdx places the item just AFTER divider → becomes first hidden.
+        const dividerIdx = baseItems.indexOf(DIVIDER_ID);
+        if (dividerIdx < 0) return;
+        newIndex = dividerIdx;
+      } else {
+        const overIndex = baseItems.indexOf(String(over.id));
+        if (overIndex < 0) return;
+
+        // Direction-aware insertion relative to the over item.
+        const activeRect = active.rect.current.translated;
+        const overRect = over.rect;
+        newIndex = overIndex;
+        if (activeRect) {
+          const activeMid = activeRect.top + activeRect.height / 2;
+          const overMid = overRect.top + overRect.height / 2;
+          const droppedAfter = activeMid > overMid;
+          if (oldIndex < overIndex) {
+            // moving down: default `to = overIndex` places AFTER over (post-shift).
+            newIndex = droppedAfter ? overIndex : Math.max(0, overIndex - 1);
+          } else {
+            // moving up: default `to = overIndex` places BEFORE over.
+            newIndex = droppedAfter ? overIndex + 1 : overIndex;
+          }
+        }
+      }
 
       const final = arrayMove(baseItems, oldIndex, newIndex);
       if (!final.includes(DIVIDER_ID)) return;
