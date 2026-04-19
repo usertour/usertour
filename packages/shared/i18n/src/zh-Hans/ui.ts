@@ -13,6 +13,8 @@ const translations = {
     search: '搜索...',
     reset: '重置',
     addFilter: '添加筛选',
+    rowsSelected: '已选 {{count}} 项',
+    clearSelection: '清除选择',
   },
   users: {
     actions: {

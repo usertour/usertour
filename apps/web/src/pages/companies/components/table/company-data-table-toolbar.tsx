@@ -22,6 +22,8 @@ import { updateSegment } from '@usertour-packages/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useTableSelection } from '@/hooks/use-table-selection';
+import { Button } from '@usertour-packages/button';
+import { Cross2Icon } from '@radix-ui/react-icons';
 
 interface CompanyDataTableToolbarProps {
   table: Table<any>;
@@ -47,7 +49,7 @@ export const CompanyDataTableToolbar = ({
 
   const { setQuery, refetch: refetchCompanyList } = useCompanyListContext();
   const [searchValue, setSearchValue] = useState('');
-  const { hasSelection } = useTableSelection(table);
+  const { hasSelection, getSelectedCount } = useTableSelection(table);
   const { isViewOnly, environment } = useAppContext();
 
   // Use ref to store currentSegment to avoid recreating handleDataChange when segment object changes
@@ -145,33 +147,50 @@ export const CompanyDataTableToolbar = ({
           baseZIndex={WebZIndex.RULES}
         />
       </div>
-      <div className="flex items-center justify-end gap-2">
-        <CollapsibleSearch
-          value={searchValue}
-          onChange={handleSearchChange}
-          placeholder={t('common.search')}
-        />
-        <DataTableViewOptions
-          table={table}
-          onColumnsChange={updateSegmentColumns}
-          disabled={isViewOnly}
-        />
-
-        <CompanySegmentCreateDialog
-          isOpen={open}
-          onClose={handleOnClose}
-          environmentId={environment?.id}
-        />
-      </div>
-      {hasSelection() && (
-        <div className="flex flex-row space-x-2">
-          <AddCompanyManualSegment table={table} />
-          {currentSegment.dataType === 'MANUAL' && (
-            <RemoveFromSegment table={table} currentSegment={currentSegment} />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-row items-center gap-2">
+          {hasSelection() && (
+            <>
+              <span className="text-sm text-muted-foreground pl-1">
+                {t('common.rowsSelected', { count: getSelectedCount() })}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground"
+                onClick={() => table.resetRowSelection()}
+                aria-label={t('common.clearSelection')}
+              >
+                <Cross2Icon className="h-3.5 w-3.5" />
+              </Button>
+              <div className="w-px h-4 bg-border mx-1" />
+              <AddCompanyManualSegment table={table} />
+              {currentSegment.dataType === 'MANUAL' && (
+                <RemoveFromSegment table={table} currentSegment={currentSegment} />
+              )}
+              <DeleteCompanyFromSegment table={table} />
+            </>
           )}
-          <DeleteCompanyFromSegment table={table} />
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          <CollapsibleSearch
+            value={searchValue}
+            onChange={handleSearchChange}
+            placeholder={t('common.search')}
+          />
+          <DataTableViewOptions
+            table={table}
+            onColumnsChange={updateSegmentColumns}
+            disabled={isViewOnly}
+          />
+
+          <CompanySegmentCreateDialog
+            isOpen={open}
+            onClose={handleOnClose}
+            environmentId={environment?.id}
+          />
+        </div>
+      </div>
     </>
   );
 };

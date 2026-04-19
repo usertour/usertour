@@ -19,6 +19,8 @@ const translations = {
     search: 'Search...',
     reset: 'Reset',
     addFilter: 'Add filter',
+    rowsSelected: '{{count}} selected',
+    clearSelection: 'Clear selection',
   },
   users: {
     actions: {

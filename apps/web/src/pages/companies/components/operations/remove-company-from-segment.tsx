@@ -42,12 +42,8 @@ export const RemoveFromSegment = (props: RemoveFromSegmentProps) => {
 
   return (
     <>
-      <Button
-        variant={'ghost'}
-        className="h-8 text-primary hover:text-primary px-1"
-        onClick={handleOnClick}
-      >
-        <CloseIcon className="mr-1" />
+      <Button variant="ghost" className="h-8 px-2" onClick={handleOnClick}>
+        <CloseIcon className="mr-1 h-4 w-4" />
         {t('companies.actions.removeFromSegment')}
       </Button>
 
