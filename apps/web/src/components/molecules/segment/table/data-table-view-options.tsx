@@ -126,16 +126,25 @@ const SortableRow = ({ row, visible, dragEnabled, disabled, onToggle }: Sortable
 };
 
 interface DividerRowProps {
+  visible: boolean;
+  showBorder: boolean;
   label: string;
   actionLabel?: string;
   onAction?: () => void;
   actionDisabled?: boolean;
 }
 
-const DividerRow = ({ label, actionLabel, onAction, actionDisabled }: DividerRowProps) => {
-  // Droppable but not draggable. It must be droppable so closestCenter can target it when
-  // the cursor is in the gap between the last shown row and the first hidden row —
-  // otherwise that gap becomes a dead zone where drops land on the wrong side.
+const DividerRow = ({
+  visible,
+  showBorder,
+  label,
+  actionLabel,
+  onAction,
+  actionDisabled,
+}: DividerRowProps) => {
+  // Droppable but not draggable. The sentinel must always be mounted (even when
+  // collapsed) so it stays in SortableContext and remains a valid drop target for
+  // cross-section drags.
   const { setNodeRef, transform, transition } = useSortable({
     id: DIVIDER_ID,
     disabled: { draggable: true },
@@ -146,8 +155,12 @@ const DividerRow = ({ label, actionLabel, onAction, actionDisabled }: DividerRow
     transition,
   };
 
+  if (!visible) {
+    return <div ref={setNodeRef} style={style} aria-hidden className="h-0" />;
+  }
+
   return (
-    <div ref={setNodeRef} style={style} className="mt-2 border-t pt-2">
+    <div ref={setNodeRef} style={style} className={cn(showBorder && 'mt-2 border-t pt-2')}>
       <div className="flex items-center justify-between px-2 py-1">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         {actionLabel && onAction && (
@@ -439,12 +452,12 @@ export function DataTableViewOptions<TData>({
                 onDragCancel={handleDragCancel}
               >
                 <SortableContext items={baseItems} strategy={verticalListSortingStrategy}>
-                  <div className="px-2 py-2">
-                    <div className="flex items-center justify-between px-2 py-1">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        Shown in table
-                      </span>
-                      {shownSlice.length > 0 && (
+                  {shownSlice.length > 0 && (
+                    <div className="px-2 py-2">
+                      <div className="flex items-center justify-between px-2 py-1">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Shown in table
+                        </span>
                         <button
                           type="button"
                           className="text-xs text-primary hover:underline disabled:opacity-50"
@@ -453,59 +466,63 @@ export function DataTableViewOptions<TData>({
                         >
                           Hide all
                         </button>
+                      </div>
+                      {filteredShown.length === 0 ? (
+                        <div className="px-2 py-3 text-xs text-muted-foreground italic">
+                          No matches
+                        </div>
+                      ) : (
+                        filteredShown.map((id) => {
+                          const row = getRow(id);
+                          if (!row) return null;
+                          return (
+                            <SortableRow
+                              key={id}
+                              row={row}
+                              visible
+                              dragEnabled={dragEnabled}
+                              disabled={disabled}
+                              onToggle={() => handleToggle(id)}
+                            />
+                          );
+                        })
                       )}
                     </div>
-                    {filteredShown.length === 0 ? (
-                      <div className="px-2 py-3 text-xs text-muted-foreground italic">
-                        {search ? 'No matches' : 'Drag items here to show'}
-                      </div>
-                    ) : (
-                      filteredShown.map((id) => {
-                        const row = getRow(id);
-                        if (!row) return null;
-                        return (
-                          <SortableRow
-                            key={id}
-                            row={row}
-                            visible
-                            dragEnabled={dragEnabled}
-                            disabled={disabled}
-                            onToggle={() => handleToggle(id)}
-                          />
-                        );
-                      })
-                    )}
-                  </div>
+                  )}
 
                   <DividerRow
+                    visible={hiddenSlice.length > 0}
+                    showBorder={shownSlice.length > 0}
                     label="Hidden in table"
-                    actionLabel={hiddenSlice.length > 0 ? 'Show all' : undefined}
-                    onAction={hiddenSlice.length > 0 ? handleShowAll : undefined}
+                    actionLabel="Show all"
+                    onAction={handleShowAll}
                     actionDisabled={!dragEnabled}
                   />
 
-                  <div className="px-2 pb-2">
-                    {filteredHidden.length === 0 ? (
-                      <div className="px-2 py-3 text-xs text-muted-foreground italic">
-                        {search ? 'No matches' : 'Drag items here to hide'}
-                      </div>
-                    ) : (
-                      filteredHidden.map((id) => {
-                        const row = getRow(id);
-                        if (!row) return null;
-                        return (
-                          <SortableRow
-                            key={id}
-                            row={row}
-                            visible={false}
-                            dragEnabled={dragEnabled}
-                            disabled={disabled}
-                            onToggle={() => handleToggle(id)}
-                          />
-                        );
-                      })
-                    )}
-                  </div>
+                  {hiddenSlice.length > 0 && (
+                    <div className="px-2 pb-2">
+                      {filteredHidden.length === 0 ? (
+                        <div className="px-2 py-3 text-xs text-muted-foreground italic">
+                          No matches
+                        </div>
+                      ) : (
+                        filteredHidden.map((id) => {
+                          const row = getRow(id);
+                          if (!row) return null;
+                          return (
+                            <SortableRow
+                              key={id}
+                              row={row}
+                              visible={false}
+                              dragEnabled={dragEnabled}
+                              disabled={disabled}
+                              onToggle={() => handleToggle(id)}
+                            />
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
                 </SortableContext>
               </DndContext>
             )}
