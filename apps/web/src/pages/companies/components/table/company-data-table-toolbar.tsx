@@ -3,19 +3,17 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
-import { Cross2Icon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
-import { Button } from '@usertour-packages/button';
-import { Input } from '@usertour-packages/input';
 import { useTranslation } from 'react-i18next';
 import { WebZIndex } from '@usertour-packages/constants';
 import { Rules } from '@usertour-packages/shared-components';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
-import { ChangeEvent, useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { AddCompanyManualSegment } from '../operations';
 import { CompanySegmentCreateDialog } from '../dialogs';
 import { DataTableViewOptions } from '@/components/molecules/segment/table';
+import { CollapsibleSearch } from '@/components/molecules/collapsible-search';
 import { DeleteCompanyFromSegment } from '../operations';
 import { RemoveFromSegment } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
@@ -124,17 +122,12 @@ export const CompanyDataTableToolbar = ({
   );
 
   const handleSearchChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setSearchValue(event.target.value);
-      setQuery((prev) => ({ ...prev, search: event.target.value }));
+    (value: string) => {
+      setSearchValue(value);
+      setQuery((prev) => ({ ...prev, search: value }));
     },
     [setQuery],
   );
-
-  const handleSearchReset = useCallback(() => {
-    setSearchValue('');
-    setQuery((prev) => ({ ...prev, search: '' }));
-  }, [setQuery]);
 
   return (
     <>
@@ -152,21 +145,12 @@ export const CompanyDataTableToolbar = ({
           baseZIndex={WebZIndex.RULES}
         />
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-1 items-center space-x-2">
-          <Input
-            placeholder={t('common.search')}
-            value={searchValue}
-            onChange={handleSearchChange}
-            className="h-8 w-[150px] lg:w-[250px]"
-          />
-          {searchValue !== '' && (
-            <Button variant="ghost" onClick={handleSearchReset} className="h-8 px-2 lg:px-3">
-              {t('common.reset')}
-              <Cross2Icon className="ml-2 h-4 w-4" />
-            </Button>
-          )}
-        </div>
+      <div className="flex items-center justify-end gap-2">
+        <CollapsibleSearch
+          value={searchValue}
+          onChange={handleSearchChange}
+          placeholder={t('common.search')}
+        />
         <DataTableViewOptions
           table={table}
           onColumnsChange={updateSegmentColumns}

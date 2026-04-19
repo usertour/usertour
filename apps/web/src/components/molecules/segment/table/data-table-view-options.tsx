@@ -379,12 +379,7 @@ export function DataTableViewOptions<TData>({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="ml-auto hidden h-8 lg:flex"
-          disabled={disabled}
-        >
+        <Button variant="outline" size="sm" className="hidden h-8 lg:flex" disabled={disabled}>
           <RiLayoutColumnLine className="mr-2 h-4 w-4" />
           Customize Columns
         </Button>

@@ -408,11 +408,17 @@ export class BizService {
             });
           }
         } else if (attr.bizType === bizType && attr.dataType === AttributeDataType.Boolean) {
-          // Boolean type - convert search to boolean
-          const boolValue = search.toLowerCase() === 'true' || search === '1';
-          conditions.push({
-            data: { path: [attr.codeName], equals: boolValue },
-          });
+          // Boolean type — only match when the search term is explicitly boolean-like.
+          // Otherwise any non-bool search (e.g. "lisa") would implicitly resolve to `false`
+          // and match every record whose boolean attribute happens to be false.
+          const normalized = search.toLowerCase();
+          const isTrueLiteral = normalized === 'true' || search === '1';
+          const isFalseLiteral = normalized === 'false' || search === '0';
+          if (isTrueLiteral || isFalseLiteral) {
+            conditions.push({
+              data: { path: [attr.codeName], equals: isTrueLiteral },
+            });
+          }
         }
       }
     }
