@@ -66,6 +66,7 @@ export function createBizListContext<T>() {
         query: { environmentId, ...queryState },
         orderBy: { field: 'createdAt', direction: 'desc' },
       },
+      skip: !environmentId,
       notifyOnNetworkStatusChange: true,
     });
 
@@ -126,8 +127,9 @@ export function createBizListContext<T>() {
     }, [bizList, currentPagination, dataProcessor]);
 
     useEffect(() => {
+      if (!environmentId) return;
       refetch();
-    }, [queryState, requestPagination]);
+    }, [queryState, requestPagination, environmentId]);
 
     const value: BizListContextValue<T> = {
       refetch,

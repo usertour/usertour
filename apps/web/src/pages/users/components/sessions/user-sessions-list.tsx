@@ -23,9 +23,10 @@ import {
 import { cn } from '@usertour-packages/tailwind';
 import {
   BannerIcon,
+  ChecklistIcon,
+  EventTrackerIcon,
   FlowIcon,
   LauncherIcon,
-  ChecklistIcon,
   ResourceCenterIcon,
   SpinnerIcon,
 } from '@usertour-packages/icons';
@@ -106,7 +107,7 @@ const ContentColumn = ({
     return <div className="text-muted-foreground">Unknown content</div>;
   }
 
-  const iconClassName = 'w-4 h-4';
+  const iconClassName = 'h-4 w-4 flex-none text-muted-foreground';
 
   const getContentIcon = (contentType: string) => {
     switch (contentType) {
@@ -120,6 +121,8 @@ const ContentColumn = ({
         return <BannerIcon className={iconClassName} />;
       case ContentDataType.RESOURCE_CENTER:
         return <ResourceCenterIcon className={iconClassName} />;
+      case ContentDataType.TRACKER:
+        return <EventTrackerIcon className={iconClassName} />;
       default:
         return null;
     }

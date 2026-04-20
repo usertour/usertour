@@ -1,9 +1,24 @@
-import { BizEvent, EventAttributes } from '@usertour/types';
+import { BizEvent, BizEvents, EventAttributes } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Button } from '@usertour-packages/button';
-import { SpinnerIcon } from '@usertour-packages/icons';
-import { ChevronDownIcon, ChevronUpIcon, CopyIcon, ReloadIcon } from '@radix-ui/react-icons';
+import {
+  BannerIcon,
+  ChecklistIcon,
+  EventTrackerIcon,
+  FlowIcon,
+  LauncherIcon,
+  ResourceCenterIcon,
+  SpinnerIcon,
+} from '@usertour-packages/icons';
+import {
+  ActivityLogIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CopyIcon,
+  GlobeIcon,
+  ReloadIcon,
+} from '@radix-ui/react-icons';
 import { cn } from '@usertour-packages/tailwind';
 import {
   Tooltip,
@@ -44,67 +59,93 @@ function getEventDisplayName(event: BizEvent): string {
   return 'Unknown event';
 }
 
-// Get event color indicator
-function getEventColor(event: BizEvent): string {
-  if (event.event?.predefined) {
-    return 'bg-blue-500';
-  }
-  return 'bg-green-500';
+type EventCategory =
+  | 'flow'
+  | 'checklist'
+  | 'launcher'
+  | 'banner'
+  | 'resource_center'
+  | 'event_tracker'
+  | 'page'
+  | 'custom';
+
+function getEventCategory(event: BizEvent): EventCategory {
+  const data = (event.data || {}) as Record<string, unknown>;
+
+  if (data[EventAttributes.FLOW_ID]) return 'flow';
+  if (data[EventAttributes.CHECKLIST_ID]) return 'checklist';
+  if (data[EventAttributes.LAUNCHER_ID]) return 'launcher';
+  if (data[EventAttributes.BANNER_ID]) return 'banner';
+  if (data[EventAttributes.RESOURCE_CENTER_ID]) return 'resource_center';
+  if (data[EventAttributes.EVENT_TRACKER_ID]) return 'event_tracker';
+  if (event.event?.codeName === BizEvents.PAGE_VIEWED) return 'page';
+  return 'custom';
 }
 
-// Extract useful context from event data
-function getEventContext(event: BizEvent): string | null {
-  if (!event.data) return null;
-  const data = event.data as Record<string, unknown>;
+const CATEGORY_ICON: Record<EventCategory, React.ComponentType<{ className?: string }>> = {
+  flow: FlowIcon,
+  checklist: ChecklistIcon,
+  launcher: LauncherIcon,
+  banner: BannerIcon,
+  resource_center: ResourceCenterIcon,
+  event_tracker: EventTrackerIcon,
+  page: GlobeIcon,
+  custom: ActivityLogIcon,
+};
 
-  if (data.url) return String(data.url);
-  if (data.path) return String(data.path);
-  if (data.page) return String(data.page);
-  if (data.name) return String(data.name);
-  if (data.title) return String(data.title);
+const CATEGORY_ICON_COLOR = 'text-muted-foreground';
 
-  return null;
+// Extract inline descriptor: content name + sub-context (step/task/url)
+function getEventDescriptor(event: BizEvent): { primary?: string; secondary?: string } {
+  const data = (event.data || {}) as Record<string, unknown>;
+  const category = getEventCategory(event);
+
+  const str = (v: unknown): string | undefined =>
+    typeof v === 'string' && v ? v : typeof v === 'number' ? String(v) : undefined;
+
+  switch (category) {
+    case 'flow': {
+      const primary = str(data[EventAttributes.FLOW_NAME]);
+      const stepNumber = str(data[EventAttributes.FLOW_STEP_NUMBER]);
+      const stepName = str(data[EventAttributes.FLOW_STEP_NAME]);
+      const secondary = stepNumber
+        ? `Step ${stepNumber}${stepName ? `: ${stepName}` : ''}`
+        : stepName;
+      return { primary, secondary };
+    }
+    case 'checklist':
+      return {
+        primary: str(data[EventAttributes.CHECKLIST_NAME]),
+        secondary: str(data[EventAttributes.CHECKLIST_TASK_NAME]),
+      };
+    case 'launcher':
+      return { primary: str(data[EventAttributes.LAUNCHER_NAME]) };
+    case 'banner':
+      return { primary: str(data[EventAttributes.BANNER_NAME]) };
+    case 'resource_center':
+      return {
+        primary: str(data[EventAttributes.RESOURCE_CENTER_NAME]),
+        secondary: str(data[EventAttributes.RESOURCE_CENTER_BLOCK_NAME]),
+      };
+    case 'event_tracker':
+      return { primary: str(data[EventAttributes.EVENT_TRACKER_NAME]) };
+    case 'page':
+      return { primary: str(data[EventAttributes.PAGE_URL]) };
+    default:
+      return { primary: str(data.name) || str(data.title) };
+  }
 }
 
-function getFallbackSessionAttributeKey(event: BizEvent): string | null {
-  const dataKeys = Object.keys(event.data || {});
+const CATEGORY_SESSION_ATTRIBUTE_KEY: Partial<Record<EventCategory, EventAttributes>> = {
+  flow: EventAttributes.FLOW_SESSION_ID,
+  checklist: EventAttributes.CHECKLIST_SESSION_ID,
+  launcher: EventAttributes.LAUNCHER_SESSION_ID,
+  banner: EventAttributes.BANNER_SESSION_ID,
+  resource_center: EventAttributes.RESOURCE_CENTER_SESSION_ID,
+};
 
-  if (
-    dataKeys.some((key) => key.startsWith('checklist_')) ||
-    event.event?.codeName?.startsWith('CHECKLIST_')
-  ) {
-    return EventAttributes.CHECKLIST_SESSION_ID;
-  }
-
-  if (
-    dataKeys.some((key) => key.startsWith('flow_')) ||
-    event.event?.codeName?.startsWith('FLOW_')
-  ) {
-    return EventAttributes.FLOW_SESSION_ID;
-  }
-
-  if (
-    dataKeys.some((key) => key.startsWith('launcher_')) ||
-    event.event?.codeName?.startsWith('LAUNCHER_')
-  ) {
-    return EventAttributes.LAUNCHER_SESSION_ID;
-  }
-
-  if (
-    dataKeys.some((key) => key.startsWith('banner_')) ||
-    event.event?.codeName?.startsWith('BANNER_')
-  ) {
-    return EventAttributes.BANNER_SESSION_ID;
-  }
-
-  if (
-    dataKeys.some((key) => key.startsWith('resource_center_')) ||
-    event.event?.codeName?.startsWith('RESOURCE_CENTER_')
-  ) {
-    return EventAttributes.RESOURCE_CENTER_SESSION_ID;
-  }
-
-  return null;
+function getFallbackSessionAttributeKey(event: BizEvent): EventAttributes | null {
+  return CATEGORY_SESSION_ATTRIBUTE_KEY[getEventCategory(event)] ?? null;
 }
 
 const SESSION_LINK_LABEL = 'Session';
@@ -134,8 +175,10 @@ const ActivityFeedRow = ({
 }: ActivityFeedRowProps) => {
   const time = format(new Date(event.createdAt), 'hh:mm a');
   const displayName = getEventDisplayName(event);
-  const context = getEventContext(event);
-  const colorClass = getEventColor(event);
+  const category = getEventCategory(event);
+  const CategoryIcon = CATEGORY_ICON[category];
+  const { primary: descriptorPrimary, secondary: descriptorSecondary } = getEventDescriptor(event);
+  const hasDescriptor = !!(descriptorPrimary || descriptorSecondary);
   const hasEventData = !!(event.data && Object.keys(event.data).length > 0);
   const fallbackSessionAttributeKey =
     environmentId && event.bizSessionId ? getFallbackSessionAttributeKey(event) : null;
@@ -151,10 +194,20 @@ const ActivityFeedRow = ({
         onClick={onToggle}
       >
         <div className="w-20 flex-none text-muted-foreground text-xs">{time}</div>
-        <div className={cn('w-2 h-2 rounded-full flex-none', colorClass)} />
+        <CategoryIcon className={cn('h-4 w-4 flex-none', CATEGORY_ICON_COLOR)} />
         <div className="font-medium flex-none">{displayName}</div>
-        {context && <div className="text-muted-foreground truncate min-w-0 flex-1">{context}</div>}
-        {!context && <div className="flex-1" />}
+        {hasDescriptor && (
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 text-muted-foreground">
+            {descriptorPrimary && (
+              <span className="truncate max-w-[40%] shrink-0">{descriptorPrimary}</span>
+            )}
+            {descriptorPrimary && descriptorSecondary && (
+              <span className="shrink-0 text-muted-foreground/60">·</span>
+            )}
+            {descriptorSecondary && <span className="truncate min-w-0">{descriptorSecondary}</span>}
+          </div>
+        )}
+        {!hasDescriptor && <div className="flex-1" />}
         {renderTrailingContent && (
           <div className="flex-none text-muted-foreground text-xs">
             {renderTrailingContent(event)}
