@@ -6,6 +6,7 @@ import { TableCell, TableRow } from '@usertour-packages/table';
 import { Button } from '@usertour-packages/button';
 import { cn } from '@usertour-packages/tailwind';
 import { TruncatedText } from '@/components/molecules/truncated-text';
+import { AttributeTypeChip } from '@/components/molecules/attribute-type-chip';
 import { formatAttributeValue } from '@/utils/common';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 
@@ -125,6 +126,7 @@ export const MembershipRow = ({
                       ) : (
                         formattedValue
                       )}
+                      <AttributeTypeChip dataType={attr.dataType} />
                     </div>
                     <Button
                       variant="ghost"
