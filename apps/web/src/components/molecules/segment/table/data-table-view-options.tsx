@@ -198,16 +198,28 @@ export function DataTableViewOptions<TData>({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  // `table.getState().columnOrder` may be a new array reference each render even when its
-  // contents are unchanged. Serialize once to a stable key, then derive a memoized array
-  // so downstream memos get a reference-stable dep without having to eslint-disable.
+  // TanStack Table's `table` object identity is stable across renders even when its
+  // internal column model updates (e.g. when dynamic attribute columns arrive later
+  // after an Apollo cache hydration on route remount). Depending solely on `[table]`
+  // would freeze memos to the first-render snapshot. Serialize the things we actually
+  // care about — column order and the full column-id list — into stable string keys,
+  // then use those as deps. Same pattern for both keeps downstream memos reactive.
   const columnOrderKey = (table.getState().columnOrder ?? []).join('|');
   const currentOrder = React.useMemo(
     () => (columnOrderKey === '' ? [] : columnOrderKey.split('|')),
     [columnOrderKey],
   );
 
-  const hideableIds = React.useMemo(() => collectHideableIds(table), [table]);
+  const allColumnsKey = table
+    .getAllColumns()
+    .map((c) => c.id)
+    .join('|');
+
+  const hideableIds = React.useMemo(
+    () => collectHideableIds(table),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allColumnsKey],
+  );
 
   const staticColumnIds = React.useMemo(
     () => currentOrder.filter((id) => !hideableIds.has(id)),
@@ -260,7 +272,8 @@ export function DataTableViewOptions<TData>({
       byId.set(column.id, column);
     }
     return byId;
-  }, [table]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allColumnsKey]);
 
   const getRow = React.useCallback(
     (id: string): RowInfo | null => {
