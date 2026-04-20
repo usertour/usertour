@@ -3,9 +3,9 @@
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Attribute, ColumnSetting } from '@usertour/types';
-import { DynamicColumnConfig, TableStyles } from './types';
+import { DynamicColumnConfig } from './types';
 import { DataTableColumnHeader } from './data-table-column-header';
-import { formatAttributeValue } from '@/utils/common';
+import { cellContainerClass, renderAttributeCell } from './cells';
 
 // Type guard to safely access data
 const getDataValue = (row: any, key: string): unknown => {
@@ -20,12 +20,12 @@ const getDataValue = (row: any, key: string): unknown => {
 const createColumnAccessor = (codeName: string) => (row: any) => getDataValue(row, codeName);
 
 const createColumnHeader =
-  (displayName: string, className?: string) =>
+  (displayName: string, dataType: number, className?: string) =>
   ({ column }: { column: any }) => (
     <DataTableColumnHeader
       column={column}
       title={displayName}
-      className={className || TableStyles.HEADER_CONSTRAINED}
+      className={className ?? cellContainerClass(dataType)}
     />
   );
 
@@ -34,8 +34,8 @@ const createColumnCell =
   ({ row }: { row: any }) => {
     const value = row.getValue(codeName);
     return (
-      <div className={className || TableStyles.CELL_CONSTRAINED}>
-        {formatAttributeValue(value, dataType)}
+      <div className={className ?? cellContainerClass(dataType)}>
+        {renderAttributeCell(value, dataType)}
       </div>
     );
   };
@@ -53,7 +53,7 @@ export const createDynamicColumn = <TData,>(
   return {
     accessorFn: createColumnAccessor(attribute.codeName),
     id: attribute.codeName,
-    header: createColumnHeader(displayName, options?.headerClassName),
+    header: createColumnHeader(displayName, attribute.dataType, options?.headerClassName),
     cell: createColumnCell(attribute.codeName, attribute.dataType, options?.cellClassName),
     enableSorting: false,
     enableHiding: true,

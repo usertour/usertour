@@ -102,7 +102,5 @@ export interface DynamicColumnConfig {
 
 // Table styles constants
 export enum TableStyles {
-  CELL_CONSTRAINED = 'min-w-24 max-w-72 truncate',
-  HEADER_CONSTRAINED = 'min-w-24 max-w-72 truncate',
   SKELETON_ROWS = 5,
 }
