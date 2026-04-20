@@ -127,6 +127,7 @@ const translations = {
       countLabel_other: '{{count}} sessions',
       table: {
         content: 'Content',
+        status: 'Status',
         progress: 'Progress',
         lastActivity: 'Last activity',
         user: 'User',

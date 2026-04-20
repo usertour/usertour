@@ -119,6 +119,7 @@ const translations = {
       countLabel_other: '{{count}} 个会话',
       table: {
         content: '内容',
+        status: '状态',
         progress: '进度',
         lastActivity: '最后活动',
         user: '用户',

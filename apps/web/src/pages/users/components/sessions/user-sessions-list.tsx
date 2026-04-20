@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  BannerProgressColumn,
-  LauncherProgressColumn,
-  ChecklistProgressColumn,
-  FlowProgressColumn,
-  ResourceCenterProgressColumn,
-} from '@/components/molecules/session';
+  BannerProgressCell,
+  ChecklistProgressCell,
+  FlowProgressCell,
+  LauncherProgressCell,
+  ResourceCenterProgressCell,
+  SessionStatusBadge,
+} from '@/components/molecules/session-analytics';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { Link } from 'react-router-dom';
 import {
@@ -40,39 +41,47 @@ import {
 } from '@usertour-packages/tooltip';
 import { useAppContext } from '@/contexts/app-context';
 
+const EmptyCell = () => <span className="text-sm text-muted-foreground">—</span>;
+
+const StatusColumn = ({ session }: { session: BizSession }) => {
+  const { content, bizEvent } = session;
+  if (!content || !bizEvent || bizEvent.length === 0) {
+    return <EmptyCell />;
+  }
+  return <SessionStatusBadge original={session} contentType={content.type as ContentDataType} />;
+};
+
 const ProgressColumn = ({ session, eventList }: { session: BizSession; eventList: Event[] }) => {
   const { bizEvent, content, version } = session;
 
   if (!bizEvent || bizEvent.length === 0 || !content) {
-    return <div className="text-muted-foreground">No activity</div>;
+    return <EmptyCell />;
   }
 
   const contentType = content.type;
 
   if (contentType === ContentDataType.CHECKLIST) {
-    if (!version) {
-      return <div className="text-muted-foreground">No version data</div>;
-    }
-    return <ChecklistProgressColumn original={session} eventList={eventList} version={version} />;
+    if (!version) return <EmptyCell />;
+    return <ChecklistProgressCell original={session} eventList={eventList} version={version} />;
   }
 
   if (contentType === ContentDataType.FLOW) {
-    return <FlowProgressColumn original={session} eventList={eventList} />;
+    return <FlowProgressCell original={session} eventList={eventList} />;
   }
 
   if (contentType === ContentDataType.LAUNCHER) {
-    return <LauncherProgressColumn original={session} eventList={eventList} />;
+    return <LauncherProgressCell />;
   }
 
   if (contentType === ContentDataType.BANNER) {
-    return <BannerProgressColumn original={session} eventList={eventList} />;
+    return <BannerProgressCell />;
   }
 
   if (contentType === ContentDataType.RESOURCE_CENTER) {
-    return <ResourceCenterProgressColumn original={session} eventList={eventList} />;
+    return <ResourceCenterProgressCell />;
   }
 
-  return <div className="text-muted-foreground">Unknown content type</div>;
+  return <EmptyCell />;
 };
 
 const CreateAtColumn = ({ session }: { session: BizSession }) => {
@@ -217,23 +226,29 @@ export const UserSessionsList = () => {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-2/5">{t('users.sessions.table.content')}</TableHead>
-                <TableHead className="w-2/5">{t('users.sessions.table.progress')}</TableHead>
-                <TableHead className="w-1/5">{t('users.sessions.table.lastActivity')}</TableHead>
+                <TableHead className="w-5/12">{t('users.sessions.table.content')}</TableHead>
+                <TableHead className="w-2/12">{t('users.sessions.table.status')}</TableHead>
+                <TableHead className="w-3/12">{t('users.sessions.table.progress')}</TableHead>
+                <TableHead className="w-2/12">{t('users.sessions.table.lastActivity')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="[&_tr]:h-14">
               {userSessions.map((session) => (
                 <TableRow key={session.id} className="cursor-pointer group">
-                  <TableCell className="w-2/5 overflow-hidden">
+                  <TableCell className="w-5/12 overflow-hidden">
                     <ContentColumn session={session} environmentId={environment?.id || ''} />
                   </TableCell>
-                  <TableCell className="w-2/5 overflow-hidden">
+                  <TableCell className="w-2/12 overflow-hidden">
+                    <Link to={`/env/${environment?.id}/session/${session.id}`}>
+                      <StatusColumn session={session} />
+                    </Link>
+                  </TableCell>
+                  <TableCell className="w-3/12 overflow-hidden">
                     <Link to={`/env/${environment?.id}/session/${session.id}`}>
                       <ProgressColumn session={session} eventList={eventList || []} />
                     </Link>
                   </TableCell>
-                  <TableCell className="w-1/5 overflow-hidden">
+                  <TableCell className="w-2/12 overflow-hidden">
                     <CreateAtColumn session={session} />
                   </TableCell>
                 </TableRow>
