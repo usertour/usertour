@@ -210,7 +210,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/session/:sessionId',
     component: SessionDetail,
-    layout: AdminDetailLayout,
+    layout: AdminListLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'SessionDetail',

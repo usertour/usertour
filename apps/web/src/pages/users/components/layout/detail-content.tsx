@@ -28,6 +28,12 @@ import {
   UnderlineTabsTrigger,
   UnderlineTabsContent,
 } from '@usertour-packages/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { BizUserDeleteDialog } from '../dialogs';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
@@ -180,15 +186,25 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 </span>
               )}
               {bizUser?.externalId && (
-                <span className="inline-flex min-w-0 items-center gap-1.5">
-                  <IdCardIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{bizUser.externalId}</span>
-                </span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex min-w-0 items-center gap-1.5 cursor-help">
+                        <IdCardIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{bizUser.externalId}</span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('users.detail.externalIdTooltip')}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               {bizUser?.createdAt && (
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span>{formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}</span>
+                  <span>
+                    {t('users.detail.firstSeen')}{' '}
+                    {formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}
+                  </span>
                 </span>
               )}
             </div>
@@ -248,7 +264,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           <div className="w-full flex-none xl:sticky xl:top-20 xl:w-[420px] xl:self-start">
             <Card>
               <CardHeader className="pb-4">
-                <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <CardTitle className="text-sm font-semibold">
                   {t('users.detail.userAttributes')}
                 </CardTitle>
               </CardHeader>

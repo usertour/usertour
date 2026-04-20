@@ -606,15 +606,23 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
             </h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               {bizCompany?.externalId && (
-                <span className="inline-flex min-w-0 items-center gap-1.5">
-                  <IdCardIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{bizCompany.externalId}</span>
-                </span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex min-w-0 items-center gap-1.5 cursor-help">
+                        <IdCardIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{bizCompany.externalId}</span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('companies.detail.externalIdTooltip')}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               {bizCompany?.createdAt && (
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
                   <span>
+                    {t('companies.detail.firstSeen')}{' '}
                     {formatAttributeValue(bizCompany.createdAt, AttributeDataType.DateTime)}
                   </span>
                 </span>
@@ -684,7 +692,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
           <div className="w-full flex-none xl:sticky xl:top-20 xl:w-[420px] xl:self-start">
             <Card>
               <CardHeader className="pb-4">
-                <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <CardTitle className="text-sm font-semibold">
                   {t('companies.detail.companyAttributes')}
                 </CardTitle>
               </CardHeader>

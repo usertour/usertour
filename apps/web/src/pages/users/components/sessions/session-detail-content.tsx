@@ -1,7 +1,8 @@
 import {
   ActivityLogIcon,
-  ArrowLeftIcon,
+  CalendarIcon,
   ChevronDownIcon,
+  ChevronRightIcon,
   ChevronUpIcon,
   DotsHorizontalIcon,
 } from '@radix-ui/react-icons';
@@ -10,6 +11,7 @@ import { useQuerySessionDetailQuery } from '@usertour-packages/shared-hooks';
 import { BizEvent, BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import {
   BannerProgressColumn,
@@ -20,8 +22,8 @@ import {
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
-import { cn } from '@usertour-packages/tailwind';
 import { Button } from '@usertour-packages/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
 import { QuestionAnswer, SessionResponse } from '@/components/molecules/session-detail';
 import { ContentLoading } from '@/components/molecules/content-loading';
@@ -33,19 +35,6 @@ import {
   getStartReasonTitle,
   sortEventDataEntries,
 } from '@/utils/session';
-
-const SessionItemContainer = ({
-  children,
-  className,
-}: { children: React.ReactNode; className?: string }) => {
-  return (
-    <div
-      className={cn('flex flex-col w-full px-6 py-6 grow shadow bg-white rounded-lg', className)}
-    >
-      {children}
-    </div>
-  );
-};
 
 interface SessionDetailContentProps {
   environmentId: string;
@@ -83,6 +72,7 @@ const SessionDetailContentInner = ({
   session: any;
   refetch: () => void;
 }) => {
+  const { t } = useTranslation();
   const navigator = useNavigate();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const { attributeList } = useAttributeListContext();
@@ -90,6 +80,12 @@ const SessionDetailContentInner = ({
   const content = session?.content;
   const contentType = content?.type;
   const version = session?.version;
+  const bizUser = session?.bizUser;
+  const userName =
+    bizUser?.data?.name ||
+    bizUser?.data?.email ||
+    bizUser?.externalId ||
+    t('users.sessions.detail.unnamedUser');
 
   const handleRowClick = (id: string) => {
     setExpandedRowId(expandedRowId === id ? null : id);
@@ -121,7 +117,7 @@ const SessionDetailContentInner = ({
           alt="Session not found"
           className="w-16 h-16 mb-4 opacity-50"
         />
-        <p className="text-muted-foreground text-center">Session not found or incomplete data.</p>
+        <p className="text-muted-foreground text-center">{t('users.sessions.detail.notFound')}</p>
       </div>
     );
   }
@@ -135,19 +131,39 @@ const SessionDetailContentInner = ({
   const startReason = getStartReasonTitle(contentType, startEvent);
   const endReason = getEndReasonTitle(contentType, endEvent);
   const routeContentTypes = `${contentType}s`;
+  const startedAgo = session?.createdAt
+    ? `${formatDistanceToNow(new Date(session.createdAt))} ${t('users.sessions.detail.relative.ago')}`
+    : null;
 
   return (
     <>
-      <div className="border-b bg-white flex-row md:flex w-full fixed justify-between items-center">
-        <div className="flex h-16 items-center px-4 w-full">
-          <ArrowLeftIcon
-            className="ml-4 h-6 w-8 cursor-pointer"
-            onClick={() => {
-              navigator(`/env/${environmentId}/users`);
-            }}
-          />
-          <span>Session Detail</span>
-          <div className="ml-auto">
+      <div className="border-b bg-white flex-row md:flex w-full sticky top-0 z-10 justify-between items-center">
+        <div className="flex h-16 items-center px-4 w-full gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => navigator(`/env/${environmentId}/users`)}
+            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
+          >
+            {t('users.detail.breadcrumb')}
+          </button>
+          <ChevronRightIcon className="h-4 w-4 text-muted-foreground/60 shrink-0" />
+          {bizUser?.id ? (
+            <Link
+              to={`/env/${environmentId}/user/${bizUser.id}`}
+              className="text-sm text-muted-foreground hover:text-foreground truncate min-w-0 max-w-[220px]"
+            >
+              {userName}
+            </Link>
+          ) : (
+            <span className="text-sm text-muted-foreground truncate min-w-0 max-w-[220px]">
+              {userName}
+            </span>
+          )}
+          <ChevronRightIcon className="h-4 w-4 text-muted-foreground/60 shrink-0" />
+          <span className="text-sm font-medium truncate min-w-0">
+            {t('users.sessions.detail.breadcrumb')}
+          </span>
+          <div className="ml-auto shrink-0">
             <SessionActionDropdownMenu
               session={session}
               showViewDetails={false}
@@ -167,153 +183,248 @@ const SessionDetailContentInner = ({
           </div>
         </div>
       </div>
-      <div className="flex flex-col space-y-6 w-full max-w-screen-xl mx-auto p-14 mt-12  ">
-        <SessionItemContainer className="grid grid-cols-2 gap-2 gap-x-12">
-          <div className="border-b flex flex-col pb-1 min-w-0">
-            <span className="text-sm text-foreground/60">User</span>
-            <Link
-              className="text-primary hover:underline underline-offset-2 truncate"
-              to={`/env/${environmentId}/user/${session?.bizUser?.id}`}
-            >
-              {session?.bizUser?.data?.name ??
-                session?.bizUser?.data?.email ??
-                session?.bizUser?.data?.externalId ??
-                'Unnamed user'}
-            </Link>
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-6 xl:p-8">
+        {/* Identity header */}
+        <div className="flex items-start gap-4 px-1">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted">
+            <ActivityLogIcon className="h-5 w-5 text-foreground/70" />
           </div>
-          <div className="border-b flex flex-col pb-1 min-w-0">
-            <span className="text-sm text-foreground/60 capitalize">{content.type}</span>
-            <Link
-              className="text-primary hover:underline underline-offset-2 truncate"
-              to={`/env/${environmentId}/${routeContentTypes}/${session?.content?.id}/detail`}
-            >
-              {session?.content?.name}
-            </Link>
-          </div>
-          <div className="border-b flex flex-col pb-1">
-            <span className="text-sm text-foreground/60">Version</span>
-            <Link
-              className="text-primary hover:underline underline-offset-2"
-              to={`/env/${environmentId}/${routeContentTypes}/${session?.content?.id}/versions`}
-            >
-              V{session?.version?.sequence + 1}
-            </Link>
-          </div>
-          <div className="border-b flex flex-col pb-1">
-            <span className="text-sm text-foreground/60">Started</span>
-            <span>
-              {session?.createdAt && formatDistanceToNow(new Date(session?.createdAt))} ago
-            </span>
-          </div>
-          <div className="border-b flex flex-col pb-1">
-            <span className="text-sm text-foreground/60">Start reason</span>
-            <span>{startReason}</span>
-          </div>
-          {endEvent && (
-            <div className="border-b flex flex-col pb-1">
-              <span className="text-sm text-foreground/60">End reason</span>
-              <span>{endReason}</span>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-semibold text-foreground truncate">{content?.name}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 capitalize">{contentType}</span>
+              {version?.sequence !== undefined && (
+                <Link
+                  to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/versions`}
+                  className="inline-flex items-center gap-1.5 hover:text-foreground"
+                >
+                  V{version.sequence + 1}
+                </Link>
+              )}
+              {startedAgo && (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    {t('users.sessions.detail.fields.started')} {startedAgo}
+                  </span>
+                </span>
+              )}
             </div>
-          )}
-        </SessionItemContainer>
-        <SessionItemContainer>
-          <div className="mb-2 flex flex-row items-center font-bold	">Progress</div>
-          {contentType === ContentDataType.CHECKLIST && (
-            <div className="flex flex-col gap-8">
-              <ChecklistProgressColumn original={session} eventList={eventList} version={version} />
-              <ChecklistItemsColumn original={session} eventList={eventList} version={version} />
-            </div>
-          )}
-
-          {contentType === ContentDataType.FLOW && (
-            <FlowProgressColumn original={session} eventList={eventList} />
-          )}
-          {contentType === ContentDataType.LAUNCHER && (
-            <LauncherProgressColumn original={session} eventList={eventList} />
-          )}
-          {contentType === ContentDataType.BANNER && (
-            <BannerProgressColumn original={session} eventList={eventList} />
-          )}
-          {contentType === ContentDataType.RESOURCE_CENTER && (
-            <ResourceCenterProgressColumn original={session} eventList={eventList} />
-          )}
-        </SessionItemContainer>
-
-        {questionAnswers && questionAnswers.length > 0 && (
-          <SessionItemContainer>
-            <div className="mb-2 flex flex-row items-center font-bold">Response</div>
-            <SessionResponse questions={questionAnswers} />
-          </SessionItemContainer>
-        )}
-
-        <SessionItemContainer>
-          <div className="mb-2 flex flex-row items-center font-bold	">
-            <ActivityLogIcon width={18} height={18} className="mr-2" />
-            Activity feed
           </div>
-          <div className="w-full text-sm">
-            {bizEvents ? (
-              bizEvents.map((bizEvent: BizEvent) => {
-                const displaySuffix = getEventDisplaySuffix(bizEvent, session);
-                return (
-                  <Fragment key={bizEvent.id}>
-                    <div
-                      className="flex items-center cursor-pointer group border-b hover:bg-muted leading-6"
-                      onClick={() => handleRowClick(bizEvent.id)}
-                    >
-                      <span className="w-1/4 p-2 flex-none">
-                        {format(new Date(bizEvent.createdAt), 'yyyy-MM-dd HH:mm:ss')}
-                      </span>
-                      <div className="flex-1 min-w-0 flex justify-between items-center gap-2 p-2">
-                        <span className="truncate">
-                          {bizEvent.event?.displayName}
-                          {displaySuffix && (
-                            <span className="text-muted-foreground ml-2">{displaySuffix}</span>
-                          )}
-                        </span>
-                        {expandedRowId === bizEvent.id ? (
-                          <ChevronUpIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
-                        ) : (
-                          <ChevronDownIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
-                        )}
-                      </div>
-                    </div>
-                    {expandedRowId === bizEvent.id && bizEvent.data && (
-                      <div className="bg-muted/50 border-b text-sm">
-                        {sortEventDataEntries(bizEvent.data, attributeList || []).map(
-                          ([key, value]) => (
-                            <div key={key} className="flex border-b last:border-b-0">
-                              <span className="w-1/4 p-2 flex-none font-medium truncate">
-                                {attributeList?.find((attr) => attr.codeName === key)
-                                  ?.displayName || key}
-                              </span>
-                              <div className="flex-1 min-w-0 p-2">
-                                {key === EventAttributes.LIST_ANSWER && (
-                                  <div className="overflow-hidden">
-                                    <QuestionAnswer answerEvent={bizEvent} />
-                                  </div>
-                                )}
-                                {key !== EventAttributes.LIST_ANSWER && (
-                                  <span className="block truncate">
-                                    {getFieldValue(key, value)}
+        </div>
+
+        {/* Two-column content area */}
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+          {/* Left column - primary content */}
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-sm font-semibold">
+                  {t('users.sessions.detail.progress')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {contentType === ContentDataType.CHECKLIST && (
+                  <div className="flex flex-col gap-8">
+                    <ChecklistProgressColumn
+                      original={session}
+                      eventList={eventList}
+                      version={version}
+                    />
+                    <ChecklistItemsColumn
+                      original={session}
+                      eventList={eventList}
+                      version={version}
+                    />
+                  </div>
+                )}
+                {contentType === ContentDataType.FLOW && (
+                  <FlowProgressColumn original={session} eventList={eventList} />
+                )}
+                {contentType === ContentDataType.LAUNCHER && (
+                  <LauncherProgressColumn original={session} eventList={eventList} />
+                )}
+                {contentType === ContentDataType.BANNER && (
+                  <BannerProgressColumn original={session} eventList={eventList} />
+                )}
+                {contentType === ContentDataType.RESOURCE_CENTER && (
+                  <ResourceCenterProgressColumn original={session} eventList={eventList} />
+                )}
+              </CardContent>
+            </Card>
+
+            {questionAnswers && questionAnswers.length > 0 && (
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-sm font-semibold">
+                    {t('users.sessions.detail.response')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SessionResponse questions={questionAnswers} />
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-sm font-semibold">
+                  {t('users.sessions.detail.activityFeed')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full text-sm">
+                  {bizEvents ? (
+                    bizEvents.map((bizEvent: BizEvent) => {
+                      const displaySuffix = getEventDisplaySuffix(bizEvent, session);
+                      return (
+                        <Fragment key={bizEvent.id}>
+                          <div
+                            className="flex items-center cursor-pointer group border-b hover:bg-muted leading-6"
+                            onClick={() => handleRowClick(bizEvent.id)}
+                          >
+                            <span className="w-1/4 p-2 flex-none">
+                              {format(new Date(bizEvent.createdAt), 'yyyy-MM-dd HH:mm:ss')}
+                            </span>
+                            <div className="flex-1 min-w-0 flex justify-between items-center gap-2 p-2">
+                              <span className="truncate">
+                                {bizEvent.event?.displayName}
+                                {displaySuffix && (
+                                  <span className="text-muted-foreground ml-2">
+                                    {displaySuffix}
                                   </span>
                                 )}
-                              </div>
+                              </span>
+                              {expandedRowId === bizEvent.id ? (
+                                <ChevronUpIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                              ) : (
+                                <ChevronDownIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                              )}
                             </div>
-                          ),
-                        )}
-                      </div>
-                    )}
-                  </Fragment>
-                );
-              })
-            ) : (
-              <div className="h-24 flex items-center justify-center text-muted-foreground">
-                No events found.
-              </div>
-            )}
+                          </div>
+                          {expandedRowId === bizEvent.id && bizEvent.data && (
+                            <div className="bg-muted/50 border-b text-sm">
+                              {sortEventDataEntries(bizEvent.data, attributeList || []).map(
+                                ([key, value]) => (
+                                  <div key={key} className="flex border-b last:border-b-0">
+                                    <span className="w-1/4 p-2 flex-none font-medium truncate">
+                                      {attributeList?.find((attr) => attr.codeName === key)
+                                        ?.displayName || key}
+                                    </span>
+                                    <div className="flex-1 min-w-0 p-2">
+                                      {key === EventAttributes.LIST_ANSWER && (
+                                        <div className="overflow-hidden">
+                                          <QuestionAnswer answerEvent={bizEvent} />
+                                        </div>
+                                      )}
+                                      {key !== EventAttributes.LIST_ANSWER && (
+                                        <span className="block truncate">
+                                          {getFieldValue(key, value)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          )}
+                        </Fragment>
+                      );
+                    })
+                  ) : (
+                    <div className="h-24 flex items-center justify-center text-muted-foreground">
+                      {t('users.sessions.detail.noEvents')}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </SessionItemContainer>
+
+          {/* Right column - session info (sticky on xl) */}
+          <div className="w-full flex-none xl:sticky xl:top-20 xl:w-[420px] xl:self-start">
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-sm font-semibold">
+                  {t('users.sessions.detail.sessionInfo')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col text-sm">
+                  <div className="flex min-w-0 gap-2 border-b py-2 leading-6">
+                    <div className="w-2/5 min-w-0 break-words font-medium">
+                      {t('users.sessions.detail.fields.user')}
+                    </div>
+                    <div className="w-3/5 min-w-0 break-words">
+                      {bizUser?.id ? (
+                        <Link
+                          to={`/env/${environmentId}/user/${bizUser.id}`}
+                          className="text-primary hover:underline underline-offset-2 truncate"
+                        >
+                          {userName}
+                        </Link>
+                      ) : (
+                        userName
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex min-w-0 gap-2 border-b py-2 leading-6">
+                    <div className="w-2/5 min-w-0 break-words font-medium capitalize">
+                      {contentType}
+                    </div>
+                    <div className="w-3/5 min-w-0 break-words">
+                      <Link
+                        to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/detail`}
+                        className="text-primary hover:underline underline-offset-2 truncate"
+                      >
+                        {content?.name}
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="flex min-w-0 gap-2 border-b py-2 leading-6">
+                    <div className="w-2/5 min-w-0 break-words font-medium">
+                      {t('users.sessions.detail.fields.version')}
+                    </div>
+                    <div className="w-3/5 min-w-0 break-words">
+                      <Link
+                        to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/versions`}
+                        className="text-primary hover:underline underline-offset-2"
+                      >
+                        V{version?.sequence + 1}
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="flex min-w-0 gap-2 border-b py-2 leading-6">
+                    <div className="w-2/5 min-w-0 break-words font-medium">
+                      {t('users.sessions.detail.fields.started')}
+                    </div>
+                    <div className="w-3/5 min-w-0 break-words">{startedAgo}</div>
+                  </div>
+                  <div
+                    className={
+                      endEvent
+                        ? 'flex min-w-0 gap-2 border-b py-2 leading-6'
+                        : 'flex min-w-0 gap-2 py-2 leading-6'
+                    }
+                  >
+                    <div className="w-2/5 min-w-0 break-words font-medium">
+                      {t('users.sessions.detail.fields.startReason')}
+                    </div>
+                    <div className="w-3/5 min-w-0 break-words">{startReason}</div>
+                  </div>
+                  {endEvent && (
+                    <div className="flex min-w-0 gap-2 py-2 leading-6">
+                      <div className="w-2/5 min-w-0 break-words font-medium">
+                        {t('users.sessions.detail.fields.endReason')}
+                      </div>
+                      <div className="w-3/5 min-w-0 break-words">{endReason}</div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </>
   );
