@@ -12,7 +12,7 @@ import {
   SessionStatusBadge,
 } from '@/components/molecules/session-analytics';
 import { useEventListContext } from '@/contexts/event-list-context';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -138,12 +138,13 @@ const ContentColumn = ({
   };
 
   return (
-    <div className="font-medium flex items-center space-x-2 hover:text-primary underline-offset-4 hover:underline transition-colors min-w-0">
+    <div className="font-medium flex items-center space-x-2 min-w-0">
       {getContentIcon(content.type)}
       <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
         <Link
           to={`/env/${environmentId}/${content.type}s/${content.id}/detail`}
-          className="truncate"
+          className="truncate hover:text-primary underline-offset-4 hover:underline transition-colors"
+          onClick={(e) => e.stopPropagation()}
         >
           {content.name}
         </Link>
@@ -186,6 +187,7 @@ export const UserSessionsList = () => {
   const { eventList } = useEventListContext();
   const { environment } = useAppContext();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const handleRefresh = () => {
     refetch();
@@ -234,19 +236,23 @@ export const UserSessionsList = () => {
             </TableHeader>
             <TableBody className="[&_tr]:h-14">
               {userSessions.map((session) => (
-                <TableRow key={session.id} className="cursor-pointer group">
+                <TableRow
+                  key={session.id}
+                  className="cursor-pointer group"
+                  onClick={() => {
+                    if (environment?.id) {
+                      navigate(`/env/${environment.id}/session/${session.id}`);
+                    }
+                  }}
+                >
                   <TableCell className="w-5/12 overflow-hidden">
                     <ContentColumn session={session} environmentId={environment?.id || ''} />
                   </TableCell>
                   <TableCell className="w-2/12 overflow-hidden">
-                    <Link to={`/env/${environment?.id}/session/${session.id}`}>
-                      <StatusColumn session={session} />
-                    </Link>
+                    <StatusColumn session={session} />
                   </TableCell>
                   <TableCell className="w-3/12 overflow-hidden">
-                    <Link to={`/env/${environment?.id}/session/${session.id}`}>
-                      <ProgressColumn session={session} eventList={eventList || []} />
-                    </Link>
+                    <ProgressColumn session={session} eventList={eventList || []} />
                   </TableCell>
                   <TableCell className="w-2/12 overflow-hidden">
                     <CreateAtColumn session={session} />
