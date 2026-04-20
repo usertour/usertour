@@ -23,7 +23,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { Button } from '@usertour-packages/button';
-import { Cross2Icon } from '@radix-ui/react-icons';
+import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 
 interface UserDataTableToolbarProps {
   table: Table<any>;
@@ -50,6 +50,8 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
   const handleOnClose = () => {
     setOpen(false);
   };
+
+  const [showFilterBar, setShowFilterBar] = useState((currentSegment.data?.length ?? 0) > 0);
 
   const [mutation] = useMutation(updateSegment);
   const { toast } = useToast();
@@ -120,25 +122,27 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <Rules
-          onDataChange={handleDataChange}
-          defaultConditions={JSON.parse(JSON.stringify(currentSegment.data || []))}
-          isHorizontal={true}
-          isShowIf={false}
-          key={currentSegment.id}
-          filterItems={['group', 'user-attr']}
-          addButtonText={t('common.addFilter')}
-          attributes={
-            attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || []
-          }
-          disabled={isViewOnly}
-          baseZIndex={WebZIndex.RULES}
-        />
-      </div>
+      {showFilterBar && (
+        <div className="flex items-center justify-between">
+          <Rules
+            onDataChange={handleDataChange}
+            defaultConditions={JSON.parse(JSON.stringify(currentSegment.data || []))}
+            isHorizontal={true}
+            isShowIf={false}
+            key={currentSegment.id}
+            filterItems={['group', 'user-attr']}
+            addButtonText={t('common.addFilter')}
+            attributes={
+              attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || []
+            }
+            disabled={isViewOnly}
+            baseZIndex={WebZIndex.RULES}
+          />
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-row items-center gap-2">
-          {hasSelection() && (
+          {hasSelection() ? (
             <>
               <span className="text-sm text-muted-foreground pl-1">
                 {t('common.rowsSelected', { count: getSelectedCount() })}
@@ -159,7 +163,17 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
               )}
               <DeleteUserFromSegment table={table} />
             </>
-          )}
+          ) : !showFilterBar ? (
+            <Button
+              variant="ghost"
+              className="h-8 px-2 text-muted-foreground"
+              onClick={() => setShowFilterBar(true)}
+              disabled={isViewOnly}
+            >
+              <PlusIcon className="mr-1 h-4 w-4" />
+              {t('common.addFilter')}
+            </Button>
+          ) : null}
         </div>
         <div className="flex items-center gap-2">
           <CollapsibleSearch
