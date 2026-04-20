@@ -183,7 +183,7 @@ export const UserSessionsList = () => {
     <div>
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm text-muted-foreground">
-          {t('users.sessions.title')} ({totalCount})
+          {t('users.sessions.countLabel', { count: totalCount })}
         </div>
         <TooltipProvider>
           <Tooltip>

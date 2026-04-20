@@ -336,13 +336,14 @@ export const ActivityFeed = ({
   emptyMessage,
   renderTrailingContent,
 }: ActivityFeedProps) => {
+  const { t } = useTranslation();
   const { events, loading, hasNextPage, loadMore, refetch, totalCount } = useActivityFeedContext();
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm text-muted-foreground">
-          {totalCount > 0 && `${totalCount} events`}
+          {t('activityFeed.count', { count: totalCount })}
         </div>
         <TooltipProvider>
           <Tooltip>

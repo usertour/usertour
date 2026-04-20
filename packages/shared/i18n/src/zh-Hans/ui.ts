@@ -1,6 +1,13 @@
 const translations = {
   language: '简体中文',
   productName: 'Usertour',
+  activityFeed: {
+    noEvents: '未找到事件。',
+    loadMore: '加载更多事件',
+    loading: '加载中...',
+    tab: '活动流',
+    count_other: '{{count}} 个事件',
+  },
   privacyPage: {
     title: '隐私政策',
   },
@@ -58,6 +65,24 @@ const translations = {
       unnamedUser: '未命名用户',
       firstSeen: '首次出现',
       externalIdTooltip: '外部 ID（来自你的应用）',
+      activity: {
+        title: '活动',
+        events: '事件',
+        sessions: '会话',
+        companies: '公司',
+      },
+      companiesChip: {
+        moreCount: '+{{count}} 更多',
+        emptyTitle: '暂无公司',
+      },
+      companies: {
+        noCompanies: '此用户未关联任何公司。',
+        loadMore: '加载更多公司',
+        loading: '加载中...',
+        company: '公司',
+        membershipAttributes: '成员属性',
+        noMembershipAttributes: '无成员属性',
+      },
       tooltips: {
         userId: '用户ID',
         email: '邮箱',
@@ -91,6 +116,7 @@ const translations = {
     sessions: {
       loadMore: '加载更多会话',
       title: '用户会话',
+      countLabel_other: '{{count}} 个会话',
       table: {
         content: '内容',
         progress: '进度',
@@ -191,6 +217,12 @@ const translations = {
       companyMembers: '公司成员',
       user: '用户',
       membershipAttributes: '成员属性',
+      activity: {
+        title: '活动',
+        events: '事件',
+        members: '成员',
+      },
+      membersCount_other: '{{count}} 个成员',
       noMembershipAttributes: '无成员属性',
       loadMoreUsers: '加载更多用户',
       loading: '加载中...',

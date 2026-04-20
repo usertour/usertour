@@ -29,12 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import {
-  Tabs,
-  UnderlineTabsList,
-  UnderlineTabsTrigger,
-  UnderlineTabsContent,
-} from '@usertour-packages/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@usertour-packages/toggle';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { BizCompanyDeleteDialog } from '../dialogs';
 import { TruncatedText } from '@/components/molecules/truncated-text';
@@ -305,7 +300,7 @@ const CompanyUserList = () => {
     <div>
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm text-muted-foreground">
-          {t('companies.detail.companyMembers')} ({totalCount})
+          {t('companies.detail.membersCount', { count: totalCount })}
         </div>
         <TooltipProvider>
           <Tooltip>
@@ -459,6 +454,8 @@ const CompanyUserList = () => {
   );
 };
 
+type CompanyActivityView = 'events' | 'members';
+
 interface CompanyDetailContentProps {
   environmentId: string;
   companyId: string;
@@ -491,6 +488,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const [bizCompanyAttributes, setBizCompanyAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [activityView, setActivityView] = useState<CompanyActivityView>('events');
   const { isViewOnly } = useAppContext();
   const copyWithToast = useCopyWithToast();
 
@@ -636,54 +634,62 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
           {/* Left column - primary content */}
           <div className="flex min-w-0 flex-1 flex-col gap-6">
             <Card>
-              <CardContent className="pt-6">
-                <Tabs defaultValue="activity-feed">
-                  <UnderlineTabsList className="justify-start">
-                    <UnderlineTabsTrigger value="activity-feed" className="text-base font-medium">
-                      {t('companies.detail.tabs.activityFeed')}
-                    </UnderlineTabsTrigger>
-                    <UnderlineTabsTrigger value="company-members" className="text-base font-medium">
-                      {t('companies.detail.tabs.companyMembers')}
-                    </UnderlineTabsTrigger>
-                  </UnderlineTabsList>
-
-                  <UnderlineTabsContent value="activity-feed">
-                    <CompanyActivityFeedProvider
+              <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
+                <CardTitle className="text-sm font-semibold">
+                  {t('companies.detail.activity.title')}
+                </CardTitle>
+                <ToggleGroup
+                  type="single"
+                  value={activityView}
+                  onValueChange={(value) => {
+                    if (value === 'events' || value === 'members') {
+                      setActivityView(value);
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ToggleGroupItem value="events">
+                    {t('companies.detail.activity.events')}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="members">
+                    {t('companies.detail.activity.members')}
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </CardHeader>
+              <CardContent>
+                {activityView === 'events' && (
+                  <CompanyActivityFeedProvider environmentId={environmentId} companyId={companyId}>
+                    <ActivityFeed
                       environmentId={environmentId}
-                      companyId={companyId}
-                    >
-                      <ActivityFeed
-                        environmentId={environmentId}
-                        renderTrailingContent={(event) => {
-                          const bizUser = event.bizUser;
-                          if (!bizUser) return null;
-                          const displayName =
-                            bizUser.data?.name || bizUser.data?.email || bizUser.externalId;
-                          return (
-                            <Link
-                              to={`/env/${environmentId}/user/${bizUser.id}`}
-                              className="flex items-center gap-1.5 hover:text-primary"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <UserAvatar
-                                email={bizUser.data?.email || ''}
-                                name={bizUser.data?.name || ''}
-                                size="sm"
-                              />
-                              <span className="text-xs truncate max-w-[120px]">{displayName}</span>
-                            </Link>
-                          );
-                        }}
-                      />
-                    </CompanyActivityFeedProvider>
-                  </UnderlineTabsContent>
-
-                  <UnderlineTabsContent value="company-members">
-                    <CompanyUserListProvider environmentId={environmentId} companyId={companyId}>
-                      <CompanyUserList />
-                    </CompanyUserListProvider>
-                  </UnderlineTabsContent>
-                </Tabs>
+                      renderTrailingContent={(event) => {
+                        const bizUser = event.bizUser;
+                        if (!bizUser) return null;
+                        const displayName =
+                          bizUser.data?.name || bizUser.data?.email || bizUser.externalId;
+                        return (
+                          <Link
+                            to={`/env/${environmentId}/user/${bizUser.id}`}
+                            className="flex items-center gap-1.5 hover:text-primary"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <UserAvatar
+                              email={bizUser.data?.email || ''}
+                              name={bizUser.data?.name || ''}
+                              size="sm"
+                            />
+                            <span className="text-xs truncate max-w-[120px]">{displayName}</span>
+                          </Link>
+                        );
+                      }}
+                    />
+                  </CompanyActivityFeedProvider>
+                )}
+                {activityView === 'members' && (
+                  <CompanyUserListProvider environmentId={environmentId} companyId={companyId}>
+                    <CompanyUserList />
+                  </CompanyUserListProvider>
+                )}
               </CardContent>
             </Card>
           </div>

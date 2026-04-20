@@ -2,18 +2,24 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useTranslation } from 'react-i18next';
-import { ChevronRightIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
-import { Delete2Icon } from '@usertour-packages/icons';
+import {
+  CalendarIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  DotsHorizontalIcon,
+  EnvelopeClosedIcon,
+  IdCardIcon,
+} from '@radix-ui/react-icons';
+import { CompanyIcon, Delete2Icon } from '@usertour-packages/icons';
 import { UserAvatar } from '@/components/molecules/user-avatar';
-import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { AttributeBizTypes, AttributeDataType, BizUser, BizUserOnCompany } from '@usertour/types';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserSessions } from '../sessions';
 import { UserCompaniesTab } from '../companies';
 import { ActivityFeed } from '@/components/molecules/activity-feed';
 import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';
-import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon } from '@radix-ui/react-icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { Button } from '@usertour-packages/button';
 import {
@@ -22,12 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import {
-  Tabs,
-  UnderlineTabsList,
-  UnderlineTabsTrigger,
-  UnderlineTabsContent,
-} from '@usertour-packages/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@usertour-packages/toggle';
 import {
   Tooltip,
   TooltipContent,
@@ -40,18 +41,20 @@ import { TruncatedText } from '@/components/molecules/truncated-text';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 
+const COMPANY_CHIP_VISIBLE_LIMIT = 3;
+
+type ActivityView = 'events' | 'sessions' | 'companies';
+
 interface UserDetailContentProps {
   environmentId: string;
   userId: string;
 }
 
-// Loading wrapper component to handle all loading states
 const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
   const { loading: userListLoading } = useUserListContext();
   const { loading: eventListLoading } = useEventListContext();
   const { loading: attributeListLoading } = useAttributeListContext();
 
-  // Check if any provider is still loading
   const isLoading = userListLoading || eventListLoading || attributeListLoading;
 
   if (isLoading) {
@@ -61,7 +64,42 @@ const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailConte
   return <UserDetailContentInner environmentId={environmentId} userId={userId} />;
 };
 
-// Inner component that handles the actual content rendering
+const CompanyChips = ({
+  memberships,
+  environmentId,
+}: { memberships: BizUserOnCompany[]; environmentId: string }) => {
+  const { t } = useTranslation();
+  const visible = memberships.slice(0, COMPANY_CHIP_VISIBLE_LIMIT);
+  const overflow = memberships.length - visible.length;
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      {visible.map((membership) => {
+        const company = membership.bizCompany;
+        if (!company) {
+          return null;
+        }
+        const label = company.data?.name || company.externalId;
+        return (
+          <Link
+            key={company.id}
+            to={`/env/${environmentId}/company/${company.id}`}
+            className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-0.5 text-xs text-foreground/80 transition-colors hover:bg-muted"
+          >
+            <CompanyIcon width={12} height={12} className="shrink-0 text-foreground/60" />
+            <span className="max-w-[160px] truncate">{label}</span>
+          </Link>
+        );
+      })}
+      {overflow > 0 && (
+        <span className="text-xs text-muted-foreground">
+          {t('users.detail.companiesChip.moreCount', { count: overflow })}
+        </span>
+      )}
+    </div>
+  );
+};
+
 const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProps) => {
   const navigator = useNavigate();
   const { contents } = useUserListContext();
@@ -69,6 +107,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [activityView, setActivityView] = useState<ActivityView>('events');
   const { isViewOnly } = useAppContext();
   const copyWithToast = useCopyWithToast();
   const { t } = useTranslation();
@@ -100,7 +139,6 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           });
         }
       }
-      // Sort attributes by name in alphabetical order (a-z)
       attrs.sort((a, b) => {
         const nameA = (a.name || '').toLowerCase();
         const nameB = (b.name || '').toLowerCase();
@@ -109,6 +147,8 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
       setBizUserAttributes(attrs);
     }
   }, [bizUser, attributeList]);
+
+  const memberships = useMemo(() => bizUser?.bizUsersOnCompany ?? [], [bizUser?.bizUsersOnCompany]);
 
   const handleDeleteSuccess = async () => {
     navigator(`/env/${environmentId}/users`);
@@ -208,6 +248,9 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                 </span>
               )}
             </div>
+            {memberships.length > 0 && (
+              <CompanyChips memberships={memberships} environmentId={environmentId} />
+            )}
           </div>
         </div>
 
@@ -216,46 +259,44 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           {/* Left column - primary content */}
           <div className="flex min-w-0 flex-1 flex-col gap-6">
             <Card>
-              <CardContent className="pt-6">
-                <Tabs defaultValue="activity-feed">
-                  <UnderlineTabsList className="justify-start">
-                    <UnderlineTabsTrigger value="activity-feed" className="text-base font-medium">
-                      {t('users.detail.tabs.activityFeed')}
-                    </UnderlineTabsTrigger>
-                    <UnderlineTabsTrigger value="sessions" className="text-base font-medium">
-                      {t('users.detail.tabs.sessions')}
-                    </UnderlineTabsTrigger>
-                    <UnderlineTabsTrigger value="companies" className="text-base font-medium">
-                      {t('users.detail.tabs.companies')}
-                      {bizUser?.bizUsersOnCompany && bizUser.bizUsersOnCompany.length > 0 && (
-                        <span className="ml-1">({bizUser.bizUsersOnCompany.length})</span>
-                      )}
-                    </UnderlineTabsTrigger>
-                  </UnderlineTabsList>
-
-                  <UnderlineTabsContent value="activity-feed">
-                    {bizUser && (
-                      <UserActivityFeedProvider environmentId={environmentId} userId={bizUser.id}>
-                        <ActivityFeed environmentId={environmentId} />
-                      </UserActivityFeedProvider>
-                    )}
-                  </UnderlineTabsContent>
-
-                  <UnderlineTabsContent value="sessions">
-                    {bizUser?.externalId && (
-                      <UserSessions
-                        environmentId={environmentId}
-                        externalUserId={bizUser.externalId}
-                      />
-                    )}
-                  </UnderlineTabsContent>
-
-                  <UnderlineTabsContent value="companies">
-                    {bizUser && (
-                      <UserCompaniesTab bizUser={bizUser} environmentId={environmentId} />
-                    )}
-                  </UnderlineTabsContent>
-                </Tabs>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
+                <CardTitle className="text-sm font-semibold">
+                  {t('users.detail.activity.title')}
+                </CardTitle>
+                <ToggleGroup
+                  type="single"
+                  value={activityView}
+                  onValueChange={(value) => {
+                    if (value === 'events' || value === 'sessions' || value === 'companies') {
+                      setActivityView(value);
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ToggleGroupItem value="events">
+                    {t('users.detail.activity.events')}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="sessions">
+                    {t('users.detail.activity.sessions')}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="companies">
+                    {t('users.detail.activity.companies')}
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </CardHeader>
+              <CardContent>
+                {activityView === 'events' && (
+                  <UserActivityFeedProvider environmentId={environmentId} userId={bizUser.id}>
+                    <ActivityFeed environmentId={environmentId} />
+                  </UserActivityFeedProvider>
+                )}
+                {activityView === 'sessions' && bizUser?.externalId && (
+                  <UserSessions environmentId={environmentId} externalUserId={bizUser.externalId} />
+                )}
+                {activityView === 'companies' && (
+                  <UserCompaniesTab bizUser={bizUser} environmentId={environmentId} />
+                )}
               </CardContent>
             </Card>
           </div>
@@ -310,7 +351,6 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
         </div>
       </div>
 
-      {/* Delete Dialog */}
       <BizUserDeleteDialog
         bizUserIds={bizUser ? [bizUser.id] : []}
         open={showDeleteDialog}
@@ -321,7 +361,6 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   );
 };
 
-// Main export component
 export function UserDetailContent(props: UserDetailContentProps) {
   return <UserDetailContentWithLoading {...props} />;
 }

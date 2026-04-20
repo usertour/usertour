@@ -6,6 +6,8 @@ const translations = {
     loadMore: 'Load More Events',
     loading: 'Loading...',
     tab: 'Activity feed',
+    count_one: '{{count}} event',
+    count_other: '{{count}} events',
   },
   privacyPage: {
     title: 'Privacy Policy',
@@ -65,6 +67,16 @@ const translations = {
       unnamedUser: 'Unnamed user',
       firstSeen: 'First seen',
       externalIdTooltip: 'External ID (from your app)',
+      activity: {
+        title: 'Activity',
+        events: 'Events',
+        sessions: 'Sessions',
+        companies: 'Companies',
+      },
+      companiesChip: {
+        moreCount: '+{{count}} more',
+        emptyTitle: 'No companies',
+      },
       tabs: {
         activityFeed: 'Activity feed',
         sessions: 'Sessions',
@@ -111,6 +123,8 @@ const translations = {
     sessions: {
       loadMore: 'Load More Sessions',
       title: 'User sessions',
+      countLabel_one: '{{count}} session',
+      countLabel_other: '{{count}} sessions',
       table: {
         content: 'Content',
         progress: 'Progress',
@@ -212,10 +226,13 @@ const translations = {
       companyMembers: 'Company members',
       user: 'User',
       membershipAttributes: 'Membership Attributes',
-      tabs: {
-        activityFeed: 'Activity feed',
-        companyMembers: 'Company members',
+      activity: {
+        title: 'Activity',
+        events: 'Events',
+        members: 'Members',
       },
+      membersCount_one: '{{count}} member',
+      membersCount_other: '{{count}} members',
       noMembershipAttributes: 'No membership attributes',
       loadMoreUsers: 'Load More Users',
       loading: 'Loading...',
