@@ -22,6 +22,11 @@ const translations = {
     addFilter: '添加筛选',
     rowsSelected: '已选 {{count}} 项',
     clearSelection: '清除选择',
+    membership: {
+      attributes: '成员属性',
+      none: '无成员属性',
+      attributesCount_other: '{{count}} 个属性',
+    },
   },
   users: {
     actions: {
@@ -80,8 +85,6 @@ const translations = {
         loadMore: '加载更多公司',
         loading: '加载中...',
         company: '公司',
-        membershipAttributes: '成员属性',
-        noMembershipAttributes: '无成员属性',
       },
       tooltips: {
         userId: '用户ID',
@@ -217,14 +220,12 @@ const translations = {
       externalIdTooltip: '外部 ID（来自你的应用）',
       companyMembers: '公司成员',
       user: '用户',
-      membershipAttributes: '成员属性',
       activity: {
         title: '活动',
         events: '事件',
         members: '成员',
       },
       membersCount_other: '{{count}} 个成员',
-      noMembershipAttributes: '无成员属性',
       loadMoreUsers: '加载更多用户',
       loading: '加载中...',
       noUsersFound: '此公司未找到用户。',

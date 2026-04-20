@@ -23,6 +23,12 @@ const translations = {
     addFilter: 'Add filter',
     rowsSelected: '{{count}} selected',
     clearSelection: 'Clear selection',
+    membership: {
+      attributes: 'Membership attributes',
+      none: 'No membership attributes',
+      attributesCount_one: '{{count}} attribute',
+      attributesCount_other: '{{count}} attributes',
+    },
   },
   users: {
     actions: {
@@ -87,8 +93,6 @@ const translations = {
         loadMore: 'Load More Companies',
         loading: 'Loading...',
         company: 'Company',
-        membershipAttributes: 'Membership attributes',
-        noMembershipAttributes: 'No membership attributes',
       },
       tooltips: {
         userId: 'User ID',
@@ -226,7 +230,6 @@ const translations = {
       externalIdTooltip: 'External ID (from your app)',
       companyMembers: 'Company members',
       user: 'User',
-      membershipAttributes: 'Membership Attributes',
       activity: {
         title: 'Activity',
         events: 'Events',
@@ -234,7 +237,6 @@ const translations = {
       },
       membersCount_one: '{{count}} member',
       membersCount_other: '{{count}} members',
-      noMembershipAttributes: 'No membership attributes',
       loadMoreUsers: 'Load More Users',
       loading: 'Loading...',
       noUsersFound: 'No users found for this company.',

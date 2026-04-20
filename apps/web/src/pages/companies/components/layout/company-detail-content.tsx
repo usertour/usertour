@@ -12,9 +12,11 @@ import {
   BizUserOnCompany,
 } from '@usertour/types';
 import { formatAttributeValue } from '@/utils/common';
-import { useEffect, useState, createContext, useContext, ReactNode, Fragment } from 'react';
+import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { IdCardIcon, CalendarIcon, ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons';
+import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour-packages/table';
+import { MembershipRow } from '@/components/molecules/membership-row';
 import {
   Tooltip,
   TooltipContent,
@@ -180,76 +182,11 @@ const CompanyUserListProvider = ({
   );
 };
 
-// Helper function to get membership attributes for a user
-const getMembershipAttributes = (
-  user: BizUser,
-  companyId: string,
-  attributeList: any[] | undefined,
-) => {
-  if (!user.bizUsersOnCompany || !attributeList) {
-    return [];
-  }
-
-  // Find the membership for this specific company
-  const membership = user.bizUsersOnCompany.find(
+const getMembershipData = (user: BizUser, companyId: string): Record<string, unknown> | null => {
+  const membership = user.bizUsersOnCompany?.find(
     (m: BizUserOnCompany) => m.bizCompany?.id === companyId,
   );
-  if (!membership || !membership.data) {
-    return [];
-  }
-
-  const membershipData = membership.data;
-  const membershipAttributes = attributeList.filter(
-    (attr) => attr.bizType === AttributeBizTypes.Membership,
-  );
-
-  return Object.entries(membershipData)
-    .filter(([key]) => membershipAttributes.some((attr) => attr.codeName === key))
-    .map(([key, value]) => {
-      const attr = membershipAttributes.find((attr) => attr.codeName === key);
-      return {
-        name: attr?.displayName || key,
-        value,
-        dataType: attr?.dataType,
-        codeName: key,
-      };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
-};
-
-// Helper function to sort membership data entries
-const sortMembershipDataEntries = (data: Record<string, any>, attributes: any[]) => {
-  return Object.entries(data || {}).sort(([keyA], [keyB]) => {
-    // Find attributes in attributeList to determine order
-    const attrA = attributes?.find((attr) => attr.codeName === keyA);
-    const attrB = attributes?.find((attr) => attr.codeName === keyB);
-
-    // If both are in attributeList, sort by their order in the list
-    if (attrA && attrB && attributes) {
-      const indexA = attributes.indexOf(attrA);
-      const indexB = attributes.indexOf(attrB);
-      return indexA - indexB;
-    }
-
-    // If only one is in attributeList, prioritize the one in the list
-    if (attrA && !attrB) return -1;
-    if (!attrA && attrB) return 1;
-
-    // If neither is in attributeList, sort alphabetically
-    return keyA.localeCompare(keyB);
-  });
-};
-
-// Helper function to get membership data for a user
-const getMembershipData = (user: BizUser, companyId: string) => {
-  if (!user.bizUsersOnCompany) {
-    return null;
-  }
-
-  const membership = user.bizUsersOnCompany.find(
-    (m: BizUserOnCompany) => m.bizCompany?.id === companyId,
-  );
-  return membership?.data || null;
+  return (membership?.data as Record<string, unknown> | undefined) ?? null;
 };
 
 // --- CompanyUserList components ---
@@ -286,11 +223,6 @@ const CompanyUserList = () => {
   const { contents, loading, refetch, totalCount, companyId } = useCompanyUserListContext();
   const { attributeList } = useAttributeListContext();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const copyWithToast = useCopyWithToast();
-
-  const handleRowClick = (id: string) => {
-    setExpandedRowId(expandedRowId === id ? null : id);
-  };
 
   const handleRefresh = () => {
     refetch();
@@ -328,124 +260,51 @@ const CompanyUserList = () => {
         </div>
       ) : (
         <div className="flex flex-col w-full grow">
-          {/* Header */}
-          <div className="flex flex-row border-b text-sm font-medium text-muted-foreground">
-            <div className="w-2/5 p-2">{t('companies.detail.user')}</div>
-            <div className="w-3/5 p-2">{t('companies.detail.membershipAttributes')}</div>
-            <div className="w-10" />
-          </div>
-          {/* Body */}
-          {contents.map((user: BizUser) => {
-            const membershipAttributes = getMembershipAttributes(user, companyId, attributeList);
-            const membershipData = getMembershipData(user, companyId);
-            const hasMembershipData = membershipData && Object.keys(membershipData).length > 0;
+          <Table className="table-fixed">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-2/5">{t('companies.detail.user')}</TableHead>
+                <TableHead className="w-3/5">{t('common.membership.attributes')}</TableHead>
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {contents.map((user: BizUser) => {
+                const membershipData = getMembershipData(user, companyId);
+                const isExpanded = expandedRowId === user.id;
 
-            return (
-              <Fragment key={user.id}>
-                {/* Data Row */}
-                <div
-                  className="group flex flex-row border-b cursor-pointer hover:bg-muted/50"
-                  onClick={() => hasMembershipData && handleRowClick(user.id)}
-                >
-                  <div className="w-2/5 p-2 min-w-0 overflow-hidden flex items-center">
-                    <Link to={`/env/${user.environmentId}/user/${user.id}`}>
-                      <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline min-w-0">
-                        <UserAvatar
-                          email={user.data?.email || ''}
-                          name={user.data?.name || ''}
-                          size="sm"
-                        />
-                        <div className="flex-1 min-w-0 truncate">
-                          {user.data?.email || user.externalId}
-                        </div>
+                const identity = (
+                  <Link
+                    to={`/env/${user.environmentId}/user/${user.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline min-w-0">
+                      <UserAvatar
+                        email={user.data?.email || ''}
+                        name={user.data?.name || ''}
+                        size="sm"
+                      />
+                      <div className="flex-1 min-w-0 truncate">
+                        {user.data?.email || user.externalId}
                       </div>
-                    </Link>
-                  </div>
-                  <div className="w-3/5 p-2 min-w-0 overflow-hidden">
-                    {hasMembershipData ? (
-                      <div className="space-y-1 min-w-0">
-                        {membershipAttributes.slice(0, 2).map((attr, index) => {
-                          const formattedValue = formatAttributeValue(
-                            attr.value,
-                            attr.dataType || AttributeDataType.String,
-                          );
-                          return (
-                            <div key={index} className="text-sm flex items-center gap-1.5 min-w-0">
-                              <div className="font-medium text-muted-foreground flex-none w-32 truncate">
-                                {attr.name}:
-                              </div>
-                              <div className="flex-1 min-w-0 truncate">{formattedValue}</div>
-                            </div>
-                          );
-                        })}
-                        {membershipAttributes.length > 2 && (
-                          <div className="text-xs text-muted-foreground">
-                            +{membershipAttributes.length - 2} more attributes
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        {t('companies.detail.noMembershipAttributes')}
-                      </span>
-                    )}
-                  </div>
-                  <div className="w-10 flex items-center justify-center">
-                    {hasMembershipData &&
-                      (expandedRowId === user.id ? (
-                        <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      ) : (
-                        <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      ))}
-                  </div>
-                </div>
-                {/* Expanded Row */}
-                {expandedRowId === user.id && membershipData && (
-                  <div className="bg-muted/50 text-sm">
-                    {sortMembershipDataEntries(membershipData, attributeList || []).map(
-                      ([key, value]) => {
-                        const attr = attributeList?.find((attr) => attr.codeName === key);
-                        const dataType = attr?.dataType || AttributeDataType.String;
-                        const formattedValue = formatAttributeValue(value, dataType);
-                        const isDateTime = dataType === AttributeDataType.DateTime;
-                        const textToCopy = String(isDateTime ? value : formattedValue);
+                    </div>
+                  </Link>
+                );
 
-                        return (
-                          <div
-                            key={key}
-                            className="group flex flex-row border-b last:border-0 min-w-0"
-                          >
-                            <div className="font-medium w-2/5 min-w-0 p-2 leading-6">
-                              <div className="break-words">{attr?.displayName || key}</div>
-                            </div>
-                            <div className="w-3/5 min-w-0 p-2 break-words leading-6">
-                              {isDateTime ? (
-                                <TruncatedText
-                                  text={formattedValue}
-                                  className="max-w-full"
-                                  rawValue={value}
-                                />
-                              ) : (
-                                formattedValue
-                              )}
-                            </div>
-                            <Button
-                              variant={'ghost'}
-                              size={'icon'}
-                              className="w-6 h-6 m-2 rounded invisible group-hover:visible flex-shrink-0"
-                              onClick={() => copyWithToast(textToCopy)}
-                            >
-                              <CopyIcon className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        );
-                      },
-                    )}
-                  </div>
-                )}
-              </Fragment>
-            );
-          })}
+                return (
+                  <MembershipRow
+                    key={user.id}
+                    identity={identity}
+                    membershipData={membershipData}
+                    attributeList={attributeList}
+                    isExpanded={isExpanded}
+                    onToggle={() => setExpandedRowId(isExpanded ? null : user.id)}
+                    colSpan={3}
+                  />
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
 
