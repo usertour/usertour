@@ -38,9 +38,7 @@ export const useCompanyTableColumns = (): ColumnDef<BizCompany>[] => {
       {
         id: 'externalId',
         accessorKey: 'externalId',
-        header: ({ column }: any) => (
-          <DataTableColumnHeader column={column} title={t('companies.table.company')} />
-        ),
+        header: () => <DataTableColumnHeader title={t('companies.table.company')} />,
         cell: ({ row }: any) => {
           const email = row.original.data?.email || '';
           const name = row.original.data?.name || '';

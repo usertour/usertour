@@ -40,9 +40,7 @@ export const useUserTableColumns = (): ColumnDef<BizUser>[] => {
       {
         id: 'externalId',
         accessorKey: 'externalId',
-        header: ({ column }: any) => (
-          <DataTableColumnHeader column={column} title={t('users.table.user')} />
-        ),
+        header: () => <DataTableColumnHeader title={t('users.table.user')} />,
         cell: ({ row }: any) => {
           const email = row.original.data?.email || '';
           const name = row.original.data?.name || '';

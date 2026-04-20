@@ -67,7 +67,6 @@ export interface DataTablePaginationProps<TData extends { id: string }> {
 
 // Column header props interface
 export interface DataTableColumnHeaderProps {
-  column: any;
   title: string;
   className?: string;
 }

@@ -19,15 +19,12 @@ const getDataValue = (row: any, key: string): unknown => {
 // Column builder utilities
 const createColumnAccessor = (codeName: string) => (row: any) => getDataValue(row, codeName);
 
-const createColumnHeader =
-  (displayName: string, dataType: number, className?: string) =>
-  ({ column }: { column: any }) => (
-    <DataTableColumnHeader
-      column={column}
-      title={displayName}
-      className={className ?? cellContainerClass(dataType)}
-    />
-  );
+const createColumnHeader = (displayName: string, dataType: number, className?: string) => () => (
+  <DataTableColumnHeader
+    title={displayName}
+    className={className ?? cellContainerClass(dataType)}
+  />
+);
 
 const createColumnCell =
   (codeName: string, dataType: number, className?: string) =>
