@@ -1,7 +1,7 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ChevronRightIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
-import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
+import { CompanyIcon, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
 import { useTranslation } from 'react-i18next';
 import {
   AttributeBizTypes,
@@ -464,29 +464,6 @@ interface CompanyDetailContentProps {
   companyId: string;
 }
 
-// TooltipIcon component to reduce repetitive code
-const TooltipIcon = ({
-  icon: Icon,
-  tooltipKey,
-  className = 'w-4 h-4 text-foreground/60 cursor-help',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  tooltipKey: string;
-  className?: string;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Icon className={className} />
-        </TooltipTrigger>
-        <TooltipContent>{t(tooltipKey)}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
 // Loading wrapper component to handle all loading states
 const CompanyDetailContentWithLoading = ({
   environmentId,
@@ -615,164 +592,141 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
           </div>
         </div>
       </div>
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-14 xl:flex-row xl:items-start xl:justify-center">
-        {/* Left column - primary content */}
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-lg font-normal">
-                <CompanyIcon width={18} height={18} className="mr-2 text-foreground/80" />
-                {t('companies.detail.companyDetails')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2 gap-x-12">
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={IdCardIcon} tooltipKey="companies.detail.tooltips.companyId" />
-                  <span className="flex-1 min-w-0 truncate">{bizCompany?.externalId || ''}</span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizCompany?.externalId || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={CompanyIcon} tooltipKey="companies.detail.tooltips.name" />
-                  <span className="flex-1 min-w-0 truncate">
-                    {bizCompany?.data?.name || t('companies.detail.unnamedCompany')}
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-6 xl:p-8">
+        {/* Identity header */}
+        <div className="flex items-start gap-4 px-1">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted">
+            <CompanyIcon width={24} height={24} className="text-foreground/70" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-semibold text-foreground truncate">
+              {bizCompany?.data?.name ||
+                bizCompany?.externalId ||
+                t('companies.detail.unnamedCompany')}
+            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {bizCompany?.externalId && (
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <IdCardIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{bizCompany.externalId}</span>
+                </span>
+              )}
+              {bizCompany?.createdAt && (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    {formatAttributeValue(bizCompany.createdAt, AttributeDataType.DateTime)}
                   </span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizCompany?.data?.name || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={CalendarIcon} tooltipKey="companies.detail.tooltips.created" />
-                  {bizCompany?.createdAt ? (
-                    <TruncatedText
-                      text={formatAttributeValue(bizCompany.createdAt, AttributeDataType.DateTime)}
-                      className="flex-1 min-w-0 truncate"
-                      rawValue={bizCompany.createdAt}
-                    />
-                  ) : (
-                    <span className="flex-1 min-w-0 truncate">-</span>
-                  )}
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizCompany?.createdAt || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <Tabs defaultValue="activity-feed">
-                <UnderlineTabsList className="justify-start">
-                  <UnderlineTabsTrigger value="activity-feed" className="text-base font-medium">
-                    {t('companies.detail.tabs.activityFeed')}
-                  </UnderlineTabsTrigger>
-                  <UnderlineTabsTrigger value="company-members" className="text-base font-medium">
-                    {t('companies.detail.tabs.companyMembers')}
-                  </UnderlineTabsTrigger>
-                </UnderlineTabsList>
-
-                <UnderlineTabsContent value="activity-feed">
-                  <CompanyActivityFeedProvider environmentId={environmentId} companyId={companyId}>
-                    <ActivityFeed
-                      environmentId={environmentId}
-                      renderTrailingContent={(event) => {
-                        const bizUser = event.bizUser;
-                        if (!bizUser) return null;
-                        const displayName =
-                          bizUser.data?.name || bizUser.data?.email || bizUser.externalId;
-                        return (
-                          <Link
-                            to={`/env/${environmentId}/user/${bizUser.id}`}
-                            className="flex items-center gap-1.5 hover:text-primary"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <UserAvatar
-                              email={bizUser.data?.email || ''}
-                              name={bizUser.data?.name || ''}
-                              size="sm"
-                            />
-                            <span className="text-xs truncate max-w-[120px]">{displayName}</span>
-                          </Link>
-                        );
-                      }}
-                    />
-                  </CompanyActivityFeedProvider>
-                </UnderlineTabsContent>
-
-                <UnderlineTabsContent value="company-members">
-                  <CompanyUserListProvider environmentId={environmentId} companyId={companyId}>
-                    <CompanyUserList />
-                  </CompanyUserListProvider>
-                </UnderlineTabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Right column - supporting attributes */}
-        <div className="w-full flex-none xl:w-[550px]">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-lg font-normal">
-                <UserProfile width={18} height={18} className="mr-2 text-foreground/80" />
-                {t('companies.detail.companyAttributes')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {bizCompanyAttributes.map(({ name, value, dataType }, key) => {
-                const formattedValue = formatAttributeValue(value, dataType);
-                const isDateTime = dataType === AttributeDataType.DateTime;
-                const textToCopy = String(isDateTime ? value : formattedValue);
+        {/* Two-column content area */}
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+          {/* Left column - primary content */}
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            <Card>
+              <CardContent className="pt-6">
+                <Tabs defaultValue="activity-feed">
+                  <UnderlineTabsList className="justify-start">
+                    <UnderlineTabsTrigger value="activity-feed" className="text-base font-medium">
+                      {t('companies.detail.tabs.activityFeed')}
+                    </UnderlineTabsTrigger>
+                    <UnderlineTabsTrigger value="company-members" className="text-base font-medium">
+                      {t('companies.detail.tabs.companyMembers')}
+                    </UnderlineTabsTrigger>
+                  </UnderlineTabsList>
 
-                return (
-                  <div
-                    className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
-                    key={key}
-                  >
-                    <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
-                      {name}
-                    </div>
-                    <div className="w-3/5 min-w-0 break-words p-2 leading-6">
-                      {isDateTime ? (
-                        <TruncatedText
-                          text={formattedValue}
-                          className="max-w-full"
-                          rawValue={value}
-                        />
-                      ) : (
-                        formattedValue
-                      )}
-                    </div>
-                    <Button
-                      variant={'ghost'}
-                      size={'icon'}
-                      className="m-2 h-6 w-6 rounded invisible flex-shrink-0 group-hover:visible"
-                      onClick={() => copyWithToast(textToCopy)}
+                  <UnderlineTabsContent value="activity-feed">
+                    <CompanyActivityFeedProvider
+                      environmentId={environmentId}
+                      companyId={companyId}
                     >
-                      <CopyIcon className="w-4 h-4" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
+                      <ActivityFeed
+                        environmentId={environmentId}
+                        renderTrailingContent={(event) => {
+                          const bizUser = event.bizUser;
+                          if (!bizUser) return null;
+                          const displayName =
+                            bizUser.data?.name || bizUser.data?.email || bizUser.externalId;
+                          return (
+                            <Link
+                              to={`/env/${environmentId}/user/${bizUser.id}`}
+                              className="flex items-center gap-1.5 hover:text-primary"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <UserAvatar
+                                email={bizUser.data?.email || ''}
+                                name={bizUser.data?.name || ''}
+                                size="sm"
+                              />
+                              <span className="text-xs truncate max-w-[120px]">{displayName}</span>
+                            </Link>
+                          );
+                        }}
+                      />
+                    </CompanyActivityFeedProvider>
+                  </UnderlineTabsContent>
+
+                  <UnderlineTabsContent value="company-members">
+                    <CompanyUserListProvider environmentId={environmentId} companyId={companyId}>
+                      <CompanyUserList />
+                    </CompanyUserListProvider>
+                  </UnderlineTabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right column - supporting attributes (sticky on xl) */}
+          <div className="w-full flex-none xl:sticky xl:top-20 xl:w-[420px] xl:self-start">
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {t('companies.detail.companyAttributes')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {bizCompanyAttributes.map(({ name, value, dataType }, key) => {
+                  const formattedValue = formatAttributeValue(value, dataType);
+                  const isDateTime = dataType === AttributeDataType.DateTime;
+                  const textToCopy = String(isDateTime ? value : formattedValue);
+
+                  return (
+                    <div
+                      className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
+                      key={key}
+                    >
+                      <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
+                        {name}
+                      </div>
+                      <div className="w-3/5 min-w-0 break-words p-2 leading-6">
+                        {isDateTime ? (
+                          <TruncatedText
+                            text={formattedValue}
+                            className="max-w-full"
+                            rawValue={value}
+                          />
+                        ) : (
+                          formattedValue
+                        )}
+                      </div>
+                      <Button
+                        variant={'ghost'}
+                        size={'icon'}
+                        className="m-2 h-6 w-6 rounded invisible flex-shrink-0 group-hover:visible"
+                        onClick={() => copyWithToast(textToCopy)}
+                      >
+                        <CopyIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 

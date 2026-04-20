@@ -3,7 +3,8 @@ import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useTranslation } from 'react-i18next';
 import { ChevronRightIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
-import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
+import { Delete2Icon } from '@usertour-packages/icons';
+import { UserAvatar } from '@/components/molecules/user-avatar';
 import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,13 +13,7 @@ import { UserCompaniesTab } from '../companies';
 import { ActivityFeed } from '@/components/molecules/activity-feed';
 import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';
-import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon } from '@radix-ui/react-icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { Button } from '@usertour-packages/button';
 import {
@@ -43,29 +38,6 @@ interface UserDetailContentProps {
   environmentId: string;
   userId: string;
 }
-
-// TooltipIcon component to reduce repetitive code
-const TooltipIcon = ({
-  icon: Icon,
-  tooltipKey,
-  className = 'w-4 h-4 text-foreground/60 cursor-help',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  tooltipKey: string;
-  className?: string;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Icon className={className} />
-        </TooltipTrigger>
-        <TooltipContent>{t(tooltipKey)}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
 
 // Loading wrapper component to handle all loading states
 const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
@@ -185,170 +157,140 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           </div>
         </div>
       </div>
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-14 xl:flex-row xl:items-start xl:justify-center">
-        {/* Left column - primary content */}
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-lg font-normal">
-                <UserIcon width={18} height={18} className="mr-2 text-foreground/80" />
-                {t('users.detail.userDetails')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-x-16 gap-y-4 md:grid-cols-2">
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={IdCardIcon} tooltipKey="users.detail.tooltips.userId" />
-                  <span className="flex-1 min-w-0 truncate">{bizUser?.externalId || ''}</span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizUser?.externalId || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={EnvelopeClosedIcon} tooltipKey="users.detail.tooltips.email" />
-                  <span className="flex-1 min-w-0 truncate">{bizUser?.data?.email || ''}</span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizUser?.data?.email || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={PersonIcon} tooltipKey="users.detail.tooltips.name" />
-                  <span className="flex-1 min-w-0 truncate">
-                    {bizUser?.data?.name || t('users.detail.unnamedUser')}
-                  </span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizUser?.data?.name || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={CalendarIcon} tooltipKey="users.detail.tooltips.created" />
-                  {bizUser?.createdAt ? (
-                    <TruncatedText
-                      text={formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}
-                      className="flex-1 min-w-0 truncate"
-                      rawValue={bizUser.createdAt}
-                    />
-                  ) : (
-                    <span className="flex-1 min-w-0 truncate">-</span>
-                  )}
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizUser?.createdAt || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <Tabs defaultValue="activity-feed">
-                <UnderlineTabsList className="justify-start">
-                  <UnderlineTabsTrigger value="activity-feed" className="text-base font-medium">
-                    {t('users.detail.tabs.activityFeed')}
-                  </UnderlineTabsTrigger>
-                  <UnderlineTabsTrigger value="sessions" className="text-base font-medium">
-                    {t('users.detail.tabs.sessions')}
-                  </UnderlineTabsTrigger>
-                  <UnderlineTabsTrigger value="companies" className="text-base font-medium">
-                    {t('users.detail.tabs.companies')}
-                    {bizUser?.bizUsersOnCompany && bizUser.bizUsersOnCompany.length > 0 && (
-                      <span className="ml-1">({bizUser.bizUsersOnCompany.length})</span>
-                    )}
-                  </UnderlineTabsTrigger>
-                </UnderlineTabsList>
-
-                <UnderlineTabsContent value="activity-feed">
-                  {bizUser && (
-                    <UserActivityFeedProvider environmentId={environmentId} userId={bizUser.id}>
-                      <ActivityFeed environmentId={environmentId} />
-                    </UserActivityFeedProvider>
-                  )}
-                </UnderlineTabsContent>
-
-                <UnderlineTabsContent value="sessions">
-                  {bizUser?.externalId && (
-                    <UserSessions
-                      environmentId={environmentId}
-                      externalUserId={bizUser.externalId}
-                    />
-                  )}
-                </UnderlineTabsContent>
-
-                <UnderlineTabsContent value="companies">
-                  {bizUser && <UserCompaniesTab bizUser={bizUser} environmentId={environmentId} />}
-                </UnderlineTabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-6 xl:p-8">
+        {/* Identity header */}
+        <div className="flex items-start gap-4 px-1">
+          <UserAvatar
+            email={(bizUser?.data as any)?.email || ''}
+            name={(bizUser?.data as any)?.name}
+            size="lg"
+          />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-semibold text-foreground truncate">
+              {(bizUser?.data as any)?.name ||
+                (bizUser?.data as any)?.email ||
+                bizUser?.externalId ||
+                t('users.detail.unnamedUser')}
+            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {(bizUser?.data as any)?.email && (
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <EnvelopeClosedIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{(bizUser?.data as any)?.email}</span>
+                </span>
+              )}
+              {bizUser?.externalId && (
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <IdCardIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{bizUser.externalId}</span>
+                </span>
+              )}
+              {bizUser?.createdAt && (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span>{formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}</span>
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Right column - supporting attributes */}
-        <div className="w-full flex-none xl:w-[550px]">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-lg font-normal">
-                <UserProfile width={18} height={18} className="mr-2 text-foreground/80" />
-                {t('users.detail.userAttributes')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {bizUserAttributes.map(({ name, value, dataType }, key) => {
-                const formattedValue = formatAttributeValue(value, dataType);
-                const isDateTime = dataType === AttributeDataType.DateTime;
-                const textToCopy = String(isDateTime ? value : formattedValue);
-
-                return (
-                  <div
-                    className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
-                    key={key}
-                  >
-                    <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
-                      {name}
-                    </div>
-                    <div className="w-3/5 min-w-0 break-words p-2 leading-6">
-                      {isDateTime ? (
-                        <TruncatedText
-                          text={formattedValue}
-                          className="max-w-full"
-                          rawValue={value}
-                        />
-                      ) : (
-                        formattedValue
+        {/* Two-column content area */}
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+          {/* Left column - primary content */}
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            <Card>
+              <CardContent className="pt-6">
+                <Tabs defaultValue="activity-feed">
+                  <UnderlineTabsList className="justify-start">
+                    <UnderlineTabsTrigger value="activity-feed" className="text-base font-medium">
+                      {t('users.detail.tabs.activityFeed')}
+                    </UnderlineTabsTrigger>
+                    <UnderlineTabsTrigger value="sessions" className="text-base font-medium">
+                      {t('users.detail.tabs.sessions')}
+                    </UnderlineTabsTrigger>
+                    <UnderlineTabsTrigger value="companies" className="text-base font-medium">
+                      {t('users.detail.tabs.companies')}
+                      {bizUser?.bizUsersOnCompany && bizUser.bizUsersOnCompany.length > 0 && (
+                        <span className="ml-1">({bizUser.bizUsersOnCompany.length})</span>
                       )}
-                    </div>
-                    <Button
-                      variant={'ghost'}
-                      size={'icon'}
-                      className="m-2 h-6 w-6 rounded invisible flex-shrink-0 group-hover:visible"
-                      onClick={() => copyWithToast(textToCopy)}
+                    </UnderlineTabsTrigger>
+                  </UnderlineTabsList>
+
+                  <UnderlineTabsContent value="activity-feed">
+                    {bizUser && (
+                      <UserActivityFeedProvider environmentId={environmentId} userId={bizUser.id}>
+                        <ActivityFeed environmentId={environmentId} />
+                      </UserActivityFeedProvider>
+                    )}
+                  </UnderlineTabsContent>
+
+                  <UnderlineTabsContent value="sessions">
+                    {bizUser?.externalId && (
+                      <UserSessions
+                        environmentId={environmentId}
+                        externalUserId={bizUser.externalId}
+                      />
+                    )}
+                  </UnderlineTabsContent>
+
+                  <UnderlineTabsContent value="companies">
+                    {bizUser && (
+                      <UserCompaniesTab bizUser={bizUser} environmentId={environmentId} />
+                    )}
+                  </UnderlineTabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right column - supporting attributes (sticky on xl) */}
+          <div className="w-full flex-none xl:sticky xl:top-20 xl:w-[420px] xl:self-start">
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {t('users.detail.userAttributes')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {bizUserAttributes.map(({ name, value, dataType }, key) => {
+                  const formattedValue = formatAttributeValue(value, dataType);
+                  const isDateTime = dataType === AttributeDataType.DateTime;
+                  const textToCopy = String(isDateTime ? value : formattedValue);
+
+                  return (
+                    <div
+                      className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
+                      key={key}
                     >
-                      <CopyIcon className="w-4 h-4" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
+                      <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
+                        {name}
+                      </div>
+                      <div className="w-3/5 min-w-0 break-words p-2 leading-6">
+                        {isDateTime ? (
+                          <TruncatedText
+                            text={formattedValue}
+                            className="max-w-full"
+                            rawValue={value}
+                          />
+                        ) : (
+                          formattedValue
+                        )}
+                      </div>
+                      <Button
+                        variant={'ghost'}
+                        size={'icon'}
+                        className="m-2 h-6 w-6 rounded invisible flex-shrink-0 group-hover:visible"
+                        onClick={() => copyWithToast(textToCopy)}
+                      >
+                        <CopyIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
