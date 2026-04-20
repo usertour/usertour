@@ -10,6 +10,7 @@ import {
   PageInfo,
   BizUser,
   BizUserOnCompany,
+  CompanyAttributes,
 } from '@usertour/types';
 import { formatAttributeValue } from '@/utils/common';
 import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
@@ -475,15 +476,22 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                   </Tooltip>
                 </TooltipProvider>
               )}
-              {bizCompany?.createdAt && (
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span>
-                    {t('companies.detail.firstSeen')}{' '}
-                    {formatAttributeValue(bizCompany.createdAt, AttributeDataType.DateTime)}
+              {(() => {
+                const companyData = bizCompany?.data as Record<string, unknown> | undefined;
+                const lastSeen =
+                  (companyData?.[CompanyAttributes.LAST_SEEN_AT] as string | undefined) ||
+                  bizCompany?.createdAt;
+                if (!lastSeen) return null;
+                return (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {t('companies.detail.lastSeen')}{' '}
+                      {formatAttributeValue(lastSeen, AttributeDataType.DateTime)}
+                    </span>
                   </span>
-                </span>
-              )}
+                );
+              })()}
             </div>
           </div>
         </div>

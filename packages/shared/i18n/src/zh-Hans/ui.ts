@@ -68,7 +68,7 @@ const translations = {
       userDetails: '用户详情',
       userAttributes: '用户属性',
       unnamedUser: '未命名用户',
-      firstSeen: '首次出现',
+      lastSeen: '最近活跃',
       externalIdTooltip: '外部 ID（来自你的应用）',
       activity: {
         title: '活动',
@@ -216,7 +216,7 @@ const translations = {
       companyDetails: '公司详情',
       companyAttributes: '公司属性',
       unnamedCompany: '未命名公司',
-      firstSeen: '首次出现',
+      lastSeen: '最近活跃',
       externalIdTooltip: '外部 ID（来自你的应用）',
       companyMembers: '公司成员',
       user: '用户',

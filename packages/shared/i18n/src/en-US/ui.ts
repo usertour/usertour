@@ -71,7 +71,7 @@ const translations = {
       userDetails: 'User details',
       userAttributes: 'User attributes',
       unnamedUser: 'Unnamed user',
-      firstSeen: 'First seen',
+      lastSeen: 'Last seen',
       externalIdTooltip: 'External ID (from your app)',
       activity: {
         title: 'Activity',
@@ -226,7 +226,7 @@ const translations = {
       companyDetails: 'Company details',
       companyAttributes: 'Company attributes',
       unnamedCompany: 'Unnamed company',
-      firstSeen: 'First seen',
+      lastSeen: 'Last seen',
       externalIdTooltip: 'External ID (from your app)',
       companyMembers: 'Company members',
       user: 'User',

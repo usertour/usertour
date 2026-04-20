@@ -12,7 +12,13 @@ import {
 } from '@radix-ui/react-icons';
 import { CompanyIcon, Delete2Icon } from '@usertour-packages/icons';
 import { UserAvatar } from '@/components/molecules/user-avatar';
-import { AttributeBizTypes, AttributeDataType, BizUser, BizUserOnCompany } from '@usertour/types';
+import {
+  AttributeBizTypes,
+  AttributeDataType,
+  BizUser,
+  BizUserOnCompany,
+  UserAttributes,
+} from '@usertour/types';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserSessions } from '../sessions';
@@ -238,15 +244,22 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
                   </Tooltip>
                 </TooltipProvider>
               )}
-              {bizUser?.createdAt && (
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span>
-                    {t('users.detail.firstSeen')}{' '}
-                    {formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}
+              {(() => {
+                const userData = bizUser?.data as Record<string, unknown> | undefined;
+                const lastSeen =
+                  (userData?.[UserAttributes.LAST_SEEN_AT] as string | undefined) ||
+                  bizUser?.createdAt;
+                if (!lastSeen) return null;
+                return (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {t('users.detail.lastSeen')}{' '}
+                      {formatAttributeValue(lastSeen, AttributeDataType.DateTime)}
+                    </span>
                   </span>
-                </span>
-              )}
+                );
+              })()}
             </div>
             {memberships.length > 0 && (
               <CompanyChips memberships={memberships} environmentId={environmentId} />
