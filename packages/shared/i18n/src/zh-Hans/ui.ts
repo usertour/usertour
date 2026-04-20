@@ -51,6 +51,7 @@ const translations = {
     },
     detail: {
       title: '用户详情',
+      breadcrumb: '用户',
       notFound: '未找到用户。',
       userDetails: '用户详情',
       userAttributes: '用户属性',
@@ -157,6 +158,7 @@ const translations = {
     },
     detail: {
       title: '公司详情',
+      breadcrumb: '公司',
       notFound: '未找到公司。',
       companyDetails: '公司详情',
       companyAttributes: '公司属性',

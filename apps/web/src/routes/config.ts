@@ -201,7 +201,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/user/:userId',
     component: UserDetail,
-    layout: AdminDetailLayout,
+    layout: AdminListLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'UserDetail',
@@ -219,7 +219,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/company/:companyId',
     component: CompanyDetail,
-    layout: AdminDetailLayout,
+    layout: AdminListLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'CompanyDetail',

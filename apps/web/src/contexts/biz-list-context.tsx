@@ -35,7 +35,7 @@ export function createBizListContext<T>() {
 
   const defaultPagination = {
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 20,
   };
 
   function BizListProvider({

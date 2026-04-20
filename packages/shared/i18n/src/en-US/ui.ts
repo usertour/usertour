@@ -58,6 +58,7 @@ const translations = {
     },
     detail: {
       title: 'User Detail',
+      breadcrumb: 'Users',
       notFound: 'User not found.',
       userDetails: 'User details',
       userAttributes: 'User attributes',
@@ -178,6 +179,7 @@ const translations = {
     },
     detail: {
       title: 'Company Detail',
+      breadcrumb: 'Companies',
       notFound: 'Company not found.',
       companyDetails: 'Company details',
       companyAttributes: 'Company attributes',

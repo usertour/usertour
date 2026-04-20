@@ -1,6 +1,6 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
-import { ArrowLeftIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
+import { ChevronRightIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -578,16 +578,22 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
 
   return (
     <>
-      <div className="border-b bg-white flex-row md:flex w-full fixed justify-between items-center">
-        <div className="flex h-16 items-center px-4 w-full">
-          <ArrowLeftIcon
-            className="ml-4 h-6 w-8 cursor-pointer"
-            onClick={() => {
-              navigator(`/env/${environmentId}/companies`);
-            }}
-          />
-          <span>{t('companies.detail.title')}</span>
-          <div className="ml-auto">
+      <div className="border-b bg-white flex-row md:flex w-full sticky top-0 z-10 justify-between items-center">
+        <div className="flex h-16 items-center px-4 w-full gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => navigator(`/env/${environmentId}/companies`)}
+            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
+          >
+            {t('companies.detail.breadcrumb')}
+          </button>
+          <ChevronRightIcon className="h-4 w-4 text-muted-foreground/60 shrink-0" />
+          <span className="text-sm font-medium truncate min-w-0">
+            {(bizCompany?.data as any)?.name ||
+              bizCompany?.externalId ||
+              t('companies.detail.unnamedCompany')}
+          </span>
+          <div className="ml-auto shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
@@ -609,7 +615,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
           </div>
         </div>
       </div>
-      <div className="mx-auto mt-12 flex w-full max-w-[1600px] flex-col gap-6 p-14 xl:flex-row xl:items-start xl:justify-center">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-14 xl:flex-row xl:items-start xl:justify-center">
         {/* Left column - primary content */}
         <div className="flex min-w-0 flex-1 flex-col gap-6">
           <Card>
