@@ -51,7 +51,12 @@ const getInitials = (name?: string, seed?: string) => {
       .toUpperCase()
       .slice(0, 2);
   }
-  if (seed) return seed.charAt(0).toUpperCase();
+  if (seed) {
+    const firstLetter = seed.match(/\p{L}/u);
+    if (firstLetter) return firstLetter[0].toUpperCase();
+    const firstDigit = seed.match(/\p{N}/u);
+    if (firstDigit) return firstDigit[0];
+  }
   return 'U';
 };
 
