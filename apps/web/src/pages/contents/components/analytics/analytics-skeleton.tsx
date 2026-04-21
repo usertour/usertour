@@ -8,7 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { Tabs, TabsContent } from '@usertour-packages/tabs';
 
 // AnalyticsHeader skeleton
 export const AnalyticsHeaderSkeleton = () => {
@@ -42,28 +41,24 @@ export const AnalyticsViewsSkeleton = () => {
   );
 };
 
-// AnalyticsDays skeleton - shows chart with tabs
+// AnalyticsDays skeleton - shows single chart with granularity select
 export const AnalyticsDaysSkeleton = () => {
   return (
-    <Tabs defaultValue="views">
-      <Card>
-        <CardHeader>
-          <CardTitle className="space-between flex flex-row items-center">
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
             <Skeleton className="h-6 w-24" />
-          </CardTitle>
-        </CardHeader>
-        <TabsContent value="views" className="border-none p-0 outline-none">
-          <div className="p-6">
-            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-3 w-48" />
+            <Skeleton className="h-3 w-60" />
           </div>
-        </TabsContent>
-        <TabsContent value="rate" className="border-none p-0 outline-none">
-          <div className="p-6">
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </TabsContent>
-      </Card>
-    </Tabs>
+          <Skeleton className="h-9 w-[120px]" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-96 w-full" />
+      </CardContent>
+    </Card>
   );
 };
 

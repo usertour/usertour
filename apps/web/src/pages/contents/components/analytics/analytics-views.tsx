@@ -55,10 +55,10 @@ const AnalyticsViewsGrid = ({
   analyticsData,
   tooltips,
   titles = {
-    uniqueViews: 'Unique Views',
-    uniqueCompletionRate: 'Unique Completion Rate',
-    totalViews: 'Total Views',
-    totalCompletionRate: 'Total Completion Rate',
+    uniqueViews: 'Unique views',
+    uniqueCompletionRate: 'Unique completion rate',
+    totalViews: 'Total views',
+    totalCompletionRate: 'Total completion rate',
   },
 }: AnalyticsViewsGridProps) => (
   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -98,14 +98,14 @@ const AnalyticsViewsGrid = ({
 const LauncherAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
   <div className="grid gap-4 md:grid-cols-2">
     <AnalyticsCard
-      title="Views"
-      tooltip="Views are only counted once per user, meaning even if a user views the launcher multiple times, it will only be counted once"
+      title="Unique views"
+      tooltip="Unique users who saw the launcher."
       value={analyticsData?.uniqueViews || 0}
       icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
     />
     <AnalyticsCard
-      title="Activation Rate"
-      tooltip="The activation rate shows the percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it)."
+      title="Activation rate"
+      tooltip="Percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it)."
       value={calculateCompletionRate(
         analyticsData?.uniqueCompletions || 0,
         analyticsData?.uniqueViews || 0,
@@ -118,14 +118,14 @@ const LauncherAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
 const BannerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
   <div className="grid gap-4 md:grid-cols-2">
     <AnalyticsCard
-      title="Views"
-      tooltip="Views count unique users who saw the banner."
+      title="Unique views"
+      tooltip="Unique users who saw the banner."
       value={analyticsData?.uniqueViews || 0}
       icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
     />
     <AnalyticsCard
-      title="Dismissed"
-      tooltip="Dismissed counts unique users who closed the banner."
+      title="Dismissals"
+      tooltip="Unique users who dismissed the banner."
       value={analyticsData?.uniqueCompletions || 0}
       icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
     />
@@ -193,16 +193,16 @@ const ResourceCenterAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) =>
 const TrackerAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => (
   <div className="grid gap-4 md:grid-cols-2">
     <AnalyticsCard
-      title="Events"
-      tooltip="Total number of tracker events fired."
-      value={analyticsData?.totalViews || 0}
-      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
-    />
-    <AnalyticsCard
       title="Unique events"
       tooltip="Unique users who triggered this tracker event."
       value={analyticsData?.uniqueViews || 0}
       icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+    />
+    <AnalyticsCard
+      title="Events"
+      tooltip="Total number of tracker events fired."
+      value={analyticsData?.totalViews || 0}
+      icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
     />
   </div>
 );
