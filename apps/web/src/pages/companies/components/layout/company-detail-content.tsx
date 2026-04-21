@@ -1,7 +1,7 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { ChevronRightIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
-import { CompanyIcon, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
+import { Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
 import { useTranslation } from 'react-i18next';
 import {
   AttributeBizTypes,
@@ -38,7 +38,7 @@ import { BizCompanyDeleteDialog } from '../dialogs';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour-packages/tailwind';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { InitialsAvatar } from '@/components/molecules/initials-avatar';
 import { useQuery } from '@apollo/client';
 import { queryBizUser } from '@usertour-packages/gql';
 import { PaginationState } from '@tanstack/react-table';
@@ -280,8 +280,8 @@ const CompanyUserList = () => {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline min-w-0">
-                      <UserAvatar
-                        email={user.data?.email || ''}
+                      <InitialsAvatar
+                        seed={user.data?.email || ''}
                         name={user.data?.name || ''}
                         size="sm"
                       />
@@ -453,9 +453,11 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
       <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-6 xl:p-8">
         {/* Identity header */}
         <div className="flex items-start gap-4 px-1">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted">
-            <CompanyIcon width={24} height={24} className="text-foreground/70" />
-          </div>
+          <InitialsAvatar
+            seed={bizCompany?.externalId || bizCompany?.data?.name || ''}
+            name={bizCompany?.data?.name}
+            size="lg"
+          />
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-semibold text-foreground truncate">
               {bizCompany?.data?.name ||
@@ -540,8 +542,8 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                             className="flex items-center gap-1.5 hover:text-primary"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <UserAvatar
-                              email={bizUser.data?.email || ''}
+                            <InitialsAvatar
+                              seed={bizUser.data?.email || ''}
                               name={bizUser.data?.name || ''}
                               size="sm"
                             />

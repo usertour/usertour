@@ -6,6 +6,7 @@ import { BizCompany } from '@usertour/types';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTableColumnHeader } from '@/components/molecules/segment/table';
+import { InitialsAvatar } from '@/components/molecules/initials-avatar';
 
 // Hook to create company table columns
 export const useCompanyTableColumns = (): ColumnDef<BizCompany>[] => {
@@ -43,7 +44,12 @@ export const useCompanyTableColumns = (): ColumnDef<BizCompany>[] => {
           const externalId = row.original.externalId || '';
           const primary = name || externalId;
 
-          return <span className="block w-72 min-w-0 truncate">{primary}</span>;
+          return (
+            <div className="flex items-center gap-2 w-72 min-w-0">
+              <InitialsAvatar seed={externalId || name} name={name} size="sm" />
+              <span className="truncate">{primary}</span>
+            </div>
+          );
         },
         enableSorting: false,
         enableHiding: false,

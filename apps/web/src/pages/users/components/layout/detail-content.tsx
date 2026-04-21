@@ -11,7 +11,7 @@ import {
   IdCardIcon,
 } from '@radix-ui/react-icons';
 import { CompanyIcon, Delete2Icon } from '@usertour-packages/icons';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { InitialsAvatar } from '@/components/molecules/initials-avatar';
 import {
   AttributeBizTypes,
   AttributeDataType,
@@ -212,8 +212,8 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
       <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-6 xl:p-8">
         {/* Identity header */}
         <div className="flex items-start gap-4 px-1">
-          <UserAvatar
-            email={(bizUser?.data as any)?.email || ''}
+          <InitialsAvatar
+            seed={(bizUser?.data as any)?.email || ''}
             name={(bizUser?.data as any)?.name}
             size="lg"
           />
