@@ -209,7 +209,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           </div>
         </div>
       </div>
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-6 xl:p-8">
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-6 xl:p-8">
         {/* Identity header */}
         <div className="flex items-start gap-4 px-1">
           <UserAvatar
