@@ -214,8 +214,8 @@ export const EventEditForm = (props: EditFormProps) => {
                         <FormLabel className="flex flex-row">
                           Code name
                           <QuestionTooltip className="ml-1">
-                            Code-friendly event identifier sent to webhooks and analytics
-                            integrations. e.g. "user_signed_up".
+                            Code-friendly identifier used throughout Usertour to reference this
+                            event. e.g. "user_signed_up".
                           </QuestionTooltip>
                         </FormLabel>
                         <FormControl>

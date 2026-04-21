@@ -256,8 +256,8 @@ export const AttributeEditForm = (props: EditFormProps) => {
                       <FormLabel className="flex flex-row">
                         Code name
                         <QuestionTooltip className="inline ml-1">
-                          Code-friendly key used in webhook payloads and analytics integrations.
-                          e.g. "billing_plan".
+                          Code-friendly identifier used throughout Usertour to reference this
+                          attribute. e.g. "billing_plan".
                         </QuestionTooltip>
                       </FormLabel>
                       <FormControl>
