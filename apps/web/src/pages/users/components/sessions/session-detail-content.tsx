@@ -36,6 +36,20 @@ import {
   sortEventDataEntries,
 } from '@/utils/session';
 
+const groupBizEventsByDate = (events: BizEvent[]): Map<string, BizEvent[]> => {
+  const groups = new Map<string, BizEvent[]>();
+  for (const event of events) {
+    const dateKey = format(new Date(event.createdAt), 'yyyy-MM-dd');
+    const existing = groups.get(dateKey) || [];
+    existing.push(event);
+    groups.set(dateKey, existing);
+  }
+  return groups;
+};
+
+const formatActivityDateHeader = (dateKey: string): string =>
+  format(new Date(`${dateKey}T00:00:00`), 'MMM d, yyyy');
+
 interface SessionDetailContentProps {
   environmentId: string;
   sessionId: string;
@@ -274,63 +288,72 @@ const SessionDetailContentInner = ({
               </CardHeader>
               <CardContent>
                 <div className="w-full text-sm">
-                  {bizEvents ? (
-                    bizEvents.map((bizEvent: BizEvent) => {
-                      const displaySuffix = getEventDisplaySuffix(bizEvent, session);
-                      return (
-                        <Fragment key={bizEvent.id}>
-                          <div
-                            className="flex items-center cursor-pointer group border-b hover:bg-muted leading-6"
-                            onClick={() => handleRowClick(bizEvent.id)}
-                          >
-                            <span className="w-1/4 p-2 flex-none">
-                              {format(new Date(bizEvent.createdAt), 'yyyy-MM-dd HH:mm:ss')}
-                            </span>
-                            <div className="flex-1 min-w-0 flex justify-between items-center gap-2 p-2">
-                              <span className="truncate">
-                                {bizEvent.event?.displayName}
-                                {displaySuffix && (
-                                  <span className="text-muted-foreground ml-2">
-                                    {displaySuffix}
-                                  </span>
-                                )}
-                              </span>
-                              {expandedRowId === bizEvent.id ? (
-                                <ChevronUpIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
-                              ) : (
-                                <ChevronDownIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
-                              )}
-                            </div>
+                  {bizEvents && bizEvents.length > 0 ? (
+                    Array.from(groupBizEventsByDate(bizEvents).entries()).map(
+                      ([dateKey, dayEvents]) => (
+                        <Fragment key={dateKey}>
+                          <div className="px-2 py-2 text-xs font-semibold text-muted-foreground bg-muted/40 border-b">
+                            {formatActivityDateHeader(dateKey)}
                           </div>
-                          {expandedRowId === bizEvent.id && bizEvent.data && (
-                            <div className="bg-muted/50 border-b text-sm">
-                              {sortEventDataEntries(bizEvent.data, attributeList || []).map(
-                                ([key, value]) => (
-                                  <div key={key} className="flex border-b last:border-b-0">
-                                    <span className="w-1/4 p-2 flex-none font-medium truncate">
-                                      {attributeList?.find((attr) => attr.codeName === key)
-                                        ?.displayName || key}
-                                    </span>
-                                    <div className="flex-1 min-w-0 p-2">
-                                      {key === EventAttributes.LIST_ANSWER && (
-                                        <div className="overflow-hidden">
-                                          <QuestionAnswer answerEvent={bizEvent} />
-                                        </div>
-                                      )}
-                                      {key !== EventAttributes.LIST_ANSWER && (
-                                        <span className="block truncate">
-                                          {getFieldValue(key, value)}
+                          {dayEvents.map((bizEvent: BizEvent) => {
+                            const displaySuffix = getEventDisplaySuffix(bizEvent, session);
+                            return (
+                              <Fragment key={bizEvent.id}>
+                                <div
+                                  className="flex items-center cursor-pointer group border-b hover:bg-muted leading-6"
+                                  onClick={() => handleRowClick(bizEvent.id)}
+                                >
+                                  <span className="w-1/4 p-2 flex-none tabular-nums">
+                                    {format(new Date(bizEvent.createdAt), 'HH:mm:ss')}
+                                  </span>
+                                  <div className="flex-1 min-w-0 flex justify-between items-center gap-2 p-2">
+                                    <span className="truncate">
+                                      {bizEvent.event?.displayName}
+                                      {displaySuffix && (
+                                        <span className="text-muted-foreground ml-2">
+                                          {displaySuffix}
                                         </span>
                                       )}
-                                    </div>
+                                    </span>
+                                    {expandedRowId === bizEvent.id ? (
+                                      <ChevronUpIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    ) : (
+                                      <ChevronDownIcon className="h-4 w-4 flex-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    )}
                                   </div>
-                                ),
-                              )}
-                            </div>
-                          )}
+                                </div>
+                                {expandedRowId === bizEvent.id && bizEvent.data && (
+                                  <div className="bg-muted/50 border-b text-sm">
+                                    {sortEventDataEntries(bizEvent.data, attributeList || []).map(
+                                      ([key, value]) => (
+                                        <div key={key} className="flex border-b last:border-b-0">
+                                          <span className="w-1/4 p-2 flex-none font-medium truncate">
+                                            {attributeList?.find((attr) => attr.codeName === key)
+                                              ?.displayName || key}
+                                          </span>
+                                          <div className="flex-1 min-w-0 p-2">
+                                            {key === EventAttributes.LIST_ANSWER && (
+                                              <div className="overflow-hidden">
+                                                <QuestionAnswer answerEvent={bizEvent} />
+                                              </div>
+                                            )}
+                                            {key !== EventAttributes.LIST_ANSWER && (
+                                              <span className="block truncate">
+                                                {getFieldValue(key, value)}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ),
+                                    )}
+                                  </div>
+                                )}
+                              </Fragment>
+                            );
+                          })}
                         </Fragment>
-                      );
-                    })
+                      ),
+                    )
                   ) : (
                     <div className="h-24 flex items-center justify-center text-muted-foreground">
                       {t('users.sessions.detail.noEvents')}
