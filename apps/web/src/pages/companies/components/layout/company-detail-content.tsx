@@ -539,15 +539,10 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                         return (
                           <Link
                             to={`/env/${environmentId}/user/${bizUser.id}`}
-                            className="flex items-center gap-1.5 hover:text-primary"
+                            className="block max-w-[160px] truncate text-xs hover:text-primary"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <InitialsAvatar
-                              seed={bizUser.data?.email || ''}
-                              name={bizUser.data?.name || ''}
-                              size="sm"
-                            />
-                            <span className="text-xs truncate max-w-[120px]">{displayName}</span>
+                            {displayName}
                           </Link>
                         );
                       }}
