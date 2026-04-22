@@ -105,19 +105,40 @@ export const VersionHistoryList = () => {
           No versions yet.
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
           {groupedHistory.map((group) => (
-            <div key={group.key} className="flex flex-col">
-              <div className="px-3 py-2 text-sm font-semibold">{group.label}</div>
-              <div className="flex flex-col divide-y divide-border/60">
-                {group.versions.map((version) => (
-                  <VersionRow
-                    key={version.id}
-                    version={version}
-                    chips={chipsMap.get(version.id) ?? []}
-                    createdDisplay="timeOnly"
+            <div key={group.key} className="flex flex-col gap-1">
+              <div className="inline-flex w-fit items-center rounded-md bg-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground/80">
+                {group.label}
+              </div>
+              <div className="relative ml-4">
+                {group.versions.length > 1 && (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute left-0 top-4 bottom-4 w-px bg-border"
                   />
-                ))}
+                )}
+                {group.versions.map((version) => {
+                  const versionChips = chipsMap.get(version.id) ?? [];
+                  const isHighlighted = versionChips.length > 0;
+                  return (
+                    <div key={version.id} className="relative pl-6">
+                      <span
+                        aria-hidden
+                        className={
+                          isHighlighted
+                            ? 'absolute left-[-4px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-success ring-2 ring-success/30'
+                            : 'absolute left-[-4px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-background ring-2 ring-border/80'
+                        }
+                      />
+                      <VersionRow
+                        version={version}
+                        chips={versionChips}
+                        createdDisplay="timeOnly"
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}

@@ -136,12 +136,7 @@ export const VersionRow = ({
       : 'grid-cols-[64px_1fr_auto]';
 
   return (
-    <div
-      className={cn(
-        'group grid items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/50',
-        gridCols,
-      )}
-    >
+    <div className={cn('group grid items-center gap-3 px-3 py-2', gridCols)}>
       {timeFirst ? (
         <>
           {timeCell}
