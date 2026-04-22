@@ -95,17 +95,15 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
       <div
         className={cn(
-          'w-full min-w-0 overflow-hidden flex relative rounded-md border border-border h-full dark:border-border/60',
+          'w-full min-w-0 overflow-hidden flex relative rounded-xl border border-border h-full dark:border-border/60',
           surfaceClassName,
-          shouldShowWarning && [
-            'border-t-warning dark:border-t-warning',
-            'before:content-[""] before:absolute before:top-0 before:left-0 before:right-0 before:h-[1px] before:bg-warning before:z-[10] before:rounded-t-md dark:before:bg-warning',
-          ],
+          shouldShowWarning &&
+            'before:content-[""] before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-warning before:z-20 dark:before:bg-warning',
           className,
         )}
       >
         {shouldShowWarning && environment?.name && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center rounded-b-md rounded-t-none border-0 bg-warning text-white px-3 pt-0 py-0.5 text-xs leading-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center rounded-b-md rounded-t-none border-0 bg-warning text-white px-3 pt-0 py-0.5 text-xs leading-none">
             {environment.name}
           </div>
         )}
