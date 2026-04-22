@@ -48,6 +48,14 @@ const buildAllChipsMap = (
     if (existing) existing.push(chip);
     else map.set(coe.publishedVersion.id, [chip]);
   }
+  for (const [versionId, chips] of map) {
+    if (chips.some((c) => c.kind === 'live') && chips.some((c) => c.kind === 'draft')) {
+      map.set(
+        versionId,
+        chips.filter((c) => c.kind !== 'draft'),
+      );
+    }
+  }
   return map;
 };
 
@@ -120,16 +128,18 @@ export const VersionHistoryList = () => {
                 )}
                 {group.versions.map((version) => {
                   const versionChips = chipsMap.get(version.id) ?? [];
-                  const isHighlighted = versionChips.length > 0;
+                  const hasLive = versionChips.some((chip) => chip.kind === 'live');
+                  const hasDraft = versionChips.some((chip) => chip.kind === 'draft');
+                  const dotFillClass = hasLive
+                    ? 'bg-success ring-success/30'
+                    : hasDraft
+                      ? 'bg-primary ring-primary/30'
+                      : 'bg-background ring-border/80';
                   return (
                     <div key={version.id} className="relative pl-6">
                       <span
                         aria-hidden
-                        className={
-                          isHighlighted
-                            ? 'absolute left-[-4px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-success ring-2 ring-success/30'
-                            : 'absolute left-[-4px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-background ring-2 ring-border/80'
-                        }
+                        className={`absolute left-[-4px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full ring-2 ${dotFillClass}`}
                       />
                       <VersionRow
                         version={version}

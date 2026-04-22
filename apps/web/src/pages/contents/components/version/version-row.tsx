@@ -22,7 +22,7 @@ interface VersionRowProps {
 }
 
 const chipClass: Record<VersionRowChip['kind'], string> = {
-  draft: 'bg-success/15 text-success hover:bg-success/15',
+  draft: 'bg-primary/15 text-primary hover:bg-primary/15',
   live: 'bg-success/15 text-success hover:bg-success/15',
 };
 
