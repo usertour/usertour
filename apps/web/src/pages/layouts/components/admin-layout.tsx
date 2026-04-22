@@ -169,7 +169,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                 className={
                   type === 'builder'
                     ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
-                    : 'bg-slate-100'
+                    : 'bg-slate-50'
                 }
               />
             </Helmet>
