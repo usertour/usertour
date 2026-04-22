@@ -2,6 +2,7 @@ import { Attribute, ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { convertSettings } from '@/utils/convert-settings';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { Card } from '@usertour-packages/card';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { cn } from '@usertour-packages/tailwind';
 import { createContext, forwardRef, useContext, useMemo, useCallback, ReactNode } from 'react';
@@ -131,9 +132,9 @@ export const ThemeSettingsPanel = ({
   return (
     <ThemeSettingsContext.Provider value={value}>
       <GoogleFontCss settings={settings} />
-      <div className={cn('shadow bg-white rounded-lg w-[350px]', className)}>
+      <Card className={cn('w-[350px]', className)}>
         <Accordion.Root type="multiple">{children}</Accordion.Root>
-      </div>
+      </Card>
     </ThemeSettingsContext.Provider>
   );
 };

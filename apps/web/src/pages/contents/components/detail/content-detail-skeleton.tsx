@@ -1,9 +1,10 @@
+import { Card } from '@usertour-packages/card';
 import { Skeleton } from '@usertour-packages/skeleton';
 
 // Skeleton for individual step/item in content detail
 export const ContentDetailItemSkeleton = () => {
   return (
-    <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8">
+    <Card className="flex flex-row p-4 px-8 space-x-8">
       {/* Preview area skeleton */}
       <div className="w-40 h-32 flex flex-none items-center justify-center">
         <Skeleton className="h-24 w-32 rounded-lg" />
@@ -40,16 +41,16 @@ export const ContentDetailItemSkeleton = () => {
           <Skeleton className="h-3 w-32" />
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 
 // Skeleton for add button (for flows)
 export const ContentDetailAddButtonSkeleton = () => {
   return (
-    <div className="flex py-8 shadow bg-white rounded-lg justify-center cursor-pointer w-auto h-auto">
+    <Card className="flex py-8 justify-center cursor-pointer w-auto h-auto">
       <Skeleton className="h-10 w-10 rounded" />
-    </div>
+    </Card>
   );
 };
 

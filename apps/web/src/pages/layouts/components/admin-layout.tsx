@@ -72,10 +72,11 @@ AdminLayoutContent.displayName = 'AdminLayoutContent';
 interface AdminLayoutNewContentProps {
   children: React.ReactNode;
   className?: string;
+  surface?: 'default' | 'muted';
 }
 
 export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
-  const { children, className } = props;
+  const { children, className, surface = 'default' } = props;
   const { settingType } = useParams<{ settingType?: string }>();
   const { isNonPrimary } = useEnvironmentSelection();
   const { environment } = useAppContext();
@@ -87,11 +88,15 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
     ? (settingType === 'api' || settingType === 'environments') && isNonPrimary
     : isNonPrimary;
 
+  const surfaceClassName =
+    surface === 'muted' ? 'bg-slate-100 dark:bg-background' : 'bg-white dark:bg-card/60';
+
   return (
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
       <div
         className={cn(
-          'w-full min-w-0 overflow-hidden flex relative rounded-md border border-border bg-white h-full dark:border-border/60 dark:bg-card/60',
+          'w-full min-w-0 overflow-hidden flex relative rounded-md border border-border h-full dark:border-border/60',
+          surfaceClassName,
           shouldShowWarning && [
             'border-t-warning dark:border-t-warning',
             'before:content-[""] before:absolute before:top-0 before:left-0 before:right-0 before:h-[1px] before:bg-warning before:z-[10] before:rounded-t-md dark:before:bg-warning',

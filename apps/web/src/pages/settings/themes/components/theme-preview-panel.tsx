@@ -1,4 +1,5 @@
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
+import { Card } from '@usertour-packages/card';
 import { Separator } from '@usertour-packages/separator';
 import { cn } from '@usertour-packages/tailwind';
 import { LauncherDataType, ThemeDetailSelectorType, ThemeDetailPreviewType } from '@usertour/types';
@@ -70,7 +71,7 @@ export const ThemePreviewPanel = ({
   }, [settings, selectedType, onCustomStyleChange]);
 
   return (
-    <div className={cn('shadow bg-white rounded-lg grow ml-4 h-full flex flex-col', className)}>
+    <Card className={cn('grow ml-4 h-full flex flex-col', className)}>
       <div className="flex flex-col items-start justify-between space-y-2 p-4 sm:flex-row sm:items-center sm:space-y-0 md:h-16">
         <h2 className="text-lg font-semibold">Preview</h2>
         {showSelector && (
@@ -141,7 +142,7 @@ export const ThemePreviewPanel = ({
           />
         )}
       </div>
-    </div>
+    </Card>
   );
 };
 

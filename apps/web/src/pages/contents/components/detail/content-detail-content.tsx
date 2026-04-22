@@ -38,6 +38,7 @@ import {
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
+import { Card } from '@usertour-packages/card';
 import { cn } from '@usertour-packages/tailwind';
 
 interface ContentDetailContentStepProps {
@@ -154,7 +155,7 @@ const ContentPreviewCard = ({
   return (
     <>
       <GoogleFontCss settings={themeSettings} />
-      <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8">
+      <Card className="flex flex-row p-4 px-8 space-x-8">
         {leftContent}
 
         <div className="grow flex flex-col relative space-y-1 min-w-80">
@@ -187,7 +188,7 @@ const ContentPreviewCard = ({
             </div>
           )}
         </div>
-      </div>
+      </Card>
     </>
   );
 };
@@ -613,7 +614,7 @@ export const ContentDetailContent = () => {
         {showAddButton && (
           <Button
             onClick={() => openBuilder(content, contentType)}
-            className="py-8 shadow bg-white rounded-lg cursor-pointer w-auto h-auto hover:bg-white "
+            className="py-8 rounded-lg bg-white cursor-pointer w-auto h-auto hover:bg-white shadow"
             disabled={isViewOnly}
           >
             <AddIcon width={40} height={40} className="text-primary" />

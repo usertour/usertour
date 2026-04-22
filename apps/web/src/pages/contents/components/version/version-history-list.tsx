@@ -1,6 +1,7 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
 import { ListSkeleton } from '@/components/molecules/skeleton';
+import { Card } from '@usertour-packages/card';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { Separator } from '@usertour-packages/separator';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
@@ -69,7 +70,7 @@ export const VersionHistoryList = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col p-4 shadow bg-white rounded-lg space-y-4 w-full">
+      <Card className="flex flex-col p-4 space-y-4 w-full">
         <h3 className="text-lg font-medium flex items-center gap-1">
           Version history
           <QuestionTooltip>
@@ -79,12 +80,12 @@ export const VersionHistoryList = () => {
         </h3>
         <Separator />
         <ListSkeleton length={6} />
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="flex flex-col p-4 shadow bg-white rounded-lg space-y-4 w-full">
+    <Card className="flex flex-col p-4 space-y-4 w-full">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium flex items-center gap-1">
           Version history
@@ -129,7 +130,7 @@ export const VersionHistoryList = () => {
           <span className="text-xs text-muted-foreground">End of history</span>
         )}
       </div>
-    </div>
+    </Card>
   );
 };
 

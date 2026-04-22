@@ -12,6 +12,7 @@ import { ContentBuilder, ContentDetail, ContentList, ContentLocalization } from 
 import { Dashboard } from '@/pages/dashboard';
 import {
   AdminDetailLayout,
+  AdminSubpageLayout,
   AdminListLayout,
   AdminSettingsLayout,
   AuthLayout,
@@ -201,7 +202,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/user/:userId',
     component: UserDetail,
-    layout: AdminListLayout,
+    layout: AdminSubpageLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'UserDetail',
@@ -210,7 +211,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/session/:sessionId',
     component: SessionDetail,
-    layout: AdminListLayout,
+    layout: AdminSubpageLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'SessionDetail',
@@ -219,7 +220,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/company/:companyId',
     component: CompanyDetail,
-    layout: AdminListLayout,
+    layout: AdminSubpageLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'CompanyDetail',

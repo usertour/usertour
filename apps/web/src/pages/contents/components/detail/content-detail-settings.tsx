@@ -1,5 +1,6 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
+import { Card } from '@usertour-packages/card';
 import { buildConfig } from '@usertour/helpers';
 import { ContentDataType, RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
@@ -113,7 +114,7 @@ export const ContentDetailSettings = () => {
 
   return (
     <div className="flex flex-col space-y-6 flex-none w-[420px]">
-      <div className="px-4 py-6 space-y-3 shadow bg-white rounded-lg">
+      <Card className="px-4 py-6 space-y-3">
         <ContentDetailAutoStartRules
           defaultConditions={config.autoStartRules}
           defaultEnabled={config.enabledAutoStartRules}
@@ -130,10 +131,10 @@ export const ContentDetailSettings = () => {
           disabled={isViewOnly}
           featureTooltip={AutoStartTooltips(contentType)}
         />
-      </div>
+      </Card>
 
       {enabledAutoStartRules && (
-        <div className="px-4 py-6 space-y-3 shadow bg-white rounded-lg">
+        <Card className="px-4 py-6 space-y-3">
           <ContentDetailAutoStartRules
             defaultConditions={config.hideRules}
             defaultEnabled={config.enabledHideRules}
@@ -149,7 +150,7 @@ export const ContentDetailSettings = () => {
             disabled={isViewOnly}
             featureTooltip={HideRulesTooltips(contentType)}
           />
-        </div>
+        </Card>
       )}
     </div>
   );

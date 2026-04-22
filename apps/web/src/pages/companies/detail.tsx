@@ -10,7 +10,7 @@ export const CompanyDetail = () => {
   return (
     <CompanyListProvider environmentId={environment?.id} defaultQuery={{ companyId }}>
       <ScrollArea className="h-full w-full">
-        <div className="min-h-full bg-slate-50">
+        <div className="min-h-full">
           {environment?.id && companyId && (
             <CompanyDetailContent environmentId={environment?.id} companyId={companyId} />
           )}

@@ -13,7 +13,7 @@ export const SessionDetail = () => {
   return (
     <EventListProvider projectId={project?.id}>
       <ScrollArea className="h-full w-full">
-        <div className="min-h-full bg-slate-50">
+        <div className="min-h-full">
           <SessionDetailContent environmentId={environment?.id} sessionId={sessionId} />
         </div>
       </ScrollArea>

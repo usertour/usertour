@@ -13,7 +13,7 @@ export const UserDetail = () => {
     <UserListProvider environmentId={environment?.id} defaultQuery={{ userId: userId }}>
       <EventListProvider projectId={project?.id || ''}>
         <ScrollArea className="h-full w-full">
-          <div className="min-h-full bg-slate-50">
+          <div className="min-h-full">
             {environment?.id && userId && (
               <UserDetailContent environmentId={environment?.id} userId={userId} />
             )}
