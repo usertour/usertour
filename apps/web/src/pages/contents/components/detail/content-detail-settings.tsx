@@ -11,6 +11,11 @@ import {
 import { useAppContext } from '@/contexts/app-context';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 
+const getContentTypeLabel = (contentType: ContentDataType): string => {
+  if (contentType === ContentDataType.RESOURCE_CENTER) return 'resource center';
+  return contentType;
+};
+
 const getAutoStartRulesName = (contentType: ContentDataType) => {
   if (contentType === ContentDataType.BANNER) {
     return 'Show banner if...';
@@ -18,26 +23,14 @@ const getAutoStartRulesName = (contentType: ContentDataType) => {
   if (contentType === ContentDataType.LAUNCHER) {
     return 'Show launcher if...';
   }
-  if (contentType === ContentDataType.RESOURCE_CENTER) {
-    return 'Show resource center if...';
-  }
-  return `Auto-start ${contentType} if...`;
+  return `Auto-start ${getContentTypeLabel(contentType)} if...`;
 };
 
-const SHOW_ONLY_CONTENT_TYPES = [
-  ContentDataType.LAUNCHER,
-  ContentDataType.BANNER,
-  ContentDataType.RESOURCE_CENTER,
-];
+const SHOW_ONLY_CONTENT_TYPES = [ContentDataType.LAUNCHER, ContentDataType.BANNER];
 
 const AutoStartTooltips = (contentType: ContentDataType) => {
   if (SHOW_ONLY_CONTENT_TYPES.includes(contentType)) {
-    const contentLabel =
-      contentType === ContentDataType.BANNER
-        ? 'banner'
-        : contentType === ContentDataType.RESOURCE_CENTER
-          ? 'resource center'
-          : 'launcher';
+    const contentLabel = contentType === ContentDataType.BANNER ? 'banner' : 'launcher';
     return (
       <>
         Show the {contentLabel} if the user matches the given condition. If the user doesn't match
@@ -47,23 +40,25 @@ const AutoStartTooltips = (contentType: ContentDataType) => {
       </>
     );
   }
+  const label = getContentTypeLabel(contentType);
   return (
     <>
-      Automatically starts the {contentType} if the user matches the given condition. Example:
-      Automatically start an {contentType} for all new users. <br />
+      Automatically starts the {label} if the user matches the given condition. Example:
+      Automatically start a {label} for all new users. <br />
       <br />
-      Once the {contentType} has started, the auto-start condition has no effect, meaning if the
-      user no longer matches it, the {contentType} will stay open until otherwise dismissed.
+      Once the {label} has started, the auto-start condition has no effect, meaning if the user no
+      longer matches it, the {label} will stay open until otherwise dismissed.
     </>
   );
 };
 
 const HideRulesTooltips = (contentType: ContentDataType) => {
+  const label = getContentTypeLabel(contentType);
   return (
     <>
-      Temporarily hides the {contentType} when this condition is true. Once the condition is no
-      longer true, the {contentType} may be shown again. <br />
-      Example: Hide a {contentType} on certain pages.
+      Temporarily hides the {label} when this condition is true. Once the condition is no longer
+      true, the {label} may be shown again. <br />
+      Example: Hide a {label} on certain pages.
     </>
   );
 };
@@ -110,6 +105,10 @@ export const ContentDetailSettings = () => {
   }
 
   const isShowOnly = SHOW_ONLY_CONTENT_TYPES.includes(contentType);
+  const isResourceCenter = contentType === ContentDataType.RESOURCE_CENTER;
+  // Flow / Checklist show the full advanced rule options; RC uses auto-start semantics but
+  // intentionally keeps the advanced options hidden.
+  const showAdvancedOptions = !isShowOnly && !isResourceCenter;
   const enabledAutoStartRules = !isShowOnly;
 
   return (
@@ -123,11 +122,11 @@ export const ContentDetailSettings = () => {
           onDataChange={handleAutoStartRulesDataChange}
           content={content}
           type={ContentDetailAutoStartRulesType.START_RULES}
-          showIfCompleted={!isShowOnly}
-          showFrequency={!isShowOnly}
+          showIfCompleted={showAdvancedOptions}
+          showFrequency={showAdvancedOptions}
           showAtLeast={contentType !== ContentDataType.CHECKLIST}
-          showWait={!isShowOnly}
-          showPriority={!isShowOnly || contentType === ContentDataType.RESOURCE_CENTER}
+          showWait={showAdvancedOptions}
+          showPriority={showAdvancedOptions || isResourceCenter}
           disabled={isViewOnly}
           featureTooltip={AutoStartTooltips(contentType)}
         />
@@ -139,7 +138,7 @@ export const ContentDetailSettings = () => {
             defaultConditions={config.hideRules}
             defaultEnabled={config.enabledHideRules}
             setting={config.hideRulesSetting}
-            name={`Temporarily hide ${contentType} if...`}
+            name={`Temporarily hide ${getContentTypeLabel(contentType)} if...`}
             onDataChange={handleHideRulesDataChange}
             content={content}
             type={ContentDetailAutoStartRulesType.HIDE_RULES}

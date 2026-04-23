@@ -685,10 +685,7 @@ export const isSingletonContentType = (contentType: ContentDataType): boolean =>
   return SINGLETON_CONTENT_TYPES.includes(contentType);
 };
 
-const SHOW_ONLY_CONTENT_TYPES: ContentDataType[] = [
-  ContentDataType.BANNER,
-  ContentDataType.RESOURCE_CENTER,
-];
+const SHOW_ONLY_CONTENT_TYPES: ContentDataType[] = [ContentDataType.BANNER];
 
 export const isShowOnlyContentType = (contentType: ContentDataType): boolean =>
   SHOW_ONLY_CONTENT_TYPES.includes(contentType);
