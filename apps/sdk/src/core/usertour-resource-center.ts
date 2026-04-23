@@ -168,6 +168,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     onProviderClose: () => {
       this.updateStore({ liveChatActive: false, liveChatProviderOpen: false });
     },
+    isEvalJsDisabled: () => this.isEvalJsDisabled(),
   });
 
   handleLiveChatClick = (block: ResourceCenterLiveChatBlock): void => {

@@ -13,6 +13,12 @@ import { logger, timerManager } from '@/utils';
 export interface LiveChatManagerCallbacks {
   /** Called when the provider's chat widget is closed autonomously (by the user, not by force-close) */
   onProviderClose: () => void;
+  /**
+   * Returns whether JavaScript evaluation has been disabled via `usertour.disableEvalJs()`.
+   * When it returns true, the CUSTOM provider's `customLiveChatCode` is skipped instead of
+   * executed via `new Function(...)`. Mirrors the guard used for JAVASCRIPT_EVALUATE actions.
+   */
+  isEvalJsDisabled?: () => boolean;
 }
 
 // ============================================================================
@@ -162,6 +168,10 @@ export class UsertourLiveChatManager {
         w.Beacon?.('open');
         break;
       case LiveChatProvider.CUSTOM:
+        if (this.callbacks.isEvalJsDisabled?.()) {
+          logger.warn('JavaScript evaluation is disabled. Skipping custom live chat code.');
+          break;
+        }
         if (block.customLiveChatCode) {
           try {
             new Function(block.customLiveChatCode)();
