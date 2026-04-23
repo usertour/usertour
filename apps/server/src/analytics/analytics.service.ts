@@ -13,6 +13,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
 import { extractStepQuestion, numberQuestionTypes } from '@/utils/content-question';
+import { resolveContentVersionId } from '@/utils/content-utils';
 import { isDisplayOnlyBlockType, serializeBlockName } from '@usertour/helpers';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
@@ -443,14 +444,12 @@ export class AnalyticsService {
       return false;
     }
 
-    const publishedVersionId =
-      content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
-        ?.publishedVersionId ||
-      content.publishedVersionId ||
-      content.editedVersionId;
-
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return false;
+    }
     const version = await this.prisma.version.findUnique({
-      where: { id: publishedVersionId },
+      where: { id: versionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
     });
 
@@ -668,9 +667,10 @@ export class AnalyticsService {
     completeEvent: Event,
     tooltipTargetMissingEvent?: Event,
   ) {
-    const { contentId } = condition;
+    const { contentId, environmentId } = condition;
     const content = await this.prisma.content.findFirst({
       where: { id: contentId },
+      include: { contentOnEnvironments: true },
     });
     if (
       !content ||
@@ -679,7 +679,10 @@ export class AnalyticsService {
     ) {
       return false;
     }
-    const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return false;
+    }
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
@@ -717,14 +720,18 @@ export class AnalyticsService {
   }
 
   async aggregationTasksByContent(condition: AnalyticsConditions, projectId: string) {
-    const { contentId } = condition;
+    const { contentId, environmentId } = condition;
     const content = await this.prisma.content.findFirst({
       where: { id: contentId },
+      include: { contentOnEnvironments: true },
     });
     if (!content || content.type !== ContentType.CHECKLIST) {
       return false;
     }
-    const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return false;
+    }
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
@@ -820,14 +827,18 @@ export class AnalyticsService {
   }
 
   async aggregationBlocksByContent(condition: AnalyticsConditions, projectId: string) {
-    const { contentId } = condition;
+    const { contentId, environmentId } = condition;
     const content = await this.prisma.content.findFirst({
       where: { id: contentId },
+      include: { contentOnEnvironments: true },
     });
     if (!content || content.type !== ContentType.RESOURCE_CENTER) {
       return false;
     }
-    const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return false;
+    }
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
     });
@@ -875,24 +886,6 @@ export class AnalyticsService {
       });
     }
     return ret;
-  }
-
-  async aggregationQuestionSession(
-    contentId: string,
-    questionCvid: string,
-    startDateStr: string,
-    endDateStr: string,
-  ) {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-
-    const data = await this.prisma.$queryRaw`
-      SELECT Count(DISTINCT("BizAnswer"."bizSessionId")) from "BizAnswer"
-        WHERE
-        "BizAnswer"."contentId" = ${contentId} AND "BizAnswer"."cvid" = ${questionCvid}
-        AND "BizAnswer"."createdAt" >= ${startDate} AND "BizAnswer"."createdAt" <= ${endDate}
-        `;
-    return Number.parseInt(data[0].count.toString());
   }
 
   async aggregationByEvent(condition: AnalyticsConditions) {

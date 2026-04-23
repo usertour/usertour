@@ -796,6 +796,32 @@ export const getPublishedVersionId = (
   )?.publishedVersionId;
 };
 
+/**
+ * Resolve the version id to render for analytics / structure-enumeration paths.
+ *
+ * Priority:
+ *   1. `contentOnEnvironments[env].publishedVersionId` — the published version for this env
+ *      (see {@link getPublishedVersionId} for the strict-serving variant that also checks
+ *      `item.published`; this function does NOT require that).
+ *   2. `content.editedVersionId` — the current draft, used when the content has never been
+ *      published in this environment so analytics UI can still list the draft's structure
+ *      rather than showing an empty rows.
+ *
+ * Never reads the top-level legacy `content.publishedVersionId` — that field predates
+ * `contentOnEnvironments` and is multi-environment-unsafe.
+ */
+export const resolveContentVersionId = (
+  content: ContentWithContentOnEnvironments & { editedVersionId: string | null },
+  environmentId: string,
+): string | null => {
+  return (
+    content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
+      ?.publishedVersionId ??
+    content.editedVersionId ??
+    null
+  );
+};
+
 // ============================================================================
 // Condition Evaluation and Extraction Functions
 // ============================================================================

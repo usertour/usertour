@@ -236,6 +236,10 @@ model Content {
   versions              Version[]              @relation("ContentVersions")
   editedVersion         Version?               @relation("EditedVersion", fields: [editedVersionId], references: [id])
   publishedVersion      Version?               @relation("publishedVersion", fields: [publishedVersionId], references: [id])
+  /// @deprecated Legacy field from before `contentOnEnvironments` existed. The real
+  /// per-environment published version lives in `contentOnEnvironments[env].publishedVersionId`.
+  /// Resolve via `getPublishedVersionId` (serving) or `resolveContentVersionId` (analytics).
+  /// Reading this field directly picks the wrong version in multi-environment setups.
   publishedVersionId    String?                @unique
   editedVersionId       String?                @unique
   bizSession            BizSession[]
