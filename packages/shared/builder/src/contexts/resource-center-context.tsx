@@ -236,19 +236,16 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
 
   const removeTab = useCallback(
     (tabId: string) => {
+      let nextTabId: string | null = null;
       setAndSave((prev) => {
         const newTabs = prev.tabs.filter((t) => t.id !== tabId);
+        nextTabId = newTabs[0]?.id ?? null;
         return { ...prev, tabs: newTabs };
       });
-      // If removing the current tab, switch to first tab
-      setCurrentTabId((prevTabId) => {
-        if (prevTabId === tabId) {
-          return localData?.tabs[0]?.id ?? null;
-        }
-        return prevTabId;
-      });
+      // If removing the current tab, switch to the first remaining tab
+      setCurrentTabId((prevTabId) => (prevTabId === tabId ? nextTabId : prevTabId));
     },
-    [setAndSave, localData],
+    [setAndSave],
   );
 
   const updateTab = useCallback(
