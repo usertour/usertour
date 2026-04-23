@@ -5,7 +5,6 @@ import type {
   ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
   ResourceCenterPageEntry,
-  SearchKnowledgeBaseResult,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
@@ -23,9 +22,7 @@ import { RESOURCE_CENTER_DEFAULTS } from './constants';
 // ============================================================================
 
 const isNavigableBlockType = (type: string): boolean =>
-  type === ResourceCenterBlockType.SUB_PAGE ||
-  type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
-  type === ResourceCenterBlockType.CONTENT_LIST;
+  type === ResourceCenterBlockType.SUB_PAGE || type === ResourceCenterBlockType.CONTENT_LIST;
 
 interface ResourceCenterRootProps {
   children: React.ReactNode;
@@ -45,11 +42,6 @@ interface ResourceCenterRootProps {
   onContentListNavigate?: (block: ResourceCenterContentListBlock) => void;
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
   onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
-  onSearchKnowledgeBase?: (
-    blockId: string,
-    query: string,
-    offset: number,
-  ) => Promise<SearchKnowledgeBaseResult>;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden?: boolean;
 }
@@ -72,7 +64,6 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onContentListNavigate,
     onContentListItemClick,
     onLiveChatClick,
-    onSearchKnowledgeBase,
     launcherHidden = false,
   } = props;
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
@@ -234,7 +225,6 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       contentListItems: contentListItemsProp,
       onContentListItemClick,
       onLiveChatClick,
-      onSearchKnowledgeBase,
       launcherHidden,
     }),
     [
@@ -263,7 +253,6 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       contentListItemsProp,
       onContentListItemClick,
       onLiveChatClick,
-      onSearchKnowledgeBase,
       launcherHidden,
     ],
   );

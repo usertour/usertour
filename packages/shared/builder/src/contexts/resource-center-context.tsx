@@ -71,8 +71,6 @@ function isBlockValid(block: ResourceCenterBlock): boolean {
     case ResourceCenterBlockType.SUB_PAGE:
     case ResourceCenterBlockType.CONTENT_LIST:
       return !isRichTextEmpty(block.name);
-    case ResourceCenterBlockType.KNOWLEDGE_BASE:
-      return !isRichTextEmpty(block.name) && block.knowledgeBaseUrl.trim() !== '';
     case ResourceCenterBlockType.LIVE_CHAT:
       if (isRichTextEmpty(block.name)) return false;
       if (

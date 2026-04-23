@@ -13,7 +13,6 @@ export enum ResourceCenterBlockType {
   DIVIDER = 'divider',
   SUB_PAGE = 'sub-page',
   CONTENT_LIST = 'content-list',
-  KNOWLEDGE_BASE = 'knowledge-base',
   LIVE_CHAT = 'live-chat',
 }
 
@@ -62,24 +61,6 @@ export interface ResourceCenterSubPageBlock extends ResourceCenterBlockCondition
   iconType: string;
   iconUrl?: string;
   content: ContentEditorRoot[];
-}
-
-export enum KnowledgeBaseSearchProvider {
-  FRESHDESK = 'freshdesk',
-  HUBSPOT = 'hubspot',
-  ZENDESK = 'zendesk',
-}
-
-export interface ResourceCenterKnowledgeBaseBlock extends ResourceCenterBlockConditionFields {
-  id: string;
-  name: RichTextNode[];
-  type: ResourceCenterBlockType.KNOWLEDGE_BASE;
-  iconSource: LauncherIconSource;
-  iconType: string;
-  iconUrl?: string;
-  searchProvider: KnowledgeBaseSearchProvider;
-  knowledgeBaseUrl: string;
-  defaultSearchQuery: string;
 }
 
 export enum LiveChatProvider {
@@ -140,14 +121,12 @@ export type ResourceCenterBlock =
   | ResourceCenterDividerBlock
   | ResourceCenterActionBlock
   | ResourceCenterSubPageBlock
-  | ResourceCenterKnowledgeBaseBlock
   | ResourceCenterContentListBlock
   | ResourceCenterLiveChatBlock;
 
 /** Navigable block types — blocks that push a detail view when clicked. */
 export type ResourceCenterNavigableBlock =
   | ResourceCenterSubPageBlock
-  | ResourceCenterKnowledgeBaseBlock
   | ResourceCenterContentListBlock;
 
 // ============================================================================
@@ -185,7 +164,6 @@ export const DEFAULT_RESOURCE_CENTER_DATA: ResourceCenterData = {
 
 export type ResourceCenterPageEntry =
   | { type: ResourceCenterBlockType.SUB_PAGE; block: ResourceCenterSubPageBlock }
-  | { type: ResourceCenterBlockType.KNOWLEDGE_BASE; block: ResourceCenterKnowledgeBaseBlock }
   | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock };
 
 export interface ResourceCenterNavigationState {

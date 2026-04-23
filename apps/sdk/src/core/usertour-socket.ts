@@ -19,8 +19,6 @@ import {
   CloseResourceCenterDto,
   ClickResourceCenterDto,
   ListResourceCenterBlockContentDto,
-  SearchKnowledgeBaseDto,
-  SearchKnowledgeBaseResult,
   ResourceCenterBlockContentItem,
   ClientCondition,
   WebSocketEvents,
@@ -71,7 +69,6 @@ export interface IUsertourSocket {
   listResourceCenterBlockContent(
     params: ListResourceCenterBlockContentDto,
   ): Promise<ResourceCenterBlockContentItem[]>;
-  searchKnowledgeBase(params: SearchKnowledgeBaseDto): Promise<SearchKnowledgeBaseResult>;
 
   // Context and reporting
   updateClientContext(params: ClientContext, options?: BatchOptions): Promise<boolean>;
@@ -488,23 +485,6 @@ export class UsertourSocket implements IUsertourSocket {
     } catch (error) {
       logger.error('Failed to list resource center block content:', error);
       return [];
-    }
-  }
-
-  async searchKnowledgeBase(params: SearchKnowledgeBaseDto): Promise<SearchKnowledgeBaseResult> {
-    try {
-      const result = await this.socket?.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-        kind: ClientMessageKind.SEARCH_KNOWLEDGE_BASE,
-        payload: params,
-        requestId: uuidV4(),
-      });
-      if (result && typeof result === 'object' && 'articles' in result) {
-        return result as SearchKnowledgeBaseResult;
-      }
-      return { articles: [], total: 0 };
-    } catch (error) {
-      logger.error('Failed to search knowledge base:', error);
-      return { articles: [], total: 0 };
     }
   }
 

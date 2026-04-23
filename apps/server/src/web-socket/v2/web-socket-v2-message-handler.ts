@@ -148,11 +148,6 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
-      ClientMessageKind.SEARCH_KNOWLEDGE_BASE,
-      async (context, payload) => await this.service.searchKnowledgeBase(context, payload),
-    );
-
-    register(
       ClientMessageKind.END_BATCH,
       async (context, _payload) => await this.service.endBatch(context),
     );

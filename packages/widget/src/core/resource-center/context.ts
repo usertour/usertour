@@ -5,7 +5,6 @@ import type {
   ResourceCenterNavigationState,
   ResourceCenterPageEntry,
   ResourceCenterTab,
-  SearchKnowledgeBaseResult,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
@@ -76,11 +75,6 @@ export interface ResourceCenterContextValue {
   onBlockClick?: (blockId: string) => Promise<void>;
   onContentListItemClick?: (item: ContentListDisplayItem) => void;
   onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
-  onSearchKnowledgeBase?: (
-    blockId: string,
-    query: string,
-    offset: number,
-  ) => Promise<SearchKnowledgeBaseResult>;
 
   // Content list
   contentListItems: ContentListDisplayItem[];

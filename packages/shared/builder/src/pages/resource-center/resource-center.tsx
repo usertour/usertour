@@ -5,7 +5,6 @@ import { ResourceCenterBlockRichText } from './resource-center-block-rich-text';
 import { ResourceCenterBlockDivider } from './resource-center-block-divider';
 import { ResourceCenterBlockAction } from './resource-center-block-action';
 import { ResourceCenterBlockSubPage } from './resource-center-block-sub-page';
-import { ResourceCenterBlockKnowledgeBase } from './resource-center-block-knowledge-base';
 import { ResourceCenterBlockContentList } from './resource-center-block-content-list';
 import { ResourceCenterBlockLiveChat } from './resource-center-block-live-chat';
 import { ResourceCenterTabSettings } from './resource-center-tab-settings';
@@ -31,10 +30,6 @@ export const ResourceCenterBuilder = () => {
         currentBlock?.type === ResourceCenterBlockType.ACTION && <ResourceCenterBlockAction />}
       {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&
         currentBlock?.type === ResourceCenterBlockType.SUB_PAGE && <ResourceCenterBlockSubPage />}
-      {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&
-        currentBlock?.type === ResourceCenterBlockType.KNOWLEDGE_BASE && (
-          <ResourceCenterBlockKnowledgeBase />
-        )}
       {currentMode?.mode === BuilderMode.RESOURCE_CENTER_BLOCK &&
         currentBlock?.type === ResourceCenterBlockType.CONTENT_LIST && (
           <ResourceCenterBlockContentList />

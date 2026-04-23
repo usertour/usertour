@@ -102,17 +102,6 @@ export interface Config {
   globalConfig: {
     isSelfHostedMode: boolean;
   };
-  knowledgeBase: {
-    freshdesk: {
-      apiKey: string;
-    };
-    zendesk: {
-      apiKey: string;
-    };
-    hubspot: {
-      apiKey: string;
-    };
-  };
   integration: {
     salesforce: {
       clientId: string;

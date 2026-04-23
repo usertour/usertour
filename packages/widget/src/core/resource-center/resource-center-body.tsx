@@ -1,24 +1,13 @@
-import {
-  CSSProperties,
-  Fragment,
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { CSSProperties, Fragment, memo, useMemo } from 'react';
 import type {
   ResourceCenterActionBlock,
   ResourceCenterContentListBlock,
   ResourceCenterDividerBlock,
-  ResourceCenterKnowledgeBaseBlock,
   ResourceCenterLiveChatBlock,
   ResourceCenterRichTextBlock,
   ResourceCenterNavigableBlock,
   ResourceCenterPageEntry,
   ResourceCenterSubPageBlock,
-  KnowledgeBaseArticleItem as KnowledgeBaseArticle,
   UserTourTypes,
 } from '@usertour/types';
 import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
@@ -211,7 +200,7 @@ export const ResourceCenterLiveChatBlockView = memo(
 ResourceCenterLiveChatBlockView.displayName = 'ResourceCenterLiveChatBlockView';
 
 // ============================================================================
-// NavigableBlockRow — unified row for sub-page, knowledge-base, content-list
+// NavigableBlockRow — unified row for sub-page, content-list
 // ============================================================================
 
 interface NavigableBlockRowProps {
@@ -229,7 +218,6 @@ export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowP
   const nameText = serializeBlockName(block.name, userAttributes);
   const fallbackLabels: Partial<Record<ResourceCenterBlockType, string>> = {
     [ResourceCenterBlockType.SUB_PAGE]: 'Untitled sub-page',
-    [ResourceCenterBlockType.KNOWLEDGE_BASE]: 'Knowledge base',
     [ResourceCenterBlockType.CONTENT_LIST]: 'Content list',
   };
   const label = nameText || fallbackLabels[block.type] || block.type;
@@ -287,186 +275,6 @@ export const SubPageDetail = memo(({ block, editSlot }: SubPageDetailProps) => {
 });
 
 SubPageDetail.displayName = 'SubPageDetail';
-
-// ============================================================================
-// Knowledge Base — search result article item
-// ============================================================================
-
-const KnowledgeBaseArticleRow = memo(({ article }: { article: KnowledgeBaseArticle }) => {
-  return (
-    <a
-      href={article.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-sdk-hover no-underline"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        className="h-5 w-5 flex-shrink-0 text-sdk-foreground/50 mt-0.5"
-      >
-        <path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM7 6V8H17V6H7ZM7 10V12H17V10H7ZM7 14V16H14V14H7Z" />
-      </svg>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-sdk-foreground line-clamp-2">{article.title}</div>
-        {article.snippet && (
-          <div className="text-xs text-sdk-foreground/70 mt-1 line-clamp-3">{article.snippet}</div>
-        )}
-      </div>
-    </a>
-  );
-});
-
-KnowledgeBaseArticleRow.displayName = 'KnowledgeBaseArticleRow';
-
-// ============================================================================
-// Knowledge Base detail view
-// ============================================================================
-
-interface KnowledgeBaseDetailProps {
-  block: ResourceCenterKnowledgeBaseBlock;
-}
-
-export const KnowledgeBaseDetail = memo(({ block }: KnowledgeBaseDetailProps) => {
-  const { onSearchKnowledgeBase, userAttributes, searchQuery, setSearchQuery } =
-    useResourceCenterContext();
-  const [articles, setArticles] = useState<KnowledgeBaseArticle[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [total, setTotal] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const hasMore = articles.length < total;
-
-  const handleSearch = useCallback(
-    async (query: string) => {
-      if (!query.trim() || !onSearchKnowledgeBase) return;
-      setIsSearching(true);
-      setHasSearched(true);
-      setArticles([]);
-      setTotal(0);
-      try {
-        const result = await onSearchKnowledgeBase(block.id, query.trim(), 0);
-        setArticles(result.articles);
-        setTotal(result.total);
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [block.id, onSearchKnowledgeBase],
-  );
-
-  // Auto-fill defaultSearchQuery on mount
-  useEffect(() => {
-    if (block.defaultSearchQuery) {
-      setSearchQuery(block.defaultSearchQuery);
-    }
-  }, [block.id]);
-
-  // Debounced auto-search on input change
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setArticles([]);
-      setTotal(0);
-      setHasSearched(false);
-      return;
-    }
-    const timer = setTimeout(() => {
-      handleSearch(searchQuery);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const loadMore = useCallback(async () => {
-    if (!onSearchKnowledgeBase || isLoadingMore || !hasMore || !searchQuery.trim()) return;
-    setIsLoadingMore(true);
-    try {
-      const result = await onSearchKnowledgeBase(block.id, searchQuery.trim(), articles.length);
-      setArticles((prev) => [...prev, ...result.articles]);
-      setTotal(result.total);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [block.id, onSearchKnowledgeBase, isLoadingMore, hasMore, searchQuery, articles.length]);
-
-  // Infinite scroll handler
-  const handleScroll = useCallback(() => {
-    const container = scrollContainerRef.current;
-    if (!container || isLoadingMore || !hasMore) return;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    if (scrollHeight - scrollTop - clientHeight < 100) {
-      loadMore();
-    }
-  }, [loadMore, isLoadingMore, hasMore]);
-
-  const externalUrl = block.knowledgeBaseUrl;
-
-  return (
-    <div className="flex flex-col gap-3 p-2">
-      {/* Title row with optional external link */}
-      <div className="flex items-center justify-between px-1">
-        <span className="text-base font-semibold text-sdk-foreground">
-          {serializeBlockName(block.name, userAttributes) || 'Knowledge base'}
-        </span>
-        {externalUrl && (
-          <a
-            href={externalUrl.startsWith('http') ? externalUrl : `https://${externalUrl}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sdk-foreground/50 hover:text-sdk-foreground"
-            aria-label="Open knowledge base"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="h-4 w-4"
-            >
-              <path d="M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19V6.413L11.2071 14.2071L9.79289 12.7929L17.585 5H13V3H21Z" />
-            </svg>
-          </a>
-        )}
-      </div>
-
-      {/* Results */}
-      {isSearching && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">Searching...</div>
-      )}
-
-      {!isSearching && hasSearched && articles.length === 0 && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/50">No results found</div>
-      )}
-
-      {!isSearching && articles.length > 0 && (
-        <div
-          ref={scrollContainerRef}
-          onScroll={handleScroll}
-          className="flex flex-col overflow-y-auto"
-        >
-          <div className="px-1 pb-1 text-xs font-medium text-sdk-foreground/50">
-            Suggested articles
-          </div>
-          {articles.map((article, idx) => (
-            <KnowledgeBaseArticleRow key={`${article.url}-${idx}`} article={article} />
-          ))}
-          {isLoadingMore && (
-            <div className="py-2 text-center text-xs text-sdk-foreground/50">Loading more...</div>
-          )}
-        </div>
-      )}
-
-      {!isSearching && !hasSearched && (
-        <div className="py-4 text-center text-sm text-sdk-foreground/40">
-          Search your knowledge base
-        </div>
-      )}
-    </div>
-  );
-});
-
-KnowledgeBaseDetail.displayName = 'KnowledgeBaseDetail';
 
 // ============================================================================
 // Content List detail view
@@ -579,8 +387,6 @@ export const DetailView = memo(({ page, subPageEditSlot }: DetailViewProps) => {
   switch (page.type) {
     case ResourceCenterBlockType.SUB_PAGE:
       return <SubPageDetail block={page.block} editSlot={subPageEditSlot} />;
-    case ResourceCenterBlockType.KNOWLEDGE_BASE:
-      return <KnowledgeBaseDetail block={page.block} />;
     case ResourceCenterBlockType.CONTENT_LIST:
       return <ContentListDetail block={page.block} />;
     default:
@@ -761,7 +567,6 @@ export const ResourceCenterBlocks = memo(
                 <ResourceCenterLiveChatBlockView block={block} onLiveChatClick={onLiveChatClick} />
               )}
               {(block.type === ResourceCenterBlockType.SUB_PAGE ||
-                block.type === ResourceCenterBlockType.KNOWLEDGE_BASE ||
                 block.type === ResourceCenterBlockType.CONTENT_LIST) && (
                 <NavigableBlockRow
                   block={block as ResourceCenterNavigableBlock}

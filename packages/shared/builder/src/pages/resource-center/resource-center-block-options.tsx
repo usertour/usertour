@@ -26,7 +26,6 @@ export const BLOCK_TYPE_LABELS: Record<ResourceCenterBlockType, string> = {
   [ResourceCenterBlockType.DIVIDER]: 'Divider line',
   [ResourceCenterBlockType.SUB_PAGE]: 'Sub-page',
   [ResourceCenterBlockType.CONTENT_LIST]: 'List of flows/checklists',
-  [ResourceCenterBlockType.KNOWLEDGE_BASE]: 'Knowledge base',
   [ResourceCenterBlockType.LIVE_CHAT]: 'Live chat',
 };
 

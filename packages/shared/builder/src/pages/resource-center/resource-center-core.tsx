@@ -15,7 +15,6 @@ import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Button } from '@usertour-packages/button';
 import {
   ContentEditorRoot,
-  KnowledgeBaseSearchProvider,
   LauncherIconSource,
   LiveChatProvider,
   ResourceCenterBlockType,
@@ -93,19 +92,6 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
         iconSource: LauncherIconSource.BUILTIN,
         iconType: 'pages-fill',
         content: DEFAULT_MESSAGE_BLOCK_CONTENT,
-        onlyShowBlock: false,
-        onlyShowBlockConditions: [],
-      };
-    case ResourceCenterBlockType.KNOWLEDGE_BASE:
-      return {
-        id,
-        type: ResourceCenterBlockType.KNOWLEDGE_BASE,
-        name: [{ type: 'paragraph', children: [{ text: 'Knowledge base' }] }],
-        iconSource: LauncherIconSource.BUILTIN,
-        iconType: 'book-open-fill',
-        searchProvider: KnowledgeBaseSearchProvider.FRESHDESK,
-        knowledgeBaseUrl: '',
-        defaultSearchQuery: '',
         onlyShowBlock: false,
         onlyShowBlockConditions: [],
       };

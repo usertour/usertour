@@ -102,7 +102,6 @@ export const ResourceCenterHeader = memo(() => {
   const activePage = currentPage ?? autoExpandedPage;
   const showSearch = useMemo(() => {
     if (!activePage) return false;
-    if (activePage.type === ResourceCenterBlockType.KNOWLEDGE_BASE) return true;
     if (activePage.type === ResourceCenterBlockType.CONTENT_LIST) {
       return (activePage.block as ResourceCenterContentListBlock).showSearchField;
     }

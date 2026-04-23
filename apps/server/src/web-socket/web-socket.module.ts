@@ -25,7 +25,6 @@ import { SocketMessageQueueService } from './core/socket-message-queue.service';
 import { SocketDataService } from './core/socket-data.service';
 import { DistributedLockService } from './core/distributed-lock.service';
 import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
-import { KnowledgeBaseSearchService } from './core/knowledge-base-search.service';
 
 @Module({
   imports: [
@@ -80,7 +79,6 @@ import { KnowledgeBaseSearchService } from './core/knowledge-base-search.service
     SocketDataService,
     DistributedLockService,
     WebSocketV2MessageHandler,
-    KnowledgeBaseSearchService,
   ],
   exports: [WebSocketGateway, WebSocketV2Gateway],
 })

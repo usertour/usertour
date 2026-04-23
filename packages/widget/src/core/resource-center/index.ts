@@ -41,7 +41,6 @@ export {
   BlockIcon,
   NavigableBlockRow,
   SubPageDetail,
-  KnowledgeBaseDetail,
   ContentListDetail,
   DetailView,
 } from './resource-center-body';
