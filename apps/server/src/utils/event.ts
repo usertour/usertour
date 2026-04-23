@@ -172,6 +172,7 @@ const SINGLE_OCCURRENCE_EVENTS = [
   BizEvents.CHECKLIST_DISMISSED,
   BizEvents.CHECKLIST_STARTED,
   BizEvents.LAUNCHER_DISMISSED,
+  BizEvents.RESOURCE_CENTER_STARTED,
 ] as const;
 
 // Events that should invalidate subsequent events

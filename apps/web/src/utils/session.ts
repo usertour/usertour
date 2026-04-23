@@ -272,7 +272,8 @@ export const sortEventDataEntries = (
 
 /**
  * Get start reason title from start event
- * Extracts the start reason from FLOW_STARTED, CHECKLIST_STARTED, or LAUNCHER_SEEN events
+ * Extracts the start reason from FLOW_STARTED, CHECKLIST_STARTED, RESOURCE_CENTER_STARTED,
+ * or LAUNCHER_SEEN events
  *
  * @param startEvent - Business event containing start reason data
  * @returns Formatted start reason title or empty string
@@ -287,13 +288,11 @@ export const getStartReasonTitle = (
   if (contentType === ContentDataType.BANNER) {
     return 'Banner seen';
   }
-  if (contentType === ContentDataType.RESOURCE_CENTER) {
-    return 'Resource center opened';
-  }
   try {
     const reason =
       startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||
       startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON] ||
+      startEvent?.data?.[EventAttributes.RESOURCE_CENTER_START_REASON] ||
       startEvent?.data?.[EventAttributes.LAUNCHER_START_REASON];
     return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason || '';
   } catch (_) {

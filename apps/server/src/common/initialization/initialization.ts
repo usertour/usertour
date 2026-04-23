@@ -231,6 +231,22 @@ export const defaultEvents = [
     ],
   },
   {
+    displayName: 'Resource Center Started',
+    codeName: BizEvents.RESOURCE_CENTER_STARTED,
+    attributes: [
+      EventAttributes.RESOURCE_CENTER_ID,
+      EventAttributes.RESOURCE_CENTER_NAME,
+      EventAttributes.RESOURCE_CENTER_SESSION_ID,
+      EventAttributes.RESOURCE_CENTER_START_REASON,
+      EventAttributes.RESOURCE_CENTER_VERSION_ID,
+      EventAttributes.RESOURCE_CENTER_VERSION_NUMBER,
+      EventAttributes.LOCALE_CODE,
+      EventAttributes.PAGE_URL,
+      EventAttributes.VIEWPORT_HEIGHT,
+      EventAttributes.VIEWPORT_WIDTH,
+    ],
+  },
+  {
     displayName: 'Resource Center Opened',
     codeName: BizEvents.RESOURCE_CENTER_OPENED,
     attributes: [

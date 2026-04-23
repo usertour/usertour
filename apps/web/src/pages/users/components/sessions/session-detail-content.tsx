@@ -111,7 +111,7 @@ const SessionDetailContentInner = ({
       bizEvent.event?.codeName === BizEvents.LAUNCHER_SEEN ||
       bizEvent.event?.codeName === BizEvents.CHECKLIST_STARTED ||
       bizEvent.event?.codeName === BizEvents.BANNER_SEEN ||
-      bizEvent.event?.codeName === BizEvents.RESOURCE_CENTER_OPENED,
+      bizEvent.event?.codeName === BizEvents.RESOURCE_CENTER_STARTED,
   );
 
   const endEvent = session?.bizEvent?.find(

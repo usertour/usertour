@@ -652,7 +652,28 @@ export const buildResourceCenterBaseEventData = (
 };
 
 /**
- * Build event data for resource center opened events
+ * Build event data for resource center started events (session activated)
+ * @param session - The business session with content and version
+ * @param params - Event build parameters containing startReason
+ * @returns Resource center started event data, or null if startReason is missing
+ */
+export const buildResourceCenterStartEventData = (
+  session: BizSessionWithRelations,
+  params?: EventBuildParams,
+): Record<string, any> | null => {
+  const startReason = params?.startReason;
+  if (!startReason) {
+    return null;
+  }
+
+  return {
+    ...buildResourceCenterBaseEventData(session),
+    [EventAttributes.RESOURCE_CENTER_START_REASON]: startReason,
+  };
+};
+
+/**
+ * Build event data for resource center opened events (user expanded the panel)
  * @param session - The business session with content and version
  * @returns Resource center opened event data
  */
@@ -785,7 +806,7 @@ export const getStartEventType = (contentType: ContentDataType): BizEvents | nul
     return BizEvents.BANNER_SEEN;
   }
   if (contentType === ContentDataType.RESOURCE_CENTER) {
-    return BizEvents.RESOURCE_CENTER_OPENED;
+    return BizEvents.RESOURCE_CENTER_STARTED;
   }
   return null;
 };

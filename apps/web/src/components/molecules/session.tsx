@@ -333,12 +333,14 @@ const ResourceCenterProgressColumn = ({
     return <></>;
   }
 
-  const isOpened = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.RESOURCE_CENTER_OPENED);
+  const isStarted = !!bizEvent.find(
+    (e) => e?.event?.codeName === BizEvents.RESOURCE_CENTER_STARTED,
+  );
   const isDismissed = !!bizEvent.find(
     (e) => e?.event?.codeName === BizEvents.RESOURCE_CENTER_DISMISSED,
   );
 
-  if (!isOpened && !isDismissed) {
+  if (!isStarted && !isDismissed) {
     return <></>;
   }
 

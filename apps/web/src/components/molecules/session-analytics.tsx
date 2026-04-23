@@ -62,7 +62,7 @@ const deriveStatus = (
 
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     if (has(BizEvents.RESOURCE_CENTER_DISMISSED)) return 'dismissed';
-    if (has(BizEvents.RESOURCE_CENTER_OPENED)) return 'active';
+    if (has(BizEvents.RESOURCE_CENTER_STARTED)) return 'active';
     return null;
   }
 

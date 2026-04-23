@@ -18,6 +18,7 @@ import {
   buildQuestionAnsweredEventData,
   buildBannerSeenEventData,
   buildBannerDismissedEventData,
+  buildResourceCenterStartEventData,
   buildResourceCenterOpenedEventData,
   buildResourceCenterClosedEventData,
   buildResourceCenterClickedEventData,
@@ -1078,6 +1079,11 @@ export class EventTrackingService {
     });
 
     // Resource center events
+    register({
+      eventName: BizEvents.RESOURCE_CENTER_STARTED,
+      buildEventData: (session, params) => buildResourceCenterStartEventData(session, params),
+    });
+
     register({
       eventName: BizEvents.RESOURCE_CENTER_OPENED,
       buildEventData: (session) => buildResourceCenterOpenedEventData(session),
