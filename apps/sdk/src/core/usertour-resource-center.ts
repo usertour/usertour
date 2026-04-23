@@ -181,6 +181,10 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     }
   };
 
+  protected onDestroy(): void {
+    this.liveChatManager.dispose();
+  }
+
   isExpandable(): boolean {
     const store = this.getStoreData();
     return store?.expanded === false;
