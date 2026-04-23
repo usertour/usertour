@@ -156,21 +156,33 @@ export class WebSocketV2Service {
     socketData: SocketData,
     auth: SocketAuthData,
   ): Promise<SocketData> {
-    const { flowSessionId, checklistSessionId, bannerSessionId, launchers = [] } = auth;
+    const {
+      flowSessionId,
+      checklistSessionId,
+      bannerSessionId,
+      resourceCenterSessionId,
+      launchers = [],
+    } = auth;
 
     // Initialize sessions in parallel (singleton sessions and launchers can be initialized concurrently)
-    const [flowSession, checklistSession, bannerSession, launcherSessions] = await Promise.all([
-      flowSessionId ? this.initializeSessionById(socketData, flowSessionId) : Promise.resolve(null),
-      checklistSessionId
-        ? this.initializeSessionById(socketData, checklistSessionId)
-        : Promise.resolve(null),
-      bannerSessionId
-        ? this.initializeSessionById(socketData, bannerSessionId)
-        : Promise.resolve(null),
-      launchers.length > 0
-        ? this.initializeLauncherSessions(socketData, launchers)
-        : Promise.resolve([]),
-    ]);
+    const [flowSession, checklistSession, bannerSession, resourceCenterSession, launcherSessions] =
+      await Promise.all([
+        flowSessionId
+          ? this.initializeSessionById(socketData, flowSessionId)
+          : Promise.resolve(null),
+        checklistSessionId
+          ? this.initializeSessionById(socketData, checklistSessionId)
+          : Promise.resolve(null),
+        bannerSessionId
+          ? this.initializeSessionById(socketData, bannerSessionId)
+          : Promise.resolve(null),
+        resourceCenterSessionId
+          ? this.initializeSessionById(socketData, resourceCenterSessionId)
+          : Promise.resolve(null),
+        launchers.length > 0
+          ? this.initializeLauncherSessions(socketData, launchers)
+          : Promise.resolve([]),
+      ]);
 
     // Assign sessions to socket data if they exist
     if (flowSession) {
@@ -181,6 +193,9 @@ export class WebSocketV2Service {
     }
     if (bannerSession) {
       socketData.bannerSession = bannerSession;
+    }
+    if (resourceCenterSession) {
+      socketData.resourceCenterSession = resourceCenterSession;
     }
     if (launcherSessions.length > 0) {
       socketData.launcherSessions = launcherSessions;

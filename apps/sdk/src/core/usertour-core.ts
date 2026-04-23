@@ -1569,6 +1569,7 @@ export class UsertourCore extends Evented {
     const flowSessionId = this.activatedTour?.getSessionId();
     const checklistSessionId = this.activatedChecklist?.getSessionId();
     const bannerSessionId = this.activatedBanner?.getSessionId();
+    const resourceCenterSessionId = this.activatedResourceCenter?.getSessionId();
     const launchers = this.launchers.map((l) => l.getContentId());
     this.socketService.updateCredentials({
       clientConditions,
@@ -1579,6 +1580,7 @@ export class UsertourCore extends Evented {
       flowSessionId,
       checklistSessionId,
       bannerSessionId,
+      resourceCenterSessionId,
       launchers,
     });
   }
