@@ -151,13 +151,24 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
         ? (currentPage.block as ResourceCenterContentListBlock)
         : null;
 
-  const activeContentListBlockId = activeContentListBlock?.id ?? null;
+  // Refetch when the block's identity OR its item/visibility configuration changes.
+  // Using a stable serialization of the relevant fields avoids thrashing on unrelated
+  // session updates while still catching admin edits and condition-driven changes.
+  const activeContentListBlockSignature = useMemo(() => {
+    if (!activeContentListBlock) return null;
+    return JSON.stringify({
+      id: activeContentListBlock.id,
+      contentItems: activeContentListBlock.contentItems,
+      onlyShowBlockConditions: activeContentListBlock.onlyShowBlockConditions,
+    });
+  }, [activeContentListBlock]);
+
   useEffect(() => {
-    if (activeContentListBlock && activeContentListBlockId) {
+    if (activeContentListBlock) {
       onContentListNavigate?.(activeContentListBlock);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeContentListBlockId]);
+  }, [activeContentListBlockSignature]);
 
   const showTabBar = data.tabs.length > 1 && nav.pageStack.length === 0;
   const showBackButton = nav.pageStack.length > 0;
