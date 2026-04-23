@@ -51,7 +51,7 @@ const SINGLE_OCCURRENCE_EVENTS = [
 ] as const;
 
 // Events that should invalidate subsequent events
-const DISMISSED_EVENTS = [
+export const DISMISSED_EVENTS = [
   BizEvents.CHECKLIST_DISMISSED,
   BizEvents.LAUNCHER_DISMISSED,
   BizEvents.FLOW_ENDED,

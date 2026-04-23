@@ -31,6 +31,7 @@ import {
   ConditionEvaluationService,
   ConditionEvaluationContext,
 } from './condition-evaluation.service';
+import { DISMISSED_EVENTS } from '@/utils/event-v2';
 
 // ============================================================================
 // Type Definitions
@@ -98,15 +99,6 @@ export class ContentDataService {
     BizEvents.FLOW_COMPLETED,
     BizEvents.LAUNCHER_ACTIVATED,
     BizEvents.CHECKLIST_COMPLETED,
-  ] as const;
-
-  /**
-   * Event code names for dismissed events
-   */
-  private static readonly DISMISSED_EVENTS = [
-    BizEvents.FLOW_ENDED,
-    BizEvents.LAUNCHER_DISMISSED,
-    BizEvents.CHECKLIST_DISMISSED,
   ] as const;
 
   /**
@@ -549,9 +541,7 @@ export class ContentDataService {
       if (
         contentId &&
         eventCodeName &&
-        ContentDataService.DISMISSED_EVENTS.includes(
-          eventCodeName as (typeof ContentDataService.DISMISSED_EVENTS)[number],
-        ) &&
+        DISMISSED_EVENTS.includes(eventCodeName as (typeof DISMISSED_EVENTS)[number]) &&
         !latestDismissedEvents.has(contentId)
       ) {
         const { bizSession, ...eventWithEvent } = event;
