@@ -49,7 +49,7 @@ export const AnalyticsBlocks = () => {
     return <AnalyticsTasksSkeleton />;
   }
 
-  const blocks = analyticsData?.viewsByBlock ?? [];
+  const blocks = Array.isArray(analyticsData?.viewsByBlock) ? analyticsData.viewsByBlock : [];
   const groups = groupBlocksByTab(blocks);
   const hasAnyClicks = blocks.some((b) => b.analytics.totalClicks > 0);
 
