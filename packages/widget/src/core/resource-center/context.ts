@@ -4,6 +4,7 @@ import type {
   ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
   ResourceCenterPageEntry,
+  ResourceCenterPageRef,
   ResourceCenterTab,
   ThemeTypesSetting,
   UserTourTypes,
@@ -32,7 +33,7 @@ export interface ResourceCenterNavigationActions {
   /** Switch to a tab by ID. Clears the page stack. */
   switchTab: (tabId: string) => void;
   /** Push a detail page onto the stack. */
-  push: (entry: ResourceCenterPageEntry) => void;
+  push: (ref: ResourceCenterPageRef) => void;
   /** Pop the top page off the stack. If stack is empty, does nothing. */
   pop: () => void;
   /** Clear the entire page stack, staying on the current tab. */

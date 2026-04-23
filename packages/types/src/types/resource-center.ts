@@ -162,11 +162,24 @@ export const DEFAULT_RESOURCE_CENTER_DATA: ResourceCenterData = {
 // Navigation (used by widget)
 // ============================================================================
 
+/**
+ * Derived page shape used by the widget to render a detail view. The `block`
+ * is resolved from the latest `ResourceCenterData` on every render.
+ */
 export type ResourceCenterPageEntry =
   | { type: ResourceCenterBlockType.SUB_PAGE; block: ResourceCenterSubPageBlock }
   | { type: ResourceCenterBlockType.CONTENT_LIST; block: ResourceCenterContentListBlock };
 
+/**
+ * Stored page reference. The stack keeps only an id + type so admin edits
+ * (content, contentItems, visibility) propagate into the open detail view.
+ */
+export type ResourceCenterPageRef = {
+  type: ResourceCenterBlockType.SUB_PAGE | ResourceCenterBlockType.CONTENT_LIST;
+  blockId: string;
+};
+
 export interface ResourceCenterNavigationState {
   activeTabId: string;
-  pageStack: ResourceCenterPageEntry[];
+  pageStack: ResourceCenterPageRef[];
 }

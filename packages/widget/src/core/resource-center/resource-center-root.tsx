@@ -5,6 +5,8 @@ import type {
   ResourceCenterLiveChatBlock,
   ResourceCenterNavigationState,
   ResourceCenterPageEntry,
+  ResourceCenterPageRef,
+  ResourceCenterSubPageBlock,
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
@@ -80,13 +82,22 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     pageStack: [],
   });
 
-  // Reset navigation when data changes (e.g. tabs restructured)
+  // Reconcile navigation when data changes (tabs restructured, blocks edited/removed).
+  // The stack stores only { type, blockId } refs; stale refs (whose block was
+  // removed from the current tab) are pruned so the detail view and the
+  // back-button state stay consistent.
   useEffect(() => {
-    const tabExists = data.tabs.some((t) => t.id === nav.activeTabId);
-    if (!tabExists) {
+    const activeTab = data.tabs.find((t) => t.id === nav.activeTabId);
+    if (!activeTab) {
       setNav({ activeTabId: data.tabs[0]?.id ?? '', pageStack: [] });
+      return;
     }
-  }, [data.tabs, nav.activeTabId]);
+    const blockIds = new Set(activeTab.blocks.map((b) => b.id));
+    const prunedStack = nav.pageStack.filter((ref) => blockIds.has(ref.blockId));
+    if (prunedStack.length !== nav.pageStack.length) {
+      setNav((prev) => ({ ...prev, pageStack: prunedStack }));
+    }
+  }, [data.tabs, nav.activeTabId, nav.pageStack]);
 
   // ── Navigation actions ──────────────────────────────────────────────
   const switchTab = useCallback(
@@ -98,10 +109,10 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     [data.tabs],
   );
 
-  const push = useCallback((entry: ResourceCenterPageEntry) => {
+  const push = useCallback((ref: ResourceCenterPageRef) => {
     setNav((prev) => ({
       ...prev,
-      pageStack: [...prev.pageStack, entry],
+      pageStack: [...prev.pageStack, ref],
     }));
   }, []);
 
@@ -130,7 +141,19 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     [data.tabs, nav.activeTabId],
   );
 
-  const currentPage = nav.pageStack.length > 0 ? nav.pageStack[nav.pageStack.length - 1] : null;
+  // Resolve the top-of-stack ref against the latest tab blocks so admin edits
+  // propagate into the open detail view. If the ref no longer resolves, the
+  // pruning effect above will clean it up on the next render.
+  const currentPage = useMemo<ResourceCenterPageEntry | null>(() => {
+    if (nav.pageStack.length === 0) return null;
+    const ref = nav.pageStack[nav.pageStack.length - 1];
+    const block = currentTab?.blocks.find((b) => b.id === ref.blockId);
+    if (!block) return null;
+    if (ref.type === ResourceCenterBlockType.SUB_PAGE) {
+      return { type: ref.type, block: block as ResourceCenterSubPageBlock };
+    }
+    return { type: ref.type, block: block as ResourceCenterContentListBlock };
+  }, [nav.pageStack, currentTab]);
 
   // Auto-expand: if tab has exactly one block and it's navigable, show its detail view directly
   // (without pushing to pageStack, so tab bar stays visible and no back button)
@@ -170,8 +193,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeContentListBlockSignature]);
 
-  const showTabBar = data.tabs.length > 1 && nav.pageStack.length === 0;
-  const showBackButton = nav.pageStack.length > 0;
+  const showTabBar = data.tabs.length > 1 && currentPage === null;
+  const showBackButton = currentPage !== null;
 
   // ── Search state ───────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');

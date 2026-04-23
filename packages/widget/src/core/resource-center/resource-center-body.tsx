@@ -7,6 +7,7 @@ import type {
   ResourceCenterRichTextBlock,
   ResourceCenterNavigableBlock,
   ResourceCenterPageEntry,
+  ResourceCenterPageRef,
   ResourceCenterSubPageBlock,
   UserTourTypes,
 } from '@usertour/types';
@@ -205,14 +206,14 @@ ResourceCenterLiveChatBlockView.displayName = 'ResourceCenterLiveChatBlockView';
 
 interface NavigableBlockRowProps {
   block: ResourceCenterNavigableBlock;
-  onNavigate: (entry: ResourceCenterPageEntry) => void;
+  onNavigate: (ref: ResourceCenterPageRef) => void;
 }
 
 export const NavigableBlockRow = memo(({ block, onNavigate }: NavigableBlockRowProps) => {
   const { userAttributes, onBlockClick } = useResourceCenterContext();
   const handleClick = () => {
     onBlockClick?.(block.id);
-    onNavigate({ type: block.type, block } as ResourceCenterPageEntry);
+    onNavigate({ type: block.type, blockId: block.id });
   };
 
   const nameText = serializeBlockName(block.name, userAttributes);
