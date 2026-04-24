@@ -70,7 +70,7 @@ export const ResourceCenterTabBar = memo(() => {
   return (
     <div
       className={cn(
-        'order-3 shrink-0 border-t border-sdk-foreground/10',
+        'relative z-30 order-3 shrink-0 border-t border-sdk-foreground/10',
         'group-data-[animate-frame=true]:transition-opacity',
         'group-data-[animate-frame=true]:duration-sdk-resource-center',
         'group-data-[state=closed]:absolute group-data-[state=closed]:invisible group-data-[state=closed]:opacity-0',
