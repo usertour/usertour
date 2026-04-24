@@ -11,6 +11,7 @@ import { CompanyDetail, CompanyList } from '@/pages/companies';
 import { ContentBuilder, ContentDetail, ContentList, ContentLocalization } from '@/pages/contents';
 import { Dashboard } from '@/pages/dashboard';
 import {
+  AdminBuilderLayout,
   AdminDetailLayout,
   AdminSubpageLayout,
   AdminListLayout,
@@ -162,9 +163,9 @@ const config: CustomRouteConfig[] = [
   },
   /* ContentBuilder */
   {
-    path: '/env/:envId/:contentType/:contentId/:type/:versionId',
+    path: '/env/:envId/:contentType/:contentId/builder/:versionId',
     component: ContentBuilder,
-    layout: AdminDetailLayout,
+    layout: AdminBuilderLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'ContentBuilder',

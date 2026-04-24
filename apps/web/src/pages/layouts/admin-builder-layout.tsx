@@ -1,15 +1,15 @@
 import { AdminLayout, AdminLayoutContent } from './components/admin-layout';
 
-interface AdminDetailLayoutProps {
+interface AdminBuilderLayoutProps {
   children: React.ReactNode;
 }
 
-export const AdminDetailLayout = ({ children }: AdminDetailLayoutProps) => {
+export const AdminBuilderLayout = ({ children }: AdminBuilderLayoutProps) => {
   return (
-    <AdminLayout surface="muted">
+    <AdminLayout surface="canvas">
       <AdminLayoutContent>{children}</AdminLayoutContent>
     </AdminLayout>
   );
 };
 
-AdminDetailLayout.displayName = 'AdminDetailLayout';
+AdminBuilderLayout.displayName = 'AdminBuilderLayout';

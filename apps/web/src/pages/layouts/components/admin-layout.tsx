@@ -115,9 +115,18 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
 
 AdminLayoutNewContent.displayName = 'AdminLayoutNewContent';
 
+export type AdminLayoutSurface = 'canvas' | 'muted' | 'default';
+
 interface AdminLayoutProps {
   children: React.ReactNode;
+  surface?: AdminLayoutSurface;
 }
+
+const SURFACE_BODY_CLASSNAMES: Record<AdminLayoutSurface, string> = {
+  canvas: 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]',
+  muted: 'bg-slate-100 dark:bg-background',
+  default: 'bg-slate-50',
+};
 
 // Add new custom hook
 const useUserTracking = (userInfo: UserProfile | null | undefined) => {
@@ -147,9 +156,8 @@ const useUserTracking = (userInfo: UserProfile | null | undefined) => {
 };
 
 export const AdminLayout = (props: AdminLayoutProps) => {
-  const { children } = props;
+  const { children, surface = 'default' } = props;
   const { project, userInfo } = useAppContext();
-  const { type } = useParams();
   const projectId = project?.id;
   const subscriptionId = project?.subscriptionId;
   useUserTracking(userInfo);
@@ -165,13 +173,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
           <SubscriptionProvider projectId={projectId} subscriptionId={subscriptionId}>
             <Helmet>
               <title>Usertour App</title>
-              <body
-                className={
-                  type === 'builder'
-                    ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
-                    : 'bg-slate-50'
-                }
-              />
+              <body className={SURFACE_BODY_CLASSNAMES[surface]} />
             </Helmet>
             <UpgradePlanBanner projectId={projectId} />
             {children}
