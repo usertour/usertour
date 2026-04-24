@@ -25,6 +25,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     userAttributes,
     resourceCenterData,
     expanded,
+    initialNav,
     openState,
     zIndex,
     themeSettings,
@@ -42,6 +43,7 @@ const useResourceCenterStore = (rc: UsertourResourceCenter) => {
     userAttributes,
     resourceCenterData,
     expanded,
+    initialNav,
     openState,
     zIndex,
     themeSettings,
@@ -65,6 +67,7 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
     userAttributes,
     zIndex,
     expanded,
+    initialNav,
     removeBranding,
     linkUrlDecorator,
     assets,
@@ -82,6 +85,8 @@ export const ResourceCenterWidget = ({ resourceCenter }: ResourceCenterWidgetPro
         themeSettings={themeSettings}
         expanded={expanded}
         onExpandedChange={resourceCenter.expand}
+        initialNav={initialNav}
+        onNavChange={resourceCenter.persistNavState}
         zIndex={zIndex}
         hidden={liveChatActive === true}
         launcherHidden={launcherHidden === true}

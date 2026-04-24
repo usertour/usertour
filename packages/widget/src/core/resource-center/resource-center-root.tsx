@@ -46,6 +46,14 @@ interface ResourceCenterRootProps {
   onLiveChatClick?: (block: ResourceCenterLiveChatBlock) => void;
   /** When true, the default launcher is hidden (set via SDK API) */
   launcherHidden?: boolean;
+  /**
+   * Initial navigation state. Consumed once on mount via useState initializer
+   * so the widget can restore activeTabId + pageStack after a page refresh.
+   * Later prop changes are ignored — updates flow through onNavChange.
+   */
+  initialNav?: ResourceCenterNavigationState | null;
+  /** Fires whenever activeTabId / pageStack changes, so callers can persist the nav. */
+  onNavChange?: (nav: ResourceCenterNavigationState) => void;
 }
 
 export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
@@ -67,6 +75,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     onContentListItemClick,
     onLiveChatClick,
     launcherHidden = false,
+    initialNav,
+    onNavChange,
   } = props;
   const { globalStyle, themeSetting } = useSettingsStyles(themeSettings);
 
@@ -87,10 +97,19 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   // ── Navigation state ────────────────────────────────────────────────
   const defaultTabId = visibleTabs[0]?.id ?? '';
 
-  const [nav, setNav] = useState<ResourceCenterNavigationState>({
-    activeTabId: defaultTabId,
-    pageStack: [],
-  });
+  // Initialize from initialNav once (useState initializer runs on mount only).
+  // This lets the widget pick up a persisted nav after a page refresh without
+  // letting later prop updates clobber live state. Reconcile effect below
+  // validates the restored state and falls back to defaults if stale.
+  const [nav, setNav] = useState<ResourceCenterNavigationState>(
+    () => initialNav ?? { activeTabId: defaultTabId, pageStack: [] },
+  );
+
+  // Notify caller whenever nav changes so it can persist across reloads.
+  useEffect(() => {
+    onNavChange?.(nav);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav]);
 
   // Reconcile navigation when data changes (tabs restructured, blocks edited/removed,
   // or the active tab becomes empty and is filtered out of visibleTabs).

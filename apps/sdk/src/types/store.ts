@@ -5,6 +5,7 @@ import {
   LauncherData,
   ResourceCenterData,
   ResourceCenterBlockContentItem,
+  ResourceCenterNavigationState,
   Step,
   ThemeTypesSetting,
   UserTourTypes,
@@ -53,6 +54,12 @@ export type BannerStore = BaseStore & {
 export type ResourceCenterStore = BaseStore & {
   resourceCenterData?: ResourceCenterData;
   expanded: boolean;
+  /**
+   * Navigation state (active tab + page stack) loaded from storage at mount
+   * time. Read once by the widget via useState initializer so subsequent
+   * storage writes (driven by user interaction) do not overwrite live state.
+   */
+  initialNav?: ResourceCenterNavigationState | null;
   contentListItems?: ResourceCenterBlockContentItem[];
   /** When true, the RC panel is visually hidden (a live chat provider is active) */
   liveChatActive?: boolean;

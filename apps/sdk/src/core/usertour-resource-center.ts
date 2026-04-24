@@ -7,6 +7,7 @@ import {
   ResourceCenterContentListBlock,
   ResourceCenterData,
   ResourceCenterLiveChatBlock,
+  ResourceCenterNavigationState,
   ThemeTypesSetting,
   ResourceCenterBlockContentItem,
   contentEndReason,
@@ -229,11 +230,21 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       }
     }
     const expanded = this.getExpandedStateStorage(this.getSessionId());
+    const initialNav = this.getNavStateStorage(this.getSessionId());
     return {
       resourceCenterData,
       expanded,
+      initialNav,
     };
   }
+
+  /**
+   * Persist the widget's current navigation state (activeTabId + pageStack)
+   * so refreshing the page restores the user where they left off.
+   */
+  persistNavState = (nav: ResourceCenterNavigationState): void => {
+    this.setNavStateStorage(this.getSessionId(), nav);
+  };
 
   private getResourceCenterData(): ResourceCenterData | undefined {
     return this.session.getResourceCenterData();
@@ -251,5 +262,15 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   private getExpandedStateStorage(sessionId: string): boolean {
     const key = `${StorageKeys.RESOURCE_CENTER_EXPANDED}-${sessionId}`;
     return (storage.getSessionStorage(key) as boolean | undefined) ?? false;
+  }
+
+  private setNavStateStorage(sessionId: string, nav: ResourceCenterNavigationState): void {
+    const key = `${StorageKeys.RESOURCE_CENTER_NAV}-${sessionId}`;
+    storage.setSessionStorage(key, nav);
+  }
+
+  private getNavStateStorage(sessionId: string): ResourceCenterNavigationState | null {
+    const key = `${StorageKeys.RESOURCE_CENTER_NAV}-${sessionId}`;
+    return (storage.getSessionStorage(key) as ResourceCenterNavigationState | undefined) ?? null;
   }
 }
