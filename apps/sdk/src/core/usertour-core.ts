@@ -709,6 +709,7 @@ export class UsertourCore extends Evented {
       this.activatedChecklist?.getContentId() === contentId ||
       this.activatedTour?.getContentId() === contentId ||
       this.activatedBanner?.getContentId() === contentId ||
+      this.activatedResourceCenter?.getContentId() === contentId ||
       this.launchers.some((launcher) => launcher.getContentId() === contentId)
     );
   }
