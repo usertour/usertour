@@ -33,21 +33,20 @@ const AutoStartTooltips = (contentType: ContentDataType) => {
     const contentLabel = contentType === ContentDataType.BANNER ? 'banner' : 'launcher';
     return (
       <>
-        Show the {contentLabel} if the user matches the given condition. If the user doesn't match
-        the condition, the {contentLabel} will not be displayed. Example: Show the {contentLabel} if
-        the user is a new user, or set current page condition matches /* to display on all pages.{' '}
-        <br />
+        Only users who match these conditions see the {contentLabel} — everyone else won't. For
+        example, show it only to new signups, or match the current page against /* to show it on
+        every page. <br />
       </>
     );
   }
   const label = getContentTypeLabel(contentType);
   return (
     <>
-      Automatically starts the {label} if the user matches the given condition. Example:
-      Automatically start a {label} for all new users. <br />
+      As soon as a user matches these conditions, the {label} opens on its own. For example, kick
+      off a {label} for every new user. <br />
       <br />
-      Once the {label} has started, the auto-start condition has no effect, meaning if the user no
-      longer matches it, the {label} will stay open until otherwise dismissed.
+      Note: once the {label} is already running, these conditions stop applying. Even if the user no
+      longer matches them, the {label} stays open until it's dismissed.
     </>
   );
 };
@@ -56,9 +55,9 @@ const HideRulesTooltips = (contentType: ContentDataType) => {
   const label = getContentTypeLabel(contentType);
   return (
     <>
-      Temporarily hides the {label} when this condition is true. Once the condition is no longer
-      true, the {label} may be shown again. <br />
-      Example: Hide a {label} on certain pages.
+      Temporarily hide the {label} while these conditions are true. Once they're no longer true, it
+      can show up again. <br />
+      For example, hide the {label} on certain pages.
     </>
   );
 };
