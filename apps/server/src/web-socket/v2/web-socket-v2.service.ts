@@ -349,7 +349,13 @@ export class WebSocketV2Service {
    */
   async endAllContent(context: WebSocketContext): Promise<boolean> {
     const { server, socket, socketData } = context;
-    const { flowSession, checklistSession, launcherSessions = [] } = socketData;
+    const {
+      flowSession,
+      checklistSession,
+      bannerSession,
+      resourceCenterSession,
+      launcherSessions = [],
+    } = socketData;
 
     // Collect all sessions to cancel
     const sessionsToCancel: CustomContentSession[] = [];
@@ -358,6 +364,12 @@ export class WebSocketV2Service {
     }
     if (checklistSession) {
       sessionsToCancel.push(checklistSession);
+    }
+    if (bannerSession) {
+      sessionsToCancel.push(bannerSession);
+    }
+    if (resourceCenterSession) {
+      sessionsToCancel.push(resourceCenterSession);
     }
     sessionsToCancel.push(...launcherSessions);
 
