@@ -177,6 +177,17 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     return null;
   }, [currentTab, currentPage]);
 
+  // Fire the block-click analytics event when a block auto-expands, so its
+  // click counts stay consistent with the button-clicked path. Without this,
+  // moving a block from a multi-block tab into its own tab would silently
+  // zero out the block's click analytics.
+  useEffect(() => {
+    if (autoExpandedPage) {
+      onBlockClick?.(autoExpandedPage.block.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoExpandedPage?.block.id]);
+
   // Trigger content list fetch for auto-expanded or pushed content list pages
   const activeContentListBlock =
     autoExpandedPage?.type === ResourceCenterBlockType.CONTENT_LIST
