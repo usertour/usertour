@@ -598,7 +598,7 @@ export class AnalyticsService {
 
     // Validate date range
     if (isBefore(endDate, startDate)) {
-      return false;
+      return [];
     }
 
     // Get aggregated statistics
@@ -677,18 +677,18 @@ export class AnalyticsService {
       content.type === ContentType.CHECKLIST ||
       content.type === ContentType.LAUNCHER
     ) {
-      return false;
+      return [];
     }
     const versionId = resolveContentVersionId(content, environmentId);
     if (!versionId) {
-      return false;
+      return [];
     }
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
     });
     if (!version || !version.steps || version.steps.length === 0) {
-      return false;
+      return [];
     }
     const maxStepIndex = version.steps.length;
 
@@ -726,18 +726,18 @@ export class AnalyticsService {
       include: { contentOnEnvironments: true },
     });
     if (!content || content.type !== ContentType.CHECKLIST) {
-      return false;
+      return [];
     }
     const versionId = resolveContentVersionId(content, environmentId);
     if (!versionId) {
-      return false;
+      return [];
     }
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
     });
     if (!version || !version.data) {
-      return false;
+      return [];
     }
 
     const events = await this.prisma.event.findMany({
@@ -756,7 +756,7 @@ export class AnalyticsService {
     const completeEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_TASK_COMPLETED);
     const clickEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_TASK_CLICKED);
     if (!startEvent || !completeEvent) {
-      return false;
+      return [];
     }
 
     const checklistData = version.data as unknown as ChecklistData;
@@ -833,17 +833,17 @@ export class AnalyticsService {
       include: { contentOnEnvironments: true },
     });
     if (!content || content.type !== ContentType.RESOURCE_CENTER) {
-      return false;
+      return [];
     }
     const versionId = resolveContentVersionId(content, environmentId);
     if (!versionId) {
-      return false;
+      return [];
     }
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
     });
     if (!version || !version.data) {
-      return false;
+      return [];
     }
 
     const clickEvent = await this.prisma.event.findFirst({
@@ -853,11 +853,11 @@ export class AnalyticsService {
       },
     });
     if (!clickEvent) {
-      return false;
+      return [];
     }
 
     const resourceCenterData = version.data as unknown as ResourceCenterData;
-    const blocksWithTab = (resourceCenterData.tabs ?? []).flatMap((tab) =>
+    const blocksWithTab = resourceCenterData.tabs.flatMap((tab) =>
       tab.blocks.filter((b) => !isDisplayOnlyBlockType(b.type)).map((block) => ({ block, tab })),
     );
 
