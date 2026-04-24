@@ -70,7 +70,8 @@ const RulesFrequencyUnits = (props: RulesFrequencyUnitsProps) => {
         </DropdownMenuContent>
       </DropdownMenu>
       <QuestionTooltip>
-        Whether the {contentType} can auto-start for the same user just once, or many times.
+        Choose whether this {contentType} can auto-start once, multiple times, or without a limit
+        for the same user.
       </QuestionTooltip>
     </div>
   );
@@ -179,11 +180,12 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
         <span className="text-sm">apart </span>
         <QuestionTooltip>
           <p>
-            The {contentType} may auto-start up to {data.times} times, with at least {data.duration}{' '}
-            {data.unit} passing in between.
+            This {contentType} can auto-start up to {data.times} times for the same user. After the
+            user dismisses it, at least {data.duration} {data.unit} must pass before it can
+            auto-start again.
             <br />
             <br />
-            Note that manual and programmatic starts are included in the limit.
+            Note: manual and programmatic starts count toward this limit too.
           </p>
         </QuestionTooltip>
       </div>
@@ -203,8 +205,8 @@ const RulesFrequencyEvery = (props: RulesFrequencyEveryProps) => {
       />
       <EveryTimes />
       <QuestionTooltip>
-        The {contentType} may auto-start unlimited times, with at least {data.duration} {data.unit}{' '}
-        passing in between.
+        This {contentType} can auto-start as many times as needed. After the user dismisses it, at
+        least {data.duration} {data.unit} must pass before it can auto-start again.
       </QuestionTooltip>
     </div>
   );
@@ -269,9 +271,8 @@ const RulesFrequencyAtLeast = (props: RulesFrequencyAtLeastProps) => {
       </DropdownMenu>
       <span className="text-sm">after any {contentType}</span>
       <QuestionTooltip>
-        If enabled, the {contentType} will only auto-start if no other {contentType} has shown in
-        the period you pick. This is useful to make sure you don't overwhelm users with too much{' '}
-        {contentType} at the same time.
+        Only auto-start this {contentType} if no other {contentType} has been shown within the
+        window you choose. This helps avoid showing users too many at once.
       </QuestionTooltip>
     </div>
   );

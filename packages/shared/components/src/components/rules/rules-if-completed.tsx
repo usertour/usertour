@@ -32,7 +32,7 @@ export const RulesIfCompleted = (props: RulesIfCompletedProps) => {
         <span className="font-normal">Only start if not complete</span>
       </Label>
       <QuestionTooltip>
-        If enabled, the {contentType} will only auto-start if the user has not completed it before.
+        When enabled, this {contentType} won't auto-start for users who've already completed it.
       </QuestionTooltip>
     </div>
   );

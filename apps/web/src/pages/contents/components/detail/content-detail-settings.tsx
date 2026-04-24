@@ -33,20 +33,19 @@ const AutoStartTooltips = (contentType: ContentDataType) => {
     const contentLabel = contentType === ContentDataType.BANNER ? 'banner' : 'launcher';
     return (
       <>
-        Only users who match these conditions see the {contentLabel} — everyone else won't. For
-        example, show it only to new signups, or match the current page against /* to show it on
-        every page. <br />
+        Only users who match these conditions will see the {contentLabel}. For example, show it only
+        to new users, or set the current page rule to /* to show it everywhere. <br />
       </>
     );
   }
   const label = getContentTypeLabel(contentType);
   return (
     <>
-      As soon as a user matches these conditions, the {label} opens on its own. For example, kick
-      off a {label} for every new user. <br />
+      As soon as a user matches these conditions, the {label} starts automatically. For example,
+      start a {label} for every new user. <br />
       <br />
-      Note: once the {label} is already running, these conditions stop applying. Even if the user no
-      longer matches them, the {label} stays open until it's dismissed.
+      Note: once the {label} is already running, these conditions no longer matter. Even if the user
+      stops matching them, the {label} stays open until it's dismissed.
     </>
   );
 };
