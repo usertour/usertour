@@ -2,6 +2,7 @@ import {
   ContentEditorClickableElement,
   ContentEditorRoot,
   CustomContentSession,
+  LiveChatProvider,
   ResourceCenterBlockType,
   ResourceCenterContentListBlock,
   ResourceCenterData,
@@ -174,6 +175,15 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   handleLiveChatClick = (block: ResourceCenterLiveChatBlock): void => {
     try {
       this.handleBlockClick(block.id);
+      // CUSTOM provider is fire-and-forget: run the user's code and collapse
+      // to launcher. Unlike managed providers, there's no "session" to hide
+      // the RC for — doing so would leave RC invisible forever (no close
+      // signal ever arrives to flip liveChatActive back to false).
+      if (block.liveChatProvider === LiveChatProvider.CUSTOM) {
+        this.liveChatManager.executeCustomCode(block);
+        this.updateStore({ expanded: false });
+        return;
+      }
       this.liveChatManager.open(block);
       this.updateStore({ expanded: false, liveChatActive: true, liveChatProviderOpen: true });
     } catch (error) {

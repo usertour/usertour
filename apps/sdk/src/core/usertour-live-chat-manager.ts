@@ -60,6 +60,9 @@ export class UsertourLiveChatManager {
   /**
    * Open a live chat provider widget and listen for close events.
    * Automatically tears down any previously active session.
+   *
+   * Does not handle CUSTOM — that is fire-and-forget with no session to
+   * track; use `executeCustomCode` instead.
    */
   open(block: ResourceCenterLiveChatBlock): void {
     this.teardownSession();
@@ -70,6 +73,26 @@ export class UsertourLiveChatManager {
     } else {
       this.openWidget(block);
       this.sessionCleanup = this.listenClose(block, () => this.handleProviderClose());
+    }
+  }
+
+  /**
+   * Run a CUSTOM live chat block's user-provided code. Fire-and-forget:
+   * no session state is tracked and no close listener is attached, so the
+   * resource center stays interactive afterwards.
+   */
+  executeCustomCode(block: ResourceCenterLiveChatBlock): void {
+    if (block.liveChatProvider !== LiveChatProvider.CUSTOM) return;
+    if (this.callbacks.isEvalJsDisabled?.()) {
+      logger.warn('JavaScript evaluation is disabled. Skipping custom live chat code.');
+      return;
+    }
+    if (block.customLiveChatCode) {
+      try {
+        new Function(block.customLiveChatCode)();
+      } catch (e) {
+        logger.error('Custom live chat code error:', e);
+      }
     }
   }
 
@@ -167,19 +190,6 @@ export class UsertourLiveChatManager {
         w.Beacon?.('config', { display: { style: 'icon' } });
         w.Beacon?.('open');
         break;
-      case LiveChatProvider.CUSTOM:
-        if (this.callbacks.isEvalJsDisabled?.()) {
-          logger.warn('JavaScript evaluation is disabled. Skipping custom live chat code.');
-          break;
-        }
-        if (block.customLiveChatCode) {
-          try {
-            new Function(block.customLiveChatCode)();
-          } catch (e) {
-            logger.error('Custom live chat code error:', e);
-          }
-        }
-        break;
     }
   }
 
@@ -217,8 +227,6 @@ export class UsertourLiveChatManager {
       case LiveChatProvider.HUBSPOT:
         this.setHubSpotVisibility('hidden');
         w.HubSpotConversations?.widget?.close?.();
-        break;
-      case LiveChatProvider.CUSTOM:
         break;
     }
   }
