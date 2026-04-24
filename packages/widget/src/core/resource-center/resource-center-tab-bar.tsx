@@ -56,13 +56,12 @@ const tabItemBase = cn(
 // ============================================================================
 
 export const ResourceCenterTabBar = memo(() => {
-  const { data, nav, actions, showTabBar } = useResourceCenterContext();
+  const { visibleTabs, nav, actions, showTabBar } = useResourceCenterContext();
 
   if (!showTabBar) return null;
 
-  const tabs = data.tabs;
-  const homeTab = tabs[0];
-  const otherTabs = tabs.slice(1);
+  const homeTab = visibleTabs[0];
+  const otherTabs = visibleTabs.slice(1);
 
   // If there's only one tab (Home), no tab bar needed
   if (otherTabs.length === 0) return null;

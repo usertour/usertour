@@ -74,22 +74,33 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const animationTimerRef = useRef<number | null>(null);
 
+  // ── Visible tabs ────────────────────────────────────────────────────
+  // First tab is always kept (so the RC always has a landing tab, even if
+  // conditions currently filter out all its blocks). Subsequent tabs are
+  // dropped when empty, so e.g. a "Paid users" tab configured as a single
+  // condition-gated content list does not show as an empty slot to free users.
+  const visibleTabs = useMemo(
+    () => data.tabs.filter((tab, index) => index === 0 || tab.blocks.length > 0),
+    [data.tabs],
+  );
+
   // ── Navigation state ────────────────────────────────────────────────
-  const defaultTabId = data.tabs[0]?.id ?? '';
+  const defaultTabId = visibleTabs[0]?.id ?? '';
 
   const [nav, setNav] = useState<ResourceCenterNavigationState>({
     activeTabId: defaultTabId,
     pageStack: [],
   });
 
-  // Reconcile navigation when data changes (tabs restructured, blocks edited/removed).
+  // Reconcile navigation when data changes (tabs restructured, blocks edited/removed,
+  // or the active tab becomes empty and is filtered out of visibleTabs).
   // The stack stores only { type, blockId } refs; stale refs (whose block was
   // removed from the current tab) are pruned so the detail view and the
   // back-button state stay consistent.
   useEffect(() => {
-    const activeTab = data.tabs.find((t) => t.id === nav.activeTabId);
+    const activeTab = visibleTabs.find((t) => t.id === nav.activeTabId);
     if (!activeTab) {
-      setNav({ activeTabId: data.tabs[0]?.id ?? '', pageStack: [] });
+      setNav({ activeTabId: visibleTabs[0]?.id ?? '', pageStack: [] });
       return;
     }
     const blockIds = new Set(activeTab.blocks.map((b) => b.id));
@@ -97,16 +108,16 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     if (prunedStack.length !== nav.pageStack.length) {
       setNav((prev) => ({ ...prev, pageStack: prunedStack }));
     }
-  }, [data.tabs, nav.activeTabId, nav.pageStack]);
+  }, [visibleTabs, nav.activeTabId, nav.pageStack]);
 
   // ── Navigation actions ──────────────────────────────────────────────
   const switchTab = useCallback(
     (tabId: string) => {
-      const tab = data.tabs.find((t) => t.id === tabId);
+      const tab = visibleTabs.find((t) => t.id === tabId);
       if (!tab) return;
       setNav({ activeTabId: tabId, pageStack: [] });
     },
-    [data.tabs],
+    [visibleTabs],
   );
 
   const push = useCallback((ref: ResourceCenterPageRef) => {
@@ -137,8 +148,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
 
   // ── Derived state ───────────────────────────────────────────────────
   const currentTab = useMemo(
-    () => data.tabs.find((t) => t.id === nav.activeTabId) ?? data.tabs[0],
-    [data.tabs, nav.activeTabId],
+    () => visibleTabs.find((t) => t.id === nav.activeTabId) ?? visibleTabs[0],
+    [visibleTabs, nav.activeTabId],
   );
 
   // Resolve the top-of-stack ref against the latest tab blocks so admin edits
@@ -193,7 +204,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeContentListBlockSignature]);
 
-  const showTabBar = data.tabs.length > 1 && currentPage === null;
+  const showTabBar = visibleTabs.length > 1 && currentPage === null;
   const showBackButton = currentPage !== null;
 
   // ── Search state ───────────────────────────────────────────────────
@@ -249,6 +260,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       showMadeWith,
       nav,
       actions,
+      visibleTabs,
       currentTab,
       currentPage,
       autoExpandedPage,
@@ -277,6 +289,7 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
       showMadeWith,
       nav,
       actions,
+      visibleTabs,
       currentTab,
       currentPage,
       autoExpandedPage,

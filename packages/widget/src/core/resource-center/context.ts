@@ -54,6 +54,14 @@ export interface ResourceCenterContextValue {
   nav: ResourceCenterNavigationState;
   actions: ResourceCenterNavigationActions;
 
+  /**
+   * Tabs that should appear in the tab bar. The first tab is always included
+   * (even if empty), so users always have a landing tab; subsequent tabs are
+   * dropped when their blocks array is empty (e.g. all blocks filtered out by
+   * show conditions server-side).
+   */
+  visibleTabs: ResourceCenterTab[];
+
   // Derived navigation state
   currentTab: ResourceCenterTab;
   currentPage: ResourceCenterPageEntry | null;
