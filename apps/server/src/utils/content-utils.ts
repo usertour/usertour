@@ -1595,7 +1595,7 @@ export const evaluateResourceCenterBlocksWithContext = async (
   clientContext: ClientContext,
   clientConditions?: ClientCondition[],
 ): Promise<ResourceCenterData> => {
-  if (!resourceCenterData?.tabs?.length) {
+  if (resourceCenterData.tabs.length === 0) {
     return resourceCenterData;
   }
 

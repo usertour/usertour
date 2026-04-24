@@ -759,7 +759,7 @@ export class WebSocketV2Service {
     }
 
     const resourceCenterData = resourceCenterSession.version?.resourceCenter;
-    if (!resourceCenterData?.tabs) {
+    if (!resourceCenterData) {
       return [];
     }
 

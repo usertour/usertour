@@ -169,20 +169,16 @@ export class ConditionEvaluationService {
     data: ResourceCenterData,
     context: ConditionEvaluationContext,
   ): Promise<ResourceCenterData> {
-    if (!data?.tabs?.length) {
-      return data;
-    }
-
     const tabs = await Promise.all(
       data.tabs.map(async (tab) => {
         const blocks = await Promise.all(
-          (tab.blocks ?? []).map(async (block) => {
+          tab.blocks.map(async (block) => {
             const onlyShowBlockConditions = block.onlyShowBlockConditions
               ? await this.evaluateRulesConditions(block.onlyShowBlockConditions, context)
               : [];
             if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
               const contentItems = await Promise.all(
-                (block.contentItems ?? []).map(async (item) => {
+                block.contentItems.map(async (item) => {
                   const onlyShowItemConditions = item.onlyShowItemConditions
                     ? await this.evaluateRulesConditions(item.onlyShowItemConditions, context)
                     : [];

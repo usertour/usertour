@@ -22,7 +22,7 @@ import {
 } from '@usertour-packages/form';
 import { createContent } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { getErrorMessage } from '@usertour/helpers';
+import { createDefaultResourceCenterData, getErrorMessage } from '@usertour/helpers';
 import { Content, ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useMemo, useState } from 'react';
@@ -48,8 +48,9 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CONTENT_TYPE_INITIAL_DATA: Partial<Record<ContentDataType, unknown>> = {
-  [ContentDataType.CHECKLIST]: DEFAULT_CHECKLIST_DATA,
+const CONTENT_TYPE_INITIAL_DATA: Partial<Record<ContentDataType, () => unknown>> = {
+  [ContentDataType.CHECKLIST]: () => ({ ...DEFAULT_CHECKLIST_DATA }),
+  [ContentDataType.RESOURCE_CENTER]: createDefaultResourceCenterData,
 };
 
 const defaultValues: Partial<FormValues> = {
@@ -64,7 +65,6 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
   const { toast } = useToast();
 
   const contentTypeMeta = useMemo(() => getContentTypeMeta(contentType), [contentType]);
-  const initialData = useMemo(() => CONTENT_TYPE_INITIAL_DATA[contentType], [contentType]);
 
   const copy = useMemo(
     () => ({
@@ -95,7 +95,7 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
     const { name } = formValues;
     setIsLoading(true);
     try {
-      const data = initialData;
+      const data = CONTENT_TYPE_INITIAL_DATA[contentType]?.();
       const variables = {
         name,
         environmentId: environment?.id,

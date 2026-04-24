@@ -207,7 +207,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   ): Promise<Partial<ResourceCenterStore>> {
     const resourceCenterData = this.getResourceCenterData();
     // Evaluate button conditions in message block contents across all tabs
-    if (resourceCenterData?.tabs) {
+    if (resourceCenterData) {
       for (const tab of resourceCenterData.tabs) {
         for (const block of tab.blocks) {
           if (block.type === ResourceCenterBlockType.RICH_TEXT && block.content) {

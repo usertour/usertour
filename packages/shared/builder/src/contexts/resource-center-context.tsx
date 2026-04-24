@@ -3,13 +3,11 @@ import {
   ResourceCenterBlockType,
   ResourceCenterData,
   ResourceCenterTab,
-  DEFAULT_RESOURCE_CENTER_DATA,
-  LauncherIconSource,
   LiveChatProvider,
 } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { isEqual } from 'lodash';
-import { uuidV4, isRichTextEmpty } from '@usertour/helpers';
+import { isRichTextEmpty } from '@usertour/helpers';
 import {
   ReactNode,
   createContext,
@@ -99,34 +97,6 @@ function updateTabBlocks(
   };
 }
 
-/** Ensure data always has at least one tab (Home) */
-function ensureResourceCenterData(
-  raw: Partial<ResourceCenterData> & { blocks?: ResourceCenterBlock[] },
-): ResourceCenterData {
-  const merged: ResourceCenterData = {
-    buttonText: raw.buttonText ?? DEFAULT_RESOURCE_CENTER_DATA.buttonText,
-    headerText: raw.headerText ?? DEFAULT_RESOURCE_CENTER_DATA.headerText,
-    tabs: raw.tabs ?? DEFAULT_RESOURCE_CENTER_DATA.tabs,
-  };
-
-  if (merged.tabs.length > 0) {
-    return merged;
-  }
-
-  const homeTab: ResourceCenterTab = {
-    id: uuidV4(),
-    name: 'Home',
-    iconSource: LauncherIconSource.BUILTIN,
-    iconType: 'home-line',
-    blocks: raw.blocks ?? [],
-  };
-
-  return {
-    ...merged,
-    tabs: [homeTab],
-  };
-}
-
 export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.Element {
   const { children } = props;
   const {
@@ -142,7 +112,7 @@ export function ResourceCenterProvider(props: ResourceCenterProviderProps): JSX.
     if (!currentVersion) {
       return null;
     }
-    return ensureResourceCenterData(currentVersion?.data ?? {});
+    return currentVersion.data as unknown as ResourceCenterData;
   }, [currentVersion]);
 
   const { invoke: updateContentVersionMutation } = useUpdateContentVersionMutation();

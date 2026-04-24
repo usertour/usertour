@@ -41,7 +41,7 @@ export class UsertourLiveChatManager {
    * Prevents duplicate floating buttons when the resource center takes over the launcher role.
    */
   configure(data: ResourceCenterData | undefined): void {
-    if (!data?.tabs) return;
+    if (!data) return;
 
     const configured = new Set<LiveChatProvider>();
     for (const tab of data.tabs) {

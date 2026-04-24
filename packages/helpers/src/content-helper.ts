@@ -8,6 +8,7 @@ import type {
   ContentEditorRootColumn,
   ContentEditorRootElement,
   LauncherData,
+  ResourceCenterData,
   RichTextNode,
   Step,
   StepTrigger,
@@ -15,6 +16,8 @@ import type {
 import {
   ContentDataType,
   ContentEditorElementType,
+  DEFAULT_RESOURCE_CENTER_DATA,
+  LauncherIconSource,
   ResourceCenterBlockType,
 } from '@usertour/types';
 
@@ -372,3 +375,17 @@ export const isRichTextEmpty = (nodes: RichTextNode[] | undefined): boolean => {
 /** Display-only block types that do not emit click analytics. */
 export const isDisplayOnlyBlockType = (type: ResourceCenterBlockType): boolean =>
   type === ResourceCenterBlockType.RICH_TEXT || type === ResourceCenterBlockType.DIVIDER;
+
+/** Build a fresh ResourceCenterData with a single Home tab. Used when creating new RC content. */
+export const createDefaultResourceCenterData = (): ResourceCenterData => ({
+  ...DEFAULT_RESOURCE_CENTER_DATA,
+  tabs: [
+    {
+      id: uuidV4(),
+      name: 'Home',
+      iconSource: LauncherIconSource.BUILTIN,
+      iconType: 'home-line',
+      blocks: [],
+    },
+  ],
+});

@@ -455,17 +455,15 @@ export class SessionBuilderService {
     // Extract attribute codes and button-condition attribute ids across the whole block tree
     const attrCodes: string[] = [];
     const buttonAttrIds: string[] = [];
-    if (resourceCenterData?.tabs) {
-      const allBlocks = resourceCenterData.tabs.flatMap((tab) => tab.blocks);
-      attrCodes.push(...extractResourceCenterAttrCodes(allBlocks));
-      for (const block of allBlocks) {
-        if (
-          (block.type === ResourceCenterBlockType.RICH_TEXT ||
-            block.type === ResourceCenterBlockType.SUB_PAGE) &&
-          block.content
-        ) {
-          buttonAttrIds.push(...extractButtonConditionAttributeIds({ contents: block.content }));
-        }
+    const allBlocks = resourceCenterData.tabs.flatMap((tab) => tab.blocks);
+    attrCodes.push(...extractResourceCenterAttrCodes(allBlocks));
+    for (const block of allBlocks) {
+      if (
+        (block.type === ResourceCenterBlockType.RICH_TEXT ||
+          block.type === ResourceCenterBlockType.SUB_PAGE) &&
+        block.content
+      ) {
+        buttonAttrIds.push(...extractButtonConditionAttributeIds({ contents: block.content }));
       }
     }
 
