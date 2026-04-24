@@ -4,6 +4,7 @@ import {
   ResourceCenterData,
   ResourceCenterLiveChatBlock,
 } from '@usertour/types';
+import { executeUserCode } from '@usertour/helpers';
 import { logger, timerManager } from '@/utils';
 
 // ============================================================================
@@ -88,11 +89,7 @@ export class UsertourLiveChatManager {
       return;
     }
     if (block.customLiveChatCode) {
-      try {
-        new Function(block.customLiveChatCode)();
-      } catch (e) {
-        logger.error('Custom live chat code error:', e);
-      }
+      executeUserCode(block.customLiveChatCode);
     }
   }
 
