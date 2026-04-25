@@ -77,7 +77,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.ACTION,
-        name: [{ type: 'paragraph', children: [{ text: '' }] }],
+        name: [{ type: 'paragraph', children: [{ text: 'Action button' }] }],
         iconSource: LauncherIconSource.BUILTIN,
         iconType: 'arrow-right-circle-fill',
         clickedActions: [],
@@ -88,7 +88,7 @@ const createBlock = (type: ResourceCenterBlockType): ResourceCenterBlock | null 
       return {
         id,
         type: ResourceCenterBlockType.SUB_PAGE,
-        name: [{ type: 'paragraph', children: [{ text: '' }] }],
+        name: [{ type: 'paragraph', children: [{ text: 'Sub-page' }] }],
         iconSource: LauncherIconSource.BUILTIN,
         iconType: 'pages-fill',
         content: DEFAULT_MESSAGE_BLOCK_CONTENT,
