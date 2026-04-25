@@ -104,9 +104,16 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     const sessionId = this.getSessionId();
     this.socketService.clickResourceCenter({ sessionId, blockId });
 
-    // Handle clickedActions for ACTION blocks
-    if (block.type === ResourceCenterBlockType.ACTION && block.clickedActions?.length > 0) {
-      await this.handleActions(block.clickedActions);
+    // ACTION is a CTA, not navigation: run any configured actions and
+    // collapse back to launcher with the same semantics as the user
+    // clicking the close button (clears storage, fires closeResourceCenter).
+    // Sub-page / content-list clicks fall through and stay expanded so the
+    // user can navigate inside the RC.
+    if (block.type === ResourceCenterBlockType.ACTION) {
+      if (block.clickedActions?.length > 0) {
+        await this.handleActions(block.clickedActions);
+      }
+      await this.expand(false);
     }
   }
 
@@ -159,6 +166,10 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
           openType: item.navigateOpenType ?? 'same',
         });
       }
+
+      // Clicking a list item launches content — collapse with the same
+      // semantics as the user clicking the close button.
+      await this.expand(false);
     } catch (error) {
       logger.error('Failed to start content from content list:', error);
     }
@@ -173,20 +184,28 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     isEvalJsDisabled: () => this.isEvalJsDisabled(),
   });
 
-  handleLiveChatClick = (block: ResourceCenterLiveChatBlock): void => {
+  handleLiveChatClick = async (block: ResourceCenterLiveChatBlock): Promise<void> => {
     try {
-      this.handleBlockClick(block.id);
+      await this.handleBlockClick(block.id);
       // CUSTOM provider is fire-and-forget: run the user's code and collapse
-      // to launcher. Unlike managed providers, there's no "session" to hide
-      // the RC for — doing so would leave RC invisible forever (no close
-      // signal ever arrives to flip liveChatActive back to false).
+      // to launcher with the same semantics as the user clicking the close
+      // button. Unlike managed providers, there's no "session" to hide the
+      // RC for — doing so would leave RC invisible forever (no close signal
+      // ever arrives to flip liveChatActive back to false).
       if (block.liveChatProvider === LiveChatProvider.CUSTOM) {
         this.liveChatManager.executeCustomCode(block);
-        this.updateStore({ expanded: false });
+        await this.expand(false);
         return;
       }
       this.liveChatManager.open(block);
+      // Hide RC and mark live chat active in a single render to avoid the
+      // launcher flashing between expanded:false and liveChatActive:true.
+      // Mirror expand(false)'s persistence + analytics so closing-via-chat
+      // matches closing-via-button.
+      const sessionId = this.getSessionId();
+      this.setExpandedStateStorage(sessionId, false);
       this.updateStore({ expanded: false, liveChatActive: true, liveChatProviderOpen: true });
+      this.socketService.closeResourceCenter({ sessionId });
     } catch (error) {
       logger.error('Failed to open live chat:', error);
     }
