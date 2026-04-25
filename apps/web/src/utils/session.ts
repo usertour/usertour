@@ -227,6 +227,11 @@ export const getEventDisplaySuffix = (
     return bizEvent.data?.[EventAttributes.CHECKLIST_TASK_NAME] ?? '';
   }
 
+  // Handle resource center clicked event
+  if (eventCodeName === BizEvents.RESOURCE_CENTER_CLICKED) {
+    return bizEvent.data?.[EventAttributes.RESOURCE_CENTER_BLOCK_NAME] ?? '';
+  }
+
   // Default: return session content name for other events
   return session?.content?.name ?? '';
 };
@@ -267,7 +272,8 @@ export const sortEventDataEntries = (
 
 /**
  * Get start reason title from start event
- * Extracts the start reason from FLOW_STARTED, CHECKLIST_STARTED, or LAUNCHER_SEEN events
+ * Extracts the start reason from FLOW_STARTED, CHECKLIST_STARTED, RESOURCE_CENTER_STARTED,
+ * or LAUNCHER_SEEN events
  *
  * @param startEvent - Business event containing start reason data
  * @returns Formatted start reason title or empty string
@@ -286,6 +292,7 @@ export const getStartReasonTitle = (
     const reason =
       startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||
       startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON] ||
+      startEvent?.data?.[EventAttributes.RESOURCE_CENTER_START_REASON] ||
       startEvent?.data?.[EventAttributes.LAUNCHER_START_REASON];
     return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason || '';
   } catch (_) {
@@ -309,6 +316,9 @@ export const getEndReasonTitle = (
   }
   if (contentType === ContentDataType.BANNER) {
     return 'Banner dismissed';
+  }
+  if (contentType === ContentDataType.RESOURCE_CENTER) {
+    return 'Resource center dismissed';
   }
   try {
     const reason =
@@ -347,6 +357,9 @@ export const getFieldValue = (key: string, value: any): string | number => {
     return value !== undefined && value !== null ? Number(value) + 1 : value;
   }
   if (key === EventAttributes.BANNER_VERSION_NUMBER) {
+    return value !== undefined && value !== null ? Number(value) + 1 : value;
+  }
+  if (key === EventAttributes.RESOURCE_CENTER_VERSION_NUMBER) {
     return value !== undefined && value !== null ? Number(value) + 1 : value;
   }
   return key === 'question_type'

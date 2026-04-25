@@ -4,6 +4,7 @@ import { ChecklistData } from './checklist';
 import { Content, ContentDataType, Step } from './contents';
 import { ContentConfigObject, RulesCondition } from './config';
 import { LauncherData } from './launcher';
+import { ResourceCenterData } from './resource-center';
 import { ClientContext, contentStartReason } from './sdk';
 import { Theme } from './theme';
 
@@ -25,6 +26,7 @@ export interface SocketAuthData {
   flowSessionId?: string;
   checklistSessionId?: string;
   bannerSessionId?: string;
+  resourceCenterSessionId?: string;
 }
 
 /**
@@ -64,6 +66,10 @@ export enum ClientMessageKind {
   ACTIVATE_LAUNCHER = 'ActivateLauncher',
   DISMISS_LAUNCHER = 'DismissLauncher',
   TRACK_TRACKER_EVENT = 'TrackTrackerEvent',
+  OPEN_RESOURCE_CENTER = 'OpenResourceCenter',
+  CLOSE_RESOURCE_CENTER = 'CloseResourceCenter',
+  CLICK_RESOURCE_CENTER = 'ClickResourceCenter',
+  LIST_RESOURCE_CENTER_BLOCK_CONTENT = 'ListResourceCenterBlockContent',
   BEGIN_BATCH = 'BeginBatch',
   END_BATCH = 'EndBatch',
   END_ALL_CONTENT = 'EndAllContent',
@@ -77,9 +83,11 @@ export enum ServerMessageKind {
   SET_FLOW_SESSION = 'SetFlowSession',
   SET_CHECKLIST_SESSION = 'SetChecklistSession',
   SET_BANNER_SESSION = 'SetBannerSession',
+  SET_RESOURCE_CENTER_SESSION = 'SetResourceCenterSession',
   UNSET_FLOW_SESSION = 'UnsetFlowSession',
   UNSET_CHECKLIST_SESSION = 'UnsetChecklistSession',
   UNSET_BANNER_SESSION = 'UnsetBannerSession',
+  UNSET_RESOURCE_CENTER_SESSION = 'UnsetResourceCenterSession',
   ADD_LAUNCHER = 'AddLauncher',
   REMOVE_LAUNCHER = 'RemoveLauncher',
   ADD_TRACKER = 'AddTracker',
@@ -259,6 +267,54 @@ export type DismissLauncherDto = {
 };
 
 // ============================================================================
+// Resource Center DTOs
+// ============================================================================
+
+/**
+ * Open resource center request
+ */
+export type OpenResourceCenterDto = {
+  sessionId: string;
+};
+
+/**
+ * Close resource center request
+ */
+export type CloseResourceCenterDto = {
+  sessionId: string;
+};
+
+/**
+ * Click resource center block request
+ */
+export type ClickResourceCenterDto = {
+  sessionId: string;
+  blockId: string;
+};
+
+/**
+ * List resource center block content request
+ */
+export type ListResourceCenterBlockContentDto = {
+  sessionId: string;
+  blockId: string;
+};
+
+/**
+ * List resource center block content response item
+ */
+export type ResourceCenterBlockContentItem = {
+  contentId: string;
+  contentType: 'flow' | 'checklist';
+  name: string;
+  iconSource?: string;
+  iconType?: string;
+  iconUrl?: string;
+  navigateUrl?: unknown[];
+  navigateOpenType?: 'same' | 'new';
+};
+
+// ============================================================================
 // Session Types
 // ============================================================================
 
@@ -311,6 +367,7 @@ export type CustomContentSession = {
     checklist?: ChecklistData;
     launcher?: LauncherData;
     banner?: BannerData;
+    resourceCenter?: ResourceCenterData;
     tracker?: { eventId: string };
   };
 };

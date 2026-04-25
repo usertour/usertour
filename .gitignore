@@ -47,3 +47,6 @@ stats.html
 # vscode config
 .history
 .vscode
+
+# Claude Code
+.claude/

@@ -49,6 +49,13 @@ interface ActivateBannerSessionOptions {
   cleanupContentTypes?: ContentDataType[];
 }
 
+interface ActivateResourceCenterSessionOptions {
+  /** The conditions to track */
+  trackConditions?: TrackCondition[];
+  /** Optional array of content types to cleanup client conditions for */
+  cleanupContentTypes?: ContentDataType[];
+}
+
 interface CleanupSocketSessionOptions {
   /** Whether to execute unsetSocketSession, defaults to true */
   unsetSession?: boolean;
@@ -268,6 +275,49 @@ export class SocketOperationService {
   }
 
   /**
+   * Activate Resource Center session
+   * @param socket - The socket
+   * @param socketData - The socket client data
+   * @param session - The Resource Center session to activate
+   * @param options - Options for Resource Center activation behavior
+   * @returns Promise<boolean> - True if the session was activated successfully
+   */
+  async activateResourceCenterSession(
+    socket: Socket,
+    socketData: SocketData,
+    session: CustomContentSession,
+    options: ActivateResourceCenterSessionOptions = {},
+  ): Promise<boolean> {
+    const { trackConditions = [], cleanupContentTypes } = options;
+
+    const isSetSession = await this.socketEmitterService.setResourceCenterSessionWithAck(
+      socket,
+      session,
+    );
+    if (!isSetSession) {
+      return false;
+    }
+
+    const conditionChanges = await this.emitConditions(
+      socket,
+      socketData,
+      trackConditions,
+      cleanupContentTypes,
+    );
+    if (!conditionChanges) {
+      return false;
+    }
+
+    const updatedSocketData: Partial<SocketData> = {
+      ...conditionChanges,
+      resourceCenterSession: session,
+      lastDismissedResourceCenterId: undefined,
+    };
+
+    return await this.socketDataService.set(socket, updatedSocketData, true);
+  }
+
+  /**
    * Cleanup socket session and associated conditions
    * @param socket - The socket instance
    * @param socketData - The socket client data
@@ -314,6 +364,10 @@ export class SocketOperationService {
       ...(contentType === ContentDataType.BANNER && {
         ...(setLastDismissedId && { lastDismissedBannerId: session.content.id }),
         bannerSession: undefined,
+      }),
+      ...(contentType === ContentDataType.RESOURCE_CENTER && {
+        ...(setLastDismissedId && { lastDismissedResourceCenterId: session.content.id }),
+        resourceCenterSession: undefined,
       }),
     };
 
@@ -651,6 +705,9 @@ export class SocketOperationService {
     }
     if (contentType === ContentDataType.BANNER) {
       return await this.socketEmitterService.unsetBannerSessionWithAck(socket, session.id);
+    }
+    if (contentType === ContentDataType.RESOURCE_CENTER) {
+      return await this.socketEmitterService.unsetResourceCenterSessionWithAck(socket, session.id);
     }
 
     if (contentType === ContentDataType.LAUNCHER) {

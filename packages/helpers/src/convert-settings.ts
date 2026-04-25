@@ -290,6 +290,22 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.brandColor.color,
   );
 
+  // Resource center launcher colors (cascade from brand colors)
+  const rcPrimary = data.brandColor.background;
+  const rcHeaderForeground = data.brandColor.color;
+  const rcLauncherColor = data.resourceCenterLauncherButton!.color;
+
+  rcLauncherColor.background = resolveAutoValue(rcLauncherColor.background, rcPrimary);
+  rcLauncherColor.foreground = resolveAutoValue(rcLauncherColor.foreground, rcHeaderForeground);
+
+  // Generate hover/active from resolved background
+  const rcLauncherStates = generateStateColors(
+    rcLauncherColor.background,
+    rcLauncherColor.foreground,
+  );
+  rcLauncherColor.hover = resolveAutoValue(rcLauncherColor.hover, rcLauncherStates.hover);
+  rcLauncherColor.active = resolveAutoValue(rcLauncherColor.active, rcLauncherStates.active);
+
   // Banner color: resolve base from brandColor, then derive hover/active via generateStateColors
   data.banner.textColor.color = resolveAutoValue(
     data.banner.textColor.color,
@@ -369,9 +385,15 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
 };
 
 export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') => {
+  const resourceCenter = (settings.resourceCenter ?? defaultSettings.resourceCenter)!;
+  const resourceCenterLauncherButton = (settings.resourceCenterLauncherButton ??
+    defaultSettings.resourceCenterLauncherButton)!;
+
   const cssMapping: any = {
     '--usertour-background': hexToHSLString(settings.mainColor.background),
     '--usertour-foreground': hexToHSLString(settings.mainColor.color),
+    '--usertour-brand-background-color': hexToHSLString(settings.brandColor.background),
+    '--usertour-brand-foreground-color': hexToHSLString(settings.brandColor.color),
     '--usertour-brand-active-background-color': hexToHSLString(settings.brandColor.active),
     '--usertour-brand-hover-background-color': hexToHSLString(settings.brandColor.hover),
     '--usertour-font-family': settings.font.fontFamily,
@@ -461,6 +483,31 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     ),
     '--usertour-checklist-trigger-font-weight': settings.checklistLauncher.fontWeight,
     '--usertour-checkmark-background-color': settings.checklist.checkmarkColor,
+    '--usertour-resource-center-launcher-background-color': hexToHSLString(
+      resourceCenterLauncherButton.color.background,
+    ),
+    '--usertour-resource-center-launcher-hover-background-color': hexToHSLString(
+      resourceCenterLauncherButton.color.hover,
+    ),
+    '--usertour-resource-center-launcher-active-background-color': hexToHSLString(
+      resourceCenterLauncherButton.color.active,
+    ),
+    '--usertour-resource-center-launcher-foreground-color': hexToHSLString(
+      resourceCenterLauncherButton.color.foreground,
+    ),
+    '--usertour-resource-center-launcher-border-radius':
+      resourceCenterLauncherButton.borderRadius == null
+        ? 'calc(var(--usertour-resource-center-launcher-height) / 2)'
+        : `${resourceCenterLauncherButton.borderRadius}px`,
+    '--usertour-resource-center-launcher-font-weight': settings.font.fontWeightBold,
+    '--usertour-resource-center-launcher-height': `${resourceCenterLauncherButton.height}px`,
+    '--usertour-resource-center-launcher-icon-size': `${resourceCenterLauncherButton.imageHeight}px`,
+    '--usertour-resource-center-width': `${resourceCenter.normalWidth}px`,
+    '--usertour-resource-center-large-width': `${resourceCenter.largeWidth}px`,
+    '--usertour-resource-center-max-height': resourceCenter.maxHeight
+      ? `${resourceCenter.maxHeight}px`
+      : 'none',
+    '--usertour-resource-center-transition-duration': `${resourceCenter.transitionDuration}ms`,
     '--usertour-banner-foreground-color': hexToHSLString(settings.banner.textColor.color),
     '--usertour-banner-background-color': hexToHSLString(
       settings.banner.backgroundColor.background,

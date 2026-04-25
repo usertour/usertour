@@ -14,6 +14,7 @@ export {
   IconsList,
 } from './launcher';
 export * from './checklist';
+export * from './resource-center';
 export { useSettingsStyles, useStepWidth, getThemeWidthByStepType } from './hooks';
 export * from './utils/content';
 export { getAvatarUrlFromSettings } from './utils/avatar';

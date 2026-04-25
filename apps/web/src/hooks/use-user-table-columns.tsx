@@ -2,13 +2,11 @@
 
 import { ColumnDef, Table } from '@tanstack/react-table';
 import { Checkbox } from '@usertour-packages/checkbox';
-import { CompanyIcon } from '@usertour-packages/icons';
-import { BizUser, BizUserOnCompany } from '@usertour/types';
+import { BizUser } from '@usertour/types';
 import * as React from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DataTableColumnHeader } from '@/components/molecules/segment/table';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 
 // Hook to create user table columns
 export const useUserTableColumns = (): ColumnDef<BizUser>[] => {
@@ -38,44 +36,19 @@ export const useUserTableColumns = (): ColumnDef<BizUser>[] => {
         enableHiding: false,
       },
       {
+        id: 'externalId',
         accessorKey: 'externalId',
-        header: ({ column }: any) => (
-          <DataTableColumnHeader column={column} title={t('users.table.user')} />
-        ),
+        header: () => <DataTableColumnHeader title={t('users.table.user')} />,
         cell: ({ row }: any) => {
           const email = row.original.data?.email || '';
           const name = row.original.data?.name || '';
-          const companies = row.original.bizUsersOnCompany || [];
           const externalId = row.original.externalId || '';
+          const primary = name || email || externalId;
 
           return (
-            <div className="flex items-center gap-2">
-              <UserAvatar email={email} name={name} size="sm" />
-              <div className="flex flex-col gap-0.5 w-72">
-                <span className="leading-none truncate">{email || externalId}</span>
-                {companies.length > 0 && (
-                  <div className="flex flex-wrap gap-0.5">
-                    {companies.slice(0, 3).map((membership: BizUserOnCompany) => (
-                      <Link
-                        key={membership.id}
-                        to={`/env/${row.original.environmentId}/company/${membership.bizCompany?.id}`}
-                        className="inline-flex items-center gap-1 rounded-md text-xs hover:text-primary underline-offset-4 hover:underline transition-colors min-w-0 overflow-hidden"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <CompanyIcon className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">
-                          {membership.bizCompany?.externalId || 'Unknown'}
-                        </span>
-                      </Link>
-                    ))}
-                    {companies.length > 3 && (
-                      <span className="text-xs text-muted-foreground">
-                        +{companies.length - 3} more
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
+            <div className="flex items-center gap-2 w-72 min-w-0">
+              <DefaultAvatar seed={externalId || email} name={name} size="sm" />
+              <span className="truncate">{primary}</span>
             </div>
           );
         },

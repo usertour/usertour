@@ -8,7 +8,7 @@ import {
   CommandInput,
   CommandItem,
 } from '@usertour-packages/command';
-import { CloseIcon, RiFlashlightFill } from '@usertour-packages/icons';
+import { CloseIcon, EventTrackerIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
@@ -565,7 +565,7 @@ export const RulesEventAttribute = (props: RulesEventAttributeProps) => {
         <RulesErrorAnchor asChild>
           <RulesConditionRightContent disabled={disabled}>
             <RulesPopover onOpenChange={handleOpenChange} open={open}>
-              <RulesPopoverTriggerWrapper icon={<RiFlashlightFill size={16} />}>
+              <RulesPopoverTriggerWrapper icon={<EventTrackerIcon size={16} />}>
                 <span className="font-bold">{selectedPreset?.displayName} </span>
                 {displayCondition} <span className="font-bold">{displayValue}</span>
                 {localData?.logic === 'between' && (

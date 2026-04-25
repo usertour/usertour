@@ -20,7 +20,7 @@ import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
 import type { DatePresetKey } from '@/utils/date-presets';
 import type { DateRange } from 'react-day-picker';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { formatDistanceToNow, endOfDay, startOfDay } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour-packages/icons';
@@ -208,7 +208,7 @@ const SessionRow = ({
           to={`/env/${environmentId}/user/${session.bizUserId}`}
           className="flex items-center gap-2"
         >
-          <UserAvatar email={email} name={name} size="sm" />
+          <DefaultAvatar seed={externalId || email} name={name} size="sm" />
           <div className="flex flex-col">
             <span className="text-muted-foreground hover:text-primary hover:underline underline-offset-4">
               {primaryText}

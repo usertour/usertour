@@ -31,11 +31,11 @@ export const DeleteUserFromSegment = (props: DeleteUserFromSegmentProps) => {
   return (
     <>
       <Button
-        variant={'ghost'}
-        className="h-8 text-primary hover:text-primary px-1 text-red-600 hover:text-red-600 hover:bg-red-100"
+        variant="ghost"
+        className="h-8 px-2 hover:text-red-600 hover:bg-red-100"
         onClick={handleOnClick}
       >
-        <Delete2Icon className="mr-1" />
+        <Delete2Icon className="mr-1 h-4 w-4" />
         {t('users.actions.deleteUser')}
       </Button>
       <BizUserDeleteDialog

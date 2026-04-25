@@ -2,6 +2,7 @@ import {
   AttributeBizTypes,
   BannerData,
   LauncherData,
+  ResourceCenterData,
   CustomContentSession,
   SessionStep,
   SessionTheme,
@@ -150,6 +151,13 @@ export class UsertourSession {
    */
   getBannerData(): BannerData | undefined {
     return this.session.version.banner;
+  }
+
+  /**
+   * Gets the resource center data from session
+   */
+  getResourceCenterData(): ResourceCenterData | undefined {
+    return this.session.version.resourceCenter;
   }
 
   // === Attributes ===

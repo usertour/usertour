@@ -51,9 +51,11 @@ export enum LauncherPositionType {
 }
 
 export enum LauncherIconSource {
+  NONE = 'none',
   BUILTIN = 'builtin',
   UPLOAD = 'upload',
   URL = 'url',
+  INHERIT = 'inherit',
 }
 
 export type LauncherData = {

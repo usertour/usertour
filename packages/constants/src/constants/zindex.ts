@@ -23,6 +23,7 @@ export const PREVIEW_BASIC = 1;
 export enum WidgetZIndex {
   BASE = 1000000,
   TOUR_OFFSET = 200,
+  RESOURCE_CENTER_OFFSET = 150,
   CHECKLIST_OFFSET = 100,
   LAUNCHER_OFFSET = 0,
 }

@@ -20,6 +20,7 @@ import {
   ContentConfigObject,
   ChecklistData,
   ContentDataType,
+  ResourceCenterData,
   RulesCondition,
   ThemeVariation,
 } from '@usertour/types';
@@ -30,6 +31,7 @@ import {
   ConditionEvaluationService,
   ConditionEvaluationContext,
 } from './condition-evaluation.service';
+import { DISMISSED_EVENTS } from '@/utils/event-v2';
 
 // ============================================================================
 // Type Definitions
@@ -97,15 +99,6 @@ export class ContentDataService {
     BizEvents.FLOW_COMPLETED,
     BizEvents.LAUNCHER_ACTIVATED,
     BizEvents.CHECKLIST_COMPLETED,
-  ] as const;
-
-  /**
-   * Event code names for dismissed events
-   */
-  private static readonly DISMISSED_EVENTS = [
-    BizEvents.FLOW_ENDED,
-    BizEvents.LAUNCHER_DISMISSED,
-    BizEvents.CHECKLIST_DISMISSED,
   ] as const;
 
   /**
@@ -376,6 +369,7 @@ export class ContentDataService {
     // Find all published versions with content, filtered by contentTypes in Prisma query
     const publishedContents = await this.prisma.content.findMany({
       where: {
+        deleted: false,
         contentOnEnvironments: {
           some: {
             environmentId: environment.id,
@@ -547,9 +541,7 @@ export class ContentDataService {
       if (
         contentId &&
         eventCodeName &&
-        ContentDataService.DISMISSED_EVENTS.includes(
-          eventCodeName as (typeof ContentDataService.DISMISSED_EVENTS)[number],
-        ) &&
+        DISMISSED_EVENTS.includes(eventCodeName as (typeof DISMISSED_EVENTS)[number]) &&
         !latestDismissedEvents.has(contentId)
       ) {
         const { bizSession, ...eventWithEvent } = event;
@@ -769,6 +761,14 @@ export class ContentDataService {
         context,
       );
       return checklistData as unknown as JsonValue;
+    }
+    if (content.type === ContentDataType.RESOURCE_CENTER) {
+      const resourceCenterData =
+        await this.conditionEvaluationService.evaluateResourceCenterConditions(
+          version.data as unknown as ResourceCenterData,
+          context,
+        );
+      return resourceCenterData as unknown as JsonValue;
     }
     return version.data ?? null;
   }

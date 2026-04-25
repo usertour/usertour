@@ -35,7 +35,7 @@ export function createBizListContext<T>() {
 
   const defaultPagination = {
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 20,
   };
 
   function BizListProvider({
@@ -66,6 +66,7 @@ export function createBizListContext<T>() {
         query: { environmentId, ...queryState },
         orderBy: { field: 'createdAt', direction: 'desc' },
       },
+      skip: !environmentId,
       notifyOnNetworkStatusChange: true,
     });
 
@@ -126,8 +127,9 @@ export function createBizListContext<T>() {
     }, [bizList, currentPagination, dataProcessor]);
 
     useEffect(() => {
+      if (!environmentId) return;
       refetch();
-    }, [queryState, requestPagination]);
+    }, [queryState, requestPagination, environmentId]);
 
     const value: BizListContextValue<T> = {
       refetch,

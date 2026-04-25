@@ -33,16 +33,14 @@ export const AnalyticsSteps = () => {
     return <AnalyticsStepsSkeleton />;
   }
 
-  const hasExplicitGoalStep = analyticsData?.viewsByStep?.some(
-    (step) => step.explicitCompletionStep,
-  );
+  const viewsByStep = Array.isArray(analyticsData?.viewsByStep) ? analyticsData.viewsByStep : [];
+  const hasExplicitGoalStep = viewsByStep.some((step) => step.explicitCompletionStep);
 
   const isGoalStep = (step: AnalyticsViewsByStep, index: number) => {
     if (hasExplicitGoalStep) {
       return step.explicitCompletionStep;
     }
-    // If no explicit goal step, the last step is the goal step
-    return index === (analyticsData?.viewsByStep?.length ?? 0) - 1;
+    return index === viewsByStep.length - 1;
   };
 
   const handleOpenDialog = (step: AnalyticsViewsByStep) => {
@@ -86,11 +84,11 @@ export const AnalyticsSteps = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analyticsData?.viewsByStep ? (
-                analyticsData?.viewsByStep.map((step: AnalyticsViewsByStep, index) => {
+              {viewsByStep.length > 0 ? (
+                viewsByStep.map((step: AnalyticsViewsByStep, index) => {
                   const viewRate = calculateRate(
                     step.analytics.uniqueViews,
-                    analyticsData.uniqueViews,
+                    analyticsData?.uniqueViews ?? 0,
                   );
                   return (
                     <TableRow key={index}>

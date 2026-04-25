@@ -8,6 +8,8 @@ import {
   Environment,
   UserTourTypes,
   autoStartRulesSetting,
+  type RichTextLeaf,
+  type RichTextNode,
 } from '@usertour/types';
 import { deepmerge } from 'deepmerge-ts';
 import { isUndefined } from './type-utils';
@@ -179,4 +181,24 @@ const replaceUserAttr = (
   });
 };
 
-export { replaceUserAttr, extractLinkUrl };
+/**
+ * Serialize a RichTextNode[] (Slate) field to plain text.
+ * When userAttributes is provided, user-attribute nodes are resolved to actual values.
+ */
+const serializeBlockName = (
+  name: RichTextNode[] | string | undefined,
+  userAttributes?: UserTourTypes.Attributes,
+): string => {
+  if (!name) return '';
+  if (typeof name === 'string') return name;
+  const extract = (node: RichTextNode): string => {
+    if ('text' in node) return (node as RichTextLeaf).text;
+    if (node.type === 'user-attribute') {
+      return String(extractUserAttributeValue(node, userAttributes));
+    }
+    return node.children.map(extract).join('');
+  };
+  return name.map(extract).join('');
+};
+
+export { replaceUserAttr, extractLinkUrl, serializeBlockName };

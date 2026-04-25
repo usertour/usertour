@@ -24,6 +24,7 @@ import { VersionIdInput, VersionUpdateLocalizationInput } from './dto/version.in
 import { ContentConnection } from './models/content-connection.model';
 import { Content } from './models/content.model';
 import { Step } from './models/step.model';
+import { VersionConnection } from './models/version-connection.model';
 import { VersionOnLocalization } from './models/version-on-localization.model';
 import { Version } from './models/version.model';
 
@@ -107,10 +108,18 @@ export class ContentResolver {
     return { success: true };
   }
 
-  @Query(() => [Version])
+  @Query(() => VersionConnection)
   @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
-  async listContentVersions(@Args() { contentId }: ContentIdArgs) {
-    return await this.contentService.listContentVersions(contentId);
+  async listContentVersions(
+    @Args() { after, before, first, last }: PaginationArgs,
+    @Args() { contentId }: ContentIdArgs,
+  ) {
+    return await this.contentService.listContentVersions(contentId, {
+      first,
+      last,
+      before,
+      after,
+    });
   }
 
   @Mutation(() => Common)
@@ -247,6 +256,14 @@ export class ContentResolver {
     return this.prisma.step.findMany({
       where: { versionId: content.editedVersionId },
       orderBy: { sequence: 'asc' },
+    });
+  }
+
+  @ResolveField('editedVersion', () => Version, { nullable: true })
+  editedVersion(@Parent() content: Content) {
+    if (!content.editedVersionId) return null;
+    return this.prisma.version.findUnique({
+      where: { id: content.editedVersionId },
     });
   }
 }

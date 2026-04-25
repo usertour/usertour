@@ -36,7 +36,7 @@ export const ThemeSettingsAvatar = memo(() => {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="py-[15px] px-5 space-y-3">
+      <div className="py-4 px-5 space-y-3">
         <div className="space-y-2">
           {/* <span className="block text-sm">Avatar type</span> */}
           <AvatarTypeSelector

@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { UserIcon3 } from '@usertour-packages/icons';
+import { PlusIcon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Table } from '@tanstack/react-table';
 import { Segment } from '@usertour/types';
@@ -44,12 +44,8 @@ export const AddUserManualSegment = (props: AddUserManualSegmentProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="h-8 text-primary hover:text-primary px-1"
-          disabled={isAdding}
-        >
-          <UserIcon3 width={16} height={16} className="mr-1" />
+        <Button variant="ghost" className="h-8 px-2" disabled={isAdding}>
+          <PlusIcon className="mr-1 h-4 w-4" />
           {t('users.actions.addToManualSegment')}
         </Button>
       </DropdownMenuTrigger>

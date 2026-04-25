@@ -15,7 +15,6 @@
     "incremental": true,
     "strict": true,
     "inlineSources": true,
-    "baseUrl": "./",
     "rootDir": "./src",
     "sourceRoot": "/",
     "composite": true,

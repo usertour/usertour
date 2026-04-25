@@ -6,30 +6,54 @@ import {
   UnderlineTabsTrigger,
   UnderlineTabsContent,
 } from '@usertour-packages/tabs';
+import { cn } from '@usertour-packages/tailwind';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import { LauncherIconSource } from '@usertour/types';
+import { TAB_VALUES } from './constants';
 import { getActiveText } from './utils';
 import { useIconTab } from './hooks/use-icon-tab';
 import { IconTriggerButton } from './icon-trigger-button';
 import { BuiltinIconTab } from './builtin-icon-tab';
 import { UploadIconTab } from './upload-icon-tab';
 import { UrlIconTab } from './url-icon-tab';
-import type { LauncherIconTypeProps } from './types';
+import type { IconPickerProps } from './types';
 
-export const LauncherIconType = ({
+export const IconPicker = ({
   type,
   iconSource = LauncherIconSource.BUILTIN,
   iconUrl,
   zIndex,
+  showNoIcon = false,
+  showInherit = false,
   onChange,
-}: LauncherIconTypeProps) => {
+}: IconPickerProps) => {
   const [open, setOpen] = useState(false);
+  const hasBothExtraTabs = showNoIcon && showInherit;
+  const popoverWidthClassName = hasBothExtraTabs ? 'w-80' : 'w-72';
 
   const activeText = getActiveText(iconSource, type);
 
   const { activeTab, handleTabChange } = useIconTab({
     iconSource,
   });
+
+  const handleInherit = useCallback(() => {
+    onChange({
+      iconType: '',
+      iconSource: LauncherIconSource.INHERIT,
+      iconUrl: undefined,
+    });
+    setOpen(false);
+  }, [onChange]);
+
+  const handleNoIcon = useCallback(() => {
+    onChange({
+      iconType: '',
+      iconSource: LauncherIconSource.NONE,
+      iconUrl: undefined,
+    });
+    setOpen(false);
+  }, [onChange]);
 
   const handleIconSelect = useCallback(
     (selectedName: string) => {
@@ -75,6 +99,22 @@ export const LauncherIconType = ({
     });
   }, [onChange, type]);
 
+  const handleTabValueChange = useCallback(
+    (value: string) => {
+      if (value === TAB_VALUES.INHERIT) {
+        handleInherit();
+        return;
+      }
+      if (value === TAB_VALUES.NONE) {
+        handleNoIcon();
+        return;
+      }
+
+      handleTabChange(value);
+    },
+    [handleInherit, handleNoIcon, handleTabChange],
+  );
+
   return (
     <TooltipProvider>
       <Popover open={open} onOpenChange={setOpen}>
@@ -94,13 +134,31 @@ export const LauncherIconType = ({
             zIndex: zIndex + 1,
           }}
         >
-          <div className="bg-background p-4 rounded space-y-3 w-72">
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <div className={cn('bg-background space-y-3 rounded p-4', popoverWidthClassName)}>
+            <Tabs value={activeTab} onValueChange={handleTabValueChange}>
               <UnderlineTabsList>
-                <UnderlineTabsTrigger value="builtin">Built-in icon</UnderlineTabsTrigger>
-                <UnderlineTabsTrigger value="upload">Upload icon</UnderlineTabsTrigger>
-                <UnderlineTabsTrigger value="url">Enter URL</UnderlineTabsTrigger>
+                {showInherit && (
+                  <UnderlineTabsTrigger value="inherit">Default</UnderlineTabsTrigger>
+                )}
+                <UnderlineTabsTrigger value="builtin">Built-in</UnderlineTabsTrigger>
+                <UnderlineTabsTrigger value="upload">Upload</UnderlineTabsTrigger>
+                <UnderlineTabsTrigger value="url">URL</UnderlineTabsTrigger>
+                {showNoIcon && <UnderlineTabsTrigger value="none">None</UnderlineTabsTrigger>}
               </UnderlineTabsList>
+              {showInherit && (
+                <UnderlineTabsContent value="inherit">
+                  <div className="py-4 text-center text-sm text-muted-foreground">
+                    Uses the list's default icon for this content type.
+                  </div>
+                </UnderlineTabsContent>
+              )}
+              {showNoIcon && (
+                <UnderlineTabsContent value="none">
+                  <div className="py-4 text-center text-sm text-muted-foreground">
+                    No icon will be displayed for this item.
+                  </div>
+                </UnderlineTabsContent>
+              )}
               <UnderlineTabsContent value="builtin">
                 <BuiltinIconTab selectedType={type} onIconSelect={handleIconSelect} />
               </UnderlineTabsContent>
@@ -127,4 +185,4 @@ export const LauncherIconType = ({
     </TooltipProvider>
   );
 };
-LauncherIconType.displayName = 'LauncherIconType';
+IconPicker.displayName = 'IconPicker';

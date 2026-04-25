@@ -49,7 +49,7 @@ export const RulesWait = (props: RulesCurrentTimeProps) => {
           </RulesErrorAnchor>
           <div className="text-muted-foreground text-sm">second before starting</div>
           <QuestionTooltip className="ml-1" contentClassName="max-w-sm">
-            Condition must stay true while waiting
+            The conditions must keep matching for the entire wait.
           </QuestionTooltip>
         </div>
         <RulesErrorContent className="w-60" zIndex={errorZIndex}>

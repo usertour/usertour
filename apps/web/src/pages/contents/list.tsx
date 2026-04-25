@@ -131,6 +131,22 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
       <ContentCreateForm contentType={ContentDataType.TRACKER} isOpen={isOpen} onClose={onClose} />
     ),
   },
+  'resource-centers': {
+    title: 'Resource Centers',
+    description: (
+      <ContentDescription text="A Resource Center provides a centralized hub for users to access help, guides, checklists, and more — all from a single launcher button." />
+    ),
+    emptyTitle: 'No resource centers added',
+    emptyDescription: 'You have not added any resource centers. Add one below.',
+    createButtonText: 'Create Resource Center',
+    createForm: ({ isOpen, onClose }) => (
+      <ContentCreateForm
+        contentType={ContentDataType.RESOURCE_CENTER}
+        isOpen={isOpen}
+        onClose={onClose}
+      />
+    ),
+  },
 };
 
 // Support 'content' as alias for 'flows'

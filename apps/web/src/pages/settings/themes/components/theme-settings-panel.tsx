@@ -2,6 +2,7 @@ import { Attribute, ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { convertSettings } from '@/utils/convert-settings';
 import * as Accordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { Card } from '@usertour-packages/card';
 import { GoogleFontCss } from '@usertour-packages/shared-components';
 import { cn } from '@usertour-packages/tailwind';
 import { createContext, forwardRef, useContext, useMemo, useCallback, ReactNode } from 'react';
@@ -24,6 +25,8 @@ import { ThemeSettingsXbutton } from './settings/theme-settings-xbutton';
 import { ThemeSettingsBubble } from './settings/theme-settings-bubble';
 import { ThemeSettingsAvatar } from './settings/theme-settings-avatar';
 import { ThemeSettingsBanner } from './settings/theme-settings-banner';
+import { ThemeSettingsResourceCenter } from './settings/theme-settings-resource-center';
+import { ThemeSettingsResourceCenterLauncher } from './settings/theme-settings-resource-center-launcher';
 import { ConditionalVariationsPanel } from './conditional-variations-panel';
 
 const AccordionItem = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
@@ -43,7 +46,7 @@ const AccordionTrigger = forwardRef(({ children, className, ...props }: any, for
   <Accordion.Header className="flex">
     <Accordion.Trigger
       className={cn(
-        'text-foreground bg-white hover:bg-blue-50 data-[state=open]:bg-blue-50 group flex flex-1 items-center justify-between px-5 text-[15px] leading-none h-[45px] outline-none cursor-pointer',
+        'text-foreground bg-white hover:bg-blue-50 data-[state=open]:bg-blue-50 group flex flex-1 items-center justify-between px-5 text-sm leading-none h-10 outline-none cursor-pointer',
         className,
       )}
       {...props}
@@ -61,7 +64,7 @@ const AccordionTrigger = forwardRef(({ children, className, ...props }: any, for
 const AccordionContent = forwardRef(({ children, className, ...props }: any, forwardedRef) => (
   <Accordion.Content
     className={cn(
-      'text-foreground bg-background data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-hidden text-[15px]',
+      'text-foreground bg-background data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp overflow-hidden text-base',
       className,
     )}
     {...props}
@@ -129,9 +132,9 @@ export const ThemeSettingsPanel = ({
   return (
     <ThemeSettingsContext.Provider value={value}>
       <GoogleFontCss settings={settings} />
-      <div className={cn('shadow bg-white rounded-lg w-[350px]', className)}>
+      <Card className={cn('w-[350px]', className)}>
         <Accordion.Root type="multiple">{children}</Accordion.Root>
-      </div>
+      </Card>
     </ThemeSettingsContext.Provider>
   );
 };
@@ -224,6 +227,18 @@ export const ThemeSettingsAccordionContent = () => (
       <AccordionTrigger>Checklist launcher</AccordionTrigger>
       <AccordionContent>
         <ThemeSettingsChecklistLauncher />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="resource-center">
+      <AccordionTrigger>Resource center</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsResourceCenter />
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="resource-center-launcher">
+      <AccordionTrigger>Resource center launcher</AccordionTrigger>
+      <AccordionContent>
+        <ThemeSettingsResourceCenterLauncher />
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="launcher-beacon">

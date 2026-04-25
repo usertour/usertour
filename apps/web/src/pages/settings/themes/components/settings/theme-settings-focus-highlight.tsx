@@ -12,7 +12,7 @@ export const ThemeSettingsFocusHighlight = () => {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="py-[15px] px-5">
+      <div className="py-4 px-5">
         <div className="flex flex-col space-y-3">
           <ThemeSelectColor
             name="focus-highlight-color"

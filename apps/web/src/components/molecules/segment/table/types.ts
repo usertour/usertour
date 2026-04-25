@@ -1,7 +1,7 @@
 'use client';
 
 import { ColumnDef, Table, Updater } from '@tanstack/react-table';
-import { Segment } from '@usertour/types';
+import { ColumnSetting, Segment } from '@usertour/types';
 
 // Generic table props interface
 export interface DataTableProps<TData> {
@@ -33,6 +33,10 @@ export interface DataTableProps<TData> {
   columnVisibility: Record<string, boolean>;
   onColumnVisibilityChange: (updaterOrValue: Updater<Record<string, boolean>>) => void;
 
+  // Column order
+  columnOrder?: string[];
+  onColumnOrderChange?: (updaterOrValue: Updater<string[]>) => void;
+
   // Filtering
   columnFilters: Array<{ id: string; value: unknown }>;
   onColumnFiltersChange: (updaterOrValue: Updater<Array<{ id: string; value: unknown }>>) => void;
@@ -63,7 +67,6 @@ export interface DataTablePaginationProps<TData extends { id: string }> {
 
 // Column header props interface
 export interface DataTableColumnHeaderProps {
-  column: any;
   title: string;
   className?: string;
 }
@@ -71,7 +74,8 @@ export interface DataTableColumnHeaderProps {
 // View options props interface
 export interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
-  onColumnVisibilityChange?: (columnId: string, visible: boolean) => Promise<void>;
+  // Called with the full ColumnSetting[] (ordered) on every toggle/reorder; caller persists it.
+  onColumnsChange?: (columns: ColumnSetting[]) => Promise<void> | void;
   disabled?: boolean;
 }
 
@@ -97,7 +101,5 @@ export interface DynamicColumnConfig {
 
 // Table styles constants
 export enum TableStyles {
-  CELL_CONSTRAINED = 'min-w-24 max-w-72 truncate',
-  HEADER_CONSTRAINED = 'min-w-24 max-w-72 truncate',
   SKELETON_ROWS = 5,
 }

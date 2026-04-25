@@ -1,12 +1,13 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useApolloClient, useQuery } from '@apollo/client';
 import { queryTrackerUsers } from '@usertour-packages/gql';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { Button } from '@usertour-packages/button';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useToast } from '@usertour-packages/use-toast';
 import {
   Table,
@@ -298,7 +299,13 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
     <Card>
       <CardHeader>
         <CardTitle className="space-between flex flex-row items-center">
-          <div className="grow">Users that tracked this event</div>
+          <div className="grow flex items-center gap-1">
+            Users
+            <QuestionTooltip>
+              Users who triggered this tracker event in the selected date range. "First tracked" and
+              "Last tracked" are their earliest and latest events; "Events" is the total count.
+            </QuestionTooltip>
+          </div>
           <Button
             variant="ghost"
             className="h-8 text-primary hover:text-primary"
@@ -346,7 +353,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                       <TableRow key={user.id} className="h-10">
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <UserAvatar email={email} name={name} size="sm" />
+                            <DefaultAvatar seed={externalId || email} name={name} size="sm" />
                             <div className="flex flex-col">
                               <div className="flex items-center gap-1">
                                 <Link

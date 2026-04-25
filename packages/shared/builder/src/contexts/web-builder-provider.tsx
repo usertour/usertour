@@ -11,6 +11,7 @@ import { BannerProvider } from './banner-context';
 import { BuilderProvider } from './builder-context';
 import { ChecklistProvider } from './checklist-context';
 import { LauncherProvider } from './launcher-context';
+import { ResourceCenterProvider } from './resource-center-context';
 
 export interface WebBuilderProviderProps {
   children: ReactNode;
@@ -60,22 +61,24 @@ export function WebBuilderProvider(props: WebBuilderProviderProps): JSX.Element 
       <BannerProvider>
         <LauncherProvider>
           <ChecklistProvider>
-            <ThemeListProvider projectId={projectId}>
-              <AttributeListProvider projectId={projectId}>
-                <ContentListProvider
-                  environmentId={environmentId}
-                  key={'environmentId'}
-                  contentType={undefined}
-                  defaultQuery={{}}
-                  defaultPagination={{
-                    pageSize: 1000,
-                    pageIndex: 0,
-                  }}
-                >
-                  <WebBuilderContent>{children}</WebBuilderContent>
-                </ContentListProvider>
-              </AttributeListProvider>
-            </ThemeListProvider>
+            <ResourceCenterProvider>
+              <ThemeListProvider projectId={projectId}>
+                <AttributeListProvider projectId={projectId}>
+                  <ContentListProvider
+                    environmentId={environmentId}
+                    key={'environmentId'}
+                    contentType={undefined}
+                    defaultQuery={{}}
+                    defaultPagination={{
+                      pageSize: 1000,
+                      pageIndex: 0,
+                    }}
+                  >
+                    <WebBuilderContent>{children}</WebBuilderContent>
+                  </ContentListProvider>
+                </AttributeListProvider>
+              </ThemeListProvider>
+            </ResourceCenterProvider>
           </ChecklistProvider>
         </LauncherProvider>
       </BannerProvider>

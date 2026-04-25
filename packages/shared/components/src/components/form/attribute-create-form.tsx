@@ -147,15 +147,15 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex flex-row">
-                        Objet type
+                        Object type
                         <QuestionTooltip className="ml-1">
-                          Determines which kind of objects this attribute can be set for.
+                          The entity this attribute belongs to: User, Company, Membership, or Event.
                         </QuestionTooltip>
                       </FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="w-72">
-                            <SelectValue placeholder="Select a object type" />
+                            <SelectValue placeholder="Select an object type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="w-72">
@@ -197,7 +197,8 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
                       <FormLabel className="flex flex-row">
                         Data type
                         <QuestionTooltip className="ml-1">
-                          Determines what kind of values will be stored in this attribute.
+                          The value type stored in this attribute. Determines serialization and
+                          filter operators.
                         </QuestionTooltip>
                       </FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -230,8 +231,8 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
                       <FormLabel className="flex flex-row">
                         Display name
                         <QuestionTooltip className="ml-1">
-                          Human-friendly name shown in Usertour. we recommend using Word Case
-                          (i.e.uppercasefrst letter, spaces between words) such as"Billing Plan".
+                          Human-friendly name shown across the Usertour dashboard. e.g. "Billing
+                          Plan".
                         </QuestionTooltip>
                       </FormLabel>
                       <FormControl>
@@ -250,9 +251,8 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
                       <FormLabel className="flex flex-row">
                         Code name
                         <QuestionTooltip className="ml-1">
-                          Code-friendly name used in Webhooks and integrations to analytics
-                          providers. we recommend using snake_case (i.e. lowercaseletters with words
-                          separated by underscore).
+                          Code-friendly identifier used throughout Usertour to reference this
+                          attribute. e.g. "billing_plan".
                         </QuestionTooltip>
                       </FormLabel>
                       <FormControl>
@@ -269,12 +269,7 @@ export const AttributeCreateForm = ({ onClose, isOpen, projectId }: CreateFormPr
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex flex-row">
-                      Description
-                      <QuestionTooltip className="ml-1">
-                        Put any additional information for your own reference here.
-                      </QuestionTooltip>
-                    </FormLabel>
+                    <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Input placeholder="Optional description" className="w-full" {...field} />
                     </FormControl>

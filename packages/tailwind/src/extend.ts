@@ -13,6 +13,8 @@ export const extendSdk = {
       progress: 'var(--usertour-progress-bar-color)',
       question: 'hsl(var(--usertour-question-color))',
       brand: {
+        background: 'hsl(var(--usertour-brand-background-color))',
+        foreground: 'hsl(var(--usertour-brand-foreground-color))',
         hover: 'hsl(var(--usertour-brand-hover-background-color))',
         active: 'hsl(var(--usertour-brand-active-background-color))',
       },
@@ -24,6 +26,14 @@ export const extendSdk = {
         'trigger-font': 'hsl(var(--usertour-checklist-trigger-font-color))',
         'trigger-hover-background': 'var(--usertour-checklist-trigger-hover-background-color)',
         checkmark: 'var(--usertour-checkmark-background-color)',
+      },
+      'resource-center': {
+        launcher: {
+          background: 'hsl(var(--usertour-resource-center-launcher-background-color))',
+          hover: 'hsl(var(--usertour-resource-center-launcher-hover-background-color))',
+          active: 'hsl(var(--usertour-resource-center-launcher-active-background-color))',
+          foreground: 'hsl(var(--usertour-resource-center-launcher-foreground-color))',
+        },
       },
       banner: {
         DEFAULT: 'hsl(var(--usertour-banner-background-color))',
@@ -59,10 +69,11 @@ export const extendSdk = {
   },
   borderRadius: {
     'sdk-checklist-trigger': 'var(--usertour-checklist-trigger-border-radius)',
+    'sdk-resource-center-launcher': 'var(--usertour-resource-center-launcher-border-radius)',
     'sdk-lg': 'var(--usertour-radius)',
     'sdk-md': 'calc(var(--usertour-radius) - 2px)',
     'sdk-sm': 'calc(var(--usertour-radius) - 4px)',
-    'sdk-popper': 'var(--usertour-popper-radius)',
+    'sdk-popper': 'var(--usertour-widget-popper-border-radius)',
     'sdk-button': 'var(--usertour-button-border-radius)',
     'sdk-xs': 'calc(var(--usertour-font-size) * 0.25)',
   },
@@ -83,9 +94,16 @@ export const extendSdk = {
       active: 'var(--usertour-secondary-border-active)',
     },
   },
+  margin: {
+    'sdk-resource-center-launcher-gap':
+      'calc(var(--usertour-resource-center-launcher-height) / 7.5)',
+    'sdk-resource-center-launcher-divider':
+      'calc(var(--usertour-resource-center-launcher-height) / 3.75)',
+  },
   padding: {
     'sdk-button-x': 'var(--usertour-button-px)',
     'sdk-banner': 'var(--usertour-banner-padding, 8px)',
+    'sdk-resource-center-launcher': 'calc(var(--usertour-resource-center-launcher-height) / 4)',
     // Button vertical padding: centers text within button height accounting for borders
     // Formula: (button-height - font-size) / 2 - border-width
     'sdk-btn-primary-y':
@@ -100,6 +118,7 @@ export const extendSdk = {
   height: {
     'sdk-font-size': 'var(--usertour-font-size)',
     'sdk-line-height': 'var(--usertour-line-height)',
+    'sdk-resource-center-header-button': 'calc(var(--usertour-line-height) + 1rem)',
     'sdk-button': 'var(--usertour-button-height)',
     'sdk-progress': 'var(--usertour-progress-bar-height)',
     'sdk-narrow-progress': 'var(--usertour-narrow-progress-bar-height)',
@@ -117,6 +136,7 @@ export const extendSdk = {
   },
   minWidth: {
     'sdk-button': 'var(--usertour-button-min-width)',
+    'sdk-resource-center': 'var(--usertour-resource-center-width)',
   },
   minHeight: {
     'sdk-line-height': 'var(--usertour-line-height)',
@@ -132,22 +152,18 @@ export const extendSdk = {
     'sdk-sm': 'calc(var(--usertour-font-size) * 0.875)',
     'sdk-numbered-progress': 'var(--usertour-numbered-progress-bar-height)',
   },
+  transitionDuration: {
+    'sdk-resource-center': 'var(--usertour-resource-center-transition-duration)',
+  },
   fontWeight: {
     'sdk-normal': 'var(--usertour-font-weight)',
     'sdk-bold': 'var(--usertour-font-weight-bold)',
     'sdk-primary': 'var(--usertour-primary-font-weight)',
     'sdk-secondary': 'var(--usertour-secondary-font-weight)',
     'sdk-checklist-trigger': 'var(--usertour-checklist-trigger-font-weight)',
+    'sdk-resource-center-launcher': 'var(--usertour-resource-center-launcher-font-weight)',
   },
   keyframes: {
-    'accordion-down': {
-      from: { height: 0 },
-      to: { height: 'var(--radix-accordion-content-height)' },
-    },
-    'accordion-up': {
-      from: { height: 'var(--radix-accordion-content-height)' },
-      to: { height: 0 },
-    },
     'pop-scale': {
       '0%': { transform: 'scale(1)' },
       '33%': { transform: 'scale(0.75)' },
@@ -156,8 +172,6 @@ export const extendSdk = {
     },
   },
   animation: {
-    'accordion-down': 'accordion-down 0.2s ease-out',
-    'accordion-up': 'accordion-up 0.2s ease-out',
     'pop-scale': 'pop-scale 500ms ease-out',
   },
 };

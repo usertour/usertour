@@ -2,23 +2,30 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
-import { UserIcon, UserProfile, Delete2Icon } from '@usertour-packages/icons';
-import { AttributeBizTypes, AttributeDataType, BizUser } from '@usertour/types';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {
+  CalendarIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  DotsHorizontalIcon,
+  EnvelopeClosedIcon,
+  IdCardIcon,
+} from '@radix-ui/react-icons';
+import { CompanyIcon, Delete2Icon } from '@usertour-packages/icons';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
+import {
+  AttributeBizTypes,
+  AttributeDataType,
+  BizUser,
+  BizUserOnCompany,
+  UserAttributes,
+} from '@usertour/types';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserSessions } from '../sessions';
 import { UserCompaniesTab } from '../companies';
 import { ActivityFeed } from '@/components/molecules/activity-feed';
 import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';
-import { IdCardIcon, EnvelopeClosedIcon, CalendarIcon, PersonIcon } from '@radix-ui/react-icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { Button } from '@usertour-packages/button';
 import {
@@ -27,53 +34,33 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@usertour-packages/toggle';
 import {
-  Tabs,
-  UnderlineTabsList,
-  UnderlineTabsTrigger,
-  UnderlineTabsContent,
-} from '@usertour-packages/tabs';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import { BizUserDeleteDialog } from '../dialogs';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 
+const COMPANY_CHIP_VISIBLE_LIMIT = 3;
+
+type ActivityView = 'events' | 'sessions' | 'companies';
+
 interface UserDetailContentProps {
   environmentId: string;
   userId: string;
 }
 
-// TooltipIcon component to reduce repetitive code
-const TooltipIcon = ({
-  icon: Icon,
-  tooltipKey,
-  className = 'w-4 h-4 text-foreground/60 cursor-help',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  tooltipKey: string;
-  className?: string;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Icon className={className} />
-        </TooltipTrigger>
-        <TooltipContent>{t(tooltipKey)}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
-// Loading wrapper component to handle all loading states
 const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
   const { loading: userListLoading } = useUserListContext();
   const { loading: eventListLoading } = useEventListContext();
   const { loading: attributeListLoading } = useAttributeListContext();
 
-  // Check if any provider is still loading
   const isLoading = userListLoading || eventListLoading || attributeListLoading;
 
   if (isLoading) {
@@ -83,7 +70,42 @@ const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailConte
   return <UserDetailContentInner environmentId={environmentId} userId={userId} />;
 };
 
-// Inner component that handles the actual content rendering
+const CompanyChips = ({
+  memberships,
+  environmentId,
+}: { memberships: BizUserOnCompany[]; environmentId: string }) => {
+  const { t } = useTranslation();
+  const visible = memberships.slice(0, COMPANY_CHIP_VISIBLE_LIMIT);
+  const overflow = memberships.length - visible.length;
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      {visible.map((membership) => {
+        const company = membership.bizCompany;
+        if (!company) {
+          return null;
+        }
+        const label = company.data?.name || company.externalId;
+        return (
+          <Link
+            key={company.id}
+            to={`/env/${environmentId}/company/${company.id}`}
+            className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-0.5 text-xs text-foreground/80 transition-colors hover:bg-muted"
+          >
+            <CompanyIcon width={12} height={12} className="shrink-0 text-foreground/60" />
+            <span className="max-w-[160px] truncate">{label}</span>
+          </Link>
+        );
+      })}
+      {overflow > 0 && (
+        <span className="text-xs text-muted-foreground">
+          {t('users.detail.companiesChip.moreCount', { count: overflow })}
+        </span>
+      )}
+    </div>
+  );
+};
+
 const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProps) => {
   const navigator = useNavigate();
   const { contents } = useUserListContext();
@@ -91,6 +113,7 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [activityView, setActivityView] = useState<ActivityView>('events');
   const { isViewOnly } = useAppContext();
   const copyWithToast = useCopyWithToast();
   const { t } = useTranslation();
@@ -122,7 +145,6 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           });
         }
       }
-      // Sort attributes by name in alphabetical order (a-z)
       attrs.sort((a, b) => {
         const nameA = (a.name || '').toLowerCase();
         const nameB = (b.name || '').toLowerCase();
@@ -131,6 +153,8 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
       setBizUserAttributes(attrs);
     }
   }, [bizUser, attributeList]);
+
+  const memberships = useMemo(() => bizUser?.bizUsersOnCompany ?? [], [bizUser?.bizUsersOnCompany]);
 
   const handleDeleteSuccess = async () => {
     navigator(`/env/${environmentId}/users`);
@@ -147,16 +171,23 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
 
   return (
     <>
-      <div className="border-b bg-white flex-row md:flex w-full fixed justify-between items-center">
-        <div className="flex h-16 items-center px-4 w-full">
-          <ArrowLeftIcon
-            className="ml-4 h-6 w-8 cursor-pointer"
-            onClick={() => {
-              navigator(`/env/${environmentId}/users`);
-            }}
-          />
-          <span>{t('users.detail.title')}</span>
-          <div className="ml-auto">
+      <div className="border-b bg-white flex-row md:flex w-full sticky top-0 z-10 justify-between items-center">
+        <div className="flex h-16 items-center px-4 w-full gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => navigator(`/env/${environmentId}/users`)}
+            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
+          >
+            {t('users.detail.breadcrumb')}
+          </button>
+          <ChevronRightIcon className="h-4 w-4 text-muted-foreground/60 shrink-0" />
+          <span className="text-sm font-medium truncate min-w-0">
+            {(bizUser?.data as any)?.name ||
+              (bizUser?.data as any)?.email ||
+              bizUser?.externalId ||
+              t('users.detail.unnamedUser')}
+          </span>
+          <div className="ml-auto shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
@@ -178,174 +209,161 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
           </div>
         </div>
       </div>
-      <div className="mx-auto mt-12 flex w-full max-w-[1600px] flex-col gap-6 p-14 xl:flex-row xl:items-start xl:justify-center">
-        {/* Left column - primary content */}
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-lg font-normal">
-                <UserIcon width={18} height={18} className="mr-2 text-foreground/80" />
-                {t('users.detail.userDetails')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-x-16 gap-y-4 md:grid-cols-2">
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={IdCardIcon} tooltipKey="users.detail.tooltips.userId" />
-                  <span className="flex-1 min-w-0 truncate">{bizUser?.externalId || ''}</span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizUser?.externalId || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={EnvelopeClosedIcon} tooltipKey="users.detail.tooltips.email" />
-                  <span className="flex-1 min-w-0 truncate">{bizUser?.data?.email || ''}</span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizUser?.data?.email || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={PersonIcon} tooltipKey="users.detail.tooltips.name" />
-                  <span className="flex-1 min-w-0 truncate">
-                    {bizUser?.data?.name || t('users.detail.unnamedUser')}
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-6 xl:p-8">
+        {/* Identity header */}
+        <div className="flex items-start gap-4 px-1">
+          <DefaultAvatar
+            seed={bizUser?.externalId || (bizUser?.data as any)?.email || ''}
+            name={(bizUser?.data as any)?.name}
+            size="lg"
+          />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-semibold text-foreground truncate">
+              {(bizUser?.data as any)?.name ||
+                (bizUser?.data as any)?.email ||
+                bizUser?.externalId ||
+                t('users.detail.unnamedUser')}
+            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {(bizUser?.data as any)?.email && (
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <EnvelopeClosedIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{(bizUser?.data as any)?.email}</span>
+                </span>
+              )}
+              {bizUser?.externalId && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex min-w-0 items-center gap-1.5 cursor-help">
+                        <IdCardIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{bizUser.externalId}</span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('users.detail.externalIdTooltip')}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {(() => {
+                const userData = bizUser?.data as Record<string, unknown> | undefined;
+                const lastSeen =
+                  (userData?.[UserAttributes.LAST_SEEN_AT] as string | undefined) ||
+                  bizUser?.createdAt;
+                if (!lastSeen) return null;
+                return (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {t('users.detail.lastSeen')}{' '}
+                      {formatAttributeValue(lastSeen, AttributeDataType.DateTime)}
+                    </span>
                   </span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizUser?.data?.name || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={CalendarIcon} tooltipKey="users.detail.tooltips.created" />
-                  {bizUser?.createdAt ? (
-                    <TruncatedText
-                      text={formatAttributeValue(bizUser.createdAt, AttributeDataType.DateTime)}
-                      className="flex-1 min-w-0 truncate"
-                      rawValue={bizUser.createdAt}
-                    />
-                  ) : (
-                    <span className="flex-1 min-w-0 truncate">-</span>
-                  )}
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizUser?.createdAt || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <Tabs defaultValue="activity-feed">
-                <UnderlineTabsList className="justify-start">
-                  <UnderlineTabsTrigger value="activity-feed" className="text-base font-medium">
-                    {t('users.detail.tabs.activityFeed')}
-                  </UnderlineTabsTrigger>
-                  <UnderlineTabsTrigger value="sessions" className="text-base font-medium">
-                    {t('users.detail.tabs.sessions')}
-                  </UnderlineTabsTrigger>
-                  <UnderlineTabsTrigger value="companies" className="text-base font-medium">
-                    {t('users.detail.tabs.companies')}
-                    {bizUser?.bizUsersOnCompany && bizUser.bizUsersOnCompany.length > 0 && (
-                      <span className="ml-1">({bizUser.bizUsersOnCompany.length})</span>
-                    )}
-                  </UnderlineTabsTrigger>
-                </UnderlineTabsList>
-
-                <UnderlineTabsContent value="activity-feed">
-                  {bizUser && (
-                    <UserActivityFeedProvider environmentId={environmentId} userId={bizUser.id}>
-                      <ActivityFeed environmentId={environmentId} />
-                    </UserActivityFeedProvider>
-                  )}
-                </UnderlineTabsContent>
-
-                <UnderlineTabsContent value="sessions">
-                  {bizUser?.externalId && (
-                    <UserSessions
-                      environmentId={environmentId}
-                      externalUserId={bizUser.externalId}
-                    />
-                  )}
-                </UnderlineTabsContent>
-
-                <UnderlineTabsContent value="companies">
-                  {bizUser && <UserCompaniesTab bizUser={bizUser} environmentId={environmentId} />}
-                </UnderlineTabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+                );
+              })()}
+            </div>
+            {memberships.length > 0 && (
+              <CompanyChips memberships={memberships} environmentId={environmentId} />
+            )}
+          </div>
         </div>
 
-        {/* Right column - supporting attributes */}
-        <div className="w-full flex-none xl:w-[550px]">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-lg font-normal">
-                <UserProfile width={18} height={18} className="mr-2 text-foreground/80" />
-                {t('users.detail.userAttributes')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {bizUserAttributes.map(({ name, value, dataType }, key) => {
-                const formattedValue = formatAttributeValue(value, dataType);
-                const isDateTime = dataType === AttributeDataType.DateTime;
-                const textToCopy = String(isDateTime ? value : formattedValue);
+        {/* Two-column content area */}
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+          {/* Left column - primary content */}
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
+                <CardTitle className="text-sm font-semibold">
+                  {t('users.detail.activity.title')}
+                </CardTitle>
+                <ToggleGroup
+                  type="single"
+                  value={activityView}
+                  onValueChange={(value) => {
+                    if (value === 'events' || value === 'sessions' || value === 'companies') {
+                      setActivityView(value);
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ToggleGroupItem value="events">
+                    {t('users.detail.activity.events')}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="sessions">
+                    {t('users.detail.activity.sessions')}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="companies">
+                    {t('users.detail.activity.companies')}
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </CardHeader>
+              <CardContent>
+                {activityView === 'events' && (
+                  <UserActivityFeedProvider environmentId={environmentId} userId={bizUser.id}>
+                    <ActivityFeed environmentId={environmentId} />
+                  </UserActivityFeedProvider>
+                )}
+                {activityView === 'sessions' && bizUser?.externalId && (
+                  <UserSessions environmentId={environmentId} externalUserId={bizUser.externalId} />
+                )}
+                {activityView === 'companies' && (
+                  <UserCompaniesTab bizUser={bizUser} environmentId={environmentId} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-                return (
-                  <div
-                    className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
-                    key={key}
-                  >
-                    <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
-                      {name}
-                    </div>
-                    <div className="w-3/5 min-w-0 break-words p-2 leading-6">
-                      {isDateTime ? (
-                        <TruncatedText
-                          text={formattedValue}
-                          className="max-w-full"
-                          rawValue={value}
-                        />
-                      ) : (
-                        formattedValue
-                      )}
-                    </div>
-                    <Button
-                      variant={'ghost'}
-                      size={'icon'}
-                      className="m-2 h-6 w-6 rounded invisible flex-shrink-0 group-hover:visible"
-                      onClick={() => copyWithToast(textToCopy)}
+          {/* Right column - supporting attributes (sticky on xl) */}
+          <div className="w-full flex-none xl:sticky xl:top-20 xl:w-[420px] xl:self-start">
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-sm font-semibold">
+                  {t('users.detail.userAttributes')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {bizUserAttributes.map(({ name, value, dataType }, key) => {
+                  const formattedValue = formatAttributeValue(value, dataType);
+                  const isDateTime = dataType === AttributeDataType.DateTime;
+                  const textToCopy = String(isDateTime ? value : formattedValue);
+
+                  return (
+                    <div
+                      className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
+                      key={key}
                     >
-                      <CopyIcon className="w-4 h-4" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
+                      <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
+                        {name}
+                      </div>
+                      <div className="w-3/5 min-w-0 break-words p-2 leading-6">
+                        {isDateTime ? (
+                          <TruncatedText
+                            text={formattedValue}
+                            className="max-w-full"
+                            rawValue={value}
+                          />
+                        ) : (
+                          formattedValue
+                        )}
+                      </div>
+                      <Button
+                        variant={'ghost'}
+                        size={'icon'}
+                        className="m-2 h-6 w-6 rounded invisible flex-shrink-0 group-hover:visible"
+                        onClick={() => copyWithToast(textToCopy)}
+                      >
+                        <CopyIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
-      {/* Delete Dialog */}
       <BizUserDeleteDialog
         bizUserIds={bizUser ? [bizUser.id] : []}
         open={showDeleteDialog}
@@ -356,7 +374,6 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   );
 };
 
-// Main export component
 export function UserDetailContent(props: UserDetailContentProps) {
   return <UserDetailContentWithLoading {...props} />;
 }

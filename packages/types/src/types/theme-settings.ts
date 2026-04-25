@@ -1,5 +1,57 @@
 import { ContentModalPlacementData, ModalPosition } from './contents';
 
+// ============================================================================
+// Resource Center Theme Settings (migrated from resource-center.ts)
+// ============================================================================
+
+export type ResourceCenterPlacement = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
+export type ResourceCenterHeaderBackgroundType = 'none' | 'color' | 'gradient' | 'image';
+
+export type ResourceCenterHeaderBackground = {
+  type: ResourceCenterHeaderBackgroundType;
+  color: string;
+  gradientFrom: string;
+  gradientTo: string;
+  imageUrl: string;
+};
+
+export type ResourceCenterThemeSettings = {
+  placement: ResourceCenterPlacement;
+  offsetX: number;
+  offsetY: number;
+  normalWidth: number;
+  largeWidth: number;
+  maxHeight?: number;
+  zIndex?: number;
+  transitionDuration: number;
+  dividerLines: boolean;
+  headerBackground: ResourceCenterHeaderBackground;
+  logoUrl: string;
+};
+
+export type ResourceCenterLauncherIconType =
+  | 'default-question-mark'
+  | 'plaintext-question-mark'
+  | 'custom';
+
+export type ResourceCenterLauncherTextMode = 'resource-center-text' | 'no-text';
+
+export type ResourceCenterLauncherButtonThemeSettings = {
+  iconType: ResourceCenterLauncherIconType;
+  iconUrl?: string;
+  height: number;
+  imageHeight: number;
+  borderRadius: number | null;
+  textMode: ResourceCenterLauncherTextMode;
+  color: {
+    background: string;
+    hover: string;
+    active: string;
+    foreground: string;
+  };
+};
+
 export enum ProgressBarType {
   FULL_WIDTH = 'full-width',
   NARROW = 'narrow',
@@ -30,6 +82,8 @@ export enum ModalBackdropClickBehavior {
   DO_NOTHING = 'do-nothing',
   DISMISS_FLOW = 'dismiss-flow',
 }
+
+export type BannerAnimationTiming = 'smooth' | 'snappy' | 'gentle' | 'linear';
 
 export type ThemeTypesSettingsColor = {
   background: string;
@@ -113,6 +167,8 @@ export type ThemeTypesSetting = {
     backgroundColor: ThemeTypesSettingsColor;
     textColor: ThemeTypesSettingsColor;
     padding: number;
+    animationDuration: number;
+    animationTiming: BannerAnimationTiming;
   };
   checklistLauncher: {
     borderRadius: number;
@@ -169,6 +225,8 @@ export type ThemeTypesSetting = {
     url?: string;
     name?: string;
   };
+  resourceCenter?: ResourceCenterThemeSettings;
+  resourceCenterLauncherButton?: ResourceCenterLauncherButtonThemeSettings;
 };
 
 export const defaultSettings: ThemeTypesSetting = {
@@ -312,6 +370,8 @@ export const defaultSettings: ThemeTypesSetting = {
       active: 'Auto',
     },
     padding: 8,
+    animationDuration: 320,
+    animationTiming: 'smooth',
   },
   mainColor: {
     color: '#0f172a',
@@ -406,6 +466,36 @@ export const defaultSettings: ThemeTypesSetting = {
     size: 60,
     url: '',
     name: 'alex',
+  },
+  resourceCenter: {
+    placement: 'bottom-right',
+    offsetX: 20,
+    offsetY: 20,
+    normalWidth: 360,
+    largeWidth: 480,
+    transitionDuration: 450,
+    dividerLines: true,
+    headerBackground: {
+      type: 'color',
+      color: 'Auto',
+      gradientFrom: 'Auto',
+      gradientTo: 'Auto',
+      imageUrl: '',
+    },
+    logoUrl: '',
+  },
+  resourceCenterLauncherButton: {
+    iconType: 'default-question-mark',
+    height: 60,
+    imageHeight: 50,
+    borderRadius: null,
+    textMode: 'no-text',
+    color: {
+      background: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+      foreground: 'Auto',
+    },
   },
 };
 
@@ -550,6 +640,8 @@ export const standardDarkSettings: ThemeTypesSetting = {
       active: 'Auto',
     },
     padding: 8,
+    animationDuration: 320,
+    animationTiming: 'smooth',
   },
   mainColor: {
     color: '#ffffff',
@@ -644,5 +736,35 @@ export const standardDarkSettings: ThemeTypesSetting = {
     size: 60,
     url: '',
     name: 'alex',
+  },
+  resourceCenter: {
+    placement: 'bottom-right',
+    offsetX: 20,
+    offsetY: 20,
+    normalWidth: 360,
+    largeWidth: 480,
+    transitionDuration: 450,
+    dividerLines: true,
+    headerBackground: {
+      type: 'color',
+      color: 'Auto',
+      gradientFrom: 'Auto',
+      gradientTo: 'Auto',
+      imageUrl: '',
+    },
+    logoUrl: '',
+  },
+  resourceCenterLauncherButton: {
+    iconType: 'default-question-mark',
+    height: 60,
+    imageHeight: 50,
+    borderRadius: null,
+    textMode: 'no-text',
+    color: {
+      background: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+      foreground: 'Auto',
+    },
   },
 };

@@ -52,8 +52,9 @@ export const RulesPriority = (props: RulesPriorityProps) => {
         </DropdownMenuContent>
       </DropdownMenu>
       <QuestionTooltip>
-        if a user matches start conditions for 2 contents, the one with the higher priority will be
-        started. Choose a high priority for your most important content
+        When a user matches the start conditions for two pieces of content at the same time, the one
+        with higher priority starts first. Use a higher priority for content you really want users
+        to see first.
       </QuestionTooltip>
     </div>
   );

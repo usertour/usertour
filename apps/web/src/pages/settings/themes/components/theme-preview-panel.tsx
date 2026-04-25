@@ -1,4 +1,5 @@
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
+import { Card } from '@usertour-packages/card';
 import { Separator } from '@usertour-packages/separator';
 import { cn } from '@usertour-packages/tailwind';
 import { LauncherDataType, ThemeDetailSelectorType, ThemeDetailPreviewType } from '@usertour/types';
@@ -11,6 +12,7 @@ import { ThemePreviewModal } from './preview/theme-preview-modal';
 import { ThemePreviewPopper } from './preview/theme-preview-popper';
 import { ThemePreviewBubble } from './preview/theme-preview-bubble';
 import { ThemePreviewBanner } from './preview/theme-preview-banner';
+import { ThemePreviewResourceCenter } from './preview/theme-preview-resource-center';
 import { ThemePreviewSelector } from './preview/theme-preview-selector';
 import {
   BANNER_PREVIEW_CONTENT,
@@ -69,7 +71,7 @@ export const ThemePreviewPanel = ({
   }, [settings, selectedType, onCustomStyleChange]);
 
   return (
-    <div className={cn('shadow bg-white rounded-lg grow ml-4 h-full flex flex-col', className)}>
+    <Card className={cn('grow ml-4 h-full flex flex-col', className)}>
       <div className="flex flex-col items-start justify-between space-y-2 p-4 sm:flex-row sm:items-center sm:space-y-0 md:h-16">
         <h2 className="text-lg font-semibold">Preview</h2>
         {showSelector && (
@@ -132,8 +134,15 @@ export const ThemePreviewPanel = ({
             settings={settings}
           />
         )}
+        {(selectedType?.type === ThemeDetailPreviewType.RESOURCE_CENTER ||
+          selectedType?.type === ThemeDetailPreviewType.RESOURCE_CENTER_LAUNCHER) && (
+          <ThemePreviewResourceCenter
+            expanded={selectedType.type === ThemeDetailPreviewType.RESOURCE_CENTER}
+            settings={settings}
+          />
+        )}
       </div>
-    </div>
+    </Card>
   );
 };
 

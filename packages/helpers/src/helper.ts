@@ -33,13 +33,14 @@ export function hexToRgb(hex: string) {
     : null;
 }
 
-export const evalCode = (code: string) => {
+// Uses `new Function` instead of `eval` so the user-provided code runs in
+// the global scope and cannot read or mutate the caller's locals.
+export const executeUserCode = (code: string) => {
   try {
-    // biome-ignore lint/security/noGlobalEval: <explanation>
-    return eval(code);
+    return new Function(code)();
   } catch (error) {
-    console.error('Usertour.js: Error evaluating code:', error);
-    return null; // Return null instead of throwing
+    console.error('Usertour.js: Error executing user code:', error);
+    return null;
   }
 };
 

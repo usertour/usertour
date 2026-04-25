@@ -36,19 +36,14 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const { toast } = useToast();
   const { environmentList } = useEnvironmentListContext();
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
-  const [version, setVersion] = React.useState<ContentVersion>();
   const { content, refetch } = useContentDetailContext();
   const contentTypeMeta = getContentTypeMeta(content?.type);
 
   const contentVersion = useQuery(getContentVersion, {
     variables: { versionId },
+    skip: !open,
   });
-
-  React.useEffect(() => {
-    if (contentVersion?.data?.getContentVersion) {
-      setVersion(contentVersion.data.getContentVersion);
-    }
-  }, [contentVersion?.data]);
+  const version: ContentVersion | undefined = contentVersion?.data?.getContentVersion;
 
   React.useEffect(() => {
     if (open) {
@@ -92,20 +87,14 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
   };
 
   const getPublishButtonText = () => {
-    if (selectedEnvironments.length === 0) {
-      return 'Publish';
+    const count = selectedEnvironments.length;
+    if (count === 0) return 'Publish';
+    if (count === environmentList?.length) return 'Publish to all environments';
+    if (count === 1) {
+      const name = environmentList?.find((env) => env.id === selectedEnvironments[0])?.name;
+      return name ? `Publish to ${name}` : 'Publish';
     }
-
-    if (selectedEnvironments.length === environmentList?.length) {
-      return 'Publish to all environments';
-    }
-
-    const selectedEnvNames = selectedEnvironments
-      .map((id) => environmentList?.find((env) => env.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
-
-    return `Publish to ${selectedEnvNames}`;
+    return `Publish to ${count} environments`;
   };
 
   const allEnvironmentsUpToDate = React.useMemo(() => {

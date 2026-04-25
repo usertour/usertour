@@ -6,7 +6,7 @@ import { BizCompany } from '@usertour/types';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTableColumnHeader } from '@/components/molecules/segment/table';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 
 // Hook to create company table columns
 export const useCompanyTableColumns = (): ColumnDef<BizCompany>[] => {
@@ -36,19 +36,18 @@ export const useCompanyTableColumns = (): ColumnDef<BizCompany>[] => {
         enableHiding: false,
       },
       {
+        id: 'externalId',
         accessorKey: 'externalId',
-        header: ({ column }: any) => (
-          <DataTableColumnHeader column={column} title={t('companies.table.company')} />
-        ),
+        header: () => <DataTableColumnHeader title={t('companies.table.company')} />,
         cell: ({ row }: any) => {
-          const email = row.original.data?.email || '';
           const name = row.original.data?.name || '';
           const externalId = row.original.externalId || '';
+          const primary = name || externalId;
 
           return (
-            <div className="flex items-center gap-2">
-              <UserAvatar email={email} name={name} size="sm" />
-              <span className="leading-none w-72 truncate">{externalId}</span>
+            <div className="flex items-center gap-2 w-72 min-w-0">
+              <DefaultAvatar seed={externalId || name} name={name} size="sm" />
+              <span className="truncate">{primary}</span>
             </div>
           );
         },

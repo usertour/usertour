@@ -6,6 +6,8 @@ const translations = {
     loadMore: 'Load More Events',
     loading: 'Loading...',
     tab: 'Activity feed',
+    count_one: '{{count}} event',
+    count_other: '{{count}} events',
   },
   privacyPage: {
     title: 'Privacy Policy',
@@ -19,6 +21,14 @@ const translations = {
     search: 'Search...',
     reset: 'Reset',
     addFilter: 'Add filter',
+    rowsSelected: '{{count}} selected',
+    clearSelection: 'Clear selection',
+    membership: {
+      attributes: 'Membership attributes',
+      none: 'No membership attributes',
+      attributesCount_one: '{{count}} attribute',
+      attributesCount_other: '{{count}} attributes',
+    },
   },
   users: {
     actions: {
@@ -56,10 +66,23 @@ const translations = {
     },
     detail: {
       title: 'User Detail',
+      breadcrumb: 'Users',
       notFound: 'User not found.',
       userDetails: 'User details',
       userAttributes: 'User attributes',
       unnamedUser: 'Unnamed user',
+      lastSeen: 'Last seen',
+      externalIdTooltip: 'External ID (from your app)',
+      activity: {
+        title: 'Activity',
+        events: 'Events',
+        sessions: 'Sessions',
+        companies: 'Companies',
+      },
+      companiesChip: {
+        moreCount: '+{{count}} more',
+        emptyTitle: 'No companies',
+      },
       tabs: {
         activityFeed: 'Activity feed',
         sessions: 'Sessions',
@@ -70,8 +93,6 @@ const translations = {
         loadMore: 'Load More Companies',
         loading: 'Loading...',
         company: 'Company',
-        membershipAttributes: 'Membership attributes',
-        noMembershipAttributes: 'No membership attributes',
       },
       tooltips: {
         userId: 'User ID',
@@ -106,11 +127,35 @@ const translations = {
     sessions: {
       loadMore: 'Load More Sessions',
       title: 'User sessions',
+      countLabel_one: '{{count}} session',
+      countLabel_other: '{{count}} sessions',
       table: {
         content: 'Content',
+        status: 'Status',
         progress: 'Progress',
         lastActivity: 'Last activity',
         user: 'User',
+      },
+      detail: {
+        breadcrumb: 'Session',
+        notFound: 'Session not found or incomplete data.',
+        unnamedUser: 'Unnamed user',
+        sessionInfo: 'Session info',
+        progress: 'Progress',
+        response: 'Response',
+        activityFeed: 'Activity feed',
+        noEvents: 'No events found.',
+        fields: {
+          user: 'User',
+          version: 'Version',
+          started: 'Started',
+          startReason: 'Start reason',
+          endReason: 'End reason',
+        },
+        relative: {
+          ago: 'ago',
+        },
+        deleteAction: 'Delete session',
       },
     },
     sidebar: {
@@ -176,18 +221,22 @@ const translations = {
     },
     detail: {
       title: 'Company Detail',
+      breadcrumb: 'Companies',
       notFound: 'Company not found.',
       companyDetails: 'Company details',
       companyAttributes: 'Company attributes',
       unnamedCompany: 'Unnamed company',
+      lastSeen: 'Last seen',
+      externalIdTooltip: 'External ID (from your app)',
       companyMembers: 'Company members',
       user: 'User',
-      membershipAttributes: 'Membership Attributes',
-      tabs: {
-        activityFeed: 'Activity feed',
-        companyMembers: 'Company members',
+      activity: {
+        title: 'Activity',
+        events: 'Events',
+        members: 'Members',
       },
-      noMembershipAttributes: 'No membership attributes',
+      membersCount_one: '{{count}} member',
+      membersCount_other: '{{count}} members',
       loadMoreUsers: 'Load More Users',
       loading: 'Loading...',
       noUsersFound: 'No users found for this company.',

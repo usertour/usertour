@@ -11,6 +11,7 @@ export const getQueryType = (contentType: string): ContentDataType => {
     banners: ContentDataType.BANNER,
     checklists: ContentDataType.CHECKLIST,
     trackers: ContentDataType.TRACKER,
+    'resource-centers': ContentDataType.RESOURCE_CENTER,
   };
   return typeMap[contentType] ?? ContentDataType.FLOW;
 };

@@ -1,6 +1,13 @@
 const translations = {
   language: '简体中文',
   productName: 'Usertour',
+  activityFeed: {
+    noEvents: '未找到事件。',
+    loadMore: '加载更多事件',
+    loading: '加载中...',
+    tab: '活动流',
+    count_other: '{{count}} 个事件',
+  },
   privacyPage: {
     title: '隐私政策',
   },
@@ -13,6 +20,13 @@ const translations = {
     search: '搜索...',
     reset: '重置',
     addFilter: '添加筛选',
+    rowsSelected: '已选 {{count}} 项',
+    clearSelection: '清除选择',
+    membership: {
+      attributes: '成员属性',
+      none: '无成员属性',
+      attributesCount_other: '{{count}} 个属性',
+    },
   },
   users: {
     actions: {
@@ -49,10 +63,29 @@ const translations = {
     },
     detail: {
       title: '用户详情',
+      breadcrumb: '用户',
       notFound: '未找到用户。',
       userDetails: '用户详情',
       userAttributes: '用户属性',
       unnamedUser: '未命名用户',
+      lastSeen: '最近活跃',
+      externalIdTooltip: '外部 ID（来自你的应用）',
+      activity: {
+        title: '活动',
+        events: '事件',
+        sessions: '会话',
+        companies: '公司',
+      },
+      companiesChip: {
+        moreCount: '+{{count}} 更多',
+        emptyTitle: '暂无公司',
+      },
+      companies: {
+        noCompanies: '此用户未关联任何公司。',
+        loadMore: '加载更多公司',
+        loading: '加载中...',
+        company: '公司',
+      },
       tooltips: {
         userId: '用户ID',
         email: '邮箱',
@@ -86,11 +119,34 @@ const translations = {
     sessions: {
       loadMore: '加载更多会话',
       title: '用户会话',
+      countLabel_other: '{{count}} 个会话',
       table: {
         content: '内容',
+        status: '状态',
         progress: '进度',
         lastActivity: '最后活动',
         user: '用户',
+      },
+      detail: {
+        breadcrumb: '会话',
+        notFound: '未找到会话或数据不完整。',
+        unnamedUser: '未命名用户',
+        sessionInfo: '会话信息',
+        progress: '进度',
+        response: '回答',
+        activityFeed: '活动流',
+        noEvents: '未找到事件。',
+        fields: {
+          user: '用户',
+          version: '版本',
+          started: '开始于',
+          startReason: '开始原因',
+          endReason: '结束原因',
+        },
+        relative: {
+          ago: '前',
+        },
+        deleteAction: '删除会话',
       },
     },
     sidebar: {
@@ -155,14 +211,21 @@ const translations = {
     },
     detail: {
       title: '公司详情',
+      breadcrumb: '公司',
       notFound: '未找到公司。',
       companyDetails: '公司详情',
       companyAttributes: '公司属性',
       unnamedCompany: '未命名公司',
+      lastSeen: '最近活跃',
+      externalIdTooltip: '外部 ID（来自你的应用）',
       companyMembers: '公司成员',
       user: '用户',
-      membershipAttributes: '成员属性',
-      noMembershipAttributes: '无成员属性',
+      activity: {
+        title: '活动',
+        events: '事件',
+        members: '成员',
+      },
+      membersCount_other: '{{count}} 个成员',
       loadMoreUsers: '加载更多用户',
       loading: '加载中...',
       noUsersFound: '此公司未找到用户。',

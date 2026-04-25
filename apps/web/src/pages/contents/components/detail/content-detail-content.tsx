@@ -20,6 +20,7 @@ import {
   LauncherActionType,
   LauncherData,
   LauncherDataType,
+  ResourceCenterData,
   Step,
   Theme,
   ThemeTypesSetting,
@@ -33,9 +34,11 @@ import {
   ChecklistPreview,
   FlowPreview,
   LauncherPreview,
+  ResourceCenterPreview,
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@usertour-packages/button';
+import { Card } from '@usertour-packages/card';
 import { cn } from '@usertour-packages/tailwind';
 
 interface ContentDetailContentStepProps {
@@ -152,7 +155,7 @@ const ContentPreviewCard = ({
   return (
     <>
       <GoogleFontCss settings={themeSettings} />
-      <div className="flex flex-row p-4 px-8 shadow bg-white rounded-lg space-x-8">
+      <Card className="flex flex-row p-4 px-8 space-x-8">
         {leftContent}
 
         <div className="grow flex flex-col relative space-y-1 min-w-80">
@@ -185,7 +188,7 @@ const ContentPreviewCard = ({
             </div>
           )}
         </div>
-      </div>
+      </Card>
     </>
   );
 };
@@ -494,6 +497,59 @@ const BannerContentPreview = ({
   );
 };
 
+interface ResourceCenterContentPreviewProps {
+  currentVersion: ContentVersion;
+  content: Content;
+  onEdit: () => void;
+  disabled: boolean;
+}
+
+const ResourceCenterContentPreview = ({
+  currentVersion,
+  content,
+  onEdit,
+  disabled,
+}: ResourceCenterContentPreviewProps) => {
+  const currentTheme = useThemeHandler(currentVersion);
+  const data = currentVersion.data as ResourceCenterData;
+  const { height, setContentRect, setScale } = useScaledPreview();
+
+  if (!currentVersion || !currentTheme) return null;
+
+  const leftContent = (
+    <ScaledPreviewWrapper
+      height={height}
+      onContentRectChange={(rect, scale) => {
+        setContentRect(rect);
+        setScale(scale);
+      }}
+    >
+      <ResourceCenterPreview currentTheme={currentTheme} currentVersion={currentVersion} />
+    </ScaledPreviewWrapper>
+  );
+
+  const badges = (
+    <>
+      <ContentBadge>Launcher button text: {data.buttonText ?? ''}</ContentBadge>
+      <ContentBadge>Header text: {data.headerText ?? ''}</ContentBadge>
+      <ContentBadge>Tabs: {data.tabs?.length ?? 0}</ContentBadge>
+      <ContentBadge>Theme: {currentTheme.name ?? ''}</ContentBadge>
+    </>
+  );
+
+  return (
+    <ContentPreviewCard
+      themeSettings={currentTheme.settings}
+      title={content.name ?? ''}
+      badges={badges}
+      updatedAt={currentVersion.updatedAt}
+      onEdit={onEdit}
+      disabled={disabled}
+      leftContent={leftContent}
+    />
+  );
+};
+
 export const ContentDetailContent = () => {
   const { version } = useContentVersionContext();
   const { content, contentType } = useContentDetailContext();
@@ -547,10 +603,18 @@ export const ContentDetailContent = () => {
             disabled={isViewOnly}
           />
         )}
+        {contentType === ContentTypeName.RESOURCE_CENTERS && content && version.data && (
+          <ResourceCenterContentPreview
+            currentVersion={version}
+            content={content}
+            onEdit={() => openBuilder(content, contentType)}
+            disabled={isViewOnly}
+          />
+        )}
         {showAddButton && (
           <Button
             onClick={() => openBuilder(content, contentType)}
-            className="py-8 shadow bg-white rounded-lg cursor-pointer w-auto h-auto hover:bg-white "
+            className="py-8 rounded-lg bg-white cursor-pointer w-auto h-auto hover:bg-white shadow"
             disabled={isViewOnly}
           >
             <AddIcon width={40} height={40} className="text-primary" />

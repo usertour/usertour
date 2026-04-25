@@ -1,16 +1,14 @@
 import { AdminLayout, AdminLayoutContent } from './components/admin-layout';
 
-interface AdminLayoutProps {
+interface AdminDetailLayoutProps {
   children: React.ReactNode;
 }
 
-export const AdminDetailLayout = ({ children }: AdminLayoutProps) => {
+export const AdminDetailLayout = ({ children }: AdminDetailLayoutProps) => {
   return (
-    <>
-      <AdminLayout>
-        <AdminLayoutContent>{children}</AdminLayoutContent>
-      </AdminLayout>
-    </>
+    <AdminLayout surface="muted">
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </AdminLayout>
   );
 };
 
