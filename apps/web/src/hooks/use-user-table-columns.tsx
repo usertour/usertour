@@ -6,7 +6,7 @@ import { BizUser } from '@usertour/types';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTableColumnHeader } from '@/components/molecules/segment/table';
-import { InitialsAvatar } from '@/components/molecules/initials-avatar';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 
 // Hook to create user table columns
 export const useUserTableColumns = (): ColumnDef<BizUser>[] => {
@@ -47,7 +47,7 @@ export const useUserTableColumns = (): ColumnDef<BizUser>[] => {
 
           return (
             <div className="flex items-center gap-2 w-72 min-w-0">
-              <InitialsAvatar seed={email} name={name} size="sm" />
+              <DefaultAvatar seed={externalId || email} name={name} size="sm" />
               <span className="truncate">{primary}</span>
             </div>
           );

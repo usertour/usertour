@@ -38,7 +38,7 @@ import { BizCompanyDeleteDialog } from '../dialogs';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour-packages/tailwind';
-import { InitialsAvatar } from '@/components/molecules/initials-avatar';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { useQuery } from '@apollo/client';
 import { queryBizUser } from '@usertour-packages/gql';
 import { PaginationState } from '@tanstack/react-table';
@@ -280,8 +280,8 @@ const CompanyUserList = () => {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline min-w-0">
-                      <InitialsAvatar
-                        seed={user.data?.email || ''}
+                      <DefaultAvatar
+                        seed={user.externalId || user.data?.email || ''}
                         name={user.data?.name || ''}
                         size="sm"
                       />
@@ -453,7 +453,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
       <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-6 xl:p-8">
         {/* Identity header */}
         <div className="flex items-start gap-4 px-1">
-          <InitialsAvatar
+          <DefaultAvatar
             seed={bizCompany?.externalId || bizCompany?.data?.name || ''}
             name={bizCompany?.data?.name}
             size="lg"

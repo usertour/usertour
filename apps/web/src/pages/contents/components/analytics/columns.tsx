@@ -16,7 +16,7 @@ import {
   ResourceCenterProgressCell,
   SessionStatusBadge,
 } from '@/components/molecules/session-analytics';
-import { InitialsAvatar } from '@/components/molecules/initials-avatar';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { Link } from 'react-router-dom';
 import {
   Tooltip,
@@ -118,7 +118,7 @@ const UserCell = ({ original }: Row<BizSession>) => {
 
   return (
     <div className="flex items-center gap-3 min-w-0">
-      <InitialsAvatar seed={email} name={name} size="md" />
+      <DefaultAvatar seed={externalId || email} name={name} size="md" />
       <div className="flex flex-col min-w-0">
         <Link
           to={`/env/${environment?.id}/user/${bizUser?.id ?? original.bizUserId}`}

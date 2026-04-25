@@ -1,7 +1,7 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { InitialsAvatar } from '@/components/molecules/initials-avatar';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useApolloClient, useQuery } from '@apollo/client';
 import { queryTrackerUsers } from '@usertour-packages/gql';
@@ -353,7 +353,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
                       <TableRow key={user.id} className="h-10">
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <InitialsAvatar seed={email} name={name} size="sm" />
+                            <DefaultAvatar seed={externalId || email} name={name} size="sm" />
                             <div className="flex flex-col">
                               <div className="flex items-center gap-1">
                                 <Link
