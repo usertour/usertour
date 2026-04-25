@@ -27,12 +27,14 @@ const groupBlocksByTab = (blocks: AnalyticsViewsByBlock[]): TabGroup[] => {
       });
     }
   }
-  return Array.from(groups.values())
-    .map((group) => ({
-      ...group,
-      blocks: [...group.blocks].sort((a, b) => b.analytics.totalClicks - a.analytics.totalClicks),
-    }))
-    .sort((a, b) => b.totalClicks - a.totalClicks);
+  // Tabs preserve the configured order from the published RC data
+  // (server returns viewsByBlock in tab/block iteration order, and Map
+  // keeps insertion order). Blocks within a tab are sorted by clicks DESC
+  // so the highest-volume blocks surface first in each tab.
+  return Array.from(groups.values()).map((group) => ({
+    ...group,
+    blocks: [...group.blocks].sort((a, b) => b.analytics.totalClicks - a.analytics.totalClicks),
+  }));
 };
 
 const getRankDotClass = (rank: number, isIdle: boolean) => {
