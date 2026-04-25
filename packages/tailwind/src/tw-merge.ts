@@ -37,6 +37,7 @@ const sdkColors = [
   'sdk-checklist-trigger-hover-background',
   'sdk-checklist-checkmark',
   // Resource center colors
+  'sdk-resource-center-header',
   'sdk-resource-center-launcher-background',
   'sdk-resource-center-launcher-hover',
   'sdk-resource-center-launcher-active',

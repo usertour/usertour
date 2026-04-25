@@ -495,6 +495,15 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-resource-center-launcher-foreground-color': hexToHSLString(
       resourceCenterLauncherButton.color.foreground,
     ),
+    // RC header background — 'Auto' falls back to mainColor.active so the soft
+    // brand-derived tint reads well in both light and dark themes. Settings
+    // here have already been Auto-resolved by convertSettings, so
+    // mainColor.active is guaranteed to be a hex.
+    '--usertour-resource-center-header-background-color': hexToHSLString(
+      resourceCenter.headerBackground.color === 'Auto'
+        ? settings.mainColor.active
+        : resourceCenter.headerBackground.color,
+    ),
     '--usertour-resource-center-launcher-border-radius':
       resourceCenterLauncherButton.borderRadius == null
         ? 'calc(var(--usertour-resource-center-launcher-height) / 2)'
