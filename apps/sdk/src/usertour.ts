@@ -184,12 +184,16 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
       app.toggleResourceCenter();
     },
 
-    setResourceCenterLauncherHidden: (hidden: boolean) => {
-      app.setResourceCenterLauncherHidden(hidden);
+    showResourceCenterLauncher: () => {
+      app.showResourceCenterLauncher();
     },
 
-    getResourceCenterState: () => {
-      return app.getResourceCenterState();
+    hideResourceCenterLauncher: () => {
+      app.hideResourceCenterLauncher();
+    },
+
+    isResourceCenterOpen: () => {
+      return app.isResourceCenterOpen();
     },
 
     on: (eventName: string, _listener: (...args: any[]) => void) => {

@@ -75,9 +75,11 @@ export interface Usertour {
 
   toggleResourceCenter: () => void;
 
-  setResourceCenterLauncherHidden: (hidden: boolean) => void;
+  showResourceCenterLauncher: () => void;
 
-  getResourceCenterState: () => ResourceCenterState | null;
+  hideResourceCenterLauncher: () => void;
+
+  isResourceCenterOpen: () => boolean;
 }
 
 export interface Attributes {
@@ -126,10 +128,6 @@ export interface StartOptions {
   once?: boolean;
   continue?: boolean; // If true, continue the content if it's in progress. Default is false (restart)
   cvid?: string;
-}
-
-export interface ResourceCenterState {
-  isOpen: boolean;
 }
 
 // interface ScrollPadding {

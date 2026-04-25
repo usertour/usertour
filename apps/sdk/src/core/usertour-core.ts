@@ -102,6 +102,7 @@ export class UsertourCore extends Evented {
   private urlFilter: ((url: string) => string) | null = null;
   private linkUrlDecorator: ((url: string) => string) | null = null;
   private evalJsDisabled = false;
+  private resourceCenterLauncherHidden = false;
   private readonly id: string;
   private attributeManager: UsertourAttributeManager;
   private uiManager: UsertourUIManager;
@@ -531,21 +532,28 @@ export class UsertourCore extends Evented {
     }
   }
 
-  setResourceCenterLauncherHidden(hidden: boolean): void {
-    this.activatedResourceCenter?.setLauncherHidden(hidden);
+  showResourceCenterLauncher(): void {
+    this.resourceCenterLauncherHidden = false;
+    this.activatedResourceCenter?.setLauncherHidden(false);
   }
 
-  getResourceCenterState(): UserTourTypes.ResourceCenterState | null {
-    if (!this.activatedResourceCenter) {
-      return null;
-    }
-    const store = this.activatedResourceCenter.getSnapshot();
-    if (!store) {
-      return null;
-    }
-    return {
-      isOpen: store.expanded,
-    };
+  hideResourceCenterLauncher(): void {
+    this.resourceCenterLauncherHidden = true;
+    this.activatedResourceCenter?.setLauncherHidden(true);
+  }
+
+  isResourceCenterOpen(): boolean {
+    return this.activatedResourceCenter?.getSnapshot()?.expanded ?? false;
+  }
+
+  /**
+   * Apply global resource center settings (e.g. launcherHidden) to the
+   * currently active instance. Called whenever a new RC session activates
+   * or the existing one updates, so settings configured before the RC
+   * was active still take effect.
+   */
+  private applyResourceCenterGlobalSettings(): void {
+    this.activatedResourceCenter?.setLauncherHidden(this.resourceCenterLauncherHidden);
   }
 
   /**
@@ -1169,6 +1177,7 @@ export class UsertourCore extends Evented {
     if (this.activatedResourceCenter) {
       if (this.activatedResourceCenter.getSessionId() === session.id) {
         await this.activatedResourceCenter.update(session);
+        this.applyResourceCenterGlobalSettings();
         return true;
       }
       this.cleanupActivatedResourceCenter();
@@ -1182,6 +1191,7 @@ export class UsertourCore extends Evented {
     });
     this.syncResourceCentersStore([this.activatedResourceCenter]);
     await this.activatedResourceCenter.show();
+    this.applyResourceCenterGlobalSettings();
     return true;
   }
 
