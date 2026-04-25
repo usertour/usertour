@@ -10,6 +10,7 @@ import {
 } from '@usertour-packages/widget';
 import {
   LauncherIconSource,
+  LiveChatProvider,
   ResourceCenterBlockType,
   ResourceCenterData,
   ThemeTypesSetting,
@@ -17,10 +18,79 @@ import {
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 import { useEffect, useState } from 'react';
 
+const richTextWelcome = [
+  {
+    element: { type: 'group' },
+    children: [
+      {
+        element: {
+          type: 'column',
+          style: {},
+          width: { type: 'fill' },
+          justifyContent: 'justify-start',
+          padding: { enabled: true, top: 12, bottom: 4, left: 8, right: 8 },
+        },
+        children: [
+          {
+            element: {
+              data: [
+                { type: 'paragraph', children: [{ bold: true, text: 'Welcome! 👋' }] },
+                {
+                  type: 'paragraph',
+                  children: [{ text: 'Find guides, tutorials, and support resources here.' }],
+                },
+              ],
+              type: 'text',
+            },
+          },
+        ],
+      },
+    ],
+  },
+];
+
+const richTextChangelog = [
+  {
+    element: { type: 'group' },
+    children: [
+      {
+        element: {
+          type: 'column',
+          style: {},
+          width: { type: 'fill' },
+          justifyContent: 'justify-start',
+          padding: { enabled: true, top: 12, bottom: 12, left: 8, right: 8 },
+        },
+        children: [
+          {
+            element: {
+              data: [
+                { type: 'paragraph', children: [{ bold: true, text: "What's new" }] },
+                {
+                  type: 'paragraph',
+                  children: [
+                    { text: 'Faster onboarding, smarter checklists, and improved analytics.' },
+                  ],
+                },
+                { type: 'paragraph', children: [{ bold: true, text: 'Highlights' }] },
+                { type: 'paragraph', children: [{ text: '• Resource Center tabs' }] },
+                { type: 'paragraph', children: [{ text: '• Live chat integrations' }] },
+                { type: 'paragraph', children: [{ text: '• Theme color customization' }] },
+              ],
+              type: 'text',
+            },
+          },
+        ],
+      },
+    ],
+  },
+];
+
 const defaultResourceCenterPreviewData: ResourceCenterData = {
   buttonText: 'Help',
   headerText: 'Resource Center',
   tabs: [
+    // Tab 1 — Home: rich text welcome + actions
     {
       id: 'preview-home-tab',
       name: 'Home',
@@ -28,40 +98,9 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
       iconType: 'home-line',
       blocks: [
         {
-          id: 'preview-msg-1',
+          id: 'preview-msg-welcome',
           type: ResourceCenterBlockType.RICH_TEXT,
-          content: [
-            {
-              element: { type: 'group' },
-              children: [
-                {
-                  element: {
-                    type: 'column',
-                    style: {},
-                    width: { type: 'fill' },
-                    justifyContent: 'justify-start',
-                    padding: { enabled: true, top: 12, bottom: 4, left: 8, right: 8 },
-                  },
-                  children: [
-                    {
-                      element: {
-                        data: [
-                          { type: 'paragraph', children: [{ bold: true, text: 'Welcome! 👋' }] },
-                          {
-                            type: 'paragraph',
-                            children: [
-                              { text: 'Find guides, tutorials, and support resources here.' },
-                            ],
-                          },
-                        ],
-                        type: 'text',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ] as any,
+          content: richTextWelcome as any,
           onlyShowBlock: false,
           onlyShowBlockConditions: [],
         },
@@ -72,16 +111,25 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
           onlyShowBlockConditions: [],
         },
         {
-          id: 'preview-action-1',
+          id: 'preview-action-whats-new',
           type: ResourceCenterBlockType.ACTION,
           name: "What's new",
           iconSource: LauncherIconSource.BUILTIN,
-          iconType: 'notification-line',
+          iconType: 'gift-line',
           onlyShowBlock: false,
           onlyShowBlockConditions: [],
         },
         {
-          id: 'preview-action-2',
+          id: 'preview-action-docs',
+          type: ResourceCenterBlockType.ACTION,
+          name: 'Documentation',
+          iconSource: LauncherIconSource.BUILTIN,
+          iconType: 'book-open-fill',
+          onlyShowBlock: false,
+          onlyShowBlockConditions: [],
+        },
+        {
+          id: 'preview-action-feedback',
           type: ResourceCenterBlockType.ACTION,
           name: 'Send feedback',
           iconSource: LauncherIconSource.BUILTIN,
@@ -91,6 +139,7 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
         },
       ],
     },
+    // Tab 2 — Guides: content list (auto-expands into the list)
     {
       id: 'preview-guides-tab',
       name: 'Guides',
@@ -114,6 +163,54 @@ const defaultResourceCenterPreviewData: ResourceCenterData = {
         },
       ],
     },
+    // Tab 3 — Updates: sub-page changelog (auto-expands into rich text)
+    {
+      id: 'preview-updates-tab',
+      name: 'Updates',
+      iconSource: LauncherIconSource.BUILTIN,
+      iconType: 'notification-line',
+      blocks: [
+        {
+          id: 'preview-subpage-updates',
+          type: ResourceCenterBlockType.SUB_PAGE,
+          name: [{ type: 'paragraph', children: [{ text: "What's new" }] }],
+          iconSource: LauncherIconSource.BUILTIN,
+          iconType: 'notification-line',
+          content: richTextChangelog as any,
+          onlyShowBlock: false,
+          onlyShowBlockConditions: [],
+        },
+      ],
+    },
+    // Tab 4 — Help: live chat + FAQ
+    {
+      id: 'preview-help-tab',
+      name: 'Help',
+      iconSource: LauncherIconSource.BUILTIN,
+      iconType: 'chat1-line',
+      blocks: [
+        {
+          id: 'preview-live-chat',
+          type: ResourceCenterBlockType.LIVE_CHAT,
+          name: [{ type: 'paragraph', children: [{ text: 'Chat with support' }] }],
+          iconSource: LauncherIconSource.BUILTIN,
+          iconType: 'chat1-line',
+          liveChatProvider: LiveChatProvider.CRISP,
+          customLiveChatCode: '',
+          onlyShowBlock: false,
+          onlyShowBlockConditions: [],
+        },
+        {
+          id: 'preview-action-faq',
+          type: ResourceCenterBlockType.ACTION,
+          name: 'View FAQ',
+          iconSource: LauncherIconSource.BUILTIN,
+          iconType: 'info-circled',
+          onlyShowBlock: false,
+          onlyShowBlockConditions: [],
+        },
+      ],
+    },
   ] as any,
 };
 
@@ -127,6 +224,21 @@ const previewContentListItems = [
     contentId: 'preview-flow-2',
     contentType: 'flow' as const,
     name: 'Create your first project',
+  },
+  {
+    contentId: 'preview-flow-3',
+    contentType: 'flow' as const,
+    name: 'Invite your team',
+  },
+  {
+    contentId: 'preview-checklist-1',
+    contentType: 'checklist' as const,
+    name: 'Onboarding checklist',
+  },
+  {
+    contentId: 'preview-flow-4',
+    contentType: 'flow' as const,
+    name: 'Configure integrations',
   },
 ];
 

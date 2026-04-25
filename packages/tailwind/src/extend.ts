@@ -28,6 +28,7 @@ export const extendSdk = {
         checkmark: 'var(--usertour-checkmark-background-color)',
       },
       'resource-center': {
+        header: 'hsl(var(--usertour-resource-center-header-background-color))',
         launcher: {
           background: 'hsl(var(--usertour-resource-center-launcher-background-color))',
           hover: 'hsl(var(--usertour-resource-center-launcher-hover-background-color))',

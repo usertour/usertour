@@ -52,6 +52,12 @@ export const ThemeSettingsResourceCenter = () => {
 
   const headerBackground = resourceCenter.headerBackground;
   const brandBackground = settings.brandColor.background;
+  // The 'color' type's Auto value renders via `bg-sdk-active` in the widget,
+  // which maps to mainColor.active (falling back to autoActive when active is itself 'Auto').
+  const mainActiveBackground =
+    settings.mainColor.active === 'Auto'
+      ? ((settings.mainColor.autoActive as string) ?? settings.mainColor.background)
+      : settings.mainColor.active;
 
   const updateHeaderBackground = (data: Partial<ResourceCenterHeaderBackground>) => {
     update({
@@ -139,7 +145,7 @@ export const ThemeSettingsResourceCenter = () => {
             defaultColor={headerBackground.color}
             showAutoButton={true}
             isAutoColor={headerBackground.color === 'Auto'}
-            autoColor={brandBackground}
+            autoColor={mainActiveBackground}
             onChange={(value: string) => {
               updateHeaderBackground({ color: value });
             }}

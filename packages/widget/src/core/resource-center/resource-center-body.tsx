@@ -417,8 +417,11 @@ function getHeaderBackgroundStyle(
 
   switch (headerBackground.type) {
     case 'color': {
-      const color = resolveColor(headerBackground.color);
-      return color ? { backgroundColor: color } : undefined;
+      // The color (incl. 'Auto') is plumbed through the
+      // --usertour-resource-center-header-background-color CSS variable,
+      // applied via the bg-sdk-resource-center-header Tailwind class. No
+      // inline style needed here.
+      return undefined;
     }
     case 'gradient': {
       const from =
@@ -479,7 +482,10 @@ export const ResourceCenterBody = memo(({ children }: { children: React.ReactNod
               <div
                 className={cn(
                   'w-full h-full',
-                  !headerBackgroundStyle && 'bg-sdk-brand-background/90',
+                  // type='color' (incl. 'Auto') routes through the
+                  // bg-sdk-resource-center-header CSS-var-backed class.
+                  // gradient / image set inline `style` and skip the class.
+                  !headerBackgroundStyle && 'bg-sdk-resource-center-header',
                 )}
                 style={headerBackgroundStyle}
               />
