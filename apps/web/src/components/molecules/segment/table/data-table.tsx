@@ -19,13 +19,15 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { Skeleton } from '@usertour-packages/skeleton';
+import { cn } from '@usertour-packages/tailwind';
+import { TooltipProvider } from '@usertour-packages/tooltip';
 import { DataTableProps, TableStyles } from './types';
 import { EmptyPlaceholder } from '../ui';
 import * as React from 'react';
 
 // Helper function to build skeleton table
 const renderSkeletonRow = (columns: any[], rowIndex: number) => (
-  <TableRow key={`skeleton-${rowIndex}`}>
+  <TableRow key={`skeleton-${rowIndex}`} className="group border-border/50">
     {columns.map((column, colIndex) => (
       <TableCell key={`skeleton-cell-${rowIndex}-${column.id || colIndex}`}>
         <Skeleton className="h-4 w-full" />
@@ -48,6 +50,8 @@ export function DataTable<TData>({
   onRowSelectionChange,
   columnVisibility,
   onColumnVisibilityChange,
+  columnOrder,
+  onColumnOrderChange,
   columnFilters,
   onColumnFiltersChange,
   onRowClick,
@@ -61,10 +65,11 @@ export function DataTable<TData>({
       sorting,
       pagination,
       columnVisibility,
+      columnOrder,
       rowSelection,
       columnFilters,
     }),
-    [sorting, pagination, columnVisibility, rowSelection, columnFilters],
+    [sorting, pagination, columnVisibility, columnOrder, rowSelection, columnFilters],
   );
 
   const table = useReactTable({
@@ -79,6 +84,7 @@ export function DataTable<TData>({
     onPaginationChange,
     onColumnFiltersChange,
     onColumnVisibilityChange,
+    onColumnOrderChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -94,36 +100,34 @@ export function DataTable<TData>({
       .filter((column) => columnVisibility[column.id] !== false);
 
     return (
-      <div className="overflow-x-auto">
-        <Table className={`min-w-2xl ${className ?? ''}`}>
-          <TableHeader>
-            <TableRow>
-              {visibleColumns.map((column, colIndex) => (
-                <TableHead
-                  key={`header-skeleton-${column.id || colIndex}`}
-                  className={column.id === 'select' ? 'w-10' : undefined}
-                >
-                  <Skeleton className="h-4 w-20" />
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: TableStyles.SKELETON_ROWS as number }, (_, index) =>
-              renderSkeletonRow(visibleColumns, index),
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <Table className={cn('min-w-2xl border-y border-border', className)}>
+        <TableHeader>
+          <TableRow className="border-border/50">
+            {visibleColumns.map((column, colIndex) => (
+              <TableHead
+                key={`header-skeleton-${column.id || colIndex}`}
+                className={column.id === 'select' ? 'w-10' : undefined}
+              >
+                <Skeleton className="h-4 w-20" />
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: TableStyles.SKELETON_ROWS as number }, (_, index) =>
+            renderSkeletonRow(visibleColumns, index),
+          )}
+        </TableBody>
+      </Table>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table className={`min-w-2xl ${className ?? ''}`}>
+    <TooltipProvider delayDuration={400}>
+      <Table className={cn('min-w-2xl border-y border-border', className)}>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
+            <TableRow key={headerGroup.id} className="border-border/50">
               {headerGroup.headers.map((header) => {
                 return (
                   <TableHead
@@ -144,7 +148,10 @@ export function DataTable<TData>({
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                className={`cursor-pointer hover:bg-muted/50 ${onRowClick ? '' : 'cursor-default'}`}
+                className={cn(
+                  'group cursor-pointer border-border/50',
+                  !onRowClick && 'cursor-default',
+                )}
                 data-state={row.getIsSelected() && 'selected'}
               >
                 {row.getVisibleCells().map((cell) => {
@@ -153,7 +160,7 @@ export function DataTable<TData>({
                     return (
                       <TableCell
                         key={cell.id}
-                        className="leading-8 py-4"
+                        className="py-2"
                         onClick={() => {
                           if (cell.column.id !== 'select' && onRowClick) {
                             onRowClick(row.original);
@@ -166,7 +173,7 @@ export function DataTable<TData>({
                   } catch (error) {
                     console.error('Error rendering cell:', cell.id, error);
                     return (
-                      <TableCell key={cell.id} className="leading-8 py-4">
+                      <TableCell key={cell.id} className="py-2">
                         <span className="text-red-500">Error</span>
                       </TableCell>
                     );
@@ -185,6 +192,6 @@ export function DataTable<TData>({
           )}
         </TableBody>
       </Table>
-    </div>
+    </TooltipProvider>
   );
 }

@@ -64,7 +64,7 @@ export function SegmentSidebar({
     <>
       <AdminSidebarContainerTemplate>
         <AdminSidebarHeaderTemplate>
-          <h2 className="text-2xl font-semibold">{title}</h2>
+          <h2 className="min-w-0 truncate text-xl font-semibold">{title}</h2>
           {onCreate && (
             <TooltipProvider>
               <Tooltip>

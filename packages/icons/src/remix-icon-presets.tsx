@@ -60,6 +60,8 @@ import {
   RiChat1Line,
   RiChat1Fill,
   RiSendPlaneLine,
+  RiSendInsFill,
+  RiSendInsLine,
   RiReplyLine,
   RiRefreshLine,
   RiRestartLine,
@@ -162,8 +164,46 @@ import {
   RiCompassLine,
   RiCompassFill,
   RiInformation2Fill,
+  RiArrowRightSLine,
+  RiQuestionFill,
+  // Resource Center block type icons
+  RiArrowRightCircleFill,
+  RiPagesFill,
+  RiListCheck3,
+  RiCheckboxCircleFill,
+  RiBookOpenFill,
+  RiMessage3Fill,
+  RiSeparator,
 } from '@remixicon/react';
+import type { RemixiconComponentType } from '@remixicon/react';
+import React from 'react';
+import { FlowIcon, ChecklistIcon, LauncherIcon, BannerIcon } from './icon';
 import { registerIcons } from './remix-icon';
+
+/**
+ * Wrap a custom SVG icon component (width/height props) to match RemixiconComponentType (size prop).
+ */
+const wrapCustomIcon = (
+  Icon: React.ForwardRefExoticComponent<any>,
+  displayName: string,
+): RemixiconComponentType => {
+  const Wrapped: RemixiconComponentType = ({ size = 24, color, className, ...rest }) => (
+    <Icon
+      width={size}
+      height={size}
+      className={className}
+      style={color ? { color } : undefined}
+      {...rest}
+    />
+  );
+  (Wrapped as any).displayName = displayName;
+  return Wrapped;
+};
+
+const FlowIconWrapped = wrapCustomIcon(FlowIcon, 'FlowIconWrapped');
+const ChecklistIconWrapped = wrapCustomIcon(ChecklistIcon, 'ChecklistIconWrapped');
+const LauncherIconWrapped = wrapCustomIcon(LauncherIcon, 'LauncherIconWrapped');
+const BannerIconWrapped = wrapCustomIcon(BannerIcon, 'BannerIconWrapped');
 
 // Register common icons for easy access
 // Users can register more icons as needed using registerIcon() or registerIcons()
@@ -227,6 +267,8 @@ registerIcons({
   'chat1-fill': RiChat1Fill,
   'send-line': RiSendPlaneLine,
   'send-plane-line': RiSendPlaneLine,
+  'send-ins-fill': RiSendInsFill,
+  'send-ins-line': RiSendInsLine,
   'reply-line': RiReplyLine,
   // Media
   'image-line': RiImageLine,
@@ -356,4 +398,20 @@ registerIcons({
   'calendar-line': RiCalendarLine,
   'time-line': RiTimeLine,
   'global-line': RiGlobalLine,
+  // Misc
+  'arrow-right-s-line': RiArrowRightSLine,
+  // Resource Center block type icons
+  'arrow-right-circle-fill': RiArrowRightCircleFill,
+  'checkbox-circle-fill': RiCheckboxCircleFill,
+  'pages-fill': RiPagesFill,
+  'list-check3': RiListCheck3,
+  'book-open-fill': RiBookOpenFill,
+  'message3-fill': RiMessage3Fill,
+  separator: RiSeparator,
+  // Custom content type icons
+  'flow-icon': FlowIconWrapped,
+  'checklist-icon': ChecklistIconWrapped,
+  'launcher-icon': LauncherIconWrapped,
+  'banner-icon': BannerIconWrapped,
+  'resource-center-icon': RiQuestionFill,
 });

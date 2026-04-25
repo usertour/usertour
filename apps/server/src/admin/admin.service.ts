@@ -447,7 +447,7 @@ export class AdminService implements OnModuleInit {
       }),
     );
 
-    return usage.reduce((sum, value) => sum + value, 0);
+    return usage.reduce<number>((sum, value) => sum + value, 0);
   }
 
   async isOverProjectLimit(): Promise<boolean> {

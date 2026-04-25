@@ -6,6 +6,8 @@ import {
   ChecklistData,
   ContentDataType,
   LauncherData,
+  ResourceCenterBlockType,
+  ResourceCenterData,
   ThemeTypesSetting,
   ThemeVariation,
 } from '@usertour/types';
@@ -15,12 +17,14 @@ import {
   extractThemeVariationsAttributeIds,
   getAttributeValue,
   evaluateChecklistItemsWithContext,
+  evaluateResourceCenterBlocksWithContext,
   extractLauncherAttrCodes,
   isExpandPending,
   extractChecklistAttrCodes,
   extractBannerAttrCodes,
   extractButtonConditionAttributeIds,
   extractAttributeIdsFromConditions,
+  extractResourceCenterAttrCodes,
 } from '@/utils/content-utils';
 import { CustomContentSession, SessionTheme, SessionStep, SessionAttribute } from '@usertour/types';
 import {
@@ -247,6 +251,9 @@ export class SessionBuilderService {
     if (contentType === ContentDataType.BANNER) {
       return await this.processBannerSession(session, customContentVersion, socketData);
     }
+    if (contentType === ContentDataType.RESOURCE_CENTER) {
+      return await this.processResourceCenterSession(session, customContentVersion, socketData);
+    }
     if (contentType === ContentDataType.TRACKER) {
       return await this.processTrackerSession(session, customContentVersion, socketData);
     }
@@ -421,6 +428,55 @@ export class SessionBuilderService {
     );
     session.attributes = attributes;
     session.version.banner = bannerData;
+    return session;
+  }
+
+  /**
+   * Process RESOURCE_CENTER content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The client data
+   * @returns The processed session
+   */
+  private async processResourceCenterSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId, clientContext, clientConditions } =
+      socketData;
+    const rawResourceCenterData = customContentVersion.data as unknown as ResourceCenterData;
+    const resourceCenterData = await evaluateResourceCenterBlocksWithContext(
+      rawResourceCenterData,
+      clientContext,
+      clientConditions,
+    );
+
+    // Extract attribute codes and button-condition attribute ids across the whole block tree
+    const attrCodes: string[] = [];
+    const buttonAttrIds: string[] = [];
+    const allBlocks = resourceCenterData.tabs.flatMap((tab) => tab.blocks);
+    attrCodes.push(...extractResourceCenterAttrCodes(allBlocks));
+    for (const block of allBlocks) {
+      if (
+        (block.type === ResourceCenterBlockType.RICH_TEXT ||
+          block.type === ResourceCenterBlockType.SUB_PAGE) &&
+        block.content
+      ) {
+        buttonAttrIds.push(...extractButtonConditionAttributeIds({ contents: block.content }));
+      }
+    }
+
+    const attributes = await this.extractAttributes(
+      buttonAttrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    session.attributes = attributes;
+
+    session.version.resourceCenter = resourceCenterData;
     return session;
   }
 

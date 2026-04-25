@@ -1,7 +1,7 @@
 import type { AssetAttributes } from '@usertour-packages/frame';
 import { Frame, useFrame } from '@usertour-packages/frame';
 import { RiCloseLargeFill } from '@usertour-packages/icons';
-import type { BannerData, ThemeTypesSetting } from '@usertour/types';
+import type { BannerAnimationTiming, BannerData, ThemeTypesSetting } from '@usertour/types';
 import { BannerEmbedPlacement } from '@usertour/types';
 import type { CSSProperties } from 'react';
 import {
@@ -19,8 +19,18 @@ import { useComposedRefs } from '@usertour-packages/react-compose-refs';
 import { Button } from '../primitives';
 import { useSettingsStyles } from './hooks/use-settings-styles';
 import { cn } from '@usertour-packages/tailwind';
+import { WidgetAnimation } from './class-names';
 
 const BANNER_DEFAULT_HEIGHT_PX = 56;
+const BANNER_DEFAULT_ANIMATION_DURATION_MS = 320;
+const BANNER_DEFAULT_ANIMATION_TIMING: BannerAnimationTiming = 'smooth';
+
+const BANNER_ANIMATION_TIMING_PRESETS: Record<BannerAnimationTiming, string> = {
+  smooth: 'cubic-bezier(0.42, 0, 0.58, 1)',
+  snappy: 'cubic-bezier(0.22, 1, 0.36, 1)',
+  gentle: 'cubic-bezier(0, 0, 0.58, 1)',
+  linear: 'linear',
+};
 
 interface BannerRootContextValue {
   globalStyle: string;
@@ -104,9 +114,12 @@ export function getBannerWrapperStyle(
   }
 
   if (data?.animateWhenEmbedAppears) {
-    style.animationName = 'usertour-widget-banner-animate-in';
-    style.animationDuration = '400ms';
-    style.animationTimingFunction = 'ease-in-out';
+    const duration =
+      themeSetting?.banner?.animationDuration ?? BANNER_DEFAULT_ANIMATION_DURATION_MS;
+    const timing = themeSetting?.banner?.animationTiming ?? BANNER_DEFAULT_ANIMATION_TIMING;
+    style.animationName = WidgetAnimation.bannerReveal;
+    style.animationDuration = `${duration}ms`;
+    style.animationTimingFunction = BANNER_ANIMATION_TIMING_PRESETS[timing];
   }
 
   return style;

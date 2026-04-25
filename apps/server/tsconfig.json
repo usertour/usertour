@@ -9,9 +9,9 @@
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
     "esModuleInterop": true,
+    "strict": false,
     "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"]

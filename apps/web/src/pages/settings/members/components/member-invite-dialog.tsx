@@ -82,7 +82,9 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
   const { globalConfig } = useAppContext();
   const navigate = useNavigate();
 
-  const { subscription } = useGetSubscriptionByProjectIdQuery(project?.id);
+  const { subscription } = useGetSubscriptionByProjectIdQuery(project?.id, {
+    skip: !project?.id || !project?.subscriptionId,
+  });
 
   const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
 

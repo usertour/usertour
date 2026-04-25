@@ -179,7 +179,7 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
               <DialogTitle>Create New Event</DialogTitle>
             </DialogHeader>
             <div className="flex mt-4 mb-4 ">
-              <div className="flex flex-col mr-6 w-2/3 ">
+              <div className="flex flex-col mr-6 w-2/3 space-y-2">
                 <div className="flex flex-row justify-between">
                   <FormField
                     control={form.control}
@@ -189,8 +189,8 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
                         <FormLabel className="flex flex-row">
                           Display name
                           <QuestionTooltip className="ml-1">
-                            Human-friendly name shown in Usertour. we recommend using Word Case
-                            (i.e.uppercasefrst letter, spaces between words) such as"Billing Plan".
+                            Human-friendly name shown across the Usertour dashboard. e.g. "User
+                            signed up".
                           </QuestionTooltip>
                         </FormLabel>
                         <FormControl>
@@ -209,9 +209,8 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
                         <FormLabel className="flex flex-row">
                           Code name
                           <QuestionTooltip className="ml-1">
-                            Code-friendly name used in Webhooks and integrations to analytics
-                            providers. we recommend using snake_case (i.e. lowercaseletters with
-                            words separated by underscore).
+                            Code-friendly identifier used throughout Usertour to reference this
+                            event. e.g. "user_signed_up".
                           </QuestionTooltip>
                         </FormLabel>
                         <FormControl>
@@ -228,12 +227,7 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex flex-row">
-                        Description
-                        <QuestionTooltip className="ml-1">
-                          Put any additional information for your own reference here.
-                        </QuestionTooltip>
-                      </FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Input placeholder="Optional description" className="w-full" {...field} />
                       </FormControl>
@@ -252,7 +246,8 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
                       <FormLabel className="flex flex-row">
                         Event attributes
                         <QuestionTooltip className="ml-1">
-                          Determines what kind of values will be stored in this attribute.
+                          Attributes included in this event's payload schema. e.g. "plan_name",
+                          "price".
                         </QuestionTooltip>
                       </FormLabel>
                       <hr className="border-t" />
@@ -260,22 +255,23 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
                       {eventsOnAttributes.map((eventsOnAttribute, i) => {
                         return (
                           <div
-                            className="relative group border-b border-gray-300 hover:bg-blue-100"
+                            className="relative group border-b hover:bg-muted"
                             key={i}
                             style={{ marginTop: '0' }}
                           >
-                            <div className="p-2">{eventsOnAttribute.displayName}</div>
+                            <div className="p-2 text-sm">{eventsOnAttribute.displayName}</div>
                             <div className="absolute top-1/2 right-2 transform -translate-y-1/2 hidden group-hover:flex items-center justify-center">
-                              <CloseIcon
-                                width={16}
-                                height={16}
-                                className="mr-1 text-gray-600 hover:text-gray-800 hover:bg-red-200 w-6 h-6 p-1 rounded cursor-pointer"
+                              <Button
+                                variant={'ghost'}
+                                className="mr-1 w-6 h-6 p-1 rounded cursor-pointer"
                                 onClick={() =>
                                   setEventsOnAttributes((prev) =>
                                     prev.filter((_, index) => index !== i),
                                   )
                                 }
-                              />
+                              >
+                                <CloseIcon width={16} height={16} />
+                              </Button>
                             </div>
                           </div>
                         );

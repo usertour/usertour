@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { Attribute } from '@usertour/types';
-import { DynamicColumnConfig, TableStyles } from './types';
+import { Attribute, ColumnSetting } from '@usertour/types';
+import { DynamicColumnConfig } from './types';
 import { DataTableColumnHeader } from './data-table-column-header';
-import { formatAttributeValue } from '@/utils/common';
+import { cellContainerClass, renderAttributeCell } from './cells';
 
 // Type guard to safely access data
 const getDataValue = (row: any, key: string): unknown => {
@@ -19,23 +19,20 @@ const getDataValue = (row: any, key: string): unknown => {
 // Column builder utilities
 const createColumnAccessor = (codeName: string) => (row: any) => getDataValue(row, codeName);
 
-const createColumnHeader =
-  (displayName: string, className?: string) =>
-  ({ column }: { column: any }) => (
-    <DataTableColumnHeader
-      column={column}
-      title={displayName}
-      className={className || TableStyles.HEADER_CONSTRAINED}
-    />
-  );
+const createColumnHeader = (displayName: string, dataType: number, className?: string) => () => (
+  <DataTableColumnHeader
+    title={displayName}
+    className={className ?? cellContainerClass(dataType)}
+  />
+);
 
 const createColumnCell =
   (codeName: string, dataType: number, className?: string) =>
   ({ row }: { row: any }) => {
     const value = row.getValue(codeName);
     return (
-      <div className={className || TableStyles.CELL_CONSTRAINED}>
-        {formatAttributeValue(value, dataType)}
+      <div className={className ?? cellContainerClass(dataType)}>
+        {renderAttributeCell(value, dataType)}
       </div>
     );
   };
@@ -53,10 +50,11 @@ export const createDynamicColumn = <TData,>(
   return {
     accessorFn: createColumnAccessor(attribute.codeName),
     id: attribute.codeName,
-    header: createColumnHeader(displayName, options?.headerClassName),
+    header: createColumnHeader(displayName, attribute.dataType, options?.headerClassName),
     cell: createColumnCell(attribute.codeName, attribute.dataType, options?.cellClassName),
     enableSorting: false,
     enableHiding: true,
+    meta: { displayName },
   };
 };
 
@@ -88,13 +86,42 @@ export const useDynamicTableColumns = <TData,>(
 // Build column visibility state from attributes and segment configuration
 export const buildColumnVisibility = (
   attributes: Attribute[],
-  segmentColumns?: Record<string, boolean>,
+  segmentColumns?: ColumnSetting[] | null,
 ): Record<string, boolean> => {
+  const settingMap = new Map(
+    (segmentColumns ?? []).map(({ codeName, visible }) => [codeName, visible]),
+  );
   const visibility: Record<string, boolean> = {};
 
   for (const attribute of attributes) {
-    visibility[attribute.codeName] = !!segmentColumns?.[attribute.codeName];
+    visibility[attribute.codeName] = !!settingMap.get(attribute.codeName);
   }
 
   return visibility;
+};
+
+// Build column order from segment configuration; attributes not yet in segment.columns go to the end.
+export const buildColumnOrder = (
+  attributes: Attribute[],
+  segmentColumns?: ColumnSetting[] | null,
+  staticColumnIds: string[] = [],
+): string[] => {
+  const attrCodeNames = new Set(attributes.map((a) => a.codeName));
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+
+  for (const { codeName } of segmentColumns ?? []) {
+    if (attrCodeNames.has(codeName) && !seen.has(codeName)) {
+      ordered.push(codeName);
+      seen.add(codeName);
+    }
+  }
+  for (const attribute of attributes) {
+    if (!seen.has(attribute.codeName)) {
+      ordered.push(attribute.codeName);
+      seen.add(attribute.codeName);
+    }
+  }
+
+  return [...staticColumnIds, ...ordered];
 };

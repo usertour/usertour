@@ -11,6 +11,9 @@ export const IconTriggerButton = React.forwardRef<HTMLButtonElement, IconTrigger
     const ActiveIcon = getActiveIcon(iconType);
 
     const renderIcon = () => {
+      if (iconSource === LauncherIconSource.NONE) {
+        return null;
+      }
       if (iconSource === LauncherIconSource.UPLOAD || iconSource === LauncherIconSource.URL) {
         if (iconUrl) {
           return <IconPreview iconUrl={iconUrl} alt="Custom icon" size="small" />;

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useEventListContext } from '@/contexts/event-list-context';
-import { EyeNoneIcon, RiFlashlightFill } from '@usertour-packages/icons';
+import { EyeNoneIcon, EventTrackerIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import {
   BannerContainer,
@@ -25,6 +25,14 @@ import {
   LauncherContainer,
   LauncherView,
   LauncherRoot,
+  ResourceCenterRoot,
+  ResourceCenterStyleProvider,
+  ResourceCenterPanel,
+  ResourceCenterHeader,
+  ResourceCenterBody,
+  ResourceCenterBlocks,
+  ResourceCenterTabBar,
+  ResourceCenterFooter,
 } from '@usertour-packages/widget';
 import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
 import {
@@ -36,6 +44,7 @@ import {
   LauncherData,
   ProgressBarPosition,
   ProgressBarType,
+  ResourceCenterData,
   Step,
   StepContentType,
   Theme,
@@ -233,6 +242,41 @@ const ChecklistPreview = (props: {
   );
 };
 
+const ResourceCenterPreview = (props: {
+  currentTheme: Theme;
+  currentVersion: ContentVersion;
+}) => {
+  const { currentTheme, currentVersion } = props;
+  const data = currentVersion.data as ResourceCenterData;
+  const themeSettings = currentTheme.settings;
+  const { shouldShowMadeWith } = useSubscriptionContext();
+
+  const normalWidth = themeSettings.resourceCenter?.normalWidth ?? 410;
+  const previewHeight = Math.round(normalWidth * 1.4);
+
+  return (
+    <ResourceCenterRoot
+      data={data}
+      themeSettings={themeSettings}
+      expanded={true}
+      onExpandedChange={async () => {}}
+      zIndex={10000}
+      showMadeWith={shouldShowMadeWith}
+    >
+      <ResourceCenterStyleProvider>
+        <ResourceCenterPanel mode="dom" position={false} openHeightOverride={previewHeight}>
+          <ResourceCenterHeader />
+          <ResourceCenterBody>
+            <ResourceCenterBlocks />
+          </ResourceCenterBody>
+          <ResourceCenterTabBar />
+          <ResourceCenterFooter />
+        </ResourceCenterPanel>
+      </ResourceCenterStyleProvider>
+    </ResourceCenterRoot>
+  );
+};
+
 const BannerPreviewContent = ({
   currentTheme,
   currentVersion,
@@ -274,7 +318,7 @@ const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) 
   return (
     <div className="flex flex-col items-center justify-center h-full w-full gap-3 px-6">
       <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-        <RiFlashlightFill className="w-5 h-5 text-primary" />
+        <EventTrackerIcon className="w-5 h-5 text-primary" />
       </div>
       <div className="flex flex-col items-center gap-1 text-center w-full max-w-[260px]">
         <span className="text-sm font-medium text-foreground truncate max-w-full">
@@ -294,6 +338,7 @@ export {
   FlowPreview,
   LauncherPreview,
   ChecklistPreview,
+  ResourceCenterPreview,
   BannerPreviewContent,
   TrackerPreview,
   EmptyContentPreview,

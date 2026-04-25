@@ -1,3 +1,22 @@
+// ============================================================================
+// Rich Text Node — lightweight Slate-compatible types (no slate dependency)
+// ============================================================================
+
+export interface RichTextLeaf {
+  text: string;
+  [key: string]: unknown;
+}
+
+export interface RichTextElement {
+  type: string;
+  children: RichTextNode[];
+  [key: string]: unknown;
+}
+
+export type RichTextNode = RichTextLeaf | RichTextElement;
+
+// ============================================================================
+
 export type Pagination = {
   first?: number;
   last?: number;

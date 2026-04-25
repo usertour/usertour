@@ -14,7 +14,7 @@ export const ThemeSettingsModal = () => {
   };
   return (
     <div className="flex flex-col space-y-4">
-      <div className="py-[15px] px-5 space-y-3">
+      <div className="py-4 px-5 space-y-3">
         <ThemeSettingInput
           text="Width"
           name="modal-width"

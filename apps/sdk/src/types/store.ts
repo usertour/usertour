@@ -3,6 +3,9 @@ import {
   BannerData,
   ChecklistData,
   LauncherData,
+  ResourceCenterData,
+  ResourceCenterBlockContentItem,
+  ResourceCenterNavigationState,
   Step,
   ThemeTypesSetting,
   UserTourTypes,
@@ -31,7 +34,6 @@ export type TourStore = BaseStore & {
 
 // Checklist store type
 export type ChecklistStore = BaseStore & {
-  // content: SDKContent | undefined;
   checklistData?: ChecklistData;
   expanded: boolean;
 };
@@ -46,4 +48,23 @@ export type LauncherStore = BaseStore & {
 export type BannerStore = BaseStore & {
   bannerData?: BannerData;
   targetElement?: Element | null;
+};
+
+// Resource Center store type
+export type ResourceCenterStore = BaseStore & {
+  resourceCenterData?: ResourceCenterData;
+  expanded: boolean;
+  /**
+   * Navigation state (active tab + page stack) loaded from storage at mount
+   * time. Read once by the widget via useState initializer so subsequent
+   * storage writes (driven by user interaction) do not overwrite live state.
+   */
+  initialNav?: ResourceCenterNavigationState | null;
+  contentListItems?: ResourceCenterBlockContentItem[];
+  /** When true, the RC panel is visually hidden (a live chat provider is active) */
+  liveChatActive?: boolean;
+  /** Tracks whether the live chat provider widget is currently open */
+  liveChatProviderOpen?: boolean;
+  /** When true, the default launcher is hidden (set via SDK API) */
+  launcherHidden?: boolean;
 };

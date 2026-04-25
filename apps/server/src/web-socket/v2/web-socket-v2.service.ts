@@ -18,6 +18,13 @@ import {
   ActivateLauncherDto,
   DismissLauncherDto,
   TrackTrackerEventDto,
+  OpenResourceCenterDto,
+  CloseResourceCenterDto,
+  ClickResourceCenterDto,
+  ListResourceCenterBlockContentDto,
+  ResourceCenterBlockContentItem,
+  ResourceCenterBlock,
+  ResourceCenterBlockType,
   ContentDataType,
   ClientContext,
   contentEndReason,
@@ -149,21 +156,33 @@ export class WebSocketV2Service {
     socketData: SocketData,
     auth: SocketAuthData,
   ): Promise<SocketData> {
-    const { flowSessionId, checklistSessionId, bannerSessionId, launchers = [] } = auth;
+    const {
+      flowSessionId,
+      checklistSessionId,
+      bannerSessionId,
+      resourceCenterSessionId,
+      launchers = [],
+    } = auth;
 
     // Initialize sessions in parallel (singleton sessions and launchers can be initialized concurrently)
-    const [flowSession, checklistSession, bannerSession, launcherSessions] = await Promise.all([
-      flowSessionId ? this.initializeSessionById(socketData, flowSessionId) : Promise.resolve(null),
-      checklistSessionId
-        ? this.initializeSessionById(socketData, checklistSessionId)
-        : Promise.resolve(null),
-      bannerSessionId
-        ? this.initializeSessionById(socketData, bannerSessionId)
-        : Promise.resolve(null),
-      launchers.length > 0
-        ? this.initializeLauncherSessions(socketData, launchers)
-        : Promise.resolve([]),
-    ]);
+    const [flowSession, checklistSession, bannerSession, resourceCenterSession, launcherSessions] =
+      await Promise.all([
+        flowSessionId
+          ? this.initializeSessionById(socketData, flowSessionId)
+          : Promise.resolve(null),
+        checklistSessionId
+          ? this.initializeSessionById(socketData, checklistSessionId)
+          : Promise.resolve(null),
+        bannerSessionId
+          ? this.initializeSessionById(socketData, bannerSessionId)
+          : Promise.resolve(null),
+        resourceCenterSessionId
+          ? this.initializeSessionById(socketData, resourceCenterSessionId)
+          : Promise.resolve(null),
+        launchers.length > 0
+          ? this.initializeLauncherSessions(socketData, launchers)
+          : Promise.resolve([]),
+      ]);
 
     // Assign sessions to socket data if they exist
     if (flowSession) {
@@ -174,6 +193,9 @@ export class WebSocketV2Service {
     }
     if (bannerSession) {
       socketData.bannerSession = bannerSession;
+    }
+    if (resourceCenterSession) {
+      socketData.resourceCenterSession = resourceCenterSession;
     }
     if (launcherSessions.length > 0) {
       socketData.launcherSessions = launcherSessions;
@@ -196,7 +218,7 @@ export class WebSocketV2Service {
     const { socket, socketData } = context;
     const { environment } = socketData;
 
-    const { externalUserId, attributes } = data;
+    const { externalUserId, attributes = {} } = data;
     const bizUser = await this.bizService.upsertBizUsers(
       this.prisma,
       externalUserId,
@@ -221,7 +243,7 @@ export class WebSocketV2Service {
     const { socket, socketData } = context;
     const { environment } = socketData;
 
-    const { externalCompanyId, externalUserId, attributes, membership } = data;
+    const { externalCompanyId, externalUserId, attributes = {}, membership = {} } = data;
     const bizCompany = await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,
@@ -327,7 +349,13 @@ export class WebSocketV2Service {
    */
   async endAllContent(context: WebSocketContext): Promise<boolean> {
     const { server, socket, socketData } = context;
-    const { flowSession, checklistSession, launcherSessions = [] } = socketData;
+    const {
+      flowSession,
+      checklistSession,
+      bannerSession,
+      resourceCenterSession,
+      launcherSessions = [],
+    } = socketData;
 
     // Collect all sessions to cancel
     const sessionsToCancel: CustomContentSession[] = [];
@@ -336,6 +364,12 @@ export class WebSocketV2Service {
     }
     if (checklistSession) {
       sessionsToCancel.push(checklistSession);
+    }
+    if (bannerSession) {
+      sessionsToCancel.push(bannerSession);
+    }
+    if (resourceCenterSession) {
+      sessionsToCancel.push(resourceCenterSession);
     }
     sessionsToCancel.push(...launcherSessions);
 
@@ -353,13 +387,15 @@ export class WebSocketV2Service {
 
     // Cancel all sessions (cancelContent now supports all content types)
     await Promise.allSettled(
-      sessionsToCancel.map((session) => {
-        const context: ContentCancelContext = {
-          ...endContentContext,
-          sessionId: session.id,
-        };
-        return this.contentOrchestratorService.cancelContent(context);
-      }),
+      sessionsToCancel
+        .filter((session) => session.id != null)
+        .map((session) => {
+          const context: ContentCancelContext = {
+            ...endContentContext,
+            sessionId: session.id!,
+          };
+          return this.contentOrchestratorService.cancelContent(context);
+        }),
     );
 
     return true;
@@ -664,6 +700,131 @@ export class WebSocketV2Service {
       versionId: params.versionId,
       bizCompanyId,
     });
+  }
+
+  // ============================================================================
+  // Resource Center Methods
+  // ============================================================================
+
+  /**
+   * Open resource center (panel expanded)
+   */
+  async openResourceCenter(
+    context: WebSocketContext,
+    params: OpenResourceCenterDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackEventByType(BizEvents.RESOURCE_CENTER_OPENED, {
+      sessionId: params.sessionId,
+      environment,
+      clientContext,
+    });
+  }
+
+  /**
+   * Close resource center (panel collapsed)
+   */
+  async closeResourceCenter(
+    context: WebSocketContext,
+    params: CloseResourceCenterDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackEventByType(BizEvents.RESOURCE_CENTER_CLOSED, {
+      sessionId: params.sessionId,
+      environment,
+      clientContext,
+    });
+  }
+
+  /**
+   * Click resource center block
+   */
+  async clickResourceCenter(
+    context: WebSocketContext,
+    params: ClickResourceCenterDto,
+  ): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    return await this.eventTrackingService.trackEventByType(BizEvents.RESOURCE_CENTER_CLICKED, {
+      sessionId: params.sessionId,
+      environment,
+      clientContext,
+      blockId: params.blockId,
+    });
+  }
+
+  /**
+   * List resource center block content items (flows/checklists)
+   * Returns content names and types for the given block
+   */
+  async listResourceCenterBlockContent(
+    context: WebSocketContext,
+    params: ListResourceCenterBlockContentDto,
+  ): Promise<ResourceCenterBlockContentItem[]> {
+    const { socketData } = context;
+    const resourceCenterSession = socketData.resourceCenterSession;
+    if (!resourceCenterSession) {
+      this.logger.warn('No resource center session found');
+      return [];
+    }
+
+    const resourceCenterData = resourceCenterSession.version?.resourceCenter;
+    if (!resourceCenterData) {
+      return [];
+    }
+
+    let block: ResourceCenterBlock | undefined;
+    for (const tab of resourceCenterData.tabs) {
+      block = tab.blocks.find(
+        (b) => b.id === params.blockId && b.type === ResourceCenterBlockType.CONTENT_LIST,
+      );
+      if (block) break;
+    }
+    if (!block || block.type !== ResourceCenterBlockType.CONTENT_LIST) {
+      return [];
+    }
+
+    const contentItems = block.contentItems;
+    if (!contentItems || contentItems.length === 0) {
+      return [];
+    }
+
+    const contentIds = contentItems.map((item) => item.contentId);
+    const environmentId = socketData.environment.id;
+
+    // Query contents that are published in the current environment
+    const publishedContents = await this.prisma.contentOnEnvironment.findMany({
+      where: {
+        contentId: { in: contentIds },
+        environmentId,
+        published: true,
+      },
+      select: {
+        contentId: true,
+        content: { select: { id: true, name: true, type: true, deleted: true } },
+      },
+    });
+
+    const contentNameMap = new Map(
+      publishedContents
+        .filter((c) => !c.content.deleted)
+        .map((c) => [c.contentId, c.content.name || '']),
+    );
+
+    return contentItems
+      .filter((item) => contentNameMap.has(item.contentId))
+      .map((item) => ({
+        contentId: item.contentId,
+        contentType: item.contentType,
+        name: contentNameMap.get(item.contentId) || '',
+        ...(item.iconSource && { iconSource: item.iconSource }),
+        ...(item.iconType && { iconType: item.iconType }),
+        ...(item.iconUrl && { iconUrl: item.iconUrl }),
+        ...(item.navigateUrl && { navigateUrl: item.navigateUrl }),
+        ...(item.navigateOpenType && { navigateOpenType: item.navigateOpenType }),
+      }));
   }
 
   // ============================================================================

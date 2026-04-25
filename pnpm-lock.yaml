@@ -2944,8 +2944,8 @@ importers:
         specifier: ^1.0.2
         version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
       '@remixicon/react':
-        specifier: ^4.8.0
-        version: 4.8.0(react@18.2.0)
+        specifier: ^4.9.0
+        version: 4.9.0(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -3373,6 +3373,9 @@ importers:
       '@usertour-packages/shared-hooks':
         specifier: workspace:^
         version: link:../hooks
+      '@usertour-packages/skeleton':
+        specifier: workspace:^
+        version: link:../../components/skeleton
       '@usertour-packages/slider':
         specifier: workspace:^
         version: link:../../components/slider
@@ -8245,8 +8248,8 @@ packages:
     resolution: {integrity: sha512-mUnk8rPJBI9loFDZ+YzPGdeniYK+FTmRD1TMCz7ev2SNIozyKKpnGgsxO34u6Z4z/t0ITuu7voi/AshfsGsgFg==}
     engines: {node: '>=14.0.0'}
 
-  '@remixicon/react@4.8.0':
-    resolution: {integrity: sha512-cbzR04GKWa3zWdgn0C2i+u/avb167iWeu9gqFO00UGu84meARPAm3oKowDZTU6dlk/WS3UHo6k//LMRM1l7CRw==}
+  '@remixicon/react@4.9.0':
+    resolution: {integrity: sha512-5/jLDD4DtKxH2B4QVXTobvV1C2uL8ab9D5yAYNtFt+w80O0Ys1xFOrspqROL3fjrZi+7ElFUWE37hBfaAl6U+Q==}
     peerDependencies:
       react: '>=18.2.0'
 
@@ -20757,7 +20760,7 @@ snapshots:
 
   '@remix-run/router@1.20.0': {}
 
-  '@remixicon/react@4.8.0(react@18.2.0)':
+  '@remixicon/react@4.9.0(react@18.2.0)':
     dependencies:
       react: 18.2.0
 

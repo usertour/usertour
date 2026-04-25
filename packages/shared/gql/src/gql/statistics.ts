@@ -22,6 +22,7 @@ export const queryContentAnalytics = gql`
       viewsByDay
       viewsByStep
       viewsByTask
+      viewsByBlock
     }
   }
 `;

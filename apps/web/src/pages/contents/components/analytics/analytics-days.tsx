@@ -1,6 +1,6 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour-packages/card';
 import {
   ChartConfig,
   ChartContainer,
@@ -9,316 +9,331 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@usertour-packages/chart';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@usertour-packages/select';
 import { ContentDataType } from '@usertour/types';
-import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
-import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
+import { addDays, differenceInCalendarDays, format, startOfMonth, startOfWeek } from 'date-fns';
+import { useMemo, useState } from 'react';
+import { DateRange } from 'react-day-picker';
+import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
 import { AnalyticsDaysSkeleton } from './analytics-skeleton';
 
-// Add new function to generate chart configs
-const generateChartConfig = (
-  chartType: 'view' | 'rate',
-  contentType: ContentDataType,
-): ChartConfig => {
-  if (chartType === 'view') {
-    if (contentType === ContentDataType.TRACKER) {
-      return {
-        totalViews: {
-          label: 'Events',
-          color: 'hsl(var(--chart-1))',
-        },
-        uniqueViews: {
-          label: 'Unique events',
-          color: 'hsl(var(--chart-2))',
-        },
-      };
-    }
-    if (contentType === ContentDataType.LAUNCHER) {
-      return {
-        uniqueViews: {
-          label: 'Views',
-          color: 'hsl(var(--chart-1))',
-        },
-        uniqueCompletions: {
-          label: 'Activations',
-          color: 'hsl(var(--chart-2))',
-        },
-      };
-    }
-    if (contentType === ContentDataType.BANNER) {
-      return {
-        uniqueViews: {
-          label: 'Views',
-          color: 'hsl(var(--chart-1))',
-        },
-        uniqueCompletions: {
-          label: 'Dismissed',
-          color: 'hsl(var(--chart-2))',
-        },
-      };
-    }
+type Granularity = 'daily' | 'weekly' | 'monthly';
+
+const GRANULARITY_LABEL: Record<Granularity, string> = {
+  daily: 'Daily',
+  weekly: 'Weekly',
+  monthly: 'Monthly',
+};
+
+const availableGranularities = (rangeDays: number): Granularity[] => {
+  if (rangeDays <= 14) return ['daily'];
+  if (rangeDays <= 90) return ['daily', 'weekly'];
+  if (rangeDays <= 365) return ['weekly', 'monthly'];
+  return ['monthly'];
+};
+
+const defaultGranularity = (rangeDays: number): Granularity => {
+  if (rangeDays <= 30) return 'daily';
+  if (rangeDays <= 180) return 'weekly';
+  return 'monthly';
+};
+
+const isTotalSeries = (key: string) => key.startsWith('total');
+const lineDash = (key: string) => (isTotalSeries(key) ? '5 4' : undefined);
+
+const COLOR_VIEWS = 'hsl(217 91% 60%)';
+const COLOR_VIEWS_SOFT = 'hsl(217 91% 74%)';
+const COLOR_ENGAGEMENT = 'hsl(142 71% 45%)';
+const COLOR_ENGAGEMENT_SOFT = 'hsl(142 60% 58%)';
+
+const generateViewChartConfig = (contentType: ContentDataType): ChartConfig => {
+  if (contentType === ContentDataType.TRACKER) {
     return {
-      uniqueViews: {
-        label: 'Unique Views',
-        color: 'hsl(var(--chart-1))',
-      },
-      uniqueCompletions: {
-        label: 'Unique Completions',
-        color: 'hsl(var(--chart-2))',
-      },
-      totalViews: {
-        label: 'Total Views',
-        color: 'hsl(var(--chart-3))',
-      },
-      totalCompletions: {
-        label: 'Total Completions',
-        color: 'hsl(var(--chart-4))',
-      },
+      uniqueViews: { label: 'Unique events', color: COLOR_VIEWS },
+      totalViews: { label: 'Events', color: COLOR_VIEWS_SOFT },
     };
   }
-
   if (contentType === ContentDataType.LAUNCHER) {
     return {
-      unique: {
-        label: 'Activation Rate',
-        color: 'hsl(var(--chart-1))',
-      },
+      uniqueViews: { label: 'Unique views', color: COLOR_VIEWS },
+      uniqueCompletions: { label: 'Activations', color: COLOR_ENGAGEMENT },
     };
   }
-
+  if (contentType === ContentDataType.BANNER) {
+    return {
+      uniqueViews: { label: 'Unique views', color: COLOR_VIEWS },
+      uniqueCompletions: { label: 'Dismissals', color: COLOR_ENGAGEMENT },
+    };
+  }
+  if (contentType === ContentDataType.RESOURCE_CENTER) {
+    return {
+      uniqueViews: { label: 'Unique user interactions', color: COLOR_VIEWS },
+      uniqueCompletions: { label: 'Unique clickers', color: COLOR_ENGAGEMENT },
+    };
+  }
   return {
-    unique: {
-      label: 'Unique Completion rate',
-      color: 'hsl(var(--chart-1))',
-    },
-    total: {
-      label: 'Total Completion rate',
-      color: 'hsl(var(--chart-2))',
-    },
+    uniqueViews: { label: 'Unique views', color: COLOR_VIEWS },
+    uniqueCompletions: { label: 'Unique completions', color: COLOR_ENGAGEMENT },
+    totalViews: { label: 'Total views', color: COLOR_VIEWS_SOFT },
+    totalCompletions: { label: 'Total completions', color: COLOR_ENGAGEMENT_SOFT },
   };
 };
 
-// Improve type safety for chart data
-type ChartDataType = {
+type BucketData = {
   date: string;
+  tooltipLabel: string;
   totalViews: number;
   totalCompletions: number;
   uniqueViews: number;
   uniqueCompletions: number;
 };
 
-type RateChartDataType = {
-  date: string;
-  total: number;
-  unique: number;
+const formatDateRange = (range: DateRange | undefined): string | null => {
+  if (!range?.from || !range?.to) return null;
+  const days = differenceInCalendarDays(new Date(range.to), new Date(range.from)) + 1;
+  return `${format(range.from, 'MMM d')} – ${format(range.to, 'MMM d')} · ${days} ${
+    days === 1 ? 'day' : 'days'
+  }`;
 };
 
-// Extract tooltip formatter to a reusable component
-const TooltipFormatter = ({
+const formatBucketLabel = (date: Date, granularity: Granularity): string => {
+  if (granularity === 'monthly') return format(date, 'MMM yyyy');
+  return format(date, 'MMM d');
+};
+
+const formatBucketTooltipLabel = (date: Date, granularity: Granularity): string => {
+  if (granularity === 'monthly') return format(date, 'MMMM yyyy');
+  if (granularity === 'weekly') {
+    const end = addDays(date, 6);
+    const sameYear = date.getFullYear() === end.getFullYear();
+    const startLabel = sameYear ? format(date, 'MMM d') : format(date, 'MMM d, yyyy');
+    return `${startLabel} – ${format(end, 'MMM d, yyyy')}`;
+  }
+  return format(date, 'MMM d, yyyy');
+};
+
+const TooltipRow = ({
   value,
   name,
   chartConfig,
-  showPercentage = false,
 }: {
   value: number;
   name: string;
   chartConfig: ChartConfig;
-  showPercentage?: boolean;
 }) => (
-  <div className="flex flex-row w-[180px] items-center text-xs text-muted-foreground">
+  <div className="flex flex-row min-w-[180px] items-center text-xs text-muted-foreground">
     <div className="grow">{chartConfig[name as keyof typeof chartConfig]?.label || name}</div>
-    <div className="flex-none mx-2 font-medium tabular-nums text-foreground text-center w-6">
-      {value}
-      {showPercentage && <span className="font-normal text-muted-foreground">%</span>}
+    <div className="flex-none mx-2 font-medium tabular-nums text-foreground">
+      {value.toLocaleString()}
     </div>
   </div>
 );
 
-// Refactor chart components to be more DRY
-const AnalyticsViewChart = ({
+const ViewChart = ({
   chartData,
   chartConfig,
 }: {
-  chartData: ChartDataType[];
+  chartData: BucketData[];
   chartConfig: ChartConfig;
 }) => (
-  <CardContent>
-    <ChartContainer config={chartConfig} className="h-96 w-full">
-      <ComposedChart accessibilityLayer data={chartData}>
-        <CartesianGrid vertical={false} />
-        <YAxis tickLine={false} tickMargin={10} axisLine={false} />
-        <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
-        <ChartTooltip
-          content={
-            <ChartTooltipContent
-              formatter={(value, name) => (
-                <TooltipFormatter
-                  value={Number(value)}
-                  name={name as string}
-                  chartConfig={chartConfig}
-                />
-              )}
-            />
-          }
-          cursor={false}
+  <ChartContainer config={chartConfig} className="h-96 w-full">
+    <ComposedChart accessibilityLayer data={chartData}>
+      <CartesianGrid vertical={false} />
+      <YAxis
+        tickLine={false}
+        tickMargin={10}
+        axisLine={false}
+        allowDecimals={false}
+        tickFormatter={(v: number) => v.toLocaleString()}
+      />
+      <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
+      <ChartTooltip
+        content={
+          <ChartTooltipContent
+            labelFormatter={(label, payload) => {
+              const item = payload?.[0]?.payload as BucketData | undefined;
+              return item?.tooltipLabel ?? label;
+            }}
+            formatter={(value, name) => (
+              <TooltipRow value={Number(value)} name={name as string} chartConfig={chartConfig} />
+            )}
+          />
+        }
+        cursor={{ stroke: 'hsl(var(--border))', strokeDasharray: '3 3' }}
+      />
+      <ChartLegend content={<ChartLegendContent />} />
+      {Object.keys(chartConfig).map((key) => (
+        <Line
+          key={key}
+          dataKey={key}
+          type="linear"
+          stroke={`var(--color-${key})`}
+          strokeWidth={2}
+          strokeDasharray={lineDash(key)}
+          dot={{ r: 2, strokeWidth: 0, fill: `var(--color-${key})` }}
+          activeDot={{ r: 4 }}
         />
-        <ChartLegend content={<ChartLegendContent />} />
-        {Object.keys(chartConfig).map((key) => (
-          <Bar key={key} dataKey={key} fill={`var(--color-${key})`} radius={4} />
-        ))}
-      </ComposedChart>
-    </ChartContainer>
-  </CardContent>
+      ))}
+    </ComposedChart>
+  </ChartContainer>
 );
 
-const AnalyticsRateChart = (props: {
-  chartData: any;
-  chartConfig: ChartConfig;
-}) => {
-  const { chartData, chartConfig } = props;
-  return (
-    <CardContent>
-      <ChartContainer config={chartConfig} className="h-96 w-full">
-        <ComposedChart accessibilityLayer data={chartData}>
-          <CartesianGrid vertical={false} />
-          <YAxis tickLine={false} tickMargin={10} axisLine={false} unit={'%'} />
-          <XAxis
-            dataKey="date"
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-            // tickFormatter={(value) => value.slice(0, 3)}
-          />
-          {/* <ChartTooltip
-                content={<ChartTooltipContent indicator="line" />}
-                cursor={false}
-              /> */}
-          <ChartTooltip
-            content={
-              <ChartTooltipContent
-                formatter={(value, name) => (
-                  <div className="flex flex-row w-[180px] items-center text-xs text-muted-foreground">
-                    <div className="grow">
-                      {chartConfig[name as keyof typeof chartConfig]?.label || name}
-                    </div>
-                    <div className="flex-none mx-2 font-medium tabular-nums text-foreground text-center w-6">
-                      <>
-                        {value}
-                        <span className="font-normal text-muted-foreground">%</span>
-                      </>
-                    </div>
-                  </div>
-                )}
-              />
-            }
-            cursor={false}
-          />
-          <ChartLegend content={<ChartLegendContent />} />
-          {Object.keys(chartConfig).map((key) => (
-            <Line
-              key={key}
-              dataKey={key}
-              type="monotone"
-              stroke={`var(--color-${key})`}
-              strokeWidth={2}
-              dot={false}
-            />
-          ))}
-        </ComposedChart>
-      </ChartContainer>
-    </CardContent>
-  );
-};
+const EmptyState = () => (
+  <div className="flex h-96 items-center justify-center text-sm text-muted-foreground">
+    No data in this range
+  </div>
+);
 
 export const AnalyticsDays = () => {
-  const { analyticsData, loading } = useAnalyticsContext();
+  const { analyticsData, loading, dateRange } = useAnalyticsContext();
   const { content } = useContentDetailContext();
   const contentType = content?.type;
-  const [viewData, setViewData] = useState<ChartDataType[]>();
-  const [rateData, setRateData] = useState<RateChartDataType[]>();
 
-  // Improve data transformation
-  useEffect(() => {
-    if (!analyticsData?.viewsByDay) {
-      setViewData(undefined);
-      setRateData(undefined);
-      return;
+  const rangeDays = useMemo(() => {
+    if (!dateRange?.from || !dateRange?.to) return 0;
+    return differenceInCalendarDays(new Date(dateRange.to), new Date(dateRange.from)) + 1;
+  }, [dateRange]);
+
+  const granularityOptions = useMemo(() => availableGranularities(rangeDays), [rangeDays]);
+  const [userGranularity, setUserGranularity] = useState<Granularity | null>(null);
+  const granularity: Granularity =
+    userGranularity && granularityOptions.includes(userGranularity)
+      ? userGranularity
+      : defaultGranularity(rangeDays);
+
+  const { chartData, hasData, avgUniqueRate, avgTotalRate } = useMemo(() => {
+    const entries = analyticsData?.viewsByDay ?? [];
+    const buckets = new Map<string, BucketData>();
+
+    for (const entry of entries) {
+      const entryDate = new Date(entry.date);
+      const bucketDate =
+        granularity === 'monthly'
+          ? startOfMonth(entryDate)
+          : granularity === 'weekly'
+            ? startOfWeek(entryDate, { weekStartsOn: 1 })
+            : entryDate;
+      const key = bucketDate.toISOString();
+      const existing = buckets.get(key);
+      if (existing) {
+        existing.uniqueViews += entry.uniqueViews;
+        existing.uniqueCompletions += entry.uniqueCompletions;
+        existing.totalViews += entry.totalViews;
+        existing.totalCompletions += entry.totalCompletions;
+      } else {
+        buckets.set(key, {
+          date: formatBucketLabel(bucketDate, granularity),
+          tooltipLabel: formatBucketTooltipLabel(bucketDate, granularity),
+          uniqueViews: entry.uniqueViews,
+          uniqueCompletions: entry.uniqueCompletions,
+          totalViews: entry.totalViews,
+          totalCompletions: entry.totalCompletions,
+        });
+      }
     }
 
-    const transformData = analyticsData.viewsByDay.map((view) => {
-      const date = format(new Date(view.date), 'PP');
-      return {
-        viewData: {
-          date,
-          uniqueViews: view.uniqueViews,
-          uniqueCompletions: view.uniqueCompletions,
-          totalViews: view.totalViews,
-          totalCompletions: view.totalCompletions,
-        },
-        rateData: {
-          date,
-          unique: view.uniqueViews
-            ? Math.round((view.uniqueCompletions / view.uniqueViews) * 100)
-            : 0,
-          total: view.totalViews ? Math.round((view.totalCompletions / view.totalViews) * 100) : 0,
-        },
-      };
-    });
+    const data = Array.from(buckets.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([, v]) => v);
 
-    setViewData(transformData.map((d) => d.viewData));
-    setRateData(transformData.map((d) => d.rateData));
-  }, [analyticsData]);
+    const sum = data.reduce(
+      (acc, d) => {
+        acc.uniqueViews += d.uniqueViews;
+        acc.uniqueCompletions += d.uniqueCompletions;
+        acc.totalViews += d.totalViews;
+        acc.totalCompletions += d.totalCompletions;
+        return acc;
+      },
+      { uniqueViews: 0, uniqueCompletions: 0, totalViews: 0, totalCompletions: 0 },
+    );
+
+    return {
+      chartData: data,
+      hasData: data.length > 0 && (sum.uniqueViews > 0 || sum.totalViews > 0),
+      avgUniqueRate: sum.uniqueViews
+        ? Math.round((sum.uniqueCompletions / sum.uniqueViews) * 100)
+        : null,
+      avgTotalRate: sum.totalViews
+        ? Math.round((sum.totalCompletions / sum.totalViews) * 100)
+        : null,
+    };
+  }, [analyticsData, granularity]);
 
   if (loading) {
     return <AnalyticsDaysSkeleton />;
   }
 
-  if (!contentType || !viewData || !rateData) {
+  if (!contentType) {
     return null;
   }
 
-  const showRateTab =
-    contentType !== ContentDataType.BANNER && contentType !== ContentDataType.TRACKER;
+  const showRate =
+    contentType !== ContentDataType.BANNER &&
+    contentType !== ContentDataType.TRACKER &&
+    contentType !== ContentDataType.RESOURCE_CENTER;
+
+  const dateLabel = formatDateRange(dateRange);
+
+  const rateSummary =
+    !showRate || !hasData ? null : avgUniqueRate === null ? (
+      'No completions in range'
+    ) : contentType === ContentDataType.LAUNCHER ? (
+      <>
+        Avg activation rate{' '}
+        <span className="font-medium text-foreground tabular-nums">{avgUniqueRate}%</span>
+      </>
+    ) : (
+      <>
+        Avg unique rate{' '}
+        <span className="font-medium text-foreground tabular-nums">{avgUniqueRate}%</span>
+        {avgTotalRate !== null && (
+          <>
+            {' · '}Avg total rate{' '}
+            <span className="font-medium text-foreground tabular-nums">{avgTotalRate}%</span>
+          </>
+        )}
+      </>
+    );
 
   return (
-    <>
-      <Tabs defaultValue="views">
-        <Card>
-          <CardHeader>
-            <CardTitle className="space-between flex flex-row  items-center">
-              <div className="grow	">Performance</div>
-              {showRateTab && (
-                <TabsList className="flex-none">
-                  <TabsTrigger value="views" className="relative">
-                    Views
-                  </TabsTrigger>
-                  <TabsTrigger value="rate">Rate</TabsTrigger>
-                </TabsList>
-              )}
-            </CardTitle>
-            {/* <CardDescription>
-              {dateRange && dateRange.from && format(new Date(dateRange?.from), "PP")} - {dateRange && dateRange.to && format(new Date(dateRange?.to), "PP")}
-            </CardDescription> */}
-          </CardHeader>
-          <TabsContent value="views" className="border-none p-0 outline-none">
-            <AnalyticsViewChart
-              chartConfig={generateChartConfig('view', contentType)}
-              chartData={viewData}
-            />
-          </TabsContent>
-          {showRateTab && (
-            <TabsContent value="rate" className="border-none p-0 outline-none">
-              {/* <AnalyticsChart chartConfig={totalChartConfig} chartData={totalData} /> */}
-              <AnalyticsRateChart
-                chartConfig={generateChartConfig('rate', contentType)}
-                chartData={rateData}
-              />
-            </TabsContent>
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1.5">
+            <CardTitle>Performance</CardTitle>
+            {dateLabel && <CardDescription>{dateLabel}</CardDescription>}
+            {rateSummary && <div className="text-xs text-muted-foreground">{rateSummary}</div>}
+          </div>
+          {granularityOptions.length > 1 && (
+            <Select value={granularity} onValueChange={(v) => setUserGranularity(v as Granularity)}>
+              <SelectTrigger className="h-9 w-[120px] flex-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {granularityOptions.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {GRANULARITY_LABEL[opt]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
-        </Card>
-      </Tabs>
-    </>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {hasData ? (
+          <ViewChart chartConfig={generateViewChartConfig(contentType)} chartData={chartData} />
+        ) : (
+          <EmptyState />
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

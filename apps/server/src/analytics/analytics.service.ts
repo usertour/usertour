@@ -1,4 +1,4 @@
-import { BizEvents, EventAttributes, StepSettings } from '@usertour/types';
+import { BizEvents, EventAttributes, ResourceCenterData, StepSettings } from '@usertour/types';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -13,6 +13,8 @@ import { toZonedTime } from 'date-fns-tz';
 import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
 import { extractStepQuestion, numberQuestionTypes } from '@/utils/content-question';
+import { resolveContentVersionId } from '@/utils/content-utils';
+import { isDisplayOnlyBlockType, serializeBlockName } from '@usertour/helpers';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';
 import { PaginationConnection } from '@/common/openapi/pagination';
@@ -85,6 +87,10 @@ const EVENT_TYPE_MAPPING = {
     start: BizEvents.BANNER_SEEN,
     complete: BizEvents.BANNER_DISMISSED,
   },
+  [ContentType.RESOURCE_CENTER]: {
+    start: BizEvents.RESOURCE_CENTER_OPENED,
+    complete: BizEvents.RESOURCE_CENTER_CLICKED,
+  },
 };
 
 const EVENTS = [
@@ -98,6 +104,11 @@ const EVENTS = [
   BizEvents.TOOLTIP_TARGET_MISSING,
   BizEvents.BANNER_SEEN,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.RESOURCE_CENTER_STARTED,
+  BizEvents.RESOURCE_CENTER_OPENED,
+  BizEvents.RESOURCE_CENTER_CLOSED,
+  BizEvents.RESOURCE_CENTER_CLICKED,
+  BizEvents.RESOURCE_CENTER_DISMISSED,
 ];
 
 export interface ChecklistData {
@@ -393,6 +404,7 @@ export class AnalyticsService {
         )
       : false;
     const viewsByTask = await this.aggregationTasksByContent(condition, projectId);
+    const viewsByBlock = await this.aggregationBlocksByContent(condition, projectId);
     const viewsByDay = await this.aggregationViewsByDay(
       { ...condition },
       timezone,
@@ -408,6 +420,7 @@ export class AnalyticsService {
       viewsByDay,
       viewsByStep,
       viewsByTask,
+      viewsByBlock,
     };
   }
 
@@ -431,14 +444,12 @@ export class AnalyticsService {
       return false;
     }
 
-    const publishedVersionId =
-      content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
-        ?.publishedVersionId ||
-      content.publishedVersionId ||
-      content.editedVersionId;
-
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return false;
+    }
     const version = await this.prisma.version.findUnique({
-      where: { id: publishedVersionId },
+      where: { id: versionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
     });
 
@@ -587,7 +598,7 @@ export class AnalyticsService {
 
     // Validate date range
     if (isBefore(endDate, startDate)) {
-      return false;
+      return [];
     }
 
     // Get aggregated statistics
@@ -656,24 +667,28 @@ export class AnalyticsService {
     completeEvent: Event,
     tooltipTargetMissingEvent?: Event,
   ) {
-    const { contentId } = condition;
+    const { contentId, environmentId } = condition;
     const content = await this.prisma.content.findFirst({
       where: { id: contentId },
+      include: { contentOnEnvironments: true },
     });
     if (
       !content ||
       content.type === ContentType.CHECKLIST ||
       content.type === ContentType.LAUNCHER
     ) {
-      return false;
+      return [];
     }
-    const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return [];
+    }
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
     });
     if (!version || !version.steps || version.steps.length === 0) {
-      return false;
+      return [];
     }
     const maxStepIndex = version.steps.length;
 
@@ -705,20 +720,24 @@ export class AnalyticsService {
   }
 
   async aggregationTasksByContent(condition: AnalyticsConditions, projectId: string) {
-    const { contentId } = condition;
+    const { contentId, environmentId } = condition;
     const content = await this.prisma.content.findFirst({
       where: { id: contentId },
+      include: { contentOnEnvironments: true },
     });
     if (!content || content.type !== ContentType.CHECKLIST) {
-      return false;
+      return [];
     }
-    const versionId = content.published ? content.publishedVersionId : content.editedVersionId;
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return [];
+    }
     const version = await this.prisma.version.findFirst({
       where: { id: versionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
     });
     if (!version || !version.data) {
-      return false;
+      return [];
     }
 
     const events = await this.prisma.event.findMany({
@@ -737,7 +756,7 @@ export class AnalyticsService {
     const completeEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_TASK_COMPLETED);
     const clickEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_TASK_CLICKED);
     if (!startEvent || !completeEvent) {
-      return false;
+      return [];
     }
 
     const checklistData = version.data as unknown as ChecklistData;
@@ -784,12 +803,11 @@ export class AnalyticsService {
           })
         : 0;
       const totalClicks = clickEvent
-        ? await this.aggregationByItem({
+        ? await this.countTotalEvents({
             ...taskCondition,
             eventId: clickEvent.id,
             key: 'checklist_task_id',
             value: item.id,
-            isDistinct: false,
           })
         : 0;
       ret.push({
@@ -808,22 +826,66 @@ export class AnalyticsService {
     return ret;
   }
 
-  async aggregationQuestionSession(
-    contentId: string,
-    questionCvid: string,
-    startDateStr: string,
-    endDateStr: string,
-  ) {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+  async aggregationBlocksByContent(condition: AnalyticsConditions, projectId: string) {
+    const { contentId, environmentId } = condition;
+    const content = await this.prisma.content.findFirst({
+      where: { id: contentId },
+      include: { contentOnEnvironments: true },
+    });
+    if (!content || content.type !== ContentType.RESOURCE_CENTER) {
+      return [];
+    }
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return [];
+    }
+    const version = await this.prisma.version.findFirst({
+      where: { id: versionId },
+    });
+    if (!version || !version.data) {
+      return [];
+    }
 
-    const data = await this.prisma.$queryRaw`
-      SELECT Count(DISTINCT("BizAnswer"."bizSessionId")) from "BizAnswer"
-        WHERE
-        "BizAnswer"."contentId" = ${contentId} AND "BizAnswer"."cvid" = ${questionCvid}
-        AND "BizAnswer"."createdAt" >= ${startDate} AND "BizAnswer"."createdAt" <= ${endDate}
-        `;
-    return Number.parseInt(data[0].count.toString());
+    const clickEvent = await this.prisma.event.findFirst({
+      where: {
+        projectId,
+        codeName: BizEvents.RESOURCE_CENTER_CLICKED,
+      },
+    });
+    if (!clickEvent) {
+      return [];
+    }
+
+    const resourceCenterData = version.data as unknown as ResourceCenterData;
+    const blocksWithTab = resourceCenterData.tabs.flatMap((tab) =>
+      tab.blocks.filter((b) => !isDisplayOnlyBlockType(b.type)).map((block) => ({ block, tab })),
+    );
+
+    const ret = [];
+    for (const { block, tab } of blocksWithTab) {
+      const blockCondition = {
+        ...condition,
+        eventId: clickEvent.id,
+        key: EventAttributes.RESOURCE_CENTER_BLOCK_ID,
+        value: block.id,
+      };
+      const uniqueClicks = await this.aggregationByItem({
+        ...blockCondition,
+        isDistinct: true,
+      });
+      const totalClicks = await this.countTotalEvents(blockCondition);
+      ret.push({
+        name: serializeBlockName(block.name),
+        blockId: block.id,
+        tabId: tab.id,
+        tabName: tab.name,
+        analytics: {
+          uniqueClicks,
+          totalClicks,
+        },
+      });
+    }
+    return ret;
   }
 
   async aggregationByEvent(condition: AnalyticsConditions) {
@@ -994,7 +1056,7 @@ export class AnalyticsService {
     if (!isDistinct) {
       // Count total sessions
       const data = await this.prisma.$queryRaw`
-      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
+      SELECT Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -1011,6 +1073,21 @@ export class AnalyticsService {
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
         `;
+    return Number.parseInt(data[0].count.toString());
+  }
+
+  async countTotalEvents(condition: Omit<ItemAnalyticsConditions, 'isDistinct'>) {
+    const { contentId, eventId, startDateStr, endDateStr, key, value, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw`
+      SELECT Count(*) from "BizEvent"
+        left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
+        AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
+        AND "BizEvent"."data" ->> ${key} = ${String(value)}
+    `;
     return Number.parseInt(data[0].count.toString());
   }
 

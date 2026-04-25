@@ -11,7 +11,9 @@ import { CompanyDetail, CompanyList } from '@/pages/companies';
 import { ContentBuilder, ContentDetail, ContentList, ContentLocalization } from '@/pages/contents';
 import { Dashboard } from '@/pages/dashboard';
 import {
+  AdminBuilderLayout,
   AdminDetailLayout,
+  AdminSubpageLayout,
   AdminListLayout,
   AdminSettingsLayout,
   AuthLayout,
@@ -161,9 +163,9 @@ const config: CustomRouteConfig[] = [
   },
   /* ContentBuilder */
   {
-    path: '/env/:envId/:contentType/:contentId/:type/:versionId',
+    path: '/env/:envId/:contentType/:contentId/builder/:versionId',
     component: ContentBuilder,
-    layout: AdminDetailLayout,
+    layout: AdminBuilderLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'ContentBuilder',
@@ -201,7 +203,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/user/:userId',
     component: UserDetail,
-    layout: AdminDetailLayout,
+    layout: AdminSubpageLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'UserDetail',
@@ -210,7 +212,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/session/:sessionId',
     component: SessionDetail,
-    layout: AdminDetailLayout,
+    layout: AdminSubpageLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'SessionDetail',
@@ -219,7 +221,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/company/:companyId',
     component: CompanyDetail,
-    layout: AdminDetailLayout,
+    layout: AdminSubpageLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'CompanyDetail',

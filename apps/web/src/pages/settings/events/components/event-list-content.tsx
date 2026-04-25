@@ -10,6 +10,8 @@ import {
   TableRow,
 } from '@usertour-packages/table';
 import { format } from 'date-fns';
+import { Badge } from '@usertour-packages/badge';
+import { RiShieldCheckFill } from '@usertour-packages/icons';
 import { EventListAction } from './event-list-action';
 
 export const EventListContent = () => {
@@ -32,29 +34,40 @@ export const EventListContent = () => {
         </TableHeader>
         <TableBody>
           {eventList ? (
-            eventList?.map((event: Event) => (
-              <TableRow className="cursor-pointer" key={event.id} onClick={() => {}}>
-                <TableCell className="truncate">
-                  {event.description ? (
+            [...eventList]
+              .sort((a, b) => (a.predefined === b.predefined ? 0 : a.predefined ? -1 : 1))
+              .map((event: Event) => (
+                <TableRow className="cursor-pointer" key={event.id} onClick={() => {}}>
+                  <TableCell className="truncate">
                     <div className="flex flex-col">
-                      <span className="truncate">{event.displayName}</span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {event.description}
+                      <span className="flex items-center gap-1.5 truncate">
+                        {event.displayName}
+                        {event.predefined && (
+                          <Badge
+                            variant="secondary"
+                            className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
+                          >
+                            <RiShieldCheckFill className="h-3 w-3 text-foreground" />
+                            System
+                          </Badge>
+                        )}
                       </span>
+                      {event.description && (
+                        <span className="text-xs text-muted-foreground truncate">
+                          {event.description}
+                        </span>
+                      )}
                     </div>
-                  ) : (
-                    event.displayName
-                  )}
-                </TableCell>
-                <TableCell className="truncate">{event.codeName}</TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  {format(new Date(event.createdAt), 'PPpp')}
-                </TableCell>
-                <TableCell>
-                  <EventListAction event={event} />
-                </TableCell>
-              </TableRow>
-            ))
+                  </TableCell>
+                  <TableCell className="truncate">{event.codeName}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {format(new Date(event.createdAt), 'PPpp')}
+                  </TableCell>
+                  <TableCell>
+                    <EventListAction event={event} />
+                  </TableCell>
+                </TableRow>
+              ))
           ) : (
             <TableRow>
               <TableCell colSpan={4} className="h-24 text-center">

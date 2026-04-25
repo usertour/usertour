@@ -1,7 +1,7 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
-import { ArrowLeftIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
-import { CompanyIcon, UserProfile, Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
+import { ChevronRightIcon, DotsHorizontalIcon, CopyIcon } from '@radix-ui/react-icons';
+import { Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
 import { useTranslation } from 'react-i18next';
 import {
   AttributeBizTypes,
@@ -10,11 +10,14 @@ import {
   PageInfo,
   BizUser,
   BizUserOnCompany,
+  CompanyAttributes,
 } from '@usertour/types';
 import { formatAttributeValue } from '@/utils/common';
-import { useEffect, useState, createContext, useContext, ReactNode, Fragment } from 'react';
+import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { IdCardIcon, CalendarIcon, ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons';
+import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour-packages/table';
+import { MembershipRow } from '@/components/molecules/membership-row';
 import {
   Tooltip,
   TooltipContent,
@@ -29,18 +32,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import {
-  Tabs,
-  UnderlineTabsList,
-  UnderlineTabsTrigger,
-  UnderlineTabsContent,
-} from '@usertour-packages/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@usertour-packages/toggle';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { BizCompanyDeleteDialog } from '../dialogs';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour-packages/tailwind';
-import { UserAvatar } from '@/components/molecules/user-avatar';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { useQuery } from '@apollo/client';
 import { queryBizUser } from '@usertour-packages/gql';
 import { PaginationState } from '@tanstack/react-table';
@@ -185,76 +183,11 @@ const CompanyUserListProvider = ({
   );
 };
 
-// Helper function to get membership attributes for a user
-const getMembershipAttributes = (
-  user: BizUser,
-  companyId: string,
-  attributeList: any[] | undefined,
-) => {
-  if (!user.bizUsersOnCompany || !attributeList) {
-    return [];
-  }
-
-  // Find the membership for this specific company
-  const membership = user.bizUsersOnCompany.find(
+const getMembershipData = (user: BizUser, companyId: string): Record<string, unknown> | null => {
+  const membership = user.bizUsersOnCompany?.find(
     (m: BizUserOnCompany) => m.bizCompany?.id === companyId,
   );
-  if (!membership || !membership.data) {
-    return [];
-  }
-
-  const membershipData = membership.data;
-  const membershipAttributes = attributeList.filter(
-    (attr) => attr.bizType === AttributeBizTypes.Membership,
-  );
-
-  return Object.entries(membershipData)
-    .filter(([key]) => membershipAttributes.some((attr) => attr.codeName === key))
-    .map(([key, value]) => {
-      const attr = membershipAttributes.find((attr) => attr.codeName === key);
-      return {
-        name: attr?.displayName || key,
-        value,
-        dataType: attr?.dataType,
-        codeName: key,
-      };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
-};
-
-// Helper function to sort membership data entries
-const sortMembershipDataEntries = (data: Record<string, any>, attributes: any[]) => {
-  return Object.entries(data || {}).sort(([keyA], [keyB]) => {
-    // Find attributes in attributeList to determine order
-    const attrA = attributes?.find((attr) => attr.codeName === keyA);
-    const attrB = attributes?.find((attr) => attr.codeName === keyB);
-
-    // If both are in attributeList, sort by their order in the list
-    if (attrA && attrB && attributes) {
-      const indexA = attributes.indexOf(attrA);
-      const indexB = attributes.indexOf(attrB);
-      return indexA - indexB;
-    }
-
-    // If only one is in attributeList, prioritize the one in the list
-    if (attrA && !attrB) return -1;
-    if (!attrA && attrB) return 1;
-
-    // If neither is in attributeList, sort alphabetically
-    return keyA.localeCompare(keyB);
-  });
-};
-
-// Helper function to get membership data for a user
-const getMembershipData = (user: BizUser, companyId: string) => {
-  if (!user.bizUsersOnCompany) {
-    return null;
-  }
-
-  const membership = user.bizUsersOnCompany.find(
-    (m: BizUserOnCompany) => m.bizCompany?.id === companyId,
-  );
-  return membership?.data || null;
+  return (membership?.data as Record<string, unknown> | undefined) ?? null;
 };
 
 // --- CompanyUserList components ---
@@ -291,11 +224,6 @@ const CompanyUserList = () => {
   const { contents, loading, refetch, totalCount, companyId } = useCompanyUserListContext();
   const { attributeList } = useAttributeListContext();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const copyWithToast = useCopyWithToast();
-
-  const handleRowClick = (id: string) => {
-    setExpandedRowId(expandedRowId === id ? null : id);
-  };
 
   const handleRefresh = () => {
     refetch();
@@ -305,7 +233,7 @@ const CompanyUserList = () => {
     <div>
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm text-muted-foreground">
-          {t('companies.detail.companyMembers')} ({totalCount})
+          {t('companies.detail.membersCount', { count: totalCount })}
         </div>
         <TooltipProvider>
           <Tooltip>
@@ -333,124 +261,51 @@ const CompanyUserList = () => {
         </div>
       ) : (
         <div className="flex flex-col w-full grow">
-          {/* Header */}
-          <div className="flex flex-row border-b text-sm font-medium text-muted-foreground">
-            <div className="w-2/5 p-2">{t('companies.detail.user')}</div>
-            <div className="w-3/5 p-2">{t('companies.detail.membershipAttributes')}</div>
-            <div className="w-10" />
-          </div>
-          {/* Body */}
-          {contents.map((user: BizUser) => {
-            const membershipAttributes = getMembershipAttributes(user, companyId, attributeList);
-            const membershipData = getMembershipData(user, companyId);
-            const hasMembershipData = membershipData && Object.keys(membershipData).length > 0;
+          <Table className="table-fixed">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-2/5">{t('companies.detail.user')}</TableHead>
+                <TableHead className="w-3/5">{t('common.membership.attributes')}</TableHead>
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {contents.map((user: BizUser) => {
+                const membershipData = getMembershipData(user, companyId);
+                const isExpanded = expandedRowId === user.id;
 
-            return (
-              <Fragment key={user.id}>
-                {/* Data Row */}
-                <div
-                  className="group flex flex-row border-b cursor-pointer hover:bg-muted/50"
-                  onClick={() => hasMembershipData && handleRowClick(user.id)}
-                >
-                  <div className="w-2/5 p-2 min-w-0 overflow-hidden flex items-center">
-                    <Link to={`/env/${user.environmentId}/user/${user.id}`}>
-                      <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline min-w-0">
-                        <UserAvatar
-                          email={user.data?.email || ''}
-                          name={user.data?.name || ''}
-                          size="sm"
-                        />
-                        <div className="flex-1 min-w-0 truncate">
-                          {user.data?.email || user.externalId}
-                        </div>
+                const identity = (
+                  <Link
+                    to={`/env/${user.environmentId}/user/${user.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline min-w-0">
+                      <DefaultAvatar
+                        seed={user.externalId || user.data?.email || ''}
+                        name={user.data?.name || ''}
+                        size="sm"
+                      />
+                      <div className="flex-1 min-w-0 truncate">
+                        {user.data?.email || user.externalId}
                       </div>
-                    </Link>
-                  </div>
-                  <div className="w-3/5 p-2 min-w-0 overflow-hidden">
-                    {hasMembershipData ? (
-                      <div className="space-y-1 min-w-0">
-                        {membershipAttributes.slice(0, 2).map((attr, index) => {
-                          const formattedValue = formatAttributeValue(
-                            attr.value,
-                            attr.dataType || AttributeDataType.String,
-                          );
-                          return (
-                            <div key={index} className="text-sm flex items-center gap-1.5 min-w-0">
-                              <div className="font-medium text-muted-foreground flex-none w-32 truncate">
-                                {attr.name}:
-                              </div>
-                              <div className="flex-1 min-w-0 truncate">{formattedValue}</div>
-                            </div>
-                          );
-                        })}
-                        {membershipAttributes.length > 2 && (
-                          <div className="text-xs text-muted-foreground">
-                            +{membershipAttributes.length - 2} more attributes
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        {t('companies.detail.noMembershipAttributes')}
-                      </span>
-                    )}
-                  </div>
-                  <div className="w-10 flex items-center justify-center">
-                    {hasMembershipData &&
-                      (expandedRowId === user.id ? (
-                        <ChevronUpIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      ) : (
-                        <ChevronDownIcon className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      ))}
-                  </div>
-                </div>
-                {/* Expanded Row */}
-                {expandedRowId === user.id && membershipData && (
-                  <div className="bg-muted/50 text-sm">
-                    {sortMembershipDataEntries(membershipData, attributeList || []).map(
-                      ([key, value]) => {
-                        const attr = attributeList?.find((attr) => attr.codeName === key);
-                        const dataType = attr?.dataType || AttributeDataType.String;
-                        const formattedValue = formatAttributeValue(value, dataType);
-                        const isDateTime = dataType === AttributeDataType.DateTime;
-                        const textToCopy = String(isDateTime ? value : formattedValue);
+                    </div>
+                  </Link>
+                );
 
-                        return (
-                          <div
-                            key={key}
-                            className="group flex flex-row border-b last:border-0 min-w-0"
-                          >
-                            <div className="font-medium w-2/5 min-w-0 p-2 leading-6">
-                              <div className="break-words">{attr?.displayName || key}</div>
-                            </div>
-                            <div className="w-3/5 min-w-0 p-2 break-words leading-6">
-                              {isDateTime ? (
-                                <TruncatedText
-                                  text={formattedValue}
-                                  className="max-w-full"
-                                  rawValue={value}
-                                />
-                              ) : (
-                                formattedValue
-                              )}
-                            </div>
-                            <Button
-                              variant={'ghost'}
-                              size={'icon'}
-                              className="w-6 h-6 m-2 rounded invisible group-hover:visible flex-shrink-0"
-                              onClick={() => copyWithToast(textToCopy)}
-                            >
-                              <CopyIcon className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        );
-                      },
-                    )}
-                  </div>
-                )}
-              </Fragment>
-            );
-          })}
+                return (
+                  <MembershipRow
+                    key={user.id}
+                    identity={identity}
+                    membershipData={membershipData}
+                    attributeList={attributeList}
+                    isExpanded={isExpanded}
+                    onToggle={() => setExpandedRowId(isExpanded ? null : user.id)}
+                    colSpan={3}
+                  />
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -459,33 +314,12 @@ const CompanyUserList = () => {
   );
 };
 
+type CompanyActivityView = 'events' | 'members';
+
 interface CompanyDetailContentProps {
   environmentId: string;
   companyId: string;
 }
-
-// TooltipIcon component to reduce repetitive code
-const TooltipIcon = ({
-  icon: Icon,
-  tooltipKey,
-  className = 'w-4 h-4 text-foreground/60 cursor-help',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  tooltipKey: string;
-  className?: string;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Icon className={className} />
-        </TooltipTrigger>
-        <TooltipContent>{t(tooltipKey)}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
 
 // Loading wrapper component to handle all loading states
 const CompanyDetailContentWithLoading = ({
@@ -514,6 +348,7 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const [bizCompanyAttributes, setBizCompanyAttributes] = useState<any[]>([]);
   const { attributeList } = useAttributeListContext();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [activityView, setActivityView] = useState<CompanyActivityView>('events');
   const { isViewOnly } = useAppContext();
   const copyWithToast = useCopyWithToast();
 
@@ -578,16 +413,22 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
 
   return (
     <>
-      <div className="border-b bg-white flex-row md:flex w-full fixed justify-between items-center">
-        <div className="flex h-16 items-center px-4 w-full">
-          <ArrowLeftIcon
-            className="ml-4 h-6 w-8 cursor-pointer"
-            onClick={() => {
-              navigator(`/env/${environmentId}/companies`);
-            }}
-          />
-          <span>{t('companies.detail.title')}</span>
-          <div className="ml-auto">
+      <div className="border-b bg-white flex-row md:flex w-full sticky top-0 z-10 justify-between items-center">
+        <div className="flex h-16 items-center px-4 w-full gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => navigator(`/env/${environmentId}/companies`)}
+            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
+          >
+            {t('companies.detail.breadcrumb')}
+          </button>
+          <ChevronRightIcon className="h-4 w-4 text-muted-foreground/60 shrink-0" />
+          <span className="text-sm font-medium truncate min-w-0">
+            {(bizCompany?.data as any)?.name ||
+              bizCompany?.externalId ||
+              t('companies.detail.unnamedCompany')}
+          </span>
+          <div className="ml-auto shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
@@ -609,80 +450,84 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
           </div>
         </div>
       </div>
-      <div className="mx-auto mt-12 flex w-full max-w-[1600px] flex-col gap-6 p-14 xl:flex-row xl:items-start xl:justify-center">
-        {/* Left column - primary content */}
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-lg font-normal">
-                <CompanyIcon width={18} height={18} className="mr-2 text-foreground/80" />
-                {t('companies.detail.companyDetails')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2 gap-x-12">
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={IdCardIcon} tooltipKey="companies.detail.tooltips.companyId" />
-                  <span className="flex-1 min-w-0 truncate">{bizCompany?.externalId || ''}</span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizCompany?.externalId || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={CompanyIcon} tooltipKey="companies.detail.tooltips.name" />
-                  <span className="flex-1 min-w-0 truncate">
-                    {bizCompany?.data?.name || t('companies.detail.unnamedCompany')}
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-6 xl:p-8">
+        {/* Identity header */}
+        <div className="flex items-start gap-4 px-1">
+          <DefaultAvatar
+            seed={bizCompany?.externalId || bizCompany?.data?.name || ''}
+            name={bizCompany?.data?.name}
+            size="lg"
+          />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-semibold text-foreground truncate">
+              {bizCompany?.data?.name ||
+                bizCompany?.externalId ||
+                t('companies.detail.unnamedCompany')}
+            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {bizCompany?.externalId && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex min-w-0 items-center gap-1.5 cursor-help">
+                        <IdCardIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{bizCompany.externalId}</span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('companies.detail.externalIdTooltip')}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {(() => {
+                const companyData = bizCompany?.data as Record<string, unknown> | undefined;
+                const lastSeen =
+                  (companyData?.[CompanyAttributes.LAST_SEEN_AT] as string | undefined) ||
+                  bizCompany?.createdAt;
+                if (!lastSeen) return null;
+                return (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {t('companies.detail.lastSeen')}{' '}
+                      {formatAttributeValue(lastSeen, AttributeDataType.DateTime)}
+                    </span>
                   </span>
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizCompany?.data?.name || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="group flex items-center min-w-0 gap-2">
-                  <TooltipIcon icon={CalendarIcon} tooltipKey="companies.detail.tooltips.created" />
-                  {bizCompany?.createdAt ? (
-                    <TruncatedText
-                      text={formatAttributeValue(bizCompany.createdAt, AttributeDataType.DateTime)}
-                      className="flex-1 min-w-0 truncate"
-                      rawValue={bizCompany.createdAt}
-                    />
-                  ) : (
-                    <span className="flex-1 min-w-0 truncate">-</span>
-                  )}
-                  <Button
-                    variant={'ghost'}
-                    size={'icon'}
-                    className="w-6 h-6 rounded invisible group-hover:visible flex-shrink-0"
-                    onClick={() => copyWithToast(bizCompany?.createdAt || '')}
-                  >
-                    <CopyIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <Tabs defaultValue="activity-feed">
-                <UnderlineTabsList className="justify-start">
-                  <UnderlineTabsTrigger value="activity-feed" className="text-base font-medium">
-                    {t('companies.detail.tabs.activityFeed')}
-                  </UnderlineTabsTrigger>
-                  <UnderlineTabsTrigger value="company-members" className="text-base font-medium">
-                    {t('companies.detail.tabs.companyMembers')}
-                  </UnderlineTabsTrigger>
-                </UnderlineTabsList>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
 
-                <UnderlineTabsContent value="activity-feed">
+        {/* Two-column content area */}
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+          {/* Left column - primary content */}
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 pb-4">
+                <CardTitle className="text-sm font-semibold">
+                  {t('companies.detail.activity.title')}
+                </CardTitle>
+                <ToggleGroup
+                  type="single"
+                  value={activityView}
+                  onValueChange={(value) => {
+                    if (value === 'events' || value === 'members') {
+                      setActivityView(value);
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ToggleGroupItem value="events">
+                    {t('companies.detail.activity.events')}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="members">
+                    {t('companies.detail.activity.members')}
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </CardHeader>
+              <CardContent>
+                {activityView === 'events' && (
                   <CompanyActivityFeedProvider environmentId={environmentId} companyId={companyId}>
                     <ActivityFeed
                       environmentId={environmentId}
@@ -694,79 +539,72 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
                         return (
                           <Link
                             to={`/env/${environmentId}/user/${bizUser.id}`}
-                            className="flex items-center gap-1.5 hover:text-primary"
+                            className="block max-w-[160px] truncate text-xs hover:text-primary"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <UserAvatar
-                              email={bizUser.data?.email || ''}
-                              name={bizUser.data?.name || ''}
-                              size="sm"
-                            />
-                            <span className="text-xs truncate max-w-[120px]">{displayName}</span>
+                            {displayName}
                           </Link>
                         );
                       }}
                     />
                   </CompanyActivityFeedProvider>
-                </UnderlineTabsContent>
-
-                <UnderlineTabsContent value="company-members">
+                )}
+                {activityView === 'members' && (
                   <CompanyUserListProvider environmentId={environmentId} companyId={companyId}>
                     <CompanyUserList />
                   </CompanyUserListProvider>
-                </UnderlineTabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Right column - supporting attributes */}
-        <div className="w-full flex-none xl:w-[550px]">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-lg font-normal">
-                <UserProfile width={18} height={18} className="mr-2 text-foreground/80" />
-                {t('companies.detail.companyAttributes')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {bizCompanyAttributes.map(({ name, value, dataType }, key) => {
-                const formattedValue = formatAttributeValue(value, dataType);
-                const isDateTime = dataType === AttributeDataType.DateTime;
-                const textToCopy = String(isDateTime ? value : formattedValue);
+          {/* Right column - supporting attributes (sticky on xl) */}
+          <div className="w-full flex-none xl:sticky xl:top-20 xl:w-[420px] xl:self-start">
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-sm font-semibold">
+                  {t('companies.detail.companyAttributes')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {bizCompanyAttributes.map(({ name, value, dataType }, key) => {
+                  const formattedValue = formatAttributeValue(value, dataType);
+                  const isDateTime = dataType === AttributeDataType.DateTime;
+                  const textToCopy = String(isDateTime ? value : formattedValue);
 
-                return (
-                  <div
-                    className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
-                    key={key}
-                  >
-                    <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
-                      {name}
-                    </div>
-                    <div className="w-3/5 min-w-0 break-words p-2 leading-6">
-                      {isDateTime ? (
-                        <TruncatedText
-                          text={formattedValue}
-                          className="max-w-full"
-                          rawValue={value}
-                        />
-                      ) : (
-                        formattedValue
-                      )}
-                    </div>
-                    <Button
-                      variant={'ghost'}
-                      size={'icon'}
-                      className="m-2 h-6 w-6 rounded invisible flex-shrink-0 group-hover:visible"
-                      onClick={() => copyWithToast(textToCopy)}
+                  return (
+                    <div
+                      className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
+                      key={key}
                     >
-                      <CopyIcon className="w-4 h-4" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
+                      <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
+                        {name}
+                      </div>
+                      <div className="w-3/5 min-w-0 break-words p-2 leading-6">
+                        {isDateTime ? (
+                          <TruncatedText
+                            text={formattedValue}
+                            className="max-w-full"
+                            rawValue={value}
+                          />
+                        ) : (
+                          formattedValue
+                        )}
+                      </div>
+                      <Button
+                        variant={'ghost'}
+                        size={'icon'}
+                        className="m-2 h-6 w-6 rounded invisible flex-shrink-0 group-hover:visible"
+                        onClick={() => copyWithToast(textToCopy)}
+                      >
+                        <CopyIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 

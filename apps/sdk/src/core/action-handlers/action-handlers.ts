@@ -1,5 +1,5 @@
 import { ContentActionsItemType, RulesCondition, contentEndReason } from '@usertour/types';
-import { evalCode } from '@usertour/helpers';
+import { executeUserCode } from '@usertour/helpers';
 import { ErrorMessages } from '@/types/error-messages';
 import { logger } from '@/utils';
 import { BaseActionHandler, ActionHandlerContext, ActionSource } from './action-handler.interface';
@@ -24,7 +24,7 @@ export class CommonActionHandler extends BaseActionHandler {
           logger.warn('JavaScript evaluation is disabled. Skipping JAVASCRIPT_EVALUATE action.');
           return;
         }
-        evalCode(action.data.value);
+        executeUserCode(action.data.value);
         break;
       case ContentActionsItemType.PAGE_NAVIGATE:
         context.handleNavigate(action.data);

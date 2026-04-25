@@ -365,7 +365,11 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
           values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {
-          name: 'Event Trackers(coming soon)',
+          name: 'Event Trackers',
+          values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
+        },
+        {
+          name: 'Resource Center',
           values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'],
         },
         {

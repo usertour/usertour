@@ -15,6 +15,11 @@ import {
   ChecklistData,
   ChecklistInitialDisplay,
   LauncherData,
+  ContentListItem,
+  ResourceCenterBlock,
+  ResourceCenterBlockType,
+  ResourceCenterData,
+  ResourceCenterTab,
   SessionAttribute,
   SessionTheme,
   SessionStep,
@@ -73,6 +78,7 @@ export const SINGLETON_CONTENT_TYPES = [
   ContentDataType.FLOW,
   ContentDataType.CHECKLIST,
   ContentDataType.BANNER,
+  ContentDataType.RESOURCE_CENTER,
 ];
 
 /**
@@ -82,6 +88,7 @@ export const ALL_CONTENT_TYPES: ContentDataType[] = [
   ContentDataType.CHECKLIST,
   ContentDataType.FLOW,
   ContentDataType.BANNER,
+  ContentDataType.RESOURCE_CENTER,
   ContentDataType.LAUNCHER,
   ContentDataType.TRACKER,
 ];
@@ -789,6 +796,32 @@ export const getPublishedVersionId = (
   )?.publishedVersionId;
 };
 
+/**
+ * Resolve the version id to render for analytics / structure-enumeration paths.
+ *
+ * Priority:
+ *   1. `contentOnEnvironments[env].publishedVersionId` — the published version for this env
+ *      (see {@link getPublishedVersionId} for the strict-serving variant that also checks
+ *      `item.published`; this function does NOT require that).
+ *   2. `content.editedVersionId` — the current draft, used when the content has never been
+ *      published in this environment so analytics UI can still list the draft's structure
+ *      rather than showing an empty rows.
+ *
+ * Never reads the top-level legacy `content.publishedVersionId` — that field predates
+ * `contentOnEnvironments` and is multi-environment-unsafe.
+ */
+export const resolveContentVersionId = (
+  content: ContentWithContentOnEnvironments & { editedVersionId: string | null },
+  environmentId: string,
+): string | null => {
+  return (
+    content.contentOnEnvironments.find((item) => item.environmentId === environmentId)
+      ?.publishedVersionId ??
+    content.editedVersionId ??
+    null
+  );
+};
+
 // ============================================================================
 // Condition Evaluation and Extraction Functions
 // ============================================================================
@@ -1304,6 +1337,36 @@ export const extractBannerAttrCodes = (contents: ContentEditorRoot[] | undefined
 };
 
 /**
+ * Extracts every user-attribute code referenced across a resource-center block tree:
+ * block names (RichTextNode[]), RICH_TEXT / SUB_PAGE content (ContentEditorRoot[]),
+ * and CONTENT_LIST item navigateUrl (RichTextNode[]). Used to preload session.attributes
+ * so the SDK can resolve user-attribute placeholders without a round trip.
+ */
+export const extractResourceCenterAttrCodes = (blocks: ResourceCenterBlock[]): string[] => {
+  const attrCodes: string[] = [];
+  for (const block of blocks) {
+    if (Array.isArray((block as { name?: unknown }).name)) {
+      attrCodes.push(...extractAttrCodesRecursively((block as { name: unknown[] }).name));
+    }
+    if (
+      (block.type === ResourceCenterBlockType.RICH_TEXT ||
+        block.type === ResourceCenterBlockType.SUB_PAGE) &&
+      block.content
+    ) {
+      attrCodes.push(...extractUserAttrCodes(block.content as ContentEditorRoot[]));
+    }
+    if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
+      for (const item of block.contentItems ?? []) {
+        if (Array.isArray(item.navigateUrl)) {
+          attrCodes.push(...extractAttrCodesRecursively(item.navigateUrl));
+        }
+      }
+    }
+  }
+  return attrCodes;
+};
+
+/**
  * Extracts user attribute codes from launcher data
  * @param launcher - The launcher data
  * @returns Array of unique user attribute codes
@@ -1521,6 +1584,80 @@ export const evaluateChecklistItems = async (
 };
 
 /**
+ * Evaluate onlyShowBlock / onlyShowItem conditions across the resource center
+ * and annotate each block/item with `isVisible`. Blocks/items are NOT removed —
+ * visibility is applied later at activation time (mirroring Checklist). Keeping
+ * the full tree here lets the track-condition extractor see every
+ * client-evaluable condition even when siblings are currently hidden.
+ */
+export const evaluateResourceCenterBlocksWithContext = async (
+  resourceCenterData: ResourceCenterData,
+  clientContext: ClientContext,
+  clientConditions?: ClientCondition[],
+): Promise<ResourceCenterData> => {
+  if (resourceCenterData.tabs.length === 0) {
+    return resourceCenterData;
+  }
+
+  const activatedIds = clientConditions
+    ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === true)
+    .map((clientCondition: ClientCondition) => clientCondition.conditionId);
+
+  const deactivatedIds = clientConditions
+    ?.filter((clientCondition: ClientCondition) => clientCondition.isActive === false)
+    .map((clientCondition: ClientCondition) => clientCondition.conditionId);
+
+  const options: RulesEvaluationOptions = {
+    typeControl: {
+      [RulesType.CURRENT_PAGE]: true,
+      [RulesType.TIME]: true,
+    },
+    clientContext,
+    activatedIds,
+    deactivatedIds,
+  };
+
+  const isBlockVisible = async (block: ResourceCenterBlock): Promise<boolean> => {
+    if (!block.onlyShowBlock || !block.onlyShowBlockConditions?.length) {
+      return true;
+    }
+    const evaluated = await evaluateRulesConditions(block.onlyShowBlockConditions, options);
+    return isConditionsActived(evaluated);
+  };
+
+  const isItemVisible = async (item: ContentListItem): Promise<boolean> => {
+    if (!item.onlyShowItem || !item.onlyShowItemConditions?.length) {
+      return true;
+    }
+    const evaluated = await evaluateRulesConditions(item.onlyShowItemConditions, options);
+    return isConditionsActived(evaluated);
+  };
+
+  const annotateBlock = async (block: ResourceCenterBlock): Promise<ResourceCenterBlock> => {
+    const isVisible = await isBlockVisible(block);
+    if (block.type !== ResourceCenterBlockType.CONTENT_LIST) {
+      return { ...block, isVisible } as ResourceCenterBlock;
+    }
+    const contentItems: ContentListItem[] = [];
+    for (const item of block.contentItems ?? []) {
+      contentItems.push({ ...item, isVisible: await isItemVisible(item) });
+    }
+    return { ...block, isVisible, contentItems };
+  };
+
+  const tabs: ResourceCenterTab[] = [];
+  for (const tab of resourceCenterData.tabs) {
+    const blocks: ResourceCenterBlock[] = [];
+    for (const block of tab.blocks ?? []) {
+      blocks.push(await annotateBlock(block));
+    }
+    tabs.push({ ...tab, blocks });
+  }
+
+  return { ...resourceCenterData, tabs };
+};
+
+/**
  * Evaluates checklist items with client conditions
  * Extracts activated and deactivated condition IDs from client conditions
  * and evaluates checklist items with proper condition context
@@ -1605,6 +1742,56 @@ export const extractChecklistTrackConditions = (
           ...trackConditionBase,
           condition,
         });
+      }
+    }
+  }
+
+  return trackConditions;
+};
+
+/**
+ * Extracts client-evaluable track conditions from a resource center session.
+ * Walks all blocks and content-list items (regardless of `isVisible`), mirroring
+ * the Checklist pattern where the session keeps the full tree and visibility is
+ * applied only at activation time.
+ */
+export const extractResourceCenterTrackConditions = (
+  customContentSession: CustomContentSession,
+  allowedTypes: RulesType[] = [RulesType.ELEMENT, RulesType.TEXT_INPUT, RulesType.TEXT_FILL],
+): TrackCondition[] => {
+  const trackConditions: TrackCondition[] = [];
+  const contentId = customContentSession.content.id;
+  const contentType = customContentSession.content.type as ContentDataType;
+  const versionId = customContentSession.version.id;
+
+  if (contentType !== ContentDataType.RESOURCE_CENTER) {
+    return trackConditions;
+  }
+
+  const resourceCenterData = customContentSession.version.resourceCenter;
+  if (!resourceCenterData?.tabs?.length) {
+    return trackConditions;
+  }
+
+  const trackConditionBase = { contentId, contentType, versionId };
+
+  for (const tab of resourceCenterData.tabs) {
+    for (const block of tab.blocks ?? []) {
+      if (block.onlyShowBlock && block.onlyShowBlockConditions?.length > 0) {
+        const blockConditions = flattenConditions(block.onlyShowBlockConditions, allowedTypes);
+        for (const condition of blockConditions) {
+          trackConditions.push({ ...trackConditionBase, condition });
+        }
+      }
+      if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
+        for (const item of block.contentItems ?? []) {
+          if (item.onlyShowItem && item.onlyShowItemConditions?.length > 0) {
+            const itemConditions = flattenConditions(item.onlyShowItemConditions, allowedTypes);
+            for (const condition of itemConditions) {
+              trackConditions.push({ ...trackConditionBase, condition });
+            }
+          }
+        }
       }
     }
   }
@@ -1960,6 +2147,14 @@ export const hasContentSessionChanges = (
   }
 
   if (hasLauncherDataChanges(oldVersion.launcher, newVersion.launcher)) {
+    return true;
+  }
+
+  if (!isEqual(oldVersion.resourceCenter, newVersion.resourceCenter)) {
+    return true;
+  }
+
+  if (!isEqual(oldVersion.banner, newVersion.banner)) {
     return true;
   }
 

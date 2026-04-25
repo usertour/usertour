@@ -8,10 +8,18 @@ import type {
   ContentEditorRootColumn,
   ContentEditorRootElement,
   LauncherData,
+  ResourceCenterData,
+  RichTextNode,
   Step,
   StepTrigger,
 } from '@usertour/types';
-import { ContentDataType, ContentEditorElementType } from '@usertour/types';
+import {
+  ContentDataType,
+  ContentEditorElementType,
+  DEFAULT_RESOURCE_CENTER_DATA,
+  LauncherIconSource,
+  ResourceCenterBlockType,
+} from '@usertour/types';
 
 import { cuid, uuidV4 } from './helper';
 import { regenerateConditionIds } from './conditions';
@@ -353,3 +361,31 @@ export const duplicateStep = <T extends StepLike>(
     target: duplicateTarget(target as Step['target']),
   } as Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'versionId'>;
 };
+
+/** Check if a rich text node array is empty (no visible text content). */
+export const isRichTextEmpty = (nodes: RichTextNode[] | undefined): boolean => {
+  if (!nodes || nodes.length === 0) return true;
+  return nodes.every((node) => {
+    if ('text' in node) return String(node.text ?? '').trim() === '';
+    if ('children' in node) return isRichTextEmpty(node.children as RichTextNode[]);
+    return true;
+  });
+};
+
+/** Display-only block types that do not emit click analytics. */
+export const isDisplayOnlyBlockType = (type: ResourceCenterBlockType): boolean =>
+  type === ResourceCenterBlockType.RICH_TEXT || type === ResourceCenterBlockType.DIVIDER;
+
+/** Build a fresh ResourceCenterData with a single Home tab. Used when creating new RC content. */
+export const createDefaultResourceCenterData = (): ResourceCenterData => ({
+  ...DEFAULT_RESOURCE_CENTER_DATA,
+  tabs: [
+    {
+      id: uuidV4(),
+      name: 'Home',
+      iconSource: LauncherIconSource.BUILTIN,
+      iconType: 'home-line',
+      blocks: [],
+    },
+  ],
+});

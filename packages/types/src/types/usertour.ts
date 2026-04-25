@@ -68,6 +68,18 @@ export interface Usertour {
   // setServerEndpoint(serverEndpoint: string | null | undefined): void;
 
   disableEvalJs(): void;
+
+  openResourceCenter: () => void;
+
+  closeResourceCenter: () => void;
+
+  toggleResourceCenter: () => void;
+
+  showResourceCenterLauncher: () => void;
+
+  hideResourceCenterLauncher: () => void;
+
+  isResourceCenterOpen: () => boolean;
 }
 
 export interface Attributes {
@@ -116,13 +128,6 @@ export interface StartOptions {
   once?: boolean;
   continue?: boolean; // If true, continue the content if it's in progress. Default is false (restart)
   cvid?: string;
-}
-
-export interface ResourceCenterState {
-  isOpen: boolean;
-  hasChecklist: boolean;
-  uncompletedChecklistTaskCount: number;
-  unreadAnnouncementCount: number;
 }
 
 // interface ScrollPadding {

@@ -1,5 +1,6 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
+import { Card } from '@usertour-packages/card';
 import { buildConfig } from '@usertour/helpers';
 import { ContentDataType, RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
@@ -10,45 +11,52 @@ import {
 import { useAppContext } from '@/contexts/app-context';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
 
-const getAutoStartRulesName = (contentType: ContentDataType) => {
-  if (contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER) {
-    if (contentType === ContentDataType.BANNER) {
-      return 'Show banner if...';
-    }
-    return 'Show launcher if...';
-  }
-  return `Auto-start ${contentType} if...`;
+const getContentTypeLabel = (contentType: ContentDataType): string => {
+  if (contentType === ContentDataType.RESOURCE_CENTER) return 'resource center';
+  return contentType;
 };
 
+const getAutoStartRulesName = (contentType: ContentDataType) => {
+  if (contentType === ContentDataType.BANNER) {
+    return 'Show banner if...';
+  }
+  if (contentType === ContentDataType.LAUNCHER) {
+    return 'Show launcher if...';
+  }
+  return `Auto-start ${getContentTypeLabel(contentType)} if...`;
+};
+
+const SHOW_ONLY_CONTENT_TYPES = [ContentDataType.LAUNCHER, ContentDataType.BANNER];
+
 const AutoStartTooltips = (contentType: ContentDataType) => {
-  if (contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER) {
+  if (SHOW_ONLY_CONTENT_TYPES.includes(contentType)) {
     const contentLabel = contentType === ContentDataType.BANNER ? 'banner' : 'launcher';
     return (
       <>
-        Show the {contentLabel} if the user matches the given condition. If the user doesn't match
-        the condition, the {contentLabel} will not be displayed. Example: Show the {contentLabel} if
-        the user is a new user, or set current page condition matches /* to display on all pages.{' '}
-        <br />
+        Only users who match these conditions will see the {contentLabel}. For example, show it only
+        to new users, or set the current page rule to /* to show it everywhere. <br />
       </>
     );
   }
+  const label = getContentTypeLabel(contentType);
   return (
     <>
-      Automatically starts the {contentType} if the user matches the given condition. Example:
-      Automatically start an {contentType} for all new users. <br />
+      As soon as a user matches these conditions, the {label} starts automatically. For example,
+      start a {label} for every new user. <br />
       <br />
-      Once the {contentType} has started, the auto-start condition has no effect, meaning if the
-      user no longer matches it, the {contentType} will stay open until otherwise dismissed.
+      Note: once the {label} is already running, these conditions no longer matter. Even if the user
+      stops matching them, the {label} stays open until it's dismissed.
     </>
   );
 };
 
 const HideRulesTooltips = (contentType: ContentDataType) => {
+  const label = getContentTypeLabel(contentType);
   return (
     <>
-      Temporarily hides the {contentType} when this condition is true. Once the condition is no
-      longer true, the {contentType} may be shown again. <br />
-      Example: Hide a {contentType} on certain pages.
+      Temporarily hide the {label} while these conditions are true. Once they're no longer true, it
+      can show up again. <br />
+      For example, hide the {label} on certain pages.
     </>
   );
 };
@@ -94,14 +102,16 @@ export const ContentDetailSettings = () => {
     return null;
   }
 
-  const isLauncherLike =
-    contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.BANNER;
-  const isLauncher = contentType === ContentDataType.LAUNCHER;
-  const enabledAutoStartRules = !isLauncherLike;
+  const isShowOnly = SHOW_ONLY_CONTENT_TYPES.includes(contentType);
+  const isResourceCenter = contentType === ContentDataType.RESOURCE_CENTER;
+  // Flow / Checklist show the full advanced rule options; RC uses auto-start semantics but
+  // intentionally keeps the advanced options hidden.
+  const showAdvancedOptions = !isShowOnly && !isResourceCenter;
+  const enabledAutoStartRules = !isShowOnly;
 
   return (
     <div className="flex flex-col space-y-6 flex-none w-[420px]">
-      <div className="px-4 py-6 space-y-3 shadow bg-white rounded-lg">
+      <Card className="px-4 py-6 space-y-3">
         <ContentDetailAutoStartRules
           defaultConditions={config.autoStartRules}
           defaultEnabled={config.enabledAutoStartRules}
@@ -110,23 +120,23 @@ export const ContentDetailSettings = () => {
           onDataChange={handleAutoStartRulesDataChange}
           content={content}
           type={ContentDetailAutoStartRulesType.START_RULES}
-          showIfCompleted={!isLauncherLike}
-          showFrequency={!isLauncherLike}
+          showIfCompleted={showAdvancedOptions}
+          showFrequency={showAdvancedOptions}
           showAtLeast={contentType !== ContentDataType.CHECKLIST}
-          showWait={!isLauncherLike}
-          showPriority={!isLauncher}
+          showWait={showAdvancedOptions}
+          showPriority={showAdvancedOptions || isResourceCenter}
           disabled={isViewOnly}
           featureTooltip={AutoStartTooltips(contentType)}
         />
-      </div>
+      </Card>
 
       {enabledAutoStartRules && (
-        <div className="px-4 py-6 space-y-3 shadow bg-white rounded-lg">
+        <Card className="px-4 py-6 space-y-3">
           <ContentDetailAutoStartRules
             defaultConditions={config.hideRules}
             defaultEnabled={config.enabledHideRules}
             setting={config.hideRulesSetting}
-            name={`Temporarily hide ${contentType} if...`}
+            name={`Temporarily hide ${getContentTypeLabel(contentType)} if...`}
             onDataChange={handleHideRulesDataChange}
             content={content}
             type={ContentDetailAutoStartRulesType.HIDE_RULES}
@@ -137,7 +147,7 @@ export const ContentDetailSettings = () => {
             disabled={isViewOnly}
             featureTooltip={HideRulesTooltips(contentType)}
           />
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -13,6 +13,7 @@ export {
   useDynamicTableColumns,
   createDynamicColumn,
   buildColumnVisibility,
+  buildColumnOrder,
 } from './dynamic-columns';
 
 // Types and constants

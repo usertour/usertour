@@ -72,10 +72,11 @@ AdminLayoutContent.displayName = 'AdminLayoutContent';
 interface AdminLayoutNewContentProps {
   children: React.ReactNode;
   className?: string;
+  surface?: 'default' | 'muted';
 }
 
 export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
-  const { children, className } = props;
+  const { children, className, surface = 'default' } = props;
   const { settingType } = useParams<{ settingType?: string }>();
   const { isNonPrimary } = useEnvironmentSelection();
   const { environment } = useAppContext();
@@ -87,20 +88,22 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
     ? (settingType === 'api' || settingType === 'environments') && isNonPrimary
     : isNonPrimary;
 
+  const surfaceClassName =
+    surface === 'muted' ? 'bg-slate-100 dark:bg-background' : 'bg-white dark:bg-card/60';
+
   return (
     <div className="py-1.5 pr-1.5 w-full min-w-0 flex-shrink">
       <div
         className={cn(
-          'w-full min-w-0 overflow-hidden flex relative rounded-md border border-border bg-white h-full dark:border-border/60 dark:bg-card/60',
-          shouldShowWarning && [
-            'border-t-warning dark:border-t-warning',
-            'before:content-[""] before:absolute before:top-0 before:left-0 before:right-0 before:h-[1px] before:bg-warning before:z-[10] before:rounded-t-md dark:before:bg-warning',
-          ],
+          'w-full min-w-0 overflow-hidden flex relative rounded-xl border border-border h-full dark:border-border/60',
+          surfaceClassName,
+          shouldShowWarning &&
+            'before:content-[""] before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-warning before:z-20 dark:before:bg-warning',
           className,
         )}
       >
         {shouldShowWarning && environment?.name && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center rounded-b-md rounded-t-none border-0 bg-warning text-white px-3 pt-0 py-0.5 text-xs leading-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 inline-flex items-center justify-center rounded-b-md rounded-t-none border-0 bg-warning text-white px-3 pt-0 py-0.5 text-xs leading-none">
             {environment.name}
           </div>
         )}
@@ -112,9 +115,18 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
 
 AdminLayoutNewContent.displayName = 'AdminLayoutNewContent';
 
+export type AdminLayoutSurface = 'canvas' | 'muted' | 'default';
+
 interface AdminLayoutProps {
   children: React.ReactNode;
+  surface?: AdminLayoutSurface;
 }
+
+const SURFACE_BODY_CLASSNAMES: Record<AdminLayoutSurface, string> = {
+  canvas: 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]',
+  muted: 'bg-slate-100 dark:bg-background',
+  default: 'bg-slate-50',
+};
 
 // Add new custom hook
 const useUserTracking = (userInfo: UserProfile | null | undefined) => {
@@ -144,9 +156,8 @@ const useUserTracking = (userInfo: UserProfile | null | undefined) => {
 };
 
 export const AdminLayout = (props: AdminLayoutProps) => {
-  const { children } = props;
+  const { children, surface = 'default' } = props;
   const { project, userInfo } = useAppContext();
-  const { type } = useParams();
   const projectId = project?.id;
   const subscriptionId = project?.subscriptionId;
   useUserTracking(userInfo);
@@ -162,13 +173,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
           <SubscriptionProvider projectId={projectId} subscriptionId={subscriptionId}>
             <Helmet>
               <title>Usertour App</title>
-              <body
-                className={
-                  type === 'builder'
-                    ? 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]'
-                    : 'bg-slate-100'
-                }
-              />
+              <body className={SURFACE_BODY_CLASSNAMES[surface]} />
             </Helmet>
             <UpgradePlanBanner projectId={projectId} />
             {children}

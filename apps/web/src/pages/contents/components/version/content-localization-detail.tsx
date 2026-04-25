@@ -8,6 +8,7 @@ import { ArrowLeftIcon, ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-u
 import { Badge } from '@usertour-packages/badge';
 import { useAws } from '@usertour-packages/builder/src/hooks/use-aws';
 import { Button } from '@usertour-packages/button';
+import { Card } from '@usertour-packages/card';
 import { ImageEditIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
@@ -439,7 +440,7 @@ const ContentLocalizationDetailStep = (props: ContentLocalizationDetailStepProps
 
   return (
     <>
-      <div className="flex flex-col p-4 shadow bg-white rounded-lg space-y-4">
+      <Card className="flex flex-col p-4 space-y-4">
         <div className="font-bold">
           {index + 1}、{currentStep.name}
         </div>
@@ -462,7 +463,7 @@ const ContentLocalizationDetailStep = (props: ContentLocalizationDetailStepProps
             });
           })}
         </div>
-      </div>
+      </Card>
     </>
   );
 };

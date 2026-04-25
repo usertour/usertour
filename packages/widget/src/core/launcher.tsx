@@ -26,6 +26,7 @@ import {
 import { useLauncherPopperContentProps } from './hooks/use-launcher-popper-content-props';
 import { useSettingsStyles } from './hooks/use-settings-styles';
 import { hiddenStyle } from './utils/content';
+import { WidgetClass } from './class-names';
 
 function isNotNull<T>(value: T | null): value is T {
   return value !== null;
@@ -192,8 +193,8 @@ const LauncherIcon = ({
   if (type === LauncherDataType.BEACON) {
     return (
       <>
-        <div className="usertour-widget-beacon__ping" />
-        <div className="usertour-widget-beacon__pong" />
+        <div className={WidgetClass.beaconHalo} />
+        <div className={WidgetClass.beaconCore} />
       </>
     );
   }

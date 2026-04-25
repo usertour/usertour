@@ -194,8 +194,8 @@ export const EventEditForm = (props: EditFormProps) => {
                         <FormLabel className="flex flex-row">
                           Display name
                           <QuestionTooltip className="ml-1">
-                            Human-friendly name shown in Usertour. we recommend using Word Case
-                            (i.e.uppercasefrst letter, spaces between words) such as"Billing Plan".
+                            Human-friendly name shown across the Usertour dashboard. e.g. "User
+                            signed up".
                           </QuestionTooltip>
                         </FormLabel>
                         <FormControl>
@@ -214,9 +214,8 @@ export const EventEditForm = (props: EditFormProps) => {
                         <FormLabel className="flex flex-row">
                           Code name
                           <QuestionTooltip className="ml-1">
-                            Code-friendly name used in Webhooks and integrations to analytics
-                            providers. we recommend using snake_case (i.e. lowercaseletters with
-                            words separated by underscore).
+                            Code-friendly identifier used throughout Usertour to reference this
+                            event. e.g. "user_signed_up".
                           </QuestionTooltip>
                         </FormLabel>
                         <FormControl>
@@ -238,12 +237,7 @@ export const EventEditForm = (props: EditFormProps) => {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex flex-row">
-                        Description
-                        <QuestionTooltip className="ml-1">
-                          Put any additional information for your own reference here.
-                        </QuestionTooltip>
-                      </FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Input placeholder="Optional description" className="w-full" {...field} />
                       </FormControl>
@@ -262,7 +256,8 @@ export const EventEditForm = (props: EditFormProps) => {
                       <FormLabel className="flex flex-row">
                         Event attributes
                         <QuestionTooltip className="ml-1">
-                          Determines what kind of values will be stored in this attribute.
+                          Attributes included in this event's payload schema. e.g. "plan_name",
+                          "price".
                         </QuestionTooltip>
                       </FormLabel>
                       <hr className="border-t" />

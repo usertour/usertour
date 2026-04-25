@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ColumnFiltersState,
   SortingState,
+  Updater,
   VisibilityState,
   useReactTable,
   getCoreRowModel,
@@ -23,6 +24,7 @@ import {
   DataTablePagination,
   useDynamicTableColumns,
   buildColumnVisibility,
+  buildColumnOrder,
 } from '@/components/molecules/segment/table';
 import { UserDataTableToolbar } from './user-data-table-toolbar';
 import { useUserTableColumns } from '@/hooks/use-user-table-columns';
@@ -57,13 +59,36 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  // Column visibility state
-  const baseColumnVisibility = React.useMemo(() => {
-    const attrList = attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || [];
-    return buildColumnVisibility(attrList, segment.columns);
-  }, [attributeList, segment.columns]);
+  // Static column ids (checkbox, etc.) that must lead the order regardless of segment config
+  const staticColumnIds = React.useMemo(
+    () => columns.map((c) => c.id).filter((id): id is string => !!id),
+    [columns],
+  );
+
+  // Column visibility + order state derived from segment
+  const userAttrList = React.useMemo(
+    () => attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || [],
+    [attributeList],
+  );
+
+  const baseColumnVisibility = React.useMemo(
+    () => buildColumnVisibility(userAttrList, segment.columns),
+    [userAttrList, segment.columns],
+  );
+
+  const baseColumnOrder = React.useMemo(
+    () => buildColumnOrder(userAttrList, segment.columns, staticColumnIds),
+    [userAttrList, segment.columns, staticColumnIds],
+  );
 
   const [userColumnVisibility, setUserColumnVisibility] = React.useState<VisibilityState>({});
+  const [userColumnOrder, setUserColumnOrder] = React.useState<string[] | undefined>(undefined);
+
+  // Reset local overrides when segment changes
+  React.useEffect(() => {
+    setUserColumnVisibility({});
+    setUserColumnOrder(undefined);
+  }, [segment.id]);
 
   const columnVisibility = React.useMemo(
     () => ({
@@ -73,16 +98,29 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     [baseColumnVisibility, userColumnVisibility],
   );
 
+  const columnOrder = userColumnOrder ?? baseColumnOrder;
+
+  const handleColumnOrderChange = React.useCallback(
+    (updaterOrValue: Updater<string[]>) => {
+      setUserColumnOrder((prev) => {
+        const current = prev ?? baseColumnOrder;
+        return typeof updaterOrValue === 'function' ? updaterOrValue(current) : updaterOrValue;
+      });
+    },
+    [baseColumnOrder],
+  );
+
   // Memoize table state to prevent unnecessary re-renders
   const tableState = React.useMemo(
     () => ({
       sorting,
       pagination,
       columnVisibility,
+      columnOrder,
       rowSelection,
       columnFilters,
     }),
-    [sorting, pagination, columnVisibility, rowSelection, columnFilters],
+    [sorting, pagination, columnVisibility, columnOrder, rowSelection, columnFilters],
   );
 
   // Create the table instance
@@ -98,6 +136,7 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setUserColumnVisibility,
+    onColumnOrderChange: handleColumnOrderChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -132,6 +171,8 @@ export const UserDataTable = ({ segment }: UserDataTableProps) => {
         onRowSelectionChange={setRowSelection}
         columnVisibility={columnVisibility}
         onColumnVisibilityChange={setUserColumnVisibility}
+        columnOrder={columnOrder}
+        onColumnOrderChange={handleColumnOrderChange}
         columnFilters={columnFilters}
         onColumnFiltersChange={setColumnFilters}
         onRowClick={handleRowClick}

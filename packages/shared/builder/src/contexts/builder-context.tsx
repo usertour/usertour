@@ -31,9 +31,12 @@ export enum BuilderMode {
   LAUNCHER = 'launcher',
   CHECKLIST = 'checklist',
   BANNER = 'banner',
+  RESOURCE_CENTER = 'resource-center',
   LAUNCHER_TARGET = 'launcher-target',
   LAUNCHER_TOOLTIP = 'launcher-tooltip',
   CHECKLIST_ITEM = 'checklist-item',
+  RESOURCE_CENTER_BLOCK = 'resource-center-block',
+  RESOURCE_CENTER_TAB = 'resource-center-tab',
   NONE = 'none',
 }
 
