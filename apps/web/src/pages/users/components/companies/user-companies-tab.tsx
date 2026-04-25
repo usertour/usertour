@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { BizUser } from '@usertour/types';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CompanyIcon } from '@usertour-packages/icons';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour-packages/table';
+import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { MembershipRow } from '@/components/molecules/membership-row';
 
 interface UserCompaniesTabProps {
@@ -49,7 +49,11 @@ export const UserCompaniesTab = ({ bizUser, environmentId }: UserCompaniesTabPro
 
             const identity = (
               <div className="flex items-center gap-2 min-w-0">
-                <CompanyIcon className="w-5 h-5 flex-none text-muted-foreground" />
+                <DefaultAvatar
+                  seed={company.externalId || company.data?.name || ''}
+                  name={company.data?.name}
+                  size="sm"
+                />
                 <Link
                   to={`/env/${environmentId}/company/${company.id}`}
                   className="truncate hover:text-primary underline-offset-4 hover:underline"
