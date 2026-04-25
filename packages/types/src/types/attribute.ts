@@ -116,6 +116,15 @@ export enum EventAttributes {
   // Flow attributes
   FLOW_ID = 'flow_id',
   FLOW_NAME = 'flow_name',
+  /**
+   * @deprecated Not populated by the v2 event pipeline. Only the legacy v1
+   * web-socket service ever set this on FLOW events. Use the
+   * `BizEvent.bizSessionId` foreign key column to link an event to its
+   * session — that is the canonical source.
+   *
+   * Same applies to LAUNCHER_SESSION_ID / CHECKLIST_SESSION_ID /
+   * BANNER_SESSION_ID / RESOURCE_CENTER_SESSION_ID below.
+   */
   FLOW_SESSION_ID = 'flow_session_id',
   FLOW_START_REASON = 'flow_start_reason',
   FLOW_END_REASON = 'flow_end_reason',
@@ -129,6 +138,7 @@ export enum EventAttributes {
   // Launcher attributes
   LAUNCHER_ID = 'launcher_id',
   LAUNCHER_NAME = 'launcher_name',
+  /** @deprecated Never populated. See FLOW_SESSION_ID. */
   LAUNCHER_SESSION_ID = 'launcher_session_id',
   LAUNCHER_START_REASON = 'launcher_start_reason',
   LAUNCHER_END_REASON = 'launcher_end_reason',
@@ -137,6 +147,7 @@ export enum EventAttributes {
   // Checklist attributes
   CHECKLIST_ID = 'checklist_id',
   CHECKLIST_NAME = 'checklist_name',
+  /** @deprecated Never populated. See FLOW_SESSION_ID. */
   CHECKLIST_SESSION_ID = 'checklist_session_id',
   CHECKLIST_START_REASON = 'checklist_start_reason',
   CHECKLIST_END_REASON = 'checklist_end_reason',
@@ -148,12 +159,14 @@ export enum EventAttributes {
   // Banner attributes
   BANNER_ID = 'banner_id',
   BANNER_NAME = 'banner_name',
+  /** @deprecated Never populated. See FLOW_SESSION_ID. */
   BANNER_SESSION_ID = 'banner_session_id',
   BANNER_VERSION_ID = 'banner_version_id',
   BANNER_VERSION_NUMBER = 'banner_version_number',
   // Resource center attributes
   RESOURCE_CENTER_ID = 'resource_center_id',
   RESOURCE_CENTER_NAME = 'resource_center_name',
+  /** @deprecated Never populated. See FLOW_SESSION_ID. */
   RESOURCE_CENTER_SESSION_ID = 'resource_center_session_id',
   RESOURCE_CENTER_START_REASON = 'resource_center_start_reason',
   RESOURCE_CENTER_VERSION_ID = 'resource_center_version_id',
