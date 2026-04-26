@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1180" width="1400" height="1180">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  </style>
+  <defs>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+  <rect width="1400" height="1180" fill="#ffffff"/>
+  <text x="700" y="56" text-anchor="middle" font-size="26" font-weight="700" fill="#0f172a">How a Banner Starts</text>
+  <rect x="900" y="36" width="108" height="26" rx="13" fill="#ea580c"/>
+  <text x="954" y="54" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff" letter-spacing="0.5">MAX 1 EVER</text>
+  <text x="700" y="86" text-anchor="middle" font-size="14" fill="#64748b">Banners are one-and-done per user — once a banner ends, it never starts again for the same user</text>
+  <rect x="50" y="116" width="1300" height="212" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 116 L 1336 116 Q 1350 116 1350 130 L 1350 172 L 50 172 L 50 130 Q 50 116 64 116 Z" fill="#fff7ed" stroke="none"/>
+  <line x1="50" y1="172" x2="1350" y2="172" stroke="#fdba74" stroke-width="1"/>
+  <circle cx="85" cy="144" r="17" fill="#ea580c"/>
+  <text x="85" y="150" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">A</text>
+  <text x="114" y="138" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">PATH A</text>
+  <text x="114" y="160" font-size="18" font-weight="700" fill="#0f172a">Explicit start</text>
+  <text x="72" y="192" font-size="11" font-weight="700" fill="#ea580c" letter-spacing="0.5">WHEN</text>
+  <text x="72" y="210" font-size="11" fill="#64748b">Something asks for a specific banner</text>
+  <text x="72" y="236" font-size="12.5" fill="#334155">&#183;  usertour.start(bannerId) call</text>
+  <text x="72" y="256" font-size="12.5" fill="#334155">&#183;  URL with content_id parameter</text>
+  <text x="72" y="276" font-size="12.5" fill="#334155">&#183;  Button action targets a banner</text>
+  <text x="503" y="192" font-size="11" font-weight="700" fill="#ea580c" letter-spacing="0.5">CHECKS</text>
+  <text x="503" y="218" font-size="12.5" fill="#334155">&#10003;  Banner is published</text>
+  <text x="503" y="238" font-size="12.5" fill="#334155">&#10003;  Audience targeting matches the user</text>
+  <text x="503" y="258" font-size="12.5" fill="#334155">&#10003;  User has no prior session for this banner</text>
+  <text x="503" y="278" font-size="12.5" fill="#334155">&#10003;  "Show only once" rule still passes</text>
+  <text x="934" y="192" font-size="11" font-weight="700" fill="#ea580c" letter-spacing="0.5">RESULT</text>
+  <text x="934" y="218" font-size="12.5" fill="#334155">The banner appears at the top or bottom of the page.</text>
+  <line x1="700" y1="332" x2="700" y2="364" stroke="#ea580c" stroke-width="2"/>
+  <polygon points="693,362 707,362 700,372" fill="#ea580c"/>
+  <text x="718" y="354" font-size="12" font-style="italic" fill="#64748b">if no specific banner ID was provided</text>
+  <rect x="50" y="382" width="1300" height="192" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 382 L 1336 382 Q 1350 382 1350 396 L 1350 438 L 50 438 L 50 396 Q 50 382 64 382 Z" fill="#fff7ed" stroke="none"/>
+  <line x1="50" y1="438" x2="1350" y2="438" stroke="#fdba74" stroke-width="1"/>
+  <circle cx="85" cy="410" r="17" fill="#ea580c"/>
+  <text x="85" y="416" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">B</text>
+  <text x="114" y="404" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">PATH B</text>
+  <text x="114" y="426" font-size="18" font-weight="700" fill="#0f172a">Resume the active banner</text>
+  <text x="72" y="458" font-size="11" font-weight="700" fill="#ea580c" letter-spacing="0.5">WHEN</text>
+  <text x="72" y="476" font-size="11" fill="#64748b">User already has a banner showing</text>
+  <text x="72" y="502" font-size="12.5" fill="#334155">&#183;  Page reload</text>
+  <text x="72" y="522" font-size="12.5" fill="#334155">&#183;  New tab opens</text>
+  <text x="72" y="542" font-size="12.5" fill="#334155">&#183;  Connection re-established</text>
+  <text x="503" y="458" font-size="11" font-weight="700" fill="#ea580c" letter-spacing="0.5">CHECKS</text>
+  <text x="503" y="484" font-size="12.5" fill="#334155">&#10003;  An active banner session exists</text>
+  <text x="503" y="504" font-size="12.5" fill="#334155">&#10003;  Banner display rules still active (else canceled)</text>
+  <text x="934" y="458" font-size="11" font-weight="700" fill="#ea580c" letter-spacing="0.5">RESULT</text>
+  <text x="934" y="484" font-size="12.5" fill="#334155">SDK reuses the existing session. If show rules went</text>
+  <text x="934" y="502" font-size="12.5" fill="#334155">stale, the banner is dismissed.</text>
+  <line x1="700" y1="578" x2="700" y2="610" stroke="#ea580c" stroke-width="2"/>
+  <polygon points="693,608 707,608 700,618" fill="#ea580c"/>
+  <text x="718" y="600" font-size="12" font-style="italic" fill="#64748b">if no active banner exists for this user</text>
+  <rect x="50" y="628" width="1300" height="320" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 628 L 1336 628 Q 1350 628 1350 642 L 1350 684 L 50 684 L 50 642 Q 50 628 64 628 Z" fill="#fff7ed" stroke="none"/>
+  <line x1="50" y1="684" x2="1350" y2="684" stroke="#fdba74" stroke-width="1"/>
+  <circle cx="85" cy="656" r="17" fill="#ea580c"/>
+  <text x="85" y="662" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">C</text>
+  <text x="114" y="650" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">PATH C</text>
+  <text x="114" y="672" font-size="18" font-weight="700" fill="#0f172a">Auto-pick from eligible banners</text>
+  <text x="72" y="714" font-size="13" fill="#334155">Usertour scans banners whose audience matches this user AND that the user has never seen before, then tries these two options in order. (Banners don't support "sticky to recent"</text>
+  <text x="72" y="732" font-size="13" fill="#334155">or wait timers — the start-rule editor hides those for one-shot content.)</text>
+  <rect x="72" y="760" width="613" height="166" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="106" cy="796" r="18" fill="#fed7aa" stroke="#ea580c" stroke-width="1.6"/>
+  <text x="106" y="802" text-anchor="middle" font-size="15" font-weight="700" fill="#ea580c">①</text>
+  <text x="136" y="801" font-size="14" font-weight="700" fill="#0f172a">Start rule matches now</text>
+  <text x="88" y="844" font-size="12" fill="#334155">First eligible banner whose start condition — page, event, or attribute — is true at this</text>
+  <text x="88" y="861" font-size="12" fill="#334155">moment.</text>
+  <line x1="689" y1="843" x2="705" y2="843" stroke="#ea580c" stroke-width="2"/>
+  <polygon points="703,837 703,849 713,843" fill="#ea580c"/>
+  <rect x="715" y="760" width="613" height="166" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="749" cy="796" r="18" fill="#fed7aa" stroke="#ea580c" stroke-width="1.6"/>
+  <text x="749" y="802" text-anchor="middle" font-size="15" font-weight="700" fill="#ea580c">②</text>
+  <text x="779" y="801" font-size="14" font-weight="700" fill="#0f172a">Track conditions for later</text>
+  <text x="731" y="844" font-size="12" fill="#334155">No banner matches yet, but some might once the user navigates or an attribute updates. Set up</text>
+  <text x="731" y="861" font-size="12" fill="#334155">listeners and revisit on those events.</text>
+  <rect x="50" y="978" width="1300" height="150" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 978 L 1336 978 Q 1350 978 1350 992 L 1350 1022 L 50 1022 L 50 992 Q 50 978 64 978 Z" fill="#fff7ed" stroke="none"/>
+  <line x1="50" y1="1022" x2="1350" y2="1022" stroke="#fdba74" stroke-width="1"/>
+  <text x="72" y="1006" font-size="14" font-weight="700" fill="#0f172a">What makes Banner different from other content types</text>
+  <text x="72" y="1048" font-size="12" fill="#ea580c">&#9670;</text>
+  <text x="90" y="1048" font-size="12" fill="#334155">Max 1 ever per user. Once a banner is dismissed (by anyone — user or admin), it never re-starts for</text>
+  <text x="90" y="1064" font-size="12" fill="#334155">that user.</text>
+  <text x="72" y="1086" font-size="12" fill="#ea580c">&#9670;</text>
+  <text x="90" y="1086" font-size="12" fill="#334155">Single active session at a time. A new banner can't show while another banner is active.</text>
+  <text x="708" y="1048" font-size="12" fill="#ea580c">&#9670;</text>
+  <text x="726" y="1048" font-size="12" fill="#334155">Dismissal IS completion — there is no separate "completed" event. BANNER_DISMISSED ends the</text>
+  <text x="726" y="1064" font-size="12" fill="#334155">lifecycle.</text>
+  <text x="708" y="1086" font-size="12" fill="#ea580c">&#9670;</text>
+  <text x="726" y="1086" font-size="12" fill="#334155">When start rules go stale (e.g. user navigates away from the matching page), the banner is</text>
+  <text x="726" y="1102" font-size="12" fill="#334155">auto-canceled.</text>
+</svg>

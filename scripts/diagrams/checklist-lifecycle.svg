@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1180" width="1400" height="1180">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  </style>
+  <defs>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+  <rect width="1400" height="1180" fill="#ffffff"/>
+  <text x="700" y="56" text-anchor="middle" font-size="26" font-weight="700" fill="#0f172a">How a Checklist Starts</text>
+  <rect x="900" y="36" width="124" height="26" rx="13" fill="#16a34a"/>
+  <text x="962" y="54" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff" letter-spacing="0.5">MAX 1 ACTIVE</text>
+  <text x="700" y="86" text-anchor="middle" font-size="14" fill="#64748b">When something asks Usertour to show a checklist, three paths are tried in order — first match wins</text>
+  <rect x="50" y="116" width="1300" height="192" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 116 L 1336 116 Q 1350 116 1350 130 L 1350 172 L 50 172 L 50 130 Q 50 116 64 116 Z" fill="#f0fdf4" stroke="none"/>
+  <line x1="50" y1="172" x2="1350" y2="172" stroke="#bbf7d0" stroke-width="1"/>
+  <circle cx="85" cy="144" r="17" fill="#16a34a"/>
+  <text x="85" y="150" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">A</text>
+  <text x="114" y="138" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">PATH A</text>
+  <text x="114" y="160" font-size="18" font-weight="700" fill="#0f172a">Explicit start</text>
+  <text x="72" y="192" font-size="11" font-weight="700" fill="#16a34a" letter-spacing="0.5">WHEN</text>
+  <text x="72" y="210" font-size="11" fill="#64748b">Something asks for a specific checklist</text>
+  <text x="72" y="236" font-size="12.5" fill="#334155">&#183;  usertour.start(checklistId) call</text>
+  <text x="72" y="256" font-size="12.5" fill="#334155">&#183;  URL with content_id parameter</text>
+  <text x="72" y="276" font-size="12.5" fill="#334155">&#183;  Button action targets a checklist</text>
+  <text x="503" y="192" font-size="11" font-weight="700" fill="#16a34a" letter-spacing="0.5">CHECKS</text>
+  <text x="503" y="218" font-size="12.5" fill="#334155">&#10003;  Checklist is published</text>
+  <text x="503" y="238" font-size="12.5" fill="#334155">&#10003;  "Show only once" rule still passes</text>
+  <text x="503" y="258" font-size="12.5" fill="#334155">&#10003;  Audience targeting matches the user</text>
+  <text x="934" y="192" font-size="11" font-weight="700" fill="#16a34a" letter-spacing="0.5">RESULT</text>
+  <text x="934" y="218" font-size="12.5" fill="#334155">The requested checklist appears, with task progress</text>
+  <text x="934" y="236" font-size="12.5" fill="#334155">trackable.</text>
+  <line x1="700" y1="312" x2="700" y2="344" stroke="#16a34a" stroke-width="2"/>
+  <polygon points="693,342 707,342 700,352" fill="#16a34a"/>
+  <text x="718" y="334" font-size="12" font-style="italic" fill="#64748b">if no specific checklist ID was provided</text>
+  <rect x="50" y="362" width="1300" height="172" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 362 L 1336 362 Q 1350 362 1350 376 L 1350 418 L 50 418 L 50 376 Q 50 362 64 362 Z" fill="#f0fdf4" stroke="none"/>
+  <line x1="50" y1="418" x2="1350" y2="418" stroke="#bbf7d0" stroke-width="1"/>
+  <circle cx="85" cy="390" r="17" fill="#16a34a"/>
+  <text x="85" y="396" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">B</text>
+  <text x="114" y="384" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">PATH B</text>
+  <text x="114" y="406" font-size="18" font-weight="700" fill="#0f172a">Resume the active checklist</text>
+  <text x="72" y="438" font-size="11" font-weight="700" fill="#16a34a" letter-spacing="0.5">WHEN</text>
+  <text x="72" y="456" font-size="11" fill="#64748b">User already has a checklist running</text>
+  <text x="72" y="482" font-size="12.5" fill="#334155">&#183;  Page reload</text>
+  <text x="72" y="502" font-size="12.5" fill="#334155">&#183;  New tab opens</text>
+  <text x="72" y="522" font-size="12.5" fill="#334155">&#183;  Connection re-established</text>
+  <text x="503" y="438" font-size="11" font-weight="700" fill="#16a34a" letter-spacing="0.5">CHECKS</text>
+  <text x="503" y="464" font-size="12.5" fill="#334155">&#10003;  An active checklist session exists</text>
+  <text x="934" y="438" font-size="11" font-weight="700" fill="#16a34a" letter-spacing="0.5">RESULT</text>
+  <text x="934" y="464" font-size="12.5" fill="#334155">SDK reuses the existing session — task progress</text>
+  <text x="934" y="482" font-size="12.5" fill="#334155">preserved, no duplicated events.</text>
+  <line x1="700" y1="538" x2="700" y2="570" stroke="#16a34a" stroke-width="2"/>
+  <polygon points="693,568 707,568 700,578" fill="#16a34a"/>
+  <text x="718" y="560" font-size="12" font-style="italic" fill="#64748b">if no active checklist exists for this user</text>
+  <rect x="50" y="588" width="1300" height="360" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 588 L 1336 588 Q 1350 588 1350 602 L 1350 644 L 50 644 L 50 602 Q 50 588 64 588 Z" fill="#f0fdf4" stroke="none"/>
+  <line x1="50" y1="644" x2="1350" y2="644" stroke="#bbf7d0" stroke-width="1"/>
+  <circle cx="85" cy="616" r="17" fill="#16a34a"/>
+  <text x="85" y="622" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">C</text>
+  <text x="114" y="610" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">PATH C</text>
+  <text x="114" y="632" font-size="18" font-weight="700" fill="#0f172a">Auto-pick from eligible checklists</text>
+  <text x="72" y="674" font-size="13" fill="#334155">Usertour scans checklists whose audience targeting matches this user, then tries these four options in order. The first one that produces a checklist wins.</text>
+  <rect x="72" y="698" width="291" height="228" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="106" cy="734" r="18" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="106" y="740" text-anchor="middle" font-size="15" font-weight="700" fill="#16a34a">①</text>
+  <text x="136" y="739" font-size="14" font-weight="700" fill="#0f172a">Sticky to recent</text>
+  <text x="88" y="782" font-size="12" fill="#334155">If the user was just engaged with a</text>
+  <text x="88" y="799" font-size="12" fill="#334155">checklist and its rules still match,</text>
+  <text x="88" y="816" font-size="12" fill="#334155">restart it to preserve their task progress.</text>
+  <line x1="367" y1="812" x2="383" y2="812" stroke="#16a34a" stroke-width="2"/>
+  <polygon points="381,806 381,818 391,812" fill="#16a34a"/>
+  <rect x="393" y="698" width="291" height="228" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="427" cy="734" r="18" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="427" y="740" text-anchor="middle" font-size="15" font-weight="700" fill="#16a34a">②</text>
+  <text x="457" y="739" font-size="14" font-weight="700" fill="#0f172a">Start rule matches now</text>
+  <text x="409" y="782" font-size="12" fill="#334155">First checklist whose start condition —</text>
+  <text x="409" y="799" font-size="12" fill="#334155">page, event, attribute, or timer — is true</text>
+  <text x="409" y="816" font-size="12" fill="#334155">at this moment.</text>
+  <line x1="688" y1="812" x2="704" y2="812" stroke="#16a34a" stroke-width="2"/>
+  <polygon points="702,806 702,818 712,812" fill="#16a34a"/>
+  <rect x="714" y="698" width="291" height="228" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="748" cy="734" r="18" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="748" y="740" text-anchor="middle" font-size="15" font-weight="700" fill="#16a34a">③</text>
+  <text x="778" y="739" font-size="14" font-weight="700" fill="#0f172a">Wait timer pending</text>
+  <text x="730" y="782" font-size="12" fill="#334155">A checklist needs e.g. "5 seconds after</text>
+  <text x="730" y="799" font-size="12" fill="#334155">page load". Schedule the timer; re-evaluate</text>
+  <text x="730" y="816" font-size="12" fill="#334155">when it fires.</text>
+  <line x1="1009" y1="812" x2="1025" y2="812" stroke="#16a34a" stroke-width="2"/>
+  <polygon points="1023,806 1023,818 1033,812" fill="#16a34a"/>
+  <rect x="1035" y="698" width="291" height="228" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="1069" cy="734" r="18" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="1069" y="740" text-anchor="middle" font-size="15" font-weight="700" fill="#16a34a">④</text>
+  <text x="1099" y="739" font-size="14" font-weight="700" fill="#0f172a">Track conditions for later</text>
+  <text x="1051" y="782" font-size="12" fill="#334155">No checklist matches yet, but some might</text>
+  <text x="1051" y="799" font-size="12" fill="#334155">once the user interacts. Set up listeners</text>
+  <text x="1051" y="816" font-size="12" fill="#334155">and revisit on those events.</text>
+  <rect x="50" y="978" width="1300" height="150" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 978 L 1336 978 Q 1350 978 1350 992 L 1350 1022 L 50 1022 L 50 992 Q 50 978 64 978 Z" fill="#f0fdf4" stroke="none"/>
+  <line x1="50" y1="1022" x2="1350" y2="1022" stroke="#bbf7d0" stroke-width="1"/>
+  <text x="72" y="1006" font-size="14" font-weight="700" fill="#0f172a">What makes Checklist different from other content types</text>
+  <text x="72" y="1048" font-size="12" fill="#16a34a">&#9670;</text>
+  <text x="90" y="1048" font-size="12" fill="#334155">Multi-task list — task clicks and completions are events on the same session, not new sessions.</text>
+  <text x="72" y="1086" font-size="12" fill="#16a34a">&#9670;</text>
+  <text x="90" y="1086" font-size="12" fill="#334155">Completion is not the end. CHECKLIST_COMPLETED fires when all tasks are done, but the checklist</text>
+  <text x="90" y="1102" font-size="12" fill="#334155">stays visible until dismissed.</text>
+  <text x="708" y="1048" font-size="12" fill="#16a34a">&#9670;</text>
+  <text x="726" y="1048" font-size="12" fill="#334155">Visible vs hidden is just a display state (CHECKLIST_HIDDEN), not a session lifecycle change.</text>
+  <text x="708" y="1086" font-size="12" fill="#16a34a">&#9670;</text>
+  <text x="726" y="1086" font-size="12" fill="#334155">Only one checklist at a time per user. Re-creatable after end (unlike Banner / Resource Center).</text>
+</svg>
