@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1180" width="1400" height="1180">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  </style>
+  <defs>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+  <rect width="1400" height="1180" fill="#ffffff"/>
+  <text x="700" y="56" text-anchor="middle" font-size="26" font-weight="700" fill="#0f172a">How a Resource Center Starts</text>
+  <rect x="900" y="36" width="108" height="26" rx="13" fill="#9333ea"/>
+  <text x="954" y="54" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff" letter-spacing="0.5">MAX 1 EVER</text>
+  <text x="700" y="86" text-anchor="middle" font-size="14" fill="#64748b">Resource Centers are one-and-done per user — once dismissed, it never starts again for the same user</text>
+  <rect x="50" y="116" width="1300" height="212" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 116 L 1336 116 Q 1350 116 1350 130 L 1350 172 L 50 172 L 50 130 Q 50 116 64 116 Z" fill="#faf5ff" stroke="none"/>
+  <line x1="50" y1="172" x2="1350" y2="172" stroke="#ddd6fe" stroke-width="1"/>
+  <circle cx="85" cy="144" r="17" fill="#9333ea"/>
+  <text x="85" y="150" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">A</text>
+  <text x="114" y="138" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">PATH A</text>
+  <text x="114" y="160" font-size="18" font-weight="700" fill="#0f172a">Explicit start</text>
+  <text x="72" y="192" font-size="11" font-weight="700" fill="#9333ea" letter-spacing="0.5">WHEN</text>
+  <text x="72" y="210" font-size="11" fill="#64748b">Something asks for a specific Resource Center</text>
+  <text x="72" y="236" font-size="12.5" fill="#334155">&#183;  usertour.start(resourceCenterId) call</text>
+  <text x="72" y="256" font-size="12.5" fill="#334155">&#183;  URL with content_id parameter</text>
+  <text x="72" y="276" font-size="12.5" fill="#334155">&#183;  Button action targets a Resource Center</text>
+  <text x="503" y="192" font-size="11" font-weight="700" fill="#9333ea" letter-spacing="0.5">CHECKS</text>
+  <text x="503" y="218" font-size="12.5" fill="#334155">&#10003;  Resource Center is published</text>
+  <text x="503" y="238" font-size="12.5" fill="#334155">&#10003;  Audience targeting matches the user</text>
+  <text x="503" y="258" font-size="12.5" fill="#334155">&#10003;  User has no prior session for it</text>
+  <text x="503" y="278" font-size="12.5" fill="#334155">&#10003;  "Show only once" rule still passes</text>
+  <text x="934" y="192" font-size="11" font-weight="700" fill="#9333ea" letter-spacing="0.5">RESULT</text>
+  <text x="934" y="218" font-size="12.5" fill="#334155">The Resource Center is available — typically a Help icon</text>
+  <text x="934" y="236" font-size="12.5" fill="#334155">appears.</text>
+  <line x1="700" y1="332" x2="700" y2="364" stroke="#9333ea" stroke-width="2"/>
+  <polygon points="693,362 707,362 700,372" fill="#9333ea"/>
+  <text x="718" y="354" font-size="12" font-style="italic" fill="#64748b">if no specific Resource Center ID was provided</text>
+  <rect x="50" y="382" width="1300" height="172" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 382 L 1336 382 Q 1350 382 1350 396 L 1350 438 L 50 438 L 50 396 Q 50 382 64 382 Z" fill="#faf5ff" stroke="none"/>
+  <line x1="50" y1="438" x2="1350" y2="438" stroke="#ddd6fe" stroke-width="1"/>
+  <circle cx="85" cy="410" r="17" fill="#9333ea"/>
+  <text x="85" y="416" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">B</text>
+  <text x="114" y="404" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">PATH B</text>
+  <text x="114" y="426" font-size="18" font-weight="700" fill="#0f172a">Resume the active Resource Center</text>
+  <text x="72" y="458" font-size="11" font-weight="700" fill="#9333ea" letter-spacing="0.5">WHEN</text>
+  <text x="72" y="476" font-size="11" fill="#64748b">User already has a Resource Center available</text>
+  <text x="72" y="502" font-size="12.5" fill="#334155">&#183;  Page reload</text>
+  <text x="72" y="522" font-size="12.5" fill="#334155">&#183;  New tab opens</text>
+  <text x="72" y="542" font-size="12.5" fill="#334155">&#183;  Connection re-established</text>
+  <text x="503" y="458" font-size="11" font-weight="700" fill="#9333ea" letter-spacing="0.5">CHECKS</text>
+  <text x="503" y="484" font-size="12.5" fill="#334155">&#10003;  An active Resource Center session exists</text>
+  <text x="934" y="458" font-size="11" font-weight="700" fill="#9333ea" letter-spacing="0.5">RESULT</text>
+  <text x="934" y="484" font-size="12.5" fill="#334155">SDK reuses the existing session — open / close state</text>
+  <text x="934" y="502" font-size="12.5" fill="#334155">preserved across reloads.</text>
+  <line x1="700" y1="558" x2="700" y2="590" stroke="#9333ea" stroke-width="2"/>
+  <polygon points="693,588 707,588 700,598" fill="#9333ea"/>
+  <text x="718" y="580" font-size="12" font-style="italic" fill="#64748b">if no active Resource Center exists for this user</text>
+  <rect x="50" y="608" width="1300" height="320" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 608 L 1336 608 Q 1350 608 1350 622 L 1350 664 L 50 664 L 50 622 Q 50 608 64 608 Z" fill="#faf5ff" stroke="none"/>
+  <line x1="50" y1="664" x2="1350" y2="664" stroke="#ddd6fe" stroke-width="1"/>
+  <circle cx="85" cy="636" r="17" fill="#9333ea"/>
+  <text x="85" y="642" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">C</text>
+  <text x="114" y="630" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">PATH C</text>
+  <text x="114" y="652" font-size="18" font-weight="700" fill="#0f172a">Auto-pick from eligible Resource Centers</text>
+  <text x="72" y="694" font-size="13" fill="#334155">Usertour scans Resource Centers whose audience matches this user AND that the user has never seen before, then tries these two options in order. (Resource Centers don't support</text>
+  <text x="72" y="712" font-size="13" fill="#334155">"sticky to recent" or wait timers — the start-rule editor hides those for one-shot content.)</text>
+  <rect x="72" y="740" width="613" height="166" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="106" cy="776" r="18" fill="#ede9fe" stroke="#9333ea" stroke-width="1.6"/>
+  <text x="106" y="782" text-anchor="middle" font-size="15" font-weight="700" fill="#9333ea">①</text>
+  <text x="136" y="781" font-size="14" font-weight="700" fill="#0f172a">Start rule matches now</text>
+  <text x="88" y="824" font-size="12" fill="#334155">First eligible Resource Center whose start condition — page, event, or attribute — is true at</text>
+  <text x="88" y="841" font-size="12" fill="#334155">this moment.</text>
+  <line x1="689" y1="823" x2="705" y2="823" stroke="#9333ea" stroke-width="2"/>
+  <polygon points="703,817 703,829 713,823" fill="#9333ea"/>
+  <rect x="715" y="740" width="613" height="166" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="749" cy="776" r="18" fill="#ede9fe" stroke="#9333ea" stroke-width="1.6"/>
+  <text x="749" y="782" text-anchor="middle" font-size="15" font-weight="700" fill="#9333ea">②</text>
+  <text x="779" y="781" font-size="14" font-weight="700" fill="#0f172a">Track conditions for later</text>
+  <text x="731" y="824" font-size="12" fill="#334155">Nothing matches yet, but might once the user navigates or an attribute updates. Set up listeners</text>
+  <text x="731" y="841" font-size="12" fill="#334155">and revisit on those events.</text>
+  <rect x="50" y="958" width="1300" height="150" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 958 L 1336 958 Q 1350 958 1350 972 L 1350 1002 L 50 1002 L 50 972 Q 50 958 64 958 Z" fill="#faf5ff" stroke="none"/>
+  <line x1="50" y1="1002" x2="1350" y2="1002" stroke="#ddd6fe" stroke-width="1"/>
+  <text x="72" y="986" font-size="14" font-weight="700" fill="#0f172a">What makes Resource Center different from other content types</text>
+  <text x="72" y="1028" font-size="12" fill="#9333ea">&#9670;</text>
+  <text x="90" y="1028" font-size="12" fill="#334155">Max 1 ever per user. Once dismissed, it never re-starts for that user (same guard as Banner).</text>
+  <text x="72" y="1066" font-size="12" fill="#9333ea">&#9670;</text>
+  <text x="90" y="1066" font-size="12" fill="#334155">Open and close the panel many times — those are events on the same session, not new sessions.</text>
+  <text x="708" y="1028" font-size="12" fill="#9333ea">&#9670;</text>
+  <text x="726" y="1028" font-size="12" fill="#334155">Has tabs, blocks, and items inside. Clicks become RESOURCE_CENTER_CLICKED events on the same</text>
+  <text x="726" y="1044" font-size="12" fill="#334155">session.</text>
+  <text x="708" y="1066" font-size="12" fill="#9333ea">&#9670;</text>
+  <text x="726" y="1066" font-size="12" fill="#334155">RESOURCE_CENTER_STARTED fires when the session is created (Help icon ready); RESOURCE_CENTER_OPENED</text>
+  <text x="726" y="1082" font-size="12" fill="#334155">fires each time the user opens the panel.</text>
+</svg>
