@@ -219,6 +219,7 @@ export const defaultEvents = [
     displayName: 'Banner Dismissed',
     codeName: BizEvents.BANNER_DISMISSED,
     attributes: [
+      EventAttributes.BANNER_END_REASON,
       EventAttributes.BANNER_ID,
       EventAttributes.BANNER_NAME,
       EventAttributes.BANNER_SESSION_ID,
@@ -299,6 +300,7 @@ export const defaultEvents = [
     displayName: 'Resource Center Dismissed',
     codeName: BizEvents.RESOURCE_CENTER_DISMISSED,
     attributes: [
+      EventAttributes.RESOURCE_CENTER_END_REASON,
       EventAttributes.RESOURCE_CENTER_ID,
       EventAttributes.RESOURCE_CENTER_NAME,
       EventAttributes.RESOURCE_CENTER_SESSION_ID,
@@ -664,6 +666,13 @@ const defaultAttributes: Partial<Attribute>[] = [
     description: 'Number of the Usertour banner version',
   },
   {
+    codeName: EventAttributes.BANNER_END_REASON,
+    displayName: 'Banner End Reason',
+    bizType: AttributeBizType.EVENT,
+    dataType: AttributeDataType.String,
+    description: 'Why the banner ended',
+  },
+  {
     codeName: EventAttributes.CHECKLIST_ID,
     displayName: 'Checklist ID',
     bizType: AttributeBizType.EVENT,
@@ -796,6 +805,13 @@ const defaultAttributes: Partial<Attribute>[] = [
     bizType: AttributeBizType.EVENT,
     dataType: AttributeDataType.String,
     description: 'Display name of the Usertour resource center tab the block belongs to',
+  },
+  {
+    codeName: EventAttributes.RESOURCE_CENTER_END_REASON,
+    displayName: 'Resource Center End Reason',
+    bizType: AttributeBizType.EVENT,
+    dataType: AttributeDataType.String,
+    description: 'Why the resource center ended',
   },
   {
     codeName: EventAttributes.EVENT_TRACKER_ID,

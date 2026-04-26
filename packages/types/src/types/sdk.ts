@@ -51,6 +51,8 @@ export enum contentEndReason {
   ACTION_DISMISS = 'action_dismiss',
   // System/error specific
   STORE_NOT_FOUND = 'store_not_found',
+  // Server-side admin manually ended the session via the analytics dashboard
+  ADMIN_ENDED = 'admin_ended',
 }
 
 export enum contentStartReason {
@@ -95,6 +97,7 @@ export const flowReasonTitleMap = {
   [contentEndReason.TRIGGER_DISMISS]: 'Dismissed by trigger condition',
   [contentEndReason.ACTION_DISMISS]: 'Dismissed by action',
   [contentEndReason.STORE_NOT_FOUND]: 'Store not found',
+  [contentEndReason.ADMIN_ENDED]: 'Ended by admin',
 };
 
 export interface SDKConfig {
