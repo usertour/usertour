@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1010" width="1400" height="1010">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  </style>
+  <defs>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+  <rect width="1400" height="1010" fill="#ffffff"/>
+  <text x="700" y="56" text-anchor="middle" font-size="26" font-weight="700" fill="#0f172a">How Launchers Start</text>
+  <rect x="900" y="36" width="148" height="26" rx="13" fill="#0d9488"/>
+  <text x="974" y="54" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff" letter-spacing="0.5">MANY CONCURRENT</text>
+  <text x="700" y="86" text-anchor="middle" font-size="14" fill="#64748b">Many launchers can show at once for the same user — each one evaluated independently</text>
+  <rect x="50" y="116" width="1300" height="130" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 116 L 1336 116 Q 1350 116 1350 130 L 1350 172 L 50 172 L 50 130 Q 50 116 64 116 Z" fill="#f0fdfa" stroke="none"/>
+  <line x1="50" y1="172" x2="1350" y2="172" stroke="#99f6e4" stroke-width="1"/>
+  <circle cx="85" cy="144" r="17" fill="#0d9488"/>
+  <text x="85" y="150" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">1</text>
+  <text x="114" y="138" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">STEP 1</text>
+  <text x="114" y="160" font-size="18" font-weight="700" fill="#0f172a">Find every launcher eligible for this user</text>
+  <text x="72" y="194" font-size="13" fill="#334155">Look at every published launcher whose audience targeting matches the user. Unlike flows / checklists / banners / Resource Centers, there's no first-match-wins — every match is</text>
+  <text x="72" y="212" font-size="13" fill="#334155">evaluated independently and can become active in parallel.</text>
+  <line x1="700" y1="248" x2="367" y2="300" stroke="#0d9488" stroke-width="2"/>
+  <polygon points="360,298 374,298 367,308" fill="#0d9488"/>
+  <line x1="700" y1="248" x2="1032" y2="300" stroke="#0d9488" stroke-width="2"/>
+  <polygon points="1025,298 1039,298 1032,308" fill="#0d9488"/>
+  <text x="533" y="284" text-anchor="middle" font-size="12" font-style="italic" fill="#64748b">start condition true</text>
+  <text x="866" y="284" text-anchor="middle" font-size="12" font-style="italic" fill="#64748b">start condition not yet true</text>
+  <rect x="50" y="306" width="635" height="240" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 306 L 671 306 Q 685 306 685 320 L 685 362 L 50 362 L 50 320 Q 50 306 64 306 Z" fill="#f0fdfa" stroke="none"/>
+  <line x1="50" y1="362" x2="685" y2="362" stroke="#99f6e4" stroke-width="1"/>
+  <circle cx="86" cy="335" r="18" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.6"/>
+  <text x="86" y="341" text-anchor="middle" font-size="15" font-weight="700" fill="#0d9488">①</text>
+  <text x="114" y="328" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">OUTCOME</text>
+  <text x="114" y="350" font-size="18" font-weight="700" fill="#0f172a">Activate now</text>
+  <text x="72" y="386" font-size="11" font-weight="700" fill="#0d9488" letter-spacing="0.5">WHEN</text>
+  <text x="72" y="408" font-size="12.5" fill="#334155">The launcher's start condition is true at this moment.</text>
+  <text x="72" y="438" font-size="11" font-weight="700" fill="#0d9488" letter-spacing="0.5">WHAT HAPPENS</text>
+  <text x="72" y="460" font-size="12.5" fill="#334155">&#8226;  Create (or reuse) a session for this launcher</text>
+  <text x="72" y="480" font-size="12.5" fill="#334155">&#8226;  LAUNCHER_SEEN event fires</text>
+  <text x="72" y="500" font-size="12.5" fill="#334155">&#8226;  Launcher renders — hotspot, icon, beacon, or button</text>
+  <text x="72" y="520" font-size="12.5" fill="#334155">&#8226;  User can click it to trigger LAUNCHER_ACTIVATED</text>
+  <rect x="715" y="306" width="635" height="240" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 729 306 L 1336 306 Q 1350 306 1350 320 L 1350 362 L 715 362 L 715 320 Q 715 306 729 306 Z" fill="#f0fdfa" stroke="none"/>
+  <line x1="715" y1="362" x2="1350" y2="362" stroke="#99f6e4" stroke-width="1"/>
+  <circle cx="751" cy="335" r="18" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.6"/>
+  <text x="751" y="341" text-anchor="middle" font-size="15" font-weight="700" fill="#0d9488">②</text>
+  <text x="779" y="328" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">OUTCOME</text>
+  <text x="779" y="350" font-size="18" font-weight="700" fill="#0f172a">Track for later</text>
+  <text x="737" y="386" font-size="11" font-weight="700" fill="#0d9488" letter-spacing="0.5">WHEN</text>
+  <text x="737" y="408" font-size="12.5" fill="#334155">Audience matches, but start condition is not yet true.</text>
+  <text x="737" y="438" font-size="11" font-weight="700" fill="#0d9488" letter-spacing="0.5">WHAT HAPPENS</text>
+  <text x="737" y="460" font-size="12.5" fill="#334155">&#8226;  No session is created yet</text>
+  <text x="737" y="480" font-size="12.5" fill="#334155">&#8226;  SDK sets up listeners for the start condition</text>
+  <text x="737" y="500" font-size="12.5" fill="#334155">&#8226;  When the condition flips to true &#8594; jump to Outcome ①</text>
+  <text x="737" y="520" font-size="12.5" fill="#334155">&#8226;  Listeners are kept across page navigations</text>
+  <rect x="50" y="576" width="1300" height="170" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 576 L 1336 576 Q 1350 576 1350 590 L 1350 632 L 50 632 L 50 590 Q 50 576 64 576 Z" fill="#f0fdfa" stroke="none"/>
+  <line x1="50" y1="632" x2="1350" y2="632" stroke="#99f6e4" stroke-width="1"/>
+  <circle cx="85" cy="604" r="17" fill="#0d9488"/>
+  <text x="85" y="610" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">2</text>
+  <text x="114" y="598" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">STEP 2</text>
+  <text x="114" y="620" font-size="18" font-weight="700" fill="#0f172a">How an active launcher ends</text>
+  <text x="72" y="656" font-size="12" fill="#0d9488">&#9670;</text>
+  <text x="90" y="656" font-size="12" font-weight="700" fill="#0f172a">User dismisses</text>
+  <text x="90" y="672" font-size="11.5" fill="#334155">LAUNCHER_DISMISSED with USER_CLOSED reason</text>
+  <text x="72" y="694" font-size="12" fill="#0d9488">&#9670;</text>
+  <text x="90" y="694" font-size="12" font-weight="700" fill="#0f172a">User clicks (activates)</text>
+  <text x="90" y="710" font-size="11.5" fill="#334155">LAUNCHER_ACTIVATED event &#8212; but session stays open until later dismissed</text>
+  <text x="708" y="656" font-size="12" fill="#0d9488">&#9670;</text>
+  <text x="726" y="656" font-size="12" font-weight="700" fill="#0f172a">Tooltip auto-dismisses</text>
+  <text x="726" y="672" font-size="11.5" fill="#334155">LAUNCHER_DISMISSED with LAUNCHER_DEACTIVATED reason &#8212; only if "dismiss after first activation" is enabled</text>
+  <text x="708" y="694" font-size="12" fill="#0d9488">&#9670;</text>
+  <text x="726" y="694" font-size="12" font-weight="700" fill="#0f172a">Admin ends via dashboard</text>
+  <text x="726" y="710" font-size="11.5" fill="#334155">LAUNCHER_DISMISSED with ADMIN_ENDED reason</text>
+  <rect x="50" y="776" width="1300" height="130" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 776 L 1336 776 Q 1350 776 1350 790 L 1350 820 L 50 820 L 50 790 Q 50 776 64 776 Z" fill="#f0fdfa" stroke="none"/>
+  <line x1="50" y1="820" x2="1350" y2="820" stroke="#99f6e4" stroke-width="1"/>
+  <text x="72" y="804" font-size="14" font-weight="700" fill="#0f172a">What makes Launcher different from other content types</text>
+  <text x="72" y="846" font-size="12" fill="#0d9488">&#9670;</text>
+  <text x="90" y="846" font-size="12" fill="#334155">Many launchers active simultaneously — each evaluated and managed independently.</text>
+  <text x="72" y="884" font-size="12" fill="#0d9488">&#9670;</text>
+  <text x="90" y="884" font-size="12" fill="#334155">Identified by content ID for SDK re-render. Adding the same launcher again updates in place.</text>
+  <text x="708" y="846" font-size="12" fill="#0d9488">&#9670;</text>
+  <text x="726" y="846" font-size="12" fill="#334155">LAUNCHER_ACTIVATED is a milestone (user clicked it), not a session terminator.</text>
+  <text x="708" y="884" font-size="12" fill="#0d9488">&#9670;</text>
+  <text x="726" y="884" font-size="12" fill="#334155">Optional setting "dismiss after first activation" auto-closes the launcher when its tooltip is</text>
+  <text x="726" y="900" font-size="12" fill="#334155">closed.</text>
+</svg>

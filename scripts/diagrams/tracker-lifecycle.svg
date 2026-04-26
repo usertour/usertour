@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760" width="1400" height="760">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  </style>
+  <defs>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+  <rect width="1400" height="760" fill="#ffffff"/>
+  <text x="700" y="56" text-anchor="middle" font-size="26" font-weight="700" fill="#0f172a">How an Event Tracker Works</text>
+  <rect x="900" y="36" width="108" height="26" rx="13" fill="#475569"/>
+  <text x="954" y="54" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff" letter-spacing="0.5">NO SESSION</text>
+  <text x="700" y="86" text-anchor="middle" font-size="14" fill="#64748b">Trackers aren't sessions — they're event listeners the SDK installs and fires when conditions match</text>
+  <rect x="50" y="120" width="298" height="220" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 120 L 334 120 Q 348 120 348 134 L 348 176 L 50 176 L 50 134 Q 50 120 64 120 Z" fill="#f8fafc" stroke="none"/>
+  <line x1="50" y1="176" x2="348" y2="176" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="86" cy="149" r="18" fill="#e2e8f0" stroke="#475569" stroke-width="1.6"/>
+  <text x="86" y="155" text-anchor="middle" font-size="15" font-weight="700" fill="#475569">①</text>
+  <text x="114" y="142" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">STEP</text>
+  <text x="114" y="164" font-size="14" font-weight="700" fill="#0f172a">Server distributes definitions</text>
+  <text x="66" y="204" font-size="12" fill="#334155">On SDK connect, the server sends every</text>
+  <text x="66" y="221" font-size="12" fill="#334155">published tracker — the rules, conditions,</text>
+  <text x="66" y="238" font-size="12" fill="#334155">and event names — down to the client.</text>
+  <line x1="352" y1="230" x2="374" y2="230" stroke="#475569" stroke-width="2"/>
+  <polygon points="372,224 372,236 382,230" fill="#475569"/>
+  <rect x="384" y="120" width="298" height="220" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 398 120 L 668 120 Q 682 120 682 134 L 682 176 L 384 176 L 384 134 Q 384 120 398 120 Z" fill="#f8fafc" stroke="none"/>
+  <line x1="384" y1="176" x2="682" y2="176" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="420" cy="149" r="18" fill="#e2e8f0" stroke="#475569" stroke-width="1.6"/>
+  <text x="420" y="155" text-anchor="middle" font-size="15" font-weight="700" fill="#475569">②</text>
+  <text x="448" y="142" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">STEP</text>
+  <text x="448" y="164" font-size="14" font-weight="700" fill="#0f172a">SDK evaluates locally</text>
+  <text x="400" y="204" font-size="12" fill="#334155">The SDK watches user behavior and</text>
+  <text x="400" y="221" font-size="12" fill="#334155">continuously checks each tracker's</text>
+  <text x="400" y="238" font-size="12" fill="#334155">condition. No server round-trip per check.</text>
+  <line x1="686" y1="230" x2="708" y2="230" stroke="#475569" stroke-width="2"/>
+  <polygon points="706,224 706,236 716,230" fill="#475569"/>
+  <rect x="718" y="120" width="298" height="220" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 732 120 L 1002 120 Q 1016 120 1016 134 L 1016 176 L 718 176 L 718 134 Q 718 120 732 120 Z" fill="#f8fafc" stroke="none"/>
+  <line x1="718" y1="176" x2="1016" y2="176" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="754" cy="149" r="18" fill="#e2e8f0" stroke="#475569" stroke-width="1.6"/>
+  <text x="754" y="155" text-anchor="middle" font-size="15" font-weight="700" fill="#475569">③</text>
+  <text x="782" y="142" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">STEP</text>
+  <text x="782" y="164" font-size="14" font-weight="700" fill="#0f172a">Condition becomes active</text>
+  <text x="734" y="204" font-size="12" fill="#334155">When a tracker's condition flips from</text>
+  <text x="734" y="221" font-size="12" fill="#334155">inactive to active (e.g. the user clicks an</text>
+  <text x="734" y="238" font-size="12" fill="#334155">element that matches the rule), the SDK</text>
+  <text x="734" y="255" font-size="12" fill="#334155">fires.</text>
+  <line x1="1020" y1="230" x2="1042" y2="230" stroke="#475569" stroke-width="2"/>
+  <polygon points="1040,224 1040,236 1050,230" fill="#475569"/>
+  <rect x="1052" y="120" width="298" height="220" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 1066 120 L 1336 120 Q 1350 120 1350 134 L 1350 176 L 1052 176 L 1052 134 Q 1052 120 1066 120 Z" fill="#f8fafc" stroke="none"/>
+  <line x1="1052" y1="176" x2="1350" y2="176" stroke="#cbd5e1" stroke-width="1"/>
+  <circle cx="1088" cy="149" r="18" fill="#e2e8f0" stroke="#475569" stroke-width="1.6"/>
+  <text x="1088" y="155" text-anchor="middle" font-size="15" font-weight="700" fill="#475569">④</text>
+  <text x="1116" y="142" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">STEP</text>
+  <text x="1116" y="164" font-size="14" font-weight="700" fill="#0f172a">Event recorded</text>
+  <text x="1068" y="204" font-size="12" fill="#334155">The SDK reports the configured event back to</text>
+  <text x="1068" y="221" font-size="12" fill="#334155">the server. The server stores a BizEvent</text>
+  <text x="1068" y="238" font-size="12" fill="#334155">record tagged with the tracker's content and</text>
+  <text x="1068" y="255" font-size="12" fill="#334155">version id.</text>
+  <rect x="50" y="370" width="1300" height="170" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 370 L 1336 370 Q 1350 370 1350 384 L 1350 426 L 50 426 L 50 384 Q 50 370 64 370 Z" fill="#f8fafc" stroke="none"/>
+  <line x1="50" y1="426" x2="1350" y2="426" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="72" y="398" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">KEY DIFFERENCE</text>
+  <text x="72" y="420" font-size="18" font-weight="700" fill="#0f172a">There is no session model for trackers</text>
+  <text x="72" y="454" font-size="12" fill="#475569">&#9670;</text>
+  <text x="90" y="454" font-size="12" font-weight="700" fill="#0f172a">No BizSession</text>
+  <text x="90" y="470" font-size="11.5" fill="#334155">The server never creates a session record for a tracker.</text>
+  <text x="72" y="492" font-size="12" fill="#475569">&#9670;</text>
+  <text x="90" y="492" font-size="12" font-weight="700" fill="#0f172a">No state machine</text>
+  <text x="90" y="508" font-size="11.5" fill="#334155">Each fire is instantaneous — there's no active / ended state to track.</text>
+  <text x="708" y="454" font-size="12" fill="#475569">&#9670;</text>
+  <text x="726" y="454" font-size="12" font-weight="700" fill="#0f172a">No lifecycle events</text>
+  <text x="726" y="470" font-size="11.5" fill="#334155">No started / completed / dismissed events. Only the configured custom event.</text>
+  <text x="708" y="492" font-size="12" fill="#475569">&#9670;</text>
+  <text x="726" y="492" font-size="12" font-weight="700" fill="#0f172a">No endSession() API</text>
+  <text x="726" y="508" font-size="11.5" fill="#334155">Trackers can't be ended — they're just listeners. Unpublishing the tracker stops new fires.</text>
+  <rect x="50" y="570" width="1300" height="130" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
+  <path d="M 64 570 L 1336 570 Q 1350 570 1350 584 L 1350 614 L 50 614 L 50 584 Q 50 570 64 570 Z" fill="#f8fafc" stroke="none"/>
+  <line x1="50" y1="614" x2="1350" y2="614" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="72" y="598" font-size="14" font-weight="700" fill="#0f172a">What makes Event Tracker different from other content types</text>
+  <text x="72" y="640" font-size="12" fill="#475569">&#9670;</text>
+  <text x="90" y="640" font-size="12" fill="#334155">Pure event-tracking. Use it for conversions, custom feature usage, or click tracking — not for</text>
+  <text x="90" y="656" font-size="12" fill="#334155">showing UI.</text>
+  <text x="72" y="678" font-size="12" fill="#475569">&#9670;</text>
+  <text x="90" y="678" font-size="12" fill="#334155">All evaluation happens client-side. The server doesn't poll; it just receives the resulting events.</text>
+  <text x="708" y="640" font-size="12" fill="#475569">&#9670;</text>
+  <text x="726" y="640" font-size="12" fill="#334155">Multiple trackers can be active at the same time per user — no limit, no concurrency model.</text>
+  <text x="708" y="678" font-size="12" fill="#475569">&#9670;</text>
+  <text x="726" y="678" font-size="12" fill="#334155">Distribution refreshes when trackers change (publish, unpublish, edit) so the SDK always has</text>
+  <text x="726" y="694" font-size="12" fill="#334155">current rules.</text>
+</svg>
