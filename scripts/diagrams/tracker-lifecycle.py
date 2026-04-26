@@ -46,7 +46,7 @@ def build_svg():
         ("③", "Condition becomes active",
          "When a tracker's condition flips from inactive to active (e.g. the user clicks an element that matches the rule), the SDK fires."),
         ("④", "Event recorded",
-         "The SDK reports the configured event back to the server. The server stores a BizEvent record tagged with the tracker's content and version id."),
+         "The SDK reports the configured event back to the server. The server stores an event record tagged with the tracker's content and version id."),
     ]
 
     for i, (num, title, desc) in enumerate(steps):
@@ -73,7 +73,7 @@ def build_svg():
     L.append(f'  <text x="{margin + 22}" y="{in_y + 50}" font-size="18" font-weight="700" fill="{TEXT_HEAD}">There is no session model for trackers</text>')
 
     diffs = [
-        ("No BizSession",     "The server never creates a session record for a tracker."),
+        ("No session record", "The server never creates a session for a tracker."),
         ("No state machine",  "Each fire is instantaneous — there's no active / ended state to track."),
         ("No lifecycle events", "No started / completed / dismissed events. Only the configured custom event."),
         ("No endSession() API", "Trackers can't be ended — they're just listeners. Unpublishing the tracker stops new fires."),

@@ -57,7 +57,7 @@
   <text x="1116" y="142" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">STEP</text>
   <text x="1116" y="164" font-size="14" font-weight="700" fill="#0f172a">Event recorded</text>
   <text x="1068" y="204" font-size="12" fill="#334155">The SDK reports the configured event back to</text>
-  <text x="1068" y="221" font-size="12" fill="#334155">the server. The server stores a BizEvent</text>
+  <text x="1068" y="221" font-size="12" fill="#334155">the server. The server stores an event</text>
   <text x="1068" y="238" font-size="12" fill="#334155">record tagged with the tracker's content and</text>
   <text x="1068" y="255" font-size="12" fill="#334155">version id.</text>
   <rect x="50" y="370" width="1300" height="170" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#card-shadow)"/>
@@ -66,8 +66,8 @@
   <text x="72" y="398" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="1">KEY DIFFERENCE</text>
   <text x="72" y="420" font-size="18" font-weight="700" fill="#0f172a">There is no session model for trackers</text>
   <text x="72" y="454" font-size="12" fill="#475569">&#9670;</text>
-  <text x="90" y="454" font-size="12" font-weight="700" fill="#0f172a">No BizSession</text>
-  <text x="90" y="470" font-size="11.5" fill="#334155">The server never creates a session record for a tracker.</text>
+  <text x="90" y="454" font-size="12" font-weight="700" fill="#0f172a">No session record</text>
+  <text x="90" y="470" font-size="11.5" fill="#334155">The server never creates a session for a tracker.</text>
   <text x="72" y="492" font-size="12" fill="#475569">&#9670;</text>
   <text x="90" y="492" font-size="12" font-weight="700" fill="#0f172a">No state machine</text>
   <text x="90" y="508" font-size="11.5" fill="#334155">Each fire is instantaneous — there's no active / ended state to track.</text>
