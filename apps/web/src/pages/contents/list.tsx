@@ -134,7 +134,11 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
   'resource-centers': {
     title: 'Resource Centers',
     description: (
-      <ContentDescription text="A Resource Center provides a centralized hub for users to access help, guides, checklists, and more — all from a single launcher button." />
+      <ContentDescription
+        text="A Resource Center provides a centralized hub for users to access help, guides, checklists, and more — all from a single launcher button."
+        docUrl="https://docs.usertour.io/how-to-guides/resource-center"
+        linkText="Read more in our Resource Center guide"
+      />
     ),
     emptyTitle: 'No resource centers added',
     emptyDescription: 'You have not added any resource centers. Add one below.',
