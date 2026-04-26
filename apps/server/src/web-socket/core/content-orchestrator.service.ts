@@ -30,6 +30,7 @@ import {
   isSingletonContentType,
   filterSingleSessionContentVersions,
   isShowOnlyContentType,
+  isSingleSessionContentType,
   CONTENT_SEEN_EVENTS,
   isVersionMismatchWithActiveSession,
   unsetActiveSessionOnVersionMismatch,
@@ -565,13 +566,13 @@ export class ContentOrchestratorService {
     const customContentVersion = unsetActiveSessionOnVersionMismatch(evaluatedContentVersion);
 
     if (
-      isShowOnlyContentType(contentType) &&
+      isSingleSessionContentType(contentType) &&
       !customContentVersion.session.activeSession &&
       customContentVersion.session.totalSessions > 0
     ) {
       return {
         success: false,
-        reason: 'Banner already has a completed session',
+        reason: 'Content already has a completed session for this user',
       };
     }
 
@@ -655,7 +656,7 @@ export class ContentOrchestratorService {
       contentType,
     );
 
-    const availableEvaluatedVersions = isShowOnlyContentType(contentType)
+    const availableEvaluatedVersions = isSingleSessionContentType(contentType)
       ? filterSingleSessionContentVersions(evaluatedContentVersions)
       : evaluatedContentVersions;
 
@@ -728,8 +729,10 @@ export class ContentOrchestratorService {
           )
         : evaluatedContentVersions;
 
-    // Strategy 1: Try to start by latest activated content version (skip for show-only types)
-    if (!isShowOnlyContentType(contentType)) {
+    // Strategy 1: Try to start by latest activated content version
+    // Skip for single-session types — once dismissed, the previously activated version
+    // must not be re-shown to the same user.
+    if (!isSingleSessionContentType(contentType)) {
       const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
         context,
         availableVersions,
