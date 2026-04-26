@@ -161,6 +161,7 @@ export enum EventAttributes {
   BANNER_NAME = 'banner_name',
   /** @deprecated Never populated. See FLOW_SESSION_ID. */
   BANNER_SESSION_ID = 'banner_session_id',
+  BANNER_END_REASON = 'banner_end_reason',
   BANNER_VERSION_ID = 'banner_version_id',
   BANNER_VERSION_NUMBER = 'banner_version_number',
   // Resource center attributes
@@ -169,6 +170,7 @@ export enum EventAttributes {
   /** @deprecated Never populated. See FLOW_SESSION_ID. */
   RESOURCE_CENTER_SESSION_ID = 'resource_center_session_id',
   RESOURCE_CENTER_START_REASON = 'resource_center_start_reason',
+  RESOURCE_CENTER_END_REASON = 'resource_center_end_reason',
   RESOURCE_CENTER_VERSION_ID = 'resource_center_version_id',
   RESOURCE_CENTER_VERSION_NUMBER = 'resource_center_version_number',
   RESOURCE_CENTER_BLOCK_ID = 'resource_center_block_id',

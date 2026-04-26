@@ -691,8 +691,20 @@ export const isShowOnlyContentType = (contentType: ContentDataType): boolean =>
   SHOW_ONLY_CONTENT_TYPES.includes(contentType);
 
 /**
+ * Content types that produce at most one session per (user, content) over the user's lifetime.
+ * Once the session is completed/dismissed, the content is never re-activated for that user.
+ */
+const SINGLE_SESSION_CONTENT_TYPES: ContentDataType[] = [
+  ContentDataType.BANNER,
+  ContentDataType.RESOURCE_CENTER,
+];
+
+export const isSingleSessionContentType = (contentType: ContentDataType): boolean =>
+  SINGLE_SESSION_CONTENT_TYPES.includes(contentType);
+
+/**
  * Filters content versions to those that are either active or have never had a session.
- * This enforces "one session per content" behavior (used by Launcher and Banner).
+ * Enforces "one session per (user, content)" behavior for Launcher, Banner, and Resource Center.
  */
 export const filterSingleSessionContentVersions = (
   customContentVersions: CustomContentVersion[],

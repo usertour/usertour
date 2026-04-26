@@ -1,4 +1,10 @@
-import { BizEvents, EventAttributes, ResourceCenterData, StepSettings } from '@usertour/types';
+import {
+  BizEvents,
+  EventAttributes,
+  ResourceCenterData,
+  StepSettings,
+  contentEndReason,
+} from '@usertour/types';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -68,6 +74,34 @@ const getAggregationField = (question: ContentEditorQuestionElement) => {
     return question.data.allowMultiple ? 'listAnswer' : 'textAnswer';
   }
   return 'textAnswer';
+};
+
+/**
+ * Mapping from content type to the dismissed-style event used to record an
+ * admin-initiated session end. Used by `endSession` for content types that all
+ * share the same shape: write a `*_DISMISSED` event with an end-reason
+ * attribute and flip the session to `state = 1`. Flow uses a different shape
+ * (FLOW_ENDED + step-seen lookup) and is handled separately.
+ */
+const DISMISSED_END_CONFIG: Partial<
+  Record<ContentType, { eventCodeName: BizEvents; reasonAttribute: EventAttributes }>
+> = {
+  [ContentType.CHECKLIST]: {
+    eventCodeName: BizEvents.CHECKLIST_DISMISSED,
+    reasonAttribute: EventAttributes.CHECKLIST_END_REASON,
+  },
+  [ContentType.LAUNCHER]: {
+    eventCodeName: BizEvents.LAUNCHER_DISMISSED,
+    reasonAttribute: EventAttributes.LAUNCHER_END_REASON,
+  },
+  [ContentType.BANNER]: {
+    eventCodeName: BizEvents.BANNER_DISMISSED,
+    reasonAttribute: EventAttributes.BANNER_END_REASON,
+  },
+  [ContentType.RESOURCE_CENTER]: {
+    eventCodeName: BizEvents.RESOURCE_CENTER_DISMISSED,
+    reasonAttribute: EventAttributes.RESOURCE_CENTER_END_REASON,
+  },
 };
 
 const EVENT_TYPE_MAPPING = {
@@ -1471,17 +1505,17 @@ export class AnalyticsService {
     }
 
     const projectId = bizSession.environment.projectId;
+    const contentType = bizSession.content.type as ContentType;
 
-    if (bizSession.content.type === ContentType.FLOW) {
+    if (contentType === ContentType.FLOW) {
       return await this.endFlowSession(bizSession, projectId);
     }
-    if (bizSession.content.type === ContentType.CHECKLIST) {
-      return await this.endChecklistSession(bizSession, projectId);
+
+    const dismissedConfig = DISMISSED_END_CONFIG[contentType];
+    if (!dismissedConfig) {
+      return false;
     }
-    if (bizSession.content.type === ContentType.LAUNCHER) {
-      return await this.endLauncherSession(bizSession, projectId);
-    }
-    return false;
+    return await this.endSessionByDismissedEvent(bizSession, projectId, dismissedConfig);
   }
 
   /**
@@ -1514,7 +1548,7 @@ export class AnalyticsService {
 
     const seenData = seenBizEvent?.data as any;
     const data: any = {
-      [EventAttributes.FLOW_END_REASON]: 'admin_ended',
+      [EventAttributes.FLOW_END_REASON]: contentEndReason.ADMIN_ENDED,
     };
 
     const endedAttributes =
@@ -1544,16 +1578,21 @@ export class AnalyticsService {
   }
 
   /**
-   * End a checklist session
-   * @param bizSession - The session to end
-   * @param projectId - The project ID for event lookup
-   * @returns True if the session was ended successfully, false otherwise
+   * End a session by writing its dismissed-style event and flipping `state` to 1.
+   * Shared by Checklist, Launcher, Banner, and Resource Center — all of which end
+   * via a single `*_DISMISSED` event with the latest session event copied for context.
+   * Flow has its own ending shape and uses `endFlowSession`.
    */
-  private async endChecklistSession(bizSession: BizSession, projectId: string) {
+  private async endSessionByDismissedEvent(
+    bizSession: BizSession,
+    projectId: string,
+    config: { eventCodeName: BizEvents; reasonAttribute: EventAttributes },
+  ): Promise<boolean> {
     const sessionId = bizSession.id;
+    const { eventCodeName, reasonAttribute } = config;
 
     const endEvent = await this.prisma.event.findFirst({
-      where: { projectId, codeName: BizEvents.CHECKLIST_DISMISSED },
+      where: { projectId, codeName: eventCodeName },
     });
     const latestBizEvent = await this.prisma.bizEvent.findFirst({
       where: { bizSessionId: sessionId },
@@ -1570,67 +1609,10 @@ export class AnalyticsService {
 
     const seenData = latestBizEvent?.data as any;
     const data: any = {
-      [EventAttributes.CHECKLIST_END_REASON]: 'admin_ended',
+      [reasonAttribute]: contentEndReason.ADMIN_ENDED,
     };
     const dismissedAttributes =
-      defaultEvents.find((event) => event.codeName === BizEvents.CHECKLIST_DISMISSED)?.attributes ||
-      [];
-
-    for (const attribute of dismissedAttributes) {
-      if (seenData?.[attribute]) {
-        data[attribute] = seenData[attribute];
-      }
-    }
-
-    return await this.prisma.$transaction(async (tx) => {
-      await tx.bizEvent.create({
-        data: {
-          bizSessionId: sessionId,
-          eventId: endEvent.id,
-          bizUserId: bizSession.bizUserId,
-          data,
-        },
-      });
-      await tx.bizSession.update({
-        where: { id: sessionId },
-        data: { state: 1 },
-      });
-      return true;
-    });
-  }
-
-  /**
-   * End a launcher session
-   * @param bizSession - The session to end
-   * @param projectId - The project ID for event lookup
-   * @returns True if the session was ended successfully, false otherwise
-   */
-  private async endLauncherSession(bizSession: BizSession, projectId: string) {
-    const sessionId = bizSession.id;
-
-    const endEvent = await this.prisma.event.findFirst({
-      where: { projectId, codeName: BizEvents.LAUNCHER_DISMISSED },
-    });
-    const latestBizEvent = await this.prisma.bizEvent.findFirst({
-      where: { bizSessionId: sessionId },
-      orderBy: { createdAt: 'desc' },
-    });
-    const endBizEvent = await this.prisma.bizEvent.findFirst({
-      where: { bizSessionId: sessionId, eventId: endEvent.id },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!endEvent || endBizEvent) {
-      return false;
-    }
-
-    const seenData = latestBizEvent?.data as any;
-    const data: any = {
-      [EventAttributes.LAUNCHER_END_REASON]: 'admin_ended',
-    };
-    const dismissedAttributes =
-      defaultEvents.find((event) => event.codeName === BizEvents.LAUNCHER_DISMISSED)?.attributes ||
-      [];
+      defaultEvents.find((event) => event.codeName === eventCodeName)?.attributes ?? [];
 
     for (const attribute of dismissedAttributes) {
       if (seenData?.[attribute]) {
