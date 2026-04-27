@@ -27,7 +27,7 @@ export function WidgetSwitcher({ value, onChange }: Props) {
       value={value}
       onChange={(next) => onChange(next as ThemeDetailPreviewType)}
       options={PREVIEW_OPTIONS}
-      className="w-44"
+      className="h-7 w-40 bg-transparent text-sm shadow-none hover:bg-gray-100 md:text-sm"
     />
   );
 }

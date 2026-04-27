@@ -79,8 +79,6 @@ export function ThemeBuilder({ theme, onBack, onSave, onAfterRename }: Props) {
         theme={theme}
         onBack={onBack}
         onAfterRename={onAfterRename}
-        activeWidgetType={activeWidgetType}
-        onWidgetTypeChange={setActiveWidgetType}
         hasUnsavedChanges={draft.hasUnsavedChanges}
         isSaving={isSaving}
         onSave={handleSave}
@@ -95,7 +93,11 @@ export function ThemeBuilder({ theme, onBack, onSave, onAfterRename }: Props) {
           onDelete={onDeleteVariation}
           disabled={theme.isSystem}
         />
-        <PreviewPane settings={draft.activeSettings} widgetType={activeWidgetType} />
+        <PreviewPane
+          settings={draft.activeSettings}
+          widgetType={activeWidgetType}
+          onWidgetTypeChange={setActiveWidgetType}
+        />
         <SidebarShell width={RIGHT_SIDEBAR_WIDTH} variant="right">
           {draft.activeVariation && (
             <ConditionsSection

@@ -17,15 +17,17 @@ import { ThemePreviewModal } from '../../preview/theme-preview-modal';
 import { ThemePreviewPopper } from '../../preview/theme-preview-popper';
 import { ThemePreviewResourceCenter } from '../../preview/theme-preview-resource-center';
 import type { Rect } from '../../theme-editor';
+import { WidgetSwitcher } from '../top-bar/widget-switcher';
 import { BannerPreview } from './banner-preview';
 import { BrowserFrame } from './browser-frame';
 
 interface Props {
   settings: ThemeTypesSetting;
   widgetType: ThemeDetailPreviewType;
+  onWidgetTypeChange: (next: ThemeDetailPreviewType) => void;
 }
 
-export function PreviewPane({ settings, widgetType }: Props) {
+export function PreviewPane({ settings, widgetType, onWidgetTypeChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const containerRect = useRect(containerRef.current);
   const [debouncedRect, setDebouncedRect] = useState<Rect | undefined>();
@@ -43,7 +45,10 @@ export function PreviewPane({ settings, widgetType }: Props) {
 
   return (
     <div className="flex flex-1 items-center justify-center overflow-hidden bg-slate-100 p-8">
-      <BrowserFrame ref={containerRef}>
+      <BrowserFrame
+        ref={containerRef}
+        chromeAction={<WidgetSwitcher value={widgetType} onChange={onWidgetTypeChange} />}
+      >
         {widgetType === ThemeDetailPreviewType.TOOLTIP && (
           <ThemePreviewPopper
             contents={TOOLTIP_PREVIEW_CONTENT}

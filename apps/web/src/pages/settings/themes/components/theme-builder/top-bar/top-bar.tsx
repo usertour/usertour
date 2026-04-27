@@ -1,17 +1,14 @@
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { EditIcon } from '@usertour-packages/icons';
-import type { Theme, ThemeDetailPreviewType } from '@usertour/types';
+import type { Theme } from '@usertour/types';
 import { ThemeRenameForm } from '../../theme-rename-form';
 import { BuilderIconButton, BuilderSaveButton } from '../ui';
 import { pillClass, topBarClass } from '../ui/tokens';
-import { WidgetSwitcher } from './widget-switcher';
 
 interface Props {
   theme: Theme;
   onBack: () => void;
   onAfterRename: () => void;
-  activeWidgetType: ThemeDetailPreviewType;
-  onWidgetTypeChange: (next: ThemeDetailPreviewType) => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   onSave: () => void;
@@ -21,8 +18,6 @@ export function TopBar({
   theme,
   onBack,
   onAfterRename,
-  activeWidgetType,
-  onWidgetTypeChange,
   hasUnsavedChanges,
   isSaving,
   onSave,
@@ -45,10 +40,6 @@ export function TopBar({
             </BuilderIconButton>
           </ThemeRenameForm>
         )}
-      </div>
-
-      <div className="absolute left-1/2 -translate-x-1/2">
-        <WidgetSwitcher value={activeWidgetType} onChange={onWidgetTypeChange} />
       </div>
 
       <div className="flex items-center gap-2">
