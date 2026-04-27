@@ -18,6 +18,7 @@ import { ThemePreviewModal } from '../../preview/theme-preview-modal';
 import { ThemePreviewPopper } from '../../preview/theme-preview-popper';
 import { ThemePreviewResourceCenter } from '../../preview/theme-preview-resource-center';
 import type { Rect } from '../../theme-editor';
+import { BrowserFrame } from './browser-frame';
 
 interface Props {
   settings: ThemeTypesSetting;
@@ -41,66 +42,68 @@ export function PreviewPane({ settings, widgetType }: Props) {
   );
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-hidden bg-slate-100">
-      {widgetType === ThemeDetailPreviewType.TOOLTIP && (
-        <ThemePreviewPopper
-          contents={TOOLTIP_PREVIEW_CONTENT}
-          settings={settings}
-          customStyle={customStyle}
-          viewRect={debouncedRect}
-        />
-      )}
-      {widgetType === ThemeDetailPreviewType.MODAL && (
-        <ThemePreviewModal
-          contents={MODAL_PREVIEW_CONTENT}
-          settings={settings}
-          customStyle={customStyle}
-        />
-      )}
-      {widgetType === ThemeDetailPreviewType.BUBBLE && (
-        <ThemePreviewBubble
-          contents={BUBBLE_PREVIEW_CONTENT}
-          settings={settings}
-          customStyle={customStyle}
-        />
-      )}
-      {widgetType === ThemeDetailPreviewType.BANNER && (
-        <ThemePreviewBanner
-          contents={BANNER_PREVIEW_CONTENT}
-          settings={settings}
-          customStyle={customStyle}
-        />
-      )}
-      {widgetType === ThemeDetailPreviewType.NPS && (
-        <ThemePreviewModal
-          contents={NPS_PREVIEW_CONTENT}
-          settings={settings}
-          customStyle={customStyle}
-        />
-      )}
-      {widgetType === ThemeDetailPreviewType.LAUNCHER_ICON && (
-        <ThemePreviewLauncher type={LauncherDataType.ICON} settings={settings} />
-      )}
-      {widgetType === ThemeDetailPreviewType.LAUNCHER_BEACON && (
-        <ThemePreviewLauncher type={LauncherDataType.BEACON} settings={settings} />
-      )}
-      {widgetType === ThemeDetailPreviewType.LAUNCHER_BUTTON && (
-        <ThemePreviewLauncher type={LauncherDataType.BUTTON} settings={settings} />
-      )}
-      {(widgetType === ThemeDetailPreviewType.CHECKLIST ||
-        widgetType === ThemeDetailPreviewType.CHECKLIST_LAUNCHER) && (
-        <ThemePreviewChecklist
-          expanded={widgetType === ThemeDetailPreviewType.CHECKLIST}
-          settings={settings}
-        />
-      )}
-      {(widgetType === ThemeDetailPreviewType.RESOURCE_CENTER ||
-        widgetType === ThemeDetailPreviewType.RESOURCE_CENTER_LAUNCHER) && (
-        <ThemePreviewResourceCenter
-          expanded={widgetType === ThemeDetailPreviewType.RESOURCE_CENTER}
-          settings={settings}
-        />
-      )}
+    <div className="flex flex-1 items-center justify-center overflow-hidden bg-slate-100 p-8">
+      <BrowserFrame ref={containerRef}>
+        {widgetType === ThemeDetailPreviewType.TOOLTIP && (
+          <ThemePreviewPopper
+            contents={TOOLTIP_PREVIEW_CONTENT}
+            settings={settings}
+            customStyle={customStyle}
+            viewRect={debouncedRect}
+          />
+        )}
+        {widgetType === ThemeDetailPreviewType.MODAL && (
+          <ThemePreviewModal
+            contents={MODAL_PREVIEW_CONTENT}
+            settings={settings}
+            customStyle={customStyle}
+          />
+        )}
+        {widgetType === ThemeDetailPreviewType.BUBBLE && (
+          <ThemePreviewBubble
+            contents={BUBBLE_PREVIEW_CONTENT}
+            settings={settings}
+            customStyle={customStyle}
+          />
+        )}
+        {widgetType === ThemeDetailPreviewType.BANNER && (
+          <ThemePreviewBanner
+            contents={BANNER_PREVIEW_CONTENT}
+            settings={settings}
+            customStyle={customStyle}
+          />
+        )}
+        {widgetType === ThemeDetailPreviewType.NPS && (
+          <ThemePreviewModal
+            contents={NPS_PREVIEW_CONTENT}
+            settings={settings}
+            customStyle={customStyle}
+          />
+        )}
+        {widgetType === ThemeDetailPreviewType.LAUNCHER_ICON && (
+          <ThemePreviewLauncher type={LauncherDataType.ICON} settings={settings} />
+        )}
+        {widgetType === ThemeDetailPreviewType.LAUNCHER_BEACON && (
+          <ThemePreviewLauncher type={LauncherDataType.BEACON} settings={settings} />
+        )}
+        {widgetType === ThemeDetailPreviewType.LAUNCHER_BUTTON && (
+          <ThemePreviewLauncher type={LauncherDataType.BUTTON} settings={settings} />
+        )}
+        {(widgetType === ThemeDetailPreviewType.CHECKLIST ||
+          widgetType === ThemeDetailPreviewType.CHECKLIST_LAUNCHER) && (
+          <ThemePreviewChecklist
+            expanded={widgetType === ThemeDetailPreviewType.CHECKLIST}
+            settings={settings}
+          />
+        )}
+        {(widgetType === ThemeDetailPreviewType.RESOURCE_CENTER ||
+          widgetType === ThemeDetailPreviewType.RESOURCE_CENTER_LAUNCHER) && (
+          <ThemePreviewResourceCenter
+            expanded={widgetType === ThemeDetailPreviewType.RESOURCE_CENTER}
+            settings={settings}
+          />
+        )}
+      </BrowserFrame>
     </div>
   );
 }
