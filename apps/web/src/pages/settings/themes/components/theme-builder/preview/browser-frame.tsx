@@ -8,14 +8,13 @@ interface Props {
   chromeAction?: ReactNode;
 }
 
-// macOS-style browser chrome for widget previews. Forwards a ref to the inner
+// Browser chrome wrapper for widget previews. Forwards a ref to the inner
 // content area so widget previews can measure the actual viewport for
-// positioning anchored elements (tooltips, etc). Proportions match the banner
-// content builder's BrowserPreview.
+// positioning anchored elements (tooltips, etc).
 export const BrowserFrame = forwardRef<HTMLDivElement, Props>(({ children, chromeAction }, ref) => {
   return (
     <div className="flex h-full w-full max-w-[1200px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
-      {/* macOS window controls + nav arrows + URL bar */}
+      {/* Window controls + nav arrows + URL bar */}
       <div className="flex h-11 flex-none items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-2.5">
           <div className="h-3 w-3 rounded-full bg-red-500" />

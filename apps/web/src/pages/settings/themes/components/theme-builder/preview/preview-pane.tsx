@@ -44,7 +44,7 @@ export function PreviewPane({ settings, widgetType, onWidgetTypeChange }: Props)
   );
 
   return (
-    <div className="flex flex-1 items-center justify-center overflow-hidden bg-slate-100 p-8">
+    <div className="flex flex-1 items-center justify-center overflow-hidden bg-muted p-8">
       <BrowserFrame
         ref={containerRef}
         chromeAction={<WidgetSwitcher value={widgetType} onChange={onWidgetTypeChange} />}

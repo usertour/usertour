@@ -256,6 +256,7 @@ export const extendBase = {
       '0px 6px 8px 0px hsl(var(--foreground) / 0.02)',
       '0px 2px 3px 0px hsl(var(--foreground) / 0.02)',
     ].join(', '),
+    popper: '0 10px 30px 0 rgba(0,0,0,0.1), 0 1px 4px 0 rgba(0,0,0,0.02)',
   },
   dropShadow: {
     popover: ['0 3px 10px rgba(0, 0, 0, 0.15)', '0 1px 2px rgba(0, 0, 0, 0.1)'],

@@ -47,14 +47,28 @@ const ThemeDetailInner = () => {
 
   if (searchParams.get('builder') === 'v2' && theme) {
     const themesListPath = projectId ? `/project/${projectId}/settings/themes` : null;
+    const handleRename = async (name: string) => {
+      try {
+        await updateMutation({
+          variables: {
+            id: theme.id,
+            name,
+            settings: theme.settings,
+            variations: theme.variations ?? [],
+          },
+        });
+        await refetch();
+      } catch (error) {
+        toast({ variant: 'destructive', title: getErrorMessage(error) });
+        throw error;
+      }
+    };
     return (
       <ThemeBuilder
         theme={theme}
         onBack={() => navigate(-1)}
         onSave={handleSave}
-        onAfterRename={() => {
-          refetch();
-        }}
+        onRename={handleRename}
         onActionComplete={(action) => {
           if (action === 'delete') {
             if (themesListPath) navigate(themesListPath);

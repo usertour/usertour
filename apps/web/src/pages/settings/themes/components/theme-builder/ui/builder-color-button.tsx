@@ -8,8 +8,8 @@ interface Props extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'chi
   color: string;
 }
 
-// Framer-style swatch + hex code trigger button. Used as a popover trigger
-// inside ColorField (which owns the popover and color picker panel).
+// Swatch + hex code trigger button. Used as a popover trigger inside
+// ColorField (which owns the popover and color picker panel).
 export const BuilderColorButton = forwardRef<HTMLButtonElement, Props>(
   ({ color, className, ...props }, ref) => {
     const isAuto = color === 'Auto';
