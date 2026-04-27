@@ -1,7 +1,14 @@
 import { extendBase, extendSdk } from '@usertour-packages/tailwind';
 import { deepmerge } from 'deepmerge-ts';
 
-const extend = deepmerge(extendBase, extendSdk);
+const extend = deepmerge(extendBase, extendSdk, {
+  spacing: {
+    // Theme builder needs sizes between Tailwind's 4px-step defaults.
+    5.5: '22px',
+    7.5: '30px',
+    15: '60px',
+  },
+});
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
