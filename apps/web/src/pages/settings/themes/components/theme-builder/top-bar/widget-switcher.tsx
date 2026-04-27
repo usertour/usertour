@@ -4,7 +4,7 @@ import { BuilderSelect, type BuilderSelectOption } from '../ui';
 const PREVIEW_OPTIONS: BuilderSelectOption[] = [
   { value: ThemeDetailPreviewType.TOOLTIP, label: 'Tooltip' },
   { value: ThemeDetailPreviewType.MODAL, label: 'Modal' },
-  { value: ThemeDetailPreviewType.BUBBLE, label: 'Bubble' },
+  { value: ThemeDetailPreviewType.BUBBLE, label: 'Speech bubble' },
   { value: ThemeDetailPreviewType.BANNER, label: 'Banner' },
   { value: ThemeDetailPreviewType.LAUNCHER_ICON, label: 'Launcher icon' },
   { value: ThemeDetailPreviewType.LAUNCHER_BEACON, label: 'Launcher beacon' },

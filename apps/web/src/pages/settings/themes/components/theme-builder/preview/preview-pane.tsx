@@ -10,7 +10,6 @@ import {
   NPS_PREVIEW_CONTENT,
   TOOLTIP_PREVIEW_CONTENT,
 } from '../../../constants/preview-contents';
-import { ThemePreviewBanner } from '../../preview/theme-preview-banner';
 import { ThemePreviewBubble } from '../../preview/theme-preview-bubble';
 import { ThemePreviewChecklist } from '../../preview/theme-preview-checklist';
 import { ThemePreviewLauncher } from '../../preview/theme-preview-launcher';
@@ -18,6 +17,7 @@ import { ThemePreviewModal } from '../../preview/theme-preview-modal';
 import { ThemePreviewPopper } from '../../preview/theme-preview-popper';
 import { ThemePreviewResourceCenter } from '../../preview/theme-preview-resource-center';
 import type { Rect } from '../../theme-editor';
+import { BannerPreview } from './banner-preview';
 import { BrowserFrame } from './browser-frame';
 
 interface Props {
@@ -67,7 +67,7 @@ export function PreviewPane({ settings, widgetType }: Props) {
           />
         )}
         {widgetType === ThemeDetailPreviewType.BANNER && (
-          <ThemePreviewBanner
+          <BannerPreview
             contents={BANNER_PREVIEW_CONTENT}
             settings={settings}
             customStyle={customStyle}
