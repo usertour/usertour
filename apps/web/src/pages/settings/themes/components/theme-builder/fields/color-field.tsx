@@ -32,7 +32,7 @@ export function ColorField({ path, label, allowAuto = false, autoFallback, verti
     <FieldRow label={label} htmlFor={id} forceVertical={vertical}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <BuilderColorButton id={id} color={displayedColor} />
+          <BuilderColorButton id={id} color={displayedColor} isAuto={isAuto} />
         </PopoverTrigger>
         <PopoverContent
           align="start"

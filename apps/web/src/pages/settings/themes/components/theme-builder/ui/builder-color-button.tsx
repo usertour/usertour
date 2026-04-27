@@ -5,15 +5,18 @@ const isHexColor = (s: string): boolean => /^#?[0-9a-fA-F]{6}$|^#?[0-9a-fA-F]{8}
 const stripHash = (s: string): string => (s.startsWith('#') ? s.slice(1) : s);
 
 interface Props extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+  // The hex color to render in the swatch. When `isAuto` is set, this should
+  // be the resolved fallback hex (the swatch shows the resolved color while
+  // the label still reads "Auto").
   color: string;
+  isAuto?: boolean;
 }
 
-// Swatch + hex code trigger button. Used as a popover trigger inside
-// ColorField (which owns the popover and color picker panel).
+// Swatch + label trigger button. Used as a popover trigger inside ColorField
+// (which owns the popover and color picker panel).
 export const BuilderColorButton = forwardRef<HTMLButtonElement, Props>(
-  ({ color, className, ...props }, ref) => {
-    const isAuto = color === 'Auto';
-    const swatchColor = isAuto || !isHexColor(color) ? '#ffffff' : color;
+  ({ color, isAuto = false, className, ...props }, ref) => {
+    const swatchColor = isHexColor(color) ? color : '#ffffff';
     const display = isAuto ? 'Auto' : isHexColor(color) ? stripHash(color).toUpperCase() : color;
 
     return (

@@ -40,6 +40,7 @@ function Cell({ path, label, allowAuto, position }: CellProps) {
           <BuilderColorButton
             id={id}
             color={displayedColor}
+            isAuto={isAuto}
             className={cn(radiusClass, 'w-full')}
           />
         </PopoverTrigger>
