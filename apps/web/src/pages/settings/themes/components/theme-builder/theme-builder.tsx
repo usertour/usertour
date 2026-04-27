@@ -23,12 +23,13 @@ interface Props {
   onBack: () => void;
   onSave: (payload: { settings: ThemeTypesSetting; variations: ThemeVariation[] }) => Promise<void>;
   onAfterRename: () => void;
+  onActionComplete: (action: string) => void;
 }
 
 const mergeWithDefaults = (settings: ThemeTypesSetting): ThemeTypesSetting =>
   deepmerge(defaultSettings, settings) as ThemeTypesSetting;
 
-export function ThemeBuilder({ theme, onBack, onSave, onAfterRename }: Props) {
+export function ThemeBuilder({ theme, onBack, onSave, onAfterRename, onActionComplete }: Props) {
   const [activeWidgetType, setActiveWidgetType] = useState<ThemeDetailPreviewType>(
     ThemeDetailPreviewType.TOOLTIP,
   );
@@ -79,6 +80,7 @@ export function ThemeBuilder({ theme, onBack, onSave, onAfterRename }: Props) {
         theme={theme}
         onBack={onBack}
         onAfterRename={onAfterRename}
+        onActionComplete={onActionComplete}
         hasUnsavedChanges={draft.hasUnsavedChanges}
         isSaving={isSaving}
         onSave={handleSave}

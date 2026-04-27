@@ -1,6 +1,7 @@
-import { ChevronLeftIcon } from '@radix-ui/react-icons';
+import { ChevronLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { EditIcon } from '@usertour-packages/icons';
 import type { Theme } from '@usertour/types';
+import { ThemeEditDropdownMenu } from '../../theme-edit-dropmenu';
 import { ThemeRenameForm } from '../../theme-rename-form';
 import { BuilderIconButton, BuilderSaveButton } from '../ui';
 import { pillClass, topBarClass } from '../ui/tokens';
@@ -9,6 +10,7 @@ interface Props {
   theme: Theme;
   onBack: () => void;
   onAfterRename: () => void;
+  onActionComplete: (action: string) => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   onSave: () => void;
@@ -18,6 +20,7 @@ export function TopBar({
   theme,
   onBack,
   onAfterRename,
+  onActionComplete,
   hasUnsavedChanges,
   isSaving,
   onSave,
@@ -49,6 +52,11 @@ export function TopBar({
           onSave={onSave}
           disabled={theme.isSystem}
         />
+        <ThemeEditDropdownMenu theme={theme} onSubmit={onActionComplete}>
+          <BuilderIconButton variant="secondary" aria-label="Theme actions">
+            <DotsHorizontalIcon className="h-4 w-4" />
+          </BuilderIconButton>
+        </ThemeEditDropdownMenu>
       </div>
     </div>
   );

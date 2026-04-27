@@ -14,6 +14,7 @@ import { ContentLoading } from '@/components/molecules/content-loading';
 // Inner component that uses the context
 const ThemeDetailInner = () => {
   const { loading, theme, refetch } = useThemeDetailContext();
+  const { projectId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [updateMutation] = useMutation(updateTheme);
@@ -45,6 +46,7 @@ const ThemeDetailInner = () => {
   }
 
   if (searchParams.get('builder') === 'v2' && theme) {
+    const themesListPath = projectId ? `/project/${projectId}/settings/themes` : null;
     return (
       <ThemeBuilder
         theme={theme}
@@ -52,6 +54,13 @@ const ThemeDetailInner = () => {
         onSave={handleSave}
         onAfterRename={() => {
           refetch();
+        }}
+        onActionComplete={(action) => {
+          if (action === 'delete') {
+            if (themesListPath) navigate(themesListPath);
+          } else {
+            refetch();
+          }
         }}
       />
     );
