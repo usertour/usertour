@@ -1,10 +1,9 @@
 import { Slider } from '@usertour-packages/slider';
 import { useId } from 'react';
-import { labelClass } from '../ui/tokens';
+import { useBuilderContext } from '../builder-context';
 
 interface Props {
-  value: number | undefined;
-  onChange: (value: number) => void;
+  path: string;
   label: string;
   min: number;
   max: number;
@@ -12,13 +11,15 @@ interface Props {
   suffix?: string;
 }
 
-export function SliderField({ value, onChange, label, min, max, step = 1, suffix }: Props) {
+export function SliderField({ path, label, min, max, step = 1, suffix }: Props) {
   const id = useId();
+  const { getField, setField } = useBuilderContext();
+  const value = getField<number>(path);
   const safe = typeof value === 'number' ? value : min;
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label htmlFor={id} className={labelClass}>
+        <label htmlFor={id} className="text-xs font-medium">
           {label}
         </label>
         <span className="text-xs text-muted-foreground">
@@ -32,7 +33,7 @@ export function SliderField({ value, onChange, label, min, max, step = 1, suffix
         min={min}
         max={max}
         step={step}
-        onValueChange={([next]) => onChange(next)}
+        onValueChange={([next]) => setField(path, next)}
       />
     </div>
   );

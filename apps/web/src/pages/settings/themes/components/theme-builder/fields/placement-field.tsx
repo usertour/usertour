@@ -10,12 +10,13 @@ export interface PlacementValue {
 }
 
 interface Props {
-  value: Partial<PlacementValue> | undefined;
-  onChange: (next: Partial<PlacementValue>) => void;
+  path: string;
   label: string;
+  options?: { value: string; label: string }[];
+  labels?: { position?: string; offsetX?: string; offsetY?: string };
 }
 
-const POSITION_OPTIONS = [
+const DEFAULT_OPTIONS: { value: string; label: string }[] = [
   { value: ModalPosition.LeftTop, label: 'Top left' },
   { value: ModalPosition.CenterTop, label: 'Top center' },
   { value: ModalPosition.RightTop, label: 'Top right' },
@@ -25,28 +26,19 @@ const POSITION_OPTIONS = [
   { value: ModalPosition.Center, label: 'Center' },
 ];
 
-export function PlacementField({ value, onChange, label }: Props) {
+export function PlacementField({ path, label, options, labels }: Props) {
+  const opts = options ?? DEFAULT_OPTIONS;
+  const lbls = {
+    position: labels?.position ?? 'Anchor',
+    offsetX: labels?.offsetX ?? 'Offset X',
+    offsetY: labels?.offsetY ?? 'Offset Y',
+  };
   return (
     <div className="space-y-1">
       <div className={sectionLabelClass}>{label}</div>
-      <SelectField
-        label="Anchor"
-        value={value?.position}
-        onChange={(next) => onChange({ position: next as ModalPosition })}
-        options={POSITION_OPTIONS}
-      />
-      <NumberField
-        label="Offset X"
-        value={value?.positionOffsetX}
-        onChange={(next) => onChange({ positionOffsetX: next })}
-        suffix="px"
-      />
-      <NumberField
-        label="Offset Y"
-        value={value?.positionOffsetY}
-        onChange={(next) => onChange({ positionOffsetY: next })}
-        suffix="px"
-      />
+      <SelectField path={`${path}.position`} label={lbls.position} options={opts} />
+      <NumberField path={`${path}.positionOffsetX`} label={lbls.offsetX} suffix="px" />
+      <NumberField path={`${path}.positionOffsetY`} label={lbls.offsetY} suffix="px" />
     </div>
   );
 }

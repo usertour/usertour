@@ -1,24 +1,30 @@
 import { useId } from 'react';
-import { fieldControlColClass, fieldRowClass, labelClass } from '../ui/tokens';
+import { useBuilderContext } from '../builder-context';
 import { BuilderSelect, type BuilderSelectOption } from '../ui';
+import { FieldRow } from './field-row';
 
 interface Props {
-  value: string | undefined;
-  onChange: (value: string) => void;
+  path: string;
   label: string;
   options: BuilderSelectOption[];
+  vertical?: boolean;
+  // When true, the underlying setting is stored as a number; the field
+  // converts string ↔ number on read/write. Used for font-weight selects.
+  valueAsNumber?: boolean;
 }
 
-export function SelectField({ value, onChange, label, options }: Props) {
+export function SelectField({ path, label, options, vertical, valueAsNumber }: Props) {
   const id = useId();
+  const { getField, setField } = useBuilderContext();
+  const raw = valueAsNumber ? getField<number>(path) : getField<string>(path);
+  const value = raw == null ? undefined : String(raw);
+  const handleChange = (next: string) => {
+    setField(path, valueAsNumber ? Number(next) : next);
+  };
+
   return (
-    <div className={fieldRowClass}>
-      <label htmlFor={id} className={labelClass}>
-        {label}
-      </label>
-      <div className={fieldControlColClass}>
-        <BuilderSelect id={id} value={value} onChange={onChange} options={options} />
-      </div>
-    </div>
+    <FieldRow label={label} htmlFor={id} forceVertical={vertical}>
+      <BuilderSelect id={id} value={value} onChange={handleChange} options={options} />
+    </FieldRow>
   );
 }

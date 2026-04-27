@@ -4,12 +4,7 @@
 // className strings.
 
 // Text
-export const labelClass = 'grow text-xs leading-9 font-medium';
 export const sectionLabelClass = 'text-xs font-medium text-muted-foreground';
-
-// Field row layout: label grows, control sits in a fixed column
-export const fieldRowClass = 'flex items-center';
-export const fieldControlColClass = 'flex-none w-36';
 
 // Sidebar list row (variation row)
 export const listRowClass =

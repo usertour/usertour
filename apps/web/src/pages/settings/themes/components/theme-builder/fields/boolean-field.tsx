@@ -1,23 +1,20 @@
 import { useId } from 'react';
-import { fieldControlColClass, fieldRowClass, labelClass } from '../ui/tokens';
+import { useBuilderContext } from '../builder-context';
 import { BuilderSwitch } from '../ui';
+import { FieldRow } from './field-row';
 
 interface Props {
-  value: boolean | undefined;
-  onChange: (value: boolean) => void;
+  path: string;
   label: string;
 }
 
-export function BooleanField({ value, onChange, label }: Props) {
+export function BooleanField({ path, label }: Props) {
   const id = useId();
+  const { getField, setField } = useBuilderContext();
+  const value = getField<boolean>(path);
   return (
-    <div className={fieldRowClass}>
-      <label htmlFor={id} className={labelClass}>
-        {label}
-      </label>
-      <div className={fieldControlColClass}>
-        <BuilderSwitch id={id} checked={value} onCheckedChange={onChange} />
-      </div>
-    </div>
+    <FieldRow label={label} htmlFor={id}>
+      <BuilderSwitch id={id} checked={value} onCheckedChange={(next) => setField(path, next)} />
+    </FieldRow>
   );
 }

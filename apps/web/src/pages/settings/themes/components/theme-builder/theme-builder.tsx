@@ -7,6 +7,7 @@ import {
 } from '@usertour/types';
 import { deepmerge } from 'deepmerge-ts';
 import { useCallback, useMemo, useState } from 'react';
+import { BuilderProvider } from './builder-context';
 import { PreviewPane } from './preview/preview-pane';
 import { builderSections } from './schema/sections';
 import { ConditionsSection } from './sidebar/conditions-section';
@@ -74,49 +75,58 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
     }
   }, [draft, onSave]);
 
+  const builderContextValue = useMemo(
+    () => ({
+      activeSettings: draft.activeSettings,
+      finalSettings: draft.finalSettings,
+      getField: draft.getField,
+      setField: draft.setField,
+      isReadOnly: !!theme.isSystem,
+    }),
+    [draft.activeSettings, draft.finalSettings, draft.getField, draft.setField, theme.isSystem],
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <TopBar
-        theme={theme}
-        onBack={onBack}
-        onRename={onRename}
-        onActionComplete={onActionComplete}
-        hasUnsavedChanges={draft.hasUnsavedChanges}
-        isSaving={isSaving}
-        onSave={handleSave}
-      />
-      <div className="flex flex-1 overflow-hidden">
-        <VariationsSidebar
-          variations={draft.variations}
-          activeVariationId={activeVariationId}
-          onSelect={setActiveVariationId}
-          onAdd={onAddVariation}
-          onRename={draft.renameVariation}
-          onDelete={onDeleteVariation}
-          disabled={theme.isSystem}
+    <BuilderProvider value={builderContextValue}>
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+        <TopBar
+          theme={theme}
+          onBack={onBack}
+          onRename={onRename}
+          onActionComplete={onActionComplete}
+          hasUnsavedChanges={draft.hasUnsavedChanges}
+          isSaving={isSaving}
+          onSave={handleSave}
         />
-        <PreviewPane
-          settings={draft.activeSettings}
-          widgetType={activeWidgetType}
-          onWidgetTypeChange={setActiveWidgetType}
-        />
-        <SidebarShell width={RIGHT_SIDEBAR_WIDTH} variant="right">
-          {draft.activeVariation && (
-            <ConditionsSection
-              conditions={draft.activeVariation.conditions}
-              onConditionsChange={(conds) =>
-                draft.updateVariationConditions(draft.activeVariation!.id, conds)
-              }
-              disabled={theme.isSystem}
-            />
-          )}
-          <SectionsAccordion
-            getField={draft.getField}
-            setField={draft.setField}
-            onSectionExpanded={onSectionExpanded}
+        <div className="flex flex-1 overflow-hidden">
+          <VariationsSidebar
+            variations={draft.variations}
+            activeVariationId={activeVariationId}
+            onSelect={setActiveVariationId}
+            onAdd={onAddVariation}
+            onRename={draft.renameVariation}
+            onDelete={onDeleteVariation}
+            disabled={theme.isSystem}
           />
-        </SidebarShell>
+          <PreviewPane
+            settings={draft.activeSettings}
+            widgetType={activeWidgetType}
+            onWidgetTypeChange={setActiveWidgetType}
+          />
+          <SidebarShell width={RIGHT_SIDEBAR_WIDTH} variant="right">
+            {draft.activeVariation && (
+              <ConditionsSection
+                conditions={draft.activeVariation.conditions}
+                onConditionsChange={(conds) =>
+                  draft.updateVariationConditions(draft.activeVariation!.id, conds)
+                }
+                disabled={theme.isSystem}
+              />
+            )}
+            <SectionsAccordion onSectionExpanded={onSectionExpanded} />
+          </SidebarShell>
+        </div>
       </div>
-    </div>
+    </BuilderProvider>
   );
 }

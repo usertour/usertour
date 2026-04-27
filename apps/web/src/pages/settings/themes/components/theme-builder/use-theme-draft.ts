@@ -1,4 +1,4 @@
-import { cuid } from '@usertour/helpers';
+import { convertSettings, cuid, generateStateColors } from '@usertour/helpers';
 import {
   type RulesCondition,
   type ThemeTypesSetting,
@@ -7,6 +7,153 @@ import {
 } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cloneDeep, getPath, setPath } from './draft-util';
+
+// Cascade rules — when a "trigger" path changes, derive auxiliary paths and
+// patch them in the same setField call. Mirrors v1's manual recomputation of
+// autoHover / autoActive across base colors and primary/secondary buttons so
+// users never have to maintain those fields by hand.
+const resolveAuto = (value: string, fallback: string | undefined): string | undefined =>
+  value === 'Auto' ? fallback : value;
+
+const CASCADE_RULES: Array<{
+  trigger: string;
+  derive: (settings: ThemeTypesSetting) => Record<string, string>;
+}> = [
+  // Base colors -----------------------------------------------------------
+  {
+    trigger: 'brandColor.background',
+    derive: (s) => {
+      const brand = generateStateColors(s.brandColor.background, s.brandColor.color);
+      const main = generateStateColors(s.mainColor.background, s.brandColor.background);
+      return {
+        'brandColor.autoHover': brand.hover,
+        'brandColor.autoActive': brand.active,
+        'mainColor.autoHover': main.hover,
+        'mainColor.autoActive': main.active,
+      };
+    },
+  },
+  {
+    trigger: 'brandColor.color',
+    derive: (s) => {
+      const brand = generateStateColors(s.brandColor.background, s.brandColor.color);
+      return {
+        'brandColor.autoHover': brand.hover,
+        'brandColor.autoActive': brand.active,
+      };
+    },
+  },
+  {
+    trigger: 'mainColor.background',
+    derive: (s) => {
+      const main = generateStateColors(s.mainColor.background, s.brandColor.background);
+      return {
+        'mainColor.autoHover': main.hover,
+        'mainColor.autoActive': main.active,
+      };
+    },
+  },
+  // Primary button --------------------------------------------------------
+  // textColor: when value is 'Auto', resolve to brand.color; auto* mirror it.
+  {
+    trigger: 'buttons.primary.textColor.color',
+    derive: (s) => {
+      const resolved = resolveAuto(s.buttons.primary.textColor.color, s.brandColor.color);
+      if (!resolved) return {} as Record<string, string>;
+      return {
+        'buttons.primary.textColor.autoHover': resolved,
+        'buttons.primary.textColor.autoActive': resolved,
+      };
+    },
+  },
+  // backgroundColor: 'Auto' → brand.background; states from generateStateColors(bg, brand.color).
+  {
+    trigger: 'buttons.primary.backgroundColor.background',
+    derive: (s) => {
+      const resolved = resolveAuto(
+        s.buttons.primary.backgroundColor.background,
+        s.brandColor.background,
+      );
+      const accent = s.brandColor.color;
+      if (!resolved || !accent) return {} as Record<string, string>;
+      const states = generateStateColors(resolved, accent);
+      return {
+        'buttons.primary.backgroundColor.autoHover': states.hover,
+        'buttons.primary.backgroundColor.autoActive': states.active,
+      };
+    },
+  },
+  // border.color: 'Auto' → falls back to brand.background; primary uses generateStateColors.
+  {
+    trigger: 'buttons.primary.border.color.color',
+    derive: (s) => {
+      const resolved = resolveAuto(s.buttons.primary.border.color.color, s.brandColor.background);
+      const accent = s.brandColor.color;
+      if (!resolved || !accent) return {} as Record<string, string>;
+      const states = generateStateColors(resolved, accent);
+      return {
+        'buttons.primary.border.color.autoHover': states.hover,
+        'buttons.primary.border.color.autoActive': states.active,
+      };
+    },
+  },
+  // Secondary button ------------------------------------------------------
+  // textColor: 'Auto' → brand.background (inverted vs primary); auto* mirror resolved.
+  {
+    trigger: 'buttons.secondary.textColor.color',
+    derive: (s) => {
+      const resolved = resolveAuto(s.buttons.secondary.textColor.color, s.brandColor.background);
+      if (!resolved) return {} as Record<string, string>;
+      return {
+        'buttons.secondary.textColor.autoHover': resolved,
+        'buttons.secondary.textColor.autoActive': resolved,
+      };
+    },
+  },
+  // backgroundColor: 'Auto' → mainColor.background; accent for state generation = brand.background.
+  {
+    trigger: 'buttons.secondary.backgroundColor.background',
+    derive: (s) => {
+      const resolved = resolveAuto(
+        s.buttons.secondary.backgroundColor.background,
+        s.mainColor.background,
+      );
+      const accent = s.brandColor.background;
+      if (!resolved || !accent) return {} as Record<string, string>;
+      const states = generateStateColors(resolved, accent);
+      return {
+        'buttons.secondary.backgroundColor.autoHover': states.hover,
+        'buttons.secondary.backgroundColor.autoActive': states.active,
+      };
+    },
+  },
+  // border.color: secondary mirrors resolved value (no generateStateColors).
+  {
+    trigger: 'buttons.secondary.border.color.color',
+    derive: (s) => {
+      const resolved = resolveAuto(s.buttons.secondary.border.color.color, s.brandColor.background);
+      if (!resolved) return {} as Record<string, string>;
+      return {
+        'buttons.secondary.border.color.autoHover': resolved,
+        'buttons.secondary.border.color.autoActive': resolved,
+      };
+    },
+  },
+];
+
+const applyCascade = (settings: ThemeTypesSetting, changedPath: string): ThemeTypesSetting => {
+  const rule = CASCADE_RULES.find((r) => r.trigger === changedPath);
+  if (!rule) return settings;
+  let next = settings;
+  for (const [path, value] of Object.entries(rule.derive(next))) {
+    next = setPath(
+      next as unknown as Record<string, unknown>,
+      path,
+      value,
+    ) as unknown as ThemeTypesSetting;
+  }
+  return next;
+};
 
 export interface UseThemeDraftArgs {
   initialBase: ThemeTypesSetting;
@@ -18,6 +165,9 @@ export interface UseThemeDraftResult {
   base: ThemeTypesSetting;
   variations: ThemeVariation[];
   activeSettings: ThemeTypesSetting;
+  // activeSettings post-`convertSettings`: every "Auto" sentinel resolved to a
+  // concrete color, used by ColorField to display the Auto fallback color.
+  finalSettings: ThemeTypesSetting;
   activeVariation: ThemeVariation | null;
   setField: (path: string, value: unknown) => void;
   getField: <T = unknown>(path: string) => T | undefined;
@@ -77,28 +227,25 @@ export function useThemeDraft({
   const setField = useCallback(
     (path: string, value: unknown) => {
       if (activeVariationId === null) {
-        setBase(
-          (prev) =>
-            setPath(
-              prev as unknown as Record<string, unknown>,
-              path,
-              value,
-            ) as unknown as ThemeTypesSetting,
-        );
+        setBase((prev) => {
+          const after = setPath(
+            prev as unknown as Record<string, unknown>,
+            path,
+            value,
+          ) as unknown as ThemeTypesSetting;
+          return applyCascade(after, path);
+        });
       } else {
         setVariations((prev) =>
-          prev.map((v) =>
-            v.id === activeVariationId
-              ? {
-                  ...v,
-                  settings: setPath(
-                    v.settings as unknown as Record<string, unknown>,
-                    path,
-                    value,
-                  ) as unknown as ThemeTypesSetting,
-                }
-              : v,
-          ),
+          prev.map((v) => {
+            if (v.id !== activeVariationId) return v;
+            const after = setPath(
+              v.settings as unknown as Record<string, unknown>,
+              path,
+              value,
+            ) as unknown as ThemeTypesSetting;
+            return { ...v, settings: applyCascade(after, path) };
+          }),
         );
       }
     },
@@ -109,6 +256,8 @@ export function useThemeDraft({
     <T>(path: string): T | undefined => getPath(activeSettings, path) as T | undefined,
     [activeSettings],
   );
+
+  const finalSettings = useMemo(() => convertSettings(activeSettings), [activeSettings]);
 
   const addVariation = useCallback((name?: string): string => {
     const id = cuid();
@@ -157,6 +306,7 @@ export function useThemeDraft({
     base,
     variations,
     activeSettings,
+    finalSettings,
     activeVariation,
     setField,
     getField,

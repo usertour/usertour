@@ -1,29 +1,26 @@
 import { useId } from 'react';
-import { fieldControlColClass, fieldRowClass, labelClass } from '../ui/tokens';
+import { useBuilderContext } from '../builder-context';
 import { BuilderInput } from '../ui';
+import { FieldRow } from './field-row';
 
 interface Props {
-  value: string | undefined;
-  onChange: (value: string) => void;
+  path: string;
   label: string;
   placeholder?: string;
 }
 
-export function TextField({ value, onChange, label, placeholder }: Props) {
+export function TextField({ path, label, placeholder }: Props) {
   const id = useId();
+  const { getField, setField } = useBuilderContext();
+  const value = getField<string>(path) ?? '';
   return (
-    <div className={fieldRowClass}>
-      <label htmlFor={id} className={labelClass}>
-        {label}
-      </label>
-      <div className={fieldControlColClass}>
-        <BuilderInput
-          id={id}
-          value={value ?? ''}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      </div>
-    </div>
+    <FieldRow label={label} htmlFor={id}>
+      <BuilderInput
+        id={id}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => setField(path, e.target.value)}
+      />
+    </FieldRow>
   );
 }

@@ -2,17 +2,37 @@ import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import { MinusIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useState } from 'react';
 import { FieldRenderer } from '../fields/field-renderer';
+import type { FieldDef } from '../schema/types';
 import { builderSections } from '../schema/sections';
 
 interface Props {
-  getField: <T = unknown>(path: string) => T | undefined;
-  setField: (path: string, value: unknown) => void;
   // Called with the section id when a previously-collapsed section is opened.
   // Used to sync the widget preview to that section's previewWidget.
   onSectionExpanded?: (sectionId: string) => void;
 }
 
-export function SectionsAccordion({ getField, setField, onSectionExpanded }: Props) {
+function fieldKey(field: FieldDef, index: number): string {
+  if (
+    field.type === 'group-header' ||
+    field.type === 'inline-alert' ||
+    field.type === 'sub-section' ||
+    field.type === 'separator'
+  ) {
+    return `${field.type}:${index}`;
+  }
+  if (field.type === 'triple-color') {
+    return `${field.type}:${field.paths.join('|')}`;
+  }
+  if (field.type === 'dynamic-number') {
+    return `${field.type}:${index}`;
+  }
+  if (field.type === 'avatar-type') {
+    return `${field.type}:${field.basePath}`;
+  }
+  return `${field.type}:${field.path}`;
+}
+
+export function SectionsAccordion({ onSectionExpanded }: Props) {
   const [expanded, setExpanded] = useState<string[]>([]);
 
   const handleValueChange = (values: string[]) => {
@@ -43,13 +63,8 @@ export function SectionsAccordion({ getField, setField, onSectionExpanded }: Pro
           </AccordionPrimitive.Header>
           <AccordionPrimitive.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
             <div className="space-y-3 px-5 py-4">
-              {section.fields.map((field) => (
-                <FieldRenderer
-                  key={`${field.type}:${field.path}`}
-                  field={field}
-                  getField={getField}
-                  setField={setField}
-                />
+              {section.fields.map((field, index) => (
+                <FieldRenderer key={fieldKey(field, index)} field={field} />
               ))}
             </div>
           </AccordionPrimitive.Content>
