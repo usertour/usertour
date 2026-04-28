@@ -139,6 +139,7 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
                 draft.updateVariationConditions(draft.activeVariation.id, conds);
               }
             }}
+            onReorder={draft.reorderVariations}
             disabled={theme.isSystem}
             width={leftResizable.width}
             resize={{

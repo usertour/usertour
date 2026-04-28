@@ -175,6 +175,9 @@ export interface UseThemeDraftResult {
   removeVariation: (id: string) => void;
   renameVariation: (id: string, name: string) => void;
   updateVariationConditions: (id: string, conditions: RulesCondition[]) => void;
+  // Reorder variations by id. The list order is semantic — first match wins
+  // when multiple variations' conditions are true at runtime.
+  reorderVariations: (fromIndex: number, toIndex: number) => void;
   reset: () => void;
   markSaved: () => void;
   hasUnsavedChanges: boolean;
@@ -286,6 +289,24 @@ export function useThemeDraft({
     setVariations((prev) => prev.map((v) => (v.id === id ? { ...v, conditions } : v)));
   }, []);
 
+  const reorderVariations = useCallback((fromIndex: number, toIndex: number) => {
+    setVariations((prev) => {
+      if (
+        fromIndex === toIndex ||
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= prev.length ||
+        toIndex >= prev.length
+      ) {
+        return prev;
+      }
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
+
   const reset = useCallback(() => {
     setBase(cloneDeep(baseline.base));
     setVariations(cloneDeep(baseline.variations));
@@ -314,6 +335,7 @@ export function useThemeDraft({
     removeVariation,
     renameVariation,
     updateVariationConditions,
+    reorderVariations,
     reset,
     markSaved,
     hasUnsavedChanges,

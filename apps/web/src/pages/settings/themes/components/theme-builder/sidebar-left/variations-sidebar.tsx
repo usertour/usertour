@@ -1,3 +1,19 @@
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { PlusIcon } from '@usertour-packages/icons';
 import {
   AlertDialog,
@@ -32,12 +48,54 @@ interface Props {
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
   onConditionsChange: (conditions: RulesCondition[]) => void;
+  // Reorder by id list — VariationsSidebar resolves ids to indices.
+  onReorder: (fromIndex: number, toIndex: number) => void;
   disabled?: boolean;
   width: number;
   resize?: {
     isAtMin: boolean;
     onMouseDown: (event: React.MouseEvent) => void;
   };
+}
+
+// Wires a single variation row into the SortableContext. Kept inline because
+// it captures parent props and isn't reused elsewhere.
+function SortableVariationRow({
+  variation,
+  selected,
+  onClick,
+  onRename,
+  onDelete,
+  disabled,
+}: {
+  variation: ThemeVariation;
+  selected: boolean;
+  onClick: () => void;
+  onRename?: () => void;
+  onDelete?: () => void;
+  disabled?: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: variation.id,
+    disabled,
+  });
+  return (
+    <VariationRow
+      label={variation.name || 'Untitled variation'}
+      selected={selected}
+      onClick={onClick}
+      onRename={onRename}
+      onDelete={onDelete}
+      disabled={disabled}
+      sortableRef={setNodeRef}
+      sortableStyle={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      dragHandleProps={{ ...attributes, ...listeners }}
+      isDragging={isDragging}
+    />
+  );
 }
 
 const BASE_LABEL = 'Base';
@@ -51,6 +109,7 @@ export function VariationsSidebar({
   onRename,
   onDelete,
   onConditionsChange,
+  onReorder,
   disabled,
   width,
   resize,
@@ -58,6 +117,23 @@ export function VariationsSidebar({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // PointerSensor with a small distance threshold so a click doesn't get
+  // hijacked as a drag (we want clicks on the handle to be clearly drags only
+  // when the user moves a few pixels).
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const fromIndex = variations.findIndex((v) => v.id === active.id);
+    const toIndex = variations.findIndex((v) => v.id === over.id);
+    if (fromIndex < 0 || toIndex < 0) return;
+    onReorder(fromIndex, toIndex);
+  };
 
   const renamingVariation = renamingId
     ? (variations.find((v) => v.id === renamingId) ?? null)
@@ -95,29 +171,41 @@ export function VariationsSidebar({
             selected={activeVariationId === null}
             onClick={() => onSelect(null)}
           />
-          {variations.map((variation) => (
-            <VariationRow
-              key={variation.id}
-              label={variation.name || 'Untitled variation'}
-              selected={activeVariationId === variation.id}
-              onClick={() => onSelect(variation.id)}
-              onRename={
-                disabled
-                  ? undefined
-                  : () => {
-                      setRenamingId(variation.id);
-                    }
-              }
-              onDelete={
-                disabled
-                  ? undefined
-                  : () => {
-                      setDeletingId(variation.id);
-                    }
-              }
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={variations.map((v) => v.id)}
+              strategy={verticalListSortingStrategy}
               disabled={disabled}
-            />
-          ))}
+            >
+              {variations.map((variation) => (
+                <SortableVariationRow
+                  key={variation.id}
+                  variation={variation}
+                  selected={activeVariationId === variation.id}
+                  onClick={() => onSelect(variation.id)}
+                  onRename={
+                    disabled
+                      ? undefined
+                      : () => {
+                          setRenamingId(variation.id);
+                        }
+                  }
+                  onDelete={
+                    disabled
+                      ? undefined
+                      : () => {
+                          setDeletingId(variation.id);
+                        }
+                  }
+                  disabled={disabled}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
 
         {/* Conditions for the active variation. Inline below the list (not
@@ -125,7 +213,12 @@ export function VariationsSidebar({
             Hidden when Base is selected — Base has no conditions. */}
         {activeVariation && (
           <div className="border-t border-border/50">
+            {/* `key` forces ConditionsSection (and the underlying Rules
+                component, whose `defaultConditions` is uncontrolled) to
+                remount when the user switches variation, so the rules editor
+                shows the conditions of the newly selected variation. */}
             <ConditionsSection
+              key={activeVariation.id}
               conditions={activeVariation.conditions}
               onConditionsChange={onConditionsChange}
               disabled={disabled}
