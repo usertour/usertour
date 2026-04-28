@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import type { RulesCondition, ThemeVariation } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { ConditionsSection } from '../sidebar/conditions-section';
@@ -174,7 +175,18 @@ export function VariationsSidebar({
   return (
     <div className={sidebarPanelClass} style={{ width }}>
       <div className={`${sidebarHeaderClass} flex items-center justify-between`}>
-        <div className={sectionLabelClass}>Variations</div>
+        <div className={`${sectionLabelClass} flex items-center gap-1.5`}>
+          <span>Variations</span>
+          <QuestionTooltip>
+            Create theme variations that automatically apply based on user attributes. All matching
+            variations will be applied in the order shown below.
+            <br />
+            <br />
+            Examples:
+            <br />• Apply dark theme when user has dark mode enabled
+            <br />• Use premium colors for paid users
+          </QuestionTooltip>
+        </div>
         <BuilderIconButton onClick={onAdd} disabled={disabled} aria-label="Add variation">
           <PlusIcon className="h-3.5 w-3.5" />
         </BuilderIconButton>
@@ -242,6 +254,7 @@ export function VariationsSidebar({
             <ConditionsSection
               key={activeVariation.id}
               conditions={activeVariation.conditions}
+              variationName={activeVariation.name}
               onConditionsChange={onConditionsChange}
               disabled={disabled}
             />
