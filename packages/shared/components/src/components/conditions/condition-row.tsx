@@ -1,6 +1,7 @@
 import { RiCloseLine } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import type { RulesCondition } from '@usertour/types';
+import isEqual from 'fast-deep-equal';
 import { useEffect, useState } from 'react';
 import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '../error-tooltip';
 import { useConditionsContext, useConditionsT, useConditionsZIndex } from './conditions-context';
@@ -40,12 +41,21 @@ const CHIP_INVALID = 'border-destructive/70 hover:border-destructive';
 // One condition row. For 'group' types renders a recursive ConditionList
 // inline (no popover). For all other registered types renders a summary
 // button that opens the type's Editor in a popover.
+//
+// Edit cadence mirrors v1 Rules: while the editor popover is open, edits go
+// to a local `draft` and only the chip Summary reflects them; the parent's
+// onChange fires once on popover close (and only when the draft actually
+// differs from the committed condition). This keeps consumers from having
+// to debounce or dedup keystroke-level updates.
 export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOpened }: Props) {
   const ctx = useConditionsContext();
   const t = useConditionsT();
   const zIndex = useConditionsZIndex();
   const { disabled, isHorizontal } = ctx;
   const [open, setOpen] = useState(false);
+  // Draft is the in-flight edit. While the editor is open, the schema's
+  // Editor writes here instead of bubbling to the parent on each keystroke.
+  const [draft, setDraft] = useState<RulesCondition>(condition);
   // i18n key of the validation error currently flagged on this row, or null
   // when valid / unchecked. Recomputed each time the editor closes.
   const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -59,6 +69,16 @@ export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpen]);
 
+  // Sync the draft when the committed condition changes externally (parent
+  // overwriting state, list reordering, logic re-stamp). Intentionally only
+  // depends on `condition` — we don't want to re-sync when the popover toggles
+  // because that would wipe partial edits on a close-with-error (the draft
+  // should survive until the user fixes the error or removes the row).
+  useEffect(() => {
+    if (!open) setDraft(condition);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [condition]);
+
   const validateContext: ValidateContext = {
     attributes: ctx.attributes,
     segments: ctx.segments,
@@ -68,16 +88,23 @@ export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOp
 
   const handleOpenChange = (next: boolean) => {
     if (disabled) return;
-    setOpen(next);
     if (next) {
-      // Opening the editor clears any prior error display so the user can
-      // edit without a red ring chasing them.
+      // Open: hide any prior error so editing isn't chased by red. The draft
+      // already tracks the committed condition via useEffect.
       setErrorKey(null);
+      setOpen(true);
       return;
     }
-    // Closing — re-run validate against the latest committed condition.
-    const result = schema?.validate?.(condition, validateContext);
+    setOpen(false);
+    // Closing — validate the draft. When invalid, stay flagged but don't
+    // propagate the bad data upward. Matches v1 (rules-user-attribute.tsx
+    // handleOpenChange returns early on showError).
+    const result = schema?.validate?.(draft, validateContext);
     setErrorKey(result?.key ?? null);
+    if (result) return;
+    if (!isEqual(draft, condition)) {
+      onChange(draft);
+    }
   };
 
   // In horizontal layout each chip sizes to its content; in vertical it
@@ -142,6 +169,10 @@ export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOp
   // Surface the inline error tooltip whenever a key is set AND the editor is
   // closed — opening the editor temporarily hides it.
   const showError = Boolean(errorKey) && !open;
+  // Chip Summary follows the draft so users see live changes while editing,
+  // then settles back to the committed condition on close (via the
+  // useEffect above when draft = condition).
+  const visibleCondition = open ? draft : condition;
 
   return (
     <ErrorTooltip open={showError}>
@@ -157,7 +188,7 @@ export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOp
                   isHorizontal ? '' : 'flex-1',
                 )}
               >
-                <Summary condition={condition} />
+                <Summary condition={visibleCondition} />
               </button>
             </ConditionPopoverTrigger>
             {!disabled && (
@@ -175,9 +206,9 @@ export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOp
           <ConditionPopoverContent align="start" sideOffset={6} className="w-[300px]">
             <ConditionEditor
               schema={schema}
-              condition={condition}
-              onChange={onChange}
-              onClose={() => setOpen(false)}
+              condition={draft}
+              onChange={setDraft}
+              onClose={() => handleOpenChange(false)}
             />
           </ConditionPopoverContent>
         </ConditionPopover>
