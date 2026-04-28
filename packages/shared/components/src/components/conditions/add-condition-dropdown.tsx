@@ -16,18 +16,23 @@ interface Props {
   // the new condition to its conditions list with the right `operators`
   // (and/or) for that group.
   onSelect: (condition: RulesCondition) => void;
+  // Optional override for the filterItems context value — used by nested
+  // contexts like an event's where-section that need to surface a different
+  // type set than the outer Conditions tree.
+  filterItems?: string[];
 }
 
-// "Add condition" trigger + popup of registered types. Filters by the
-// surrounding ConditionsContext.filterItems so the dropdown only shows what
-// the consumer wants exposed.
+// "Add condition" trigger + popup of registered types. Filters by either the
+// `filterItems` prop (if provided) or ConditionsContext.filterItems so the
+// dropdown only shows what the surrounding scope wants exposed.
 //
 // Selection is deferred until the dropdown finishes closing — otherwise the
 // click that picked the item also lands as a click-outside on the new
 // condition's auto-opened popover and immediately closes it.
-export function AddConditionDropdown({ onSelect }: Props) {
+export function AddConditionDropdown({ onSelect, filterItems: filterItemsOverride }: Props) {
   const t = useConditionsT();
-  const { filterItems, disabled } = useConditionsContext();
+  const { filterItems: ctxFilter, disabled } = useConditionsContext();
+  const filterItems = filterItemsOverride ?? ctxFilter;
   const schemas = listAvailableSchemas(filterItems);
 
   const pendingSchemaRef = useRef<(typeof schemas)[number] | null>(null);

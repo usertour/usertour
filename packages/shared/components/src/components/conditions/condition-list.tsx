@@ -16,6 +16,11 @@ interface Props {
   // across all conditions in the same group. Default 'and' when conditions
   // are empty.
   className?: string;
+  // Optional override for the filterItems context — only the listed types
+  // are surfaced in the add-condition dropdown. Used by nested scopes like
+  // an event's where-section that allow a different subset of types than
+  // the outer Conditions tree.
+  filterItems?: string[];
 }
 
 // Ensure every condition has a stable id for React keying and dedup.
@@ -58,7 +63,12 @@ function LogicToggler({ logic, onToggle, disabled }: LogicTogglerProps) {
 // row out as `[prefix] [condition]` with prefix being either an "If" label
 // (first row, when isShowIf) or the same toggler chip used horizontally
 // (subsequent rows). Recursively used for nested 'group' conditions.
-export function ConditionList({ conditions, onChange, className }: Props) {
+export function ConditionList({
+  conditions,
+  onChange,
+  className,
+  filterItems: filterItemsOverride,
+}: Props) {
   const { isHorizontal, isShowIf, disabled } = useConditionsContext();
   const t = useConditionsT();
   const items = ensureIds(conditions);
@@ -108,7 +118,7 @@ export function ConditionList({ conditions, onChange, className }: Props) {
             />
           </Fragment>
         ))}
-        <AddConditionDropdown onSelect={handleAdd} />
+        <AddConditionDropdown onSelect={handleAdd} filterItems={filterItemsOverride} />
       </div>
     );
   }
@@ -142,7 +152,7 @@ export function ConditionList({ conditions, onChange, className }: Props) {
           </div>
         );
       })}
-      <AddConditionDropdown onSelect={handleAdd} />
+      <AddConditionDropdown onSelect={handleAdd} filterItems={filterItemsOverride} />
     </div>
   );
 }

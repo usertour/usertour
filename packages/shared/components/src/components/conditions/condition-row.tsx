@@ -2,10 +2,12 @@ import { RiCloseLine } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import type { RulesCondition } from '@usertour/types';
 import { useEffect, useState } from 'react';
-import { useConditionsContext } from './conditions-context';
+import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '../error-tooltip';
+import { useConditionsContext, useConditionsT, useConditionsZIndex } from './conditions-context';
 import { ConditionEditor } from './condition-editor';
 import { ConditionList } from './condition-list';
 import { getConditionSchema } from './registry';
+import type { ValidateContext } from './schema-types';
 import {
   ConditionIconButton,
   ConditionPopover,
@@ -30,12 +32,23 @@ interface Props {
 const CHIP_OUTER =
   'group/condition inline-flex items-stretch overflow-hidden rounded-lg border border-input/60 bg-background text-xs shadow-sm transition-colors hover:border-input';
 
+// Red ring around the chip when validation failed on close — gives a static
+// visual cue that complements the popping error tooltip so the row stays
+// flagged even after the tooltip auto-dismisses.
+const CHIP_INVALID = 'border-destructive/70 hover:border-destructive';
+
 // One condition row. For 'group' types renders a recursive ConditionList
 // inline (no popover). For all other registered types renders a summary
 // button that opens the type's Editor in a popover.
 export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOpened }: Props) {
-  const { disabled, isHorizontal } = useConditionsContext();
+  const ctx = useConditionsContext();
+  const t = useConditionsT();
+  const zIndex = useConditionsZIndex();
+  const { disabled, isHorizontal } = ctx;
   const [open, setOpen] = useState(false);
+  // i18n key of the validation error currently flagged on this row, or null
+  // when valid / unchecked. Recomputed each time the editor closes.
+  const [errorKey, setErrorKey] = useState<string | null>(null);
   const schema = getConditionSchema(condition.type);
 
   useEffect(() => {
@@ -45,6 +58,27 @@ export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOp
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpen]);
+
+  const validateContext: ValidateContext = {
+    attributes: ctx.attributes,
+    segments: ctx.segments,
+    contents: ctx.contents,
+    events: ctx.events,
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (disabled) return;
+    setOpen(next);
+    if (next) {
+      // Opening the editor clears any prior error display so the user can
+      // edit without a red ring chasing them.
+      setErrorKey(null);
+      return;
+    }
+    // Closing — re-run validate against the latest committed condition.
+    const result = schema?.validate?.(condition, validateContext);
+    setErrorKey(result?.key ?? null);
+  };
 
   // In horizontal layout each chip sizes to its content; in vertical it
   // stretches to fill the surrounding container.
@@ -105,42 +139,54 @@ export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOp
   }
 
   const { Summary } = schema;
+  // Surface the inline error tooltip whenever a key is set AND the editor is
+  // closed — opening the editor temporarily hides it.
+  const showError = Boolean(errorKey) && !open;
 
   return (
-    <ConditionPopover open={open} onOpenChange={disabled ? undefined : setOpen}>
-      <div className={cn(CHIP_OUTER, widthClass)}>
-        <ConditionPopoverTrigger asChild>
-          <button
-            type="button"
-            disabled={disabled}
-            className={cn(
-              'flex min-w-0 items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60',
-              isHorizontal ? '' : 'flex-1',
+    <ErrorTooltip open={showError}>
+      <ErrorTooltipAnchor asChild>
+        <ConditionPopover open={open} onOpenChange={handleOpenChange}>
+          <div className={cn(CHIP_OUTER, errorKey ? CHIP_INVALID : '', widthClass)}>
+            <ConditionPopoverTrigger asChild>
+              <button
+                type="button"
+                disabled={disabled}
+                className={cn(
+                  'flex min-w-0 items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60',
+                  isHorizontal ? '' : 'flex-1',
+                )}
+              >
+                <Summary condition={condition} />
+              </button>
+            </ConditionPopoverTrigger>
+            {!disabled && (
+              <button
+                type="button"
+                onClick={onRemove}
+                aria-label="Remove condition"
+                className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none group-hover/condition:text-muted-foreground"
+              >
+                <RiCloseLine className="h-3.5 w-3.5" />
+              </button>
             )}
-          >
-            <Summary condition={condition} />
-          </button>
-        </ConditionPopoverTrigger>
-        {!disabled && (
-          <button
-            type="button"
-            onClick={onRemove}
-            aria-label="Remove condition"
-            className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none group-hover/condition:text-muted-foreground"
-          >
-            <RiCloseLine className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+          </div>
 
-      <ConditionPopoverContent align="start" sideOffset={6} className="w-[300px]">
-        <ConditionEditor
-          schema={schema}
-          condition={condition}
-          onChange={onChange}
-          onClose={() => setOpen(false)}
-        />
-      </ConditionPopoverContent>
-    </ConditionPopover>
+          <ConditionPopoverContent align="start" sideOffset={6} className="w-[300px]">
+            <ConditionEditor
+              schema={schema}
+              condition={condition}
+              onChange={onChange}
+              onClose={() => setOpen(false)}
+            />
+          </ConditionPopoverContent>
+        </ConditionPopover>
+      </ErrorTooltipAnchor>
+      {errorKey && (
+        <ErrorTooltipContent zIndex={zIndex.error} side="right" sideOffset={8}>
+          {t(errorKey)}
+        </ErrorTooltipContent>
+      )}
+    </ErrorTooltip>
   );
 }

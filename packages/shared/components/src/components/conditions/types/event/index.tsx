@@ -8,13 +8,13 @@ import {
   type RulesCondition,
 } from '@usertour/types';
 import { useMemo } from 'react';
+import { ConditionList } from '../../condition-list';
 import { useConditionsContext, useConditionsT } from '../../conditions-context';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateEvent } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { ConditionInput } from '../../ui/condition-input';
-import { eventAttrSchema } from '../event-attr';
 
 export interface EventData {
   eventId?: string;
@@ -340,70 +340,37 @@ interface WhereProps {
   data: EventData;
 }
 
-// Inline list of event-attribute filters scoped to the chosen event. Each
-// entry is a thin wrapper around the event-attr Editor — no separate group
-// nesting (v1 supported one level of grouping; we collapse to a flat list
-// for the v2 chrome and let the surrounding ConditionList provide and/or
-// logic if/when groups are reintroduced).
+// Nested list of event-attribute filters scoped to the chosen event. Renders
+// a recursive ConditionList limited to event-attr + group types so users can
+// build (A AND B) OR (C AND D) — matching v1 RulesEventWhereGroup behavior.
+// New event-attr conditions get the parent eventId injected into their data
+// so the attribute picker scopes to the chosen event.
 function EventWhereSection({ condition, onChange, data }: WhereProps) {
   const t = useConditionsT();
   const where = data.whereConditions ?? [];
 
-  const setWhere = (next: RulesCondition[]) => {
-    onChange(writeData(condition, { whereConditions: next.length > 0 ? next : undefined }));
+  const handleWhereChange = (next: RulesCondition[]) => {
+    // ConditionList writes back the full list — when a fresh event-attr lands
+    // without an eventId (defaultData() returns empty), inject it so the
+    // child editor can fetch attributes-on-event for the right event.
+    const stamped = next.map((c) =>
+      c.type === 'event-attr' && !(c.data as { eventId?: string })?.eventId
+        ? { ...c, data: { ...(c.data as Record<string, unknown>), eventId: data.eventId } }
+        : c,
+    );
+    onChange(writeData(condition, { whereConditions: stamped.length > 0 ? stamped : undefined }));
   };
-
-  const addWhere = () => {
-    const newId = `${condition.id}-${where.length}-${Date.now()}`;
-    setWhere([
-      ...where,
-      {
-        id: newId,
-        type: 'event-attr',
-        data: { eventId: data.eventId },
-        operators: 'and',
-      } as RulesCondition,
-    ]);
-  };
-
-  const updateWhere = (index: number, next: RulesCondition) => {
-    setWhere(where.map((c, i) => (i === index ? next : c)));
-  };
-
-  const removeWhere = (index: number) => {
-    setWhere(where.filter((_, i) => i !== index));
-  };
-
-  const { Editor: AttrEditor } = eventAttrSchema;
 
   return (
     <div className="flex flex-col gap-2 border-t border-border/50 pt-2">
       <div className="text-[11px] font-medium text-muted-foreground">
         {t('conditions.types.event.whereLabel')}
       </div>
-      {where.map((c, i) => (
-        <div key={c.id} className="rounded-lg border border-border/60 bg-muted/30 p-2">
-          <AttrEditor
-            condition={c}
-            onChange={(next) => updateWhere(i, next)}
-            onClose={() => undefined}
-          />
-          <button
-            type="button"
-            onClick={() => removeWhere(i)}
-            className="mt-1 text-[11px] text-muted-foreground hover:text-foreground"
-          >
-            {t('conditions.types.event.removeWhere')}
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={addWhere}
-        className="self-start text-[11px] font-medium text-primary hover:text-primary/80"
-      >
-        {t('conditions.types.event.addWhere')}
-      </button>
+      <ConditionList
+        conditions={where}
+        onChange={handleWhereChange}
+        filterItems={['event-attr', 'group']}
+      />
     </div>
   );
 }
