@@ -1,4 +1,5 @@
 import { cn } from '@usertour-packages/tailwind';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   // Which edge of the sidebar this handle sits on.
@@ -13,10 +14,11 @@ interface Props {
 // 6px invisible hit area straddling the panel's inner edge. The drag
 // affordance is purely the cursor change — no visible line or icon.
 export function SidebarResizeHandle({ edge, isAtMin, onMouseDown }: Props) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
-      aria-label="Resize sidebar"
+      aria-label={t('themeBuilder.aria.resizeSidebar')}
       onMouseDown={onMouseDown}
       className={cn(
         'absolute top-0 z-10 h-full w-1.5 cursor-col-resize bg-transparent',

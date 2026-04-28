@@ -8,47 +8,52 @@ import {
 } from '@usertour/types';
 import type { BuilderSection, FieldDef } from './types';
 
+// All `label`, option labels, alert messages, etc. are translation keys; the
+// FieldRenderer / consuming components resolve them via `t()` at render time.
+// Keys live under `themeBuilder.*` in `packages/shared/i18n/src/{en-US,zh-Hans}/ui.ts`.
+
 const FONT_WEIGHT_OPTIONS = [
-  { value: '100', label: 'Thin 100' },
-  { value: '200', label: 'Extra light 200' },
-  { value: '300', label: 'Light 300' },
-  { value: '400', label: 'Normal 400' },
-  { value: '500', label: 'Medium 500' },
-  { value: '600', label: 'Semibold 600' },
-  { value: '700', label: 'Bold 700' },
-  { value: '800', label: 'Extra bold 800' },
-  { value: '900', label: 'Black 900' },
+  { value: '100', label: 'themeBuilder.options.fontWeight.thin' },
+  { value: '200', label: 'themeBuilder.options.fontWeight.extraLight' },
+  { value: '300', label: 'themeBuilder.options.fontWeight.light' },
+  { value: '400', label: 'themeBuilder.options.fontWeight.normal' },
+  { value: '500', label: 'themeBuilder.options.fontWeight.medium' },
+  { value: '600', label: 'themeBuilder.options.fontWeight.semibold' },
+  { value: '700', label: 'themeBuilder.options.fontWeight.bold' },
+  { value: '800', label: 'themeBuilder.options.fontWeight.extraBold' },
+  { value: '900', label: 'themeBuilder.options.fontWeight.black' },
 ];
 
 const PLACEMENT_FIVE: { value: string; label: string }[] = [
-  { value: ModalPosition.LeftTop, label: 'Top Left' },
-  { value: ModalPosition.RightTop, label: 'Top Right' },
-  { value: ModalPosition.LeftBottom, label: 'Bottom Left' },
-  { value: ModalPosition.RightBottom, label: 'Bottom Right' },
-  { value: ModalPosition.Center, label: 'Center' },
+  { value: ModalPosition.LeftTop, label: 'themeBuilder.options.placementCornerCenter.topLeft' },
+  { value: ModalPosition.RightTop, label: 'themeBuilder.options.placementCornerCenter.topRight' },
+  {
+    value: ModalPosition.LeftBottom,
+    label: 'themeBuilder.options.placementCornerCenter.bottomLeft',
+  },
+  {
+    value: ModalPosition.RightBottom,
+    label: 'themeBuilder.options.placementCornerCenter.bottomRight',
+  },
+  { value: ModalPosition.Center, label: 'themeBuilder.options.placementCornerCenter.center' },
 ];
 
 const RC_PLACEMENT_FOUR: { value: string; label: string }[] = [
-  { value: 'top-left', label: 'Top Left' },
-  { value: 'top-right', label: 'Top Right' },
-  { value: 'bottom-left', label: 'Bottom Left' },
-  { value: 'bottom-right', label: 'Bottom Right' },
+  { value: 'top-left', label: 'themeBuilder.options.placementCornerCenter.topLeft' },
+  { value: 'top-right', label: 'themeBuilder.options.placementCornerCenter.topRight' },
+  { value: 'bottom-left', label: 'themeBuilder.options.placementCornerCenter.bottomLeft' },
+  { value: 'bottom-right', label: 'themeBuilder.options.placementCornerCenter.bottomRight' },
 ];
 
 const ALL_AUTO: [boolean, boolean, boolean] = [true, true, true];
 
-// Builds the per-button block (primary or secondary) used inside the Buttons
-// section. Mirrors v1 ThemeSettingsButton's hierarchy: font-weight select →
-// font color triple → background triple → border switch (+ width when on) →
-// border color triple (when on). Cascade rules in use-theme-draft handle the
-// auto* derivation for textColor / backgroundColor / border.color.
 const buttonFields = (name: 'primary' | 'secondary'): FieldDef[] => {
   const prefix = `buttons.${name}`;
   return [
     {
       type: 'select',
       path: `${prefix}.fontWeight`,
-      label: 'Font weight',
+      label: 'themeBuilder.fields.common.fontWeight',
       options: FONT_WEIGHT_OPTIONS,
       valueAsNumber: true,
     },
@@ -59,7 +64,11 @@ const buttonFields = (name: 'primary' | 'secondary'): FieldDef[] => {
         `${prefix}.textColor.hover`,
         `${prefix}.textColor.active`,
       ],
-      labels: ['Font color', 'Hover', 'Click'],
+      labels: [
+        'themeBuilder.fields.common.fontColor',
+        'themeBuilder.fields.common.hover',
+        'themeBuilder.fields.common.click',
+      ],
       allowAuto: ALL_AUTO,
     },
     {
@@ -69,14 +78,22 @@ const buttonFields = (name: 'primary' | 'secondary'): FieldDef[] => {
         `${prefix}.backgroundColor.hover`,
         `${prefix}.backgroundColor.active`,
       ],
-      labels: ['Background', 'Hover', 'Click'],
+      labels: [
+        'themeBuilder.fields.common.background',
+        'themeBuilder.fields.common.hover',
+        'themeBuilder.fields.common.click',
+      ],
       allowAuto: ALL_AUTO,
     },
-    { type: 'boolean', path: `${prefix}.border.enabled`, label: 'Border' },
+    {
+      type: 'boolean',
+      path: `${prefix}.border.enabled`,
+      label: 'themeBuilder.fields.common.border',
+    },
     {
       type: 'number',
       path: `${prefix}.border.borderWidth`,
-      label: 'Border width',
+      label: 'themeBuilder.fields.common.borderWidth',
       min: 0,
       max: 10,
       suffix: 'px',
@@ -89,7 +106,11 @@ const buttonFields = (name: 'primary' | 'secondary'): FieldDef[] => {
         `${prefix}.border.color.hover`,
         `${prefix}.border.color.active`,
       ],
-      labels: ['Border color', 'Hover', 'Click'],
+      labels: [
+        'themeBuilder.fields.common.borderColor',
+        'themeBuilder.fields.common.hover',
+        'themeBuilder.fields.common.click',
+      ],
       allowAuto: ALL_AUTO,
       visibleWhen: (s) => s.buttons[name].border.enabled,
     },
@@ -97,37 +118,52 @@ const buttonFields = (name: 'primary' | 'secondary'): FieldDef[] => {
 };
 
 export const builderSections: BuilderSection[] = [
-  // -------------------------------------------------------------------------
-  // Base colors
-  // -------------------------------------------------------------------------
   {
     id: 'base-colors',
-    label: 'Base colors',
+    label: 'themeBuilder.sections.baseColors',
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
       {
         type: 'sub-section',
-        label: 'Brand colors',
+        label: 'themeBuilder.subSections.brandColors',
         fields: [
-          { type: 'color', path: 'brandColor.color', label: 'Text', vertical: true },
+          {
+            type: 'color',
+            path: 'brandColor.color',
+            label: 'themeBuilder.fields.common.text',
+            vertical: true,
+          },
           {
             type: 'triple-color',
             paths: ['brandColor.background', 'brandColor.hover', 'brandColor.active'],
-            labels: ['Background', 'Hover', 'Click'],
+            labels: [
+              'themeBuilder.fields.common.background',
+              'themeBuilder.fields.common.hover',
+              'themeBuilder.fields.common.click',
+            ],
             allowAuto: [false, true, true],
           },
         ],
       },
       {
         type: 'sub-section',
-        label: 'Main colors',
+        label: 'themeBuilder.subSections.mainColors',
         withSeparator: true,
         fields: [
-          { type: 'color', path: 'mainColor.color', label: 'Text', vertical: true },
+          {
+            type: 'color',
+            path: 'mainColor.color',
+            label: 'themeBuilder.fields.common.text',
+            vertical: true,
+          },
           {
             type: 'triple-color',
             paths: ['mainColor.background', 'mainColor.hover', 'mainColor.active'],
-            labels: ['Background', 'Hover', 'Click'],
+            labels: [
+              'themeBuilder.fields.common.background',
+              'themeBuilder.fields.common.hover',
+              'themeBuilder.fields.common.click',
+            ],
             allowAuto: [false, true, true],
           },
         ],
@@ -135,19 +171,16 @@ export const builderSections: BuilderSection[] = [
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Avatar
-  // -------------------------------------------------------------------------
   {
     id: 'avatar',
-    label: 'Avatar',
+    label: 'themeBuilder.sections.avatar',
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
       { type: 'avatar-type', basePath: 'avatar' },
       {
         type: 'number',
         path: 'avatar.size',
-        label: 'Avatar size',
+        label: 'themeBuilder.fields.avatar.avatarSize',
         min: 24,
         max: 120,
         suffix: 'px',
@@ -155,19 +188,16 @@ export const builderSections: BuilderSection[] = [
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Font
-  // -------------------------------------------------------------------------
   {
     id: 'font',
-    label: 'Font',
+    label: 'themeBuilder.sections.font',
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
-      { type: 'font-family', path: 'font.fontFamily', label: 'Font family' },
+      { type: 'font-family', path: 'font.fontFamily', label: 'themeBuilder.fields.font.family' },
       {
         type: 'number',
         path: 'font.fontSize',
-        label: 'Body size',
+        label: 'themeBuilder.fields.font.bodySize',
         min: 10,
         max: 24,
         suffix: 'px',
@@ -175,7 +205,7 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'font.lineHeight',
-        label: 'Line height',
+        label: 'themeBuilder.fields.font.lineHeight',
         min: 12,
         max: 40,
         suffix: 'px',
@@ -183,21 +213,21 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'select',
         path: 'font.fontWeightNormal',
-        label: 'Body weight',
+        label: 'themeBuilder.fields.font.bodyWeight',
         options: FONT_WEIGHT_OPTIONS,
         valueAsNumber: true,
       },
       {
         type: 'select',
         path: 'font.fontWeightBold',
-        label: 'Bold weight',
+        label: 'themeBuilder.fields.font.boldWeight',
         options: FONT_WEIGHT_OPTIONS,
         valueAsNumber: true,
       },
       {
         type: 'number',
         path: 'font.h1FontSize',
-        label: 'H1 size',
+        label: 'themeBuilder.fields.font.h1Size',
         min: 16,
         max: 48,
         suffix: 'px',
@@ -205,36 +235,42 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'font.h2FontSize',
-        label: 'H2 size',
+        label: 'themeBuilder.fields.font.h2Size',
         min: 14,
         max: 32,
         suffix: 'px',
       },
-      { type: 'color', path: 'font.linkColor', label: 'Link color', allowAuto: true },
+      {
+        type: 'color',
+        path: 'font.linkColor',
+        label: 'themeBuilder.fields.font.linkColor',
+        allowAuto: true,
+      },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Chrome border
-  // -------------------------------------------------------------------------
   {
     id: 'chrome-border',
-    label: 'Chrome border',
+    label: 'themeBuilder.sections.chromeBorder',
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
       {
         type: 'number',
         path: 'border.borderRadius',
-        label: 'Border radius',
+        label: 'themeBuilder.fields.common.borderRadius',
         min: 0,
         max: 40,
         suffix: 'px',
       },
-      { type: 'boolean', path: 'border.borderWidthEnabled', label: 'Border' },
+      {
+        type: 'boolean',
+        path: 'border.borderWidthEnabled',
+        label: 'themeBuilder.fields.common.border',
+      },
       {
         type: 'number',
         path: 'border.borderWidth',
-        label: 'Border width',
+        label: 'themeBuilder.fields.common.borderWidth',
         min: 0,
         max: 10,
         suffix: 'px',
@@ -243,61 +279,81 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'color',
         path: 'border.borderColor',
-        label: 'Border color',
+        label: 'themeBuilder.fields.common.borderColor',
         allowAuto: true,
         visibleWhen: (s) => s.border.borderWidthEnabled,
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // X button
-  // -------------------------------------------------------------------------
   {
     id: 'x-button',
-    label: 'X Button',
+    label: 'themeBuilder.sections.xButton',
     previewWidget: ThemeDetailPreviewType.MODAL,
-    fields: [{ type: 'color', path: 'xbutton.color', label: 'Color', allowAuto: true }],
+    fields: [
+      {
+        type: 'color',
+        path: 'xbutton.color',
+        label: 'themeBuilder.fields.common.color',
+        allowAuto: true,
+      },
+    ],
   },
 
-  // -------------------------------------------------------------------------
-  // Progress bar
-  // -------------------------------------------------------------------------
   {
     id: 'progress-bar',
-    label: 'Progress bar',
+    label: 'themeBuilder.sections.progressBar',
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
-      { type: 'boolean', path: 'progress.enabled', label: 'Show progress bar' },
+      {
+        type: 'boolean',
+        path: 'progress.enabled',
+        label: 'themeBuilder.fields.progress.showProgressBar',
+      },
       {
         type: 'select',
         path: 'progress.type',
-        label: 'Progress bar type',
+        label: 'themeBuilder.fields.progress.progressBarType',
         vertical: true,
         options: [
-          { value: ProgressBarType.FULL_WIDTH, label: 'Full width progress bar' },
-          { value: ProgressBarType.NARROW, label: 'Narrow progress bar' },
-          { value: ProgressBarType.CHAIN_ROUNDED, label: 'Chain rounded' },
-          { value: ProgressBarType.CHAIN_SQUARED, label: 'Chain squared' },
-          { value: ProgressBarType.DOTS, label: 'Dots' },
-          { value: ProgressBarType.NUMBERED, label: 'Numbered (1 of 3)' },
+          {
+            value: ProgressBarType.FULL_WIDTH,
+            label: 'themeBuilder.options.progressBarType.fullWidth',
+          },
+          { value: ProgressBarType.NARROW, label: 'themeBuilder.options.progressBarType.narrow' },
+          {
+            value: ProgressBarType.CHAIN_ROUNDED,
+            label: 'themeBuilder.options.progressBarType.chainRounded',
+          },
+          {
+            value: ProgressBarType.CHAIN_SQUARED,
+            label: 'themeBuilder.options.progressBarType.chainSquared',
+          },
+          { value: ProgressBarType.DOTS, label: 'themeBuilder.options.progressBarType.dots' },
+          {
+            value: ProgressBarType.NUMBERED,
+            label: 'themeBuilder.options.progressBarType.numbered',
+          },
         ],
         visibleWhen: (s) => s.progress.enabled,
       },
       {
         type: 'select',
         path: 'progress.position',
-        label: 'Progress bar position',
+        label: 'themeBuilder.fields.progress.progressBarPosition',
         options: [
-          { value: ProgressBarPosition.TOP, label: 'Top' },
-          { value: ProgressBarPosition.BOTTOM, label: 'Bottom' },
+          { value: ProgressBarPosition.TOP, label: 'themeBuilder.options.progressBarPosition.top' },
+          {
+            value: ProgressBarPosition.BOTTOM,
+            label: 'themeBuilder.options.progressBarPosition.bottom',
+          },
         ],
         visibleWhen: (s) => s.progress.enabled && s.progress.type !== ProgressBarType.FULL_WIDTH,
       },
       {
         type: 'color',
         path: 'progress.color',
-        label: 'Progress bar color',
+        label: 'themeBuilder.fields.progress.progressBarColor',
         allowAuto: true,
         visibleWhen: (s) => s.progress.enabled,
       },
@@ -307,13 +363,13 @@ export const builderSections: BuilderSection[] = [
           switch (s.progress.type) {
             case ProgressBarType.CHAIN_ROUNDED:
             case ProgressBarType.CHAIN_SQUARED:
-              return 'Chain height';
+              return 'themeBuilder.fields.progress.chainHeight';
             case ProgressBarType.DOTS:
-              return 'Dot size';
+              return 'themeBuilder.fields.progress.dotSize';
             case ProgressBarType.NUMBERED:
-              return 'Font size';
+              return 'themeBuilder.fields.progress.fontSize';
             default:
-              return 'Progress bar height';
+              return 'themeBuilder.fields.progress.progressBarHeight';
           }
         },
         getPath: (s) => {
@@ -347,8 +403,7 @@ export const builderSections: BuilderSection[] = [
       },
       {
         type: 'inline-alert',
-        message:
-          'Progress bar may not work correctly with non-linear flows that have conditional steps or branching paths.',
+        message: 'themeBuilder.alerts.progressNonLinear',
         variant: 'warning',
         visibleWhen: (s) =>
           s.progress.enabled &&
@@ -358,19 +413,23 @@ export const builderSections: BuilderSection[] = [
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Buttons (Primary + Secondary, with cascades)
-  // -------------------------------------------------------------------------
   {
     id: 'buttons',
-    label: 'Buttons',
+    label: 'themeBuilder.sections.buttons',
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
-      { type: 'number', path: 'buttons.height', label: 'Height', min: 24, max: 64, suffix: 'px' },
+      {
+        type: 'number',
+        path: 'buttons.height',
+        label: 'themeBuilder.fields.common.height',
+        min: 24,
+        max: 64,
+        suffix: 'px',
+      },
       {
         type: 'number',
         path: 'buttons.minWidth',
-        label: 'Min width',
+        label: 'themeBuilder.fields.buttons.minWidth',
         min: 0,
         max: 200,
         suffix: 'px',
@@ -378,7 +437,7 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'buttons.borderRadius',
-        label: 'Border radius',
+        label: 'themeBuilder.fields.common.borderRadius',
         min: 0,
         max: 32,
         suffix: 'px',
@@ -386,57 +445,69 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'buttons.px',
-        label: 'Horizontal padding',
+        label: 'themeBuilder.fields.buttons.horizontalPadding',
         min: 0,
         max: 40,
         suffix: 'px',
       },
       {
         type: 'sub-section',
-        label: 'Primary button',
+        label: 'themeBuilder.subSections.primaryButton',
         withSeparator: true,
         fields: buttonFields('primary'),
       },
       {
         type: 'sub-section',
-        label: 'Secondary button',
+        label: 'themeBuilder.subSections.secondaryButton',
         withSeparator: true,
         fields: buttonFields('secondary'),
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Speech bubble
-  // -------------------------------------------------------------------------
   {
     id: 'speech-bubble',
-    label: 'Speech bubble',
+    label: 'themeBuilder.sections.speechBubble',
     previewWidget: ThemeDetailPreviewType.BUBBLE,
     fields: [
-      { type: 'number', path: 'bubble.width', label: 'Width', min: 200, max: 600, suffix: 'px' },
+      {
+        type: 'number',
+        path: 'bubble.width',
+        label: 'themeBuilder.fields.common.width',
+        min: 200,
+        max: 600,
+        suffix: 'px',
+      },
       {
         type: 'placement',
         path: 'bubble.placement',
-        label: 'Placement',
-        labels: { position: 'Placement', offsetX: 'Offset left', offsetY: 'Offset bottom' },
+        label: 'themeBuilder.fields.common.placement',
+        labels: {
+          position: 'themeBuilder.fields.common.placement',
+          offsetX: 'themeBuilder.fields.common.offsetLeft',
+          offsetY: 'themeBuilder.fields.common.offsetBottom',
+        },
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Tooltip
-  // -------------------------------------------------------------------------
   {
     id: 'tooltip',
-    label: 'Tooltip',
+    label: 'themeBuilder.sections.tooltip',
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
-      { type: 'number', path: 'tooltip.width', label: 'Width', min: 200, max: 600, suffix: 'px' },
+      {
+        type: 'number',
+        path: 'tooltip.width',
+        label: 'themeBuilder.fields.common.width',
+        min: 200,
+        max: 600,
+        suffix: 'px',
+      },
       {
         type: 'number',
         path: 'tooltip.notchSize',
-        label: 'Notch size',
+        label: 'themeBuilder.fields.tooltip.notchSize',
         min: 0,
         max: 30,
         suffix: 'px',
@@ -444,78 +515,108 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'tooltip.missingTargetTolerance',
-        label: 'Missing tooltip target tolerance',
+        label: 'themeBuilder.fields.tooltip.missingTargetTolerance',
         min: 0,
         max: 10,
         suffix: 's',
-        validate: (v) => (v > 10 ? 'Maximum value is 10' : undefined),
+        validate: (v) => (v > 10 ? 'themeBuilder.validation.toleranceMax' : undefined),
       },
       {
         type: 'select',
         path: 'tooltip.missingTargetBehavior',
-        label: 'Missing tooltip target behavior',
+        label: 'themeBuilder.fields.tooltip.missingTargetBehavior',
         vertical: true,
         options: [
-          { value: MissingTooltipTargetBehavior.AUTO_DISMISS, label: 'Auto dismiss' },
-          { value: MissingTooltipTargetBehavior.USE_BUBBLE, label: 'Use bubble' },
+          {
+            value: MissingTooltipTargetBehavior.AUTO_DISMISS,
+            label: 'themeBuilder.options.missingTargetBehavior.autoDismiss',
+          },
+          {
+            value: MissingTooltipTargetBehavior.USE_BUBBLE,
+            label: 'themeBuilder.options.missingTargetBehavior.useBubble',
+          },
         ],
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Modal
-  // -------------------------------------------------------------------------
   {
     id: 'modal',
-    label: 'Modal',
+    label: 'themeBuilder.sections.modal',
     previewWidget: ThemeDetailPreviewType.MODAL,
     fields: [
-      { type: 'number', path: 'modal.width', label: 'Width', min: 320, max: 1200, suffix: 'px' },
-      { type: 'number', path: 'modal.padding', label: 'Padding', min: 0, max: 80, suffix: 'px' },
+      {
+        type: 'number',
+        path: 'modal.width',
+        label: 'themeBuilder.fields.common.width',
+        min: 320,
+        max: 1200,
+        suffix: 'px',
+      },
+      {
+        type: 'number',
+        path: 'modal.padding',
+        label: 'themeBuilder.fields.common.padding',
+        min: 0,
+        max: 80,
+        suffix: 'px',
+      },
       {
         type: 'select',
         path: 'modal.backdropClickBehavior',
-        label: 'Modal backdrop click behavior',
+        label: 'themeBuilder.fields.modal.backdropClickBehavior',
         vertical: true,
         options: [
-          { value: 'do-nothing', label: 'Do nothing' },
-          { value: 'dismiss-flow', label: 'Dismiss flow' },
+          { value: 'do-nothing', label: 'themeBuilder.options.modalBackdropClick.doNothing' },
+          { value: 'dismiss-flow', label: 'themeBuilder.options.modalBackdropClick.dismissFlow' },
         ],
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Survey
-  // -------------------------------------------------------------------------
   {
     id: 'survey',
-    label: 'Survey',
+    label: 'themeBuilder.sections.survey',
     previewWidget: ThemeDetailPreviewType.NPS,
-    fields: [{ type: 'color', path: 'survey.color', label: 'Color', allowAuto: true }],
+    fields: [
+      {
+        type: 'color',
+        path: 'survey.color',
+        label: 'themeBuilder.fields.common.color',
+        allowAuto: true,
+      },
+    ],
   },
 
-  // -------------------------------------------------------------------------
-  // Banner
-  // -------------------------------------------------------------------------
   {
     id: 'banner',
-    label: 'Banner',
+    label: 'themeBuilder.sections.banner',
     previewWidget: ThemeDetailPreviewType.BANNER,
     fields: [
       {
         type: 'color',
         path: 'banner.backgroundColor.background',
-        label: 'Background color',
+        label: 'themeBuilder.fields.banner.backgroundColor',
         allowAuto: true,
       },
-      { type: 'color', path: 'banner.textColor.color', label: 'Text color', allowAuto: true },
-      { type: 'number', path: 'banner.padding', label: 'Padding', min: 0, max: 40, suffix: 'px' },
+      {
+        type: 'color',
+        path: 'banner.textColor.color',
+        label: 'themeBuilder.fields.banner.textColor',
+        allowAuto: true,
+      },
+      {
+        type: 'number',
+        path: 'banner.padding',
+        label: 'themeBuilder.fields.common.padding',
+        min: 0,
+        max: 40,
+        suffix: 'px',
+      },
       {
         type: 'number',
         path: 'banner.animationDuration',
-        label: 'Animation duration',
+        label: 'themeBuilder.fields.banner.animationDuration',
         min: 0,
         max: 1000,
         suffix: 'ms',
@@ -523,29 +624,26 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'select',
         path: 'banner.animationTiming',
-        label: 'Animation style',
+        label: 'themeBuilder.fields.banner.animationStyle',
         options: [
-          { value: 'smooth', label: 'Smooth' },
-          { value: 'snappy', label: 'Snappy' },
-          { value: 'gentle', label: 'Gentle' },
-          { value: 'linear', label: 'Linear' },
+          { value: 'smooth', label: 'themeBuilder.options.bannerAnimation.smooth' },
+          { value: 'snappy', label: 'themeBuilder.options.bannerAnimation.snappy' },
+          { value: 'gentle', label: 'themeBuilder.options.bannerAnimation.gentle' },
+          { value: 'linear', label: 'themeBuilder.options.bannerAnimation.linear' },
         ],
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Checklist
-  // -------------------------------------------------------------------------
   {
     id: 'checklist',
-    label: 'Checklist',
+    label: 'themeBuilder.sections.checklist',
     previewWidget: ThemeDetailPreviewType.CHECKLIST,
     fields: [
       {
         type: 'number',
         path: 'checklist.width',
-        label: 'Width',
+        label: 'themeBuilder.fields.common.width',
         min: 240,
         max: 600,
         suffix: 'px',
@@ -553,48 +651,49 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'placement',
         path: 'checklist.placement',
-        label: 'Placement',
+        label: 'themeBuilder.fields.common.placement',
         options: PLACEMENT_FIVE,
-        labels: { position: 'Placement', offsetX: 'Offset right', offsetY: 'Offset bottom' },
+        labels: {
+          position: 'themeBuilder.fields.common.placement',
+          offsetX: 'themeBuilder.fields.common.offsetRight',
+          offsetY: 'themeBuilder.fields.common.offsetBottom',
+        },
       },
       {
         type: 'number',
         path: 'checklist.zIndex',
-        label: 'Z-index',
+        label: 'themeBuilder.fields.common.zIndex',
         optional: true,
-        placeholder: 'Auto',
+        placeholder: 'themeBuilder.placeholders.auto',
       },
       {
         type: 'color',
         path: 'checklist.checkmarkColor',
-        label: 'Checkmark color',
+        label: 'themeBuilder.fields.checklist.checkmarkColor',
         allowAuto: true,
       },
       {
         type: 'select',
         path: 'checklist.completedTaskTextDecoration',
-        label: 'Completed task text decoration',
+        label: 'themeBuilder.fields.checklist.completedTaskTextDecoration',
         vertical: true,
         options: [
-          { value: 'none', label: 'None (no line-through)' },
-          { value: 'line-through', label: 'Line-through' },
+          { value: 'none', label: 'themeBuilder.options.textDecoration.none' },
+          { value: 'line-through', label: 'themeBuilder.options.textDecoration.lineThrough' },
         ],
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Checklist launcher
-  // -------------------------------------------------------------------------
   {
     id: 'checklist-launcher',
-    label: 'Checklist launcher',
+    label: 'themeBuilder.sections.checklistLauncher',
     previewWidget: ThemeDetailPreviewType.CHECKLIST_LAUNCHER,
     fields: [
       {
         type: 'number',
         path: 'checklistLauncher.height',
-        label: 'Height',
+        label: 'themeBuilder.fields.common.height',
         min: 32,
         max: 80,
         suffix: 'px',
@@ -602,7 +701,7 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'checklistLauncher.borderRadius',
-        label: 'Border radius',
+        label: 'themeBuilder.fields.common.borderRadius',
         min: 0,
         max: 40,
         suffix: 'px',
@@ -610,21 +709,25 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'select',
         path: 'checklistLauncher.fontWeight',
-        label: 'Font weight',
+        label: 'themeBuilder.fields.common.fontWeight',
         options: FONT_WEIGHT_OPTIONS,
         valueAsNumber: true,
       },
       {
         type: 'placement',
         path: 'checklistLauncher.placement',
-        label: 'Placement',
+        label: 'themeBuilder.fields.common.placement',
         options: PLACEMENT_FIVE,
-        labels: { position: 'Placement', offsetX: 'Offset right', offsetY: 'Offset bottom' },
+        labels: {
+          position: 'themeBuilder.fields.common.placement',
+          offsetX: 'themeBuilder.fields.common.offsetRight',
+          offsetY: 'themeBuilder.fields.common.offsetBottom',
+        },
       },
       {
         type: 'color',
         path: 'checklistLauncher.color.color',
-        label: 'Font color',
+        label: 'themeBuilder.fields.common.fontColor',
         allowAuto: true,
         vertical: true,
       },
@@ -635,55 +738,55 @@ export const builderSections: BuilderSection[] = [
           'checklistLauncher.color.hover',
           'checklistLauncher.color.active',
         ],
-        labels: ['Background', 'Hover', 'Active'],
+        labels: [
+          'themeBuilder.fields.common.background',
+          'themeBuilder.fields.common.hover',
+          'themeBuilder.fields.common.active',
+        ],
         allowAuto: ALL_AUTO,
       },
       {
         type: 'color',
         path: 'checklistLauncher.counter.color',
-        label: 'Counter font color',
+        label: 'themeBuilder.fields.checklistLauncher.counterFontColor',
         allowAuto: true,
         vertical: true,
       },
       {
         type: 'color',
         path: 'checklistLauncher.counter.background',
-        label: 'Counter background color',
+        label: 'themeBuilder.fields.checklistLauncher.counterBackgroundColor',
         allowAuto: true,
         vertical: true,
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Resource center
-  // -------------------------------------------------------------------------
   {
     id: 'resource-center',
-    label: 'Resource center',
+    label: 'themeBuilder.sections.resourceCenter',
     previewWidget: ThemeDetailPreviewType.RESOURCE_CENTER,
     fields: [
       {
         type: 'sub-section',
-        label: 'Home header background',
+        label: 'themeBuilder.subSections.homeHeaderBackground',
         fields: [
           {
             type: 'select',
             path: 'resourceCenter.headerBackground.type',
-            label: 'Type',
+            label: 'themeBuilder.fields.resourceCenter.type',
             options: [
-              { value: 'none', label: 'None' },
-              { value: 'color', label: 'Color' },
-              { value: 'gradient', label: 'Gradient' },
-              { value: 'image', label: 'Image' },
+              { value: 'none', label: 'themeBuilder.options.headerBackgroundType.none' },
+              { value: 'color', label: 'themeBuilder.options.headerBackgroundType.color' },
+              { value: 'gradient', label: 'themeBuilder.options.headerBackgroundType.gradient' },
+              { value: 'image', label: 'themeBuilder.options.headerBackgroundType.image' },
             ],
           },
           {
             type: 'color',
             path: 'resourceCenter.headerBackground.color',
-            label: 'Background color',
+            label: 'themeBuilder.fields.resourceCenter.backgroundColor',
             allowAuto: true,
-            // v1: autoColor = mainColor.active resolved (autoActive when active is 'Auto').
             autoFallback: (s) =>
               s.mainColor.active === 'Auto'
                 ? ((s.mainColor.autoActive as string) ?? s.mainColor.background)
@@ -693,7 +796,7 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'color',
             path: 'resourceCenter.headerBackground.gradientFrom',
-            label: 'Gradient from',
+            label: 'themeBuilder.fields.resourceCenter.gradientFrom',
             allowAuto: true,
             autoFallback: (s) => s.brandColor.background,
             visibleWhen: (s) => s.resourceCenter?.headerBackground.type === 'gradient',
@@ -701,7 +804,7 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'color',
             path: 'resourceCenter.headerBackground.gradientTo',
-            label: 'Gradient to',
+            label: 'themeBuilder.fields.resourceCenter.gradientTo',
             allowAuto: true,
             autoFallback: (s) => s.brandColor.color,
             visibleWhen: (s) => s.resourceCenter?.headerBackground.type === 'gradient',
@@ -709,15 +812,15 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'image-upload',
             path: 'resourceCenter.headerBackground.imageUrl',
-            label: 'Upload background image',
-            description: 'PNG/JPG/SVG',
+            label: 'themeBuilder.subSections.uploadBackgroundImage',
+            description: 'themeBuilder.descriptions.pngJpgSvg',
             visibleWhen: (s) => s.resourceCenter?.headerBackground.type === 'image',
           },
         ],
       },
       {
         type: 'sub-section',
-        label: 'Logo',
+        label: 'themeBuilder.subSections.logo',
         visibleWhen: (s) =>
           s.resourceCenter?.headerBackground.type !== 'none' &&
           s.resourceCenter?.headerBackground.type != null,
@@ -726,7 +829,7 @@ export const builderSections: BuilderSection[] = [
             type: 'image-upload',
             path: 'resourceCenter.logoUrl',
             label: '',
-            description: 'Recommended size: 60x60 pixels. Max file size: 2MB.',
+            description: 'themeBuilder.descriptions.logoSpec',
             maxSizeBytes: 2 * 1024 * 1024,
             previewAspect: 'wide',
           },
@@ -739,13 +842,13 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'select',
             path: 'resourceCenter.placement',
-            label: 'Placement',
+            label: 'themeBuilder.fields.common.placement',
             options: RC_PLACEMENT_FOUR,
           },
           {
             type: 'number',
             path: 'resourceCenter.offsetX',
-            label: 'Offset X',
+            label: 'themeBuilder.fields.common.offsetX',
             min: 0,
             max: 200,
             suffix: 'px',
@@ -753,7 +856,7 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'number',
             path: 'resourceCenter.offsetY',
-            label: 'Offset Y',
+            label: 'themeBuilder.fields.common.offsetY',
             min: 0,
             max: 200,
             suffix: 'px',
@@ -761,7 +864,7 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'number',
             path: 'resourceCenter.normalWidth',
-            label: 'Normal width',
+            label: 'themeBuilder.fields.resourceCenter.normalWidth',
             min: 240,
             max: 600,
             suffix: 'px',
@@ -769,7 +872,7 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'number',
             path: 'resourceCenter.largeWidth',
-            label: 'Large width',
+            label: 'themeBuilder.fields.resourceCenter.largeWidth',
             min: 320,
             max: 800,
             suffix: 'px',
@@ -777,7 +880,7 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'number',
             path: 'resourceCenter.maxHeight',
-            label: 'Max height',
+            label: 'themeBuilder.fields.resourceCenter.maxHeight',
             min: 200,
             max: 1200,
             suffix: 'px',
@@ -785,7 +888,7 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'number',
             path: 'resourceCenter.transitionDuration',
-            label: 'Transition duration',
+            label: 'themeBuilder.fields.resourceCenter.transitionDuration',
             min: 0,
             max: 1000,
             suffix: 'ms',
@@ -793,45 +896,48 @@ export const builderSections: BuilderSection[] = [
           {
             type: 'number',
             path: 'resourceCenter.zIndex',
-            label: 'Z-index',
+            label: 'themeBuilder.fields.common.zIndex',
             optional: true,
-            placeholder: 'Auto',
+            placeholder: 'themeBuilder.placeholders.auto',
           },
         ],
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Resource center launcher
-  // -------------------------------------------------------------------------
   {
     id: 'resource-center-launcher',
-    label: 'Resource center launcher',
+    label: 'themeBuilder.sections.resourceCenterLauncher',
     previewWidget: ThemeDetailPreviewType.RESOURCE_CENTER_LAUNCHER,
     fields: [
       {
         type: 'select',
         path: 'resourceCenterLauncherButton.iconType',
-        label: 'Icon type',
+        label: 'themeBuilder.fields.resourceCenterLauncher.iconType',
         vertical: true,
         options: [
-          { value: 'default-question-mark', label: 'Default question mark' },
-          { value: 'plaintext-question-mark', label: 'Plaintext question mark' },
-          { value: 'custom', label: 'Custom' },
+          {
+            value: 'default-question-mark',
+            label: 'themeBuilder.options.iconType.defaultQuestionMark',
+          },
+          {
+            value: 'plaintext-question-mark',
+            label: 'themeBuilder.options.iconType.plaintextQuestionMark',
+          },
+          { value: 'custom', label: 'themeBuilder.options.iconType.custom' },
         ],
       },
       {
         type: 'image-upload',
         path: 'resourceCenterLauncherButton.iconUrl',
-        label: 'Custom icon',
-        description: 'Recommended at least 60x60 pixels. PNG/JPG/SVG.',
+        label: 'themeBuilder.subSections.customIcon',
+        description: 'themeBuilder.descriptions.customIconSpec',
         visibleWhen: (s) => s.resourceCenterLauncherButton?.iconType === 'custom',
       },
       {
         type: 'number',
         path: 'resourceCenterLauncherButton.height',
-        label: 'Height',
+        label: 'themeBuilder.fields.common.height',
         min: 24,
         max: 80,
         suffix: 'px',
@@ -839,7 +945,7 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'resourceCenterLauncherButton.imageHeight',
-        label: 'Image height',
+        label: 'themeBuilder.fields.resourceCenterLauncher.imageHeight',
         min: 16,
         max: 80,
         suffix: 'px',
@@ -848,21 +954,24 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'resourceCenterLauncherButton.borderRadius',
-        label: 'Border radius',
+        label: 'themeBuilder.fields.common.borderRadius',
         min: 0,
         max: 40,
         suffix: 'px',
         optional: true,
-        placeholder: 'Round',
+        placeholder: 'themeBuilder.placeholders.round',
       },
       {
         type: 'select',
         path: 'resourceCenterLauncherButton.textMode',
-        label: 'Text mode',
+        label: 'themeBuilder.fields.resourceCenterLauncher.textMode',
         vertical: true,
         options: [
-          { value: 'resource-center-text', label: 'Resource center text' },
-          { value: 'no-text', label: 'No text' },
+          {
+            value: 'resource-center-text',
+            label: 'themeBuilder.options.textMode.resourceCenterText',
+          },
+          { value: 'no-text', label: 'themeBuilder.options.textMode.noText' },
         ],
       },
       {
@@ -872,32 +981,38 @@ export const builderSections: BuilderSection[] = [
           'resourceCenterLauncherButton.color.hover',
           'resourceCenterLauncherButton.color.active',
         ],
-        labels: ['Background', 'Hover', 'Active'],
+        labels: [
+          'themeBuilder.fields.common.background',
+          'themeBuilder.fields.common.hover',
+          'themeBuilder.fields.common.active',
+        ],
         allowAuto: ALL_AUTO,
       },
       {
         type: 'color',
         path: 'resourceCenterLauncherButton.color.foreground',
-        label: 'Font color',
+        label: 'themeBuilder.fields.common.fontColor',
         allowAuto: true,
         vertical: true,
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Launcher beacons
-  // -------------------------------------------------------------------------
   {
     id: 'launcher-beacons',
-    label: 'Launcher beacons',
+    label: 'themeBuilder.sections.launcherBeacons',
     previewWidget: ThemeDetailPreviewType.LAUNCHER_BEACON,
     fields: [
-      { type: 'color', path: 'launcherBeacon.color', label: 'Color', allowAuto: true },
+      {
+        type: 'color',
+        path: 'launcherBeacon.color',
+        label: 'themeBuilder.fields.common.color',
+        allowAuto: true,
+      },
       {
         type: 'number',
         path: 'launcherBeacon.size',
-        label: 'Size',
+        label: 'themeBuilder.fields.common.size',
         min: 8,
         max: 32,
         suffix: 'px',
@@ -905,18 +1020,15 @@ export const builderSections: BuilderSection[] = [
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Launcher icons
-  // -------------------------------------------------------------------------
   {
     id: 'launcher-icons',
-    label: 'Launcher icons',
+    label: 'themeBuilder.sections.launcherIcons',
     previewWidget: ThemeDetailPreviewType.LAUNCHER_ICON,
     fields: [
       {
         type: 'number',
         path: 'launcherIcon.size',
-        label: 'Size',
+        label: 'themeBuilder.fields.common.size',
         min: 8,
         max: 64,
         suffix: 'px',
@@ -928,13 +1040,17 @@ export const builderSections: BuilderSection[] = [
           'launcherIcon.color.hover',
           'launcherIcon.color.active',
         ],
-        labels: ['Color', 'Hover', 'Click'],
+        labels: [
+          'themeBuilder.fields.common.color',
+          'themeBuilder.fields.common.hover',
+          'themeBuilder.fields.common.click',
+        ],
         allowAuto: ALL_AUTO,
       },
       {
         type: 'slider',
         path: 'launcherIcon.opacity',
-        label: 'Opacity',
+        label: 'themeBuilder.fields.common.opacity',
         min: 0,
         max: 100,
         suffix: '%',
@@ -942,18 +1058,15 @@ export const builderSections: BuilderSection[] = [
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Launcher buttons (single primary, no cascade — matches v1 behavior)
-  // -------------------------------------------------------------------------
   {
     id: 'launcher-buttons',
-    label: 'Launcher buttons',
+    label: 'themeBuilder.sections.launcherButtons',
     previewWidget: ThemeDetailPreviewType.LAUNCHER_BUTTON,
     fields: [
       {
         type: 'number',
         path: 'launcherButtons.height',
-        label: 'Height',
+        label: 'themeBuilder.fields.common.height',
         min: 24,
         max: 80,
         suffix: 'px',
@@ -961,20 +1074,18 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'launcherButtons.width',
-        label: 'Width',
+        label: 'themeBuilder.fields.common.width',
         min: 0,
         max: 400,
         suffix: 'px',
         optional: true,
-        placeholder: 'Auto',
-        // v1 forbids width === 0; empty input writes undefined (Auto), but a
-        // literal 0 would render a 0-wide button.
-        validate: (v) => (v === 0 ? 'Width cannot be 0' : undefined),
+        placeholder: 'themeBuilder.placeholders.auto',
+        validate: (v) => (v === 0 ? 'themeBuilder.validation.widthZero' : undefined),
       },
       {
         type: 'number',
         path: 'launcherButtons.borderRadius',
-        label: 'Border radius',
+        label: 'themeBuilder.fields.common.borderRadius',
         min: 0,
         max: 40,
         suffix: 'px',
@@ -982,7 +1093,7 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'launcherButtons.px',
-        label: 'Horizontal padding',
+        label: 'themeBuilder.fields.buttons.horizontalPadding',
         min: 0,
         max: 40,
         suffix: 'px',
@@ -990,7 +1101,7 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'select',
         path: 'launcherButtons.primary.fontWeight',
-        label: 'Font weight',
+        label: 'themeBuilder.fields.common.fontWeight',
         options: FONT_WEIGHT_OPTIONS,
         valueAsNumber: true,
       },
@@ -1001,7 +1112,11 @@ export const builderSections: BuilderSection[] = [
           'launcherButtons.primary.textColor.hover',
           'launcherButtons.primary.textColor.active',
         ],
-        labels: ['Font color', 'Hover', 'Click'],
+        labels: [
+          'themeBuilder.fields.common.fontColor',
+          'themeBuilder.fields.common.hover',
+          'themeBuilder.fields.common.click',
+        ],
         allowAuto: ALL_AUTO,
       },
       {
@@ -1011,14 +1126,22 @@ export const builderSections: BuilderSection[] = [
           'launcherButtons.primary.backgroundColor.hover',
           'launcherButtons.primary.backgroundColor.active',
         ],
-        labels: ['Background', 'Hover', 'Click'],
+        labels: [
+          'themeBuilder.fields.common.background',
+          'themeBuilder.fields.common.hover',
+          'themeBuilder.fields.common.click',
+        ],
         allowAuto: ALL_AUTO,
       },
-      { type: 'boolean', path: 'launcherButtons.primary.border.enabled', label: 'Border' },
+      {
+        type: 'boolean',
+        path: 'launcherButtons.primary.border.enabled',
+        label: 'themeBuilder.fields.common.border',
+      },
       {
         type: 'number',
         path: 'launcherButtons.primary.border.borderWidth',
-        label: 'Border width',
+        label: 'themeBuilder.fields.common.borderWidth',
         min: 0,
         max: 10,
         suffix: 'px',
@@ -1031,26 +1154,31 @@ export const builderSections: BuilderSection[] = [
           'launcherButtons.primary.border.color.hover',
           'launcherButtons.primary.border.color.active',
         ],
-        labels: ['Border color', 'Hover', 'Click'],
+        labels: [
+          'themeBuilder.fields.common.borderColor',
+          'themeBuilder.fields.common.hover',
+          'themeBuilder.fields.common.click',
+        ],
         allowAuto: ALL_AUTO,
         visibleWhen: (s) => s.launcherButtons.primary.border.enabled,
       },
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Backdrop
-  // -------------------------------------------------------------------------
   {
     id: 'backdrop',
-    label: 'Backdrop',
+    label: 'themeBuilder.sections.backdrop',
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
-      { type: 'color', path: 'backdrop.color', label: 'Backdrop color' },
+      {
+        type: 'color',
+        path: 'backdrop.color',
+        label: 'themeBuilder.fields.backdrop.backdropColor',
+      },
       {
         type: 'slider',
         path: 'backdrop.opacity',
-        label: 'Backdrop opacity',
+        label: 'themeBuilder.fields.backdrop.backdropOpacity',
         min: 0,
         max: 100,
         suffix: '%',
@@ -1058,16 +1186,16 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'select',
         path: 'backdrop.highlight.type',
-        label: 'Highlight type',
+        label: 'themeBuilder.fields.backdrop.highlightType',
         options: [
-          { value: 'outside', label: 'Outside' },
-          { value: 'inside', label: 'Inside' },
+          { value: 'outside', label: 'themeBuilder.options.highlightType.outside' },
+          { value: 'inside', label: 'themeBuilder.options.highlightType.inside' },
         ],
       },
       {
         type: 'number',
         path: 'backdrop.highlight.radius',
-        label: 'Highlight radius',
+        label: 'themeBuilder.fields.backdrop.highlightRadius',
         min: 0,
         max: 40,
         suffix: 'px',
@@ -1075,16 +1203,20 @@ export const builderSections: BuilderSection[] = [
       {
         type: 'number',
         path: 'backdrop.highlight.spread',
-        label: 'Highlight spread',
+        label: 'themeBuilder.fields.backdrop.highlightSpread',
         min: 0,
         max: 40,
         suffix: 'px',
       },
-      { type: 'color', path: 'backdrop.highlight.color', label: 'Highlight color' },
+      {
+        type: 'color',
+        path: 'backdrop.highlight.color',
+        label: 'themeBuilder.fields.backdrop.highlightColor',
+      },
       {
         type: 'slider',
         path: 'backdrop.highlight.opacity',
-        label: 'Highlight opacity',
+        label: 'themeBuilder.fields.backdrop.highlightOpacity',
         min: 0,
         max: 100,
         suffix: '%',
@@ -1092,19 +1224,21 @@ export const builderSections: BuilderSection[] = [
     ],
   },
 
-  // -------------------------------------------------------------------------
-  // Focus highlight
-  // -------------------------------------------------------------------------
   {
     id: 'focus-highlight',
-    label: 'Focus highlight',
+    label: 'themeBuilder.sections.focusHighlight',
     previewWidget: ThemeDetailPreviewType.TOOLTIP,
     fields: [
-      { type: 'color', path: 'focusHighlight.color', label: 'Color', allowAuto: true },
+      {
+        type: 'color',
+        path: 'focusHighlight.color',
+        label: 'themeBuilder.fields.common.color',
+        allowAuto: true,
+      },
       {
         type: 'slider',
         path: 'focusHighlight.opacity',
-        label: 'Opacity',
+        label: 'themeBuilder.fields.common.opacity',
         min: 0,
         max: 100,
         suffix: '%',
@@ -1113,7 +1247,4 @@ export const builderSections: BuilderSection[] = [
   },
 ];
 
-// `AvatarType` is exported from @usertour/types but TypeScript drops the
-// import if it's only used for a value comparison inside a closure. Keep a
-// reference here so coverage tests / future schema closures can use it.
 export const _avatarTypeRef = AvatarType;

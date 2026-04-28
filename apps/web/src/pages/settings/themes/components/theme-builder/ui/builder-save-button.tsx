@@ -1,4 +1,5 @@
 import { RiCheckLine } from '@usertour-packages/icons';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   hasUnsavedChanges: boolean;
@@ -8,13 +9,14 @@ interface Props {
 }
 
 export function BuilderSaveButton({ hasUnsavedChanges, isSaving, onSave, disabled }: Props) {
+  const { t } = useTranslation();
   if (disabled) return null;
 
   if (!hasUnsavedChanges && !isSaving) {
     return (
       <span className="inline-flex h-7.5 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-muted-foreground">
         <RiCheckLine className="h-3.5 w-3.5" />
-        Saved
+        {t('themeBuilder.chrome.saved')}
       </span>
     );
   }
@@ -26,7 +28,7 @@ export function BuilderSaveButton({ hasUnsavedChanges, isSaving, onSave, disable
       disabled={isSaving}
       className="inline-flex h-7.5 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
     >
-      {isSaving ? 'Saving…' : 'Save'}
+      {isSaving ? t('themeBuilder.chrome.saving') : t('themeBuilder.chrome.save')}
     </button>
   );
 }

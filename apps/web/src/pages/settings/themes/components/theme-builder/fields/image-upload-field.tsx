@@ -14,7 +14,7 @@ export function ImageUploadField({ path, label, description, maxSizeBytes, previ
   const value = getField<string>(path);
   return (
     <div className="space-y-1.5">
-      <h4 className="text-xs font-semibold text-foreground">{label}</h4>
+      {label && <h4 className="text-xs font-semibold text-foreground">{label}</h4>}
       <ImageUploadWidget
         value={value}
         onChange={(url) => setField(path, url)}

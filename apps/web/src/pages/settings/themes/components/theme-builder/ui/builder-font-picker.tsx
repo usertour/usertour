@@ -12,6 +12,7 @@ import { Separator } from '@usertour-packages/separator';
 import { cn } from '@usertour-packages/tailwind';
 import { fontItems } from '@/utils/webfonts';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   value: string;
@@ -20,18 +21,29 @@ interface Props {
   id?: string;
 }
 
-const SYSTEM_ITEMS: { id: string; name: string }[] = [
-  { id: 'system-font', name: 'System font' },
-  { id: 'custom-font', name: 'Custom font' },
+// Names are also the stored values in settings, so they stay as English
+// constants. The visible label is translated separately at render time.
+const SYSTEM_ITEMS: { id: string; name: string; labelKey: string }[] = [
+  { id: 'system-font', name: 'System font', labelKey: 'themeBuilder.fontPicker.systemFont' },
+  { id: 'custom-font', name: 'Custom font', labelKey: 'themeBuilder.fontPicker.customFont' },
 ];
 
 export function BuilderFontPicker({ value, onChange, disabled, id }: Props) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   const handleSelect = (name: string) => {
     onChange(name);
     setOpen(false);
   };
+
+  // For the trigger label, prefer the translated form when value matches a
+  // known system name; otherwise show the raw font-family value as-is.
+  const triggerLabel = (() => {
+    if (!value) return t('themeBuilder.fontPicker.placeholder');
+    const sys = SYSTEM_ITEMS.find((i) => i.name === value);
+    return sys ? t(sys.labelKey) : value;
+  })();
 
   return (
     <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
@@ -43,19 +55,19 @@ export function BuilderFontPicker({ value, onChange, disabled, id }: Props) {
           disabled={disabled}
           className="flex h-7.5 w-full items-center justify-between rounded-lg bg-muted px-3 text-xs text-foreground shadow-sm transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <span className="truncate">{value || 'Load a font family…'}</span>
+          <span className="truncate">{triggerLabel}</span>
           <RiExpandUpDownLine className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[280px] p-0 text-xs [&_*]:text-xs">
         <Command>
-          <CommandInput placeholder="Search font family…" />
-          <CommandEmpty>No items found.</CommandEmpty>
-          <CommandGroup heading="Font family">
+          <CommandInput placeholder={t('themeBuilder.fontPicker.searchPlaceholder')} />
+          <CommandEmpty>{t('themeBuilder.fontPicker.noItemsFound')}</CommandEmpty>
+          <CommandGroup heading={t('themeBuilder.fontPicker.heading')}>
             <ScrollArea className="h-72">
               {SYSTEM_ITEMS.map((item) => (
                 <CommandItem key={item.id} onSelect={() => handleSelect(item.name)}>
-                  {item.name}
+                  {t(item.labelKey)}
                   <RiCheckLine
                     className={cn(
                       'ml-auto h-4 w-4',

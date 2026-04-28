@@ -1,5 +1,6 @@
 import { RiArrowLeftSLine, RiMoreFill } from '@usertour-packages/icons';
 import type { Theme } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { ThemeEditDropdownMenu } from '../../theme-edit-dropmenu';
 import { BuilderIconButton, BuilderSaveButton } from '../ui';
 import { pillClass, topBarClass } from '../ui/tokens';
@@ -24,17 +25,22 @@ export function TopBar({
   isSaving,
   onSave,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div className={topBarClass}>
       <div className="flex items-center gap-2">
-        <BuilderIconButton variant="depth" onClick={onBack} aria-label="Back">
+        <BuilderIconButton
+          variant="depth"
+          onClick={onBack}
+          aria-label={t('themeBuilder.aria.back')}
+        >
           <RiArrowLeftSLine className="h-4 w-4" />
         </BuilderIconButton>
       </div>
 
       <div className="absolute left-1/2 flex max-w-[40%] -translate-x-1/2 items-center gap-2">
         <EditableTitle value={theme.name} onRename={onRename} disabled={theme.isSystem} />
-        {theme.isSystem && <span className={pillClass}>System</span>}
+        {theme.isSystem && <span className={pillClass}>{t('themeBuilder.chrome.systemPill')}</span>}
       </div>
 
       <div className="flex items-center gap-2">
@@ -45,7 +51,7 @@ export function TopBar({
           disabled={theme.isSystem}
         />
         <ThemeEditDropdownMenu theme={theme} onSubmit={onActionComplete}>
-          <BuilderIconButton variant="secondary" aria-label="Theme actions">
+          <BuilderIconButton variant="secondary" aria-label={t('themeBuilder.aria.themeActions')}>
             <RiMoreFill className="h-4 w-4" />
           </BuilderIconButton>
         </ThemeEditDropdownMenu>

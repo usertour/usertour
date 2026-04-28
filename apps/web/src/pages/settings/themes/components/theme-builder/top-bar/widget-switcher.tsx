@@ -1,20 +1,7 @@
 import { ThemeDetailPreviewType } from '@usertour/types';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BuilderSelect, type BuilderSelectOption } from '../ui';
-
-const PREVIEW_OPTIONS: BuilderSelectOption[] = [
-  { value: ThemeDetailPreviewType.TOOLTIP, label: 'Tooltip' },
-  { value: ThemeDetailPreviewType.MODAL, label: 'Modal' },
-  { value: ThemeDetailPreviewType.BUBBLE, label: 'Speech bubble' },
-  { value: ThemeDetailPreviewType.BANNER, label: 'Banner' },
-  { value: ThemeDetailPreviewType.LAUNCHER_ICON, label: 'Launcher icon' },
-  { value: ThemeDetailPreviewType.LAUNCHER_BEACON, label: 'Launcher beacon' },
-  { value: ThemeDetailPreviewType.LAUNCHER_BUTTON, label: 'Launcher button' },
-  { value: ThemeDetailPreviewType.CHECKLIST, label: 'Checklist' },
-  { value: ThemeDetailPreviewType.CHECKLIST_LAUNCHER, label: 'Checklist launcher' },
-  { value: ThemeDetailPreviewType.NPS, label: 'NPS' },
-  { value: ThemeDetailPreviewType.RESOURCE_CENTER, label: 'Resource center' },
-  { value: ThemeDetailPreviewType.RESOURCE_CENTER_LAUNCHER, label: 'Resource center launcher' },
-];
 
 interface Props {
   value: ThemeDetailPreviewType;
@@ -22,11 +9,48 @@ interface Props {
 }
 
 export function WidgetSwitcher({ value, onChange }: Props) {
+  const { t } = useTranslation();
+  const options = useMemo<BuilderSelectOption[]>(
+    () => [
+      { value: ThemeDetailPreviewType.TOOLTIP, label: t('themeBuilder.previewTypes.tooltip') },
+      { value: ThemeDetailPreviewType.MODAL, label: t('themeBuilder.previewTypes.modal') },
+      { value: ThemeDetailPreviewType.BUBBLE, label: t('themeBuilder.previewTypes.speechBubble') },
+      { value: ThemeDetailPreviewType.BANNER, label: t('themeBuilder.previewTypes.banner') },
+      {
+        value: ThemeDetailPreviewType.LAUNCHER_ICON,
+        label: t('themeBuilder.previewTypes.launcherIcon'),
+      },
+      {
+        value: ThemeDetailPreviewType.LAUNCHER_BEACON,
+        label: t('themeBuilder.previewTypes.launcherBeacon'),
+      },
+      {
+        value: ThemeDetailPreviewType.LAUNCHER_BUTTON,
+        label: t('themeBuilder.previewTypes.launcherButton'),
+      },
+      { value: ThemeDetailPreviewType.CHECKLIST, label: t('themeBuilder.previewTypes.checklist') },
+      {
+        value: ThemeDetailPreviewType.CHECKLIST_LAUNCHER,
+        label: t('themeBuilder.previewTypes.checklistLauncher'),
+      },
+      { value: ThemeDetailPreviewType.NPS, label: t('themeBuilder.previewTypes.nps') },
+      {
+        value: ThemeDetailPreviewType.RESOURCE_CENTER,
+        label: t('themeBuilder.previewTypes.resourceCenter'),
+      },
+      {
+        value: ThemeDetailPreviewType.RESOURCE_CENTER_LAUNCHER,
+        label: t('themeBuilder.previewTypes.resourceCenterLauncher'),
+      },
+    ],
+    [t],
+  );
+
   return (
     <BuilderSelect
       value={value}
       onChange={(next) => onChange(next as ThemeDetailPreviewType)}
-      options={PREVIEW_OPTIONS}
+      options={options}
       className="h-7 w-52 truncate whitespace-nowrap bg-transparent text-sm shadow-none hover:bg-muted/40 md:text-sm"
     />
   );

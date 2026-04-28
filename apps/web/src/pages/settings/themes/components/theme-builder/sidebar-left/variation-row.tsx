@@ -7,6 +7,7 @@ import {
 } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import type { CSSProperties, MouseEvent, Ref } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   BuilderDropdownMenu,
   BuilderDropdownMenuContent,
@@ -62,6 +63,7 @@ export function VariationRow({
   dragHandleProps,
   isDragging,
 }: Props) {
+  const { t } = useTranslation();
   const hasMenu = !!(onRename || onDelete);
   const draggable = !!dragHandleProps && !disabled;
 
@@ -78,7 +80,7 @@ export function VariationRow({
       {draggable ? (
         <button
           type="button"
-          aria-label="Drag to reorder"
+          aria-label={t('themeBuilder.aria.dragToReorder')}
           className="absolute left-0.5 top-1/2 flex h-5 w-4 -translate-y-1/2 cursor-grab items-center justify-center text-muted-foreground/60 transition-colors hover:text-foreground active:cursor-grabbing"
           {...dragHandleProps}
           onClick={(e) => e.stopPropagation()}
@@ -137,7 +139,7 @@ export function VariationRow({
             <BuilderDropdownMenuTrigger asChild>
               <BuilderIconButton
                 size="sm"
-                aria-label="Variation menu"
+                aria-label={t('themeBuilder.aria.variationMenu')}
                 onClick={(e) => e.stopPropagation()}
               >
                 <RiMoreFill className="h-3.5 w-3.5" />
@@ -153,13 +155,13 @@ export function VariationRow({
               {onRename && (
                 <BuilderDropdownMenuItem onClick={onRename}>
                   <EditIcon className="h-3.5 w-3.5" />
-                  Rename
+                  {t('themeBuilder.actions.rename')}
                 </BuilderDropdownMenuItem>
               )}
               {onDelete && (
                 <BuilderDropdownMenuItem onClick={onDelete} className="text-destructive">
                   <RiDeleteBinLine className="h-3.5 w-3.5" />
-                  Delete
+                  {t('themeBuilder.actions.delete')}
                 </BuilderDropdownMenuItem>
               )}
             </BuilderDropdownMenuContent>

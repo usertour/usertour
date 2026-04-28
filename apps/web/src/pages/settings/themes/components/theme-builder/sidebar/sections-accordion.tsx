@@ -1,6 +1,7 @@
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import { PlusIcon, RiSubtractLine } from '@usertour-packages/icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FieldRenderer } from '../fields/field-renderer';
 import type { FieldDef } from '../schema/types';
 import { builderSections } from '../schema/sections';
@@ -33,6 +34,7 @@ function fieldKey(field: FieldDef, index: number): string {
 }
 
 export function SectionsAccordion({ onSectionExpanded }: Props) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState<string[]>([]);
 
   const handleValueChange = (values: string[]) => {
@@ -56,7 +58,7 @@ export function SectionsAccordion({ onSectionExpanded }: Props) {
         >
           <AccordionPrimitive.Header>
             <AccordionPrimitive.Trigger className="group flex w-full items-center justify-between px-3 py-2.5 text-xs font-semibold text-foreground">
-              <span className="truncate text-left">{section.label}</span>
+              <span className="truncate text-left">{t(section.label)}</span>
               <PlusIcon className="h-4 w-4 shrink-0 text-muted-foreground group-data-[state=open]:hidden" />
               <RiSubtractLine className="hidden h-4 w-4 shrink-0 text-muted-foreground group-data-[state=open]:block" />
             </AccordionPrimitive.Trigger>

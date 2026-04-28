@@ -3,13 +3,11 @@ import { WebZIndex } from '@usertour-packages/constants';
 import { Rules } from '@usertour-packages/shared-components';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import type { RulesCondition } from '@usertour/types';
+import { Trans, useTranslation } from 'react-i18next';
 
 interface Props {
   conditions: RulesCondition[];
   onConditionsChange: (conditions: RulesCondition[]) => void;
-  // Name of the variation these conditions belong to. Surfacing it in the
-  // header makes it obvious what's being edited when the user switches
-  // between variations.
   variationName: string;
   disabled?: boolean;
 }
@@ -21,19 +19,20 @@ export function ConditionsSection({
   disabled,
 }: Props) {
   const { attributeList } = useAttributeListContext();
+  const { t } = useTranslation();
+  const displayName = variationName || t('themeBuilder.chrome.thisVariation');
 
   return (
     <div className="space-y-2 border-b border-border/50 px-3 py-3">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <span>
-          Apply{' '}
-          <span className="font-medium text-foreground">{variationName || 'this variation'}</span>{' '}
-          when
+          <Trans
+            i18nKey="themeBuilder.chrome.applyWhen"
+            values={{ name: displayName }}
+            components={{ 1: <span className="font-medium text-foreground" /> }}
+          />
         </span>
-        <QuestionTooltip>
-          This variation overrides the Base theme when its conditions match the current user. All
-          matching variations are applied in the order shown in the list — drag to reorder.
-        </QuestionTooltip>
+        <QuestionTooltip>{t('themeBuilder.tooltips.applyWhen')}</QuestionTooltip>
       </div>
       <Rules
         onDataChange={(conds) => onConditionsChange(conds)}
@@ -41,7 +40,7 @@ export function ConditionsSection({
         isHorizontal={true}
         isShowIf={false}
         filterItems={['group', 'user-attr', 'current-page']}
-        addButtonText="Add condition"
+        addButtonText={t('themeBuilder.actions.addCondition')}
         attributes={attributeList || []}
         disabled={disabled}
         baseZIndex={WebZIndex.RULES}

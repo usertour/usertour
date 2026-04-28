@@ -28,6 +28,7 @@ import {
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import type { RulesCondition, ThemeVariation } from '@usertour/types';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ConditionsSection } from '../sidebar/conditions-section';
 import { SidebarResizeHandle } from '../sidebar/sidebar-resize-handle';
 import { BuilderIconButton } from '../ui';
@@ -62,6 +63,7 @@ interface Props {
 // it captures parent props and isn't reused elsewhere.
 function SortableVariationRow({
   variation,
+  untitledLabel,
   selected,
   onClick,
   onRename,
@@ -74,6 +76,7 @@ function SortableVariationRow({
   onRenameCancel,
 }: {
   variation: ThemeVariation;
+  untitledLabel: string;
   selected: boolean;
   onClick: () => void;
   onRename?: () => void;
@@ -93,7 +96,7 @@ function SortableVariationRow({
   });
   return (
     <VariationRow
-      label={variation.name || 'Untitled variation'}
+      label={variation.name || untitledLabel}
       selected={selected}
       onClick={onClick}
       onRename={onRename}
@@ -115,8 +118,6 @@ function SortableVariationRow({
   );
 }
 
-const BASE_LABEL = 'Base';
-
 export function VariationsSidebar({
   variations,
   activeVariationId,
@@ -131,6 +132,7 @@ export function VariationsSidebar({
   width,
   resize,
 }: Props) {
+  const { t } = useTranslation();
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -176,18 +178,24 @@ export function VariationsSidebar({
     <div className={sidebarPanelClass} style={{ width }}>
       <div className={`${sidebarHeaderClass} flex items-center justify-between`}>
         <div className={`${sectionLabelClass} flex items-center gap-1.5`}>
-          <span>Variations</span>
+          <span>{t('themeBuilder.chrome.variations')}</span>
           <QuestionTooltip>
-            Create theme variations that automatically apply based on user attributes. All matching
-            variations will be applied in the order shown below.
-            <br />
-            <br />
-            Examples:
-            <br />• Apply dark theme when user has dark mode enabled
-            <br />• Use premium colors for paid users
+            {t('themeBuilder.tooltips.variations')
+              .split('\n')
+              .map((line, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: tooltip body is static
+                <span key={i}>
+                  {line}
+                  <br />
+                </span>
+              ))}
           </QuestionTooltip>
         </div>
-        <BuilderIconButton onClick={onAdd} disabled={disabled} aria-label="Add variation">
+        <BuilderIconButton
+          onClick={onAdd}
+          disabled={disabled}
+          aria-label={t('themeBuilder.aria.addVariation')}
+        >
           <PlusIcon className="h-3.5 w-3.5" />
         </BuilderIconButton>
       </div>
@@ -195,7 +203,7 @@ export function VariationsSidebar({
       <div className={sidebarBodyClass}>
         <div className="space-y-0.5 p-2">
           <VariationRow
-            label={BASE_LABEL}
+            label={t('themeBuilder.chrome.base')}
             selected={activeVariationId === null}
             onClick={() => onSelect(null)}
           />
@@ -213,6 +221,7 @@ export function VariationsSidebar({
                 <SortableVariationRow
                   key={variation.id}
                   variation={variation}
+                  untitledLabel={t('themeBuilder.chrome.untitledVariation')}
                   selected={activeVariationId === variation.id}
                   onClick={() => onSelect(variation.id)}
                   onRename={
@@ -270,15 +279,17 @@ export function VariationsSidebar({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete variation</AlertDialogTitle>
+            <AlertDialogTitle>{t('themeBuilder.dialogs.deleteVariation.title')}</AlertDialogTitle>
             <AlertDialogDescription>
               {deletingVariation
-                ? `Delete "${deletingVariation.name || 'Untitled'}"? This can be undone before saving.`
+                ? t('themeBuilder.dialogs.deleteVariation.description', {
+                    name: deletingVariation.name || t('themeBuilder.chrome.untitledVariation'),
+                  })
                 : ''}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('themeBuilder.actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deletingId) {
@@ -288,7 +299,7 @@ export function VariationsSidebar({
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t('themeBuilder.actions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

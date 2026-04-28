@@ -1,23 +1,22 @@
-import type { ThemeTypesSetting } from '@usertour/types';
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
 import { BuilderInput } from '../ui';
 import { FieldRow } from './field-row';
 
 interface Props {
-  getLabel: (settings: ThemeTypesSetting) => string;
-  getPath: (settings: ThemeTypesSetting) => string;
+  // Both `label` and `path` are pre-resolved by FieldRenderer (which knows the
+  // active settings + i18n function). The leaf component just renders.
+  label: string;
+  path: string;
   min?: number;
   max?: number;
   step?: number;
   suffix?: string;
 }
 
-export function DynamicNumberField({ getLabel, getPath, min, max, step = 1, suffix }: Props) {
+export function DynamicNumberField({ label, path, min, max, step = 1, suffix }: Props) {
   const id = useId();
-  const { activeSettings, getField, setField, isReadOnly } = useBuilderContext();
-  const path = getPath(activeSettings);
-  const label = getLabel(activeSettings);
+  const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<number>(path);
 
   return (

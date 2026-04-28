@@ -3,6 +3,7 @@ import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour-packages/
 import { useToast } from '@usertour-packages/use-toast';
 import Upload from 'rc-upload';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAvatarUpload } from '../avatar-type/hooks/use-avatar-upload';
 
 const ACCEPT_IMAGE_TYPES = 'image/svg+xml,image/png,image/jpeg';
@@ -31,6 +32,7 @@ export function ImageUploadWidget({
   disabled = false,
 }: Props) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { handleUpload, isUploading } = useAvatarUpload({
     onUploadSuccess: (url) => onChange(url),
   });
@@ -88,10 +90,10 @@ export function ImageUploadWidget({
             {isUploading ? (
               <span className="inline-flex items-center">
                 <SpinnerIcon className="mr-2 animate-spin" />
-                Uploading
+                {t('themeBuilder.actions.uploading')}
               </span>
             ) : (
-              'Choose file'
+              t('themeBuilder.actions.chooseFile')
             )}
           </Button>
         </div>
@@ -113,7 +115,9 @@ export function ImageUploadWidget({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-foreground">Uploaded image</div>
+              <div className="truncate text-sm font-medium text-foreground">
+                {t('themeBuilder.actions.uploadedImage')}
+              </div>
               <div className="truncate break-all text-xs text-muted-foreground">{value}</div>
             </div>
           </div>
