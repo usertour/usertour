@@ -1,5 +1,5 @@
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
-import { MinusIcon, PlusIcon } from '@radix-ui/react-icons';
+import { PlusIcon, RiSubtractLine } from '@usertour-packages/icons';
 import { useState } from 'react';
 import { FieldRenderer } from '../fields/field-renderer';
 import type { FieldDef } from '../schema/types';
@@ -58,7 +58,7 @@ export function SectionsAccordion({ onSectionExpanded }: Props) {
             <AccordionPrimitive.Trigger className="group flex w-full items-center justify-between px-3 py-2.5 text-xs font-semibold text-foreground">
               <span className="truncate text-left">{section.label}</span>
               <PlusIcon className="h-4 w-4 shrink-0 text-muted-foreground group-data-[state=open]:hidden" />
-              <MinusIcon className="hidden h-4 w-4 shrink-0 text-muted-foreground group-data-[state=open]:block" />
+              <RiSubtractLine className="hidden h-4 w-4 shrink-0 text-muted-foreground group-data-[state=open]:block" />
             </AccordionPrimitive.Trigger>
           </AccordionPrimitive.Header>
           <AccordionPrimitive.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">

@@ -15,9 +15,11 @@ import { SectionsAccordion } from './sidebar/sections-accordion';
 import { SidebarShell } from './sidebar/sidebar-shell';
 import { VariationsSidebar } from './sidebar-left/variations-sidebar';
 import { TopBar } from './top-bar/top-bar';
+import { useResizable } from './use-resizable';
 import { useThemeDraft } from './use-theme-draft';
 
-const RIGHT_SIDEBAR_WIDTH = 320;
+const LEFT_SIDEBAR = { default: 220, min: 180, max: 360 };
+const RIGHT_SIDEBAR = { default: 320, min: 280, max: 480 };
 
 interface Props {
   theme: Theme;
@@ -65,6 +67,21 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
     [draft, activeVariationId],
   );
 
+  const leftResizable = useResizable({
+    storageKey: 'theme-builder.left-sidebar.width',
+    defaultWidth: LEFT_SIDEBAR.default,
+    min: LEFT_SIDEBAR.min,
+    max: LEFT_SIDEBAR.max,
+    edge: 'right',
+  });
+  const rightResizable = useResizable({
+    storageKey: 'theme-builder.right-sidebar.width',
+    defaultWidth: RIGHT_SIDEBAR.default,
+    min: RIGHT_SIDEBAR.min,
+    max: RIGHT_SIDEBAR.max,
+    edge: 'left',
+  });
+
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
@@ -107,13 +124,27 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
             onRename={draft.renameVariation}
             onDelete={onDeleteVariation}
             disabled={theme.isSystem}
+            width={leftResizable.width}
+            resize={{
+              isResizing: leftResizable.isResizing,
+              isAtMin: leftResizable.isAtMin,
+              onMouseDown: leftResizable.handleProps.onMouseDown,
+            }}
           />
           <PreviewPane
             settings={draft.activeSettings}
             widgetType={activeWidgetType}
             onWidgetTypeChange={setActiveWidgetType}
           />
-          <SidebarShell width={RIGHT_SIDEBAR_WIDTH} variant="right">
+          <SidebarShell
+            width={rightResizable.width}
+            variant="right"
+            resize={{
+              isResizing: rightResizable.isResizing,
+              isAtMin: rightResizable.isAtMin,
+              onMouseDown: rightResizable.handleProps.onMouseDown,
+            }}
+          >
             {draft.activeVariation && (
               <ConditionsSection
                 conditions={draft.activeVariation.conditions}

@@ -1,4 +1,4 @@
-import { PlusIcon } from '@radix-ui/react-icons';
+import { PlusIcon } from '@usertour-packages/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,6 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import type { ThemeVariation } from '@usertour/types';
 import { useEffect, useState } from 'react';
+import { SidebarResizeHandle } from '../sidebar/sidebar-resize-handle';
 import { BuilderIconButton, BuilderInput } from '../ui';
 import {
   sectionLabelClass,
@@ -29,6 +30,12 @@ interface Props {
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
   disabled?: boolean;
+  width: number;
+  resize?: {
+    isResizing: boolean;
+    isAtMin: boolean;
+    onMouseDown: (event: React.MouseEvent) => void;
+  };
 }
 
 const BASE_LABEL = 'Base';
@@ -41,6 +48,8 @@ export function VariationsSidebar({
   onRename,
   onDelete,
   disabled,
+  width,
+  resize,
 }: Props) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
@@ -67,7 +76,7 @@ export function VariationsSidebar({
   };
 
   return (
-    <div className={`${sidebarPanelClass} w-[220px]`}>
+    <div className={sidebarPanelClass} style={{ width }}>
       <div className={`${sidebarHeaderClass} flex items-center justify-between`}>
         <div className={sectionLabelClass}>Variations</div>
         <BuilderIconButton onClick={onAdd} disabled={disabled} aria-label="Add variation">
@@ -180,6 +189,15 @@ export function VariationsSidebar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {resize && (
+        <SidebarResizeHandle
+          edge="right"
+          isResizing={resize.isResizing}
+          isAtMin={resize.isAtMin}
+          onMouseDown={resize.onMouseDown}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { RiMoreFill } from '@usertour-packages/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +39,7 @@ export function VariationRow({ label, selected, onClick, onRename, onDelete, dis
                 aria-label="Variation menu"
                 onClick={(e) => e.stopPropagation()}
               >
-                <DotsHorizontalIcon className="h-3.5 w-3.5" />
+                <RiMoreFill className="h-3.5 w-3.5" />
               </BuilderIconButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="text-xs">

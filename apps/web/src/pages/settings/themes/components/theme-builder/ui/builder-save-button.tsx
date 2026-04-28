@@ -1,4 +1,4 @@
-import { CheckIcon } from '@radix-ui/react-icons';
+import { RiCheckLine } from '@usertour-packages/icons';
 
 interface Props {
   hasUnsavedChanges: boolean;
@@ -13,7 +13,7 @@ export function BuilderSaveButton({ hasUnsavedChanges, isSaving, onSave, disable
   if (!hasUnsavedChanges && !isSaving) {
     return (
       <span className="inline-flex h-7.5 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-muted-foreground">
-        <CheckIcon className="h-3.5 w-3.5" />
+        <RiCheckLine className="h-3.5 w-3.5" />
         Saved
       </span>
     );

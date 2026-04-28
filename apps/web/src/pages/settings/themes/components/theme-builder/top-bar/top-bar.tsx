@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { RiArrowLeftSLine, RiMoreFill } from '@usertour-packages/icons';
 import type { Theme } from '@usertour/types';
 import { ThemeEditDropdownMenu } from '../../theme-edit-dropmenu';
 import { BuilderIconButton, BuilderSaveButton } from '../ui';
@@ -28,7 +28,7 @@ export function TopBar({
     <div className={topBarClass}>
       <div className="flex items-center gap-2">
         <BuilderIconButton variant="depth" onClick={onBack} aria-label="Back">
-          <ChevronLeftIcon className="h-4 w-4" />
+          <RiArrowLeftSLine className="h-4 w-4" />
         </BuilderIconButton>
       </div>
 
@@ -46,7 +46,7 @@ export function TopBar({
         />
         <ThemeEditDropdownMenu theme={theme} onSubmit={onActionComplete}>
           <BuilderIconButton variant="secondary" aria-label="Theme actions">
-            <DotsHorizontalIcon className="h-4 w-4" />
+            <RiMoreFill className="h-4 w-4" />
           </BuilderIconButton>
         </ThemeEditDropdownMenu>
       </div>

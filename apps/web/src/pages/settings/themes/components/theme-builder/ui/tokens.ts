@@ -19,8 +19,10 @@ export const pillClass =
 export const topBarClass =
   'relative flex h-15 flex-none items-center justify-between border-b border-border/50 bg-background px-3';
 
-// Sidebar panel chrome
-export const sidebarPanelClass = 'flex flex-none flex-col border-r border-border/50 bg-background';
+// Sidebar panel chrome. `relative` so the resize handle (positioned absolute)
+// anchors to the panel.
+export const sidebarPanelClass =
+  'relative flex flex-none flex-col border-r border-border/50 bg-background';
 export const sidebarPanelRightClass =
   'relative flex flex-none flex-col border-l border-border/50 bg-background';
 export const sidebarHeaderClass = 'flex-none border-b border-border/50 px-3 py-2.5';
