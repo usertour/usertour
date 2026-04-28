@@ -1,7 +1,10 @@
+import { storage } from '@usertour/helpers';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Options {
-  // Stable key for localStorage persistence. Pass `null` to skip persistence.
+  // Storage key for the AppStorage helper (auto-prefixed with `USERTOUR@…/`).
+  // Pass `null` to skip persistence. Compose user-scoped keys at the call
+  // site (e.g. `${StorageKeys.X}-${uid}`).
   storageKey: string | null;
   defaultWidth: number;
   min: number;
@@ -26,11 +29,10 @@ interface Result {
 }
 
 const readStoredWidth = (key: string | null): number | null => {
-  if (!key || typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(key);
-  if (raw == null) return null;
-  const parsed = Number.parseFloat(raw);
-  return Number.isFinite(parsed) ? parsed : null;
+  if (!key) return null;
+  const raw = storage.getLocalStorage(key);
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return null;
+  return raw;
 };
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -88,9 +90,10 @@ export function useResizable({ storageKey, defaultWidth, min, max, edge }: Optio
   }, [isResizing, min, max, edge]);
 
   // Persist after each commit (not during drag, to avoid spamming storage).
+  // expire = -1 → never expire.
   useEffect(() => {
-    if (!storageKey || isResizing || typeof window === 'undefined') return;
-    window.localStorage.setItem(storageKey, String(width));
+    if (!storageKey || isResizing) return;
+    storage.setLocalStorage(storageKey, width, -1);
   }, [width, isResizing, storageKey]);
 
   return { width, isResizing, isAtMin: width <= min, handleProps: { onMouseDown } };

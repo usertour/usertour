@@ -1,3 +1,4 @@
+import { StorageKeys } from '@usertour-packages/constants';
 import {
   type Theme,
   ThemeDetailPreviewType,
@@ -5,6 +6,7 @@ import {
   type ThemeVariation,
   defaultSettings,
 } from '@usertour/types';
+import { useCurrentUserId } from '@usertour-packages/shared-hooks';
 import { deepmerge } from 'deepmerge-ts';
 import { useCallback, useMemo, useState } from 'react';
 import { BuilderProvider } from './builder-context';
@@ -18,7 +20,7 @@ import { TopBar } from './top-bar/top-bar';
 import { useResizable } from './use-resizable';
 import { useThemeDraft } from './use-theme-draft';
 
-const LEFT_SIDEBAR = { default: 220, min: 180, max: 360 };
+const LEFT_SIDEBAR = { default: 320, min: 180, max: 360 };
 const RIGHT_SIDEBAR = { default: 320, min: 280, max: 480 };
 
 interface Props {
@@ -67,15 +69,24 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
     [draft, activeVariationId],
   );
 
+  const uid = useCurrentUserId();
+  // User-scoped storage keys: pre-login (uid=null) shares an unscoped slot,
+  // post-login each user keeps their own preferred widths.
+  const leftStorageKey = uid
+    ? `${StorageKeys.THEME_BUILDER_LEFT_SIDEBAR_WIDTH}-${uid}`
+    : StorageKeys.THEME_BUILDER_LEFT_SIDEBAR_WIDTH;
+  const rightStorageKey = uid
+    ? `${StorageKeys.THEME_BUILDER_RIGHT_SIDEBAR_WIDTH}-${uid}`
+    : StorageKeys.THEME_BUILDER_RIGHT_SIDEBAR_WIDTH;
   const leftResizable = useResizable({
-    storageKey: 'theme-builder.left-sidebar.width',
+    storageKey: leftStorageKey,
     defaultWidth: LEFT_SIDEBAR.default,
     min: LEFT_SIDEBAR.min,
     max: LEFT_SIDEBAR.max,
     edge: 'right',
   });
   const rightResizable = useResizable({
-    storageKey: 'theme-builder.right-sidebar.width',
+    storageKey: rightStorageKey,
     defaultWidth: RIGHT_SIDEBAR.default,
     min: RIGHT_SIDEBAR.min,
     max: RIGHT_SIDEBAR.max,

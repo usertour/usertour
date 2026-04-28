@@ -8,4 +8,6 @@ export enum StorageKeys {
   RESOURCE_CENTER_NAV = 'resource-center-nav',
   ENVIRONMENT_ID = 'environment-id',
   COLOR_PICKER_RECENT = 'color-picker-recent',
+  THEME_BUILDER_LEFT_SIDEBAR_WIDTH = 'theme-builder-left-sidebar-width',
+  THEME_BUILDER_RIGHT_SIDEBAR_WIDTH = 'theme-builder-right-sidebar-width',
 }
