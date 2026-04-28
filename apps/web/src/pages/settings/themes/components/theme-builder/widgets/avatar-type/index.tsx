@@ -1,12 +1,7 @@
 import { memo, useCallback } from 'react';
 
 import { AvatarType } from '@usertour/types';
-import {
-  Tabs,
-  UnderlineTabsList,
-  UnderlineTabsTrigger,
-  UnderlineTabsContent,
-} from '@usertour-packages/tabs';
+import { BuilderTabs, BuilderTabsContent, BuilderTabsList, BuilderTabsTrigger } from '../../ui';
 
 import { useAvatarTab } from './hooks/use-avatar-tab';
 import { CartoonAvatarTab } from './cartoon-avatar-tab';
@@ -78,29 +73,29 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
     }, [onChange]);
 
     return (
-      <Tabs value={activeTab} onValueChange={disabled ? undefined : handleTabChangeWithNone}>
-        <UnderlineTabsList>
-          <UnderlineTabsTrigger value={AvatarType.CARTOON} disabled={disabled}>
+      <BuilderTabs value={activeTab} onValueChange={disabled ? undefined : handleTabChangeWithNone}>
+        <BuilderTabsList>
+          <BuilderTabsTrigger value={AvatarType.CARTOON} disabled={disabled}>
             Cartoon
-          </UnderlineTabsTrigger>
-          <UnderlineTabsTrigger value={AvatarType.UPLOAD} disabled={disabled}>
+          </BuilderTabsTrigger>
+          <BuilderTabsTrigger value={AvatarType.UPLOAD} disabled={disabled}>
             Upload
-          </UnderlineTabsTrigger>
-          <UnderlineTabsTrigger value={AvatarType.URL} disabled={disabled}>
+          </BuilderTabsTrigger>
+          <BuilderTabsTrigger value={AvatarType.URL} disabled={disabled}>
             URL
-          </UnderlineTabsTrigger>
-          <UnderlineTabsTrigger value={AvatarType.NONE} disabled={disabled}>
+          </BuilderTabsTrigger>
+          <BuilderTabsTrigger value={AvatarType.NONE} disabled={disabled}>
             None
-          </UnderlineTabsTrigger>
-        </UnderlineTabsList>
-        <UnderlineTabsContent value={AvatarType.CARTOON}>
+          </BuilderTabsTrigger>
+        </BuilderTabsList>
+        <BuilderTabsContent value={AvatarType.CARTOON}>
           <CartoonAvatarTab
             selectedName={name}
             onAvatarSelect={handleCartoonSelect}
             disabled={disabled}
           />
-        </UnderlineTabsContent>
-        <UnderlineTabsContent value={AvatarType.UPLOAD}>
+        </BuilderTabsContent>
+        <BuilderTabsContent value={AvatarType.UPLOAD}>
           <UploadAvatarTab
             avatarUrl={url}
             isCurrentUpload={type === AvatarType.UPLOAD}
@@ -108,17 +103,17 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
             onRemove={handleRemoveUploadedAvatar}
             disabled={disabled}
           />
-        </UnderlineTabsContent>
-        <UnderlineTabsContent value={AvatarType.URL}>
+        </BuilderTabsContent>
+        <BuilderTabsContent value={AvatarType.URL}>
           <UrlAvatarTab
             avatarUrl={url}
             isCurrentUrl={type === AvatarType.URL}
             onUrlSubmit={handleUrlSubmit}
             disabled={disabled}
           />
-        </UnderlineTabsContent>
-        <UnderlineTabsContent value={AvatarType.NONE} />
-      </Tabs>
+        </BuilderTabsContent>
+        <BuilderTabsContent value={AvatarType.NONE} />
+      </BuilderTabs>
     );
   },
 );
