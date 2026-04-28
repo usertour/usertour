@@ -9,6 +9,7 @@ import {
 import { useCurrentUserId } from '@usertour-packages/shared-hooks';
 import { deepmerge } from 'deepmerge-ts';
 import { useCallback, useMemo, useState } from 'react';
+import { useEvent } from 'react-use';
 import { BuilderProvider } from './builder-context';
 import { PreviewPane } from './preview/preview-pane';
 import { builderSections } from './schema/sections';
@@ -90,6 +91,14 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
     min: RIGHT_SIDEBAR.min,
     max: RIGHT_SIDEBAR.max,
     edge: 'left',
+  });
+
+  // Warn before closing / refreshing the tab when there are unsaved changes,
+  // matching v1's theme-detail-header behavior.
+  useEvent('beforeunload', (e: BeforeUnloadEvent) => {
+    if (draft.hasUnsavedChanges) {
+      e.preventDefault();
+    }
   });
 
   const handleSave = useCallback(async () => {
