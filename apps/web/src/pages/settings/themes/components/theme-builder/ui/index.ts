@@ -6,6 +6,12 @@ export { BuilderFontPicker } from './builder-font-picker';
 export { BuilderIconButton } from './builder-icon-button';
 export { BuilderSaveButton } from './builder-save-button';
 export {
+  BuilderDropdownMenu,
+  BuilderDropdownMenuTrigger,
+  BuilderDropdownMenuContent,
+  BuilderDropdownMenuItem,
+} from './builder-dropdown-menu';
+export {
   BuilderTabs,
   BuilderTabsList,
   BuilderTabsTrigger,

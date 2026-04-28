@@ -10,8 +10,9 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import type { ThemeVariation } from '@usertour/types';
+import type { RulesCondition, ThemeVariation } from '@usertour/types';
 import { useEffect, useState } from 'react';
+import { ConditionsSection } from '../sidebar/conditions-section';
 import { SidebarResizeHandle } from '../sidebar/sidebar-resize-handle';
 import { BuilderIconButton, BuilderInput } from '../ui';
 import {
@@ -25,10 +26,12 @@ import { VariationRow } from './variation-row';
 interface Props {
   variations: ThemeVariation[];
   activeVariationId: string | null;
+  activeVariation: ThemeVariation | null;
   onSelect: (id: string | null) => void;
   onAdd: () => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
+  onConditionsChange: (conditions: RulesCondition[]) => void;
   disabled?: boolean;
   width: number;
   resize?: {
@@ -42,10 +45,12 @@ const BASE_LABEL = 'Base';
 export function VariationsSidebar({
   variations,
   activeVariationId,
+  activeVariation,
   onSelect,
   onAdd,
   onRename,
   onDelete,
+  onConditionsChange,
   disabled,
   width,
   resize,
@@ -114,6 +119,19 @@ export function VariationsSidebar({
             />
           ))}
         </div>
+
+        {/* Conditions for the active variation. Inline below the list (not
+            pinned to the bottom) so an empty panel doesn't get a midline gap.
+            Hidden when Base is selected — Base has no conditions. */}
+        {activeVariation && (
+          <div className="border-t border-border/50">
+            <ConditionsSection
+              conditions={activeVariation.conditions}
+              onConditionsChange={onConditionsChange}
+              disabled={disabled}
+            />
+          </div>
+        )}
       </div>
 
       {/* Rename popover, anchored to the sidebar (simpler than per-row anchors) */}

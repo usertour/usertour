@@ -1,12 +1,12 @@
-import { RiMoreFill } from '@usertour-packages/icons';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
+import { EditIcon, RiDeleteBinLine, RiMoreFill } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
-import { BuilderIconButton } from '../ui';
+import {
+  BuilderDropdownMenu,
+  BuilderDropdownMenuContent,
+  BuilderDropdownMenuItem,
+  BuilderDropdownMenuTrigger,
+  BuilderIconButton,
+} from '../ui';
 import { listRowClass, listRowSelectedClass } from '../ui/tokens';
 
 interface Props {
@@ -32,8 +32,8 @@ export function VariationRow({ label, selected, onClick, onRename, onDelete, dis
       </button>
       {hasMenu && !disabled && (
         <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover/row:opacity-100 data-[state=open]:opacity-100">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <BuilderDropdownMenu>
+            <BuilderDropdownMenuTrigger asChild>
               <BuilderIconButton
                 size="sm"
                 aria-label="Variation menu"
@@ -41,16 +41,22 @@ export function VariationRow({ label, selected, onClick, onRename, onDelete, dis
               >
                 <RiMoreFill className="h-3.5 w-3.5" />
               </BuilderIconButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-xs">
-              {onRename && <DropdownMenuItem onClick={onRename}>Rename</DropdownMenuItem>}
-              {onDelete && (
-                <DropdownMenuItem onClick={onDelete} className="text-destructive">
-                  Delete
-                </DropdownMenuItem>
+            </BuilderDropdownMenuTrigger>
+            <BuilderDropdownMenuContent align="end">
+              {onRename && (
+                <BuilderDropdownMenuItem onClick={onRename}>
+                  <EditIcon className="h-3.5 w-3.5" />
+                  Rename
+                </BuilderDropdownMenuItem>
               )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              {onDelete && (
+                <BuilderDropdownMenuItem onClick={onDelete} className="text-destructive">
+                  <RiDeleteBinLine className="h-3.5 w-3.5" />
+                  Delete
+                </BuilderDropdownMenuItem>
+              )}
+            </BuilderDropdownMenuContent>
+          </BuilderDropdownMenu>
         </div>
       )}
     </div>

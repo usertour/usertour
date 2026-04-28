@@ -12,7 +12,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { BuilderProvider } from './builder-context';
 import { PreviewPane } from './preview/preview-pane';
 import { builderSections } from './schema/sections';
-import { ConditionsSection } from './sidebar/conditions-section';
 import { SectionsAccordion } from './sidebar/sections-accordion';
 import { SidebarShell } from './sidebar/sidebar-shell';
 import { VariationsSidebar } from './sidebar-left/variations-sidebar';
@@ -130,10 +129,16 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
           <VariationsSidebar
             variations={draft.variations}
             activeVariationId={activeVariationId}
+            activeVariation={draft.activeVariation}
             onSelect={setActiveVariationId}
             onAdd={onAddVariation}
             onRename={draft.renameVariation}
             onDelete={onDeleteVariation}
+            onConditionsChange={(conds) => {
+              if (draft.activeVariation) {
+                draft.updateVariationConditions(draft.activeVariation.id, conds);
+              }
+            }}
             disabled={theme.isSystem}
             width={leftResizable.width}
             resize={{
@@ -154,15 +159,6 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
               onMouseDown: rightResizable.handleProps.onMouseDown,
             }}
           >
-            {draft.activeVariation && (
-              <ConditionsSection
-                conditions={draft.activeVariation.conditions}
-                onConditionsChange={(conds) =>
-                  draft.updateVariationConditions(draft.activeVariation!.id, conds)
-                }
-                disabled={theme.isSystem}
-              />
-            )}
             <SectionsAccordion onSectionExpanded={onSectionExpanded} />
           </SidebarShell>
         </div>
