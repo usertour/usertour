@@ -11,7 +11,7 @@ interface Props {
 
 export function TextField({ path, label, placeholder }: Props) {
   const id = useId();
-  const { getField, setField } = useBuilderContext();
+  const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<string>(path) ?? '';
   return (
     <FieldRow label={label} htmlFor={id}>
@@ -19,6 +19,7 @@ export function TextField({ path, label, placeholder }: Props) {
         id={id}
         value={value}
         placeholder={placeholder}
+        disabled={isReadOnly}
         onChange={(e) => setField(path, e.target.value)}
       />
     </FieldRow>

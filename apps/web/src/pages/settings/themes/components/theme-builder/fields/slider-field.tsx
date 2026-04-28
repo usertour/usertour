@@ -13,7 +13,7 @@ interface Props {
 
 export function SliderField({ path, label, min, max, step = 1, suffix }: Props) {
   const id = useId();
-  const { getField, setField } = useBuilderContext();
+  const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<number>(path);
   const safe = typeof value === 'number' ? value : min;
   return (
@@ -33,6 +33,7 @@ export function SliderField({ path, label, min, max, step = 1, suffix }: Props) 
         min={min}
         max={max}
         step={step}
+        disabled={isReadOnly}
         onValueChange={([next]) => setField(path, next)}
       />
     </div>

@@ -11,14 +11,19 @@ interface Props {
 // in the dropdown comfortably.
 export function FontFamilyField({ path, label }: Props) {
   const id = useId();
-  const { getField, setField } = useBuilderContext();
+  const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<string>(path) ?? '';
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className="block text-xs font-medium leading-none">
         {label}
       </label>
-      <BuilderFontPicker id={id} value={value} onChange={(next) => setField(path, next)} />
+      <BuilderFontPicker
+        id={id}
+        value={value}
+        disabled={isReadOnly}
+        onChange={(next) => setField(path, next)}
+      />
     </div>
   );
 }

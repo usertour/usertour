@@ -16,7 +16,7 @@ interface CellProps {
 function Cell({ path, label, allowAuto, position }: CellProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
-  const { finalSettings, getField, setField } = useBuilderContext();
+  const { finalSettings, getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<string>(path) ?? '';
   const isAuto = value === 'Auto';
   const fallback = getPath(finalSettings, path);
@@ -35,12 +35,13 @@ function Cell({ path, label, allowAuto, position }: CellProps) {
       <label htmlFor={id} className="text-xs font-medium leading-none">
         {label}
       </label>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={isReadOnly ? undefined : setOpen}>
         <PopoverTrigger asChild>
           <BuilderColorButton
             id={id}
             color={displayedColor}
             isAuto={isAuto}
+            disabled={isReadOnly}
             className={cn(radiusClass, 'w-full')}
           />
         </PopoverTrigger>

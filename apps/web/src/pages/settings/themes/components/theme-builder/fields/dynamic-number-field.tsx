@@ -15,7 +15,7 @@ interface Props {
 
 export function DynamicNumberField({ getLabel, getPath, min, max, step = 1, suffix }: Props) {
   const id = useId();
-  const { activeSettings, getField, setField } = useBuilderContext();
+  const { activeSettings, getField, setField, isReadOnly } = useBuilderContext();
   const path = getPath(activeSettings);
   const label = getLabel(activeSettings);
   const value = getField<number>(path);
@@ -29,6 +29,7 @@ export function DynamicNumberField({ getLabel, getPath, min, max, step = 1, suff
         min={min}
         max={max}
         step={step}
+        disabled={isReadOnly}
         onChange={(e) => {
           const next = Number.parseFloat(e.target.value);
           if (!Number.isNaN(next)) setField(path, next);

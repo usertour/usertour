@@ -29,7 +29,7 @@ export function NumberField({
   validate,
 }: Props) {
   const id = useId();
-  const { getField, setField } = useBuilderContext();
+  const { getField, setField, isReadOnly } = useBuilderContext();
   const stored = getField<number>(path);
   const [error, setError] = useState<string | undefined>();
 
@@ -57,6 +57,7 @@ export function NumberField({
         max={max}
         step={step}
         placeholder={placeholder}
+        disabled={isReadOnly}
         onChange={(e) => handleChange(e.target.value)}
         className={suffix ? 'pr-8' : undefined}
       />

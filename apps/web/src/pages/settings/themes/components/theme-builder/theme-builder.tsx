@@ -7,6 +7,8 @@ import {
   defaultSettings,
 } from '@usertour/types';
 import { useCurrentUserId } from '@usertour-packages/shared-hooks';
+import { useToast } from '@usertour-packages/use-toast';
+import { getErrorMessage } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { useCallback, useMemo, useState } from 'react';
 import { useEvent } from 'react-use';
@@ -101,15 +103,18 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
     }
   });
 
+  const { toast } = useToast();
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
       await onSave({ settings: draft.base, variations: draft.variations });
       draft.markSaved();
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
     } finally {
       setIsSaving(false);
     }
-  }, [draft, onSave]);
+  }, [draft, onSave, toast]);
 
   const builderContextValue = useMemo(
     () => ({

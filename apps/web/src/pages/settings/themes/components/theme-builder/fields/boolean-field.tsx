@@ -10,11 +10,16 @@ interface Props {
 
 export function BooleanField({ path, label }: Props) {
   const id = useId();
-  const { getField, setField } = useBuilderContext();
+  const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<boolean>(path);
   return (
     <FieldRow label={label} htmlFor={id}>
-      <BuilderSwitch id={id} checked={value} onCheckedChange={(next) => setField(path, next)} />
+      <BuilderSwitch
+        id={id}
+        checked={value}
+        disabled={isReadOnly}
+        onCheckedChange={(next) => setField(path, next)}
+      />
     </FieldRow>
   );
 }

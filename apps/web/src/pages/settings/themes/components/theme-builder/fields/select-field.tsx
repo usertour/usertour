@@ -15,7 +15,7 @@ interface Props {
 
 export function SelectField({ path, label, options, vertical, valueAsNumber }: Props) {
   const id = useId();
-  const { getField, setField } = useBuilderContext();
+  const { getField, setField, isReadOnly } = useBuilderContext();
   const raw = valueAsNumber ? getField<number>(path) : getField<string>(path);
   const value = raw == null ? undefined : String(raw);
   const handleChange = (next: string) => {
@@ -24,7 +24,13 @@ export function SelectField({ path, label, options, vertical, valueAsNumber }: P
 
   return (
     <FieldRow label={label} htmlFor={id} forceVertical={vertical}>
-      <BuilderSelect id={id} value={value} onChange={handleChange} options={options} />
+      <BuilderSelect
+        id={id}
+        value={value}
+        disabled={isReadOnly}
+        onChange={handleChange}
+        options={options}
+      />
     </FieldRow>
   );
 }

@@ -446,7 +446,7 @@ export const builderSections: BuilderSection[] = [
         path: 'tooltip.missingTargetTolerance',
         label: 'Missing tooltip target tolerance',
         min: 0,
-        max: 60,
+        max: 10,
         suffix: 's',
         validate: (v) => (v > 10 ? 'Maximum value is 10' : undefined),
       },
@@ -967,6 +967,9 @@ export const builderSections: BuilderSection[] = [
         suffix: 'px',
         optional: true,
         placeholder: 'Auto',
+        // v1 forbids width === 0; empty input writes undefined (Auto), but a
+        // literal 0 would render a 0-wide button.
+        validate: (v) => (v === 0 ? 'Width cannot be 0' : undefined),
       },
       {
         type: 'number',

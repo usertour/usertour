@@ -18,7 +18,7 @@ interface Props {
 export function ColorField({ path, label, allowAuto = false, autoFallback, vertical }: Props) {
   const id = useId();
   const [open, setOpen] = useState(false);
-  const { activeSettings, finalSettings, getField, setField } = useBuilderContext();
+  const { activeSettings, finalSettings, getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<string>(path) ?? '';
   const isAuto = value === 'Auto';
 
@@ -30,9 +30,14 @@ export function ColorField({ path, label, allowAuto = false, autoFallback, verti
 
   return (
     <FieldRow label={label} htmlFor={id} forceVertical={vertical}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={isReadOnly ? undefined : setOpen}>
         <PopoverTrigger asChild>
-          <BuilderColorButton id={id} color={displayedColor} isAuto={isAuto} />
+          <BuilderColorButton
+            id={id}
+            color={displayedColor}
+            isAuto={isAuto}
+            disabled={isReadOnly}
+          />
         </PopoverTrigger>
         <PopoverContent
           align="start"
