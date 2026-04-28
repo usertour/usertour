@@ -733,6 +733,22 @@ const translations = {
           clicked: '已点击',
           unclicked: '未点击',
         },
+        selector: {
+          none: '无',
+          elementText: '元素文本',
+          elementTextTooltip: 'Usertour 会选择包含此文本的元素。',
+          cssSelector: 'CSS 选择器',
+          cssSelectorTooltip:
+            '高级功能:有文本时优先用文本选择。元素没有文本或文本过于通用时可以用 CSS 选择器,两者同时填写则要求两者都匹配。',
+          ifMultipleMatches: '匹配到多个时',
+          ifMultipleMatchesTooltip:
+            '当多个元素都匹配时,可以告诉 Usertour 选第几个。排序规则:先按纵向位置(上优先)、再按横向位置(左优先)。',
+          select1st: '选第 1 个元素',
+          select2nd: '选第 2 个元素',
+          select3rd: '选第 3 个元素',
+          select4th: '选第 4 个元素',
+          select5th: '选第 5 个元素',
+        },
       },
       textInput: {
         label: '输入框文本值',

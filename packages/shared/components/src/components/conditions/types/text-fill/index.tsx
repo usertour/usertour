@@ -1,7 +1,7 @@
 import { TextFillIcon } from '@usertour-packages/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
-import { ElementSelector } from '../../../selector/element-selector';
-import { useConditionsContext, useConditionsT } from '../../conditions-context';
+import { useConditionsT } from '../../conditions-context';
+import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextFill } from '../../validators';
 
@@ -66,7 +66,6 @@ interface EditorProps {
 
 function TextFillEditor({ condition, onChange }: EditorProps) {
   const t = useConditionsT();
-  const { currentContent, token, onElementChange } = useConditionsContext();
   const data = readData(condition);
   const elementData = data.elementData ?? DEFAULT_ELEMENT_DATA;
 
@@ -75,13 +74,9 @@ function TextFillEditor({ condition, onChange }: EditorProps) {
       <div className="text-[11px] font-medium text-muted-foreground">
         {t('conditions.types.textFill.editorTitle')}
       </div>
-      <ElementSelector
+      <ConditionElementSelector
         data={elementData}
         onDataChange={(next) => onChange(writeData(condition, { elementData: next }))}
-        isInput
-        currentContent={currentContent}
-        token={token ?? ''}
-        onElementChange={onElementChange ? () => onElementChange(0, condition.type) : undefined}
       />
     </div>
   );

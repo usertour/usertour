@@ -1,8 +1,8 @@
 import { TextInputIcon } from '@usertour-packages/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
-import { ElementSelector } from '../../../selector/element-selector';
-import { useConditionsContext, useConditionsT } from '../../conditions-context';
+import { useConditionsT } from '../../conditions-context';
+import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextInput } from '../../validators';
@@ -94,7 +94,6 @@ interface EditorProps {
 
 function TextInputEditor({ condition, onChange }: EditorProps) {
   const t = useConditionsT();
-  const { currentContent, token, onElementChange } = useConditionsContext();
   const data = readData(condition);
   const elementData = data.elementData ?? DEFAULT_ELEMENT_DATA;
 
@@ -110,13 +109,9 @@ function TextInputEditor({ condition, onChange }: EditorProps) {
       <div className="text-[11px] font-medium text-muted-foreground">
         {t('conditions.types.textInput.editorTitle')}
       </div>
-      <ElementSelector
+      <ConditionElementSelector
         data={elementData}
         onDataChange={(next) => onChange(writeData(condition, { elementData: next }))}
-        isInput
-        currentContent={currentContent}
-        token={token ?? ''}
-        onElementChange={onElementChange ? () => onElementChange(0, condition.type) : undefined}
       />
       <OperatorSelect
         value={data.logic ?? 'is'}

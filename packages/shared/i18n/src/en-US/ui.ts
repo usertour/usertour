@@ -751,6 +751,22 @@ const translations = {
           clicked: 'is clicked',
           unclicked: 'is not clicked',
         },
+        selector: {
+          none: 'None',
+          elementText: 'Element text',
+          elementTextTooltip: 'Usertour will select an element containing the text you write here.',
+          cssSelector: 'CSS selector',
+          cssSelectorTooltip:
+            'Advanced feature: if possible, we recommend selecting elements using text. If an element does not have text, or the text is very generic, you can select it using a CSS selector instead. If both text and CSS selector are filled in, Usertour will select an element matching both.',
+          ifMultipleMatches: 'If multiple matches',
+          ifMultipleMatchesTooltip:
+            'If multiple elements match your criteria, you can tell Usertour which of the elements to select. Elements are sorted first by vertical position and second by horizontal position — i.e. an element higher up on the page and more towards the left takes precedence.',
+          select1st: 'select 1st element',
+          select2nd: 'select 2nd element',
+          select3rd: 'select 3rd element',
+          select4th: 'select 4th element',
+          select5th: 'select 5th element',
+        },
       },
       textInput: {
         label: 'Text input value',
