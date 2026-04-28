@@ -17,7 +17,6 @@ interface Props {
   // When provided, renders a drag handle on the inner edge (right edge for
   // left-variant, left edge for right-variant).
   resize?: {
-    isResizing: boolean;
     isAtMin: boolean;
     onMouseDown: (event: React.MouseEvent) => void;
   };
@@ -34,7 +33,6 @@ export function SidebarShell({ width, header, footer, children, variant = 'left'
       {resize && (
         <SidebarResizeHandle
           edge={handleEdge}
-          isResizing={resize.isResizing}
           isAtMin={resize.isAtMin}
           onMouseDown={resize.onMouseDown}
         />

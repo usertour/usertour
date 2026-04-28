@@ -126,7 +126,6 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
             disabled={theme.isSystem}
             width={leftResizable.width}
             resize={{
-              isResizing: leftResizable.isResizing,
               isAtMin: leftResizable.isAtMin,
               onMouseDown: leftResizable.handleProps.onMouseDown,
             }}
@@ -140,7 +139,6 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
             width={rightResizable.width}
             variant="right"
             resize={{
-              isResizing: rightResizable.isResizing,
               isAtMin: rightResizable.isAtMin,
               onMouseDown: rightResizable.handleProps.onMouseDown,
             }}

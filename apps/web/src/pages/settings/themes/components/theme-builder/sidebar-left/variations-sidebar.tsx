@@ -32,7 +32,6 @@ interface Props {
   disabled?: boolean;
   width: number;
   resize?: {
-    isResizing: boolean;
     isAtMin: boolean;
     onMouseDown: (event: React.MouseEvent) => void;
   };
@@ -193,7 +192,6 @@ export function VariationsSidebar({
       {resize && (
         <SidebarResizeHandle
           edge="right"
-          isResizing={resize.isResizing}
           isAtMin={resize.isAtMin}
           onMouseDown={resize.onMouseDown}
         />
