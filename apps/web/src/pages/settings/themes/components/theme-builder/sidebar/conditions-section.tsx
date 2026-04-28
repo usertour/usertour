@@ -1,6 +1,6 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { WebZIndex } from '@usertour-packages/constants';
-import { Rules } from '@usertour-packages/shared-components';
+import { Conditions } from '@usertour-packages/shared-components';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import type { RulesCondition } from '@usertour/types';
 import { Trans, useTranslation } from 'react-i18next';
@@ -34,16 +34,16 @@ export function ConditionsSection({
         </span>
         <QuestionTooltip>{t('themeBuilder.tooltips.applyWhen')}</QuestionTooltip>
       </div>
-      <Rules
-        onDataChange={(conds) => onConditionsChange(conds)}
-        defaultConditions={conditions}
-        isHorizontal={true}
+      <Conditions
+        conditions={conditions}
+        onChange={onConditionsChange}
+        isHorizontal
         isShowIf={false}
         filterItems={['group', 'user-attr', 'current-page']}
-        addButtonText={t('themeBuilder.actions.addCondition')}
         attributes={attributeList || []}
         disabled={disabled}
         baseZIndex={WebZIndex.RULES}
+        t={t}
       />
     </div>
   );

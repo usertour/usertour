@@ -4,11 +4,12 @@ import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { WebZIndex } from '@usertour-packages/constants';
 import { Label } from '@usertour-packages/label';
 import {
-  Rules,
-  RulesFrequency,
-  RulesIfCompleted,
-  RulesPriority,
-  RulesWait,
+  ConditionFrequency,
+  ConditionIfCompleted,
+  ConditionPriority,
+  ConditionWait,
+  Conditions,
+  validateConditions,
 } from '@usertour-packages/shared-components';
 import { useContentListQuery } from '@usertour-packages/shared-hooks';
 import { deepClone, getAuthToken } from '@usertour/helpers';
@@ -23,6 +24,7 @@ import {
   autoStartRulesSetting,
 } from '@usertour/types';
 import { useCallback, useId, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export enum ContentDetailAutoStartRulesType {
   START_RULES = 'start-rules',
@@ -70,6 +72,7 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
   const [enabled, setEnabled] = useState(defaultEnabled);
   const [conditions, setConditions] = useState<RulesCondition[]>(deepClone(defaultConditions));
   const effectiveEnabled = showEnabledSwitch ? enabled : true;
+  const { t } = useTranslation();
 
   // Sync internal state with props when they change
   useEffect(() => {
@@ -79,32 +82,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
   useEffect(() => {
     setConditions(deepClone(defaultConditions));
   }, [defaultConditions]);
-
-  const updateSettings = useCallback(
-    (updates: Partial<autoStartRulesSetting>) => {
-      onDataChange(effectiveEnabled, conditions, { ...setting, ...updates });
-    },
-    [effectiveEnabled, conditions, setting, onDataChange],
-  );
-
-  const handleDataChange = useCallback(
-    (conds: RulesCondition[], hasError: boolean) => {
-      if (hasError || conditionsIsSame(conds, conditions)) return;
-
-      const newConditions = deepClone(conds);
-      setConditions(newConditions);
-      onDataChange(effectiveEnabled, newConditions, setting);
-    },
-    [conditions, effectiveEnabled, setting, onDataChange],
-  );
-
-  const handleEnabledChange = useCallback(
-    (checked: boolean) => {
-      setEnabled(checked);
-      onDataChange(checked, conditions, setting);
-    },
-    [conditions, setting, onDataChange],
-  );
 
   const environmentId = content.environmentId ?? '';
   const contentType = content.type;
@@ -118,6 +95,48 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     query: { environmentId },
     options: { skip: !environmentId },
   });
+
+  const updateSettings = useCallback(
+    (updates: Partial<autoStartRulesSetting>) => {
+      onDataChange(effectiveEnabled, conditions, { ...setting, ...updates });
+    },
+    [effectiveEnabled, conditions, setting, onDataChange],
+  );
+
+  const handleConditionsChange = useCallback(
+    (conds: RulesCondition[]) => {
+      // Mirror v1 behavior: only propagate to the parent when conditions are
+      // both new and valid — partial input keeps the controlled value
+      // up-to-date locally without overwriting the persisted state above.
+      setConditions(conds);
+      const failures = validateConditions(conds, {
+        attributes: attributeList,
+        segments: segmentList,
+        contents,
+        events: eventList,
+      });
+      if (failures.length > 0 || conditionsIsSame(conds, conditions)) return;
+      onDataChange(effectiveEnabled, deepClone(conds), setting);
+    },
+    [
+      attributeList,
+      conditions,
+      contents,
+      effectiveEnabled,
+      eventList,
+      onDataChange,
+      segmentList,
+      setting,
+    ],
+  );
+
+  const handleEnabledChange = useCallback(
+    (checked: boolean) => {
+      setEnabled(checked);
+      onDataChange(checked, conditions, setting);
+    },
+    [conditions, setting, onDataChange],
+  );
 
   if (!environmentId) return null;
 
@@ -141,9 +160,9 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
         </div>
       )}
       {(showEnabledSwitch ? enabled : true) && (
-        <Rules
-          onDataChange={handleDataChange}
-          defaultConditions={defaultConditions}
+        <Conditions
+          conditions={conditions}
+          onChange={handleConditionsChange}
           attributes={attributeList}
           segments={segmentList}
           contents={contents}
@@ -152,40 +171,45 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
           disabled={disabled}
           baseZIndex={WebZIndex.RULES}
           events={eventList}
+          t={t}
           {...(filterItems ? { filterItems } : {})}
         />
       )}
 
       {showWait && (
-        <RulesWait
+        <ConditionWait
           defaultValue={setting.wait ?? 0}
           onValueChange={(value) => updateSettings({ wait: value })}
           disabled={disabled}
           baseZIndex={WebZIndex.RULES}
+          t={t}
         />
       )}
       {showFrequency && (
-        <RulesFrequency
+        <ConditionFrequency
           onChange={(frequency) => updateSettings({ frequency })}
           defaultValue={setting.frequency}
           contentType={contentType}
           showAtLeast={showAtLeast}
           disabled={disabled}
+          t={t}
         />
       )}
       {showIfCompleted && setting.frequency?.frequency !== Frequency.ONCE && (
-        <RulesIfCompleted
+        <ConditionIfCompleted
           defaultValue={setting.startIfNotComplete ?? false}
           contentType={contentType}
           onCheckedChange={(checked) => updateSettings({ startIfNotComplete: checked })}
           disabled={disabled}
+          t={t}
         />
       )}
       {showPriority && (
-        <RulesPriority
+        <ConditionPriority
           onChange={(priority) => updateSettings({ priority: priority as ContentPriority })}
-          defaltValue={setting.priority ?? ContentPriority.MEDIUM}
+          defaultValue={setting.priority ?? ContentPriority.MEDIUM}
           disabled={disabled}
+          t={t}
         />
       )}
     </div>

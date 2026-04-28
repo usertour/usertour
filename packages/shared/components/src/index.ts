@@ -1,4 +1,36 @@
 export { Rules } from './components/rules';
+export { Conditions } from './components/conditions';
+export {
+  ConditionFrequency,
+  ConditionIfCompleted,
+  ConditionPriority,
+  ConditionWait,
+} from './components/conditions/standalone';
+export {
+  validateConditions,
+  validateConditionList,
+  type ConditionValidationFailure,
+} from './components/conditions/validate';
+export {
+  validateUserAttr,
+  validateCurrentPage,
+  validateSegment,
+  validateContent,
+  validateElement,
+  validateTextInput,
+  validateTextFill,
+  validateTime,
+  validateEvent,
+  validateEventAttr,
+  validateConditionByType,
+} from './components/conditions/validators';
+export type {
+  ConditionTypeSchema,
+  AnySchema,
+  ValidationError,
+  ValidateContext,
+} from './components/conditions/schema-types';
+export type { ConditionsTranslator } from './components/conditions/conditions-context';
 export { conditionsTypeMapping } from './components/rules/rules-user-attribute';
 export { GoogleFontCss } from './components/theme/google-font';
 export { RulesFrequency } from './components/rules/rules-frequency';
