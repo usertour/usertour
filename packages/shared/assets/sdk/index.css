@@ -100,7 +100,7 @@
 .usertour-widget-spotlight {
   position: fixed;
   border-radius: 12px;
-  box-shadow: var(--usertour-backdrop-highlight-inset) 0 0
+  box-shadow: var(--usertour-backdrop-highlight-inset, ) 0 0
       var(--usertour-backdrop-highlight-radius)
       var(--usertour-backdrop-highlight-spread)
       rgba(
