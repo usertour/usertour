@@ -25,12 +25,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import type { RulesCondition, ThemeVariation } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { ConditionsSection } from '../sidebar/conditions-section';
 import { SidebarResizeHandle } from '../sidebar/sidebar-resize-handle';
-import { BuilderIconButton, BuilderInput } from '../ui';
+import { BuilderIconButton } from '../ui';
 import {
   sectionLabelClass,
   sidebarBodyClass,
@@ -67,6 +66,11 @@ function SortableVariationRow({
   onRename,
   onDelete,
   disabled,
+  isRenaming,
+  renameDraft,
+  onRenameDraftChange,
+  onRenameCommit,
+  onRenameCancel,
 }: {
   variation: ThemeVariation;
   selected: boolean;
@@ -74,10 +78,17 @@ function SortableVariationRow({
   onRename?: () => void;
   onDelete?: () => void;
   disabled?: boolean;
+  isRenaming?: boolean;
+  renameDraft?: string;
+  onRenameDraftChange?: (value: string) => void;
+  onRenameCommit?: () => void;
+  onRenameCancel?: () => void;
 }) {
+  // Disable drag-and-drop while this row is being renamed so pointer events
+  // go to the input rather than the sortable wrapper.
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: variation.id,
-    disabled,
+    disabled: disabled || isRenaming,
   });
   return (
     <VariationRow
@@ -87,12 +98,17 @@ function SortableVariationRow({
       onRename={onRename}
       onDelete={onDelete}
       disabled={disabled}
+      isRenaming={isRenaming}
+      renameDraft={renameDraft}
+      onRenameDraftChange={onRenameDraftChange}
+      onRenameCommit={onRenameCommit}
+      onRenameCancel={onRenameCancel}
       sortableRef={setNodeRef}
       sortableStyle={{
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      dragHandleProps={{ ...attributes, ...listeners }}
+      dragHandleProps={isRenaming ? undefined : { ...attributes, ...listeners }}
       isDragging={isDragging}
     />
   );
@@ -192,6 +208,7 @@ export function VariationsSidebar({
                       ? undefined
                       : () => {
                           setRenamingId(variation.id);
+                          setRenameDraft(variation.name);
                         }
                   }
                   onDelete={
@@ -202,6 +219,11 @@ export function VariationsSidebar({
                         }
                   }
                   disabled={disabled}
+                  isRenaming={renamingId === variation.id}
+                  renameDraft={renameDraft}
+                  onRenameDraftChange={setRenameDraft}
+                  onRenameCommit={commitRename}
+                  onRenameCancel={() => setRenamingId(null)}
                 />
               ))}
             </SortableContext>
@@ -226,47 +248,6 @@ export function VariationsSidebar({
           </div>
         )}
       </div>
-
-      {/* Rename popover, anchored to the sidebar (simpler than per-row anchors) */}
-      <Popover
-        open={!!renamingVariation}
-        onOpenChange={(open) => {
-          if (!open) commitRename();
-        }}
-      >
-        <PopoverTrigger asChild>
-          <span className="absolute left-[100px] top-[60px]" aria-hidden />
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          sideOffset={6}
-          className="w-64 p-3"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-        >
-          <div className="grid grid-cols-[60px_1fr] items-center gap-x-3 gap-y-2">
-            <label
-              htmlFor="variation-rename-input"
-              className="text-[11px] font-medium text-muted-foreground"
-            >
-              Name
-            </label>
-            <BuilderInput
-              id="variation-rename-input"
-              autoFocus
-              value={renameDraft}
-              onChange={(e) => setRenameDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  commitRename();
-                } else if (e.key === 'Escape') {
-                  setRenamingId(null);
-                }
-              }}
-            />
-          </div>
-        </PopoverContent>
-      </Popover>
 
       <AlertDialog
         open={!!deletingVariation}
