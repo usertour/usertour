@@ -2,7 +2,7 @@ import { RiArrowDownSLine } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import { cuid } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { AddConditionDropdown } from './add-condition-dropdown';
 import { ConditionRow } from './condition-row';
 import { useConditionsContext, useConditionsT } from './conditions-context';
@@ -23,9 +23,14 @@ interface Props {
   filterItems?: string[];
 }
 
-// Ensure every condition has a stable id for React keying and dedup.
-const ensureIds = (conds: RulesCondition[]): RulesCondition[] =>
-  conds.map((c) => (c.id ? c : { ...c, id: cuid() }));
+// Backfill missing ids without re-rolling them on every render. Only mints
+// new cuids when at least one condition lacks an id, and returns the input
+// reference unchanged otherwise so downstream useMemo / useEffect deps stay
+// stable.
+const ensureIds = (conds: RulesCondition[]): RulesCondition[] => {
+  if (conds.every((c) => Boolean(c.id))) return conds;
+  return conds.map((c) => (c.id ? c : { ...c, id: cuid() }));
+};
 
 const readLogic = (conds: RulesCondition[]): Logic => {
   const first = conds[0]?.operators;
@@ -71,8 +76,23 @@ export function ConditionList({
 }: Props) {
   const { isHorizontal, isShowIf, disabled } = useConditionsContext();
   const t = useConditionsT();
-  const items = ensureIds(conditions);
+  // Memoize the id-backfill so the same cuid sticks across rerenders for a
+  // given conditions reference. Otherwise legacy data missing ids would get
+  // a fresh cuid every render — the React key would change, ConditionRow
+  // would unmount/remount, and the row's draft / errorKey / open state
+  // would reset on any unrelated parent rerender.
+  const items = useMemo(() => ensureIds(conditions), [conditions]);
   const logic = readLogic(items);
+
+  // Persist the backfilled ids to the parent so subsequent updates to
+  // `conditions` don't lose them and we don't have to fix up the same
+  // missing-id list repeatedly. Runs only when ensureIds actually allocated
+  // new cuids (items !== conditions).
+  useEffect(() => {
+    if (items !== conditions) {
+      onChange(items);
+    }
+  }, [items, conditions, onChange]);
   // Tracks the most recently added condition so the corresponding row can
   // auto-open its popover. Cleared by ConditionRow once consumed.
   const [pendingOpenId, setPendingOpenId] = useState<string | null>(null);
