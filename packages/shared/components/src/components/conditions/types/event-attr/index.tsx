@@ -18,6 +18,7 @@ import type { ConditionTypeSchema } from '../../schema-types';
 import { validateEventAttr } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { ConditionInput } from '../../ui/condition-input';
+import { useEventScope } from '../event/event-scope-context';
 import {
   DATE_PICKER_OPERATORS,
   VALUELESS_OPERATORS,
@@ -26,7 +27,6 @@ import {
 } from '../user-attr/operator-mappings';
 
 export interface EventAttrData {
-  eventId?: string;
   attrId?: string;
   logic?: string;
   value?: string;
@@ -48,10 +48,25 @@ function EventAttrSummary({ condition }: { condition: RulesCondition }) {
   const t = useConditionsT();
   const summaryTextClass = useSummaryTextClass();
   const { attributes } = useConditionsContext();
+  const eventId = useEventScope();
   const data = readData(condition);
-  const attribute = attributes?.find(
-    (a) => a.id === data.attrId && a.bizType === AttributeBizTypes.Event,
-  );
+  // Stay aligned with the editor: only resolve the attribute name when it's
+  // actually bound to the parent event. If it isn't (stale data, attribute
+  // unbound after creation, etc.) we render the placeholder so the chip
+  // matches what the editor's combobox sees — instead of the chip claiming
+  // an attribute the editor can't even surface.
+  const { attributeOnEvents, loading } = useListAttributeOnEventsQuery(eventId);
+  const attribute = useMemo<Attribute | undefined>(() => {
+    if (!attributes || !data.attrId) return undefined;
+    if (!eventId) {
+      return attributes.find((a) => a.id === data.attrId && a.bizType === AttributeBizTypes.Event);
+    }
+    if (loading || !Array.isArray(attributeOnEvents)) return undefined;
+    const ids = new Set(attributeOnEvents.map((aoe) => aoe.attributeId));
+    return attributes.find(
+      (a) => a.id === data.attrId && a.bizType === AttributeBizTypes.Event && ids.has(a.id),
+    );
+  }, [attributes, attributeOnEvents, data.attrId, eventId, loading]);
 
   if (!attribute) {
     return (
@@ -122,21 +137,23 @@ interface EditorProps {
 function EventAttrEditor({ condition, onChange }: EditorProps) {
   const t = useConditionsT();
   const { attributes } = useConditionsContext();
+  const eventId = useEventScope();
   const data = readData(condition);
 
-  // Restrict the picker to attributes bound to this event. Until the
+  // Restrict the picker to attributes bound to the parent event. Until the
   // attributes-on-event query returns, surface an empty list rather than
   // falling back to every Event-bizType attribute — otherwise the user
   // could pick an attrId from a different event during the loading window
   // and the runtime would then filter on a field that doesn't exist on
   // this event, silently dropping the match. Mirrors v1 areEventAttributesReady.
-  const { attributeOnEvents, loading } = useListAttributeOnEventsQuery(data.eventId);
+  const { attributeOnEvents, loading } = useListAttributeOnEventsQuery(eventId);
   const eventAttributes = useMemo<Attribute[]>(() => {
     if (!attributes) return [];
-    // No parent event yet — surface every Event-bizType attribute (this
-    // case shouldn't normally happen because EventWhereSection injects
-    // the parent eventId on add).
-    if (!data.eventId) {
+    // No parent event scope — defensive fallback. event-attr is always
+    // rendered inside an event editor's where section, so EventScopeContext
+    // is normally populated; this branch only covers the (unsupported) case
+    // of rendering event-attr standalone.
+    if (!eventId) {
       return attributes.filter((a) => a.bizType === AttributeBizTypes.Event);
     }
     // Query in flight or hasn't returned — wait. Empty `items` makes the
@@ -145,7 +162,7 @@ function EventAttrEditor({ condition, onChange }: EditorProps) {
     if (loading || !Array.isArray(attributeOnEvents)) return [];
     const ids = new Set(attributeOnEvents.map((aoe) => aoe.attributeId));
     return attributes.filter((a) => ids.has(a.id) && a.bizType === AttributeBizTypes.Event);
-  }, [attributes, attributeOnEvents, data.eventId, loading]);
+  }, [attributes, attributeOnEvents, eventId, loading]);
 
   const attribute = eventAttributes.find((a) => a.id === data.attrId);
 

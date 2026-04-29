@@ -19,6 +19,7 @@ import type { ConditionTypeSchema } from '../../schema-types';
 import { validateEvent } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { ConditionInput } from '../../ui/condition-input';
+import { EventScopeContext } from './event-scope-context';
 
 export interface EventData {
   eventId?: string;
@@ -212,25 +213,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
         </div>
         <ConditionCombobox
           value={data.eventId}
-          onChange={(eventId) => {
-            // Re-stamp every where child with the new eventId AND clear the
-            // previously selected attrId / logic / value. The old attribute
-            // almost certainly isn't bound to the new event, and the global
-            // validator only checks bizType, not event binding — leaving
-            // the selection would persist an orphan attrId. Forcing a
-            // re-pick mirrors v1's effective behavior (its picker would
-            // show no selection when the attrId didn't match the new
-            // event's attributes).
-            const where = data.whereConditions
-              ? stampEventIdDeep(data.whereConditions, eventId, true)
-              : undefined;
-            onChange(
-              writeData(condition, {
-                eventId,
-                whereConditions: where && where.length > 0 ? where : undefined,
-              }),
-            );
-          }}
+          onChange={(eventId) => onChange(writeData(condition, { eventId }))}
           items={eventItems}
           placeholder={t('conditions.types.event.selectPlaceholder')}
           searchPlaceholder={t('conditions.types.event.searchPlaceholder')}
@@ -363,46 +346,22 @@ interface WhereProps {
   data: EventData;
 }
 
-// Recursively walk a where-list and stamp the parent event's id onto every
-// event-attr (regardless of nesting depth) so the attribute picker scopes
-// to the current event. Always overwrites — switching the parent event must
-// re-scope existing where children too. v1 sidestepped this by passing
-// eventId as a live prop to RulesEventAttribute; we keep eventId on data
-// (for legacy compatibility and standalone reads) and synchronize it here.
-//
-// `resetSelection: true` additionally clears attrId / logic / value /
-// listValues. Used when the parent event changes, since the previously
-// chosen attribute almost certainly isn't bound to the new event — leaving
-// it would persist an orphan attrId that the global validator can't catch
-// (it only checks bizType, not event binding).
-const stampEventIdDeep = (
-  conds: RulesCondition[],
-  eventId: string | undefined,
-  resetSelection = false,
-): RulesCondition[] =>
-  conds.map((c) => {
-    if (c.type === 'event-attr') {
-      const next = resetSelection
-        ? { eventId }
-        : { ...(c.data as Record<string, unknown>), eventId };
-      return { ...c, data: next };
-    }
-    if (c.type === 'group' && c.conditions) {
-      return { ...c, conditions: stampEventIdDeep(c.conditions, eventId, resetSelection) };
-    }
-    return c;
-  });
-
 // Nested list of event-attribute filters scoped to the chosen event. Renders
 // a recursive ConditionList limited to event-attr + group types so users can
 // build (A AND B) OR (C AND D) — matching v1 RulesEventWhereGroup behavior.
+//
+// The parent event's id flows down via EventScopeContext rather than being
+// persisted on each child's data. event-attr is structurally only valid
+// inside an event scope, so the scope id is always derivable from the tree;
+// keeping it off the data side avoids the stale-eventId bug that came from
+// a stored copy drifting away from the parent (e.g. legacy data, or any
+// path that mutated the parent eventId without re-stamping children).
 function EventWhereSection({ condition, onChange, data }: WhereProps) {
   const t = useConditionsT();
   const where = data.whereConditions ?? [];
 
   const handleWhereChange = (next: RulesCondition[]) => {
-    const stamped = stampEventIdDeep(next, data.eventId);
-    onChange(writeData(condition, { whereConditions: stamped.length > 0 ? stamped : undefined }));
+    onChange(writeData(condition, { whereConditions: next.length > 0 ? next : undefined }));
   };
 
   return (
@@ -410,11 +369,13 @@ function EventWhereSection({ condition, onChange, data }: WhereProps) {
       <div className="text-[11px] font-medium text-muted-foreground">
         {t('conditions.types.event.whereLabel')}
       </div>
-      <ConditionList
-        conditions={where}
-        onChange={handleWhereChange}
-        filterItems={['event-attr', 'group']}
-      />
+      <EventScopeContext.Provider value={data.eventId}>
+        <ConditionList
+          conditions={where}
+          onChange={handleWhereChange}
+          filterItems={['event-attr', 'group']}
+        />
+      </EventScopeContext.Provider>
     </div>
   );
 }
