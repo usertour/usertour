@@ -45,21 +45,31 @@ interface LogicTogglerProps {
   logic: Logic;
   onToggle: () => void;
   disabled: boolean;
+  isHorizontal: boolean;
 }
 
-// Horizontal-mode toggler. Single-button chip that flips on click — used as
-// an inline separator between conditions in flex-wrap rows.
-function LogicToggler({ logic, onToggle, disabled }: LogicTogglerProps) {
+// AND/OR connector chip. In horizontal flex-wrap layouts every element ends
+// up on the same line as a chip, so we keep the toggler at chip size for an
+// even pill rhythm. In vertical column layouts each row is `[connector]
+// [chip]`, where matching the chip's size gives the connector too much
+// weight — so we shrink it one tier (rounded-md / h-6 / text-[11px]) to
+// reinforce that AND/OR is grammar, subordinate to the chip it links.
+function LogicToggler({ logic, onToggle, disabled, isHorizontal }: LogicTogglerProps) {
   const t = useConditionsT();
   return (
     <button
       type="button"
       onClick={onToggle}
       disabled={disabled}
-      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-input/60 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm transition-colors hover:border-input hover:bg-muted/40 hover:text-foreground focus-visible:bg-muted/40 focus-visible:text-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+      className={cn(
+        'inline-flex shrink-0 shadow-sm border border-input/60 bg-background font-medium text-muted-foreground transition-colors hover:border-input hover:bg-muted/40 hover:text-foreground focus-visible:bg-muted/40 focus-visible:text-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60',
+        isHorizontal
+          ? 'rounded-lg px-3 py-1.5 text-xs items-center gap-1'
+          : 'h-6 rounded-md px-2 text-[11px] items-center gap-0.5',
+      )}
     >
       <span>{logic === 'and' ? t('conditions.logic.and') : t('conditions.logic.or')}</span>
-      <RiArrowDownSLine className="h-3.5 w-3.5 opacity-60" />
+      <RiArrowDownSLine className={cn('opacity-60', isHorizontal ? 'h-3.5 w-3.5' : 'h-3 w-3')} />
     </button>
   );
 }
@@ -127,11 +137,21 @@ export function ConditionList({
 
   if (isHorizontal) {
     return (
-      <div className={cn('flex w-full flex-wrap items-center gap-1.5', className)}>
+      // items-start (not items-center) so an AND/OR connector sits next to
+      // the FIRST line of a chip whose text wrapped — items-center would
+      // float the connector to the chip's vertical midpoint, breaking the
+      // "AND modifies the chip that follows it" reading. Mirrors v1's
+      // rules-group.tsx flex-wrap layout.
+      <div className={cn('flex w-full flex-wrap items-start gap-1.5', className)}>
         {items.map((condition, index) => (
           <Fragment key={condition.id ?? index}>
             {index > 0 && (
-              <LogicToggler logic={logic} onToggle={handleToggleLogic} disabled={disabled} />
+              <LogicToggler
+                logic={logic}
+                onToggle={handleToggleLogic}
+                disabled={disabled}
+                isHorizontal={isHorizontal}
+              />
             )}
             <ConditionRow
               condition={condition}
@@ -153,13 +173,23 @@ export function ConditionList({
       {items.map((condition, index) => {
         let prefix: React.ReactNode = null;
         if (index === 0 && isShowIf) {
+          // Static "If" label — shrunk to match the AND/OR toggler one tier
+          // so prefix-to-chip rhythm is consistent and the connectors read
+          // as a column of like-sized pills.
           prefix = (
-            <div className="inline-flex h-7.5 w-[60px] shrink-0 items-center justify-center rounded-lg border border-input/60 bg-secondary text-xs font-medium text-secondary-foreground shadow-sm">
+            <div className="inline-flex h-6 w-[44px] shrink-0 items-center justify-center rounded-md border border-input/60 bg-secondary text-[11px] font-medium text-secondary-foreground shadow-sm">
               {t('conditions.logic.if')}
             </div>
           );
         } else if (index > 0) {
-          prefix = <LogicToggler logic={logic} onToggle={handleToggleLogic} disabled={disabled} />;
+          prefix = (
+            <LogicToggler
+              logic={logic}
+              onToggle={handleToggleLogic}
+              disabled={disabled}
+              isHorizontal={isHorizontal}
+            />
+          );
         }
 
         return (
