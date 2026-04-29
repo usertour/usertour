@@ -52,16 +52,14 @@ export function useConditionsT(): ConditionsTranslator {
   return ctx?.t ?? fallbackTranslate;
 }
 
-// Class for the text portion of a chip Summary. Horizontal mode keeps a
-// single-line truncate to fit the wrap-flow rhythm; vertical mode wraps
-// long content so the user sees the full condition without hovering. We
-// use `break-words` (overflow-wrap: break-word) rather than `break-all`:
+// Class for the text portion of a chip Summary. Both modes wrap long
+// content so the user can read the full value without opening the editor.
+// We use `break-words` (overflow-wrap: break-word) rather than `break-all`:
 // English / URL-like values only break inside a token when the whole token
 // can't fit on a line, so phrases like "/visualization/data-analysis" stay
 // readable instead of being chopped mid-word at the line edge.
 export function useSummaryTextClass(): string {
-  const ctx = useContext(ConditionsContext);
-  return ctx?.isHorizontal ? 'min-w-0 truncate' : 'min-w-0 whitespace-normal break-words';
+  return 'min-w-0 whitespace-normal break-words';
 }
 
 // z-index helper. Matches v1 useRulesZIndex offsets so popovers / dropdowns
