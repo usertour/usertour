@@ -156,7 +156,22 @@ function FrequencyEvery({
   t,
 }: EveryProps) {
   const [openError, setOpenError] = useState(false);
+  // Local override for `times` while the user is mid-typing an invalid
+  // (< 2) value in MULTIPLE mode. We mirror v1 RulesFrequencyEvery here:
+  // show the in-flight number in the input so typing feels natural, but do
+  // NOT call onChange — the parent should never see times: 0 / 1 land in
+  // its persisted state.
+  const [localTimes, setLocalTimes] = useState<number | null>(null);
   const errorZIndex = WebZIndex.RULES + RulesZIndexOffset.ERROR;
+
+  // Drop the local override whenever the controlled value changes from the
+  // outside (parent reloaded data, sibling switched modes) so the input
+  // re-syncs to props.
+  useEffect(() => {
+    setLocalTimes(null);
+  }, [value.times]);
+
+  const displayTimes = localTimes ?? value.times;
 
   const update = (patch: Partial<RulesFrequencyValueEvery>) => {
     onChange({ ...value, ...patch });
@@ -165,14 +180,13 @@ function FrequencyEvery({
   const handleTimesChange = (e: ChangeEvent<HTMLInputElement>) => {
     const v = Number.parseInt(e.target.value) || 0;
     if (frequency === Frequency.MULTIPLE && v < 2) {
-      // Echo locally without committing — propagate the validation error
-      // visually but keep the persisted value valid.
+      setLocalTimes(v);
       setOpenError(true);
-      onChange({ ...value, times: v });
-    } else {
-      setOpenError(false);
-      update({ times: v });
+      return;
     }
+    setLocalTimes(null);
+    setOpenError(false);
+    update({ times: v });
   };
 
   if (frequency === Frequency.MULTIPLE) {
@@ -182,7 +196,7 @@ function FrequencyEvery({
           <ErrorTooltipAnchor asChild>
             <ConditionInput
               type="text"
-              value={value.times}
+              value={displayTimes}
               onChange={handleTimesChange}
               disabled={disabled}
               className="w-16"
