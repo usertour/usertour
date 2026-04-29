@@ -1,4 +1,9 @@
-import { convertSettings, cuid, generateStateColors } from '@usertour/helpers';
+import {
+  convertSettings,
+  cuid,
+  generateStateColors,
+  mergeThemeDefaultSettings,
+} from '@usertour/helpers';
 import {
   type RulesCondition,
   type ThemeTypesSetting,
@@ -193,19 +198,29 @@ const cloneSnapshot = (s: Snapshot): Snapshot => ({
   variations: cloneDeep(s.variations),
 });
 
+// Themes saved before a schema field existed will lack that key in the DB row.
+// Merging defaults at draft init guarantees the editable draft always has the
+// full structure, so schema `visibleWhen` predicates can read nested paths
+// directly without optional chaining for every newly added field.
+const hydrateVariations = (variations: ThemeVariation[]): ThemeVariation[] =>
+  variations.map((v) => ({ ...v, settings: mergeThemeDefaultSettings(v.settings) }));
+
 export function useThemeDraft({
   initialBase,
   initialVariations,
   activeVariationId,
 }: UseThemeDraftArgs): UseThemeDraftResult {
   const initial: Snapshot = useMemo(
-    () => ({ base: initialBase, variations: initialVariations }),
+    () => ({
+      base: mergeThemeDefaultSettings(initialBase),
+      variations: hydrateVariations(initialVariations),
+    }),
     [initialBase, initialVariations],
   );
 
-  const [base, setBase] = useState<ThemeTypesSetting>(() => cloneDeep(initialBase));
+  const [base, setBase] = useState<ThemeTypesSetting>(() => cloneDeep(initial.base));
   const [variations, setVariations] = useState<ThemeVariation[]>(() =>
-    cloneDeep(initialVariations),
+    cloneDeep(initial.variations),
   );
   const [baseline, setBaseline] = useState<Snapshot>(() => cloneSnapshot(initial));
 
