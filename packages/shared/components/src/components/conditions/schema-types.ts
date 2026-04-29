@@ -50,6 +50,12 @@ export interface ConditionTypeSchema<TData = unknown> {
   // place to keep the "+ Add value" affordance usable) so the persisted data
   // never carries them into the runtime.
   normalize?: (condition: RulesCondition) => RulesCondition;
+  // Optional Tailwind width class for this type's popover editor. Most types
+  // fit comfortably in the default 300px (a single combobox + operator +
+  // value column); types with multi-column control rows declare wider here.
+  // Mirrors v1's pattern of letting each chip's RulesPopoverContent override
+  // the wrapper's default width via className.
+  editorWidthClassName?: string;
 }
 
 export type AnySchema = ConditionTypeSchema<unknown>;

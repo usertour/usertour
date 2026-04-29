@@ -245,7 +245,11 @@ export function ConditionRow({
                 <Summary condition={visibleCondition} />
               </button>
             </ConditionPopoverTrigger>
-            <ConditionPopoverContent align="start" sideOffset={6} className="w-[300px]">
+            <ConditionPopoverContent
+              align="start"
+              sideOffset={6}
+              className={schema.editorWidthClassName ?? 'w-[300px]'}
+            >
               <ConditionEditor
                 schema={schema}
                 condition={draft}

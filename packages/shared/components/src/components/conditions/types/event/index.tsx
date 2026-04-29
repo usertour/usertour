@@ -205,7 +205,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
   const showTimeInputs = data.timeLogic !== EventTimeLogic.AT_ANY_POINT_IN_TIME;
 
   return (
-    <div className="flex w-[360px] flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         <div className="text-[11px] font-medium text-muted-foreground">
           {t('conditions.types.event.eventLabel')}
@@ -428,5 +428,9 @@ export const eventSchema: ConditionTypeSchema<EventData> = {
   defaultData: () => ({ ...DEFAULTS }),
   Summary: EventSummary,
   Editor: EventEditor,
+  // Wider than the 300px default — the count and time-window rows pack a
+  // logic select + two number inputs + a unit select, which doesn't fit in
+  // 300 without ugly wrapping.
+  editorWidthClassName: 'w-[360px]',
   validate: (condition) => validateEvent(readData(condition)),
 };
