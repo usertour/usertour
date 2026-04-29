@@ -99,7 +99,7 @@ export function ConditionCombobox({
           disabled={disabled}
           aria-expanded={open}
           className={cn(
-            'flex h-7.5 w-full items-center justify-between rounded-lg bg-muted px-3 text-xs text-foreground shadow-sm transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:opacity-50',
+            'flex h-7.5 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-xs text-foreground shadow-sm transition-colors hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-50',
             className,
           )}
         >

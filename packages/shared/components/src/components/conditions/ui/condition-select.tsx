@@ -49,7 +49,7 @@ export function ConditionSelect({
           type="button"
           disabled={disabled}
           className={cn(
-            'inline-flex h-7.5 w-full items-center justify-between gap-2 rounded-lg bg-muted px-3 text-xs shadow-sm outline-none transition-colors hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+            'inline-flex h-7.5 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-xs shadow-sm outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
             className,
           )}
         >
