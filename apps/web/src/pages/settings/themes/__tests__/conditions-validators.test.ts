@@ -18,6 +18,10 @@ import {
   validateUserAttr,
 } from '../../../../../../../packages/shared/components/src/components/conditions/validators';
 import { validateConditions } from '../../../../../../../packages/shared/components/src/components/conditions/validate';
+import {
+  partsToISO,
+  parseISOToParts,
+} from '../../../../../../../packages/shared/components/src/components/conditions/types/time/utils';
 import type { Attribute, Content, RulesCondition, Segment } from '@usertour/types';
 
 // Pure-data tests — these mirror what the editors emit so a bad commit can't
@@ -264,6 +268,42 @@ describe('validateTime', () => {
     expect(validateTime({ endDate: '12/31/2024' } as never)).toEqual({
       key: 'conditions.errors.time.enterStart',
     });
+  });
+});
+
+describe('time partsToISO round-trip', () => {
+  // Bug guard: `new Date('yyyy-MM-dd')` parses as UTC per ECMA, then
+  // setHours writes local hours — in negative timezones this would push the
+  // wall-clock day backward (e.g., user in America/Los_Angeles entering
+  // "2026-04-28 09:30" would persist "2026-04-27T16:30Z"). The fix builds
+  // the Date with the local-time constructor; this test locks the behavior
+  // by checking that a parts → ISO → parts round-trip preserves the user's
+  // wall-clock entry in whatever timezone the test runs.
+  it('preserves wall-clock date and time across ISO round-trip', () => {
+    const original = { date: '2026-04-28', hour: '09', minute: '30' };
+    const iso = partsToISO(original);
+    expect(typeof iso).toBe('string');
+    const parsed = parseISOToParts(iso);
+    expect(parsed.date).toBe('2026-04-28');
+    expect(parsed.hour).toBe('09');
+    expect(parsed.minute).toBe('30');
+  });
+
+  it('round-trips midnight without sliding to the previous day', () => {
+    const original = { date: '2026-04-28', hour: '00', minute: '00' };
+    const iso = partsToISO(original);
+    const parsed = parseISOToParts(iso);
+    expect(parsed.date).toBe('2026-04-28');
+    expect(parsed.hour).toBe('00');
+    expect(parsed.minute).toBe('00');
+  });
+
+  it('returns undefined for empty parts', () => {
+    expect(partsToISO({ date: '', hour: '00', minute: '00' })).toBeUndefined();
+  });
+
+  it('returns undefined for malformed date', () => {
+    expect(partsToISO({ date: 'not-a-date', hour: '00', minute: '00' })).toBeUndefined();
   });
 });
 
