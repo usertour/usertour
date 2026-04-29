@@ -1,8 +1,6 @@
 import { EditIcon } from '@usertour-packages/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
-import { useEffect, useState } from 'react';
-import { BuilderInput } from '../ui';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   value: string;
@@ -11,93 +9,112 @@ interface Props {
   className?: string;
 }
 
-// Click the title (or pencil icon) to open a small popover with a Name input.
-// Enter or blur commits, Esc cancels.
+// Inline-editable title. Idle state shows the text and a pencil; click flips
+// the same slot into an <input> with the current value preselected. Enter
+// or blur commits, Esc discards. Mirrors the Notion / Linear / Figma rename
+// pattern — a popover would feel ceremonial for a single text field.
 export function EditableTitle({ value, onRename, disabled, className }: Props) {
-  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  // Keep the draft in sync with external prop changes while idle. Once the
+  // user starts editing, we own the value until commit/cancel.
   useEffect(() => {
-    if (open) setDraft(value);
-  }, [open, value]);
+    if (!editing) setDraft(value);
+  }, [editing, value]);
+
+  // Autofocus + select-all when entering edit mode so the user can either
+  // overwrite immediately or click to position the caret.
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  const beginEdit = () => {
+    if (disabled) return;
+    setDraft(value);
+    setEditing(true);
+  };
+
+  const cancel = () => {
+    setDraft(value);
+    setEditing(false);
+  };
 
   const commit = async () => {
     const trimmed = draft.trim();
     if (!trimmed || trimmed === value) {
-      setOpen(false);
+      cancel();
       return;
     }
     setSaving(true);
     try {
       await onRename(trimmed);
     } catch {
-      // Toast raised by the rename callback; just close.
+      // onRename surfaces its own error toast; revert the draft so the
+      // input shows the last committed name on next edit.
+      setDraft(value);
     } finally {
       setSaving(false);
-      setOpen(false);
+      setEditing(false);
     }
   };
 
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commit();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancel();
+          }
+        }}
+        disabled={saving}
+        // The HTML `size` attribute auto-sizes the input to N character
+        // widths — universally supported, unlike CSS field-sizing which
+        // only landed in Chrome 123. min(8) keeps tiny names from
+        // collapsing to a sliver, +1 leaves room for the next keystroke.
+        size={Math.max(draft.length + 1, 8)}
+        className={cn(
+          '-mx-1 rounded border border-input bg-background px-1 text-xs font-medium text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40',
+          className,
+        )}
+      />
+    );
+  }
+
   return (
-    <Popover
-      open={open && !disabled}
-      onOpenChange={(next) => {
-        if (disabled) return;
-        setOpen(next);
-      }}
+    <button
+      type="button"
+      onClick={beginEdit}
+      disabled={disabled}
+      className={cn(
+        'group flex min-w-0 items-center gap-1 -mx-1 rounded px-1 text-xs font-medium text-foreground transition-colors',
+        disabled ? 'cursor-default' : 'cursor-pointer hover:bg-muted/40',
+        className,
+      )}
+      title={disabled ? undefined : 'Click to rename'}
     >
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          disabled={disabled}
-          className={cn(
-            'group flex items-center gap-1 -mx-1 rounded px-1 text-xs font-medium text-foreground transition-colors',
-            disabled ? 'cursor-default' : 'cursor-pointer hover:bg-muted/40',
-            className,
-          )}
-          title={disabled ? undefined : 'Click to rename'}
-        >
-          <span className="truncate">{value}</span>
-          {!disabled && (
-            <EditIcon
-              width={12}
-              height={12}
-              className="shrink-0 text-muted-foreground/50 transition-colors group-hover:text-muted-foreground"
-            />
-          )}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="center"
-        sideOffset={8}
-        className="w-72 rounded-[15px] border-0 p-3 shadow-popper"
-      >
-        <div className="grid grid-cols-[60px_1fr] items-center gap-x-3 gap-y-2">
-          <label
-            htmlFor="theme-name-input"
-            className="text-[11px] font-medium text-muted-foreground"
-          >
-            Name
-          </label>
-          <BuilderInput
-            id="theme-name-input"
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                commit();
-              } else if (e.key === 'Escape') {
-                setOpen(false);
-              }
-            }}
-            onBlur={commit}
-            disabled={saving}
-          />
-        </div>
-      </PopoverContent>
-    </Popover>
+      <span className="truncate">{value}</span>
+      {!disabled && (
+        <EditIcon
+          width={12}
+          height={12}
+          className="shrink-0 text-muted-foreground/50 transition-colors group-hover:text-muted-foreground"
+        />
+      )}
+    </button>
   );
 }

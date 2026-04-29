@@ -28,7 +28,13 @@ export function TopBar({
   const { t } = useTranslation();
   return (
     <div className={topBarClass}>
-      <div className="flex items-center gap-2">
+      {/* Title sits next to the back button as a left-aligned breadcrumb
+          ("← Standard Light 2") rather than centered over the canvas.
+          Editor chrome reads as utility, not a stage; an inline editable
+          title also keeps its position stable as the user types instead
+          of jumping horizontally with each keystroke. min-w-0 lets the
+          editable title's truncate take effect when the name is long. */}
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <BuilderIconButton
           variant="depth"
           onClick={onBack}
@@ -36,11 +42,12 @@ export function TopBar({
         >
           <RiArrowLeftSLine className="h-4 w-4" />
         </BuilderIconButton>
-      </div>
-
-      <div className="absolute left-1/2 flex max-w-[40%] -translate-x-1/2 items-center gap-2">
-        <EditableTitle value={theme.name} onRename={onRename} disabled={theme.isSystem} />
-        {theme.isSystem && <span className={pillClass}>{t('themeBuilder.chrome.systemPill')}</span>}
+        <div className="flex min-w-0 items-center gap-2">
+          <EditableTitle value={theme.name} onRename={onRename} disabled={theme.isSystem} />
+          {theme.isSystem && (
+            <span className={pillClass}>{t('themeBuilder.chrome.systemPill')}</span>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
