@@ -62,9 +62,12 @@ export function ConditionSelect({
       <ConditionDropdownMenuContent
         align="start"
         sideOffset={4}
-        // Match the trigger width so the menu doesn't reflow weirdly when an
-        // option is wider than the trigger.
-        className="min-w-[var(--radix-dropdown-menu-trigger-width)]"
+        // Anchor the menu to at least the trigger's width via Radix Popper's
+        // generic anchor-width variable. (`--radix-dropdown-menu-trigger-width`
+        // looks plausible but isn't a real variable — only Radix Select
+        // exposes a `*-trigger-width` token; popper-based primitives use
+        // `--radix-popper-anchor-width` instead.)
+        className="min-w-[var(--radix-popper-anchor-width)]"
       >
         {options.map((opt) => (
           <ConditionDropdownMenuItem

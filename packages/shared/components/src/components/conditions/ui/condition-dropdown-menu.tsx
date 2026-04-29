@@ -20,7 +20,12 @@ export const ConditionDropdownMenuContent = forwardRef<
   return (
     <DropdownMenuContent
       ref={ref}
-      className={cn('min-w-[10rem] rounded-lg p-1 text-xs', className)}
+      // No baseline min-width — callers (e.g. ConditionSelect) anchor the
+      // menu to its trigger width via --radix-popper-anchor-width. A blanket
+      // min-w-[10rem] inflates narrow pickers (e.g. the 100px time-unit
+      // select inside the event editor) so the menu spills past its
+      // surrounding popover.
+      className={cn('rounded-lg p-1 text-xs', className)}
       style={{ zIndex: dropdown }}
       {...props}
     />
