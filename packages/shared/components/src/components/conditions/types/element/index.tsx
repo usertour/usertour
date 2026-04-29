@@ -1,7 +1,7 @@
 import { ElementIcon } from '@usertour-packages/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
-import { useConditionsT } from '../../conditions-context';
+import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
 import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
@@ -47,6 +47,7 @@ const OPERATOR_KEYS = [
 
 function ElementSummary({ condition }: { condition: RulesCondition }) {
   const t = useConditionsT();
+  const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const operator = OPERATOR_KEYS.find((o) => o.value === data.logic) ?? OPERATOR_KEYS[0];
   const selected = isElementSelected(data.elementData);
@@ -54,7 +55,7 @@ function ElementSummary({ condition }: { condition: RulesCondition }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <ElementIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 truncate">
+      <span className={summaryTextClass}>
         <span>{t('conditions.types.element.prefix')}</span>{' '}
         {selected ? (
           <span className="font-semibold">

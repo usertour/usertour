@@ -9,7 +9,11 @@ import {
 } from '@usertour/types';
 import { useMemo } from 'react';
 import { ConditionList } from '../../condition-list';
-import { useConditionsContext, useConditionsT } from '../../conditions-context';
+import {
+  useConditionsContext,
+  useConditionsT,
+  useSummaryTextClass,
+} from '../../conditions-context';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateEvent } from '../../validators';
@@ -93,6 +97,7 @@ const findEvent = (events: Event[] | undefined, id: string | undefined): Event |
 
 function EventSummary({ condition }: { condition: RulesCondition }) {
   const t = useConditionsT();
+  const summaryTextClass = useSummaryTextClass();
   const { events } = useConditionsContext();
   const data = readData(condition);
   const event = findEvent(events, data.eventId);
@@ -139,7 +144,7 @@ function EventSummary({ condition }: { condition: RulesCondition }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <EventTrackerIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 truncate">
+      <span className={summaryTextClass}>
         <span className="font-semibold">{eventName}</span>{' '}
         <span className="text-muted-foreground">{countLogicLabel}</span>{' '}
         <span className="font-semibold">{count}</span>

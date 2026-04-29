@@ -52,6 +52,16 @@ export function useConditionsT(): ConditionsTranslator {
   return ctx?.t ?? fallbackTranslate;
 }
 
+// Class for the text portion of a chip Summary. Horizontal mode keeps a
+// single-line truncate to fit the wrap-flow rhythm; vertical mode wraps
+// long content (break-all) so the user sees the full condition without
+// hovering — mirrors v1's `text-wrap break-all` chip in the autostart
+// rules vertical layout.
+export function useSummaryTextClass(): string {
+  const ctx = useContext(ConditionsContext);
+  return ctx?.isHorizontal ? 'min-w-0 truncate' : 'min-w-0 whitespace-normal break-all';
+}
+
 // z-index helper. Matches v1 useRulesZIndex offsets so popovers / dropdowns
 // stack consistently with the rest of the surrounding chrome.
 export function useConditionsZIndex() {

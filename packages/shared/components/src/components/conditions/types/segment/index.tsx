@@ -1,7 +1,11 @@
 import { SegmentIcon } from '@usertour-packages/icons';
 import type { RulesCondition, Segment } from '@usertour/types';
 import { useMemo } from 'react';
-import { useConditionsContext, useConditionsT } from '../../conditions-context';
+import {
+  useConditionsContext,
+  useConditionsT,
+  useSummaryTextClass,
+} from '../../conditions-context';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateSegment } from '../../validators';
@@ -35,6 +39,7 @@ const labelForBizType = (segment: Segment | undefined, t: ReturnType<typeof useC
 
 function SegmentSummary({ condition }: { condition: RulesCondition }) {
   const t = useConditionsT();
+  const summaryTextClass = useSummaryTextClass();
   const { segments } = useConditionsContext();
   const data = readData(condition);
   const segment = findSegment(segments, data.segmentId);
@@ -53,7 +58,7 @@ function SegmentSummary({ condition }: { condition: RulesCondition }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <SegmentIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 truncate">
+      <span className={summaryTextClass}>
         <span>{labelForBizType(segment, t)}</span>{' '}
         <span className="text-muted-foreground">{operatorLabel}</span>{' '}
         <span className="font-semibold">{segment.name}</span>

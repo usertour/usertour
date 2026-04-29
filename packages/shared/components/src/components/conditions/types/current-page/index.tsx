@@ -1,6 +1,6 @@
 import { PagesIcon } from '@usertour-packages/icons';
 import type { RulesCondition } from '@usertour/types';
-import { useConditionsT } from '../../conditions-context';
+import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
 import { ListInput } from '../../primitives/list-input';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateCurrentPage } from '../../validators';
@@ -25,6 +25,7 @@ const cleanList = (values: string[] | undefined): string[] =>
 
 function CurrentPageSummary({ condition }: { condition: RulesCondition }) {
   const t = useConditionsT();
+  const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const includes = cleanList(data.includes);
   const excludes = cleanList(data.excludes);
@@ -41,7 +42,7 @@ function CurrentPageSummary({ condition }: { condition: RulesCondition }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <PagesIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 truncate">
+      <span className={summaryTextClass}>
         <span>{t('conditions.types.currentPage.prefix')}</span>
         {includes.length > 0 && (
           <>

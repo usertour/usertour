@@ -1,6 +1,6 @@
 import { TimeIcon } from '@usertour-packages/icons';
 import type { RulesCondition, TimeConditionData } from '@usertour/types';
-import { useConditionsT } from '../../conditions-context';
+import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { ConditionInput } from '../../ui/condition-input';
 import { validateTime } from '../../validators';
@@ -15,6 +15,7 @@ import { type ParsedTime, formatPretty, readParts, writeData } from './utils';
 
 function TimeSummary({ condition }: { condition: RulesCondition }) {
   const t = useConditionsT();
+  const summaryTextClass = useSummaryTextClass();
   const { start, end } = readParts(condition.data as TimeConditionData | undefined);
 
   if (!start.date && !end.date) {
@@ -30,7 +31,7 @@ function TimeSummary({ condition }: { condition: RulesCondition }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <TimeIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 truncate">
+      <span className={summaryTextClass}>
         <span className="text-muted-foreground">
           {between ? t('conditions.types.time.between') : t('conditions.types.time.after')}
         </span>{' '}
