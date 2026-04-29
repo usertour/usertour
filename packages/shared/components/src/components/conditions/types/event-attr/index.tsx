@@ -106,18 +106,28 @@ function EventAttrEditor({ condition, onChange }: EditorProps) {
   const { attributes } = useConditionsContext();
   const data = readData(condition);
 
-  // Restrict the picker to attributes that are bound to this specific event
-  // (mirrors v1 behavior — event-attribute conditions live inside an event's
-  // `where` group and so know their parent eventId).
-  const { attributeOnEvents } = useListAttributeOnEventsQuery(data.eventId);
+  // Restrict the picker to attributes bound to this event. Until the
+  // attributes-on-event query returns, surface an empty list rather than
+  // falling back to every Event-bizType attribute — otherwise the user
+  // could pick an attrId from a different event during the loading window
+  // and the runtime would then filter on a field that doesn't exist on
+  // this event, silently dropping the match. Mirrors v1 areEventAttributesReady.
+  const { attributeOnEvents, loading } = useListAttributeOnEventsQuery(data.eventId);
   const eventAttributes = useMemo<Attribute[]>(() => {
     if (!attributes) return [];
-    if (!attributeOnEvents) {
+    // No parent event yet — surface every Event-bizType attribute (this
+    // case shouldn't normally happen because EventWhereSection injects
+    // the parent eventId on add).
+    if (!data.eventId) {
       return attributes.filter((a) => a.bizType === AttributeBizTypes.Event);
     }
+    // Query in flight or hasn't returned — wait. Empty `items` makes the
+    // combobox show its emptyText placeholder instead of letting the user
+    // pick an unrelated attribute.
+    if (loading || !Array.isArray(attributeOnEvents)) return [];
     const ids = new Set(attributeOnEvents.map((aoe) => aoe.attributeId));
     return attributes.filter((a) => ids.has(a.id) && a.bizType === AttributeBizTypes.Event);
-  }, [attributes, attributeOnEvents]);
+  }, [attributes, attributeOnEvents, data.eventId, loading]);
 
   const attribute = eventAttributes.find((a) => a.id === data.attrId);
 
