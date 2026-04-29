@@ -33,7 +33,6 @@ export interface SegmentShape {
 
 export interface ContentShape {
   contentId?: string;
-  type?: string;
   logic?: string;
 }
 
@@ -62,9 +61,11 @@ export interface EventShape {
   windowValue2?: number;
 }
 
-export interface EventAttrShape extends UserAttrShape {
-  eventId?: string;
-}
+// eventId is no longer persisted on event-attr's data — it flows down via
+// EventScopeContext from the parent event editor. Event-attrs are
+// structurally only valid inside an event's where section, so the parent
+// scope is always derivable from the React tree at edit time.
+export type EventAttrShape = UserAttrShape;
 
 // ---------- Helpers ----------
 

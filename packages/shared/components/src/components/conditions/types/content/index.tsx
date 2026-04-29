@@ -21,7 +21,6 @@ import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/conditio
 
 export interface ContentData {
   contentId?: string;
-  type?: string;
   logic?: string;
 }
 
@@ -145,8 +144,7 @@ function ContentEditor({ condition, onChange }: EditorProps) {
   );
 
   const handleContentChange = (contentId: string) => {
-    const content = findContent(contents, contentId);
-    onChange(writeData(condition, { contentId, type: content?.type ?? data.type ?? 'flow' }));
+    onChange(writeData(condition, { contentId }));
   };
 
   return (
@@ -175,7 +173,7 @@ export const contentSchema: ConditionTypeSchema<ContentData> = {
   type: 'content',
   labelKey: 'conditions.types.content.label',
   Icon: ContentIcon,
-  defaultData: () => ({ logic: 'seen', type: 'flow' }),
+  defaultData: () => ({ logic: 'seen' }),
   Summary: ContentSummary,
   Editor: ContentEditor,
   validate: (condition, ctx) => validateContent(readData(condition), ctx.contents),
