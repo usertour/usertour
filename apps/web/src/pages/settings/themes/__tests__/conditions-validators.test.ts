@@ -175,6 +175,11 @@ describe('validateContent', () => {
 });
 
 describe('validateElement / validateTextFill', () => {
+  // Validator semantics mirror v1 isValidSelector + runtime finderV2:
+  // - auto needs the captured `selectors` tree (screenshot alone isn't queryable)
+  // - manual needs `customSelector` (content alone is just label text — runtime
+  //   ignores it without a CSS anchor)
+
   it('flags element with no selection', () => {
     expect(validateElement({})).toEqual({
       key: 'conditions.errors.element.selectElement',
@@ -187,21 +192,41 @@ describe('validateElement / validateTextFill', () => {
     ).toEqual({ key: 'conditions.errors.element.selectElement' });
   });
 
-  it('passes when auto has a screenshot', () => {
+  it('flags auto with only screenshot (selectors missing)', () => {
+    // Runtime finderV2 needs `selectors` to call finderX; a thumbnail with
+    // no selectors tree is dead-on-arrival.
+    expect(validateElement({ elementData: { type: 'auto', screenshot: 'data:...' } })).toEqual({
+      key: 'conditions.errors.element.selectElement',
+    });
+  });
+
+  it('passes when auto has selectors', () => {
     expect(
-      validateElement({ elementData: { type: 'auto', screenshot: 'data:...' } }),
+      validateElement({
+        elementData: { type: 'auto', selectors: { tag: 'button' } },
+      }),
     ).toBeUndefined();
   });
 
-  it('passes when manual has content or customSelector', () => {
-    expect(validateElement({ elementData: { type: 'manual', content: 'Submit' } })).toBeUndefined();
+  it('flags manual with only content (no customSelector)', () => {
+    // Runtime finderV2 manual branch is gated on customSelector — content
+    // alone produces a never-firing condition.
+    expect(validateElement({ elementData: { type: 'manual', content: 'Submit' } })).toEqual({
+      key: 'conditions.errors.element.selectElement',
+    });
+  });
+
+  it('passes when manual has customSelector', () => {
     expect(
       validateElement({ elementData: { type: 'manual', customSelector: '.btn' } }),
     ).toBeUndefined();
   });
 
-  it('text-fill mirrors element selection', () => {
+  it('text-fill mirrors element selection rules', () => {
     expect(validateTextFill({})).toEqual({
+      key: 'conditions.errors.element.selectElement',
+    });
+    expect(validateTextFill({ elementData: { type: 'manual', content: 'x' } })).toEqual({
       key: 'conditions.errors.element.selectElement',
     });
     expect(

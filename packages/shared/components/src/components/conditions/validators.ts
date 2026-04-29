@@ -43,6 +43,7 @@ export interface ElementShape {
     content?: string;
     customSelector?: string;
     screenshot?: string;
+    selectors?: unknown;
   };
   logic?: string;
 }
@@ -69,10 +70,14 @@ export interface EventAttrShape extends UserAttrShape {
 
 const VALUELESS_USER_ATTR_OPS = new Set(['any', 'empty', 'true', 'false']);
 
+// Mirrors v1 helpers/error.ts `isValidSelector` and the runtime contract in
+// shared/finder finderV2 — auto needs the captured selectors tree to query
+// against, manual needs an actual CSS customSelector. content alone is just
+// label text and the runtime ignores it without a selector to anchor on.
 const isElementSelected = (data: ElementShape['elementData']): boolean => {
   if (!data) return false;
-  if (data.type === 'auto') return Boolean(data.screenshot);
-  if (data.type === 'manual') return Boolean(data.content || data.customSelector);
+  if (data.type === 'auto') return Boolean(data.selectors);
+  if (data.type === 'manual') return Boolean(data.customSelector);
   return false;
 };
 

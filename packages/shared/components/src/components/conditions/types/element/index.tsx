@@ -29,8 +29,8 @@ const writeData = (condition: RulesCondition, patch: Partial<ElementData>): Rule
 
 const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean => {
   if (!data) return false;
-  if (data.type === 'auto') return Boolean(data.screenshot);
-  if (data.type === 'manual') return Boolean(data.content || data.customSelector);
+  if (data.type === 'auto') return Boolean(data.selectors);
+  if (data.type === 'manual') return Boolean(data.customSelector);
   return false;
 };
 
