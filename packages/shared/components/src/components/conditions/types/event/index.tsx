@@ -14,10 +14,10 @@ import {
   useConditionsT,
   useSummaryTextClass,
 } from '../../conditions-context';
-import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateEvent } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
+import { ConditionInlineSelect } from '../../ui/condition-inline-select';
 import { ConditionInput } from '../../ui/condition-input';
 import { EventScopeContext } from './event-scope-context';
 
@@ -224,11 +224,10 @@ function EventEditor({ condition, onChange }: EditorProps) {
       {data.eventId && (
         <>
           <div className="flex flex-wrap items-center gap-2">
-            <OperatorSelect
+            <ConditionInlineSelect
               value={data.countLogic}
               onChange={(v) => onChange(writeData(condition, { countLogic: v as EventCountLogic }))}
               options={countLogicOptions}
-              className="w-[120px]"
             />
             <ConditionInput
               type="number"
@@ -271,11 +270,10 @@ function EventEditor({ condition, onChange }: EditorProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <OperatorSelect
+            <ConditionInlineSelect
               value={data.timeLogic}
               onChange={(v) => onChange(writeData(condition, { timeLogic: v as EventTimeLogic }))}
               options={timeLogicOptions}
-              className="w-[140px]"
             />
             {showTimeInputs && (
               <>
@@ -312,11 +310,10 @@ function EventEditor({ condition, onChange }: EditorProps) {
                     />
                   </>
                 )}
-                <OperatorSelect
+                <ConditionInlineSelect
                   value={data.timeUnit}
                   onChange={(v) => onChange(writeData(condition, { timeUnit: v as EventTimeUnit }))}
                   options={timeUnitOptions}
-                  className="w-[100px]"
                 />
                 {data.timeLogic === EventTimeLogic.MORE_THAN && (
                   <span className="text-[11px] text-muted-foreground">
@@ -327,7 +324,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
             )}
           </div>
 
-          <OperatorSelect
+          <ConditionInlineSelect
             value={data.scope}
             onChange={(v) => onChange(writeData(condition, { scope: v as EventScope }))}
             options={scopeOptions}

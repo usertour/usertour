@@ -2,7 +2,7 @@ import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { ContentPriority } from '@usertour/types';
 import { useMemo } from 'react';
 import type { ConditionsTranslator } from '../conditions-context';
-import { ConditionSelect } from '../ui/condition-select';
+import { ConditionInlineSelect } from '../ui/condition-inline-select';
 import { resolveTranslator } from './translator';
 
 interface Props {
@@ -36,12 +36,11 @@ export function ConditionPriority({
 
   return (
     <div className="flex items-center gap-2">
-      <ConditionSelect
+      <ConditionInlineSelect
         value={defaultValue}
         onChange={(v) => onChange(v as ContentPriority)}
         options={options}
         disabled={disabled}
-        className="w-[180px]"
       />
       <QuestionTooltip>{t('conditions.standalone.priority.tooltip')}</QuestionTooltip>
     </div>

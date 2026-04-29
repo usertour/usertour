@@ -1,5 +1,9 @@
 export { ConditionInput } from './condition-input';
 export { ConditionSelect, type ConditionSelectOption } from './condition-select';
+export {
+  ConditionInlineSelect,
+  type ConditionInlineSelectOption,
+} from './condition-inline-select';
 export { ConditionButton } from './condition-button';
 export { ConditionIconButton } from './condition-icon-button';
 export {

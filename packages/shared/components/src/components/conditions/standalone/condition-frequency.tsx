@@ -11,7 +11,7 @@ import {
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import type { ConditionsTranslator } from '../conditions-context';
 import { ConditionInput } from '../ui/condition-input';
-import { ConditionSelect } from '../ui/condition-select';
+import { ConditionInlineSelect } from '../ui/condition-inline-select';
 import { resolveTranslator } from './translator';
 import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '../../error-tooltip';
 
@@ -87,12 +87,11 @@ export function ConditionFrequency({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <ConditionSelect
+        <ConditionInlineSelect
           value={data.frequency}
           onChange={(v) => update({ frequency: v as Frequency })}
           options={frequencyOptions}
           disabled={disabled}
-          className="w-[200px]"
         />
         <QuestionTooltip>
           {t('conditions.standalone.frequency.unitsTooltip', { contentType })}
@@ -214,12 +213,11 @@ function FrequencyEvery({
           disabled={disabled}
           className="w-16"
         />
-        <ConditionSelect
+        <ConditionInlineSelect
           value={value.unit}
           onChange={(v) => update({ unit: v as FrequencyUnits })}
           options={unitOptions}
           disabled={disabled}
-          className="w-[110px]"
         />
         <span className="text-xs">{t('conditions.standalone.frequency.apart')}</span>
         <QuestionTooltip>
@@ -244,12 +242,11 @@ function FrequencyEvery({
         disabled={disabled}
         className="w-16"
       />
-      <ConditionSelect
+      <ConditionInlineSelect
         value={value.unit}
         onChange={(v) => update({ unit: v as FrequencyUnits })}
         options={unitOptions}
         disabled={disabled}
-        className="w-[110px]"
       />
       <QuestionTooltip>
         {t('conditions.standalone.frequency.unlimitedTooltip', {
@@ -289,12 +286,11 @@ function FrequencyAtLeast({
         disabled={disabled}
         className="w-16"
       />
-      <ConditionSelect
+      <ConditionInlineSelect
         value={value.unit}
         onChange={(v) => onChange({ ...value, unit: v as FrequencyUnits })}
         options={unitOptions}
         disabled={disabled}
-        className="w-[110px]"
       />
       <span className="text-xs">
         {t('conditions.standalone.frequency.afterAny', { contentType })}
