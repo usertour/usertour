@@ -219,16 +219,20 @@ export function ConditionRow({
   // useEffect above when draft = condition).
   const visibleCondition = open ? draft : condition;
 
-  // ErrorTooltipAnchor uses Radix's Slot to forward a ref onto its child.
-  // The chip's outer div is the natural anchor target — putting the anchor
-  // around the function-component <ConditionPopover> instead would trigger
-  // "Function components cannot be given refs" because the Popover root
-  // doesn't render a DOM node.
+  // Nest the editor Popover INSIDE the error Popover (mirrors v1
+  // RulesUserAttribute: <RulesError><RulesErrorAnchor><RulesPopover>...).
+  // Both popovers come from the same Radix Popover module and share a
+  // React context — having ErrorTooltip outside means ConditionPopover
+  // gets to be the nearest provider for ConditionPopoverTrigger /
+  // ConditionPopoverContent, while ErrorTooltipAnchor stays bound to the
+  // outer ErrorTooltip. Putting them the other way round bound the editor
+  // trigger to the error popover and clicking the chip wouldn't open
+  // anything.
   return (
-    <ConditionPopover open={open} onOpenChange={handleOpenChange}>
-      <ErrorTooltip open={showError}>
-        <ErrorTooltipAnchor asChild>
-          <div className={cn(CHIP_OUTER, errorKey ? CHIP_INVALID : '', widthClass)}>
+    <ErrorTooltip open={showError}>
+      <ErrorTooltipAnchor asChild>
+        <div className={cn(CHIP_OUTER, errorKey ? CHIP_INVALID : '', widthClass)}>
+          <ConditionPopover open={open} onOpenChange={handleOpenChange}>
             <ConditionPopoverTrigger asChild>
               <button
                 type="button"
@@ -241,33 +245,32 @@ export function ConditionRow({
                 <Summary condition={visibleCondition} />
               </button>
             </ConditionPopoverTrigger>
-            {!disabled && (
-              <button
-                type="button"
-                onClick={onRemove}
-                aria-label="Remove condition"
-                className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none group-hover/condition:text-muted-foreground"
-              >
-                <RiCloseLine className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        </ErrorTooltipAnchor>
-        {errorKey && (
-          <ErrorTooltipContent zIndex={zIndex.error} side="right" sideOffset={8}>
-            {t(errorKey)}
-          </ErrorTooltipContent>
-        )}
-      </ErrorTooltip>
-
-      <ConditionPopoverContent align="start" sideOffset={6} className="w-[300px]">
-        <ConditionEditor
-          schema={schema}
-          condition={draft}
-          onChange={setDraft}
-          onClose={() => handleOpenChange(false)}
-        />
-      </ConditionPopoverContent>
-    </ConditionPopover>
+            <ConditionPopoverContent align="start" sideOffset={6} className="w-[300px]">
+              <ConditionEditor
+                schema={schema}
+                condition={draft}
+                onChange={setDraft}
+                onClose={() => handleOpenChange(false)}
+              />
+            </ConditionPopoverContent>
+          </ConditionPopover>
+          {!disabled && (
+            <button
+              type="button"
+              onClick={onRemove}
+              aria-label="Remove condition"
+              className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none group-hover/condition:text-muted-foreground"
+            >
+              <RiCloseLine className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </ErrorTooltipAnchor>
+      {errorKey && (
+        <ErrorTooltipContent zIndex={zIndex.error} side="right" sideOffset={8}>
+          {t(errorKey)}
+        </ErrorTooltipContent>
+      )}
+    </ErrorTooltip>
   );
 }
