@@ -17,6 +17,7 @@ import {
   validateTime,
   validateUserAttr,
 } from '../../../../../../../packages/shared/components/src/components/conditions/validators';
+import { validateConditions } from '../../../../../../../packages/shared/components/src/components/conditions/validate';
 import type { Attribute, Content, RulesCondition, Segment } from '@usertour/types';
 
 // Pure-data tests — these mirror what the editors emit so a bad commit can't
@@ -307,6 +308,85 @@ describe('validateEventAttr', () => {
     expect(
       validateEventAttr({ attrId: 'attr-event-1', logic: 'is', value: 'x' }, [eventAttribute()]),
     ).toBeUndefined();
+  });
+});
+
+describe('validateConditions (recursive walker)', () => {
+  // The walker has to recurse into both `group.conditions` and
+  // `event.data.whereConditions` — the latter was a real gap that let
+  // invalid where children sneak past v1's hasError parity.
+
+  it('returns no failures for a fully valid list', () => {
+    const conditions: RulesCondition[] = [
+      {
+        id: 'c1',
+        type: 'current-page',
+        data: { includes: ['/dashboard'] },
+      } as RulesCondition,
+    ];
+    expect(validateConditions(conditions, {})).toEqual([]);
+  });
+
+  it('recurses into group.conditions', () => {
+    const conditions: RulesCondition[] = [
+      {
+        id: 'g1',
+        type: 'group',
+        data: {},
+        conditions: [
+          { id: 'inner', type: 'current-page', data: { includes: [] } } as RulesCondition,
+        ],
+      } as RulesCondition,
+    ];
+    expect(validateConditions(conditions, {})).toEqual([
+      { conditionId: 'inner', error: { key: 'conditions.errors.currentPage.enterPattern' } },
+    ]);
+  });
+
+  it('recurses into event.data.whereConditions', () => {
+    const conditions: RulesCondition[] = [
+      {
+        id: 'evt-1',
+        type: 'event',
+        data: {
+          eventId: 'e1',
+          count: 1,
+          countLogic: 'atLeast',
+          timeLogic: 'atAnyPointInTime',
+          whereConditions: [{ id: 'wattr', type: 'event-attr', data: {} } as RulesCondition],
+        },
+      } as RulesCondition,
+    ];
+    const failures = validateConditions(conditions, {});
+    expect(failures).toEqual([
+      { conditionId: 'wattr', error: { key: 'conditions.errors.eventAttr.selectAttribute' } },
+    ]);
+  });
+
+  it('recurses into where → group → event-attr (deep)', () => {
+    const conditions: RulesCondition[] = [
+      {
+        id: 'evt-1',
+        type: 'event',
+        data: {
+          eventId: 'e1',
+          count: 1,
+          countLogic: 'atLeast',
+          timeLogic: 'atAnyPointInTime',
+          whereConditions: [
+            {
+              id: 'g',
+              type: 'group',
+              data: {},
+              conditions: [{ id: 'deep', type: 'event-attr', data: {} } as RulesCondition],
+            } as RulesCondition,
+          ],
+        },
+      } as RulesCondition,
+    ];
+    expect(validateConditions(conditions, {})).toEqual([
+      { conditionId: 'deep', error: { key: 'conditions.errors.eventAttr.selectAttribute' } },
+    ]);
   });
 });
 
