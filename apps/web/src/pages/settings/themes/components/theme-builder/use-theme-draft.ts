@@ -10,6 +10,7 @@ import {
   type ThemeVariation,
   defaultSettings,
 } from '@usertour/types';
+import isEqual from 'fast-deep-equal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cloneDeep, getPath, setPath } from './draft-util';
 
@@ -331,11 +332,15 @@ export function useThemeDraft({
     setBaseline({ base: cloneDeep(base), variations: cloneDeep(variations) });
   }, [base, variations]);
 
+  // Deep equality (order-insensitive) instead of JSON.stringify so that
+  // server-side key reordering doesn't read as a dirty change. Variations
+  // are stored as JSONB, which Postgres normalizes alphabetically — keys
+  // we constructed in insertion order come back rearranged, so the same
+  // data round-trips with a different stringification. JSON.stringify
+  // would flag that as dirty even though the values are identical;
+  // fast-deep-equal compares the values themselves and reports clean.
   const hasUnsavedChanges = useMemo(() => {
-    return (
-      JSON.stringify(base) !== JSON.stringify(baseline.base) ||
-      JSON.stringify(variations) !== JSON.stringify(baseline.variations)
-    );
+    return !isEqual(base, baseline.base) || !isEqual(variations, baseline.variations);
   }, [base, variations, baseline]);
 
   return {
