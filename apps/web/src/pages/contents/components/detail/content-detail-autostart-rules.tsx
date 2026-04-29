@@ -23,7 +23,7 @@ import {
   RulesCondition,
   autoStartRulesSetting,
 } from '@usertour/types';
-import { useCallback, useId, useState, useEffect } from 'react';
+import { useCallback, useId, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export enum ContentDetailAutoStartRulesType {
@@ -71,6 +71,11 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
 
   const [enabled, setEnabled] = useState(defaultEnabled);
   const [conditions, setConditions] = useState<RulesCondition[]>(deepClone(defaultConditions));
+  // The latest validated conditions. Sibling settings (wait / frequency /
+  // priority / enabled toggle) call onDataChange with this snapshot rather
+  // than the displayed `conditions` so an in-flight invalid edit can't
+  // piggy-back into the persisted payload via an unrelated control.
+  const committedConditionsRef = useRef<RulesCondition[]>(deepClone(defaultConditions));
   const effectiveEnabled = showEnabledSwitch ? enabled : true;
   const { t } = useTranslation();
 
@@ -80,7 +85,9 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
   }, [defaultEnabled]);
 
   useEffect(() => {
-    setConditions(deepClone(defaultConditions));
+    const cloned = deepClone(defaultConditions);
+    setConditions(cloned);
+    committedConditionsRef.current = cloned;
   }, [defaultConditions]);
 
   const environmentId = content.environmentId ?? '';
@@ -98,9 +105,9 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
 
   const updateSettings = useCallback(
     (updates: Partial<autoStartRulesSetting>) => {
-      onDataChange(effectiveEnabled, conditions, { ...setting, ...updates });
+      onDataChange(effectiveEnabled, committedConditionsRef.current, { ...setting, ...updates });
     },
-    [effectiveEnabled, conditions, setting, onDataChange],
+    [effectiveEnabled, setting, onDataChange],
   );
 
   const handleConditionsChange = useCallback(
@@ -115,27 +122,21 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
         contents,
         events: eventList,
       });
-      if (failures.length > 0 || conditionsIsSame(conds, conditions)) return;
-      onDataChange(effectiveEnabled, deepClone(conds), setting);
+      if (failures.length > 0) return;
+      if (conditionsIsSame(conds, committedConditionsRef.current)) return;
+      const cloned = deepClone(conds);
+      committedConditionsRef.current = cloned;
+      onDataChange(effectiveEnabled, cloned, setting);
     },
-    [
-      attributeList,
-      conditions,
-      contents,
-      effectiveEnabled,
-      eventList,
-      onDataChange,
-      segmentList,
-      setting,
-    ],
+    [attributeList, contents, effectiveEnabled, eventList, onDataChange, segmentList, setting],
   );
 
   const handleEnabledChange = useCallback(
     (checked: boolean) => {
       setEnabled(checked);
-      onDataChange(checked, conditions, setting);
+      onDataChange(checked, committedConditionsRef.current, setting);
     },
-    [conditions, setting, onDataChange],
+    [setting, onDataChange],
   );
 
   if (!environmentId) return null;
