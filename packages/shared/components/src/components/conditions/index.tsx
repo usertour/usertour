@@ -2,6 +2,7 @@ import type { Attribute, Content, Event, RulesCondition, Segment } from '@userto
 import { useMemo } from 'react';
 import { ConditionList } from './condition-list';
 import { ConditionsProvider, type ConditionsTranslator } from './conditions-context';
+import { DEFAULT_CONDITION_TYPES } from './registry';
 
 interface ConditionsProps {
   // Controlled list. The new component does not maintain a default-only
@@ -44,7 +45,10 @@ export function Conditions({
   onChange,
   isHorizontal = false,
   isShowIf = true,
-  filterItems = [],
+  // Default mirrors v1 `defaultRulesItems` so consumers that don't pass
+  // filterItems get the same dropdown set v1 produced — task-is-clicked
+  // stays hidden unless explicitly opted in.
+  filterItems = DEFAULT_CONDITION_TYPES,
   attributes,
   segments,
   contents,

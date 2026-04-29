@@ -1,5 +1,6 @@
 export { Rules } from './components/rules';
 export { Conditions } from './components/conditions';
+export { DEFAULT_CONDITION_TYPES } from './components/conditions/registry';
 export {
   ConditionFrequency,
   ConditionIfCompleted,

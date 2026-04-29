@@ -37,13 +37,32 @@ const HIDDEN_FROM_DROPDOWN = new Set(['event-attr']);
 
 CONDITION_SCHEMAS.push(eventAttrSchema as AnySchema);
 
+// Default set of types the dropdown surfaces when a consumer doesn't pass
+// `filterItems`. Mirrors v1 `defaultRulesItems` (rules/index.tsx) exactly so
+// callers like ContentDetailAutoStartRules — which never specified
+// filterItems — keep their original list and don't get a stray
+// task-is-clicked option that v1 hid.
+export const DEFAULT_CONDITION_TYPES: string[] = [
+  'user-attr',
+  'current-page',
+  'event',
+  'segment',
+  'content',
+  'element',
+  'text-input',
+  'text-fill',
+  'time',
+  'group',
+];
+
 export function getConditionSchema(type: string): AnySchema | undefined {
   return CONDITION_SCHEMAS.find((s) => s.type === type);
 }
 
-// Filter the schemas exposed by the add-condition dropdown. When `filterItems`
-// is empty, all registered schemas (minus internal ones) are available;
-// otherwise only the listed types show up.
+// Filter the schemas exposed by the add-condition dropdown. An empty / missing
+// filter means "show every registered, non-hidden schema" — which is rarely
+// what a consumer wants; the Conditions component normalizes a missing prop to
+// DEFAULT_CONDITION_TYPES before reaching here.
 export function listAvailableSchemas(filterItems: string[]): AnySchema[] {
   if (!filterItems || filterItems.length === 0) {
     return CONDITION_SCHEMAS.filter((s) => !HIDDEN_FROM_DROPDOWN.has(s.type));
