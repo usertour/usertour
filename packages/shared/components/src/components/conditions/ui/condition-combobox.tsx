@@ -108,7 +108,11 @@ export function ConditionCombobox({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[260px] rounded-lg p-0 text-xs"
+        // Match the trigger width via the Radix popper variable instead of a
+        // fixed 260px — when the trigger lives in a wider editor popover
+        // (e.g. event chip's 360px panel) a hard-coded 260px reads as a
+        // visible width mismatch with the button right above it.
+        className="w-[var(--radix-popper-anchor-width)] rounded-lg p-0 text-xs"
         align="start"
         sideOffset={6}
         style={{ zIndex: popover }}
