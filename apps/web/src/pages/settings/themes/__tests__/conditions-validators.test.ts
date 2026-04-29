@@ -375,6 +375,56 @@ describe('validateEvent', () => {
       }),
     ).toBeUndefined();
   });
+
+  // Backend / imported JSON can land with explicit nulls instead of
+  // undefined. Runtime evaluator coerces null counts to 0 (`count ?? 0`),
+  // which would turn AT_LEAST 0 into a match-all condition. v1
+  // getEventError treated null and undefined the same; v2 must too.
+  it('flags null count', () => {
+    expect(
+      validateEvent({
+        eventId: 'evt-1',
+        count: null as unknown as number,
+      }),
+    ).toEqual({ key: 'conditions.errors.event.enterCount' });
+  });
+
+  it('flags BETWEEN count2 = null', () => {
+    expect(
+      validateEvent({
+        eventId: 'evt-1',
+        count: 1,
+        count2: null as unknown as number,
+        countLogic: EventCountLogic.BETWEEN,
+        timeLogic: EventTimeLogic.AT_ANY_POINT_IN_TIME,
+      }),
+    ).toEqual({ key: 'conditions.errors.event.enterSecondCount' });
+  });
+
+  it('flags windowValue = null with non-at-any-point time logic', () => {
+    expect(
+      validateEvent({
+        eventId: 'evt-1',
+        count: 1,
+        countLogic: EventCountLogic.AT_LEAST,
+        timeLogic: EventTimeLogic.IN_THE_LAST,
+        windowValue: null as unknown as number,
+      }),
+    ).toEqual({ key: 'conditions.errors.event.enterTimeWindow' });
+  });
+
+  it('flags BETWEEN windowValue2 = null', () => {
+    expect(
+      validateEvent({
+        eventId: 'evt-1',
+        count: 1,
+        countLogic: EventCountLogic.AT_LEAST,
+        timeLogic: EventTimeLogic.BETWEEN,
+        windowValue: 1,
+        windowValue2: null as unknown as number,
+      }),
+    ).toEqual({ key: 'conditions.errors.event.enterSecondTimeWindow' });
+  });
 });
 
 describe('validateEventAttr', () => {

@@ -176,16 +176,22 @@ export function validateTime(data: TimeConditionData | undefined): ValidationErr
   return { key: 'conditions.errors.time.enterStart' };
 }
 
+// Treat null and undefined the same — backend payloads / imported JSON can
+// land with explicit nulls, and the runtime evaluator coerces null counts
+// to 0 (`data.count ?? 0`), turning AT_LEAST 0 into a match-all condition.
+// v1 getEventError did the same `=== undefined || === null` check.
+const isMissing = (v: unknown): boolean => v === undefined || v === null;
+
 export function validateEvent(data: EventShape | undefined): ValidationError | undefined {
   if (!data?.eventId) return { key: 'conditions.errors.event.selectEvent' };
-  if (data.count === undefined) return { key: 'conditions.errors.event.enterCount' };
-  if (data.countLogic === EventCountLogic.BETWEEN && data.count2 === undefined) {
+  if (isMissing(data.count)) return { key: 'conditions.errors.event.enterCount' };
+  if (data.countLogic === EventCountLogic.BETWEEN && isMissing(data.count2)) {
     return { key: 'conditions.errors.event.enterSecondCount' };
   }
-  if (data.timeLogic !== EventTimeLogic.AT_ANY_POINT_IN_TIME && data.windowValue === undefined) {
+  if (data.timeLogic !== EventTimeLogic.AT_ANY_POINT_IN_TIME && isMissing(data.windowValue)) {
     return { key: 'conditions.errors.event.enterTimeWindow' };
   }
-  if (data.timeLogic === EventTimeLogic.BETWEEN && data.windowValue2 === undefined) {
+  if (data.timeLogic === EventTimeLogic.BETWEEN && isMissing(data.windowValue2)) {
     return { key: 'conditions.errors.event.enterSecondTimeWindow' };
   }
   return undefined;
