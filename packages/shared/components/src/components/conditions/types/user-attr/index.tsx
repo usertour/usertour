@@ -17,7 +17,12 @@ import type { ConditionTypeSchema } from '../../schema-types';
 import { validateUserAttr } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { ConditionInput } from '../../ui/condition-input';
-import { DATE_PICKER_OPERATORS, VALUELESS_OPERATORS, operatorsFor } from './operator-mappings';
+import {
+  DATE_PICKER_OPERATORS,
+  VALUELESS_OPERATORS,
+  operatorsFor,
+  splitOperatorTemplate,
+} from './operator-mappings';
 
 export interface UserAttrData {
   attrId?: string;
@@ -73,17 +78,28 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
   }
 
   const between = data.logic === 'between' ? (data.value2 ?? '') : '';
+  const template = valueText ? splitOperatorTemplate(operatorLabel) : null;
 
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <UserIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <span className={summaryTextClass}>
         <span className="font-semibold">{attribute.displayName || attribute.codeName}</span>{' '}
-        <span className="text-muted-foreground">{operatorLabel}</span>
-        {valueText && (
+        {template ? (
           <>
-            {' '}
+            <span className="text-muted-foreground">{template.prefix}</span>
             <span className="font-semibold">{valueText}</span>
+            <span className="text-muted-foreground">{template.suffix}</span>
+          </>
+        ) : (
+          <>
+            <span className="text-muted-foreground">{operatorLabel}</span>
+            {valueText && (
+              <>
+                {' '}
+                <span className="font-semibold">{valueText}</span>
+              </>
+            )}
           </>
         )}
         {between && (

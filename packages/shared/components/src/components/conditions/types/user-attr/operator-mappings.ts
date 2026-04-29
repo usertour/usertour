@@ -66,3 +66,13 @@ export const VALUELESS_OPERATORS = new Set(['any', 'empty', 'true', 'false']);
 
 // Operators on DateTime that pick an absolute date (vs the "days ago" group).
 export const DATE_PICKER_OPERATORS = new Set(['before', 'on', 'after']);
+
+// The relative-date operator labels embed `...` as a placeholder where the
+// number of days belongs (e.g. "exactly ... days ago"). The summary chip needs
+// the value spliced INTO the label, not appended after it. Returns the prefix
+// and suffix around the placeholder, or null when the label is a flat phrase.
+export function splitOperatorTemplate(label: string): { prefix: string; suffix: string } | null {
+  const idx = label.indexOf('...');
+  if (idx < 0) return null;
+  return { prefix: label.slice(0, idx), suffix: label.slice(idx + 3) };
+}

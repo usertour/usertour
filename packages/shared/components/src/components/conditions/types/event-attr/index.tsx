@@ -22,6 +22,7 @@ import {
   DATE_PICKER_OPERATORS,
   VALUELESS_OPERATORS,
   operatorsFor,
+  splitOperatorTemplate,
 } from '../user-attr/operator-mappings';
 
 export interface EventAttrData {
@@ -75,16 +76,28 @@ function EventAttrSummary({ condition }: { condition: RulesCondition }) {
     valueText = data.value ?? '';
   }
 
+  const template = valueText ? splitOperatorTemplate(operatorLabel) : null;
+
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <EventTrackerIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <span className={summaryTextClass}>
         <span className="font-semibold">{attribute.displayName || attribute.codeName}</span>{' '}
-        <span className="text-muted-foreground">{operatorLabel}</span>
-        {valueText && (
+        {template ? (
           <>
-            {' '}
+            <span className="text-muted-foreground">{template.prefix}</span>
             <span className="font-semibold">{valueText}</span>
+            <span className="text-muted-foreground">{template.suffix}</span>
+          </>
+        ) : (
+          <>
+            <span className="text-muted-foreground">{operatorLabel}</span>
+            {valueText && (
+              <>
+                {' '}
+                <span className="font-semibold">{valueText}</span>
+              </>
+            )}
           </>
         )}
         {data.logic === 'between' && (
