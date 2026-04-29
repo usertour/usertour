@@ -182,6 +182,35 @@ export function ConditionRow({
   }
 
   const { Summary } = schema;
+
+  // Schemas with no Editor (e.g., task-is-clicked) render as a static chip
+  // — no popover trigger, no auto-open on add. Mirrors v1
+  // RulesTaskIsClicked's read-only row.
+  if (!schema.Editor) {
+    return (
+      <div className={cn(CHIP_OUTER, widthClass)}>
+        <div
+          className={cn(
+            'flex min-w-0 items-center gap-2 px-3 py-1.5 text-left',
+            isHorizontal ? '' : 'flex-1',
+          )}
+        >
+          <Summary condition={condition} />
+        </div>
+        {!disabled && (
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label="Remove condition"
+            className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none group-hover/condition:text-muted-foreground"
+          >
+            <RiCloseLine className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    );
+  }
+
   // Surface the inline error tooltip whenever a key is set AND the editor is
   // closed — opening the editor temporarily hides it.
   const showError = Boolean(errorKey) && !open;

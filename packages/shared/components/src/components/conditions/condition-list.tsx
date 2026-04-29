@@ -6,6 +6,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { AddConditionDropdown } from './add-condition-dropdown';
 import { ConditionRow } from './condition-row';
 import { useConditionsContext, useConditionsT } from './conditions-context';
+import { getConditionSchema } from './registry';
 
 type Logic = 'and' | 'or';
 
@@ -105,8 +106,11 @@ export function ConditionList({
   const handleAdd = (newCondition: RulesCondition) => {
     const stamped = { ...newCondition, operators: logic };
     onChange([...items, stamped]);
-    // Group has no popover — only auto-open editor types.
-    if (newCondition.type !== 'group') {
+    // Auto-open the popover only when the schema has an Editor — group is
+    // a recursive list, and editor-less types (e.g., task-is-clicked) are
+    // static chips, neither has anything to open.
+    const schema = getConditionSchema(newCondition.type);
+    if (newCondition.type !== 'group' && schema?.Editor) {
       setPendingOpenId(newCondition.id);
     }
   };

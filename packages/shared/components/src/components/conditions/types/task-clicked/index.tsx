@@ -3,9 +3,10 @@ import { useConditionsT } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
 
 // Task-is-clicked has no configurable data — the chip is purely declarative
-// ("checklist task is clicked"). The Editor returns null because there is
-// nothing to edit; clicking the chip toggles the popover open then closed
-// with no effect.
+// ("checklist task is clicked"). The schema omits Editor, which tells
+// ConditionRow to render a static chip (no popover) and ConditionList to
+// skip the auto-open-after-add behavior. Mirrors v1 RulesTaskIsClicked's
+// non-interactive row.
 
 const Summary = () => {
   const t = useConditionsT();
@@ -17,13 +18,10 @@ const Summary = () => {
   );
 };
 
-const Editor = () => null;
-
 export const taskClickedSchema: ConditionTypeSchema<Record<string, never>> = {
   type: 'task-is-clicked',
   labelKey: 'conditions.types.taskClicked.label',
   Icon: TaskClickedIcon,
   defaultData: () => ({}),
   Summary,
-  Editor,
 };

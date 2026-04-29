@@ -33,8 +33,11 @@ export interface ConditionTypeSchema<TData = unknown> {
   defaultConditions?: () => RulesCondition[];
   // Inline summary in the collapsed row (e.g., "Email is x@y.com").
   Summary: ComponentType<{ condition: RulesCondition }>;
-  // Editor that opens in a popover when the row is clicked.
-  Editor: ComponentType<{
+  // Editor that opens in a popover when the row is clicked. Optional — types
+  // with no configurable data (e.g., 'task-is-clicked') omit it; ConditionRow
+  // then renders a static chip with no popover, and ConditionList skips
+  // auto-open after adding one.
+  Editor?: ComponentType<{
     condition: RulesCondition;
     onChange: (next: RulesCondition) => void;
     onClose: () => void;
