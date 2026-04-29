@@ -116,6 +116,20 @@ function CurrentPageEditor({ condition, onChange }: EditorProps) {
   );
 }
 
+// ---------- Normalize ----------
+
+// Strip the trailing empty rows ListInput keeps around for the "+ Add value"
+// affordance — those are editor-only UI state and shouldn't reach the
+// runtime URL matcher (an empty pattern in includes / excludes would change
+// the match set unpredictably).
+const normalize = (condition: RulesCondition): RulesCondition => {
+  const data = readData(condition);
+  return writeData(condition, {
+    includes: cleanList(data.includes),
+    excludes: cleanList(data.excludes),
+  });
+};
+
 // ---------- Schema ----------
 
 export const currentPageSchema: ConditionTypeSchema<CurrentPageData> = {
@@ -126,4 +140,5 @@ export const currentPageSchema: ConditionTypeSchema<CurrentPageData> = {
   Summary: CurrentPageSummary,
   Editor: CurrentPageEditor,
   validate: (condition) => validateCurrentPage(readData(condition)),
+  normalize,
 };

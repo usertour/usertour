@@ -41,6 +41,12 @@ export interface ConditionTypeSchema<TData = unknown> {
   }>;
   // Returns a validation error or undefined.
   validate?: (condition: RulesCondition, ctx: ValidateContext) => ValidationError | undefined;
+  // Optional: normalize the condition before it's committed to the parent.
+  // Called once on popover close, ahead of validate / onChange. Use this to
+  // strip in-flight UI artifacts (e.g., empty list rows the editor leaves in
+  // place to keep the "+ Add value" affordance usable) so the persisted data
+  // never carries them into the runtime.
+  normalize?: (condition: RulesCondition) => RulesCondition;
 }
 
 export type AnySchema = ConditionTypeSchema<unknown>;

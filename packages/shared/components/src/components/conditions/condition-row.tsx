@@ -108,14 +108,17 @@ export function ConditionRow({
       return;
     }
     setOpen(false);
-    // Closing — validate the draft. When invalid, stay flagged but don't
+    // Closing — normalize first (strips in-flight UI artifacts like empty
+    // list rows) so what we validate / persist matches what the runtime
+    // will see. Then validate; when invalid, stay flagged but don't
     // propagate the bad data upward. Matches v1 (rules-user-attribute.tsx
     // handleOpenChange returns early on showError).
-    const result = schema?.validate?.(draft, validateContext);
+    const finalized = schema?.normalize?.(draft) ?? draft;
+    const result = schema?.validate?.(finalized, validateContext);
     setErrorKey(result?.key ?? null);
     if (result) return;
-    if (!isEqual(draft, condition)) {
-      onChange(draft);
+    if (!isEqual(finalized, condition)) {
+      onChange(finalized);
     }
   };
 
