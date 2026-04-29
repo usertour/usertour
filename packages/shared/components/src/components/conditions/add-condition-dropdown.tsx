@@ -1,4 +1,5 @@
 import { PlusIcon } from '@usertour-packages/icons';
+import { cn } from '@usertour-packages/tailwind';
 import { cuid } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback, useRef } from 'react';
@@ -31,7 +32,7 @@ interface Props {
 // condition's auto-opened popover and immediately closes it.
 export function AddConditionDropdown({ onSelect, filterItems: filterItemsOverride }: Props) {
   const t = useConditionsT();
-  const { filterItems: ctxFilter, disabled } = useConditionsContext();
+  const { filterItems: ctxFilter, disabled, isHorizontal } = useConditionsContext();
   const filterItems = filterItemsOverride ?? ctxFilter;
   const schemas = listAvailableSchemas(filterItems);
 
@@ -54,9 +55,17 @@ export function AddConditionDropdown({ onSelect, filterItems: filterItemsOverrid
   return (
     <ConditionDropdownMenu onOpenChange={handleOpenChange}>
       <ConditionDropdownMenuTrigger asChild disabled={disabled}>
+        {/* In horizontal flex-wrap rows the trigger sits beside chip-height
+            siblings; matching that height (h-8) lets the link's icon+text
+            visually center against neighboring chips instead of hugging the
+            row's top edge under items-start. Vertical mode has nothing to
+            align to, so the natural text height is fine. */}
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded text-xs font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(
+            'inline-flex items-center gap-1 rounded text-xs font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50',
+            isHorizontal && 'h-8',
+          )}
         >
           <PlusIcon className="h-3.5 w-3.5" />
           {t('conditions.actions.addCondition')}
