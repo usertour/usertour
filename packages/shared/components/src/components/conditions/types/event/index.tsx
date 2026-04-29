@@ -207,7 +207,21 @@ function EventEditor({ condition, onChange }: EditorProps) {
         </div>
         <ConditionCombobox
           value={data.eventId}
-          onChange={(eventId) => onChange(writeData(condition, { eventId }))}
+          onChange={(eventId) => {
+            // Re-stamp every where child with the new eventId so the
+            // attribute pickers and persisted data stay in sync with the
+            // parent event. Without this the where children would keep the
+            // previous event's id and query the wrong attribute set.
+            const where = data.whereConditions
+              ? stampEventIdDeep(data.whereConditions, eventId)
+              : undefined;
+            onChange(
+              writeData(condition, {
+                eventId,
+                whereConditions: where && where.length > 0 ? where : undefined,
+              }),
+            );
+          }}
           items={eventItems}
           placeholder={t('conditions.types.event.selectPlaceholder')}
           searchPlaceholder={t('conditions.types.event.searchPlaceholder')}
@@ -341,12 +355,14 @@ interface WhereProps {
 }
 
 // Recursively walk a where-list and stamp the parent event's id onto every
-// fresh event-attr (regardless of nesting depth) so the attribute picker can
-// always scope to the right event — including event-attr added inside a
-// nested group.
+// event-attr (regardless of nesting depth) so the attribute picker scopes
+// to the current event. Always overwrites — switching the parent event must
+// re-scope existing where children too. v1 sidestepped this by passing
+// eventId as a live prop to RulesEventAttribute; we keep eventId on data
+// (for legacy compatibility and standalone reads) and synchronize it here.
 const stampEventIdDeep = (conds: RulesCondition[], eventId: string | undefined): RulesCondition[] =>
   conds.map((c) => {
-    if (c.type === 'event-attr' && !(c.data as { eventId?: string })?.eventId) {
+    if (c.type === 'event-attr') {
       return { ...c, data: { ...(c.data as Record<string, unknown>), eventId } };
     }
     if (c.type === 'group' && c.conditions) {
