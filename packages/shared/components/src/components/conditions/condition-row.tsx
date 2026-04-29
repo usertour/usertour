@@ -190,10 +190,15 @@ export function ConditionRow({
   // useEffect above when draft = condition).
   const visibleCondition = open ? draft : condition;
 
+  // ErrorTooltipAnchor uses Radix's Slot to forward a ref onto its child.
+  // The chip's outer div is the natural anchor target — putting the anchor
+  // around the function-component <ConditionPopover> instead would trigger
+  // "Function components cannot be given refs" because the Popover root
+  // doesn't render a DOM node.
   return (
-    <ErrorTooltip open={showError}>
-      <ErrorTooltipAnchor asChild>
-        <ConditionPopover open={open} onOpenChange={handleOpenChange}>
+    <ConditionPopover open={open} onOpenChange={handleOpenChange}>
+      <ErrorTooltip open={showError}>
+        <ErrorTooltipAnchor asChild>
           <div className={cn(CHIP_OUTER, errorKey ? CHIP_INVALID : '', widthClass)}>
             <ConditionPopoverTrigger asChild>
               <button
@@ -218,22 +223,22 @@ export function ConditionRow({
               </button>
             )}
           </div>
+        </ErrorTooltipAnchor>
+        {errorKey && (
+          <ErrorTooltipContent zIndex={zIndex.error} side="right" sideOffset={8}>
+            {t(errorKey)}
+          </ErrorTooltipContent>
+        )}
+      </ErrorTooltip>
 
-          <ConditionPopoverContent align="start" sideOffset={6} className="w-[300px]">
-            <ConditionEditor
-              schema={schema}
-              condition={draft}
-              onChange={setDraft}
-              onClose={() => handleOpenChange(false)}
-            />
-          </ConditionPopoverContent>
-        </ConditionPopover>
-      </ErrorTooltipAnchor>
-      {errorKey && (
-        <ErrorTooltipContent zIndex={zIndex.error} side="right" sideOffset={8}>
-          {t(errorKey)}
-        </ErrorTooltipContent>
-      )}
-    </ErrorTooltip>
+      <ConditionPopoverContent align="start" sideOffset={6} className="w-[300px]">
+        <ConditionEditor
+          schema={schema}
+          condition={draft}
+          onChange={setDraft}
+          onClose={() => handleOpenChange(false)}
+        />
+      </ConditionPopoverContent>
+    </ConditionPopover>
   );
 }
