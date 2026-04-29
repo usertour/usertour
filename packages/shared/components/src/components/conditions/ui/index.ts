@@ -18,3 +18,8 @@ export {
   ConditionDropdownMenuItem,
 } from './condition-dropdown-menu';
 export { ConditionCombobox, type ConditionComboboxItem } from './condition-combobox';
+export {
+  ConditionErrorTooltip,
+  ConditionErrorTooltipAnchor,
+  ConditionErrorTooltipContent,
+} from './condition-error-tooltip';

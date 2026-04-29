@@ -1,4 +1,3 @@
-import { RulesZIndexOffset, WebZIndex } from '@usertour-packages/constants';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import {
   ContentDataType,
@@ -10,10 +9,14 @@ import {
 } from '@usertour/types';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import type { ConditionsTranslator } from '../conditions-context';
-import { ConditionInput } from '../ui/condition-input';
+import {
+  ConditionErrorTooltip,
+  ConditionErrorTooltipAnchor,
+  ConditionErrorTooltipContent,
+} from '../ui/condition-error-tooltip';
 import { ConditionInlineSelect } from '../ui/condition-inline-select';
+import { ConditionInput } from '../ui/condition-input';
 import { resolveTranslator } from './translator';
-import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '../../error-tooltip';
 
 const FREQUENCY_KEYS = [
   { value: Frequency.ONCE, labelKey: 'conditions.standalone.frequency.units.once' },
@@ -161,7 +164,6 @@ function FrequencyEvery({
   // NOT call onChange — the parent should never see times: 0 / 1 land in
   // its persisted state.
   const [localTimes, setLocalTimes] = useState<number | null>(null);
-  const errorZIndex = WebZIndex.RULES + RulesZIndexOffset.ERROR;
 
   // Drop the local override whenever the controlled value changes from the
   // outside (parent reloaded data, sibling switched modes) so the input
@@ -191,8 +193,8 @@ function FrequencyEvery({
   if (frequency === Frequency.MULTIPLE) {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <ErrorTooltip open={openError}>
-          <ErrorTooltipAnchor asChild>
+        <ConditionErrorTooltip open={openError}>
+          <ConditionErrorTooltipAnchor asChild>
             <ConditionInput
               type="text"
               value={displayTimes}
@@ -200,11 +202,11 @@ function FrequencyEvery({
               disabled={disabled}
               className="w-16"
             />
-          </ErrorTooltipAnchor>
-          <ErrorTooltipContent zIndex={errorZIndex}>
+          </ConditionErrorTooltipAnchor>
+          <ConditionErrorTooltipContent>
             {t('conditions.standalone.frequency.atLeastTwo')}
-          </ErrorTooltipContent>
-        </ErrorTooltip>
+          </ConditionErrorTooltipContent>
+        </ConditionErrorTooltip>
         <span className="text-xs">{t('conditions.standalone.frequency.timesComma')}</span>
         <ConditionInput
           type="text"

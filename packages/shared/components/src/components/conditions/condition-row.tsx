@@ -3,13 +3,15 @@ import { cn } from '@usertour-packages/tailwind';
 import type { RulesCondition } from '@usertour/types';
 import isEqual from 'fast-deep-equal';
 import { useEffect, useState } from 'react';
-import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '../error-tooltip';
-import { useConditionsContext, useConditionsT, useConditionsZIndex } from './conditions-context';
+import { useConditionsContext, useConditionsT } from './conditions-context';
 import { ConditionEditor } from './condition-editor';
 import { ConditionList } from './condition-list';
 import { getConditionSchema } from './registry';
 import type { ValidateContext } from './schema-types';
 import {
+  ConditionErrorTooltip,
+  ConditionErrorTooltipAnchor,
+  ConditionErrorTooltipContent,
   ConditionIconButton,
   ConditionPopover,
   ConditionPopoverContent,
@@ -62,7 +64,6 @@ export function ConditionRow({
 }: Props) {
   const ctx = useConditionsContext();
   const t = useConditionsT();
-  const zIndex = useConditionsZIndex();
   const { disabled, isHorizontal } = ctx;
   const [open, setOpen] = useState(false);
   // Draft is the in-flight edit. While the editor is open, the schema's
@@ -230,8 +231,8 @@ export function ConditionRow({
   // trigger to the error popover and clicking the chip wouldn't open
   // anything.
   return (
-    <ErrorTooltip open={showError}>
-      <ErrorTooltipAnchor asChild>
+    <ConditionErrorTooltip open={showError}>
+      <ConditionErrorTooltipAnchor asChild>
         <div className={cn(CHIP_OUTER, errorKey ? CHIP_INVALID : '', widthClass)}>
           <ConditionPopover open={open} onOpenChange={handleOpenChange}>
             <ConditionPopoverTrigger asChild>
@@ -270,12 +271,12 @@ export function ConditionRow({
             </button>
           )}
         </div>
-      </ErrorTooltipAnchor>
+      </ConditionErrorTooltipAnchor>
       {errorKey && (
-        <ErrorTooltipContent zIndex={zIndex.error} side="right" sideOffset={8}>
+        <ConditionErrorTooltipContent side="right" sideOffset={8}>
           {t(errorKey)}
-        </ErrorTooltipContent>
+        </ConditionErrorTooltipContent>
       )}
-    </ErrorTooltip>
+    </ConditionErrorTooltip>
   );
 }
