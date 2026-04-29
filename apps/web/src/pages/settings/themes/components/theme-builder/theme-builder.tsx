@@ -1,4 +1,6 @@
+import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { StorageKeys } from '@usertour-packages/constants';
+import { validateConditions } from '@usertour-packages/shared-components';
 import {
   type Theme,
   ThemeDetailPreviewType,
@@ -11,6 +13,7 @@ import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEvent } from 'react-use';
 import { BuilderProvider } from './builder-context';
 import { PreviewPane } from './preview/preview-pane';
@@ -104,7 +107,27 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
   });
 
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const { attributeList } = useAttributeListContext();
   const handleSave = useCallback(async () => {
+    // Conditions writes every onChange — including the one fired when a
+    // user adds a fresh empty user-attr / current-page from the dropdown
+    // — straight through to draft.variations. Block save when any of
+    // those drafted conditions still fail validation; ConditionRow's
+    // inline error tooltip already flags which row needs attention, so
+    // the toast here just tells the user why save was rejected.
+    const invalidVariation = draft.variations.find(
+      (v) => validateConditions(v.conditions ?? [], { attributes: attributeList ?? [] }).length > 0,
+    );
+    if (invalidVariation) {
+      toast({
+        variant: 'destructive',
+        title: t('themeBuilder.validation.invalidVariation', {
+          name: invalidVariation.name || t('themeBuilder.chrome.thisVariation'),
+        }),
+      });
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave({ settings: draft.base, variations: draft.variations });
@@ -114,7 +137,7 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
     } finally {
       setIsSaving(false);
     }
-  }, [draft, onSave, toast]);
+  }, [attributeList, draft, onSave, t, toast]);
 
   const builderContextValue = useMemo(
     () => ({

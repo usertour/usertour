@@ -378,6 +378,7 @@ const translations = {
     validation: {
       toleranceMax: 'Maximum value is {{max}}',
       widthZero: 'Width cannot be 0',
+      invalidVariation: '"{{name}}" has incomplete conditions — fix or remove them before saving.',
     },
     alerts: {
       progressNonLinear:

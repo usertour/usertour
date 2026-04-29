@@ -363,6 +363,7 @@ const translations = {
     validation: {
       toleranceMax: '最大值为 {{max}}',
       widthZero: '宽度不能为 0',
+      invalidVariation: '“{{name}}” 还有未填写完整的条件,先修复或移除再保存。',
     },
     alerts: {
       progressNonLinear: '进度条在含有条件分支或非线性步骤的流程中可能无法正常工作。',
