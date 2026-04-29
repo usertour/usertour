@@ -22,6 +22,10 @@ interface Props {
   // an event's where-section that allow a different subset of types than
   // the outer Conditions tree.
   filterItems?: string[];
+  // True when this list belongs to a nested group. Forwarded to the
+  // add-condition dropdown so 'group' is hidden one level down, capping
+  // group nesting at depth 1 (matches v1 RulesGroup).
+  isNested?: boolean;
 }
 
 // Backfill missing ids without re-rolling them on every render. Only mints
@@ -84,6 +88,7 @@ export function ConditionList({
   onChange,
   className,
   filterItems: filterItemsOverride,
+  isNested,
 }: Props) {
   const { isHorizontal, isShowIf, disabled } = useConditionsContext();
   const t = useConditionsT();
@@ -163,7 +168,11 @@ export function ConditionList({
             />
           </Fragment>
         ))}
-        <AddConditionDropdown onSelect={handleAdd} filterItems={filterItemsOverride} />
+        <AddConditionDropdown
+          onSelect={handleAdd}
+          filterItems={filterItemsOverride}
+          isNested={isNested}
+        />
       </div>
     );
   }
@@ -208,7 +217,11 @@ export function ConditionList({
           </div>
         );
       })}
-      <AddConditionDropdown onSelect={handleAdd} filterItems={filterItemsOverride} />
+      <AddConditionDropdown
+        onSelect={handleAdd}
+        filterItems={filterItemsOverride}
+        isNested={isNested}
+      />
     </div>
   );
 }

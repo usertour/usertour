@@ -21,6 +21,12 @@ interface Props {
   // contexts like an event's where-section that need to surface a different
   // type set than the outer Conditions tree.
   filterItems?: string[];
+  // True when this dropdown is rendered inside a nested group's list. Caps
+  // group nesting at one level by hiding 'group' from the picker — matches
+  // v1 RulesGroup's `isSubItems` filter. Group-in-group makes editing,
+  // AND/OR toggling, and validation hard to reason about both for users
+  // and for code paths that walk the tree.
+  isNested?: boolean;
 }
 
 // "Add condition" trigger + popup of registered types. Filters by either the
@@ -30,11 +36,17 @@ interface Props {
 // Selection is deferred until the dropdown finishes closing — otherwise the
 // click that picked the item also lands as a click-outside on the new
 // condition's auto-opened popover and immediately closes it.
-export function AddConditionDropdown({ onSelect, filterItems: filterItemsOverride }: Props) {
+export function AddConditionDropdown({
+  onSelect,
+  filterItems: filterItemsOverride,
+  isNested,
+}: Props) {
   const t = useConditionsT();
   const { filterItems: ctxFilter, disabled, isHorizontal } = useConditionsContext();
   const filterItems = filterItemsOverride ?? ctxFilter;
-  const schemas = listAvailableSchemas(filterItems);
+  const schemas = listAvailableSchemas(filterItems).filter((s) =>
+    isNested ? s.type !== 'group' : true,
+  );
 
   const pendingSchemaRef = useRef<(typeof schemas)[number] | null>(null);
 

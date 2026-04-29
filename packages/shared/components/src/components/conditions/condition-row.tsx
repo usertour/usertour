@@ -139,6 +139,7 @@ export function ConditionRow({
           conditions={condition.conditions ?? []}
           onChange={(nextNested) => onChange({ ...condition, conditions: nextNested })}
           filterItems={filterItems}
+          isNested
         />
         {!disabled && (
           <ConditionIconButton
