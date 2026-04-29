@@ -4,7 +4,7 @@ import { type ChangeEvent, useState } from 'react';
 import type { ConditionsTranslator } from '../conditions-context';
 import { ConditionInput } from '../ui/condition-input';
 import { resolveTranslator } from './translator';
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from '../../rules/rules-error';
+import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '../../error-tooltip';
 
 interface Props {
   defaultValue: number;
@@ -43,10 +43,10 @@ export function ConditionWait({
   };
 
   return (
-    <RulesError open={openError}>
+    <ErrorTooltip open={openError}>
       <div className="flex items-center gap-2">
         <span className="text-xs">{t('conditions.standalone.wait.before')}</span>
-        <RulesErrorAnchor asChild>
+        <ErrorTooltipAnchor asChild>
           <ConditionInput
             type="text"
             value={inputValue}
@@ -54,18 +54,18 @@ export function ConditionWait({
             disabled={disabled}
             className="w-16"
           />
-        </RulesErrorAnchor>
+        </ErrorTooltipAnchor>
         <span className="text-xs text-muted-foreground">
           {t('conditions.standalone.wait.suffix')}
         </span>
         <QuestionTooltip>{t('conditions.standalone.wait.tooltip')}</QuestionTooltip>
-        <RulesErrorContent className="w-60" zIndex={errorZIndex}>
+        <ErrorTooltipContent className="w-60" zIndex={errorZIndex}>
           {t('conditions.standalone.wait.error', {
             max: maxSeconds,
             minutes: Math.floor(maxSeconds / 60),
           })}
-        </RulesErrorContent>
+        </ErrorTooltipContent>
       </div>
-    </RulesError>
+    </ErrorTooltip>
   );
 }

@@ -13,7 +13,7 @@ import type { ConditionsTranslator } from '../conditions-context';
 import { ConditionInput } from '../ui/condition-input';
 import { ConditionSelect } from '../ui/condition-select';
 import { resolveTranslator } from './translator';
-import { RulesError, RulesErrorAnchor, RulesErrorContent } from '../../rules/rules-error';
+import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '../../error-tooltip';
 
 const FREQUENCY_KEYS = [
   { value: Frequency.ONCE, labelKey: 'conditions.standalone.frequency.units.once' },
@@ -178,8 +178,8 @@ function FrequencyEvery({
   if (frequency === Frequency.MULTIPLE) {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <RulesError open={openError}>
-          <RulesErrorAnchor asChild>
+        <ErrorTooltip open={openError}>
+          <ErrorTooltipAnchor asChild>
             <ConditionInput
               type="text"
               value={value.times}
@@ -187,11 +187,11 @@ function FrequencyEvery({
               disabled={disabled}
               className="w-16"
             />
-          </RulesErrorAnchor>
-          <RulesErrorContent zIndex={errorZIndex}>
+          </ErrorTooltipAnchor>
+          <ErrorTooltipContent zIndex={errorZIndex}>
             {t('conditions.standalone.frequency.atLeastTwo')}
-          </RulesErrorContent>
-        </RulesError>
+          </ErrorTooltipContent>
+        </ErrorTooltip>
         <span className="text-xs">{t('conditions.standalone.frequency.timesComma')}</span>
         <ConditionInput
           type="text"
