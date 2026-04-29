@@ -4,10 +4,10 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from '@usertour-packages/command';
 import { RiCheckLine, RiExpandUpDownLine } from '@usertour-packages/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { ScrollArea } from '@usertour-packages/scroll-area';
 import { cn } from '@usertour-packages/tailwind';
 import { type ReactNode, useState } from 'react';
 import { useConditionsZIndex } from '../conditions-context';
@@ -115,10 +115,18 @@ export function ConditionCombobox({
       >
         <Command>
           <CommandInput placeholder={searchPlaceholder} className="h-8 text-xs" />
-          <CommandEmpty className="py-3 text-center text-xs text-muted-foreground">
-            {emptyText}
-          </CommandEmpty>
-          <ScrollArea className="max-h-64">
+          {/*
+           * Use cmdk's CommandList (native overflow-y: auto) rather than
+           * Radix ScrollArea here. ScrollArea's viewport relies on h-full
+           * percentage height — combined with a max-h-N parent it never gets
+           * a definite height to resolve against, so the content stops
+           * scrolling once it overflows. CommandList is also where cmdk's
+           * keyboard-nav and CommandEmpty visibility expect to live.
+           */}
+          <CommandList>
+            <CommandEmpty className="py-3 text-center text-xs text-muted-foreground">
+              {emptyText}
+            </CommandEmpty>
             {groups
               ? groups.map((g) => (
                   <CommandGroup key={g.heading} heading={g.heading}>
@@ -126,7 +134,7 @@ export function ConditionCombobox({
                   </CommandGroup>
                 ))
               : renderItems(items)}
-          </ScrollArea>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
