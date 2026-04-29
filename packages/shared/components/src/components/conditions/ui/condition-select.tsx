@@ -1,12 +1,20 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour-packages/tailwind';
-import { useConditionsZIndex } from '../conditions-context';
+import {
+  ConditionDropdownMenu,
+  ConditionDropdownMenuContent,
+  ConditionDropdownMenuItem,
+  ConditionDropdownMenuTrigger,
+} from './condition-dropdown-menu';
+
+// Built on Radix DropdownMenu rather than Radix Select on purpose: when this
+// trigger sits inside a chip-editor Popover, Radix Select's dismiss layer
+// runs independent of the parent Popover's layer chain, so picking an option
+// (or clicking elsewhere in the popover while the listbox is open) collapses
+// the parent popover too. DropdownMenu shares Radix's DismissableLayer
+// context with Popover and registers as a child layer, so closing the menu
+// is correctly scoped to itself. v1 RulesEvent's scope picker took the same
+// approach for the same reason.
 
 export interface ConditionSelectOption {
   value: string;
@@ -32,22 +40,43 @@ export function ConditionSelect({
   className,
   id,
 }: Props) {
-  const { popover } = useConditionsZIndex();
+  const selected = options.find((o) => o.value === value);
   return (
-    <Select value={value ?? ''} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger
-        id={id}
-        className={cn('h-7.5 rounded-lg bg-muted text-xs shadow-sm md:text-xs', className)}
+    <ConditionDropdownMenu>
+      <ConditionDropdownMenuTrigger asChild>
+        <button
+          id={id}
+          type="button"
+          disabled={disabled}
+          className={cn(
+            'inline-flex h-7.5 w-full items-center justify-between gap-2 rounded-lg bg-muted px-3 text-xs shadow-sm outline-none transition-colors hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+            className,
+          )}
+        >
+          <span className={cn('truncate', !selected && 'text-muted-foreground')}>
+            {selected?.label ?? placeholder}
+          </span>
+          <CaretSortIcon className="h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </ConditionDropdownMenuTrigger>
+      <ConditionDropdownMenuContent
+        align="start"
+        sideOffset={4}
+        // Match the trigger width so the menu doesn't reflow weirdly when an
+        // option is wider than the trigger.
+        className="min-w-[var(--radix-dropdown-menu-trigger-width)]"
       >
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent style={{ zIndex: popover }}>
         {options.map((opt) => (
-          <SelectItem key={opt.value} value={opt.value} className="text-xs">
-            {opt.label}
-          </SelectItem>
+          <ConditionDropdownMenuItem
+            key={opt.value}
+            onSelect={() => onChange(opt.value)}
+            className="cursor-pointer pr-8"
+          >
+            <span className="flex-1 truncate">{opt.label}</span>
+            {value === opt.value && <CheckIcon className="ml-auto h-3.5 w-3.5" />}
+          </ConditionDropdownMenuItem>
         ))}
-      </SelectContent>
-    </Select>
+      </ConditionDropdownMenuContent>
+    </ConditionDropdownMenu>
   );
 }
