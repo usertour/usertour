@@ -115,6 +115,7 @@ export function ConditionList({
               onRemove={() => handleRemove(index)}
               autoOpen={pendingOpenId === condition.id}
               onAutoOpened={clearPendingOpen}
+              filterItems={filterItemsOverride}
             />
           </Fragment>
         ))}
@@ -147,6 +148,7 @@ export function ConditionList({
                 onRemove={() => handleRemove(index)}
                 autoOpen={pendingOpenId === condition.id}
                 onAutoOpened={clearPendingOpen}
+                filterItems={filterItemsOverride}
               />
             </div>
           </div>

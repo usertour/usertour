@@ -340,24 +340,30 @@ interface WhereProps {
   data: EventData;
 }
 
+// Recursively walk a where-list and stamp the parent event's id onto every
+// fresh event-attr (regardless of nesting depth) so the attribute picker can
+// always scope to the right event — including event-attr added inside a
+// nested group.
+const stampEventIdDeep = (conds: RulesCondition[], eventId: string | undefined): RulesCondition[] =>
+  conds.map((c) => {
+    if (c.type === 'event-attr' && !(c.data as { eventId?: string })?.eventId) {
+      return { ...c, data: { ...(c.data as Record<string, unknown>), eventId } };
+    }
+    if (c.type === 'group' && c.conditions) {
+      return { ...c, conditions: stampEventIdDeep(c.conditions, eventId) };
+    }
+    return c;
+  });
+
 // Nested list of event-attribute filters scoped to the chosen event. Renders
 // a recursive ConditionList limited to event-attr + group types so users can
 // build (A AND B) OR (C AND D) — matching v1 RulesEventWhereGroup behavior.
-// New event-attr conditions get the parent eventId injected into their data
-// so the attribute picker scopes to the chosen event.
 function EventWhereSection({ condition, onChange, data }: WhereProps) {
   const t = useConditionsT();
   const where = data.whereConditions ?? [];
 
   const handleWhereChange = (next: RulesCondition[]) => {
-    // ConditionList writes back the full list — when a fresh event-attr lands
-    // without an eventId (defaultData() returns empty), inject it so the
-    // child editor can fetch attributes-on-event for the right event.
-    const stamped = next.map((c) =>
-      c.type === 'event-attr' && !(c.data as { eventId?: string })?.eventId
-        ? { ...c, data: { ...(c.data as Record<string, unknown>), eventId: data.eventId } }
-        : c,
-    );
+    const stamped = stampEventIdDeep(next, data.eventId);
     onChange(writeData(condition, { whereConditions: stamped.length > 0 ? stamped : undefined }));
   };
 

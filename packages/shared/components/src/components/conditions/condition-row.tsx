@@ -25,6 +25,11 @@ interface Props {
   // without an extra click.
   autoOpen?: boolean;
   onAutoOpened?: () => void;
+  // filterItems propagated from the parent ConditionList. Threaded into
+  // nested groups so a group inside a constrained scope (e.g. an event's
+  // where-section limited to ['event-attr', 'group']) keeps the same
+  // restriction at every depth.
+  filterItems?: string[];
 }
 
 // Outer chip: holds the trigger and the close button as one rounded unit
@@ -47,7 +52,14 @@ const CHIP_INVALID = 'border-destructive/70 hover:border-destructive';
 // onChange fires once on popover close (and only when the draft actually
 // differs from the committed condition). This keeps consumers from having
 // to debounce or dedup keystroke-level updates.
-export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOpened }: Props) {
+export function ConditionRow({
+  condition,
+  onChange,
+  onRemove,
+  autoOpen,
+  onAutoOpened,
+  filterItems,
+}: Props) {
   const ctx = useConditionsContext();
   const t = useConditionsT();
   const zIndex = useConditionsZIndex();
@@ -123,6 +135,7 @@ export function ConditionRow({ condition, onChange, onRemove, autoOpen, onAutoOp
         <ConditionList
           conditions={condition.conditions ?? []}
           onChange={(nextNested) => onChange({ ...condition, conditions: nextNested })}
+          filterItems={filterItems}
         />
         {!disabled && (
           <ConditionIconButton
