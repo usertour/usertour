@@ -236,10 +236,10 @@ describe('validateTextInput', () => {
 describe('validateTime', () => {
   it('flags empty data', () => {
     expect(validateTime(undefined)).toEqual({
-      key: 'conditions.errors.time.enterRange',
+      key: 'conditions.errors.time.enterStart',
     });
     expect(validateTime({} as never)).toEqual({
-      key: 'conditions.errors.time.enterRange',
+      key: 'conditions.errors.time.enterStart',
     });
   });
 
@@ -249,6 +249,21 @@ describe('validateTime', () => {
 
   it('passes for legacy with startDate', () => {
     expect(validateTime({ startDate: '01/01/2024' } as never)).toBeUndefined();
+  });
+
+  // Runtime evaluateTimeConditionV2 returns false whenever startTime is
+  // missing — end-only data is functionally a never-match, so the validator
+  // rejects it instead of letting it persist.
+  it('flags V2 with only endTime', () => {
+    expect(validateTime({ endTime: '2024-12-31T23:59:59Z' } as never)).toEqual({
+      key: 'conditions.errors.time.enterStart',
+    });
+  });
+
+  it('flags legacy with only endDate', () => {
+    expect(validateTime({ endDate: '12/31/2024' } as never)).toEqual({
+      key: 'conditions.errors.time.enterStart',
+    });
   });
 });
 

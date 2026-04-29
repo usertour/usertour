@@ -158,12 +158,17 @@ export function validateTextFill(data: ElementShape | undefined): ValidationErro
 }
 
 export function validateTime(data: TimeConditionData | undefined): ValidationError | undefined {
-  if (!data) return { key: 'conditions.errors.time.enterRange' };
-  const v2 = data as { startTime?: string; endTime?: string };
-  if (v2.startTime || v2.endTime) return undefined;
-  const legacy = data as { startDate?: string; endDate?: string };
-  if (legacy.startDate || legacy.endDate) return undefined;
-  return { key: 'conditions.errors.time.enterRange' };
+  // The SDK runtime (helpers/conditions/time.ts) returns false whenever a
+  // start time is missing, so end-only data is functionally a never-match
+  // condition and shouldn't be persisted. v1 RulesCurrentTime side-stepped
+  // this by silently dropping end-only into {} on save; we surface it as a
+  // proper validation error instead.
+  if (!data) return { key: 'conditions.errors.time.enterStart' };
+  const v2 = data as { startTime?: string };
+  if (v2.startTime) return undefined;
+  const legacy = data as { startDate?: string };
+  if (legacy.startDate) return undefined;
+  return { key: 'conditions.errors.time.enterStart' };
 }
 
 export function validateEvent(data: EventShape | undefined): ValidationError | undefined {

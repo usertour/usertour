@@ -882,7 +882,7 @@ const translations = {
         selectElement: '请选择一个元素',
       },
       time: {
-        enterRange: '请填写开始或结束时间',
+        enterStart: '请填写开始时间',
       },
       event: {
         selectEvent: '请选择一个事件',

@@ -903,7 +903,7 @@ const translations = {
         selectElement: 'Please select an element',
       },
       time: {
-        enterRange: 'Either start or end time must be filled in',
+        enterStart: 'Please enter a start time',
       },
       event: {
         selectEvent: 'Please select an event',
