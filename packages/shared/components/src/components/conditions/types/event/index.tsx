@@ -208,12 +208,16 @@ function EventEditor({ condition, onChange }: EditorProps) {
         <ConditionCombobox
           value={data.eventId}
           onChange={(eventId) => {
-            // Re-stamp every where child with the new eventId so the
-            // attribute pickers and persisted data stay in sync with the
-            // parent event. Without this the where children would keep the
-            // previous event's id and query the wrong attribute set.
+            // Re-stamp every where child with the new eventId AND clear the
+            // previously selected attrId / logic / value. The old attribute
+            // almost certainly isn't bound to the new event, and the global
+            // validator only checks bizType, not event binding — leaving
+            // the selection would persist an orphan attrId. Forcing a
+            // re-pick mirrors v1's effective behavior (its picker would
+            // show no selection when the attrId didn't match the new
+            // event's attributes).
             const where = data.whereConditions
-              ? stampEventIdDeep(data.whereConditions, eventId)
+              ? stampEventIdDeep(data.whereConditions, eventId, true)
               : undefined;
             onChange(
               writeData(condition, {
@@ -360,13 +364,26 @@ interface WhereProps {
 // re-scope existing where children too. v1 sidestepped this by passing
 // eventId as a live prop to RulesEventAttribute; we keep eventId on data
 // (for legacy compatibility and standalone reads) and synchronize it here.
-const stampEventIdDeep = (conds: RulesCondition[], eventId: string | undefined): RulesCondition[] =>
+//
+// `resetSelection: true` additionally clears attrId / logic / value /
+// listValues. Used when the parent event changes, since the previously
+// chosen attribute almost certainly isn't bound to the new event — leaving
+// it would persist an orphan attrId that the global validator can't catch
+// (it only checks bizType, not event binding).
+const stampEventIdDeep = (
+  conds: RulesCondition[],
+  eventId: string | undefined,
+  resetSelection = false,
+): RulesCondition[] =>
   conds.map((c) => {
     if (c.type === 'event-attr') {
-      return { ...c, data: { ...(c.data as Record<string, unknown>), eventId } };
+      const next = resetSelection
+        ? { eventId }
+        : { ...(c.data as Record<string, unknown>), eventId };
+      return { ...c, data: next };
     }
     if (c.type === 'group' && c.conditions) {
-      return { ...c, conditions: stampEventIdDeep(c.conditions, eventId) };
+      return { ...c, conditions: stampEventIdDeep(c.conditions, eventId, resetSelection) };
     }
     return c;
   });
