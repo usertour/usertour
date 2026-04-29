@@ -63,7 +63,12 @@ export function ConditionCombobox({
     entries.map((item) => (
       <CommandItem
         key={item.value}
-        value={`${item.value} ${item.label}`}
+        // cmdk filters against this string by substring. Include the hint
+        // (e.g., an attribute's codeName) so callers can search by it the
+        // way v1 RulesUserAttribute / RulesEvent did with their custom
+        // filter — searching "user_email" matches an attribute whose
+        // displayName is "Email" but codeName is "user_email_addr".
+        value={`${item.value} ${item.label}${item.hint ? ` ${item.hint}` : ''}`}
         disabled={item.disabled}
         onSelect={() => {
           onChange(item.value);
