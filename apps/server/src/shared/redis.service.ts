@@ -115,6 +115,42 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     await this.client.del(...list);
   }
 
+  /**
+   * Batch read JSON values for many keys. Returns one entry per input key
+   * in the same order; null for cache miss or parse failure.
+   */
+  async mgetJson<T>(keys: string[]): Promise<(T | null)[]> {
+    if (!this.client) {
+      throw new Error('Redis client not available');
+    }
+    if (keys.length === 0) return [];
+    const raws = await this.client.mget(...keys);
+    return raws.map((raw) => {
+      if (raw === null) return null;
+      try {
+        return JSON.parse(raw) as T;
+      } catch {
+        return null;
+      }
+    });
+  }
+
+  /**
+   * Pipelined SETEX for many key/value pairs. One round-trip total.
+   */
+  async setJsonExMany<T>(entries: Array<[string, T]>, ttlSeconds: number): Promise<void> {
+    if (!this.client) {
+      throw new Error('Redis client not available');
+    }
+    if (entries.length === 0) return;
+    const pipeline = this.client.pipeline();
+    for (const [key, value] of entries) {
+      if (value === undefined || value === null) continue;
+      pipeline.setex(key, ttlSeconds, JSON.stringify(value));
+    }
+    await pipeline.exec();
+  }
+
   async acquireLock(key: string): Promise<LockReleaseFn | null> {
     if (!this.client) {
       throw new Error('Redis client not available');

@@ -23,7 +23,7 @@ import { createRequestContext, requestContext } from './request-context';
  * Writes call `invalidateDeferred(key)` which buffers the invalidation in
  * the current request's AsyncLocalStorage context (set up by `runInScope`
  * at message handler entry). Buffered invalidations fire the next time
- * the cache is READ via `getOrFetch` in the same scope, or when the scope
+ * the cache is READ via `get` in the same scope, or when the scope
  * ends — whichever comes first. This guarantees:
  *   - same-request reads after a write see the new state
  *   - concurrent cross-request reads can't repopulate cache from
@@ -32,14 +32,14 @@ import { createRequestContext, requestContext } from './request-context';
  *
  * --- IMPORTANT constraint ---
  *
- * Do NOT call `getOrFetch` from inside an open `prisma.$transaction(callback)`
+ * Do NOT call `get` from inside an open `prisma.$transaction(callback)`
  * block. The pre-read flush would invalidate cache while the surrounding tx
  * has not yet committed, allowing a concurrent reader to query the DB
  * (READ COMMITTED hides the in-flight tx) and repopulate the cache with
  * stale data. The deferred-write protection assumes reads happen AFTER any
  * write tx that touched the same key has committed.
  *
- * Today no caller violates this — `getOrFetch` is only invoked from the
+ * Today no caller violates this — `get` is only invoked from the
  * EndBatch / toggleContents path which runs auto-commit Prisma calls, not
  * inside a wrapping $transaction. New cache call sites should preserve
  * this invariant or pre-fetch the cached values before opening the tx.
@@ -86,7 +86,7 @@ export class ProjectCacheService {
    * we don't want to lock in a "not found" answer for 5 minutes if the
    * row was just about to be created.
    */
-  async getOrFetch<T>(key: string, ttlSeconds: number, loader: () => Promise<T>): Promise<T> {
+  async get<T>(key: string, ttlSeconds: number, loader: () => Promise<T>): Promise<T> {
     await this.flushDeferred();
 
     const cached = await this.redis.getJson<T>(key);
@@ -139,9 +139,58 @@ export class ProjectCacheService {
   }
 
   /**
+   * Batch variant of `get`: read N keys with one MGET, batch-load the
+   * misses via the caller-provided loader (typically a single `findMany`),
+   * then write the freshly-loaded entries back with one pipelined MSETEX.
+   *
+   * Returns a Map keyed by the input cache key. Order of `keys` is preserved
+   * via the returned Map insertion order, but callers should look up by key
+   * rather than relying on iteration order.
+   */
+  async mget<T>(
+    keys: string[],
+    ttlSeconds: number,
+    loadMissing: (missingKeys: string[]) => Promise<Map<string, T>>,
+  ): Promise<Map<string, T>> {
+    await this.flushDeferred();
+
+    const result = new Map<string, T>();
+    if (keys.length === 0) return result;
+
+    const cached = await this.redis.mgetJson<T>(keys);
+    const missingKeys: string[] = [];
+    for (let i = 0; i < keys.length; i++) {
+      const v = cached[i];
+      if (v !== null) {
+        result.set(keys[i], v);
+      } else {
+        missingKeys.push(keys[i]);
+      }
+    }
+
+    if (missingKeys.length > 0) {
+      const fresh = await loadMissing(missingKeys);
+      const toCache: Array<[string, T]> = [];
+      for (const [key, value] of fresh) {
+        result.set(key, value);
+        toCache.push([key, value]);
+      }
+      if (toCache.length > 0) {
+        try {
+          await this.redis.setJsonExMany(toCache, ttlSeconds);
+        } catch (err) {
+          this.logger.warn(`Failed to write ${toCache.length} cache entries: ${err}`);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Establish a request scope around `fn`. Any `invalidateDeferred` calls
    * inside the scope are buffered and fired the next time the cache is
-   * read (via `getOrFetch`) or once `fn` resolves — whichever comes first.
+   * read (via `get`) or once `fn` resolves — whichever comes first.
    *
    * Use this at outer boundaries that own a transaction lifecycle but aren't
    * already running inside another scope (admin mutations, etc.). Websocket
@@ -161,7 +210,7 @@ export class ProjectCacheService {
 
   /**
    * Drain any pending `invalidateDeferred` calls in the current request
-   * scope. Called automatically by `getOrFetch` before each cache read.
+   * scope. Called automatically by `get` before each cache read.
    * Safe to call when no scope is active (no-op).
    */
   private async flushDeferred(): Promise<void> {

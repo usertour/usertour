@@ -75,13 +75,14 @@ export class ContentService {
 
   async addContentSteps(input: ContentStepsInput) {
     const { contentId, versionId, steps, themeId } = input;
+    // Editable-only: matches addContentStep / updateContentStep /
+    // updateStepsSequence / updateContentVersion. The previous inline check
+    // duplicated the rule and was easy to drift out of sync.
+    await this.contentVersionIsEditable(versionId);
+    // Caller passes contentId explicitly — guard rail (versionId must belong
+    // to this content) since contentVersionIsEditable doesn't see contentId.
     const content = await this.getContent(contentId);
-    if (
-      !content ||
-      !content.editedVersionId ||
-      versionId !== content.editedVersionId ||
-      content.publishedVersionId === versionId
-    ) {
+    if (!content || content.editedVersionId !== versionId) {
       throw new ParamsError();
     }
 
@@ -126,13 +127,11 @@ export class ContentService {
 
   async addContentStep(data: CreateStepInput) {
     const versionId = data.versionId;
-    const version = await this.prisma.version.findUnique({
-      where: { id: versionId },
-    });
-    const content = await this.getContent(version.contentId);
-    if (!content || content.publishedVersionId === version.id) {
-      throw new ParamsError();
-    }
+    // Editable-only: must match content.editedVersionId AND not be currently
+    // published. Aligns with addContentSteps / updateStepsSequence /
+    // updateContentVersion (the previous guard let historical published
+    // versions through, breaking the published-immutability contract).
+    await this.contentVersionIsEditable(versionId);
 
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -174,10 +173,11 @@ export class ContentService {
 
   async updateContentStep(stepId: string, data: UpdateStepInput) {
     const version = await this.prisma.step.findUnique({ where: { id: stepId } }).version();
-    const content = await this.getContent(version.contentId);
-    if (!content || content.publishedVersionId === version.id) {
+    if (!version) {
       throw new ParamsError();
     }
+    // Editable-only: see addContentStep.
+    await this.contentVersionIsEditable(version.id);
     return await this.prisma.step.update({
       where: { id: stepId },
       data,
@@ -365,13 +365,7 @@ export class ContentService {
       return content;
     });
 
-    // Cache must be invalidated BEFORE notifying SDK clients — otherwise an
-    // SDK that immediately re-EndBatches on the notification would still
-    // read the stale content list.
     await this.cache.invalidate(this.cache.envContentKeys(environmentId));
-
-    // Send WebSocket notification outside of transaction
-    await this.webSocketGateway.notifyContentChanged(environmentId);
 
     return content;
   }
@@ -411,11 +405,7 @@ export class ContentService {
       return content;
     });
 
-    // Invalidate before notifying clients (see publishedContentVersion).
     await this.cache.invalidate(this.cache.envContentKeys(environmentId));
-
-    // send content change notification to all users in the environment
-    await this.webSocketGateway.notifyContentChanged(environmentId);
 
     // Cancel all active content sessions for this content
     await this.webSocketV2Gateway.cancelAllContentSessions(contentId, environmentId);

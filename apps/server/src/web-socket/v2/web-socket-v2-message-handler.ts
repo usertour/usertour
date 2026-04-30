@@ -166,7 +166,7 @@ export class WebSocketV2MessageHandler {
 
     // runInScope establishes a per-message AsyncLocalStorage context so any
     // cache.invalidateDeferred(...) calls made during message handling are
-    // buffered and fired the next time the cache is read (via getOrFetch)
+    // buffered and fired the next time the cache is read (via get)
     // OR when this scope ends — whichever comes first. Both branches happen
     // after any embedded $transaction has committed, so concurrent readers
     // never repopulate cache from pre-commit DB state.
