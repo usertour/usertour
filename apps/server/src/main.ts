@@ -1,7 +1,8 @@
-import { ValidationPipe } from '@nestjs/common';
+import { Logger as NestLogger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { PrismaService } from 'nestjs-prisma';
 import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
@@ -25,6 +26,20 @@ async function bootstrap() {
 
   // Use pino logger
   app.useLogger(app.get(Logger));
+
+  // Engine-level Prisma SQL logging (catches SQL inside $transaction(callback),
+  // which middleware cannot see). Gated by the same env var as the middleware.
+  if (process.env.ENABLE_PRISMA_LOGGING === 'true') {
+    const prisma = app.get(PrismaService);
+    const sqlLogger = new NestLogger('PrismaSQL');
+    type QueryEvent = { query: string; params: string; duration: number; target: string };
+    (prisma as unknown as { $on: (event: 'query', cb: (e: QueryEvent) => void) => void }).$on(
+      'query',
+      (e) => {
+        sqlLogger.log(`took ${e.duration}ms ${e.query} ${e.params}`);
+      },
+    );
+  }
 
   // Catch all exceptions
   // app.useGlobalFilters(new AllExceptionsFilter());
