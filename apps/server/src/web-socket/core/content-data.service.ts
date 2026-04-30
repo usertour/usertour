@@ -383,24 +383,37 @@ export class ContentDataService {
       return version ? [version] : [];
     }
 
-    // Find all published versions with content, filtered by contentTypes in Prisma query
-    const publishedContents = await this.prisma.content.findMany({
-      where: {
-        deleted: false,
-        contentOnEnvironments: {
-          some: {
-            environmentId: environment.id,
-            published: true,
+    // Find all published Contents (with their ContentOnEnvironment join rows)
+    // for this env + type filter. Cached only when filtering by a single type
+    // (which is what the toggleContents loop and handleChecklistCompletedEvents
+    // always do); a multi-type query is rare enough to skip caching for.
+    const fetchPublishedContents = () =>
+      this.prisma.content.findMany({
+        where: {
+          deleted: false,
+          contentOnEnvironments: {
+            some: {
+              environmentId: environment.id,
+              published: true,
+            },
+          },
+          type: {
+            in: contentTypes,
           },
         },
-        type: {
-          in: contentTypes,
+        include: {
+          contentOnEnvironments: true,
         },
-      },
-      include: {
-        contentOnEnvironments: true,
-      },
-    });
+      });
+
+    const publishedContents =
+      contentTypes.length === 1
+        ? await this.cache.getOrFetch(
+            this.cache.keys.contents(environment.id, contentTypes[0]),
+            ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
+            fetchPublishedContents,
+          )
+        : await fetchPublishedContents();
 
     // Extract version IDs for published contents
     const versionIds = publishedContents

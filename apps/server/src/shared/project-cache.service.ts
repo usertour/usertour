@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ContentDataType } from '@usertour/types';
 import { RedisService } from './redis.service';
 import { createRequestContext, requestContext } from './request-context';
 
@@ -178,5 +179,15 @@ export class ProjectCacheService {
       this.keys.themes(projectId),
       this.keys.projectLicense(projectId),
     ]);
+  }
+
+  /**
+   * Cache keys covering every content-type slice for an environment.
+   * Admin write paths usually don't know which slices changed —
+   * `await cache.invalidate(cache.envContentKeys(envId))` wipes them all
+   * with a single Redis DEL.
+   */
+  envContentKeys(envId: string): string[] {
+    return Object.values(ContentDataType).map((type) => this.keys.contents(envId, type));
   }
 }

@@ -13,6 +13,7 @@ import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
 import { ContentConfigObject } from '@usertour/types';
 import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()
 export class ContentService {
@@ -20,6 +21,7 @@ export class ContentService {
     private prisma: PrismaService,
     private webSocketGateway: WebSocketGateway,
     private webSocketV2Gateway: WebSocketV2Gateway,
+    private readonly cache: ProjectCacheService,
   ) {}
 
   async createContent(input: ContentInput) {
@@ -363,6 +365,11 @@ export class ContentService {
       return content;
     });
 
+    // Cache must be invalidated BEFORE notifying SDK clients — otherwise an
+    // SDK that immediately re-EndBatches on the notification would still
+    // read the stale content list.
+    await this.cache.invalidate(this.cache.envContentKeys(environmentId));
+
     // Send WebSocket notification outside of transaction
     await this.webSocketGateway.notifyContentChanged(environmentId);
 
@@ -404,6 +411,9 @@ export class ContentService {
       return content;
     });
 
+    // Invalidate before notifying clients (see publishedContentVersion).
+    await this.cache.invalidate(this.cache.envContentKeys(environmentId));
+
     // send content change notification to all users in the environment
     await this.webSocketGateway.notifyContentChanged(environmentId);
 
@@ -414,12 +424,15 @@ export class ContentService {
   }
 
   async deleteContent(contentId: string) {
-    return await this.prisma.content.update({
+    const updated = await this.prisma.content.update({
       where: { id: contentId },
       data: {
         deleted: true,
       },
     });
+    // The deleted Content drops out of the published-contents cache filter.
+    await this.cache.invalidate(this.cache.envContentKeys(updated.environmentId));
+    return updated;
   }
 
   async duplicateContent(contentId: string, name: string, targetEnvironmentId?: string) {
