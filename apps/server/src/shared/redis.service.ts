@@ -74,6 +74,47 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return this.client.get(key);
   }
 
+  /**
+   * Read a JSON-serialized value. Returns null on miss or parse failure.
+   * Date / BigInt / Map / Set are NOT preserved — callers must only cache
+   * values that survive a round-trip through JSON.
+   */
+  async getJson<T>(key: string): Promise<T | null> {
+    if (!this.client) {
+      throw new Error('Redis client not available');
+    }
+    const raw = await this.client.get(key);
+    if (raw === null) return null;
+    try {
+      return JSON.parse(raw) as T;
+    } catch (err) {
+      this.logger.warn(`Failed to parse cached value for ${key}: ${err}`);
+      return null;
+    }
+  }
+
+  /**
+   * Store a JSON-serialized value with TTL in seconds.
+   * Skips entirely on undefined/null to avoid caching empty results
+   * (callers that want to cache "negative" lookups should pass an explicit sentinel).
+   */
+  async setJsonEx<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
+    if (!this.client) {
+      throw new Error('Redis client not available');
+    }
+    if (value === undefined || value === null) return;
+    await this.client.setex(key, ttlSeconds, JSON.stringify(value));
+  }
+
+  async del(keys: string | string[]): Promise<void> {
+    if (!this.client) {
+      throw new Error('Redis client not available');
+    }
+    const list = Array.isArray(keys) ? keys : [keys];
+    if (list.length === 0) return;
+    await this.client.del(...list);
+  }
+
   async acquireLock(key: string): Promise<LockReleaseFn | null> {
     if (!this.client) {
       throw new Error('Redis client not available');
