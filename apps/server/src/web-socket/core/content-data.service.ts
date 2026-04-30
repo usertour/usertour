@@ -349,12 +349,22 @@ export class ContentDataService {
   }
 
   /**
-   * Find themes by project ID
+   * Find themes by project ID.
+   *
+   * Cached per project: result depends only on projectId. Invalidated by
+   * ThemesService on every create/update/delete. Theme has Date columns
+   * but none are read in the EndBatch / session-builder hot path so the
+   * JSON round trip is safe.
    */
   private async findThemesByProject(environment: Environment): Promise<Theme[]> {
-    return await this.prisma.theme.findMany({
-      where: { projectId: environment.projectId },
-    });
+    return await this.cache.get(
+      this.cache.keys.themes(environment.projectId),
+      ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
+      () =>
+        this.prisma.theme.findMany({
+          where: { projectId: environment.projectId },
+        }),
+    );
   }
 
   /**
