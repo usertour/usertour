@@ -32,6 +32,7 @@ import {
   ConditionEvaluationContext,
 } from './condition-evaluation.service';
 import { DISMISSED_EVENTS } from '@/utils/event-v2';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 // ============================================================================
 // Type Definitions
@@ -114,7 +115,12 @@ export class ContentDataService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly conditionEvaluationService: ConditionEvaluationService,
+    private readonly cache: ProjectCacheService,
   ) {}
+
+  /** TTL for project-level cached configuration. Long enough to absorb most
+   *  reads but short enough that any missed invalidation self-heals quickly. */
+  private static readonly PROJECT_CONFIG_TTL_SECONDS = 5 * 60;
 
   // ============================================================================
   // Public API Methods
@@ -313,17 +319,28 @@ export class ContentDataService {
   }
 
   /**
-   * Find attributes for content processing
+   * Find attributes for content processing.
+   *
+   * Cached per project: the result depends only on projectId + the fixed
+   * CONTENT_ATTRIBUTE_BIZ_TYPES filter, and only changes when the admin
+   * mutates Attribute rows (handled by AttributesService write path).
+   * Attribute has Date columns but none of the hot-path consumers read
+   * them, so caching the entity as-is is safe.
    */
   private async findAttributes(environment: Environment): Promise<Attribute[]> {
-    return await this.prisma.attribute.findMany({
-      where: {
-        projectId: environment.projectId,
-        bizType: {
-          in: [...ContentDataService.CONTENT_ATTRIBUTE_BIZ_TYPES],
-        },
-      },
-    });
+    return await this.cache.getOrFetch(
+      this.cache.keys.attrs(environment.projectId),
+      ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
+      () =>
+        this.prisma.attribute.findMany({
+          where: {
+            projectId: environment.projectId,
+            bizType: {
+              in: [...ContentDataService.CONTENT_ATTRIBUTE_BIZ_TYPES],
+            },
+          },
+        }),
+    );
   }
 
   /**
