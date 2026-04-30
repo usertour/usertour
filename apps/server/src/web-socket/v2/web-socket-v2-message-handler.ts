@@ -5,6 +5,7 @@ import { WebSocketV2Service } from './web-socket-v2.service';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { DistributedLockService } from '../core/distributed-lock.service';
 import { buildSocketLockKey, getSocketToken } from '@/utils/websocket-utils';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 interface MessageHandler {
   handle(context: WebSocketContext, payload?: any): Promise<any>;
@@ -22,6 +23,7 @@ export class WebSocketV2MessageHandler {
   constructor(
     private readonly service: WebSocketV2Service,
     private readonly distributedLockService: DistributedLockService,
+    private readonly cache: ProjectCacheService,
   ) {
     this.registerHandlers();
   }
@@ -162,12 +164,24 @@ export class WebSocketV2MessageHandler {
     const startTime = Date.now();
     const lockKey = buildSocketLockKey(socket);
 
-    const result = await this.distributedLockService.withRetryLock(
-      lockKey,
-      () => this.handleMessage(server, socket, kind, payload),
-      5, // Retry 5 times (increased from 3 to handle concurrent message processing)
-      1000, // Retry interval 1000ms (allows sufficient time for message processing including DB operations)
-      5000, // Lock timeout 5 seconds
+    // runInScope establishes a per-message AsyncLocalStorage context so any
+    // cache.invalidateDeferred(...) calls made during message handling are
+    // buffered and fired the next time the cache is read (via get)
+    // OR when this scope ends — whichever comes first. Both branches happen
+    // after any embedded $transaction has committed, so concurrent readers
+    // never repopulate cache from pre-commit DB state.
+    //
+    // Without this scope, invalidateDeferred would fall back to immediate
+    // invalidation, which is fine for handlers whose Prisma writes auto-commit
+    // per statement but unsafe for any path that wraps writes in $transaction.
+    const result = await this.cache.runInScope(() =>
+      this.distributedLockService.withRetryLock(
+        lockKey,
+        () => this.handleMessage(server, socket, kind, payload),
+        5,
+        1000,
+        5000,
+      ),
     );
 
     const duration = Date.now() - startTime;

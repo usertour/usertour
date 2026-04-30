@@ -40,6 +40,7 @@ import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 import { assignClientContext } from '@/utils/event-v2';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
@@ -67,6 +68,7 @@ export class WebSocketV2Service {
     private eventTrackingService: EventTrackingService,
     private readonly contentOrchestratorService: ContentOrchestratorService,
     private readonly socketDataService: SocketDataService,
+    private readonly cache: ProjectCacheService,
   ) {}
 
   // ============================================================================
@@ -428,6 +430,7 @@ export class WebSocketV2Service {
 
     const { name, attributes, userOnly } = trackEventDto;
 
+    let createdNewAttribute = false;
     const success = await this.prisma.$transaction(async (tx) => {
       // 1. Find or create Event by codeName + projectId
       let event = await tx.event.findFirst({
@@ -476,6 +479,7 @@ export class WebSocketV2Service {
                 bizType: AttributeBizType.EVENT,
               },
             });
+            createdNewAttribute = true;
           }
 
           // Validate and store value (same logic as insertBizAttributes)
@@ -526,6 +530,10 @@ export class WebSocketV2Service {
 
     if (!success) {
       return false;
+    }
+
+    if (createdNewAttribute) {
+      this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
 
     await this.contentOrchestratorService.toggleContents(context);

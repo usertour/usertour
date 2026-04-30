@@ -34,6 +34,7 @@ import {
   isNull,
   isValidISO8601,
 } from '@usertour/helpers';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 // Legacy data in DB may be stored as Record<string, boolean>; new shape is ColumnSetting[].
 // Normalize at the service boundary so callers always see the array shape.
@@ -62,7 +63,10 @@ function normalizeSegmentColumns(raw: unknown): ColumnSetting[] {
 export class BizService {
   private readonly logger = new Logger(BizService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly cache: ProjectCacheService,
+  ) {}
 
   async createBizUser(data: CreateBizInput) {
     return await this.prisma.bizUser.create({
@@ -672,6 +676,9 @@ export class BizService {
       externalCompanyId,
       attributes,
     );
+    if (!company) {
+      return null;
+    }
     await this.upsertBizMembership(tx, projectId, company.id, user.id, membership || {});
 
     return company;
@@ -796,6 +803,7 @@ export class BizService {
     attributes: Record<string, any>,
   ): Promise<Record<string, any>> {
     const insertAttribute = {};
+    let createdNewAttribute = false;
     for (const codeName in attributes) {
       const attrValue = attributes[codeName];
       const attrName = codeName;
@@ -821,6 +829,7 @@ export class BizService {
             bizType,
           },
         });
+        createdNewAttribute = true;
         if (newAttr) {
           // DateTime must be stored as ISO 8601 in UTC
           if (dataType === BizAttributeTypes.DateTime) {
@@ -857,6 +866,15 @@ export class BizService {
           );
         }
       }
+    }
+    // Defer cache invalidation to the request boundary. Doing this inline
+    // would fire BEFORE the surrounding $transaction commits, opening a
+    // window where another request could repopulate the cache from
+    // pre-commit DB state. ProjectCacheService falls back to immediate
+    // invalidation when called outside a request scope (i.e. when tx is
+    // actually `this.prisma` and statements auto-commit).
+    if (createdNewAttribute) {
+      this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
     return insertAttribute;
   }
@@ -902,42 +920,47 @@ export class BizService {
       attributes?: Record<string, any>;
     }>,
   ) {
-    return await this.prisma.$transaction(async (tx) => {
-      // First upsert the user with attributes
-      const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
+    // runInScope buffers any cache.invalidateDeferred calls made by
+    // insertBizAttributes (and friends) inside the $transaction, then
+    // fires them once the transaction has committed.
+    return await this.cache.runInScope(async () => {
+      return await this.prisma.$transaction(async (tx) => {
+        // First upsert the user with attributes
+        const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
 
-      if (!user) {
-        throw new UnknownError('Failed to upsert user');
-      }
-
-      // Handle companies/companies and memberships
-      if (companies) {
-        for (const company of companies) {
-          await this.upsertBizCompanies(
-            tx,
-            company.id,
-            externalUserId,
-            company.attributes || {},
-            environmentId,
-            {},
-          );
+        if (!user) {
+          throw new UnknownError('Failed to upsert user');
         }
-      }
 
-      if (memberships) {
-        for (const membership of memberships) {
-          await this.upsertBizCompanies(
-            tx,
-            membership.company.id,
-            externalUserId,
-            membership.company.attributes || {},
-            environmentId,
-            membership.attributes || {},
-          );
+        // Handle companies/companies and memberships
+        if (companies) {
+          for (const company of companies) {
+            await this.upsertBizCompanies(
+              tx,
+              company.id,
+              externalUserId,
+              company.attributes || {},
+              environmentId,
+              {},
+            );
+          }
         }
-      }
 
-      return user;
+        if (memberships) {
+          for (const membership of memberships) {
+            await this.upsertBizCompanies(
+              tx,
+              membership.company.id,
+              externalUserId,
+              membership.company.attributes || {},
+              environmentId,
+              membership.attributes || {},
+            );
+          }
+        }
+
+        return user;
+      });
     });
   }
 

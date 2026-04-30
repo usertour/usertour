@@ -2,25 +2,33 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CopyThemeInput, CreateThemeInput, UpdateThemeInput } from './dto/theme.input';
 import { ParamsError } from '@/common/errors';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()
 export class ThemesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly cache: ProjectCacheService,
+  ) {}
 
   async createTheme(data: CreateThemeInput) {
     if (data.isDefault) {
       await this.unsetThemeDefault(data.projectId);
     }
-    return await this.prisma.theme.create({
+    const created = await this.prisma.theme.create({
       data,
     });
+    await this.cache.invalidate(this.cache.keys.themes(created.projectId));
+    return created;
   }
 
   async unsetThemeDefault(projectId: string) {
-    return await this.prisma.theme.updateMany({
+    const result = await this.prisma.theme.updateMany({
       where: { isDefault: true, projectId },
       data: { isDefault: false },
     });
+    await this.cache.invalidate(this.cache.keys.themes(projectId));
+    return result;
   }
 
   async setDefaultTheme(themeId: string) {
@@ -29,10 +37,12 @@ export class ThemesService {
       throw new ParamsError();
     }
     await this.unsetThemeDefault(theme.projectId);
-    return await this.prisma.theme.update({
+    const updated = await this.prisma.theme.update({
       where: { id: themeId },
       data: { isDefault: true },
     });
+    await this.cache.invalidate(this.cache.keys.themes(updated.projectId));
+    return updated;
   }
 
   async updateTheme(data: UpdateThemeInput) {
@@ -41,10 +51,12 @@ export class ThemesService {
     if (!theme || theme.isSystem) {
       throw new ParamsError();
     }
-    return await this.prisma.theme.update({
+    const updated = await this.prisma.theme.update({
       where: { id },
       data: { ...others },
     });
+    await this.cache.invalidate(this.cache.keys.themes(updated.projectId));
+    return updated;
   }
 
   async getTheme(id: string) {
@@ -58,9 +70,11 @@ export class ThemesService {
     if (theme.isSystem || theme.isDefault) {
       throw new ParamsError();
     }
-    return await this.prisma.theme.delete({
+    const deleted = await this.prisma.theme.delete({
       where: { id },
     });
+    await this.cache.invalidate(this.cache.keys.themes(deleted.projectId));
+    return deleted;
   }
 
   async copyTheme(input: CopyThemeInput) {
