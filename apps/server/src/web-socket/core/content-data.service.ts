@@ -210,24 +210,32 @@ export class ContentDataService {
   }
 
   /**
-   * Find published version ID by contentId and environmentId
-   * @param contentId - The content ID
-   * @param environmentId - The environment ID
-   * @returns Published version ID or undefined if not found
+   * Find published version ID by contentId and environmentId.
+   *
+   * Cached per (envId, contentId). Invalidated alongside the env's content
+   * slices on publish / unpublish / delete (see content.service.ts). The
+   * "no published" undefined result is intentionally not cached — its
+   * frequency is low and skipping the cache write avoids a sentinel value
+   * scheme.
    */
   async findPublishedVersionId(contentId: string, environmentId: string) {
-    const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
-      where: {
-        environmentId,
-        contentId,
-        published: true,
+    return await this.cache.get(
+      this.cache.keys.publishedVersionId(environmentId, contentId),
+      ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
+      async () => {
+        const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
+          where: {
+            environmentId,
+            contentId,
+            published: true,
+          },
+          select: {
+            publishedVersionId: true,
+          },
+        });
+        return contentOnEnvironment?.publishedVersionId;
       },
-      select: {
-        publishedVersionId: true,
-      },
-    });
-
-    return contentOnEnvironment?.publishedVersionId;
+    );
   }
 
   /**

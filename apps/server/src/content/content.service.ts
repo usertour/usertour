@@ -365,7 +365,10 @@ export class ContentService {
       return content;
     });
 
-    await this.cache.invalidate(this.cache.envContentKeys(environmentId));
+    await this.cache.invalidate([
+      ...this.cache.envContentKeys(environmentId),
+      this.cache.keys.publishedVersionId(environmentId, content.id),
+    ]);
 
     return content;
   }
@@ -405,7 +408,10 @@ export class ContentService {
       return content;
     });
 
-    await this.cache.invalidate(this.cache.envContentKeys(environmentId));
+    await this.cache.invalidate([
+      ...this.cache.envContentKeys(environmentId),
+      this.cache.keys.publishedVersionId(environmentId, contentId),
+    ]);
 
     // Cancel all active content sessions for this content
     await this.webSocketV2Gateway.cancelAllContentSessions(contentId, environmentId);
@@ -420,8 +426,12 @@ export class ContentService {
         deleted: true,
       },
     });
-    // The deleted Content drops out of the published-contents cache filter.
-    await this.cache.invalidate(this.cache.envContentKeys(updated.environmentId));
+    // The deleted Content drops out of the published-contents cache filter,
+    // and any cached publishedVersionId for it is now meaningless.
+    await this.cache.invalidate([
+      ...this.cache.envContentKeys(updated.environmentId),
+      this.cache.keys.publishedVersionId(updated.environmentId, contentId),
+    ]);
     return updated;
   }
 
