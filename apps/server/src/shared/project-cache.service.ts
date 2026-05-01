@@ -273,6 +273,41 @@ export class ProjectCacheService {
   }
 
   /**
+   * Drop one memo entry from the current request scope. Used by writers
+   * that mutate the cached entity mid-scope (e.g. `bindToAttribute` writes
+   * a user-defined field on `BizUser.data` inside a trackEvent tx) so the
+   * next read repopulates from DB instead of returning the pre-write
+   * snapshot. No-op outside a scope.
+   */
+  invalidateMemo(key: string): void {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return;
+    }
+    ctx.memo.delete(key);
+  }
+
+  /**
+   * Drop every memo entry whose key starts with one of `prefixes`. Used
+   * when the writer doesn't carry the full key parameters — e.g.
+   * `upsertBizMembership` knows `bizUserId` and `bizCompanyId` but not the
+   * `(envId, externalCompanyId)` tuple stored in the
+   * `bizUserOnCompanyWithBizCompany` key. Wiping by user prefix is safe
+   * because each request scope only holds memos for that request's user.
+   */
+  invalidateMemoByPrefix(prefixes: string[]): void {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return;
+    }
+    for (const key of [...ctx.memo.keys()]) {
+      if (prefixes.some((p) => key.startsWith(p))) {
+        ctx.memo.delete(key);
+      }
+    }
+  }
+
+  /**
    * Drain any pending `invalidateDeferred` calls in the current request
    * scope. Called automatically by `get` before each cache read.
    * Safe to call when no scope is active (no-op).

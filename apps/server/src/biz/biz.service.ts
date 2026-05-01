@@ -643,13 +643,15 @@ export class BizService {
       where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
-      return await tx.bizUser.create({
+      const created = await tx.bizUser.create({
         data: {
           externalId: String(externalUserId),
           environmentId,
           data: insertAttribute,
         },
       });
+      this.cache.invalidateMemo(this.cache.memoKeys.bizUser(environmentId, String(externalUserId)));
+      return created;
     }
     const currentData = (user.data as Record<string, any>) || {};
     const insertData = filterNullAttributes({
@@ -662,7 +664,7 @@ export class BizService {
       return user;
     }
 
-    return await tx.bizUser.update({
+    const updated = await tx.bizUser.update({
       where: {
         id: user.id,
       },
@@ -670,6 +672,13 @@ export class BizService {
         data: insertData,
       },
     });
+    // Drop the per-request memo so subsequent findBizUser reads (e.g. the
+    // toggleContents condition evaluation that fires right after a
+    // bindToAttribute write) see the fresh `data`. Without this the memo
+    // would serve the scope-entry snapshot and segment rules filtering on
+    // the just-written attribute would evaluate against the old value.
+    this.cache.invalidateMemo(this.cache.memoKeys.bizUser(environmentId, String(externalUserId)));
+    return updated;
   }
 
   async upsertBizCompanies(
@@ -754,7 +763,7 @@ export class BizService {
         return company;
       }
 
-      return await tx.bizCompany.update({
+      const updated = await tx.bizCompany.update({
         where: {
           id: company.id,
         },
@@ -762,15 +771,24 @@ export class BizService {
           data: mergedData,
         },
       });
+      // Drop the per-request memo so subsequent reads see fresh `data`.
+      this.cache.invalidateMemo(
+        this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
+      );
+      return updated;
     }
 
-    return await tx.bizCompany.create({
+    const created = await tx.bizCompany.create({
       data: {
         externalId: String(externalCompanyId),
         environmentId,
         data: insertAttribute,
       },
     });
+    this.cache.invalidateMemo(
+      this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
+    );
+    return created;
   }
 
   async upsertBizMembership(
@@ -803,7 +821,7 @@ export class BizService {
         return relation;
       }
 
-      return await tx.bizUserOnCompany.update({
+      const updated = await tx.bizUserOnCompany.update({
         where: {
           id: relation.id,
         },
@@ -811,14 +829,23 @@ export class BizService {
           data: mergedData,
         },
       });
+      // Drop both membership memos: the bare `bizUserOnCompany:bizUser:bizCompany`
+      // key is targeted, and `bizUserOnCompanyWithBizCompany:bizUser:...` is wiped
+      // by user prefix because we don't carry envId/externalCompanyId here.
+      this.cache.invalidateMemo(this.cache.memoKeys.bizUserOnCompany(bizUserId, bizCompanyId));
+      this.cache.invalidateMemoByPrefix([`bizUserOnCompanyWithBizCompany:${bizUserId}:`]);
+      return updated;
     }
-    return await tx.bizUserOnCompany.create({
+    const created = await tx.bizUserOnCompany.create({
       data: {
         bizUserId,
         bizCompanyId,
         data: insertAttribute,
       },
     });
+    this.cache.invalidateMemo(this.cache.memoKeys.bizUserOnCompany(bizUserId, bizCompanyId));
+    this.cache.invalidateMemoByPrefix([`bizUserOnCompanyWithBizCompany:${bizUserId}:`]);
+    return created;
   }
 
   /**
