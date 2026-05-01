@@ -385,7 +385,7 @@ export class ContentService {
   }
 
   async unpublishedContentVersion(contentId: string, environmentId: string) {
-    const content = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Update Content table
       const content = await tx.content.update({
         where: { id: contentId },
@@ -416,18 +416,28 @@ export class ContentService {
         });
       }
 
-      return content;
+      return { content, unpublishedVersionId: contentOnEnv?.publishedVersionId ?? null };
     });
 
-    await this.cache.invalidate([
+    const keys = [
       ...this.cache.envContentKeys(environmentId),
       this.cache.keys.publishedVersionId(environmentId, contentId),
-    ]);
+    ];
+    // versionFull caches Version + Steps with a 30-min TTL on the assumption
+    // that a published version is immutable. Unpublishing breaks that
+    // invariant — once detached from every COE the version drops back into
+    // editable state, and any subsequent step / version edits would render
+    // a still-cached entry stale. Wipe it here so the next read repopulates
+    // from DB.
+    if (result.unpublishedVersionId) {
+      keys.push(this.cache.keys.versionFull(result.unpublishedVersionId));
+    }
+    await this.cache.invalidate(keys);
 
     // Cancel all active content sessions for this content
     await this.webSocketV2Gateway.cancelAllContentSessions(contentId, environmentId);
 
-    return content;
+    return result.content;
   }
 
   async deleteContent(contentId: string) {

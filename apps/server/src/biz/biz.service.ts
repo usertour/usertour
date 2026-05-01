@@ -1025,47 +1025,52 @@ export class BizService {
       attributes?: Record<string, any>;
     }>,
   ) {
-    // runInScope buffers any cache.invalidateDeferred calls made by
-    // insertBizAttributes (and friends) inside the $transaction, then
-    // fires them once the transaction has committed.
-    return await this.cache.runInScope(async () => {
-      return await this.prisma.$transaction(async (tx) => {
-        // First upsert the user with attributes
-        const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
+    // No runInScope wrap: the only cache write inside this $transaction is
+    // `invalidateDeferred(attrs(projectId))`, fired by insertBizAttributes
+    // when the SDK upsert payload introduces a previously-unseen attribute
+    // codeName. A mid-tx invalidate races with concurrent cross-pod readers
+    // that could fill the cache from pre-commit DB state — but the freshly
+    // created Attribute has no existing condition referencing it (admin
+    // couldn't have configured a rule against a codeName that didn't
+    // exist yet), so an `attrs` cache slice missing this row produces no
+    // observable effect on toggleContents output. The 5-minute TTL self-
+    // heals before any new admin-configured rule could reference it.
+    return await this.prisma.$transaction(async (tx) => {
+      // First upsert the user with attributes
+      const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
 
-        if (!user) {
-          throw new UnknownError('Failed to upsert user');
+      if (!user) {
+        throw new UnknownError('Failed to upsert user');
+      }
+
+      // Handle companies/companies and memberships
+      if (companies) {
+        for (const company of companies) {
+          await this.upsertBizCompanies(
+            tx,
+            company.id,
+            externalUserId,
+            company.attributes || {},
+            environmentId,
+            {},
+          );
         }
+      }
 
-        // Handle companies/companies and memberships
-        if (companies) {
-          for (const company of companies) {
-            await this.upsertBizCompanies(
-              tx,
-              company.id,
-              externalUserId,
-              company.attributes || {},
-              environmentId,
-              {},
-            );
-          }
+      if (memberships) {
+        for (const membership of memberships) {
+          await this.upsertBizCompanies(
+            tx,
+            membership.company.id,
+            externalUserId,
+            membership.company.attributes || {},
+            environmentId,
+            membership.attributes || {},
+          );
         }
+      }
 
-        if (memberships) {
-          for (const membership of memberships) {
-            await this.upsertBizCompanies(
-              tx,
-              membership.company.id,
-              externalUserId,
-              membership.company.attributes || {},
-              environmentId,
-              membership.attributes || {},
-            );
-          }
-        }
-
-        return user;
-      });
+      return user;
     });
   }
 
