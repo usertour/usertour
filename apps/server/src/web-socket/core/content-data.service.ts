@@ -288,22 +288,20 @@ export class ContentDataService {
   }
 
   /**
-   * Check if the user has a biz event
-   * @param contentId - The ID of the content
-   * @param bizUserId - The ID of the business user
-   * @param eventCodeNames - The code names of the events (array of strings)
-   * @returns true if the user has any of the events, false otherwise
+   * Check if the user has a biz event.
+   *
+   * NOT memoized: trackBizEvent fires SEEN / COMPLETED events mid-EndBatch
+   * as toggleContents starts new sessions, so a memo'd pre-event answer
+   * would hide just-fired events from later condition evaluation.
    */
   async hasBizEvent(
     contentId: string,
     bizUserId: string,
     eventCodeNames: string[],
   ): Promise<boolean> {
-    // Early return if no events to check
     if (!eventCodeNames || eventCodeNames.length === 0) {
       return false;
     }
-
     const count = await this.prisma.bizSession.count({
       where: {
         contentId,
@@ -327,10 +325,12 @@ export class ContentDataService {
     environment: Environment,
     externalUserId: string,
   ): Promise<BizUser | null> {
-    return this.cache.memoize('bizUser', `${environment.id}:${String(externalUserId)}`, () =>
-      this.prisma.bizUser.findFirst({
-        where: { externalId: String(externalUserId), environmentId: environment.id },
-      }),
+    return this.cache.memoize(
+      this.cache.memoKeys.bizUser(environment.id, String(externalUserId)),
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: { externalId: String(externalUserId), environmentId: environment.id },
+        }),
     );
   }
 

@@ -196,7 +196,14 @@ describe('ConditionEvaluationService', () => {
           // cross-call deduplication so this is sufficient.
           provide: ProjectCacheService,
           useValue: {
-            memoize: <T>(_namespace: string, _key: string, loader: () => Promise<T>) => loader(),
+            memoize: <T>(_key: string, loader: () => Promise<T>) => loader(),
+            memoKeys: {
+              bizUserOnCompanyWithBizCompany: (
+                bizUserId: string,
+                envId: string,
+                externalCompanyId: string,
+              ) => `bizUserOnCompanyWithBizCompany:${bizUserId}:${envId}:${externalCompanyId}`,
+            },
           },
         },
       ],

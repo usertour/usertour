@@ -718,8 +718,11 @@ export class ConditionEvaluationService {
    */
   private async findUserCompanyRelation(context: ConditionEvaluationContext) {
     return this.cache.memoize(
-      'bizUserOnCompanyWithBizCompany',
-      `${context.bizUser.id}:${context.environment.id}:${String(context.externalCompanyId)}`,
+      this.cache.memoKeys.bizUserOnCompanyWithBizCompany(
+        context.bizUser.id,
+        context.environment.id,
+        String(context.externalCompanyId),
+      ),
       () =>
         this.prisma.bizUserOnCompany.findFirst({
           where: {
@@ -737,10 +740,14 @@ export class ConditionEvaluationService {
   }
 
   /**
-   * Check if there is an available session for a content and user
-   * @param contentId - The ID of the content
-   * @param bizUserId - The ID of the business user
-   * @returns true if an available session exists, false otherwise
+   * Check if there is an available session for a content and user.
+   *
+   * NOT memoized: toggleContents may create new BizSessions mid-EndBatch
+   * (one content type's auto-start fires, then another type's rules ask
+   * "is content X activated?"), and a memo'd pre-creation `false` would
+   * mask the just-created session. The repeated calls within one
+   * evaluation pass hit a hot DB row anyway — cheaper than getting the
+   * answer wrong.
    */
   private async hasAvailableSession(contentId: string, bizUserId: string): Promise<boolean> {
     const count = await this.prisma.bizSession.count({
@@ -750,22 +757,20 @@ export class ConditionEvaluationService {
   }
 
   /**
-   * Check if the user has a biz event
-   * @param contentId - The ID of the content
-   * @param bizUserId - The ID of the business user
-   * @param eventCodeName - The code names of the events (array of strings)
-   * @returns true if the user has any of the events, false otherwise
+   * Check if the user has a biz event.
+   *
+   * NOT memoized for the same reason as hasAvailableSession: trackBizEvent
+   * fires SEEN / COMPLETED events as toggleContents progresses, and a
+   * memo'd pre-event `false` would hide the new event from later rules.
    */
   private async hasBizEvent(
     contentId: string,
     bizUserId: string,
     eventCodeName: string[],
   ): Promise<boolean> {
-    // Early return if no events to check
     if (!eventCodeName || eventCodeName.length === 0) {
       return false;
     }
-
     const count = await this.prisma.bizSession.count({
       where: {
         contentId,

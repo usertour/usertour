@@ -137,7 +137,7 @@ export class ProjectsService {
     // Memoized per request scope: a single EndBatch builds one session per
     // active content type and each session call hits this method once,
     // producing 3+ identical Project + Subscription lookups otherwise.
-    return this.cache.memoize('projectConfig', projectId, () => {
+    return this.cache.memoize(this.cache.memoKeys.projectConfig(projectId), () => {
       const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
       if (isSelfHostedMode) {
         return this.getSelfHostedConfig(projectId);
