@@ -79,6 +79,18 @@ export const capitalizeFirstLetter = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
 
+/**
+ * Humanize a codeName into a display name.
+ * Splits on `_`, `-`, `.` and whitespace, then title-cases each word.
+ */
+export const humanize = (name: string): string => {
+  return name
+    .split(/[_\-.\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export const filterNullAttributes = (attributes: Record<string, any>) => {
   const attrs: Record<string, any> = {};
   for (const key in attributes) {

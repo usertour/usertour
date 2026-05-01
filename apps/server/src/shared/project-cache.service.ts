@@ -90,7 +90,9 @@ export class ProjectCacheService {
     await this.flushDeferred();
 
     const cached = await this.redis.getJson<T>(key);
-    if (cached !== null) return cached;
+    if (cached !== null) {
+      return cached;
+    }
 
     const fresh = await loader();
     if (fresh !== undefined && fresh !== null) {
@@ -155,7 +157,9 @@ export class ProjectCacheService {
     await this.flushDeferred();
 
     const result = new Map<string, T>();
-    if (keys.length === 0) return result;
+    if (keys.length === 0) {
+      return result;
+    }
 
     const cached = await this.redis.mgetJson<T>(keys);
     const missingKeys: string[] = [];
@@ -215,7 +219,9 @@ export class ProjectCacheService {
    */
   private async flushDeferred(): Promise<void> {
     const ctx = requestContext.getStore();
-    if (!ctx || ctx.deferredCacheInvalidations.size === 0) return;
+    if (!ctx || ctx.deferredCacheInvalidations.size === 0) {
+      return;
+    }
     const keys = [...ctx.deferredCacheInvalidations];
     ctx.deferredCacheInvalidations.clear();
     await this.invalidate(keys);

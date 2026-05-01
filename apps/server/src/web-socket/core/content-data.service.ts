@@ -458,7 +458,9 @@ export class ContentDataService {
       .map((content) => getPublishedVersionId(content, environment.id))
       .filter(Boolean);
 
-    if (versionIds.length === 0) return [];
+    if (versionIds.length === 0) {
+      return [];
+    }
 
     // Per-version cache; published Version data is immutable so a long TTL
     // is safe (see invariant doc above). MGET reads all keys in one round
@@ -469,7 +471,7 @@ export class ContentDataService {
       [...keyToId.keys()],
       ContentDataService.PUBLISHED_VERSION_TTL_SECONDS,
       async (missingKeys) => {
-        const missingIds = missingKeys.map((k) => keyToId.get(k) as string);
+        const missingIds = missingKeys.map((cacheKey) => keyToId.get(cacheKey) as string);
         const fresh = await this.prisma.version.findMany({
           where: { id: { in: missingIds } },
           include: {
@@ -477,12 +479,12 @@ export class ContentDataService {
             steps: { orderBy: { sequence: 'asc' } },
           },
         });
-        return new Map(fresh.map((v) => [this.cache.keys.versionFull(v.id), v]));
+        return new Map(fresh.map((version) => [this.cache.keys.versionFull(version.id), version]));
       },
     );
     return versionIds
       .map((id) => cached.get(this.cache.keys.versionFull(id)))
-      .filter((v): v is VersionWithStepsAndContent => v != null);
+      .filter((version): version is VersionWithStepsAndContent => version != null);
   }
 
   /**

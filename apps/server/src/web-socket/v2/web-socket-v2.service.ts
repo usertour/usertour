@@ -32,7 +32,6 @@ import {
   BizEvents,
   ClientCondition,
   CustomContentSession,
-  BizAttributeTypes,
 } from '@usertour/types';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { Socket, Server } from 'socket.io';
@@ -43,20 +42,7 @@ import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrat
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { buildExternalUserRoomId } from '@/utils/websocket-utils';
 import { assignClientContext } from '@/utils/event-v2';
-import { AttributeBizType } from '@/attributes/models/attribute.model';
-import { getAttributeType, isNull, isValidISO8601 } from '@usertour/helpers';
-
-/**
- * Humanize a codeName into a display name.
- * Splits on `_`, `-`, `.` and spaces, capitalizes each word.
- */
-function humanize(name: string): string {
-  return name
-    .split(/[_\-.\s]+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
+import { humanize } from '@usertour/helpers';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -449,67 +435,17 @@ export class WebSocketV2Service {
         });
       }
 
-      // 2. Process attributes: auto-create Attribute + AttributeOnEvent
-      const eventData: Record<string, any> = {};
+      // 2. Resolve attributes + link them to this Event (handled by BizService).
       const mergedAttributes = assignClientContext(attributes ?? {}, clientContext);
-
-      if (Object.keys(mergedAttributes).length > 0) {
-        for (const attrName of Object.keys(mergedAttributes)) {
-          const attrValue = mergedAttributes[attrName];
-
-          if (isNull(attrValue)) {
-            eventData[attrName] = null;
-            continue;
-          }
-
-          const dataType = getAttributeType(attrValue);
-
-          // Find or create the attribute
-          let attr = await tx.attribute.findFirst({
-            where: { codeName: attrName, projectId, bizType: AttributeBizType.EVENT },
-          });
-
-          if (!attr) {
-            attr = await tx.attribute.create({
-              data: {
-                codeName: attrName,
-                dataType,
-                displayName: humanize(attrName),
-                projectId,
-                bizType: AttributeBizType.EVENT,
-              },
-            });
-            createdNewAttribute = true;
-          }
-
-          // Validate and store value (same logic as insertBizAttributes)
-          if (attr.dataType === BizAttributeTypes.DateTime) {
-            if (!isValidISO8601(attrValue)) {
-              this.logger.error(
-                `Invalid DateTime format for attribute "${attrName}". Received: ${JSON.stringify(attrValue)}. Skipping.`,
-              );
-              continue;
-            }
-            eventData[attrName] = attrValue;
-          } else if (attr.dataType === dataType) {
-            eventData[attrName] = attrValue;
-          } else {
-            this.logger.warn(
-              `Type mismatch for attribute ${attrName}. Expected: ${attr.dataType}, got: ${dataType}`,
-            );
-            continue;
-          }
-
-          // Link attribute to event via AttributeOnEvent
-          const existing = await tx.attributeOnEvent.findFirst({
-            where: { eventId: event.id, attributeId: attr.id },
-          });
-          if (!existing) {
-            await tx.attributeOnEvent.create({
-              data: { eventId: event.id, attributeId: attr.id },
-            });
-          }
-        }
+      const { eventData, createdNewAttribute: ca } =
+        await this.bizService.resolveAndLinkEventAttributes(
+          tx,
+          projectId,
+          event.id,
+          mergedAttributes,
+        );
+      if (ca) {
+        createdNewAttribute = true;
       }
 
       // 3. Create BizEvent
