@@ -14,7 +14,7 @@ export class AttributesService {
 
   async create(data: CreateAttributeInput) {
     const created = await this.prisma.attribute.create({ data });
-    this.cache.invalidateDeferred(this.cache.keys.attrs(created.projectId));
+    await this.cache.invalidateDeferred(this.cache.keys.attrs(created.projectId));
     return created;
   }
 
@@ -24,7 +24,7 @@ export class AttributesService {
       where: { id },
       data: { ...others },
     });
-    this.cache.invalidateDeferred(this.cache.keys.attrs(updated.projectId));
+    await this.cache.invalidateDeferred(this.cache.keys.attrs(updated.projectId));
     return updated;
   }
 
@@ -32,7 +32,7 @@ export class AttributesService {
     const deleted = await this.prisma.attribute.delete({
       where: { id },
     });
-    this.cache.invalidateDeferred(this.cache.keys.attrs(deleted.projectId));
+    await this.cache.invalidateDeferred(this.cache.keys.attrs(deleted.projectId));
     return deleted;
   }
 

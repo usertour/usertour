@@ -67,10 +67,21 @@ export class ContentService {
   }
 
   async updateContent(contentId: string, data: UpdateContentInput) {
-    return await this.prisma.content.update({
+    // A Content can be published into multiple environments via
+    // ContentOnEnvironment, so invalidating just `Content.environmentId`
+    // (the legacy primary field) leaves stale cache in every other env.
+    // The versionFull cache no longer embeds mutable Content fields
+    // (findVersions re-attaches Content from this slice on read), so a
+    // rename only needs to clear the env+type slices.
+    const envIds = await this.collectContentEnvIds(contentId);
+    const updated = await this.prisma.content.update({
       where: { id: contentId },
       data: { ...data } as any,
     });
+    if (envIds.length > 0) {
+      await this.cache.invalidate(envIds.flatMap((envId) => this.cache.envContentKeys(envId)));
+    }
+    return updated;
   }
 
   async addContentSteps(input: ContentStepsInput) {
@@ -420,19 +431,60 @@ export class ContentService {
   }
 
   async deleteContent(contentId: string) {
-    const updated = await this.prisma.content.update({
-      where: { id: contentId },
-      data: {
-        deleted: true,
-      },
+    // Same multi-environment caveat as updateContent: a Content can have
+    // ContentOnEnvironment rows in several envs, and each env has its
+    // own cached slice + pubver mapping that must be invalidated.
+    const envIds = await this.collectContentEnvIds(contentId);
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // Drop per-env publication along with the soft-delete. Otherwise
+      // findPublishedVersionId (which only checks ContentOnEnvironment.
+      // published, not Content.deleted) would re-resolve a versionId for
+      // the deleted content the next time the cache repopulates.
+      await tx.contentOnEnvironment.deleteMany({ where: { contentId } });
+      return await tx.content.update({
+        where: { id: contentId },
+        data: { deleted: true },
+      });
     });
-    // The deleted Content drops out of the published-contents cache filter,
-    // and any cached publishedVersionId for it is now meaningless.
-    await this.cache.invalidate([
-      ...this.cache.envContentKeys(updated.environmentId),
-      this.cache.keys.publishedVersionId(updated.environmentId, contentId),
+    const keys = envIds.flatMap((envId) => [
+      ...this.cache.envContentKeys(envId),
+      this.cache.keys.publishedVersionId(envId, contentId),
     ]);
+    if (keys.length > 0) {
+      await this.cache.invalidate(keys);
+    }
+    // Mirror unpublishedContentVersion: cancel active sessions per env,
+    // not just the legacy primary one.
+    await Promise.all(
+      envIds.map((envId) => this.webSocketV2Gateway.cancelAllContentSessions(contentId, envId)),
+    );
     return updated;
+  }
+
+  /**
+   * All env ids that have this content cached. Pulls every COE row plus
+   * the legacy `Content.environmentId` (some old rows may have a primary
+   * env without a matching COE entry — defend in depth).
+   */
+  private async collectContentEnvIds(contentId: string): Promise<string[]> {
+    const [coes, content] = await Promise.all([
+      this.prisma.contentOnEnvironment.findMany({
+        where: { contentId },
+        select: { environmentId: true },
+      }),
+      this.prisma.content.findUnique({
+        where: { id: contentId },
+        select: { environmentId: true },
+      }),
+    ]);
+    const envIds = new Set<string>();
+    for (const coe of coes) {
+      envIds.add(coe.environmentId);
+    }
+    if (content?.environmentId) {
+      envIds.add(content.environmentId);
+    }
+    return [...envIds];
   }
 
   async duplicateContent(contentId: string, name: string, targetEnvironmentId?: string) {

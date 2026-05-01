@@ -416,7 +416,6 @@ export class WebSocketV2Service {
 
     const { name, attributes, userOnly } = trackEventDto;
 
-    let createdNewAttribute = false;
     const success = await this.prisma.$transaction(async (tx) => {
       // 1. Find or create Event by codeName + projectId
       let event = await tx.event.findFirst({
@@ -435,18 +434,16 @@ export class WebSocketV2Service {
         });
       }
 
-      // 2. Resolve attributes + link them to this Event (handled by BizService).
+      // 2. Resolve attributes + link them to this Event (handled by BizService,
+      //    which also takes care of invalidating the project's Attribute cache
+      //    when a new row was auto-created).
       const mergedAttributes = assignClientContext(attributes ?? {}, clientContext);
-      const { eventData, createdNewAttribute: ca } =
-        await this.bizService.resolveAndLinkEventAttributes(
-          tx,
-          projectId,
-          event.id,
-          mergedAttributes,
-        );
-      if (ca) {
-        createdNewAttribute = true;
-      }
+      const eventData = await this.bizService.resolveAndLinkEventAttributes(
+        tx,
+        projectId,
+        event.id,
+        mergedAttributes,
+      );
 
       // 3. Create BizEvent
       await tx.bizEvent.create({
@@ -466,10 +463,6 @@ export class WebSocketV2Service {
 
     if (!success) {
       return false;
-    }
-
-    if (createdNewAttribute) {
-      this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
 
     await this.contentOrchestratorService.toggleContents(context);

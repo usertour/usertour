@@ -228,6 +228,10 @@ export class ContentDataService {
             environmentId,
             contentId,
             published: true,
+            // Defense in depth: deleteContent already drops COE rows,
+            // but a stale row from any other write path would otherwise
+            // resurface a deleted content's versionId via this cache.
+            content: { deleted: false },
           },
           select: {
             publishedVersionId: true,
@@ -382,30 +386,32 @@ export class ContentDataService {
    * Find versions for content processing.
    *
    * INVARIANT (cache assumption): a Version row that is currently published
-   * — i.e. referenced by a `ContentOnEnvironment.publishedVersionId` —
-   * is immutable. All admin write paths reject mutations on a version that
-   * is not the current edited draft (`contentVersionIsEditable` checks
-   * `editedVersionId === versionId` AND `not currently published`). Step
-   * mutation methods (`addContentStep` / `updateContentStep`) use the same
-   * gate. Therefore we cache `version:{id}:full` with a long TTL and
-   * **do not invalidate from any write path** — anything in the cache is,
-   * by construction, the final state of that version.
+   * is immutable, AND the Content fields we co-cache with it (`{id, type}`)
+   * are structurally immutable too — `id` is the PK, `type` cannot be
+   * changed by any update path. Mutable Content fields (name, buildUrl,
+   * config) live in the env+type slice cache (write-invalidated) and are
+   * re-attached at read time. So `versionFull` never needs invalidation
+   * from any Content rename / update.
    *
-   * If product behavior ever changes to allow editing already-published
-   * versions, every such write site MUST call
-   * `cache.invalidate(cache.keys.versionFull(versionId))` and this TTL
-   * should be shortened.
+   * The split is by field mutability, not by entity boundary: caching
+   * immutable Content fields here is free (no invalidation cost) and lets
+   * the explicit-versionId path early-return on a type-filter miss without
+   * touching the DB.
    */
   private async findVersions(
     environment: Environment,
     contentTypes: ContentDataType[],
     versionId?: string,
   ): Promise<VersionWithStepsAndContent[]> {
-    const fetchVersionById = (id: string) =>
-      this.prisma.version.findUnique({
-        where: { id },
+    // Defense in depth on the cache loader: only pin Versions whose Content
+    // is still alive. The `where: content.deleted: false` clause prevents a
+    // stale source from materializing a deleted-content version into the
+    // 30-minute TTL.
+    const fetchVersionLite = (id: string) =>
+      this.prisma.version.findFirst({
+        where: { id, deleted: false, content: { deleted: false } },
         include: {
-          content: true,
+          content: { select: { id: true, type: true } },
           steps: { orderBy: { sequence: 'asc' } },
         },
       });
@@ -414,14 +420,21 @@ export class ContentDataService {
       const version = await this.cache.get(
         this.cache.keys.versionFull(versionId),
         ContentDataService.PUBLISHED_VERSION_TTL_SECONDS,
-        () => fetchVersionById(versionId),
+        () => fetchVersionLite(versionId),
       );
-      // The original query also filtered by content.type IN contentTypes;
-      // apply post-cache since the cache key is per-version-id.
       if (!version || !contentTypes.includes(version.content.type as ContentDataType)) {
         return [];
       }
-      return [version];
+      // Re-fetch the full Content row so callers get the latest mutable
+      // fields (name, etc.), and so a delete that landed after the cache
+      // populated drops the version from the result set.
+      const content = await this.prisma.content.findFirst({
+        where: { id: version.content.id, deleted: false },
+      });
+      if (!content) {
+        return [];
+      }
+      return [{ ...version, content }];
     }
 
     // Find all published Contents (with their ContentOnEnvironment join rows)
@@ -456,6 +469,10 @@ export class ContentDataService {
           )
         : await fetchPublishedContents();
 
+    // Map by id so we can re-attach the full Content row (with the latest
+    // name, etc.) onto the slim cached version below.
+    const contentById = new Map(publishedContents.map((content) => [content.id, content]));
+
     // Extract version IDs for published contents
     const versionIds = publishedContents
       .map((content) => getPublishedVersionId(content, environment.id))
@@ -466,19 +483,20 @@ export class ContentDataService {
     }
 
     // Per-version cache; published Version data is immutable so a long TTL
-    // is safe (see invariant doc above). MGET reads all keys in one round
-    // trip; misses are loaded with a single findMany so we don't regress
-    // cold-cache cost vs the original batched query.
+    // is safe. MGET reads all keys in one round trip; misses are loaded with
+    // a single findMany so we don't regress cold-cache cost vs the original
+    // batched query.
+    type CachedVersion = Awaited<ReturnType<typeof fetchVersionLite>>;
     const keyToId = new Map(versionIds.map((id) => [this.cache.keys.versionFull(id), id]));
-    const cached = await this.cache.mget<VersionWithStepsAndContent>(
+    const cached = await this.cache.mget<NonNullable<CachedVersion>>(
       [...keyToId.keys()],
       ContentDataService.PUBLISHED_VERSION_TTL_SECONDS,
       async (missingKeys) => {
         const missingIds = missingKeys.map((cacheKey) => keyToId.get(cacheKey) as string);
         const fresh = await this.prisma.version.findMany({
-          where: { id: { in: missingIds } },
+          where: { id: { in: missingIds }, deleted: false, content: { deleted: false } },
           include: {
-            content: true,
+            content: { select: { id: true, type: true } },
             steps: { orderBy: { sequence: 'asc' } },
           },
         });
@@ -486,8 +504,20 @@ export class ContentDataService {
       },
     );
     return versionIds
-      .map((id) => cached.get(this.cache.keys.versionFull(id)))
-      .filter((version): version is VersionWithStepsAndContent => version != null);
+      .map((id): VersionWithStepsAndContent | null => {
+        const version = cached.get(this.cache.keys.versionFull(id));
+        if (!version) {
+          return null;
+        }
+        const content = contentById.get(version.content.id);
+        // Slice-miss means the Content was filtered out (deleted /
+        // unpublished post-cache) — skip the version entirely.
+        if (!content) {
+          return null;
+        }
+        return { ...version, content };
+      })
+      .filter((version): version is VersionWithStepsAndContent => version !== null);
   }
 
   /**

@@ -7,10 +7,14 @@ import {
   PrimaryEnvironmentCannotBeDeletedError,
 } from '@/common/errors';
 import { CreateAccessTokenInput } from './dto/access-token.dto';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()
 export class EnvironmentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly cache: ProjectCacheService,
+  ) {}
 
   async create(newData: CreateEnvironmentInput) {
     return await this.prisma.$transaction(async (tx) => {
@@ -79,7 +83,16 @@ export class EnvironmentsService {
   }
 
   async delete(id: string) {
-    return await this.prisma.$transaction(async (tx) => {
+    // Fetch contentIds before the tx so we can sweep per-content pubver
+    // cache keys after the COE rows are gone — same shape as deleteContent.
+    const coeContentIds = (
+      await this.prisma.contentOnEnvironment.findMany({
+        where: { environmentId: id },
+        select: { contentId: true },
+      })
+    ).map((c) => c.contentId);
+
+    const updated = await this.prisma.$transaction(async (tx) => {
       // Get the environment to find its projectId
       const environment = await tx.environment.findUnique({
         where: { id },
@@ -106,13 +119,7 @@ export class EnvironmentsService {
         throw new LastEnvironmentCannotBeDeletedError();
       }
 
-      // Check if there are any ContentOnEnvironment records
-      const contentCount = await tx.contentOnEnvironment.count({
-        where: { environmentId: id },
-      });
-
-      // Only delete ContentOnEnvironment records if they exist
-      if (contentCount > 0) {
+      if (coeContentIds.length > 0) {
         await tx.contentOnEnvironment.deleteMany({
           where: { environmentId: id },
         });
@@ -124,6 +131,18 @@ export class EnvironmentsService {
         data: { deleted: true },
       });
     });
+
+    // Invalidate every cache slice keyed by this env: the per-type Content
+    // slice and the per-content publishedVersionId mapping. Otherwise an
+    // SDK still authenticated against this env's token would keep serving
+    // its (now-orphaned) content for up to PROJECT_CONFIG_TTL_SECONDS.
+    const keys = [
+      ...this.cache.envContentKeys(id),
+      ...coeContentIds.map((cid) => this.cache.keys.publishedVersionId(id, cid)),
+    ];
+    await this.cache.invalidate(keys);
+
+    return updated;
   }
 
   async get(id: string) {

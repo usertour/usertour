@@ -147,14 +147,17 @@ export class ProjectCacheService {
    * pre-commit DB state. By deferring to the request boundary we guarantee
    * the invalidation fires after every embedded $transaction has committed.
    *
-   * If no request scope is active we fall back to immediate invalidation.
-   * That's correct for callers that aren't inside a transaction (their
-   * Prisma writes auto-commit per statement).
+   * If no request scope is active we fall back to immediate invalidation
+   * and `await` the underlying Redis DEL so callers that wish to gate
+   * their response on cache consistency (e.g. an admin GraphQL mutation
+   * that returns before the next SDK read) can `await` this call.
+   * In-scope callers can still ignore the returned Promise — the buffer
+   * write is synchronous and the returned Promise resolves immediately.
    */
-  invalidateDeferred(keys: string | string[]): void {
+  async invalidateDeferred(keys: string | string[]): Promise<void> {
     const ctx = requestContext.getStore();
     if (!ctx) {
-      void this.invalidate(keys);
+      await this.invalidate(keys);
       return;
     }
     const list = Array.isArray(keys) ? keys : [keys];
