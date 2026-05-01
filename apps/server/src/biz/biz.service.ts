@@ -643,15 +643,13 @@ export class BizService {
       where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
-      const created = await tx.bizUser.create({
+      return await tx.bizUser.create({
         data: {
           externalId: String(externalUserId),
           environmentId,
           data: insertAttribute,
         },
       });
-      this.cache.invalidateMemo(this.cache.memoKeys.bizUser(environmentId, String(externalUserId)));
-      return created;
     }
     const currentData = (user.data as Record<string, any>) || {};
     const insertData = filterNullAttributes({
@@ -664,7 +662,7 @@ export class BizService {
       return user;
     }
 
-    const updated = await tx.bizUser.update({
+    return await tx.bizUser.update({
       where: {
         id: user.id,
       },
@@ -672,13 +670,6 @@ export class BizService {
         data: insertData,
       },
     });
-    // Drop the per-request memo so subsequent findBizUser reads (e.g. the
-    // toggleContents condition evaluation that fires right after a
-    // bindToAttribute write) see the fresh `data`. Without this the memo
-    // would serve the scope-entry snapshot and segment rules filtering on
-    // the just-written attribute would evaluate against the old value.
-    this.cache.invalidateMemo(this.cache.memoKeys.bizUser(environmentId, String(externalUserId)));
-    return updated;
   }
 
   async upsertBizCompanies(
@@ -763,7 +754,7 @@ export class BizService {
         return company;
       }
 
-      const updated = await tx.bizCompany.update({
+      return await tx.bizCompany.update({
         where: {
           id: company.id,
         },
@@ -771,24 +762,15 @@ export class BizService {
           data: mergedData,
         },
       });
-      // Drop the per-request memo so subsequent reads see fresh `data`.
-      this.cache.invalidateMemo(
-        this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
-      );
-      return updated;
     }
 
-    const created = await tx.bizCompany.create({
+    return await tx.bizCompany.create({
       data: {
         externalId: String(externalCompanyId),
         environmentId,
         data: insertAttribute,
       },
     });
-    this.cache.invalidateMemo(
-      this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
-    );
-    return created;
   }
 
   async upsertBizMembership(
@@ -821,7 +803,7 @@ export class BizService {
         return relation;
       }
 
-      const updated = await tx.bizUserOnCompany.update({
+      return await tx.bizUserOnCompany.update({
         where: {
           id: relation.id,
         },
@@ -829,23 +811,14 @@ export class BizService {
           data: mergedData,
         },
       });
-      // Drop both membership memos: the bare `bizUserOnCompany:bizUser:bizCompany`
-      // key is targeted, and `bizUserOnCompanyWithBizCompany:bizUser:...` is wiped
-      // by user prefix because we don't carry envId/externalCompanyId here.
-      this.cache.invalidateMemo(this.cache.memoKeys.bizUserOnCompany(bizUserId, bizCompanyId));
-      this.cache.invalidateMemoByPrefix([`bizUserOnCompanyWithBizCompany:${bizUserId}:`]);
-      return updated;
     }
-    const created = await tx.bizUserOnCompany.create({
+    return await tx.bizUserOnCompany.create({
       data: {
         bizUserId,
         bizCompanyId,
         data: insertAttribute,
       },
     });
-    this.cache.invalidateMemo(this.cache.memoKeys.bizUserOnCompany(bizUserId, bizCompanyId));
-    this.cache.invalidateMemoByPrefix([`bizUserOnCompanyWithBizCompany:${bizUserId}:`]);
-    return created;
   }
 
   /**
@@ -1052,47 +1025,52 @@ export class BizService {
       attributes?: Record<string, any>;
     }>,
   ) {
-    // runInScope buffers any cache.invalidateDeferred calls made by
-    // insertBizAttributes (and friends) inside the $transaction, then
-    // fires them once the transaction has committed.
-    return await this.cache.runInScope(async () => {
-      return await this.prisma.$transaction(async (tx) => {
-        // First upsert the user with attributes
-        const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
+    // No runInScope wrap: the only cache write inside this $transaction is
+    // `invalidateDeferred(attrs(projectId))`, fired by insertBizAttributes
+    // when the SDK upsert payload introduces a previously-unseen attribute
+    // codeName. A mid-tx invalidate races with concurrent cross-pod readers
+    // that could fill the cache from pre-commit DB state — but the freshly
+    // created Attribute has no existing condition referencing it (admin
+    // couldn't have configured a rule against a codeName that didn't
+    // exist yet), so an `attrs` cache slice missing this row produces no
+    // observable effect on toggleContents output. The 5-minute TTL self-
+    // heals before any new admin-configured rule could reference it.
+    return await this.prisma.$transaction(async (tx) => {
+      // First upsert the user with attributes
+      const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
 
-        if (!user) {
-          throw new UnknownError('Failed to upsert user');
+      if (!user) {
+        throw new UnknownError('Failed to upsert user');
+      }
+
+      // Handle companies/companies and memberships
+      if (companies) {
+        for (const company of companies) {
+          await this.upsertBizCompanies(
+            tx,
+            company.id,
+            externalUserId,
+            company.attributes || {},
+            environmentId,
+            {},
+          );
         }
+      }
 
-        // Handle companies/companies and memberships
-        if (companies) {
-          for (const company of companies) {
-            await this.upsertBizCompanies(
-              tx,
-              company.id,
-              externalUserId,
-              company.attributes || {},
-              environmentId,
-              {},
-            );
-          }
+      if (memberships) {
+        for (const membership of memberships) {
+          await this.upsertBizCompanies(
+            tx,
+            membership.company.id,
+            externalUserId,
+            membership.company.attributes || {},
+            environmentId,
+            membership.attributes || {},
+          );
         }
+      }
 
-        if (memberships) {
-          for (const membership of memberships) {
-            await this.upsertBizCompanies(
-              tx,
-              membership.company.id,
-              externalUserId,
-              membership.company.attributes || {},
-              environmentId,
-              membership.attributes || {},
-            );
-          }
-        }
-
-        return user;
-      });
+      return user;
     });
   }
 
