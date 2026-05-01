@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { BizUser } from '@prisma/client';
 import { ContentDataType } from '@usertour/types';
 import { RedisService } from './redis.service';
 import { createRequestContext, requestContext } from './request-context';
@@ -214,39 +213,37 @@ export class ProjectCacheService {
   }
 
   /**
-   * Per-request memo for BizUser lookups by `(envId, externalUserId)`.
-   *
-   * Coalesces the 17+ findFirst calls that one EndBatch fans out to (6-type
-   * toggleContents loop, findThemes, session-builder, segment evaluation)
-   * down to one DB hit. The memo lifetime is bound to the current
-   * `runInScope` boundary: outside a scope it falls through to the loader.
+   * Per-request lookup memo. Coalesces same-scope repeated reads (the 6-type
+   * toggleContents loop, findThemes, session-builder, segment evaluation
+   * all hitting the same BizUser / BizCompany / config) down to one DB hit
+   * per (namespace, key) pair. Lifetime is bound to the current `runInScope`
+   * boundary; outside a scope it falls through to the loader.
    *
    * Stores the in-flight Promise so concurrent callers don't race two
-   * findFirst queries before the first one resolves.
+   * queries before the first one resolves.
    *
-   * Caveat: holds whatever entity the first caller resolved. EndBatch may
-   * write `bizUser.data` mid-scope (`updateUserSeenAttributes` updates
-   * lastSeenAt), and subsequent memo reads return the pre-write snapshot.
-   * That matches the desired semantics — segment / condition evaluation
-   * uses a consistent "scope-entry snapshot" of the user. Paths that need
+   * `namespace` partitions keys so distinct entity types (`bizUser`,
+   * `bizCompany`, `projectConfig`, …) can't collide when their identifiers
+   * happen to share a shape. Pick a stable, lowercased entity name.
+   *
+   * Caveat: holds whatever entity the first caller resolved. Mid-scope
+   * writes (e.g. `updateUserSeenAttributes` bumping lastSeenAt) are not
+   * reflected in subsequent memo reads — that matches the desired
+   * "scope-entry snapshot" semantics for evaluation. Paths that need
    * freshness across an in-scope write must bypass this method.
    */
-  async memoizeBizUser(
-    envId: string,
-    externalUserId: string,
-    loader: () => Promise<BizUser | null>,
-  ): Promise<BizUser | null> {
+  async memoize<T>(namespace: string, key: string, loader: () => Promise<T>): Promise<T> {
     const ctx = requestContext.getStore();
     if (!ctx) {
       return loader();
     }
-    const key = `${envId}:${externalUserId}`;
-    const existing = ctx.bizUserMemo.get(key);
+    const fullKey = `${namespace}:${key}`;
+    const existing = ctx.memo.get(fullKey);
     if (existing) {
-      return existing;
+      return existing as Promise<T>;
     }
     const promise = loader();
-    ctx.bizUserMemo.set(key, promise);
+    ctx.memo.set(fullKey, promise);
     return promise;
   }
 

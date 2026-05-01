@@ -327,7 +327,7 @@ export class ContentDataService {
     environment: Environment,
     externalUserId: string,
   ): Promise<BizUser | null> {
-    return this.cache.memoizeBizUser(environment.id, String(externalUserId), () =>
+    return this.cache.memoize('bizUser', `${environment.id}:${String(externalUserId)}`, () =>
       this.prisma.bizUser.findFirst({
         where: { externalId: String(externalUserId), environmentId: environment.id },
       }),

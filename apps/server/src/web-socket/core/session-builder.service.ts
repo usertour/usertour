@@ -122,14 +122,22 @@ export class SessionBuilderService {
     versionId: string,
   ): Promise<BizSession | null> {
     const environmentId = environment.id;
-    const bizUser = await this.cache.memoizeBizUser(environmentId, String(externalUserId), () =>
-      this.prisma.bizUser.findFirst({
-        where: { externalId: String(externalUserId), environmentId },
-      }),
+    const bizUser = await this.cache.memoize(
+      'bizUser',
+      `${environmentId}:${String(externalUserId)}`,
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: { externalId: String(externalUserId), environmentId },
+        }),
     );
-    const bizCompany = await this.prisma.bizCompany.findFirst({
-      where: { externalId: String(externalCompanyId), environmentId },
-    });
+    const bizCompany = await this.cache.memoize(
+      'bizCompany',
+      `${environmentId}:${String(externalCompanyId)}`,
+      () =>
+        this.prisma.bizCompany.findFirst({
+          where: { externalId: String(externalCompanyId), environmentId },
+        }),
+    );
     if (!bizUser || (externalCompanyId && !bizCompany)) {
       return null;
     }
@@ -305,15 +313,18 @@ export class SessionBuilderService {
     externalCompanyId?: string,
   ): Promise<any> {
     const environmentId = environment.id;
-    // Drop the {data, id} projection so the per-request memo holds a
-    // consistent full BizUser entity across all callers in the scope.
-    const bizUser = await this.cache.memoizeBizUser(environmentId, String(externalUserId), () =>
-      this.prisma.bizUser.findFirst({
-        where: {
-          environmentId,
-          externalId: String(externalUserId),
-        },
-      }),
+    // Drop projections so per-request memos hold consistent full entities
+    // across all callers in the scope.
+    const bizUser = await this.cache.memoize(
+      'bizUser',
+      `${environmentId}:${String(externalUserId)}`,
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: {
+            environmentId,
+            externalId: String(externalUserId),
+          },
+        }),
     );
 
     if (!bizUser) {
@@ -328,28 +339,41 @@ export class SessionBuilderService {
     }
 
     if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
-      if (!externalCompanyId) return null;
+      if (!externalCompanyId) {
+        return null;
+      }
 
-      const bizCompany = await this.prisma.bizCompany.findFirst({
-        where: {
-          externalId: String(externalCompanyId),
-          environmentId,
-        },
-      });
+      const bizCompany = await this.cache.memoize(
+        'bizCompany',
+        `${environmentId}:${String(externalCompanyId)}`,
+        () =>
+          this.prisma.bizCompany.findFirst({
+            where: {
+              externalId: String(externalCompanyId),
+              environmentId,
+            },
+          }),
+      );
 
-      if (!bizCompany) return null;
+      if (!bizCompany) {
+        return null;
+      }
 
-      const userOnCompany = await this.prisma.bizUserOnCompany.findFirst({
-        where: {
-          bizUserId: bizUser.id,
-          bizCompanyId: bizCompany.id,
-        },
-        select: {
-          data: true,
-        },
-      });
+      const userOnCompany = await this.cache.memoize(
+        'bizUserOnCompany',
+        `${bizUser.id}:${bizCompany.id}`,
+        () =>
+          this.prisma.bizUserOnCompany.findFirst({
+            where: {
+              bizUserId: bizUser.id,
+              bizCompanyId: bizCompany.id,
+            },
+          }),
+      );
 
-      if (!userOnCompany) return null;
+      if (!userOnCompany) {
+        return null;
+      }
 
       if (attr.bizType === AttributeBizType.COMPANY) {
         return getAttributeValue(bizCompany.data, attr.codeName);

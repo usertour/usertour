@@ -1,6 +1,7 @@
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter } from '@/common/attribute/filter';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 import { evaluateAttributeCondition, isArray, isNullish } from '@usertour/helpers';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -89,7 +90,10 @@ type ContentConditionParams = {
 export class ConditionEvaluationService {
   private readonly logger = new Logger(ConditionEvaluationService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: ProjectCacheService,
+  ) {}
 
   // ============================================================================
   // Public API Methods
@@ -706,23 +710,30 @@ export class ConditionEvaluationService {
   }
 
   /**
-   * Find user-company relationship with company included
-   * @param context - Condition evaluation context
-   * @returns User-company relationship with company, or null if not found
+   * Find user-company relationship with company included.
+   * Memoized per request scope so repeated condition evaluations across the
+   * 6-type toggleContents loop don't all re-query the same membership row.
+   * Distinct namespace from `bizUserOnCompany` because the included
+   * `bizCompany` shape differs from the bare row.
    */
   private async findUserCompanyRelation(context: ConditionEvaluationContext) {
-    return await this.prisma.bizUserOnCompany.findFirst({
-      where: {
-        bizUserId: context.bizUser.id,
-        bizCompany: {
-          externalId: String(context.externalCompanyId),
-          environmentId: context.environment.id,
-        },
-      },
-      include: {
-        bizCompany: true,
-      },
-    });
+    return this.cache.memoize(
+      'bizUserOnCompanyWithBizCompany',
+      `${context.bizUser.id}:${context.environment.id}:${String(context.externalCompanyId)}`,
+      () =>
+        this.prisma.bizUserOnCompany.findFirst({
+          where: {
+            bizUserId: context.bizUser.id,
+            bizCompany: {
+              externalId: String(context.externalCompanyId),
+              environmentId: context.environment.id,
+            },
+          },
+          include: {
+            bizCompany: true,
+          },
+        }),
+    );
   }
 
   /**

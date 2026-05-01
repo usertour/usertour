@@ -4,6 +4,7 @@ import {
   ConditionEvaluationContext,
 } from './condition-evaluation.service';
 import { PrismaService } from 'nestjs-prisma';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 import {
   RulesCondition,
   BizAttributeTypes,
@@ -188,6 +189,15 @@ describe('ConditionEvaluationService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          // memoize without a request scope just runs the loader, matching
+          // the production fallback path; the unit tests don't exercise
+          // cross-call deduplication so this is sufficient.
+          provide: ProjectCacheService,
+          useValue: {
+            memoize: <T>(_namespace: string, _key: string, loader: () => Promise<T>) => loader(),
+          },
         },
       ],
     }).compile();
