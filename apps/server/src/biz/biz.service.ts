@@ -839,7 +839,7 @@ export class BizService {
       attributes,
     );
     if (createdNewAttribute) {
-      this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
+      await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
     return outputData;
   }
@@ -854,7 +854,7 @@ export class BizService {
     projectId: string,
     eventId: string,
     attributes: Record<string, any>,
-  ): Promise<{ eventData: Record<string, any>; createdNewAttribute: boolean }> {
+  ): Promise<Record<string, any>> {
     const { outputData, attrMap, createdNewAttribute } = await this.resolveAttributes(
       tx,
       projectId,
@@ -871,9 +871,9 @@ export class BizService {
     await this.linkAttributesToEvent(tx, eventId, linkIds);
 
     if (createdNewAttribute) {
-      this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
+      await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
-    return { eventData: outputData, createdNewAttribute };
+    return outputData;
   }
 
   /**

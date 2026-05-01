@@ -51,8 +51,9 @@ export class ProjectCacheService {
   constructor(private readonly redis: RedisService) {}
 
   /**
-   * Cache key builders. All keys are prefixed by their scope (project / env / etc.)
-   * so an `invalidateProject(id)` style sweep can be implemented without scanning.
+   * Redis cache key builders. All keys are prefixed by their scope
+   * (project / env / etc.) so an `invalidateProject(id)` style sweep can be
+   * implemented without scanning. Consumed by `get` / `mget` / `invalidate`.
    */
   readonly keys = {
     /** All project-level Attribute definitions for content evaluation. */
@@ -70,6 +71,28 @@ export class ProjectCacheService {
       `env:${envId}:content:${contentId}:pubver`,
     /** Project + Subscription bundle used by the license check. */
     projectLicense: (projectId: string) => `proj:${projectId}:license`,
+  };
+
+  /**
+   * Per-request memo key builders. Consumed by `memoize`. Each entry's
+   * leading segment doubles as the namespace, so distinct entity types
+   * can never collide in `RequestContext.memo`. Centralized so callers
+   * across files share a single source of truth — e.g. `hasBizEvent` is
+   * issued from both `ContentDataService` and `ConditionEvaluationService`,
+   * and both must produce the same key for the memo to coalesce them.
+   *
+   * Array inputs are sorted before joining so the same set in different
+   * orders hits the same memo entry.
+   */
+  readonly memoKeys = {
+    bizUser: (envId: string, externalUserId: string) => `bizUser:${envId}:${externalUserId}`,
+    bizCompany: (envId: string, externalCompanyId: string) =>
+      `bizCompany:${envId}:${externalCompanyId}`,
+    bizUserOnCompany: (bizUserId: string, bizCompanyId: string) =>
+      `bizUserOnCompany:${bizUserId}:${bizCompanyId}`,
+    bizUserOnCompanyWithBizCompany: (bizUserId: string, envId: string, externalCompanyId: string) =>
+      `bizUserOnCompanyWithBizCompany:${bizUserId}:${envId}:${externalCompanyId}`,
+    projectConfig: (projectId: string) => `projectConfig:${projectId}`,
   };
 
   /**
@@ -124,14 +147,17 @@ export class ProjectCacheService {
    * pre-commit DB state. By deferring to the request boundary we guarantee
    * the invalidation fires after every embedded $transaction has committed.
    *
-   * If no request scope is active we fall back to immediate invalidation.
-   * That's correct for callers that aren't inside a transaction (their
-   * Prisma writes auto-commit per statement).
+   * If no request scope is active we fall back to immediate invalidation
+   * and `await` the underlying Redis DEL so callers that wish to gate
+   * their response on cache consistency (e.g. an admin GraphQL mutation
+   * that returns before the next SDK read) can `await` this call.
+   * In-scope callers can still ignore the returned Promise — the buffer
+   * write is synchronous and the returned Promise resolves immediately.
    */
-  invalidateDeferred(keys: string | string[]): void {
+  async invalidateDeferred(keys: string | string[]): Promise<void> {
     const ctx = requestContext.getStore();
     if (!ctx) {
-      void this.invalidate(keys);
+      await this.invalidate(keys);
       return;
     }
     const list = Array.isArray(keys) ? keys : [keys];
@@ -210,6 +236,40 @@ export class ProjectCacheService {
         await this.invalidate([...ctx.deferredCacheInvalidations]);
       }
     }
+  }
+
+  /**
+   * Per-request lookup memo. Coalesces same-scope repeated reads (the 6-type
+   * toggleContents loop, findThemes, session-builder, segment evaluation
+   * all hitting the same BizUser / BizCompany / config) down to one DB hit
+   * per `key`. Lifetime is bound to the current `runInScope` boundary;
+   * outside a scope it falls through to the loader.
+   *
+   * Stores the in-flight Promise so concurrent callers don't race two
+   * queries before the first one resolves.
+   *
+   * Always pass keys built via `memoKeys.*` so distinct entity types stay
+   * partitioned and cross-file callers (e.g. the two `hasBizEvent` sites)
+   * coalesce into one memo entry.
+   *
+   * Caveat: holds whatever entity the first caller resolved. Mid-scope
+   * writes (e.g. `updateUserSeenAttributes` bumping lastSeenAt) are not
+   * reflected in subsequent memo reads — that matches the desired
+   * "scope-entry snapshot" semantics for evaluation. Paths that need
+   * freshness across an in-scope write must bypass this method.
+   */
+  async memoize<T>(key: string, loader: () => Promise<T>): Promise<T> {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return loader();
+    }
+    const existing = ctx.memo.get(key);
+    if (existing) {
+      return existing as Promise<T>;
+    }
+    const promise = loader();
+    ctx.memo.set(key, promise);
+    return promise;
   }
 
   /**
