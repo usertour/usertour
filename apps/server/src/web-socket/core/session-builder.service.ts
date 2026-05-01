@@ -39,6 +39,7 @@ import { ContentDataService } from './content-data.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { DistributedLockService } from './distributed-lock.service';
 import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()
 export class SessionBuilderService {
@@ -49,6 +50,7 @@ export class SessionBuilderService {
     private readonly contentDataService: ContentDataService,
     private readonly projectsService: ProjectsService,
     private readonly distributedLockService: DistributedLockService,
+    private readonly cache: ProjectCacheService,
   ) {}
 
   // ============================================================================
@@ -120,9 +122,11 @@ export class SessionBuilderService {
     versionId: string,
   ): Promise<BizSession | null> {
     const environmentId = environment.id;
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId },
-    });
+    const bizUser = await this.cache.memoizeBizUser(environmentId, String(externalUserId), () =>
+      this.prisma.bizUser.findFirst({
+        where: { externalId: String(externalUserId), environmentId },
+      }),
+    );
     const bizCompany = await this.prisma.bizCompany.findFirst({
       where: { externalId: String(externalCompanyId), environmentId },
     });
@@ -301,18 +305,20 @@ export class SessionBuilderService {
     externalCompanyId?: string,
   ): Promise<any> {
     const environmentId = environment.id;
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: {
-        environmentId,
-        externalId: String(externalUserId),
-      },
-      select: {
-        data: true,
-        id: true,
-      },
-    });
+    // Drop the {data, id} projection so the per-request memo holds a
+    // consistent full BizUser entity across all callers in the scope.
+    const bizUser = await this.cache.memoizeBizUser(environmentId, String(externalUserId), () =>
+      this.prisma.bizUser.findFirst({
+        where: {
+          environmentId,
+          externalId: String(externalUserId),
+        },
+      }),
+    );
 
-    if (!bizUser) return null;
+    if (!bizUser) {
+      return null;
+    }
 
     if (attr.bizType === AttributeBizType.USER) {
       if (bizUser?.data) {

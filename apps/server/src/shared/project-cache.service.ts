@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { BizUser } from '@prisma/client';
 import { ContentDataType } from '@usertour/types';
 import { RedisService } from './redis.service';
 import { createRequestContext, requestContext } from './request-context';
@@ -210,6 +211,43 @@ export class ProjectCacheService {
         await this.invalidate([...ctx.deferredCacheInvalidations]);
       }
     }
+  }
+
+  /**
+   * Per-request memo for BizUser lookups by `(envId, externalUserId)`.
+   *
+   * Coalesces the 17+ findFirst calls that one EndBatch fans out to (6-type
+   * toggleContents loop, findThemes, session-builder, segment evaluation)
+   * down to one DB hit. The memo lifetime is bound to the current
+   * `runInScope` boundary: outside a scope it falls through to the loader.
+   *
+   * Stores the in-flight Promise so concurrent callers don't race two
+   * findFirst queries before the first one resolves.
+   *
+   * Caveat: holds whatever entity the first caller resolved. EndBatch may
+   * write `bizUser.data` mid-scope (`updateUserSeenAttributes` updates
+   * lastSeenAt), and subsequent memo reads return the pre-write snapshot.
+   * That matches the desired semantics — segment / condition evaluation
+   * uses a consistent "scope-entry snapshot" of the user. Paths that need
+   * freshness across an in-scope write must bypass this method.
+   */
+  async memoizeBizUser(
+    envId: string,
+    externalUserId: string,
+    loader: () => Promise<BizUser | null>,
+  ): Promise<BizUser | null> {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return loader();
+    }
+    const key = `${envId}:${externalUserId}`;
+    const existing = ctx.bizUserMemo.get(key);
+    if (existing) {
+      return existing;
+    }
+    const promise = loader();
+    ctx.bizUserMemo.set(key, promise);
+    return promise;
   }
 
   /**

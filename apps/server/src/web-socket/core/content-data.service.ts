@@ -320,15 +320,18 @@ export class ContentDataService {
   // ============================================================================
 
   /**
-   * Find business user by external ID
+   * Find business user by external ID. Memoized per request scope so the
+   * 6-type toggleContents loop + findThemes don't all re-query the same row.
    */
   private async findBizUser(
     environment: Environment,
     externalUserId: string,
   ): Promise<BizUser | null> {
-    return await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId: environment.id },
-    });
+    return this.cache.memoizeBizUser(environment.id, String(externalUserId), () =>
+      this.prisma.bizUser.findFirst({
+        where: { externalId: String(externalUserId), environmentId: environment.id },
+      }),
+    );
   }
 
   /**
