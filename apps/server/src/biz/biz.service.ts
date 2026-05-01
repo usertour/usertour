@@ -31,6 +31,7 @@ import {
   capitalizeFirstLetter,
   filterNullAttributes,
   getAttributeType,
+  humanize,
   isNull,
   isValidISO8601,
 } from '@usertour/helpers';
@@ -57,6 +58,30 @@ function normalizeSegmentColumns(raw: unknown): ColumnSetting[] {
       .map(([codeName, visible]) => ({ codeName, visible: visible as boolean }));
   }
   return [];
+}
+
+/**
+ * Result of `BizService.resolveAttributes`: the validated attribute payload,
+ * the attribute-row map for downstream lookups, and a flag for cache
+ * invalidation.
+ */
+interface ResolvedAttributes {
+  /**
+   * codeName → validated value. Null entries are passed through verbatim.
+   * Values that fail type / format validation are dropped (and logged).
+   */
+  outputData: Record<string, any>;
+  /**
+   * codeName → Attribute row (existing or just-created). Lets callers
+   * resolve codeName → id without a second lookup, e.g. for
+   * AttributeOnEvent linking.
+   */
+  attrMap: Map<string, Attribute>;
+  /**
+   * True iff at least one Attribute row was created during this call.
+   * Triggers project-level Attribute cache invalidation.
+   */
+  createdNewAttribute: boolean;
 }
 
 @Injectable()
@@ -796,87 +821,167 @@ export class BizService {
     });
   }
 
+  /**
+   * Resolve User/Company/Membership attribute payload: auto-create unknown
+   * codeNames, validate values against declared dataTypes, and invalidate
+   * the project's Attribute cache when new rows were created.
+   */
   async insertBizAttributes(
     tx: Prisma.TransactionClient,
     projectId: string,
     bizType: AttributeBizType,
     attributes: Record<string, any>,
   ): Promise<Record<string, any>> {
-    const insertAttribute = {};
-    let createdNewAttribute = false;
+    const { outputData, createdNewAttribute } = await this.resolveAttributes(
+      tx,
+      projectId,
+      bizType,
+      attributes,
+    );
+    if (createdNewAttribute) {
+      this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
+    }
+    return outputData;
+  }
+
+  /**
+   * Resolve EVENT-typed attribute payload and link the validated attributes
+   * to the given Event row. trackEvent uses this to keep AttributeOnEvent
+   * bookkeeping out of the websocket layer.
+   */
+  async resolveAndLinkEventAttributes(
+    tx: Prisma.TransactionClient,
+    projectId: string,
+    eventId: string,
+    attributes: Record<string, any>,
+  ): Promise<{ eventData: Record<string, any>; createdNewAttribute: boolean }> {
+    const { outputData, attrMap, createdNewAttribute } = await this.resolveAttributes(
+      tx,
+      projectId,
+      AttributeBizType.EVENT,
+      attributes,
+    );
+
+    // Link only attributes whose value passed validation (i.e. ended up in
+    // outputData with a non-null value).
+    const linkIds = Object.keys(outputData)
+      .filter((codeName) => outputData[codeName] != null)
+      .map((codeName) => attrMap.get(codeName)?.id)
+      .filter((id): id is string => !!id);
+    await this.linkAttributesToEvent(tx, eventId, linkIds);
+
+    if (createdNewAttribute) {
+      this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
+    }
+    return { eventData: outputData, createdNewAttribute };
+  }
+
+  /**
+   * Find-or-create Attribute rows for the given codeNames in one batched
+   * findMany + sequential creates for misses, then validate each value.
+   * Returns the attribute map so callers (e.g. AttributeOnEvent linking)
+   * can resolve codeName → id without a second round trip.
+   *
+   * Null inputs are passed through verbatim; rejected values (DateTime
+   * format / type mismatch) are dropped from outputData and logged.
+   */
+  private async resolveAttributes(
+    tx: Prisma.TransactionClient,
+    projectId: string,
+    bizType: AttributeBizType,
+    attributes: Record<string, any>,
+  ): Promise<ResolvedAttributes> {
+    const outputData: Record<string, any> = {};
+    const attrMap = new Map<string, Attribute>();
+    const codeNames: string[] = [];
     for (const codeName in attributes) {
-      const attrValue = attributes[codeName];
-      const attrName = codeName;
-      if (isNull(attrValue)) {
-        insertAttribute[attrName] = null;
-        continue;
+      if (isNull(attributes[codeName])) {
+        outputData[codeName] = null;
+      } else {
+        codeNames.push(codeName);
       }
-      const dataType = getAttributeType(attrValue);
-      const attribute = await tx.attribute.findFirst({
-        where: {
-          projectId,
-          codeName: attrName,
-          bizType,
-        },
-      });
-      if (!attribute) {
-        const newAttr = await tx.attribute.create({
+    }
+    if (codeNames.length === 0) {
+      return { outputData, attrMap, createdNewAttribute: false };
+    }
+
+    const existing = await tx.attribute.findMany({
+      where: { projectId, bizType, codeName: { in: codeNames } },
+    });
+    for (const attr of existing) {
+      attrMap.set(attr.codeName, attr);
+    }
+
+    const displayName = bizType === AttributeBizType.EVENT ? humanize : capitalizeFirstLetter;
+    let createdNewAttribute = false;
+    for (const codeName of codeNames) {
+      let attr = attrMap.get(codeName);
+      if (!attr) {
+        attr = await tx.attribute.create({
           data: {
-            codeName: attrName,
-            dataType: dataType,
-            displayName: capitalizeFirstLetter(attrName),
+            codeName,
+            dataType: getAttributeType(attributes[codeName]),
+            displayName: displayName(codeName),
             projectId,
             bizType,
           },
         });
+        attrMap.set(codeName, attr);
         createdNewAttribute = true;
-        if (newAttr) {
-          // DateTime must be stored as ISO 8601 in UTC
-          if (dataType === BizAttributeTypes.DateTime) {
-            if (!isValidISO8601(attrValue)) {
-              this.logger.error(
-                `Invalid DateTime format for attribute "${attrName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(attrValue)}. Example: "2024-12-12T00:00:00.000Z". Skipping this field.`,
-              );
-              continue;
-            }
-            insertAttribute[attrName] = attrValue;
-          } else {
-            insertAttribute[attrName] = attrValue;
-          }
-          continue;
-        }
       }
-      if (attribute) {
-        // If attribute is DateTime type, value must be ISO 8601 format regardless of detected type
-        if (attribute.dataType === BizAttributeTypes.DateTime) {
-          if (!isValidISO8601(attrValue)) {
-            this.logger.error(
-              `Invalid DateTime format for attribute "${attrName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(attrValue)}. Example: "2024-12-12T00:00:00.000Z". Skipping this field.`,
-            );
-            continue;
-          }
-          insertAttribute[attrName] = attrValue;
-        } else if (attribute.dataType === dataType) {
-          // For non-DateTime types, only store if types match
-          insertAttribute[attrName] = attrValue;
-        } else {
-          // Log type mismatch but don't throw error to allow flexibility
-          this.logger.warn(
-            `Type mismatch for attribute ${attrName}. Expected type: ${attribute.dataType}, got: ${dataType}. Value: ${attrValue}`,
-          );
-        }
+      const result = this.validateAttrValue(attr, attributes[codeName]);
+      if (result.ok) {
+        outputData[codeName] = result.value;
       }
     }
-    // Defer cache invalidation to the request boundary. Doing this inline
-    // would fire BEFORE the surrounding $transaction commits, opening a
-    // window where another request could repopulate the cache from
-    // pre-commit DB state. ProjectCacheService falls back to immediate
-    // invalidation when called outside a request scope (i.e. when tx is
-    // actually `this.prisma` and statements auto-commit).
-    if (createdNewAttribute) {
-      this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
+
+    return { outputData, attrMap, createdNewAttribute };
+  }
+
+  private validateAttrValue(
+    attr: Attribute,
+    value: unknown,
+  ): { ok: true; value: unknown } | { ok: false } {
+    const dataType = getAttributeType(value);
+    if (attr.dataType === BizAttributeTypes.DateTime) {
+      if (!isValidISO8601(value)) {
+        this.logger.error(
+          `Invalid DateTime format for attribute "${attr.codeName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(value)}. Example: "2024-12-12T00:00:00.000Z". Skipping this field.`,
+        );
+        return { ok: false };
+      }
+      return { ok: true, value };
     }
-    return insertAttribute;
+    if (attr.dataType !== dataType) {
+      this.logger.warn(
+        `Type mismatch for attribute "${attr.codeName}". Expected type: ${attr.dataType}, got: ${dataType}. Value: ${value}`,
+      );
+      return { ok: false };
+    }
+    return { ok: true, value };
+  }
+
+  private async linkAttributesToEvent(
+    tx: Prisma.TransactionClient,
+    eventId: string,
+    attributeIds: string[],
+  ): Promise<void> {
+    if (attributeIds.length === 0) {
+      return;
+    }
+    const existing = await tx.attributeOnEvent.findMany({
+      where: { eventId, attributeId: { in: attributeIds } },
+      select: { attributeId: true },
+    });
+    const linked = new Set(existing.map((link) => link.attributeId));
+    const toLink = attributeIds.filter((id) => !linked.has(id));
+    if (toLink.length === 0) {
+      return;
+    }
+    await tx.attributeOnEvent.createMany({
+      data: toLink.map((attributeId) => ({ eventId, attributeId })),
+      skipDuplicates: true,
+    });
   }
 
   async getBizUser(id: string, environmentId: string, include?: Prisma.BizUserInclude) {

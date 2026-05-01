@@ -84,7 +84,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       throw new Error('Redis client not available');
     }
     const raw = await this.client.get(key);
-    if (raw === null) return null;
+    if (raw === null) {
+      return null;
+    }
     try {
       return JSON.parse(raw) as T;
     } catch (err) {
@@ -102,7 +104,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     if (!this.client) {
       throw new Error('Redis client not available');
     }
-    if (value === undefined || value === null) return;
+    if (value === undefined || value === null) {
+      return;
+    }
     await this.client.setex(key, ttlSeconds, JSON.stringify(value));
   }
 
@@ -111,7 +115,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       throw new Error('Redis client not available');
     }
     const list = Array.isArray(keys) ? keys : [keys];
-    if (list.length === 0) return;
+    if (list.length === 0) {
+      return;
+    }
     await this.client.del(...list);
   }
 
@@ -123,10 +129,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     if (!this.client) {
       throw new Error('Redis client not available');
     }
-    if (keys.length === 0) return [];
+    if (keys.length === 0) {
+      return [];
+    }
     const raws = await this.client.mget(...keys);
     return raws.map((raw) => {
-      if (raw === null) return null;
+      if (raw === null) {
+        return null;
+      }
       try {
         return JSON.parse(raw) as T;
       } catch {
@@ -142,10 +152,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     if (!this.client) {
       throw new Error('Redis client not available');
     }
-    if (entries.length === 0) return;
+    if (entries.length === 0) {
+      return;
+    }
     const pipeline = this.client.pipeline();
     for (const [key, value] of entries) {
-      if (value === undefined || value === null) continue;
+      if (value === undefined || value === null) {
+        continue;
+      }
       pipeline.setex(key, ttlSeconds, JSON.stringify(value));
     }
     await pipeline.exec();
