@@ -64,8 +64,6 @@ export class ProjectCacheService {
     contents: (envId: string, type: string) => `env:${envId}:contents:${type}`,
     /** Full Version row including steps for a specific version id. */
     versionFull: (versionId: string) => `version:${versionId}:full`,
-    /** Single Segment definition by id. */
-    segment: (segmentId: string) => `segment:${segmentId}`,
     /** Map a (env, content) → publishedVersionId so the join doesn't re-run. */
     publishedVersionId: (envId: string, contentId: string) =>
       `env:${envId}:content:${contentId}:pubver`,
@@ -100,6 +98,15 @@ export class ProjectCacheService {
      * `invalidateMemo` after every Redis write.
      */
     socketData: (socketId: string) => `socketData:${socketId}`,
+    /** Single Segment row by id; the same segment is referenced by many
+     * conditions in one EndBatch evaluation. */
+    segment: (segmentId: string) => `segment:${segmentId}`,
+    /** MANUAL-segment membership lookup for a given user. */
+    bizUserOnSegment: (segmentId: string, bizUserId: string) =>
+      `bizUserOnSegment:${segmentId}:${bizUserId}`,
+    /** MANUAL-segment membership lookup for a given company. */
+    bizCompanyOnSegment: (segmentId: string, bizCompanyId: string) =>
+      `bizCompanyOnSegment:${segmentId}:${bizCompanyId}`,
   };
 
   /**
