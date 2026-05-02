@@ -346,8 +346,11 @@ export class ContentDataService {
    * mutates Attribute rows (handled by AttributesService write path).
    * Attribute has Date columns but none of the hot-path consumers read
    * them, so caching the entity as-is is safe.
+   *
+   * Public so SessionBuilderService can reuse the same cache instead of
+   * re-querying USER/COMPANY/MEMBERSHIP attributes per session via Prisma.
    */
-  private async findAttributes(environment: Environment): Promise<Attribute[]> {
+  async findAttributes(environment: Environment): Promise<Attribute[]> {
     return await this.cache.get(
       this.cache.keys.attrs(environment.projectId),
       ContentDataService.PROJECT_CONFIG_TTL_SECONDS,

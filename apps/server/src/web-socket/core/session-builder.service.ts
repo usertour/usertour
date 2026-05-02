@@ -790,21 +790,24 @@ export class SessionBuilderService {
       return [];
     }
 
-    const attributes = await this.prisma.attribute.findMany({
-      where: {
-        projectId: environment.projectId,
-        bizType: {
-          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
-        },
-      },
-    });
-
-    // Filter attributes by the extracted IDs and codes
-    const relevantAttributes = attributes.filter(
-      (attr) =>
+    // Reuse the project-level Attribute cache from ContentDataService instead
+    // of issuing a per-session findMany. Cache contains [USER, COMPANY,
+    // MEMBERSHIP, EVENT] across all extracts; filter EVENT out so this
+    // method's contract (session attributes only) is preserved.
+    const allAttributes = await this.contentDataService.findAttributes(environment);
+    const relevantAttributes = allAttributes.filter((attr) => {
+      const isSessionBizType =
+        attr.bizType === AttributeBizType.USER ||
+        attr.bizType === AttributeBizType.COMPANY ||
+        attr.bizType === AttributeBizType.MEMBERSHIP;
+      if (!isSessionBizType) {
+        return false;
+      }
+      return (
         attrIds.includes(attr.id) ||
-        (attrCodes.includes(attr.codeName) && attr.bizType === AttributeBizType.USER),
-    );
+        (attrCodes.includes(attr.codeName) && attr.bizType === AttributeBizType.USER)
+      );
+    });
 
     // Query attribute values and build result
     const results: SessionAttribute[] = [];
