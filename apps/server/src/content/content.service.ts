@@ -13,6 +13,7 @@ import { Prisma } from '@prisma/client';
 import { ParamsError, UnknownError } from '@/common/errors';
 import { ContentConfigObject } from '@usertour/types';
 import { duplicateConfig, duplicateData, duplicateStep } from '@usertour/helpers';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()
 export class ContentService {
@@ -20,6 +21,7 @@ export class ContentService {
     private prisma: PrismaService,
     private webSocketGateway: WebSocketGateway,
     private webSocketV2Gateway: WebSocketV2Gateway,
+    private readonly cache: ProjectCacheService,
   ) {}
 
   async createContent(input: ContentInput) {
@@ -65,21 +67,33 @@ export class ContentService {
   }
 
   async updateContent(contentId: string, data: UpdateContentInput) {
-    return await this.prisma.content.update({
+    // A Content can be published into multiple environments via
+    // ContentOnEnvironment, so invalidating just `Content.environmentId`
+    // (the legacy primary field) leaves stale cache in every other env.
+    // The versionFull cache no longer embeds mutable Content fields
+    // (findVersions re-attaches Content from this slice on read), so a
+    // rename only needs to clear the env+type slices.
+    const envIds = await this.collectContentEnvIds(contentId);
+    const updated = await this.prisma.content.update({
       where: { id: contentId },
       data: { ...data } as any,
     });
+    if (envIds.length > 0) {
+      await this.cache.invalidate(envIds.flatMap((envId) => this.cache.envContentKeys(envId)));
+    }
+    return updated;
   }
 
   async addContentSteps(input: ContentStepsInput) {
     const { contentId, versionId, steps, themeId } = input;
+    // Editable-only: matches addContentStep / updateContentStep /
+    // updateStepsSequence / updateContentVersion. The previous inline check
+    // duplicated the rule and was easy to drift out of sync.
+    await this.contentVersionIsEditable(versionId);
+    // Caller passes contentId explicitly — guard rail (versionId must belong
+    // to this content) since contentVersionIsEditable doesn't see contentId.
     const content = await this.getContent(contentId);
-    if (
-      !content ||
-      !content.editedVersionId ||
-      versionId !== content.editedVersionId ||
-      content.publishedVersionId === versionId
-    ) {
+    if (!content || content.editedVersionId !== versionId) {
       throw new ParamsError();
     }
 
@@ -124,13 +138,11 @@ export class ContentService {
 
   async addContentStep(data: CreateStepInput) {
     const versionId = data.versionId;
-    const version = await this.prisma.version.findUnique({
-      where: { id: versionId },
-    });
-    const content = await this.getContent(version.contentId);
-    if (!content || content.publishedVersionId === version.id) {
-      throw new ParamsError();
-    }
+    // Editable-only: must match content.editedVersionId AND not be currently
+    // published. Aligns with addContentSteps / updateStepsSequence /
+    // updateContentVersion (the previous guard let historical published
+    // versions through, breaking the published-immutability contract).
+    await this.contentVersionIsEditable(versionId);
 
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -172,10 +184,11 @@ export class ContentService {
 
   async updateContentStep(stepId: string, data: UpdateStepInput) {
     const version = await this.prisma.step.findUnique({ where: { id: stepId } }).version();
-    const content = await this.getContent(version.contentId);
-    if (!content || content.publishedVersionId === version.id) {
+    if (!version) {
       throw new ParamsError();
     }
+    // Editable-only: see addContentStep.
+    await this.contentVersionIsEditable(version.id);
     return await this.prisma.step.update({
       where: { id: stepId },
       data,
@@ -363,14 +376,16 @@ export class ContentService {
       return content;
     });
 
-    // Send WebSocket notification outside of transaction
-    await this.webSocketGateway.notifyContentChanged(environmentId);
+    await this.cache.invalidate([
+      ...this.cache.envContentKeys(environmentId),
+      this.cache.keys.publishedVersionId(environmentId, content.id),
+    ]);
 
     return content;
   }
 
   async unpublishedContentVersion(contentId: string, environmentId: string) {
-    const content = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Update Content table
       const content = await tx.content.update({
         where: { id: contentId },
@@ -401,25 +416,85 @@ export class ContentService {
         });
       }
 
-      return content;
+      return { content, unpublishedVersionId: contentOnEnv?.publishedVersionId ?? null };
     });
 
-    // send content change notification to all users in the environment
-    await this.webSocketGateway.notifyContentChanged(environmentId);
+    const keys = [
+      ...this.cache.envContentKeys(environmentId),
+      this.cache.keys.publishedVersionId(environmentId, contentId),
+    ];
+    // versionFull caches Version + Steps with a 30-min TTL on the assumption
+    // that a published version is immutable. Unpublishing breaks that
+    // invariant — once detached from every COE the version drops back into
+    // editable state, and any subsequent step / version edits would render
+    // a still-cached entry stale. Wipe it here so the next read repopulates
+    // from DB.
+    if (result.unpublishedVersionId) {
+      keys.push(this.cache.keys.versionFull(result.unpublishedVersionId));
+    }
+    await this.cache.invalidate(keys);
 
     // Cancel all active content sessions for this content
     await this.webSocketV2Gateway.cancelAllContentSessions(contentId, environmentId);
 
-    return content;
+    return result.content;
   }
 
   async deleteContent(contentId: string) {
-    return await this.prisma.content.update({
-      where: { id: contentId },
-      data: {
-        deleted: true,
-      },
+    // Same multi-environment caveat as updateContent: a Content can have
+    // ContentOnEnvironment rows in several envs, and each env has its
+    // own cached slice + pubver mapping that must be invalidated.
+    const envIds = await this.collectContentEnvIds(contentId);
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // Drop per-env publication along with the soft-delete. Otherwise
+      // findPublishedVersionId (which only checks ContentOnEnvironment.
+      // published, not Content.deleted) would re-resolve a versionId for
+      // the deleted content the next time the cache repopulates.
+      await tx.contentOnEnvironment.deleteMany({ where: { contentId } });
+      return await tx.content.update({
+        where: { id: contentId },
+        data: { deleted: true },
+      });
     });
+    const keys = envIds.flatMap((envId) => [
+      ...this.cache.envContentKeys(envId),
+      this.cache.keys.publishedVersionId(envId, contentId),
+    ]);
+    if (keys.length > 0) {
+      await this.cache.invalidate(keys);
+    }
+    // Mirror unpublishedContentVersion: cancel active sessions per env,
+    // not just the legacy primary one.
+    await Promise.all(
+      envIds.map((envId) => this.webSocketV2Gateway.cancelAllContentSessions(contentId, envId)),
+    );
+    return updated;
+  }
+
+  /**
+   * All env ids that have this content cached. Pulls every COE row plus
+   * the legacy `Content.environmentId` (some old rows may have a primary
+   * env without a matching COE entry — defend in depth).
+   */
+  private async collectContentEnvIds(contentId: string): Promise<string[]> {
+    const [coes, content] = await Promise.all([
+      this.prisma.contentOnEnvironment.findMany({
+        where: { contentId },
+        select: { environmentId: true },
+      }),
+      this.prisma.content.findUnique({
+        where: { id: contentId },
+        select: { environmentId: true },
+      }),
+    ]);
+    const envIds = new Set<string>();
+    for (const coe of coes) {
+      envIds.add(coe.environmentId);
+    }
+    if (content?.environmentId) {
+      envIds.add(content.environmentId);
+    }
+    return [...envIds];
   }
 
   async duplicateContent(contentId: string, name: string, targetEnvironmentId?: string) {

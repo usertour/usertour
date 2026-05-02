@@ -39,6 +39,7 @@ import { ContentDataService } from './content-data.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { DistributedLockService } from './distributed-lock.service';
 import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()
 export class SessionBuilderService {
@@ -49,6 +50,7 @@ export class SessionBuilderService {
     private readonly contentDataService: ContentDataService,
     private readonly projectsService: ProjectsService,
     private readonly distributedLockService: DistributedLockService,
+    private readonly cache: ProjectCacheService,
   ) {}
 
   // ============================================================================
@@ -120,12 +122,20 @@ export class SessionBuilderService {
     versionId: string,
   ): Promise<BizSession | null> {
     const environmentId = environment.id;
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId },
-    });
-    const bizCompany = await this.prisma.bizCompany.findFirst({
-      where: { externalId: String(externalCompanyId), environmentId },
-    });
+    const bizUser = await this.cache.memoize(
+      this.cache.memoKeys.bizUser(environmentId, String(externalUserId)),
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: { externalId: String(externalUserId), environmentId },
+        }),
+    );
+    const bizCompany = await this.cache.memoize(
+      this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
+      () =>
+        this.prisma.bizCompany.findFirst({
+          where: { externalId: String(externalCompanyId), environmentId },
+        }),
+    );
     if (!bizUser || (externalCompanyId && !bizCompany)) {
       return null;
     }
@@ -301,18 +311,22 @@ export class SessionBuilderService {
     externalCompanyId?: string,
   ): Promise<any> {
     const environmentId = environment.id;
-    const bizUser = await this.prisma.bizUser.findFirst({
-      where: {
-        environmentId,
-        externalId: String(externalUserId),
-      },
-      select: {
-        data: true,
-        id: true,
-      },
-    });
+    // Drop projections so per-request memos hold consistent full entities
+    // across all callers in the scope.
+    const bizUser = await this.cache.memoize(
+      this.cache.memoKeys.bizUser(environmentId, String(externalUserId)),
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: {
+            environmentId,
+            externalId: String(externalUserId),
+          },
+        }),
+    );
 
-    if (!bizUser) return null;
+    if (!bizUser) {
+      return null;
+    }
 
     if (attr.bizType === AttributeBizType.USER) {
       if (bizUser?.data) {
@@ -322,28 +336,39 @@ export class SessionBuilderService {
     }
 
     if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
-      if (!externalCompanyId) return null;
+      if (!externalCompanyId) {
+        return null;
+      }
 
-      const bizCompany = await this.prisma.bizCompany.findFirst({
-        where: {
-          externalId: String(externalCompanyId),
-          environmentId,
-        },
-      });
+      const bizCompany = await this.cache.memoize(
+        this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
+        () =>
+          this.prisma.bizCompany.findFirst({
+            where: {
+              externalId: String(externalCompanyId),
+              environmentId,
+            },
+          }),
+      );
 
-      if (!bizCompany) return null;
+      if (!bizCompany) {
+        return null;
+      }
 
-      const userOnCompany = await this.prisma.bizUserOnCompany.findFirst({
-        where: {
-          bizUserId: bizUser.id,
-          bizCompanyId: bizCompany.id,
-        },
-        select: {
-          data: true,
-        },
-      });
+      const userOnCompany = await this.cache.memoize(
+        this.cache.memoKeys.bizUserOnCompany(bizUser.id, bizCompany.id),
+        () =>
+          this.prisma.bizUserOnCompany.findFirst({
+            where: {
+              bizUserId: bizUser.id,
+              bizCompanyId: bizCompany.id,
+            },
+          }),
+      );
 
-      if (!userOnCompany) return null;
+      if (!userOnCompany) {
+        return null;
+      }
 
       if (attr.bizType === AttributeBizType.COMPANY) {
         return getAttributeValue(bizCompany.data, attr.codeName);

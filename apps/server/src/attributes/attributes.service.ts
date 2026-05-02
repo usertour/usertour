@@ -3,29 +3,37 @@ import { PrismaService } from 'nestjs-prisma';
 import { CreateAttributeInput, UpdateAttributeInput } from './dto/attribute.input';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()
 export class AttributesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly cache: ProjectCacheService,
+  ) {}
 
   async create(data: CreateAttributeInput) {
-    return await this.prisma.attribute.create({
-      data,
-    });
+    const created = await this.prisma.attribute.create({ data });
+    await this.cache.invalidateDeferred(this.cache.keys.attrs(created.projectId));
+    return created;
   }
 
   async update(data: UpdateAttributeInput) {
     const { id, ...others } = data;
-    return await this.prisma.attribute.update({
+    const updated = await this.prisma.attribute.update({
       where: { id },
       data: { ...others },
     });
+    await this.cache.invalidateDeferred(this.cache.keys.attrs(updated.projectId));
+    return updated;
   }
 
   async delete(id: string) {
-    return await this.prisma.attribute.delete({
+    const deleted = await this.prisma.attribute.delete({
       where: { id },
     });
+    await this.cache.invalidateDeferred(this.cache.keys.attrs(deleted.projectId));
+    return deleted;
   }
 
   async get(id: string) {
