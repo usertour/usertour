@@ -41,6 +41,7 @@ import {
   extractSessionByContentType,
   buildSocketLockKey,
   extractSessionsByContentType,
+  getSocketId,
 } from '@/utils/websocket-utils';
 import {
   SocketData,
@@ -61,6 +62,7 @@ import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 import { getStartEventType, getEndEventType } from '@/utils/event-v2';
 import { WebSocketContext } from '../v2/web-socket-v2.dto';
 
@@ -89,6 +91,7 @@ export class ContentOrchestratorService {
     private readonly socketOperationService: SocketOperationService,
     private readonly socketDataService: SocketDataService,
     private readonly distributedLockService: DistributedLockService,
+    private readonly cache: ProjectCacheService,
   ) {}
 
   // ============================================================================
@@ -424,12 +427,15 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Get socket data from Redis
-   * @param socket - The socket instance
-   * @returns Promise<SocketData | null>
+   * Get socket data from Redis, memoized per request scope so the
+   * 8+ orchestrator reads in one EndBatch coalesce into a single Redis GET.
+   * SocketDataService.set/delete invalidate the memo so post-write reads
+   * return the new state.
    */
   private async getSocketData(socket: Socket): Promise<SocketData | null> {
-    return await this.socketDataService.get(socket);
+    return this.cache.memoize(this.cache.memoKeys.socketData(getSocketId(socket)), () =>
+      this.socketDataService.get(socket),
+    );
   }
 
   /**

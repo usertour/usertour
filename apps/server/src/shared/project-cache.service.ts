@@ -93,6 +93,13 @@ export class ProjectCacheService {
     bizUserOnCompanyWithBizCompany: (bizUserId: string, envId: string, externalCompanyId: string) =>
       `bizUserOnCompanyWithBizCompany:${bizUserId}:${envId}:${externalCompanyId}`,
     projectConfig: (projectId: string) => `projectConfig:${projectId}`,
+    /**
+     * Snapshot of the Redis-backed SocketData for a connected client.
+     * Unlike the other memo keys this entry IS mutated mid-scope (session
+     * lifecycle writes), so SocketDataService.set/delete must call
+     * `invalidateMemo` after every Redis write.
+     */
+    socketData: (socketId: string) => `socketData:${socketId}`,
   };
 
   /**
@@ -270,6 +277,23 @@ export class ProjectCacheService {
     const promise = loader();
     ctx.memo.set(key, promise);
     return promise;
+  }
+
+  /**
+   * Drop a per-request memo entry so the next `memoize` for the same key
+   * re-runs its loader. Reserved for state that legitimately mutates inside
+   * a scope (e.g. SocketData session lifecycle writes). For snapshot-style
+   * entities like BizUser this is a code smell — refactor the writer to
+   * keep the snapshot consistent instead.
+   *
+   * No-op when called outside a request scope.
+   */
+  invalidateMemo(key: string): void {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return;
+    }
+    ctx.memo.delete(key);
   }
 
   /**
