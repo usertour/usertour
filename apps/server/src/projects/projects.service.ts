@@ -9,6 +9,7 @@ import {
   LicenseDecodeError,
 } from '@/common/errors';
 import { LicenseService } from '@/license/license.service';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 import { Environment } from '@/common/types/schema';
 import { ProjectConfig } from '@usertour/types';
 
@@ -20,6 +21,7 @@ export class ProjectsService {
     private prisma: PrismaService,
     private licenseService: LicenseService,
     private configService: ConfigService,
+    private cache: ProjectCacheService,
   ) {}
 
   async getUserProject(userId: string, projectId: string) {
@@ -132,13 +134,16 @@ export class ProjectsService {
   }
 
   async getProjectConfig(projectId: string): Promise<ProjectConfig> {
-    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
-
-    if (isSelfHostedMode) {
-      return await this.getSelfHostedConfig(projectId);
-    }
-
-    return await this.getCloudConfig(projectId);
+    // Memoized per request scope: a single EndBatch builds one session per
+    // active content type and each session call hits this method once,
+    // producing 3+ identical Project + Subscription lookups otherwise.
+    return this.cache.memoize(this.cache.memoKeys.projectConfig(projectId), () => {
+      const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
+      if (isSelfHostedMode) {
+        return this.getSelfHostedConfig(projectId);
+      }
+      return this.getCloudConfig(projectId);
+    });
   }
 
   /**

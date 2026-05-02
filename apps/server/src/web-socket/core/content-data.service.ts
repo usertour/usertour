@@ -32,6 +32,7 @@ import {
   ConditionEvaluationContext,
 } from './condition-evaluation.service';
 import { DISMISSED_EVENTS } from '@/utils/event-v2';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 
 // ============================================================================
 // Type Definitions
@@ -114,7 +115,17 @@ export class ContentDataService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly conditionEvaluationService: ConditionEvaluationService,
+    private readonly cache: ProjectCacheService,
   ) {}
+
+  /** TTL for project-level cached configuration. Long enough to absorb most
+   *  reads but short enough that any missed invalidation self-heals quickly. */
+  private static readonly PROJECT_CONFIG_TTL_SECONDS = 5 * 60;
+
+  /** TTL for published Version rows (full include with steps + content).
+   *  Longer than project-config because published versions are immutable —
+   *  see findVersions for the invariant this depends on. */
+  private static readonly PUBLISHED_VERSION_TTL_SECONDS = 30 * 60;
 
   // ============================================================================
   // Public API Methods
@@ -199,24 +210,36 @@ export class ContentDataService {
   }
 
   /**
-   * Find published version ID by contentId and environmentId
-   * @param contentId - The content ID
-   * @param environmentId - The environment ID
-   * @returns Published version ID or undefined if not found
+   * Find published version ID by contentId and environmentId.
+   *
+   * Cached per (envId, contentId). Invalidated alongside the env's content
+   * slices on publish / unpublish / delete (see content.service.ts). The
+   * "no published" undefined result is intentionally not cached — its
+   * frequency is low and skipping the cache write avoids a sentinel value
+   * scheme.
    */
   async findPublishedVersionId(contentId: string, environmentId: string) {
-    const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
-      where: {
-        environmentId,
-        contentId,
-        published: true,
+    return await this.cache.get(
+      this.cache.keys.publishedVersionId(environmentId, contentId),
+      ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
+      async () => {
+        const contentOnEnvironment = await this.prisma.contentOnEnvironment.findFirst({
+          where: {
+            environmentId,
+            contentId,
+            published: true,
+            // Defense in depth: deleteContent already drops COE rows,
+            // but a stale row from any other write path would otherwise
+            // resurface a deleted content's versionId via this cache.
+            content: { deleted: false },
+          },
+          select: {
+            publishedVersionId: true,
+          },
+        });
+        return contentOnEnvironment?.publishedVersionId;
       },
-      select: {
-        publishedVersionId: true,
-      },
-    });
-
-    return contentOnEnvironment?.publishedVersionId;
+    );
   }
 
   /**
@@ -269,22 +292,20 @@ export class ContentDataService {
   }
 
   /**
-   * Check if the user has a biz event
-   * @param contentId - The ID of the content
-   * @param bizUserId - The ID of the business user
-   * @param eventCodeNames - The code names of the events (array of strings)
-   * @returns true if the user has any of the events, false otherwise
+   * Check if the user has a biz event.
+   *
+   * NOT memoized: trackBizEvent fires SEEN / COMPLETED events mid-EndBatch
+   * as toggleContents starts new sessions, so a memo'd pre-event answer
+   * would hide just-fired events from later condition evaluation.
    */
   async hasBizEvent(
     contentId: string,
     bizUserId: string,
     eventCodeNames: string[],
   ): Promise<boolean> {
-    // Early return if no events to check
     if (!eventCodeNames || eventCodeNames.length === 0) {
       return false;
     }
-
     const count = await this.prisma.bizSession.count({
       where: {
         contentId,
@@ -301,103 +322,202 @@ export class ContentDataService {
   // ============================================================================
 
   /**
-   * Find business user by external ID
+   * Find business user by external ID. Memoized per request scope so the
+   * 6-type toggleContents loop + findThemes don't all re-query the same row.
    */
   private async findBizUser(
     environment: Environment,
     externalUserId: string,
   ): Promise<BizUser | null> {
-    return await this.prisma.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId: environment.id },
-    });
+    return this.cache.memoize(
+      this.cache.memoKeys.bizUser(environment.id, String(externalUserId)),
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: { externalId: String(externalUserId), environmentId: environment.id },
+        }),
+    );
   }
 
   /**
-   * Find attributes for content processing
+   * Find attributes for content processing.
+   *
+   * Cached per project: the result depends only on projectId + the fixed
+   * CONTENT_ATTRIBUTE_BIZ_TYPES filter, and only changes when the admin
+   * mutates Attribute rows (handled by AttributesService write path).
+   * Attribute has Date columns but none of the hot-path consumers read
+   * them, so caching the entity as-is is safe.
    */
   private async findAttributes(environment: Environment): Promise<Attribute[]> {
-    return await this.prisma.attribute.findMany({
-      where: {
-        projectId: environment.projectId,
-        bizType: {
-          in: [...ContentDataService.CONTENT_ATTRIBUTE_BIZ_TYPES],
-        },
-      },
-    });
+    return await this.cache.get(
+      this.cache.keys.attrs(environment.projectId),
+      ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
+      () =>
+        this.prisma.attribute.findMany({
+          where: {
+            projectId: environment.projectId,
+            bizType: {
+              in: [...ContentDataService.CONTENT_ATTRIBUTE_BIZ_TYPES],
+            },
+          },
+        }),
+    );
   }
 
   /**
-   * Find themes by project ID
+   * Find themes by project ID.
+   *
+   * Cached per project: result depends only on projectId. Invalidated by
+   * ThemesService on every create/update/delete. Theme has Date columns
+   * but none are read in the EndBatch / session-builder hot path so the
+   * JSON round trip is safe.
    */
   private async findThemesByProject(environment: Environment): Promise<Theme[]> {
-    return await this.prisma.theme.findMany({
-      where: { projectId: environment.projectId },
-    });
+    return await this.cache.get(
+      this.cache.keys.themes(environment.projectId),
+      ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
+      () =>
+        this.prisma.theme.findMany({
+          where: { projectId: environment.projectId },
+        }),
+    );
   }
 
   /**
-   * Find versions for content processing
-   * @param environment - The environment
-   * @param contentTypes - Content types array to filter by
-   * @param versionId - Optional specific version ID
+   * Find versions for content processing.
+   *
+   * INVARIANT (cache assumption): a Version row that is currently published
+   * is immutable, AND the Content fields we co-cache with it (`{id, type}`)
+   * are structurally immutable too — `id` is the PK, `type` cannot be
+   * changed by any update path. Mutable Content fields (name, buildUrl,
+   * config) live in the env+type slice cache (write-invalidated) and are
+   * re-attached at read time. So `versionFull` never needs invalidation
+   * from any Content rename / update.
+   *
+   * The split is by field mutability, not by entity boundary: caching
+   * immutable Content fields here is free (no invalidation cost) and lets
+   * the explicit-versionId path early-return on a type-filter miss without
+   * touching the DB.
    */
   private async findVersions(
     environment: Environment,
     contentTypes: ContentDataType[],
     versionId?: string,
   ): Promise<VersionWithStepsAndContent[]> {
-    if (versionId) {
-      // Find the specific version with content, filtered by contentTypes in Prisma query
-      const version = await this.prisma.version.findFirst({
-        where: {
-          id: versionId,
-          content: {
-            type: {
-              in: contentTypes,
-            },
-          },
-        },
+    // Defense in depth on the cache loader: only pin Versions whose Content
+    // is still alive. The `where: content.deleted: false` clause prevents a
+    // stale source from materializing a deleted-content version into the
+    // 30-minute TTL.
+    const fetchVersionLite = (id: string) =>
+      this.prisma.version.findFirst({
+        where: { id, deleted: false, content: { deleted: false } },
         include: {
-          content: true,
+          content: { select: { id: true, type: true } },
           steps: { orderBy: { sequence: 'asc' } },
         },
       });
 
-      return version ? [version] : [];
+    if (versionId) {
+      const version = await this.cache.get(
+        this.cache.keys.versionFull(versionId),
+        ContentDataService.PUBLISHED_VERSION_TTL_SECONDS,
+        () => fetchVersionLite(versionId),
+      );
+      if (!version || !contentTypes.includes(version.content.type as ContentDataType)) {
+        return [];
+      }
+      // Re-fetch the full Content row so callers get the latest mutable
+      // fields (name, etc.), and so a delete that landed after the cache
+      // populated drops the version from the result set.
+      const content = await this.prisma.content.findFirst({
+        where: { id: version.content.id, deleted: false },
+      });
+      if (!content) {
+        return [];
+      }
+      return [{ ...version, content }];
     }
 
-    // Find all published versions with content, filtered by contentTypes in Prisma query
-    const publishedContents = await this.prisma.content.findMany({
-      where: {
-        deleted: false,
-        contentOnEnvironments: {
-          some: {
-            environmentId: environment.id,
-            published: true,
+    // Find all published Contents (with their ContentOnEnvironment join rows)
+    // for this env + type filter. Cached only when filtering by a single type
+    // (which is what the toggleContents loop and handleChecklistCompletedEvents
+    // always do); a multi-type query is rare enough to skip caching for.
+    const fetchPublishedContents = () =>
+      this.prisma.content.findMany({
+        where: {
+          deleted: false,
+          contentOnEnvironments: {
+            some: {
+              environmentId: environment.id,
+              published: true,
+            },
+          },
+          type: {
+            in: contentTypes,
           },
         },
-        type: {
-          in: contentTypes,
+        include: {
+          contentOnEnvironments: true,
         },
-      },
-      include: {
-        contentOnEnvironments: true,
-      },
-    });
+      });
+
+    const publishedContents =
+      contentTypes.length === 1
+        ? await this.cache.get(
+            this.cache.keys.contents(environment.id, contentTypes[0]),
+            ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
+            fetchPublishedContents,
+          )
+        : await fetchPublishedContents();
+
+    // Map by id so we can re-attach the full Content row (with the latest
+    // name, etc.) onto the slim cached version below.
+    const contentById = new Map(publishedContents.map((content) => [content.id, content]));
 
     // Extract version IDs for published contents
     const versionIds = publishedContents
       .map((content) => getPublishedVersionId(content, environment.id))
       .filter(Boolean);
 
-    // Find versions with content and steps
-    return await this.prisma.version.findMany({
-      where: { id: { in: versionIds } },
-      include: {
-        content: true,
-        steps: { orderBy: { sequence: 'asc' } },
+    if (versionIds.length === 0) {
+      return [];
+    }
+
+    // Per-version cache; published Version data is immutable so a long TTL
+    // is safe. MGET reads all keys in one round trip; misses are loaded with
+    // a single findMany so we don't regress cold-cache cost vs the original
+    // batched query.
+    type CachedVersion = Awaited<ReturnType<typeof fetchVersionLite>>;
+    const keyToId = new Map(versionIds.map((id) => [this.cache.keys.versionFull(id), id]));
+    const cached = await this.cache.mget<NonNullable<CachedVersion>>(
+      [...keyToId.keys()],
+      ContentDataService.PUBLISHED_VERSION_TTL_SECONDS,
+      async (missingKeys) => {
+        const missingIds = missingKeys.map((cacheKey) => keyToId.get(cacheKey) as string);
+        const fresh = await this.prisma.version.findMany({
+          where: { id: { in: missingIds }, deleted: false, content: { deleted: false } },
+          include: {
+            content: { select: { id: true, type: true } },
+            steps: { orderBy: { sequence: 'asc' } },
+          },
+        });
+        return new Map(fresh.map((version) => [this.cache.keys.versionFull(version.id), version]));
       },
-    });
+    );
+    return versionIds
+      .map((id): VersionWithStepsAndContent | null => {
+        const version = cached.get(this.cache.keys.versionFull(id));
+        if (!version) {
+          return null;
+        }
+        const content = contentById.get(version.content.id);
+        // Slice-miss means the Content was filtered out (deleted /
+        // unpublished post-cache) — skip the version entirely.
+        if (!content) {
+          return null;
+        }
+        return { ...version, content };
+      })
+      .filter((version): version is VersionWithStepsAndContent => version !== null);
   }
 
   /**

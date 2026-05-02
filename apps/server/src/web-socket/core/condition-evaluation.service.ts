@@ -1,6 +1,7 @@
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter } from '@/common/attribute/filter';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 import { evaluateAttributeCondition, isArray, isNullish } from '@usertour/helpers';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -89,7 +90,10 @@ type ContentConditionParams = {
 export class ConditionEvaluationService {
   private readonly logger = new Logger(ConditionEvaluationService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: ProjectCacheService,
+  ) {}
 
   // ============================================================================
   // Public API Methods
@@ -706,30 +710,44 @@ export class ConditionEvaluationService {
   }
 
   /**
-   * Find user-company relationship with company included
-   * @param context - Condition evaluation context
-   * @returns User-company relationship with company, or null if not found
+   * Find user-company relationship with company included.
+   * Memoized per request scope so repeated condition evaluations across the
+   * 6-type toggleContents loop don't all re-query the same membership row.
+   * Distinct namespace from `bizUserOnCompany` because the included
+   * `bizCompany` shape differs from the bare row.
    */
   private async findUserCompanyRelation(context: ConditionEvaluationContext) {
-    return await this.prisma.bizUserOnCompany.findFirst({
-      where: {
-        bizUserId: context.bizUser.id,
-        bizCompany: {
-          externalId: String(context.externalCompanyId),
-          environmentId: context.environment.id,
-        },
-      },
-      include: {
-        bizCompany: true,
-      },
-    });
+    return this.cache.memoize(
+      this.cache.memoKeys.bizUserOnCompanyWithBizCompany(
+        context.bizUser.id,
+        context.environment.id,
+        String(context.externalCompanyId),
+      ),
+      () =>
+        this.prisma.bizUserOnCompany.findFirst({
+          where: {
+            bizUserId: context.bizUser.id,
+            bizCompany: {
+              externalId: String(context.externalCompanyId),
+              environmentId: context.environment.id,
+            },
+          },
+          include: {
+            bizCompany: true,
+          },
+        }),
+    );
   }
 
   /**
-   * Check if there is an available session for a content and user
-   * @param contentId - The ID of the content
-   * @param bizUserId - The ID of the business user
-   * @returns true if an available session exists, false otherwise
+   * Check if there is an available session for a content and user.
+   *
+   * NOT memoized: toggleContents may create new BizSessions mid-EndBatch
+   * (one content type's auto-start fires, then another type's rules ask
+   * "is content X activated?"), and a memo'd pre-creation `false` would
+   * mask the just-created session. The repeated calls within one
+   * evaluation pass hit a hot DB row anyway — cheaper than getting the
+   * answer wrong.
    */
   private async hasAvailableSession(contentId: string, bizUserId: string): Promise<boolean> {
     const count = await this.prisma.bizSession.count({
@@ -739,22 +757,20 @@ export class ConditionEvaluationService {
   }
 
   /**
-   * Check if the user has a biz event
-   * @param contentId - The ID of the content
-   * @param bizUserId - The ID of the business user
-   * @param eventCodeName - The code names of the events (array of strings)
-   * @returns true if the user has any of the events, false otherwise
+   * Check if the user has a biz event.
+   *
+   * NOT memoized for the same reason as hasAvailableSession: trackBizEvent
+   * fires SEEN / COMPLETED events as toggleContents progresses, and a
+   * memo'd pre-event `false` would hide the new event from later rules.
    */
   private async hasBizEvent(
     contentId: string,
     bizUserId: string,
     eventCodeName: string[],
   ): Promise<boolean> {
-    // Early return if no events to check
     if (!eventCodeName || eventCodeName.length === 0) {
       return false;
     }
-
     const count = await this.prisma.bizSession.count({
       where: {
         contentId,

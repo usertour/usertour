@@ -48,7 +48,6 @@ import { Logger } from '@nestjs/common';
       isGlobal: true,
       prismaServiceOptions: {
         middlewares: [
-          // Conditionally enable Prisma logging based on environment variable
           ...(process.env.ENABLE_PRISMA_LOGGING === 'true'
             ? [
                 loggingMiddleware({
@@ -58,6 +57,12 @@ import { Logger } from '@nestjs/common';
               ]
             : []),
         ],
+        // Engine-level query event so SQL inside $transaction(callback) is also visible.
+        // Middleware cannot intercept transactional operations.
+        prismaOptions:
+          process.env.ENABLE_PRISMA_LOGGING === 'true'
+            ? { log: [{ emit: 'event', level: 'query' }] }
+            : undefined,
       },
     }),
     LoggerModule.forRootAsync({
