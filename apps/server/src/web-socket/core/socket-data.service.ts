@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@/shared/redis.service';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 import { SocketData } from '@/common/types/content';
 import { Socket } from 'socket.io';
 import { getSocketId } from '@/utils/websocket-utils';
@@ -17,7 +18,10 @@ export class SocketDataService {
   private readonly logger = new Logger(SocketDataService.name);
   private readonly DEFAULT_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
-  constructor(private readonly redisService: RedisService) {}
+  constructor(
+    private readonly redisService: RedisService,
+    private readonly cache: ProjectCacheService,
+  ) {}
 
   // ============================================================================
   // Private Helper Methods - Key Management
@@ -69,6 +73,7 @@ export class SocketDataService {
       };
 
       await this.redisService.setex(key, this.DEFAULT_TTL_SECONDS, JSON.stringify(finalData));
+      this.cache.invalidateMemo(this.cache.memoKeys.socketData(socketId));
       this.logger.debug(`Client data set for socket ${socketId}`);
       return true;
     } catch (error) {
@@ -116,6 +121,7 @@ export class SocketDataService {
 
       // Remove socket data
       await client.del(key);
+      this.cache.invalidateMemo(this.cache.memoKeys.socketData(socketId));
 
       this.logger.debug(`Removed socket data for socket ${socketId}`);
       return true;
