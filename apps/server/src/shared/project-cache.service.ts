@@ -3,6 +3,9 @@ import { ContentDataType } from '@usertour/types';
 import { RedisService } from './redis.service';
 import { createRequestContext, requestContext } from './request-context';
 
+const MEMO_VALUE = Symbol('memoSetValue');
+type MemoizedPromise<T> = Promise<T> & { [MEMO_VALUE]?: T };
+
 /**
  * Centralized cache for project-scoped configuration data that the SDK
  * websocket message handlers read on every toggleContents iteration but
@@ -107,6 +110,12 @@ export class ProjectCacheService {
     /** MANUAL-segment membership lookup for a given company. */
     bizCompanyOnSegment: (segmentId: string, bizCompanyId: string) =>
       `bizCompanyOnSegment:${segmentId}:${bizCompanyId}`,
+    /**
+     * Pre-fetched union of session/event data for all contentIds visible
+     * in a toggleContents pass. Populated once at scope entry; per-type
+     * findSessions calls peek this and return a contentId-subset view.
+     */
+    toggleSessions: (bizUserId: string) => `toggleSessions:${bizUserId}`,
   };
 
   /**
@@ -301,6 +310,46 @@ export class ProjectCacheService {
       return;
     }
     ctx.memo.delete(key);
+  }
+
+  /**
+   * Pre-populate a per-request memo entry with an already-computed value.
+   * Useful for "fan-out collapse" patterns where the caller resolved the
+   * full result by union once and wants subsequent narrower lookups to
+   * read a subset of that value instead of re-querying.
+   *
+   * Stores the value both as a resolved Promise (for `memoize` callers
+   * that `await` it) and as a synchronous side-channel (for `peekMemo`
+   * callers that need to branch without awaiting).
+   *
+   * No-op when called outside a request scope.
+   */
+  memoSet<T>(key: string, value: T): void {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return;
+    }
+    const wrapped = Promise.resolve(value) as MemoizedPromise<T>;
+    wrapped[MEMO_VALUE] = value;
+    ctx.memo.set(key, wrapped);
+  }
+
+  /**
+   * Synchronous peek into a memo entry seeded via `memoSet`. Returns
+   * undefined for both "no entry" and "entry seeded asynchronously by
+   * `memoize`" — async-loaded promises don't expose their resolved value
+   * synchronously, so peekMemo cannot read them. Callers that need an
+   * async-loaded value should `await memoize(...)` instead.
+   *
+   * Returns undefined outside a request scope.
+   */
+  peekMemo<T>(key: string): T | undefined {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return undefined;
+    }
+    const entry = ctx.memo.get(key) as MemoizedPromise<T> | undefined;
+    return entry?.[MEMO_VALUE];
   }
 
   /**

@@ -376,9 +376,29 @@ export class ContentOrchestratorService {
       },
     };
 
-    // Handle checklist completed events
+    // Handle checklist completed events. MUST run before the prefetch
+    // below — it tracks CHECKLIST_COMPLETED events that flip session
+    // state, and prefetching first would freeze pre-completion sessions
+    // into the memo and mask just-fired events from per-type evaluation.
     if (contentTypes.some((type) => isSingletonContentType(type))) {
       await this.handleChecklistCompletedEvents(socket);
+    }
+
+    // Pre-fetch the session/event union for every contentId visible across
+    // all six types so the per-type loop below collapses 4×6 sub-queries
+    // down to a single batched fetch. Best-effort: bails out silently
+    // when socket data is gone, leaving findSessions to fall back to its
+    // original DB path.
+    const socketData = await this.getSocketData(socket);
+    if (socketData) {
+      await this.contentDataService.prefetchToggleContentSessions(
+        {
+          environment: socketData.environment,
+          externalUserId: socketData.externalUserId,
+          externalCompanyId: socketData.externalCompanyId,
+        },
+        contentTypes,
+      );
     }
 
     // Start content types sequentially
