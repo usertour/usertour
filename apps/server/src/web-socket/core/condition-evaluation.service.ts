@@ -419,9 +419,13 @@ export class ConditionEvaluationService {
         return logic === 'is';
       }
       case SegmentDataType.MANUAL: {
-        const userOnSegment = await this.prisma.bizUserOnSegment.findFirst({
-          where: { segmentId: segment.id, bizUserId: context.bizUser.id },
-        });
+        const userOnSegment = await this.cache.memoize(
+          this.cache.memoKeys.bizUserOnSegment(segment.id, context.bizUser.id),
+          () =>
+            this.prisma.bizUserOnSegment.findFirst({
+              where: { segmentId: segment.id, bizUserId: context.bizUser.id },
+            }),
+        );
         return this.applySegmentLogic(logic, !!userOnSegment);
       }
       case SegmentDataType.CONDITION: {
@@ -475,9 +479,13 @@ export class ConditionEvaluationService {
         return logic === 'is';
       }
       case SegmentDataType.MANUAL: {
-        const companyOnSegment = await this.prisma.bizCompanyOnSegment.findFirst({
-          where: { segmentId: segment.id, bizCompanyId: bizCompany.id },
-        });
+        const companyOnSegment = await this.cache.memoize(
+          this.cache.memoKeys.bizCompanyOnSegment(segment.id, bizCompany.id),
+          () =>
+            this.prisma.bizCompanyOnSegment.findFirst({
+              where: { segmentId: segment.id, bizCompanyId: bizCompany.id },
+            }),
+        );
         return this.applySegmentLogic(logic, !!companyOnSegment);
       }
       case SegmentDataType.CONDITION: {
@@ -699,14 +707,16 @@ export class ConditionEvaluationService {
   // ============================================================================
 
   /**
-   * Find segment by ID
-   * @param segmentId - The segment ID
-   * @returns The segment or null if not found
+   * Find segment by ID, memoized per request scope. Same segment id can be
+   * referenced by multiple version conditions across the 6-type
+   * toggleContents loop; without memo each evaluation reissues findFirst.
    */
   private async findSegmentById(segmentId: string) {
-    return await this.prisma.segment.findFirst({
-      where: { id: segmentId },
-    });
+    return this.cache.memoize(this.cache.memoKeys.segment(segmentId), () =>
+      this.prisma.segment.findFirst({
+        where: { id: segmentId },
+      }),
+    );
   }
 
   /**

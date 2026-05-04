@@ -3,6 +3,9 @@ import { ContentDataType } from '@usertour/types';
 import { RedisService } from './redis.service';
 import { createRequestContext, requestContext } from './request-context';
 
+const MEMO_VALUE = Symbol('memoSetValue');
+type MemoizedPromise<T> = Promise<T> & { [MEMO_VALUE]?: T };
+
 /**
  * Centralized cache for project-scoped configuration data that the SDK
  * websocket message handlers read on every toggleContents iteration but
@@ -64,8 +67,6 @@ export class ProjectCacheService {
     contents: (envId: string, type: string) => `env:${envId}:contents:${type}`,
     /** Full Version row including steps for a specific version id. */
     versionFull: (versionId: string) => `version:${versionId}:full`,
-    /** Single Segment definition by id. */
-    segment: (segmentId: string) => `segment:${segmentId}`,
     /** Map a (env, content) → publishedVersionId so the join doesn't re-run. */
     publishedVersionId: (envId: string, contentId: string) =>
       `env:${envId}:content:${contentId}:pubver`,
@@ -93,6 +94,28 @@ export class ProjectCacheService {
     bizUserOnCompanyWithBizCompany: (bizUserId: string, envId: string, externalCompanyId: string) =>
       `bizUserOnCompanyWithBizCompany:${bizUserId}:${envId}:${externalCompanyId}`,
     projectConfig: (projectId: string) => `projectConfig:${projectId}`,
+    /**
+     * Snapshot of the Redis-backed SocketData for a connected client.
+     * Unlike the other memo keys this entry IS mutated mid-scope (session
+     * lifecycle writes), so SocketDataService.set/delete must call
+     * `invalidateMemo` after every Redis write.
+     */
+    socketData: (socketId: string) => `socketData:${socketId}`,
+    /** Single Segment row by id; the same segment is referenced by many
+     * conditions in one EndBatch evaluation. */
+    segment: (segmentId: string) => `segment:${segmentId}`,
+    /** MANUAL-segment membership lookup for a given user. */
+    bizUserOnSegment: (segmentId: string, bizUserId: string) =>
+      `bizUserOnSegment:${segmentId}:${bizUserId}`,
+    /** MANUAL-segment membership lookup for a given company. */
+    bizCompanyOnSegment: (segmentId: string, bizCompanyId: string) =>
+      `bizCompanyOnSegment:${segmentId}:${bizCompanyId}`,
+    /**
+     * Pre-fetched union of session/event data for all contentIds visible
+     * in a toggleContents pass. Populated once at scope entry; per-type
+     * findSessions calls peek this and return a contentId-subset view.
+     */
+    toggleSessions: (bizUserId: string) => `toggleSessions:${bizUserId}`,
   };
 
   /**
@@ -270,6 +293,63 @@ export class ProjectCacheService {
     const promise = loader();
     ctx.memo.set(key, promise);
     return promise;
+  }
+
+  /**
+   * Drop a per-request memo entry so the next `memoize` for the same key
+   * re-runs its loader. Reserved for state that legitimately mutates inside
+   * a scope (e.g. SocketData session lifecycle writes). For snapshot-style
+   * entities like BizUser this is a code smell — refactor the writer to
+   * keep the snapshot consistent instead.
+   *
+   * No-op when called outside a request scope.
+   */
+  invalidateMemo(key: string): void {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return;
+    }
+    ctx.memo.delete(key);
+  }
+
+  /**
+   * Pre-populate a per-request memo entry with an already-computed value.
+   * Useful for "fan-out collapse" patterns where the caller resolved the
+   * full result by union once and wants subsequent narrower lookups to
+   * read a subset of that value instead of re-querying.
+   *
+   * Stores the value both as a resolved Promise (for `memoize` callers
+   * that `await` it) and as a synchronous side-channel (for `peekMemo`
+   * callers that need to branch without awaiting).
+   *
+   * No-op when called outside a request scope.
+   */
+  memoSet<T>(key: string, value: T): void {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return;
+    }
+    const wrapped = Promise.resolve(value) as MemoizedPromise<T>;
+    wrapped[MEMO_VALUE] = value;
+    ctx.memo.set(key, wrapped);
+  }
+
+  /**
+   * Synchronous peek into a memo entry seeded via `memoSet`. Returns
+   * undefined for both "no entry" and "entry seeded asynchronously by
+   * `memoize`" — async-loaded promises don't expose their resolved value
+   * synchronously, so peekMemo cannot read them. Callers that need an
+   * async-loaded value should `await memoize(...)` instead.
+   *
+   * Returns undefined outside a request scope.
+   */
+  peekMemo<T>(key: string): T | undefined {
+    const ctx = requestContext.getStore();
+    if (!ctx) {
+      return undefined;
+    }
+    const entry = ctx.memo.get(key) as MemoizedPromise<T> | undefined;
+    return entry?.[MEMO_VALUE];
   }
 
   /**

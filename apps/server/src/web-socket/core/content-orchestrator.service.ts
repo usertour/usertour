@@ -41,6 +41,7 @@ import {
   extractSessionByContentType,
   buildSocketLockKey,
   extractSessionsByContentType,
+  getSocketId,
 } from '@/utils/websocket-utils';
 import {
   SocketData,
@@ -61,6 +62,7 @@ import { SessionBuilderService } from './session-builder.service';
 import { EventTrackingService } from './event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
+import { ProjectCacheService } from '@/shared/project-cache.service';
 import { getStartEventType, getEndEventType } from '@/utils/event-v2';
 import { WebSocketContext } from '../v2/web-socket-v2.dto';
 
@@ -89,6 +91,7 @@ export class ContentOrchestratorService {
     private readonly socketOperationService: SocketOperationService,
     private readonly socketDataService: SocketDataService,
     private readonly distributedLockService: DistributedLockService,
+    private readonly cache: ProjectCacheService,
   ) {}
 
   // ============================================================================
@@ -373,9 +376,29 @@ export class ContentOrchestratorService {
       },
     };
 
-    // Handle checklist completed events
+    // Handle checklist completed events. MUST run before the prefetch
+    // below — it tracks CHECKLIST_COMPLETED events that flip session
+    // state, and prefetching first would freeze pre-completion sessions
+    // into the memo and mask just-fired events from per-type evaluation.
     if (contentTypes.some((type) => isSingletonContentType(type))) {
       await this.handleChecklistCompletedEvents(socket);
+    }
+
+    // Pre-fetch the session/event union for every contentId visible across
+    // all six types so the per-type loop below collapses 4×6 sub-queries
+    // down to a single batched fetch. Best-effort: bails out silently
+    // when socket data is gone, leaving findSessions to fall back to its
+    // original DB path.
+    const socketData = await this.getSocketData(socket);
+    if (socketData) {
+      await this.contentDataService.prefetchToggleContentSessions(
+        {
+          environment: socketData.environment,
+          externalUserId: socketData.externalUserId,
+          externalCompanyId: socketData.externalCompanyId,
+        },
+        contentTypes,
+      );
     }
 
     // Start content types sequentially
@@ -424,12 +447,15 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Get socket data from Redis
-   * @param socket - The socket instance
-   * @returns Promise<SocketData | null>
+   * Get socket data from Redis, memoized per request scope so the
+   * 8+ orchestrator reads in one EndBatch coalesce into a single Redis GET.
+   * SocketDataService.set/delete invalidate the memo so post-write reads
+   * return the new state.
    */
   private async getSocketData(socket: Socket): Promise<SocketData | null> {
-    return await this.socketDataService.get(socket);
+    return this.cache.memoize(this.cache.memoKeys.socketData(getSocketId(socket)), () =>
+      this.socketDataService.get(socket),
+    );
   }
 
   /**
