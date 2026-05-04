@@ -40,7 +40,7 @@ import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { ProjectCacheService } from '@/shared/project-cache.service';
-import { buildExternalUserRoomId } from '@/utils/websocket-utils';
+import { buildExternalUserRoomId, getSocketId } from '@/utils/websocket-utils';
 import { assignClientContext } from '@/utils/event-v2';
 import { humanize } from '@usertour/helpers';
 
@@ -62,12 +62,15 @@ export class WebSocketV2Service {
   // ============================================================================
 
   /**
-   * Get socket data from Redis
-   * @param socket - The socket instance
-   * @returns Promise<SocketData | null>
+   * Get socket data from Redis, memoized per request scope so the
+   * 8+ orchestrator reads in one EndBatch coalesce into a single Redis GET.
+   * SocketDataService.set/delete invalidate the memo so post-write reads
+   * return the new state.
    */
   async getSocketData(socket: Socket): Promise<SocketData | null> {
-    return await this.socketDataService.get(socket);
+    return this.cache.memoize(this.cache.memoKeys.socketData(getSocketId(socket)), () =>
+      this.socketDataService.get(socket),
+    );
   }
 
   /**

@@ -39,9 +39,19 @@ import { ProjectCacheService } from '@/shared/project-cache.service';
 // ============================================================================
 
 /**
+ * Sentinel returned by `findSessions` for contentIds the caller asked
+ * about that aren't present in a pre-fetched union map. Same shape the
+ * DB path would have produced for a content with zero sessions / events.
+ */
+const EMPTY_SESSION_COLLECTION: ContentSessionCollection = {
+  totalSessions: 0,
+  completedSessions: 0,
+};
+
+/**
  * Context for content queries containing essential parameters
  */
-interface ContentQueryContext {
+export interface ContentQueryContext {
   readonly environment: Environment;
   readonly externalUserId: string;
   readonly externalCompanyId?: string;
@@ -178,6 +188,65 @@ export class ContentDataService {
       });
       return [];
     }
+  }
+
+  /**
+   * Pre-fetch the union of session/event data for every contentId visible
+   * to a toggleContents pass and stash it on the request memo.
+   *
+   * Background — `toggleContents` walks the 6 ContentDataType values in a
+   * for-loop. Each iteration calls `findSessions(contentIds, bizUserId)`
+   * which fans out into 4 sub-queries (1 findMany + 2 groupBy + 1 bizEvent
+   * findMany). Per-type contentId sets are disjoint, so naively that's
+   * 4 × 6 ≈ 24 round-trips for read-only data we could have batched.
+   *
+   * This method runs the same 4 sub-queries ONCE over the union of all
+   * per-type contentIds, then writes the resulting Map into the request
+   * memo. Per-type `findSessions` calls peek the memo and return a
+   * subset view; on miss they fall through to the original full-query
+   * path so this method is purely opportunistic — handlers that don't
+   * call it (or scopes that aren't active) keep working unchanged.
+   *
+   * Sequencing constraint: `handleChecklistCompletedEvents` MUST run
+   * before this method on each toggleContents pass — it tracks
+   * CHECKLIST_COMPLETED events that flip session state, and pre-fetching
+   * before those events fire would snapshot pre-completion sessions and
+   * mask just-fired events from per-type evaluation.
+   *
+   * Mid-loop `createBizSession` calls do NOT need to invalidate the
+   * memo: per-type contentIds are disjoint, so a session created for
+   * type A's contentId is never read again by type B's findSessions.
+   * `hasAvailableSession` / `hasBizEvent` deliberately bypass this memo
+   * (see hasBizEvent above) for the cross-type cases where this
+   * disjointness assumption breaks.
+   */
+  async prefetchToggleContentSessions(
+    queryContext: ContentQueryContext,
+    contentTypes: ContentDataType[],
+  ): Promise<void> {
+    const { environment, externalUserId } = queryContext;
+
+    // Resolve bizUser + per-type version slices in parallel. findVersions
+    // is already cache-backed for single-type calls, so this is mostly
+    // Redis GETs.
+    const [bizUser, ...versionsByType] = await Promise.all([
+      this.findBizUser(environment, externalUserId),
+      ...contentTypes.map((type) => this.findVersions(environment, [type])),
+    ]);
+    if (!bizUser) {
+      return;
+    }
+
+    const unionContentIds = [
+      ...new Set(versionsByType.flat().map((version) => version.content.id)),
+    ];
+    if (unionContentIds.length === 0) {
+      return;
+    }
+
+    // Bypass the memo on this single canonical fetch — we ARE the writer.
+    const fullMap = await this.findSessionsFromDB(unionContentIds, bizUser.id);
+    this.cache.memoSet(this.cache.memoKeys.toggleSessions(bizUser.id), fullMap);
   }
 
   /**
@@ -346,8 +415,11 @@ export class ContentDataService {
    * mutates Attribute rows (handled by AttributesService write path).
    * Attribute has Date columns but none of the hot-path consumers read
    * them, so caching the entity as-is is safe.
+   *
+   * Public so SessionBuilderService can reuse the same cache instead of
+   * re-querying USER/COMPANY/MEMBERSHIP attributes per session via Prisma.
    */
-  private async findAttributes(environment: Environment): Promise<Attribute[]> {
+  async findAttributes(environment: Environment): Promise<Attribute[]> {
     return await this.cache.get(
       this.cache.keys.attrs(environment.projectId),
       ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
@@ -521,9 +593,42 @@ export class ContentDataService {
   }
 
   /**
-   * Find session statistics for multiple contents
+   * Find session statistics for multiple contents.
+   *
+   * Reads from the request-scoped union memo when available
+   * (populated by `prefetchToggleContentSessions`) to collapse the
+   * per-type fan-out in toggleContents to one DB batch. Falls through
+   * to the full 4-query path when no prefetched union exists — keeps
+   * callers outside the toggleContents pre-fetch path working unchanged.
    */
   private async findSessions(
+    contentIds: string[],
+    bizUserId: string,
+  ): Promise<Map<string, ContentSessionCollection>> {
+    const prefetched = this.cache.peekMemo<Map<string, ContentSessionCollection>>(
+      this.cache.memoKeys.toggleSessions(bizUserId),
+    );
+    // Only short-circuit if every requested contentId was part of the
+    // pre-fetched union. The explicit-versionId path in findVersions is
+    // env-agnostic and can surface contents that prefetch's published-only
+    // walk skipped — falling through to the DB then is correct AND keeps
+    // the prefetch optimization purely opportunistic.
+    if (prefetched && contentIds.every((id) => prefetched.has(id))) {
+      const subset = new Map<string, ContentSessionCollection>();
+      for (const contentId of contentIds) {
+        subset.set(contentId, prefetched.get(contentId) ?? EMPTY_SESSION_COLLECTION);
+      }
+      return subset;
+    }
+    return this.findSessionsFromDB(contentIds, bizUserId);
+  }
+
+  /**
+   * Original 4-query session/event fan-out. Always hits the DB; used by
+   * the prefetch entry point and as the fallback for `findSessions`
+   * outside the toggleContents pre-fetch flow.
+   */
+  private async findSessionsFromDB(
     contentIds: string[],
     bizUserId: string,
   ): Promise<Map<string, ContentSessionCollection>> {
