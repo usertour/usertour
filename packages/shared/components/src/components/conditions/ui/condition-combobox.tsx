@@ -99,7 +99,10 @@ export function ConditionCombobox({
           disabled={disabled}
           aria-expanded={open}
           className={cn(
-            'flex h-7.5 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-xs text-foreground shadow-sm transition-colors hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-50',
+            // Focus ring matches the atomic Input / SelectTrigger compact
+            // family (3px ring + border-ring) so all chip-popover triggers
+            // share the same focus treatment.
+            'flex h-7.5 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-xs text-foreground shadow-sm outline-none transition-colors hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
             className,
           )}
         >

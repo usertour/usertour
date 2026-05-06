@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
-import { CompactInput } from '@usertour-packages/ui';
+import { Input } from '@usertour-packages/input';
 import { FieldRow } from './field-row';
 
 interface Props {
@@ -15,7 +15,8 @@ export function TextField({ path, label, placeholder }: Props) {
   const value = getField<string>(path) ?? '';
   return (
     <FieldRow label={label} htmlFor={id}>
-      <CompactInput
+      <Input
+        variant="compact-muted"
         id={id}
         value={value}
         placeholder={placeholder}

@@ -7,8 +7,9 @@
 //   - BuilderSaveButton renders dirty / saving / saved state with translated
 //     labels.
 //
-// All other primitives (CompactInput, CompactSelect, …) are imported directly
-// from @usertour-packages/ui at the call site.
+// All other primitives are imported directly from @usertour-packages/ui (or
+// from the underlying atomic packages with `variant="compact"` / etc.) at
+// the call site.
 
 export { BuilderFontPicker } from './builder-font-picker';
 export { BuilderSaveButton } from './builder-save-button';

@@ -88,7 +88,10 @@ export function EditableTitle({ value, onRename, disabled, className }: Props) {
         // collapsing to a sliver, +1 leaves room for the next keystroke.
         size={Math.max(draft.length + 1, 8)}
         className={cn(
-          '-mx-1 rounded border border-input bg-background px-1 text-xs font-medium text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40',
+          // Focus ring matches the atomic Input compact family (3px ring +
+          // border-ring + ring/50). The rest stays minimal so the inline
+          // edit reads as "renaming in place" rather than "form field".
+          '-mx-1 rounded border border-input bg-background px-1 text-xs font-medium text-foreground shadow-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
           className,
         )}
       />

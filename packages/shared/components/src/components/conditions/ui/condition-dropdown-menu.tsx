@@ -4,9 +4,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { cn } from '@usertour-packages/tailwind';
 import { forwardRef } from 'react';
 import { useConditionsZIndex } from '../conditions-context';
+
+// Conditions-specific DropdownMenu wrappers. The styling itself comes from
+// the atomic DropdownMenu via `variant="compact"` — what we add here is the
+// dropdown z-index pulled from ConditionsContext so menus stack correctly
+// above the chip popovers that contain them. Without that injection the
+// menu would render at Radix's default z-index and slip behind the parent
+// popover at certain stacking depths.
 
 export const ConditionDropdownMenu = DropdownMenu;
 export const ConditionDropdownMenuTrigger = DropdownMenuTrigger;
@@ -15,18 +21,13 @@ type ContentProps = React.ComponentPropsWithoutRef<typeof DropdownMenuContent>;
 export const ConditionDropdownMenuContent = forwardRef<
   React.ElementRef<typeof DropdownMenuContent>,
   ContentProps
->(({ className, ...props }, ref) => {
+>(({ variant = 'compact', style, ...props }, ref) => {
   const { dropdown } = useConditionsZIndex();
   return (
     <DropdownMenuContent
       ref={ref}
-      // No baseline min-width — callers (e.g. ConditionSelect) anchor the
-      // menu to its trigger width via --radix-popper-anchor-width. A blanket
-      // min-w-[10rem] inflates narrow pickers (e.g. the 100px time-unit
-      // select inside the event editor) so the menu spills past its
-      // surrounding popover.
-      className={cn('rounded-lg p-1 text-xs', className)}
-      style={{ zIndex: dropdown }}
+      variant={variant}
+      style={{ zIndex: dropdown, ...style }}
       {...props}
     />
   );
@@ -37,11 +38,7 @@ type ItemProps = React.ComponentPropsWithoutRef<typeof DropdownMenuItem>;
 export const ConditionDropdownMenuItem = forwardRef<
   React.ElementRef<typeof DropdownMenuItem>,
   ItemProps
->(({ className, ...props }, ref) => (
-  <DropdownMenuItem
-    ref={ref}
-    className={cn('gap-2 rounded px-2 py-1 text-xs leading-tight', className)}
-    {...props}
-  />
+>(({ variant = 'compact', ...props }, ref) => (
+  <DropdownMenuItem ref={ref} variant={variant} {...props} />
 ));
 ConditionDropdownMenuItem.displayName = 'ConditionDropdownMenuItem';

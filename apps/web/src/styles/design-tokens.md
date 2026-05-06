@@ -50,6 +50,10 @@ hero. Conditions / inline edits surface chips that *are* the content,
 so they need clear edges. **Don't mix the two in the same pane** — pick
 one based on what the surrounding container is doing.
 
+Both surfaces are exposed as cva variants on the same atomic primitives
+(`<Input variant="compact-muted" />` vs. `<Input variant="compact" />`)
+— there's no separate Compact-family / Conditions-family layer.
+
 **Foreground:** prefer `slate-700` / `slate-800` for body text over
 shadcn's near-black. `text-muted-foreground` for labels and secondary
 metadata. Headings stay on `text-foreground`.
@@ -152,34 +156,58 @@ shadow does the visual lift; a hairline border on top reads as clutter.
 
 ## 7. Control inventory
 
-Live in `apps/web/src/pages/settings/themes/components/theme-builder/ui/`,
-prefixed `Builder*`. To go site-wide, lift to a shared package and drop
-the prefix.
+Compact-context primitives are **cva variants on the atomic shadcn
+packages** in `@usertour-packages/<input|select|switch|tabs|button|dropdown-menu>`.
+There is no separate styled-primitive layer — the variants pick the
+density and surface treatment directly:
 
-| Component                                  | Spec                                                              |
-| ------------------------------------------ | ----------------------------------------------------------------- |
-| `BuilderInput`                             | `h-7.5 rounded-lg bg-muted text-xs shadow-sm`                     |
-| `BuilderSelect`                            | matching trigger, `text-xs` items                                 |
-| `BuilderColorButton`                       | `h-7.5 rounded-lg bg-muted` + 22px swatch ring-1                  |
-| `BuilderIconButton`                        | variants: `ghost` / `outline` / `secondary` (muted) / `depth`     |
-| `BuilderSaveButton`                        | hero button ↔ "Saved" pill (idle)                                 |
-| `BuilderSwitch`                            | `data-[state=unchecked]:bg-muted`                                 |
-| `BuilderTabs*`                             | underline tabs pinned to `text-xs`                                |
-| `BuilderDropdownMenu*`                     | items: `gap-2 px-2 py-1 text-xs leading-tight`                    |
-| `BuilderFontPicker`                        | combobox + system / custom split                                  |
-| `EditableTitle`                            | inline edit pattern (click to flip span ↔ input)                  |
+| Atomic primitive  | Variant key                                       | Purpose                                                 |
+| ----------------- | ------------------------------------------------- | ------------------------------------------------------- |
+| `Input`           | `variant="default" \| "compact" \| "compact-muted"` | shadcn default / chip-popover form / inspector form     |
+| `SelectTrigger`   | `variant="default" \| "compact" \| "compact-muted"` | same surface choices                                    |
+| `SelectItem`      | `variant="default" \| "compact"`                  | item rhythm                                             |
+| `Switch`          | `variant="default" \| "muted"`                    | unchecked state surface                                 |
+| `UnderlineTabsTrigger` | `variant="default" \| "compact"`              | label `text-sm` vs `text-xs`                            |
+| `DropdownMenuContent` | `variant="default" \| "compact"`               | `min-w-[8rem]` vs no floor + `rounded-lg`               |
+| `DropdownMenuItem` | `variant="default" \| "compact"`                  | tighter padding + `text-xs`                             |
+| `Button`          | `variant="...compact-ghost \| compact-outline \| compact-secondary \| depth"` + `size="compact \| compact-icon{,-sm,-lg}"` | compact text/icon buttons (replaces former CompactIconButton family) |
 
-**Conditions surface (separate pane, separate vocabulary)** — lives in
-`@usertour-packages/shared-components/conditions/ui/`:
+**Composition wrappers** in `@usertour-packages/ui/compact/` (these
+package multiple atomic primitives or are self-contained components,
+not just styled primitives):
 
-| Component                       | Spec                                                                  |
+| Wrapper                  | What it composes                                                           |
+| ------------------------ | -------------------------------------------------------------------------- |
+| `CompactSelect`          | All-in-one Select for `value`/`onChange`/`options` enum pickers            |
+| `CompactDropdownMenu*`   | DropdownMenu variants pinned to `compact` + `min-w-[10rem]` floor          |
+| `CompactTabs*`           | Underline tabs with Trigger pinned to `compact`                            |
+| `CompactPanel`           | Sidebar / inspector chrome (header / body / footer + optional resize)      |
+| `CompactColorButton`     | Swatch + label trigger button (used inside ColorField)                     |
+| `ResizeHandle`           | 6px invisible drag handle for panel edges                                  |
+| `InlineAlert`            | Single-line alert for dense form rows                                      |
+| Layout tokens            | `panelClass` / `headerClass` / `bodyClass` / `pillClass` / etc.            |
+
+**Conditions surface** — lives in `@usertour-packages/shared-components/conditions/ui/`.
+Only the runtime-context-needing wrappers stay here; plain styled
+primitives went away in favor of atomic variants:
+
+| Wrapper                         | Why it's still needed                                                 |
 | ------------------------------- | --------------------------------------------------------------------- |
-| `ConditionInput`                | `h-7.5 rounded-lg border border-input bg-background text-xs`          |
-| `ConditionSelect`               | DropdownMenu under the hood (avoids Radix-Select-in-Popover trap)     |
-| `ConditionInlineSelect`         | Link-style: ghost + `text-primary` + chevron                          |
-| `ConditionCombobox`             | cmdk + popover, `w-[var(--radix-popper-anchor-width)]`                |
-| `ConditionPopover{,Content}`    | `w-auto rounded-lg p-3 text-xs shadow-lg`                             |
-| `ConditionErrorTooltip*`        | `text-xs` (override of shared `text-sm`)                              |
+| `ConditionSelect`               | DropdownMenu-based select (avoids Radix-Select-in-Popover layer trap) |
+| `ConditionInlineSelect`         | Link-style picker: ghost + `text-primary` + chevron                   |
+| `ConditionCombobox`             | cmdk + popover, anchored to `--radix-popper-anchor-width`             |
+| `ConditionPopover{,Content}`    | Popover with z-index injection from ConditionsContext                 |
+| `ConditionDropdownMenu{,Content,Item}` | DropdownMenu with z-index injection from ConditionsContext     |
+| `ConditionErrorTooltip*`        | Error tooltip with z-index injection + `text-xs` override             |
+
+**Theme-builder local wrappers** that intentionally aren't shared
+because they couple to app-level state:
+
+| Wrapper                      | Why it stays in apps/web                                          |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `BuilderFontPicker`          | Depends on the apps/web font catalog and translation              |
+| `BuilderSaveButton`          | Renders dirty / saving / saved state with translated labels       |
+| `EditableTitle`              | Inline rename pattern (click to flip span ↔ input)                |
 
 ---
 

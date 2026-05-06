@@ -29,6 +29,7 @@ import { QuestionTooltip } from '@usertour-packages/tooltip';
 import type { RulesCondition, ThemeVariation } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@usertour-packages/button';
 import {
   ResizeHandle,
   bodyClass,
@@ -37,7 +38,6 @@ import {
   sectionLabelClass,
 } from '@usertour-packages/ui';
 import { ConditionsSection } from '../sidebar/conditions-section';
-import { CompactIconButton } from '@usertour-packages/ui';
 import { VariationRow } from './variation-row';
 
 interface Props {
@@ -191,13 +191,16 @@ export function VariationsSidebar({
               ))}
           </QuestionTooltip>
         </div>
-        <CompactIconButton
+        <Button
+          type="button"
+          variant="compact-ghost"
+          size="compact-icon"
           onClick={onAdd}
           disabled={disabled}
           aria-label={t('themeBuilder.aria.addVariation')}
         >
           <PlusIcon className="h-3.5 w-3.5" />
-        </CompactIconButton>
+        </Button>
       </div>
 
       <div className={bodyClass}>

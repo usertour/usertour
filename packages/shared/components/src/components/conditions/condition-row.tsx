@@ -8,11 +8,11 @@ import { ConditionEditor } from './condition-editor';
 import { ConditionList } from './condition-list';
 import { getConditionSchema } from './registry';
 import type { ValidateContext } from './schema-types';
+import { Button } from '@usertour-packages/button';
 import {
   ConditionErrorTooltip,
   ConditionErrorTooltipAnchor,
   ConditionErrorTooltipContent,
-  ConditionIconButton,
   ConditionPopover,
   ConditionPopoverContent,
   ConditionPopoverTrigger,
@@ -147,13 +147,16 @@ export function ConditionRow({
           isNested
         />
         {!disabled && (
-          <ConditionIconButton
+          <Button
+            type="button"
+            variant="compact-ghost"
+            size="compact-icon-sm"
             aria-label="Remove group"
             onClick={onRemove}
             className="absolute right-1 top-1 opacity-0 transition-opacity group-hover/condition:opacity-100 focus-visible:opacity-100"
           >
             <RiCloseLine className="h-3.5 w-3.5" />
-          </ConditionIconButton>
+          </Button>
         )}
       </div>
     );
@@ -178,7 +181,7 @@ export function ConditionRow({
             type="button"
             onClick={onRemove}
             aria-label="Remove"
-            className="flex w-7 shrink-0 items-center justify-center border-l border-border/60 text-muted-foreground/60 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none"
+            className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none"
           >
             <RiCloseLine className="h-3.5 w-3.5" />
           </button>

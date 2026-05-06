@@ -1,7 +1,7 @@
+import { Button } from '@usertour-packages/button';
 import { RiAddLine, RiCloseLine } from '@usertour-packages/icons';
+import { Input } from '@usertour-packages/input';
 import { useConditionsT } from '../conditions-context';
-import { ConditionIconButton } from '../ui/condition-icon-button';
-import { ConditionInput } from '../ui/condition-input';
 
 interface Props {
   values: string[];
@@ -42,18 +42,22 @@ export function ListInput({
       {items.map((value, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: list is positional and short
         <div key={index} className="flex items-center gap-1.5">
-          <ConditionInput
+          <Input
+            variant="compact"
             value={value}
             placeholder={placeholder}
             onChange={(e) => handleChange(index, e.target.value)}
           />
-          <ConditionIconButton
+          <Button
+            type="button"
+            variant="compact-ghost"
+            size="compact-icon-sm"
             aria-label="Remove"
             onClick={() => handleRemove(index)}
             disabled={items.length === 1 && !value}
           >
             <RiCloseLine className="h-3.5 w-3.5" />
-          </ConditionIconButton>
+          </Button>
         </div>
       ))}
       <button

@@ -1,11 +1,16 @@
-export { ConditionInput } from './condition-input';
+// Conditions-specific UI primitives. Generic styled primitives (Input,
+// Switch, plain icon buttons, plain text buttons) live in the atomic
+// shared packages with cva variants — call them directly with
+// `variant="compact"` instead. The wrappers below stay because they're
+// either Conditions-specific composition (Combobox, InlineSelect) or need
+// runtime context that can't be expressed as variants alone (Popover /
+// DropdownMenu / ErrorTooltip with z-index injection).
+
 export { ConditionSelect, type ConditionSelectOption } from './condition-select';
 export {
   ConditionInlineSelect,
   type ConditionInlineSelectOption,
 } from './condition-inline-select';
-export { ConditionButton } from './condition-button';
-export { ConditionIconButton } from './condition-icon-button';
 export {
   ConditionPopover,
   ConditionPopoverTrigger,

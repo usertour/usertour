@@ -15,7 +15,7 @@ import {
   ConditionErrorTooltipContent,
 } from '../ui/condition-error-tooltip';
 import { ConditionInlineSelect } from '../ui/condition-inline-select';
-import { ConditionInput } from '../ui/condition-input';
+import { Input } from '@usertour-packages/input';
 import { resolveTranslator } from './translator';
 
 const FREQUENCY_KEYS = [
@@ -195,7 +195,8 @@ function FrequencyEvery({
       <div className="flex flex-wrap items-center gap-2">
         <ConditionErrorTooltip open={openError}>
           <ConditionErrorTooltipAnchor asChild>
-            <ConditionInput
+            <Input
+              variant="compact"
               type="text"
               value={displayTimes}
               onChange={handleTimesChange}
@@ -208,7 +209,8 @@ function FrequencyEvery({
           </ConditionErrorTooltipContent>
         </ConditionErrorTooltip>
         <span className="text-xs">{t('conditions.standalone.frequency.timesComma')}</span>
-        <ConditionInput
+        <Input
+          variant="compact"
           type="text"
           value={value.duration}
           onChange={(e) => update({ duration: Number.parseInt(e.target.value) || 0 })}
@@ -237,7 +239,8 @@ function FrequencyEvery({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-xs">{t('conditions.standalone.frequency.every')}</span>
-      <ConditionInput
+      <Input
+        variant="compact"
         type="text"
         value={value.duration}
         onChange={(e) => update({ duration: Number.parseInt(e.target.value) || 0 })}
@@ -281,7 +284,8 @@ function FrequencyAtLeast({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-xs">{t('conditions.standalone.frequency.atLeast')}</span>
-      <ConditionInput
+      <Input
+        variant="compact"
         type="text"
         value={value.duration}
         onChange={(e) => onChange({ ...value, duration: Number.parseInt(e.target.value) || 0 })}

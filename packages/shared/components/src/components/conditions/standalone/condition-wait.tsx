@@ -6,7 +6,7 @@ import {
   ConditionErrorTooltipAnchor,
   ConditionErrorTooltipContent,
 } from '../ui/condition-error-tooltip';
-import { ConditionInput } from '../ui/condition-input';
+import { Input } from '@usertour-packages/input';
 import { resolveTranslator } from './translator';
 
 interface Props {
@@ -46,7 +46,8 @@ export function ConditionWait({
       <div className="flex items-center gap-2">
         <span className="text-xs">{t('conditions.standalone.wait.before')}</span>
         <ConditionErrorTooltipAnchor asChild>
-          <ConditionInput
+          <Input
+            variant="compact"
             type="text"
             value={inputValue}
             onChange={handleChange}

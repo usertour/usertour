@@ -1,6 +1,7 @@
 'use client';
 
 import * as TabsPrimitive from '@radix-ui/react-tabs';
+import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from '@usertour-packages/tailwind';
@@ -72,20 +73,31 @@ const UnderlineTabsList = React.forwardRef<
 ));
 UnderlineTabsList.displayName = 'UnderlineTabsList';
 
+const underlineTabsTriggerVariants = cva(
+  'pb-2 font-medium transition-colors border-b-2 -mb-px border-transparent text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: 'text-sm',
+        // Compact — used inside dense panels (theme-builder inspector tabs).
+        compact: 'text-xs',
+      },
+    },
+    defaultVariants: { variant: 'default' },
+  },
+);
+
+interface UnderlineTabsTriggerProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>,
+    VariantProps<typeof underlineTabsTriggerVariants> {}
+
 const UnderlineTabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
+  UnderlineTabsTriggerProps
+>(({ className, variant, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
-    className={cn(
-      'pb-2 text-sm font-medium transition-colors border-b-2 -mb-px',
-      'border-transparent text-muted-foreground hover:text-foreground',
-      'data-[state=active]:border-primary data-[state=active]:text-primary',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-      'disabled:pointer-events-none disabled:opacity-50',
-      className,
-    )}
+    className={cn(underlineTabsTriggerVariants({ variant }), className)}
     {...props}
   />
 ));

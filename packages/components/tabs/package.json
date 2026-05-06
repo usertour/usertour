@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-tabs": "^1.0.4",
+    "class-variance-authority": "^0.4.0",
     "@usertour-packages/tailwind": "workspace:*"
   },
   "peerDependencies": {

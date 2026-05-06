@@ -6,7 +6,7 @@ import { ConditionElementSelector } from '../../primitives/condition-element-sel
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextInput } from '../../validators';
-import { ConditionInput } from '../../ui/condition-input';
+import { Input } from '@usertour-packages/input';
 
 export interface TextInputData {
   elementData?: ElementSelectorPropsData;
@@ -120,7 +120,8 @@ function TextInputEditor({ condition, onChange }: EditorProps) {
         options={operatorOptions}
       />
       {showValueInput && (
-        <ConditionInput
+        <Input
+          variant="compact"
           value={data.value ?? ''}
           onChange={(e) => onChange(writeData(condition, { value: e.target.value }))}
           placeholder={t('conditions.types.textInput.valuePlaceholder')}

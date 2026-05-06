@@ -1,9 +1,9 @@
+import { Button } from '@usertour-packages/button';
 import { RiArrowLeftSLine, RiMoreFill } from '@usertour-packages/icons';
 import { pillClass, topBarClass } from '@usertour-packages/ui';
 import type { Theme } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { ThemeEditDropdownMenu } from '../../theme-edit-dropmenu';
-import { CompactIconButton } from '@usertour-packages/ui';
 import { BuilderSaveButton } from '../ui';
 import { EditableTitle } from './editable-title';
 
@@ -36,13 +36,15 @@ export function TopBar({
           of jumping horizontally with each keystroke. min-w-0 lets the
           editable title's truncate take effect when the name is long. */}
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <CompactIconButton
+        <Button
+          type="button"
           variant="depth"
+          size="compact-icon-lg"
           onClick={onBack}
           aria-label={t('themeBuilder.aria.back')}
         >
           <RiArrowLeftSLine className="h-4 w-4" />
-        </CompactIconButton>
+        </Button>
         <div className="flex min-w-0 items-center gap-2">
           <EditableTitle value={theme.name} onRename={onRename} disabled={theme.isSystem} />
           {theme.isSystem && (
@@ -59,9 +61,14 @@ export function TopBar({
           disabled={theme.isSystem}
         />
         <ThemeEditDropdownMenu theme={theme} onSubmit={onActionComplete}>
-          <CompactIconButton variant="secondary" aria-label={t('themeBuilder.aria.themeActions')}>
+          <Button
+            type="button"
+            variant="compact-secondary"
+            size="compact-icon"
+            aria-label={t('themeBuilder.aria.themeActions')}
+          >
             <RiMoreFill className="h-4 w-4" />
-          </CompactIconButton>
+          </Button>
         </ThemeEditDropdownMenu>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { useBuilderContext } from '../builder-context';
-import { CompactInput } from '@usertour-packages/ui';
+import { Input } from '@usertour-packages/input';
 import { FieldRow } from './field-row';
 
 interface Props {
@@ -49,7 +49,8 @@ export function NumberField({
 
   return (
     <FieldRow label={label} htmlFor={id}>
-      <CompactInput
+      <Input
+        variant="compact-muted"
         id={id}
         type="number"
         value={stored ?? ''}

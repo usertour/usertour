@@ -1,10 +1,10 @@
+import { Button } from '@usertour-packages/button';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { Input } from '@usertour-packages/input';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import type { ElementSelectorPropsData } from '@usertour/types';
 import { type ChangeEvent, useCallback, useMemo, useState } from 'react';
 import { useConditionsT } from '../conditions-context';
-import { ConditionButton } from '../ui/condition-button';
-import { ConditionInput } from '../ui/condition-input';
 import { ConditionSelect } from '../ui/condition-select';
 
 export interface ConditionElementSelectorProps {
@@ -62,7 +62,8 @@ export function ConditionElementSelector({ data, onDataChange }: ConditionElemen
         label={t('conditions.types.element.selector.elementText')}
         tooltip={t('conditions.types.element.selector.elementTextTooltip')}
       >
-        <ConditionInput
+        <Input
+          variant="compact"
           value={innerData.content || ''}
           onChange={handleTextChange}
           placeholder={placeholder}
@@ -73,7 +74,8 @@ export function ConditionElementSelector({ data, onDataChange }: ConditionElemen
         label={t('conditions.types.element.selector.cssSelector')}
         tooltip={t('conditions.types.element.selector.cssSelectorTooltip')}
       >
-        <ConditionInput
+        <Input
+          variant="compact"
           value={innerData.customSelector || ''}
           onChange={handleSelectorChange}
           placeholder={placeholder}
@@ -83,15 +85,15 @@ export function ConditionElementSelector({ data, onDataChange }: ConditionElemen
       {innerData.selectorsList && innerData.selectorsList.length > 0 && (
         <div className="flex flex-row flex-wrap gap-1">
           {innerData.selectorsList.map((item, i) => (
-            <ConditionButton
+            <Button
               key={`${item}-${i}`}
-              variant="secondary"
-              size="sm"
               type="button"
+              variant="secondary"
+              size="compact-sm"
               onClick={() => update({ customSelector: item })}
             >
               {item}
-            </ConditionButton>
+            </Button>
           ))}
         </div>
       )}

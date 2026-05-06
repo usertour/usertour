@@ -8,15 +8,16 @@ import {
 import { cn } from '@usertour-packages/tailwind';
 import type { CSSProperties, MouseEvent, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@usertour-packages/button';
+import { Input } from '@usertour-packages/input';
 import {
   CompactDropdownMenu,
   CompactDropdownMenuContent,
   CompactDropdownMenuItem,
   CompactDropdownMenuTrigger,
-  CompactIconButton,
-  CompactInput,
+  listRowClass,
+  listRowSelectedClass,
 } from '@usertour-packages/ui';
-import { listRowClass, listRowSelectedClass } from '@usertour-packages/ui';
 
 // Props passed by `useSortable` and forwarded to the drag handle. Marked as
 // optional so the Base row (non-draggable) can reuse the component without
@@ -97,7 +98,8 @@ export function VariationRow({
       )}
       {isRenaming ? (
         <div className={cn(listRowClass, selected && listRowSelectedClass, 'pl-5 pr-2')}>
-          <CompactInput
+          <Input
+            variant="compact-muted"
             autoFocus
             value={renameDraft ?? ''}
             onChange={(e) => onRenameDraftChange?.(e.target.value)}
@@ -115,7 +117,7 @@ export function VariationRow({
             // while editing the name.
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            className="h-6 bg-background px-1.5 text-xs"
+            className="h-6 bg-background px-1.5"
           />
         </div>
       ) : (
@@ -137,13 +139,15 @@ export function VariationRow({
         <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover/row:opacity-100 data-[state=open]:opacity-100">
           <CompactDropdownMenu>
             <CompactDropdownMenuTrigger asChild>
-              <CompactIconButton
-                size="sm"
+              <Button
+                type="button"
+                variant="compact-ghost"
+                size="compact-icon-sm"
                 aria-label={t('themeBuilder.aria.variationMenu')}
                 onClick={(e) => e.stopPropagation()}
               >
                 <RiMoreFill className="h-3.5 w-3.5" />
-              </CompactIconButton>
+              </Button>
             </CompactDropdownMenuTrigger>
             <CompactDropdownMenuContent
               align="end"

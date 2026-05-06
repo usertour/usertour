@@ -5,7 +5,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { cn } from '@usertour-packages/tailwind';
 
 export interface CompactSelectOption {
   value: string;
@@ -22,8 +21,11 @@ interface Props {
   id?: string;
 }
 
-// 30px-tall trigger paired with 12px option labels — matches CompactInput so
-// rows of mixed input/select fields share a consistent baseline.
+// All-in-one compact select — a value/onChange/options shape for the common
+// "small enum picker in an inspector row" case. Wraps the atomic primitives
+// with the compact-muted variants applied; callers needing more
+// composition (custom items, groups, separators) should reach for the
+// underlying Select / SelectTrigger / SelectContent directly.
 export function CompactSelect({
   value,
   onChange,
@@ -35,10 +37,7 @@ export function CompactSelect({
 }: Props) {
   return (
     <Select value={value ?? ''} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger
-        id={id}
-        className={cn('h-7.5 rounded-lg bg-muted text-xs shadow-sm md:text-xs', className)}
-      >
+      <SelectTrigger id={id} variant="compact-muted" className={className}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

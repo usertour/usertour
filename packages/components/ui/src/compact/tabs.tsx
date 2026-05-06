@@ -4,12 +4,10 @@ import {
   UnderlineTabsList,
   UnderlineTabsTrigger,
 } from '@usertour-packages/tabs';
-import { cn } from '@usertour-packages/tailwind';
 import { forwardRef } from 'react';
 
-// Wrappers around the shared Underline tabs that pin the trigger label to
-// `text-xs`, matching the 12px rhythm used elsewhere in the compact family.
-// The shared component still defaults to text-sm for use elsewhere.
+// Compact tabs — Trigger uses the underline tabs' compact variant
+// (12px label) so the rhythm matches the rest of the compact family.
 
 export const CompactTabs = Tabs;
 export const CompactTabsList = UnderlineTabsList;
@@ -20,7 +18,7 @@ type TriggerProps = React.ComponentPropsWithoutRef<typeof UnderlineTabsTrigger>;
 export const CompactTabsTrigger = forwardRef<
   React.ElementRef<typeof UnderlineTabsTrigger>,
   TriggerProps
->(({ className, ...props }, ref) => (
-  <UnderlineTabsTrigger ref={ref} className={cn('text-xs', className)} {...props} />
+>(({ variant = 'compact', ...props }, ref) => (
+  <UnderlineTabsTrigger ref={ref} variant={variant} {...props} />
 ));
 CompactTabsTrigger.displayName = 'CompactTabsTrigger';

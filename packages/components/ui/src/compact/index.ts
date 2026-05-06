@@ -3,11 +3,17 @@
 // thin wrappers around the shared shadcn primitives, locked into a coherent
 // visual rhythm so a settings-style panel reads as one piece.
 
-export { CompactInput } from './input';
+// Compact UI family — composition wrappers and self-contained components for
+// dense form / inspector / sidebar contexts. Plain styled primitives
+// (Input, Switch, IconButton) live in their atomic packages with cva
+// variants — call those directly with `variant="compact-muted"` etc. The
+// wrappers below either compose multiple primitives (CompactSelect,
+// CompactDropdownMenu*, CompactTabs*) or are standalone components that
+// don't fit any atomic shelf (CompactPanel, ResizeHandle, InlineAlert,
+// CompactColorButton).
+
 export { CompactSelect, type CompactSelectOption } from './select';
-export { CompactIconButton } from './icon-button';
 export { CompactColorButton } from './color-button';
-export { CompactSwitch } from './switch';
 export {
   CompactDropdownMenu,
   CompactDropdownMenuTrigger,

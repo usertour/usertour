@@ -18,7 +18,7 @@ import type { ConditionTypeSchema } from '../../schema-types';
 import { validateEvent } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { ConditionInlineSelect } from '../../ui/condition-inline-select';
-import { ConditionInput } from '../../ui/condition-input';
+import { Input } from '@usertour-packages/input';
 import { EventScopeContext } from './event-scope-context';
 
 export interface EventData {
@@ -229,7 +229,8 @@ function EventEditor({ condition, onChange }: EditorProps) {
               onChange={(v) => onChange(writeData(condition, { countLogic: v as EventCountLogic }))}
               options={countLogicOptions}
             />
-            <ConditionInput
+            <Input
+              variant="compact"
               type="number"
               min={0}
               value={data.count ?? ''}
@@ -247,7 +248,8 @@ function EventEditor({ condition, onChange }: EditorProps) {
                 <span className="text-[11px] text-muted-foreground">
                   {t('conditions.operators.and')}
                 </span>
-                <ConditionInput
+                <Input
+                  variant="compact"
                   type="number"
                   min={0}
                   value={data.count2 ?? ''}
@@ -277,7 +279,8 @@ function EventEditor({ condition, onChange }: EditorProps) {
             />
             {showTimeInputs && (
               <>
-                <ConditionInput
+                <Input
+                  variant="compact"
                   type="number"
                   min={0}
                   value={data.windowValue ?? ''}
@@ -295,7 +298,8 @@ function EventEditor({ condition, onChange }: EditorProps) {
                     <span className="text-[11px] text-muted-foreground">
                       {t('conditions.operators.and')}
                     </span>
-                    <ConditionInput
+                    <Input
+                      variant="compact"
                       type="number"
                       min={0}
                       value={data.windowValue2 ?? ''}

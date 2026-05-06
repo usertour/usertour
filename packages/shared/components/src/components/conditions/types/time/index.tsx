@@ -2,7 +2,7 @@ import { TimeIcon } from '@usertour-packages/icons';
 import type { RulesCondition, TimeConditionData } from '@usertour/types';
 import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
-import { ConditionInput } from '../../ui/condition-input';
+import { Input } from '@usertour-packages/input';
 import { validateTime } from '../../validators';
 import { type ParsedTime, formatPretty, readParts, writeData } from './utils';
 
@@ -72,13 +72,15 @@ function TimeEditor({ condition, onChange }: EditorProps) {
           {t('conditions.types.time.startLabel')}
         </div>
         <div className="flex items-center gap-1.5">
-          <ConditionInput
+          <Input
+            variant="compact"
             type="date"
             value={start.date}
             onChange={(e) => commit({ start: { ...start, date: e.target.value } })}
             className="flex-1"
           />
-          <ConditionInput
+          <Input
+            variant="compact"
             type="time"
             value={`${start.hour}:${start.minute}`}
             onChange={(e) => {
@@ -94,13 +96,15 @@ function TimeEditor({ condition, onChange }: EditorProps) {
           {t('conditions.types.time.endLabel')}
         </div>
         <div className="flex items-center gap-1.5">
-          <ConditionInput
+          <Input
+            variant="compact"
             type="date"
             value={end.date}
             onChange={(e) => commit({ end: { ...end, date: e.target.value } })}
             className="flex-1"
           />
-          <ConditionInput
+          <Input
+            variant="compact"
             type="time"
             value={`${end.hour}:${end.minute}`}
             onChange={(e) => {

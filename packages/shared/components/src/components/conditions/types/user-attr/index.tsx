@@ -16,7 +16,7 @@ import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateUserAttr } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
-import { ConditionInput } from '../../ui/condition-input';
+import { Input } from '@usertour-packages/input';
 import {
   DATE_PICKER_OPERATORS,
   VALUELESS_OPERATORS,
@@ -236,7 +236,8 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
       )}
 
       {showValueInput && (
-        <ConditionInput
+        <Input
+          variant="compact"
           type={inputType}
           value={data.value ?? ''}
           onChange={(e) => handleValueChange(e.target.value)}
@@ -247,7 +248,8 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
       {showValueInput && showBetween && (
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground">{t('conditions.operators.and')}</span>
-          <ConditionInput
+          <Input
+            variant="compact"
             type={inputType}
             value={data.value2 ?? ''}
             onChange={(e) => handleValue2Change(e.target.value)}
@@ -264,7 +266,8 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
       )}
 
       {showDatePicker && (
-        <ConditionInput
+        <Input
+          variant="compact"
           type="date"
           value={data.value ?? ''}
           onChange={(e) => handleValueChange(e.target.value)}
