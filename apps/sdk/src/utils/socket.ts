@@ -102,9 +102,15 @@ export class Socket {
    * Emit an event and wait for acknowledgment
    * @param event - Event name to emit
    * @param data - Data to send with the event
+   * @param timeoutMs - Optional ack timeout in milliseconds. Without it the
+   *   emit waits indefinitely for ack, which can hang callers when the socket
+   *   is buffering during a slow connect.
    * @returns Promise with the response
    */
-  async emitWithAck<T>(event: string, data: any): Promise<T> {
+  async emitWithAck<T>(event: string, data: any, timeoutMs?: number): Promise<T> {
+    if (timeoutMs != null) {
+      return await this.socket.timeout(timeoutMs).emitWithAck(event, data);
+    }
     return await this.socket.emitWithAck(event, data);
   }
 

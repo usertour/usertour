@@ -79,8 +79,11 @@ export interface IUsertourSocket {
 
   // Convenience methods
 
-  // Connection management
-  connect(externalUserId: string, token: string): Promise<boolean>;
+  // Connection management. Connection lifecycle is owned by the socket layer:
+  // setAuth establishes/updates credentials and triggers a background connect
+  // when needed; outgoing messages buffer through Socket.IO until the connect
+  // resolves, with `EMIT_TIMEOUT` covering the no-connect-ever case.
+  setAuth(externalUserId: string, token: string): void;
   disconnect(): void;
   isConnected(): boolean;
   isInBatch(): boolean;
@@ -109,8 +112,16 @@ export class UsertourSocket implements IUsertourSocket {
   private readonly BATCH_TIMEOUT_ID = 'socket-batch-timeout';
   private readonly CONNECT_TIMEOUT = 30000; // 30 seconds
   private readonly CONNECT_TIMEOUT_ID = 'socket-connect-timeout';
-  // Cache for ongoing connection promise to avoid duplicate attempts for same user
-  private connectingPromise: Promise<boolean> | null = null;
+  // Per-emit ack timeout. Bounds how long an emit can sit unanswered when the
+  // socket is buffering during a slow or failed connect; without this, an emit
+  // queued before connect resolves would await its ack indefinitely.
+  private readonly EMIT_TIMEOUT = 30000; // 30 seconds
+  // Tracks an in-flight `socket.connect()`; prevents duplicate connect
+  // attempts and lets `disconnect()` cancel the pending CONNECT_TIMEOUT.
+  private connecting = false;
+  // Reference to the active `connect` listener so we can detach it on
+  // success, timeout, or external cancel.
+  private connectListener: (() => void) | null = null;
   // Promise chain for serializing event handlers (especially SERVER_MESSAGE)
   private eventHandlerQueues = new Map<string, Promise<boolean>>();
 
@@ -132,74 +143,74 @@ export class UsertourSocket implements IUsertourSocket {
 
   // === Connection Management ===
   /**
-   * Connect Socket with given credentials
+   * Establish (or update) the auth context and ensure the underlying socket is
+   * connecting. Synchronous: any in-flight connect work runs in the
+   * background. Callers must not depend on `setAuth` returning before the
+   * socket is actually open — outgoing messages placed in
+   * `sendClientMessage` will be buffered by Socket.IO and flushed in FIFO
+   * order once the connect resolves, with `EMIT_TIMEOUT` covering the
+   * no-connect-ever case.
+   *
+   * Behaviour:
+   *  - First call / same credentials: stores credentials and kicks off a
+   *    background connect when not already connected/connecting.
+   *  - Different credentials: cancels any in-flight connect, disconnects the
+   *    current socket, then starts a fresh connect with the new credentials.
    */
-  async connect(externalUserId: string, token: string): Promise<boolean> {
-    try {
-      // Check if credentials changed
-      if (this.requiresReconnect(externalUserId, token)) {
-        return await this.reconnectWithNewCredentials(externalUserId, token);
-      }
-
-      // If credentials haven't changed and already connected, no action needed
-      if (this.isConnected()) {
-        return true;
-      }
-
-      // Set credentials and connect
-      this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
-
-      // Connect and wait for connection result
-      return await this.connectWithPromise();
-    } catch (error) {
-      logger.error('Failed to connect socket:', error);
-      return false;
+  setAuth(externalUserId: string, token: string): void {
+    if (this.requiresReconnect(externalUserId, token)) {
+      logger.info('Auth credentials changed, reconnecting socket...');
+      this.resetBatchState();
+      this.cancelConnecting();
+      this.socket.disconnect();
     }
+
+    this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
+
+    this.ensureConnecting();
   }
 
   /**
-   * Connect socket and return a promise that resolves when connection is established
-   * Waits for Socket.IO to connect (including automatic reconnection attempts)
-   * Uses a timeout as a safety net
-   * Caches the promise to avoid duplicate connection attempts for the same user
+   * Start a background connect attempt if the socket is neither connected nor
+   * already in the middle of connecting. Idempotent.
+   *
+   * Cleanup of the `connect` listener and CONNECT_TIMEOUT is centralized in
+   * `cancelConnecting`, called both on success (via the listener) and on
+   * timeout. This means a stale connect attempt cannot leave a listener or
+   * timer hanging once cleared.
    */
-  private connectWithPromise(): Promise<boolean> {
-    // If already connected, resolve immediately
-    if (this.socket.isConnected()) {
-      return Promise.resolve(true);
+  private ensureConnecting(): void {
+    if (this.socket.isConnected() || this.connecting) {
+      return;
     }
+    this.connecting = true;
 
-    // Return cached promise if connection is already in progress
-    if (this.connectingPromise) {
-      return this.connectingPromise;
+    const onConnect = () => this.cancelConnecting();
+    this.connectListener = onConnect;
+
+    this.socket.on('connect', onConnect);
+    timerManager.setTimeout(
+      this.CONNECT_TIMEOUT_ID,
+      () => this.cancelConnecting(),
+      this.CONNECT_TIMEOUT,
+    );
+    this.socket.connect();
+  }
+
+  /**
+   * Tear down any in-flight connect-attempt state: clear the timeout, detach
+   * the `connect` listener, and reset the `connecting` flag. Idempotent.
+   */
+  private cancelConnecting(): void {
+    if (!this.connecting) {
+      return;
     }
-
-    this.connectingPromise = new Promise<boolean>((resolve) => {
-      // Set up timeout as safety net (managed by timerManager for proper cleanup on reset)
-      timerManager.setTimeout(
-        this.CONNECT_TIMEOUT_ID,
-        () => {
-          this.socket.off('connect', onConnect);
-          // Final check before giving up
-          resolve(this.socket.isConnected());
-        },
-        this.CONNECT_TIMEOUT,
-      );
-
-      // Wait for successful connection (Socket.IO handles retries automatically)
-      const onConnect = () => {
-        timerManager.clearTimeout(this.CONNECT_TIMEOUT_ID);
-        this.socket.off('connect', onConnect);
-        resolve(true);
-      };
-
-      this.socket.on('connect', onConnect);
-      this.socket.connect();
-    }).finally(() => {
-      this.connectingPromise = null;
-    });
-
-    return this.connectingPromise;
+    this.connecting = false;
+    timerManager.clearTimeout(this.CONNECT_TIMEOUT_ID);
+    if (this.connectListener) {
+      this.socket.off('connect', this.connectListener);
+      this.connectListener = null;
+    }
   }
 
   /**
@@ -210,8 +221,8 @@ export class UsertourSocket implements IUsertourSocket {
     // Clear event handler queues to prevent memory leaks
     this.eventHandlerQueues.clear();
 
-    // Clear cached connection promise
-    this.connectingPromise = null;
+    // Cancel any in-flight connect (clears CONNECT_TIMEOUT + connect listener)
+    this.cancelConnecting();
 
     // Clear batch state and pending timeout
     this.resetBatchState();
@@ -224,31 +235,6 @@ export class UsertourSocket implements IUsertourSocket {
   }
 
   // === Credential Management ===
-  /**
-   * Reconnect socket with new credentials
-   */
-  private async reconnectWithNewCredentials(
-    externalUserId: string,
-    token: string,
-  ): Promise<boolean> {
-    logger.info('Credentials changed, reconnecting socket...');
-
-    // Clear batch state before reconnecting
-    this.resetBatchState();
-
-    // Disconnect first
-    this.socket.disconnect();
-
-    // Clear cached connection promise since we're connecting with new credentials
-    this.connectingPromise = null;
-
-    // Update credentials after disconnect
-    this.authCredentials = { externalUserId, token, clientContext: getClientContext() };
-
-    // Connect with new credentials
-    return await this.connectWithPromise();
-  }
-
   /**
    * Check if reconnection is required due to credential changes
    * @param externalUserId - The external user ID to check
@@ -305,12 +291,16 @@ export class UsertourSocket implements IUsertourSocket {
    * Returns false on error, logs the error, and never throws
    */
   private async emitClientMessage(kind: ClientMessageKind, payload: any = {}): Promise<boolean> {
+    if (!this.socket) return false;
     try {
-      const result = (await this.socket?.emitWithAck(WebSocketEvents.CLIENT_MESSAGE, {
-        kind,
-        payload,
-        requestId: uuidV4(),
-      })) as boolean | undefined;
+      // EMIT_TIMEOUT bounds the await: when the socket is buffering during a
+      // slow or failed connect, we surface that as a falsy result (caught
+      // below) instead of hanging the caller indefinitely.
+      const result = await this.socket.emitWithAck<boolean | undefined>(
+        WebSocketEvents.CLIENT_MESSAGE,
+        { kind, payload, requestId: uuidV4() },
+        this.EMIT_TIMEOUT,
+      );
       return result ?? false;
     } catch (error) {
       logger.error(`Failed to emit ${kind}:`, error);
@@ -328,11 +318,16 @@ export class UsertourSocket implements IUsertourSocket {
   ): Promise<boolean> {
     if (!this.socket) return false;
 
-    // For batch messages, clear any pending timeout and ensure batch is started
+    // For batch messages, clear any pending timeout and ensure batch is started.
+    // BEGIN_BATCH is fire-and-forget: TCP/Socket.IO ordering guarantees the
+    // server receives BEGIN_BATCH before the message that follows on the same
+    // socket, so awaiting its ack would only add a full RTT to every batch's
+    // first message without buying anything.
     if (options?.batch) {
       timerManager.clearTimeout(this.BATCH_TIMEOUT_ID);
       if (!this.inBatch) {
-        await this.beginBatchInternal();
+        this.inBatch = true;
+        void this.beginBatchInternal();
       }
     }
 
