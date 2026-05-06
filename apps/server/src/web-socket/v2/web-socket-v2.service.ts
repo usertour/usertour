@@ -210,6 +210,20 @@ export class WebSocketV2Service {
     const { environment } = socketData;
 
     const { externalUserId, attributes = {} } = data;
+
+    // The WS handshake authenticates a specific externalUserId; subsequent
+    // writes must target that same user. Trusting the payload's
+    // externalUserId allows a misbehaving client (or a stale message buffered
+    // before the connection was reauthed as a different user) to cross
+    // identities, leaking the previous user's writes onto the current
+    // session's socketData.
+    if (externalUserId !== socketData.externalUserId) {
+      this.logger.warn(
+        `[WS] UpsertUser payload externalUserId=${externalUserId} does not match socket auth ${socketData.externalUserId}; rejecting`,
+      );
+      return false;
+    }
+
     const bizUser = await this.bizService.upsertBizUsers(
       this.prisma,
       externalUserId,
@@ -235,6 +249,18 @@ export class WebSocketV2Service {
     const { environment } = socketData;
 
     const { externalCompanyId, externalUserId, attributes = {}, membership = {} } = data;
+
+    // Same identity guard as upsertBizUsers: the user the connection is
+    // authenticated as is the only user this socket can write for. The
+    // company id may legitimately switch via group(), so it is not validated
+    // here.
+    if (externalUserId !== socketData.externalUserId) {
+      this.logger.warn(
+        `[WS] UpsertCompany payload externalUserId=${externalUserId} does not match socket auth ${socketData.externalUserId}; rejecting`,
+      );
+      return false;
+    }
+
     const bizCompany = await this.bizService.upsertBizCompanies(
       this.prisma,
       externalCompanyId,

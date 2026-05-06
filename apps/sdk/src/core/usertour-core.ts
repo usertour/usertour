@@ -179,14 +179,21 @@ export class UsertourCore extends Evented {
     this.startURLMonitor();
     this.startTrackerMonitor();
 
-    const { token } = this.startOptions;
-    // Use dedicated initialization method
-    if (!(await this.socketService.connect(externalUserId, token))) {
-      logger.error('Failed to initialize socket');
-      return;
-    }
+    // Set externalUserId synchronously, BEFORE any await: callers composing
+    // identify() with group()/track() via Promise.all (or back-to-back stub
+    // queue dispatch) need ensureIdentified() to see it populated. Attributes
+    // are intentionally written below the await — they're consumed by the
+    // attributeManager change-detection in updateUser, and writing them
+    // optimistically would cause a retry-with-same-attrs after a failed
+    // upsert to be skipped.
+    this.externalUserId = externalUserId;
 
-    // First call API with new attributes
+    // Hand the auth credentials to the socket layer; the connection lifecycle
+    // is owned there. setAuth is synchronous: it triggers a background
+    // connect when needed, and any failure surfaces through the EMIT_TIMEOUT
+    // applied to the upsert below.
+    this.socketService.setAuth(externalUserId, this.startOptions.token);
+
     const result = await this.socketService.upsertUser(
       {
         externalUserId,
@@ -198,8 +205,8 @@ export class UsertourCore extends Evented {
       throw new Error(ErrorMessages.FAILED_TO_IDENTIFY_USER);
     }
 
-    // Only update local state after successful API call
-    this.externalUserId = externalUserId;
+    // Only update attributes after successful API call so updateUser's
+    // change-detection guard remains accurate after retries.
     if (attributes) {
       this.attributeManager.setUserAttributes(attributes);
     }
@@ -284,6 +291,13 @@ export class UsertourCore extends Evented {
       this.attributeManager.clearCompanyAndMembershipAttributes();
     }
 
+    // Set externalCompanyId synchronously, BEFORE the await, so concurrent
+    // ensureGroup() checks (e.g. updateGroup() in a Promise.all) pass without
+    // racing this method's ack. Attributes stay below the await for the same
+    // reason as identify(): preserves change-detection retry semantics in
+    // updateGroup.
+    this.externalCompanyId = externalCompanyId;
+
     const result = await this.socketService.upsertCompany(
       {
         externalUserId,
@@ -297,8 +311,6 @@ export class UsertourCore extends Evented {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
-    // Only update local state after successful API call
-    this.externalCompanyId = externalCompanyId;
     if (attributes) {
       this.attributeManager.setCompanyAttributes(attributes);
     }
