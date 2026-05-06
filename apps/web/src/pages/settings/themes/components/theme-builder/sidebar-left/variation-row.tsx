@@ -82,7 +82,10 @@ export function VariationRow({
         <button
           type="button"
           aria-label={t('themeBuilder.aria.dragToReorder')}
-          className="absolute left-0.5 top-1/2 flex h-5 w-4 -translate-y-1/2 cursor-grab items-center justify-center text-muted-foreground/60 transition-colors hover:text-foreground active:cursor-grabbing"
+          // Focus uses text-shift, no ring — a ring around a 14px grip icon
+          // sitting at the row's left edge would clip into the row above
+          // and hover state. Same shape as the row body's bg-shift focus.
+          className="absolute left-0.5 top-1/2 flex h-5 w-4 -translate-y-1/2 cursor-grab items-center justify-center text-muted-foreground/60 outline-none transition-colors hover:text-foreground focus-visible:text-foreground active:cursor-grabbing"
           {...dragHandleProps}
           onClick={(e) => e.stopPropagation()}
         >

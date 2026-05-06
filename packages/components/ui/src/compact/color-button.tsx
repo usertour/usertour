@@ -24,7 +24,11 @@ export const CompactColorButton = forwardRef<HTMLButtonElement, Props>(
         ref={ref}
         type="button"
         className={cn(
-          'flex h-7.5 w-full items-center gap-2 rounded-lg bg-muted pl-1 pr-2 transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40',
+          // Focus ring matches the rest of the compact form-trigger family
+          // (Input / SelectTrigger / Button / FontPicker) — 3px ring +
+          // border-ring + ring/50. Keyboard tabbing through dense form
+          // panels lands one consistent focus affordance.
+          'flex h-7.5 w-full items-center gap-2 rounded-lg bg-muted pl-1 pr-2 outline-none transition-colors hover:bg-muted/70 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
           className,
         )}
         {...props}
