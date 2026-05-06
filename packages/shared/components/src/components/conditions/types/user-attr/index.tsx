@@ -15,6 +15,8 @@ import { ListInput } from '../../primitives/list-input';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateUserAttr } from '../../validators';
+import { format } from 'date-fns';
+import { DateTimePicker } from '../../../date-time-picker';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { Input } from '@usertour-packages/input';
 import {
@@ -266,11 +268,10 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
       )}
 
       {showDatePicker && (
-        <Input
-          variant="compact"
-          type="date"
-          value={data.value ?? ''}
-          onChange={(e) => handleValueChange(e.target.value)}
+        <DateTimePicker
+          mode="date"
+          value={data.value ? new Date(`${data.value}T00:00:00`) : undefined}
+          onChange={(d) => handleValueChange(d ? format(d, 'yyyy-MM-dd') : '')}
         />
       )}
     </div>

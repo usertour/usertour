@@ -1,10 +1,11 @@
 import { TimeIcon } from '@usertour-packages/icons';
 import type { RulesCondition, TimeConditionData } from '@usertour/types';
+import { format } from 'date-fns';
+import { DateTimePicker } from '../../../date-time-picker';
 import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
-import { Input } from '@usertour-packages/input';
 import { validateTime } from '../../validators';
-import { type ParsedTime, formatPretty, readParts, writeData } from './utils';
+import { EMPTY_PARSED, type ParsedTime, formatPretty, readParts, writeData } from './utils';
 
 // We persist in the V2 ISO 8601 format. Reads tolerate the legacy MM/dd/yyyy
 // shape so existing data is upgraded transparently on first edit. The pure
@@ -55,6 +56,26 @@ interface EditorProps {
   onChange: (next: RulesCondition) => void;
 }
 
+// ParsedTime <-> Date conversion. ParsedTime stores yyyy-MM-dd / HH / mm
+// as strings so the persisted data shape is stable across the picker
+// rewrite; DateTimePicker speaks Date objects, so we translate at the
+// editor seam.
+const partsToDate = (p: ParsedTime): Date | undefined => {
+  if (!p.date) return undefined;
+  const [y, m, d] = p.date.split('-').map(Number);
+  if (!y || !m || !d) return undefined;
+  return new Date(y, m - 1, d, Number(p.hour) || 0, Number(p.minute) || 0, 0, 0);
+};
+
+const dateToParts = (d: Date | undefined): ParsedTime => {
+  if (!d) return EMPTY_PARSED;
+  return {
+    date: format(d, 'yyyy-MM-dd'),
+    hour: format(d, 'HH'),
+    minute: format(d, 'mm'),
+  };
+};
+
 function TimeEditor({ condition, onChange }: EditorProps) {
   const t = useConditionsT();
   const { start, end } = readParts(condition.data as TimeConditionData | undefined);
@@ -71,49 +92,19 @@ function TimeEditor({ condition, onChange }: EditorProps) {
         <div className="text-[11px] font-medium text-muted-foreground">
           {t('conditions.types.time.startLabel')}
         </div>
-        <div className="flex items-center gap-1.5">
-          <Input
-            variant="compact"
-            type="date"
-            value={start.date}
-            onChange={(e) => commit({ start: { ...start, date: e.target.value } })}
-            className="flex-1"
-          />
-          <Input
-            variant="compact"
-            type="time"
-            value={`${start.hour}:${start.minute}`}
-            onChange={(e) => {
-              const [h = '00', m = '00'] = e.target.value.split(':');
-              commit({ start: { ...start, hour: h, minute: m } });
-            }}
-            className="w-[110px]"
-          />
-        </div>
+        <DateTimePicker
+          value={partsToDate(start)}
+          onChange={(d) => commit({ start: dateToParts(d) })}
+        />
       </div>
       <div className="flex flex-col gap-1.5">
         <div className="text-[11px] font-medium text-muted-foreground">
           {t('conditions.types.time.endLabel')}
         </div>
-        <div className="flex items-center gap-1.5">
-          <Input
-            variant="compact"
-            type="date"
-            value={end.date}
-            onChange={(e) => commit({ end: { ...end, date: e.target.value } })}
-            className="flex-1"
-          />
-          <Input
-            variant="compact"
-            type="time"
-            value={`${end.hour}:${end.minute}`}
-            onChange={(e) => {
-              const [h = '00', m = '00'] = e.target.value.split(':');
-              commit({ end: { ...end, hour: h, minute: m } });
-            }}
-            className="w-[110px]"
-          />
-        </div>
+        <DateTimePicker
+          value={partsToDate(end)}
+          onChange={(d) => commit({ end: dateToParts(d) })}
+        />
       </div>
     </div>
   );
