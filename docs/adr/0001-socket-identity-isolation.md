@@ -89,3 +89,53 @@ Reopen this decision when any of:
 - Scale point where per-user observability, rate-limiting, or routing become operational needs
 
 Each trigger maps to a different best-fit alternative above; reassess with fresh evidence at that time rather than picking a path now.
+
+## Implementation Sketch (if reopened)
+
+If a trigger fires and Alt-D (extending `requiresReconnect` to include `externalCompanyId`) is the chosen path, the work spans both layers. This sketch is **not** a commitment — re-evaluate alternatives against the fresh evidence first.
+
+**SDK** (`apps/sdk/`):
+
+- `usertour-socket.ts`: extend `requiresReconnect` to also compare `externalCompanyId`; either grow `setAuth` to a third parameter or add a sibling `setCompany(companyId)` that funnels through the same reconnect path. The public API shape (`identify` / `group` are separate) suggests separate methods.
+- `usertour-core.ts`: `group()` calls the new method synchronously (before the `await upsertCompany`) so concurrent `Promise.all([identify, group])` callers see consistent state for `ensureGroup`.
+- `authCredentials` already supports `externalCompanyId` via the existing `SocketAuthData` type — no type change required.
+
+**Server** (`apps/server/`):
+
+- `utils/websocket-utils.ts:71`: `buildExternalUserRoomId(envId, externalUserId, externalCompanyId?)` appends `:${externalCompanyId}` when provided. Keep the no-company shape (`user:${envId}:${externalUserId}`) for backward compatibility within the deploy window.
+- 5 call sites pass `socketData.externalCompanyId`:
+  - `web-socket/v2/web-socket-v2.gateway.ts:66` (handshake capacity check)
+  - `web-socket/v2/web-socket-v2.service.ts:958` (`cancelAllContentSessions`) — also requires Prisma `include: { bizCompany: { select: { externalId: true } } }` on the `bizSession.findMany`, then pass `session.bizCompany?.externalId` into the room id
+  - `web-socket/core/content-orchestrator.service.ts:173, 1174, 1218` (session activation/cancellation fan-out) — destructure `externalCompanyId` from `socketData` alongside the existing fields
+- `initializeSocketData`: add membership validation — `getBizCompany` currently fetches by `(externalCompanyId, environmentId)` without checking that the connecting `bizUser` is a member of that company. With company as a connection-level identity dimension, this should be enforced at handshake.
+- `upsertBizCompanies`: drop the `socketData.externalCompanyId / bizCompanyId` mutation (handshake now sets these) — or keep it as an idempotent guard that validates the payload matches handshake.
+
+**Cross-version deploy considerations:**
+
+- Room names change shape, so during the rolling deploy window stale-version sockets will not fan-out to or from new-version sockets in the same `(env, user)` group. Acceptable for short windows; otherwise stage a transition release that joins **both** room name shapes for the same socket and emits to both.
+- SDK clients in the wild (CDN-cached, unupdated tabs) keep using the old `(token, user)` reconnect pattern. They continue to work — the extended room id only changes server-side fan-out granularity, not the SDK's own protocol.
+
+## Notes on the v0.7.1.3 perf scope
+
+The v0.7.1.3 PR introduced the synchronous `setAuth` API. On re-examination, **the API change does not save round-trips** for the first identify:
+
+```
+Pre-refactor:  await connect()       → handshake RTT(s)
+               await upsertUser()    → ack RTT
+               total = handshake + ack
+
+Post-refactor: setAuth() (sync)      → 0
+               await upsertUser()    → emit queues in sendBuffer,
+                                       flushed on connect → ack RTT
+                                       arrives after handshake completes
+               total = handshake + ack
+```
+
+`await upsertUser` waits for both handshake completion **and** ack in either model — Socket.IO's `sendBuffer` cannot deliver before the transport opens. The actual perf wins in v0.7.1.3 come from elsewhere:
+
+- **`BeginBatch` fire-and-forget** (`sendClientMessage` no longer awaits the batch-open ack): saves one RTT per batch, since TCP/Socket.IO ordering guarantees the server processes `BeginBatch` before the next batched message on the same connection
+- Server-side AsyncLocalStorage memo and `toggleContents` pre-fetch (shipped in v0.7.1.2): collapse the per-EndBatch query fan-out
+
+`setAuth` itself is an **API ergonomics change** — synchronous return shape, callers don't compose around `await connect()`. The follow-up `connectingPromise → connecting flag + tracked listener` cleanup (commit `365ca4fc`) finishes that change by removing the `Promise<boolean>` wrapper whose resolved value no caller read.
+
+This recategorization matters when reopening this decision: extending `setAuth` to include `externalCompanyId` (Alt-D) does not borrow from the same RTT budget the perf PR was working with — it's purely a correctness/scoping change with its own UX cost (in-progress flow interruption, see Alt-D rejection above).
