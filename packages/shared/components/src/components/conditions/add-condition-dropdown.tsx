@@ -1,3 +1,4 @@
+import { Button } from '@usertour-packages/button';
 import { PlusIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import { cuid } from '@usertour/helpers';
@@ -67,21 +68,37 @@ export function AddConditionDropdown({
   return (
     <ConditionDropdownMenu onOpenChange={handleOpenChange}>
       <ConditionDropdownMenuTrigger asChild disabled={disabled}>
-        {/* In horizontal flex-wrap rows the trigger sits beside chip-height
-            siblings; matching that height (h-8) lets the link's icon+text
-            visually center against neighboring chips instead of hugging the
-            row's top edge under items-start. Vertical mode has nothing to
-            align to, so the natural text height is fine. */}
-        <button
+        {/* Ghost button + primary text — Add condition is a primary
+            "add a row" action, not a navigational link. Matches the
+            v1 Rules treatment and the Linear / Notion / Airtable
+            "Add filter" idiom. In horizontal flex-wrap rows the
+            trigger sits beside chip-height siblings, so we bump
+            height to h-8 to align with neighboring chips; vertical
+            mode keeps the default compact h-7.5. */}
+        <Button
           type="button"
+          variant="ghost"
+          size="compact"
+          disabled={disabled}
+          // Visual alignment with the surrounding Conditions chrome:
+          //  - rounded-lg matches the chip and LogicToggler radius (8px)
+          //    instead of Button's default rounded-md (6px).
+          //  - hover:bg-muted/40 matches the chip / LogicToggler hover
+          //    language instead of ghost's default hover:bg-accent, so the
+          //    Add-condition button reads as a sibling of the chips above.
+          //  - text-primary keeps the primary tone for the "add row" action;
+          //    hover:text-primary/80 dims it slightly under hover.
+          // self-start sizes the button to its content rather than
+          // stretching to the parent flex-col's full width — without it
+          // atomic Button's `justify-center` would center the icon + text.
           className={cn(
-            'inline-flex items-center gap-1 rounded text-xs font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50',
+            'self-start rounded-lg text-primary hover:bg-muted/40 hover:text-primary/80',
             isHorizontal && 'h-8',
           )}
         >
           <PlusIcon className="h-3.5 w-3.5" />
           {t('conditions.actions.addCondition')}
-        </button>
+        </Button>
       </ConditionDropdownMenuTrigger>
       <ConditionDropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
         {schemas.map((schema) => {
