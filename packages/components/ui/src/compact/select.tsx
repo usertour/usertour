@@ -7,7 +7,7 @@ import {
 } from '@usertour-packages/select';
 import { cn } from '@usertour-packages/tailwind';
 
-export interface BuilderSelectOption {
+export interface CompactSelectOption {
   value: string;
   label: string;
 }
@@ -15,14 +15,16 @@ export interface BuilderSelectOption {
 interface Props {
   value: string | undefined;
   onChange: (value: string) => void;
-  options: BuilderSelectOption[];
+  options: CompactSelectOption[];
   placeholder?: string;
   disabled?: boolean;
   className?: string;
   id?: string;
 }
 
-export function BuilderSelect({
+// 30px-tall trigger paired with 12px option labels — matches CompactInput so
+// rows of mixed input/select fields share a consistent baseline.
+export function CompactSelect({
   value,
   onChange,
   options,

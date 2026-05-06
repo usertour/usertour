@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
-import { BuilderInput } from '../ui';
+import { CompactInput } from '@usertour-packages/ui';
 import { FieldRow } from './field-row';
 
 interface Props {
@@ -15,7 +15,7 @@ export function TextField({ path, label, placeholder }: Props) {
   const value = getField<string>(path) ?? '';
   return (
     <FieldRow label={label} htmlFor={id}>
-      <BuilderInput
+      <CompactInput
         id={id}
         value={value}
         placeholder={placeholder}

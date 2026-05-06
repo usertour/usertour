@@ -1,7 +1,12 @@
 import { memo, useCallback } from 'react';
 
 import { AvatarType } from '@usertour/types';
-import { BuilderTabs, BuilderTabsContent, BuilderTabsList, BuilderTabsTrigger } from '../../ui';
+import {
+  CompactTabs,
+  CompactTabsContent,
+  CompactTabsList,
+  CompactTabsTrigger,
+} from '@usertour-packages/ui';
 
 import { useAvatarTab } from './hooks/use-avatar-tab';
 import { CartoonAvatarTab } from './cartoon-avatar-tab';
@@ -73,29 +78,29 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
     }, [onChange]);
 
     return (
-      <BuilderTabs value={activeTab} onValueChange={disabled ? undefined : handleTabChangeWithNone}>
-        <BuilderTabsList>
-          <BuilderTabsTrigger value={AvatarType.CARTOON} disabled={disabled}>
+      <CompactTabs value={activeTab} onValueChange={disabled ? undefined : handleTabChangeWithNone}>
+        <CompactTabsList>
+          <CompactTabsTrigger value={AvatarType.CARTOON} disabled={disabled}>
             Cartoon
-          </BuilderTabsTrigger>
-          <BuilderTabsTrigger value={AvatarType.UPLOAD} disabled={disabled}>
+          </CompactTabsTrigger>
+          <CompactTabsTrigger value={AvatarType.UPLOAD} disabled={disabled}>
             Upload
-          </BuilderTabsTrigger>
-          <BuilderTabsTrigger value={AvatarType.URL} disabled={disabled}>
+          </CompactTabsTrigger>
+          <CompactTabsTrigger value={AvatarType.URL} disabled={disabled}>
             URL
-          </BuilderTabsTrigger>
-          <BuilderTabsTrigger value={AvatarType.NONE} disabled={disabled}>
+          </CompactTabsTrigger>
+          <CompactTabsTrigger value={AvatarType.NONE} disabled={disabled}>
             None
-          </BuilderTabsTrigger>
-        </BuilderTabsList>
-        <BuilderTabsContent value={AvatarType.CARTOON}>
+          </CompactTabsTrigger>
+        </CompactTabsList>
+        <CompactTabsContent value={AvatarType.CARTOON}>
           <CartoonAvatarTab
             selectedName={name}
             onAvatarSelect={handleCartoonSelect}
             disabled={disabled}
           />
-        </BuilderTabsContent>
-        <BuilderTabsContent value={AvatarType.UPLOAD}>
+        </CompactTabsContent>
+        <CompactTabsContent value={AvatarType.UPLOAD}>
           <UploadAvatarTab
             avatarUrl={url}
             isCurrentUpload={type === AvatarType.UPLOAD}
@@ -103,17 +108,17 @@ export const AvatarTypeSelector = memo<AvatarTypeProps>(
             onRemove={handleRemoveUploadedAvatar}
             disabled={disabled}
           />
-        </BuilderTabsContent>
-        <BuilderTabsContent value={AvatarType.URL}>
+        </CompactTabsContent>
+        <CompactTabsContent value={AvatarType.URL}>
           <UrlAvatarTab
             avatarUrl={url}
             isCurrentUrl={type === AvatarType.URL}
             onUrlSubmit={handleUrlSubmit}
             disabled={disabled}
           />
-        </BuilderTabsContent>
-        <BuilderTabsContent value={AvatarType.NONE} />
-      </BuilderTabs>
+        </CompactTabsContent>
+        <CompactTabsContent value={AvatarType.NONE} />
+      </CompactTabs>
     );
   },
 );

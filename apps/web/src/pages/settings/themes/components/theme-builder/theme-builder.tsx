@@ -15,11 +15,11 @@ import { deepmerge } from 'deepmerge-ts';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from 'react-use';
+import { CompactPanel } from '@usertour-packages/ui';
 import { BuilderProvider } from './builder-context';
 import { PreviewPane } from './preview/preview-pane';
 import { builderSections } from './schema/sections';
 import { SectionsAccordion } from './sidebar/sections-accordion';
-import { SidebarShell } from './sidebar/sidebar-shell';
 import { VariationsSidebar } from './sidebar-left/variations-sidebar';
 import { TopBar } from './top-bar/top-bar';
 import { useResizable } from './use-resizable';
@@ -189,16 +189,17 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
             widgetType={activeWidgetType}
             onWidgetTypeChange={setActiveWidgetType}
           />
-          <SidebarShell
+          <CompactPanel
             width={rightResizable.width}
             variant="right"
             resize={{
               isAtMin: rightResizable.isAtMin,
               onMouseDown: rightResizable.handleProps.onMouseDown,
+              ariaLabel: t('themeBuilder.aria.resizeSidebar'),
             }}
           >
             <SectionsAccordion onSectionExpanded={onSectionExpanded} />
-          </SidebarShell>
+          </CompactPanel>
         </div>
       </div>
     </BuilderProvider>

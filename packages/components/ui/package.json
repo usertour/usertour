@@ -15,9 +15,15 @@
     "@base-ui/react": "1.0.0-rc.2",
     "class-variance-authority": "^0.4.0",
     "@tabler/icons-react": "^3.31.0",
-    "@usertour-packages/tailwind": "workspace:*",
+    "@usertour-packages/alert": "workspace:*",
     "@usertour-packages/button": "workspace:*",
+    "@usertour-packages/dropdown-menu": "workspace:*",
+    "@usertour-packages/icons": "workspace:*",
     "@usertour-packages/input": "workspace:*",
+    "@usertour-packages/select": "workspace:*",
+    "@usertour-packages/switch": "workspace:*",
+    "@usertour-packages/tabs": "workspace:*",
+    "@usertour-packages/tailwind": "workspace:*",
     "@usertour-packages/textarea": "workspace:*"
   },
   "peerDependencies": {

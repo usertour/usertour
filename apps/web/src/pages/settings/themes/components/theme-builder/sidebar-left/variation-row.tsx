@@ -9,14 +9,14 @@ import { cn } from '@usertour-packages/tailwind';
 import type { CSSProperties, MouseEvent, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  BuilderDropdownMenu,
-  BuilderDropdownMenuContent,
-  BuilderDropdownMenuItem,
-  BuilderDropdownMenuTrigger,
-  BuilderIconButton,
-  BuilderInput,
-} from '../ui';
-import { listRowClass, listRowSelectedClass } from '../ui/tokens';
+  CompactDropdownMenu,
+  CompactDropdownMenuContent,
+  CompactDropdownMenuItem,
+  CompactDropdownMenuTrigger,
+  CompactIconButton,
+  CompactInput,
+} from '@usertour-packages/ui';
+import { listRowClass, listRowSelectedClass } from '@usertour-packages/ui';
 
 // Props passed by `useSortable` and forwarded to the drag handle. Marked as
 // optional so the Base row (non-draggable) can reuse the component without
@@ -97,7 +97,7 @@ export function VariationRow({
       )}
       {isRenaming ? (
         <div className={cn(listRowClass, selected && listRowSelectedClass, 'pl-5 pr-2')}>
-          <BuilderInput
+          <CompactInput
             autoFocus
             value={renameDraft ?? ''}
             onChange={(e) => onRenameDraftChange?.(e.target.value)}
@@ -135,17 +135,17 @@ export function VariationRow({
       )}
       {hasMenu && !disabled && (
         <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover/row:opacity-100 data-[state=open]:opacity-100">
-          <BuilderDropdownMenu>
-            <BuilderDropdownMenuTrigger asChild>
-              <BuilderIconButton
+          <CompactDropdownMenu>
+            <CompactDropdownMenuTrigger asChild>
+              <CompactIconButton
                 size="sm"
                 aria-label={t('themeBuilder.aria.variationMenu')}
                 onClick={(e) => e.stopPropagation()}
               >
                 <RiMoreFill className="h-3.5 w-3.5" />
-              </BuilderIconButton>
-            </BuilderDropdownMenuTrigger>
-            <BuilderDropdownMenuContent
+              </CompactIconButton>
+            </CompactDropdownMenuTrigger>
+            <CompactDropdownMenuContent
               align="end"
               // Don't snap focus back to the three-dot trigger when the menu
               // closes — the rename input that just mounted is autofocusing,
@@ -153,19 +153,19 @@ export function VariationRow({
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
               {onRename && (
-                <BuilderDropdownMenuItem onClick={onRename}>
+                <CompactDropdownMenuItem onClick={onRename}>
                   <EditIcon className="h-3.5 w-3.5" />
                   {t('themeBuilder.actions.rename')}
-                </BuilderDropdownMenuItem>
+                </CompactDropdownMenuItem>
               )}
               {onDelete && (
-                <BuilderDropdownMenuItem onClick={onDelete} className="text-destructive">
+                <CompactDropdownMenuItem onClick={onDelete} className="text-destructive">
                   <RiDeleteBinLine className="h-3.5 w-3.5" />
                   {t('themeBuilder.actions.delete')}
-                </BuilderDropdownMenuItem>
+                </CompactDropdownMenuItem>
               )}
-            </BuilderDropdownMenuContent>
-          </BuilderDropdownMenu>
+            </CompactDropdownMenuContent>
+          </CompactDropdownMenu>
         </div>
       )}
     </div>

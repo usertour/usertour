@@ -2753,12 +2753,30 @@ importers:
       '@tabler/icons-react':
         specifier: ^3.31.0
         version: 3.36.1(react@18.2.0)
+      '@usertour-packages/alert':
+        specifier: workspace:*
+        version: link:../alert
       '@usertour-packages/button':
         specifier: workspace:*
         version: link:../button
+      '@usertour-packages/dropdown-menu':
+        specifier: workspace:*
+        version: link:../dropdown-menu
+      '@usertour-packages/icons':
+        specifier: workspace:*
+        version: link:../../icons
       '@usertour-packages/input':
         specifier: workspace:*
         version: link:../input
+      '@usertour-packages/select':
+        specifier: workspace:*
+        version: link:../select
+      '@usertour-packages/switch':
+        specifier: workspace:*
+        version: link:../switch
+      '@usertour-packages/tabs':
+        specifier: workspace:*
+        version: link:../tabs
       '@usertour-packages/tailwind':
         specifier: workspace:*
         version: link:../../tailwind

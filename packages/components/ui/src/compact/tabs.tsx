@@ -7,20 +7,20 @@ import {
 import { cn } from '@usertour-packages/tailwind';
 import { forwardRef } from 'react';
 
-// V2 wrappers around the shared Underline tabs that pin the trigger label to
-// `text-xs`, matching the rest of the right sidebar's 12px rhythm. The shared
-// component still defaults to text-sm for use elsewhere.
+// Wrappers around the shared Underline tabs that pin the trigger label to
+// `text-xs`, matching the 12px rhythm used elsewhere in the compact family.
+// The shared component still defaults to text-sm for use elsewhere.
 
-export const BuilderTabs = Tabs;
-export const BuilderTabsList = UnderlineTabsList;
-export const BuilderTabsContent = UnderlineTabsContent;
+export const CompactTabs = Tabs;
+export const CompactTabsList = UnderlineTabsList;
+export const CompactTabsContent = UnderlineTabsContent;
 
 type TriggerProps = React.ComponentPropsWithoutRef<typeof UnderlineTabsTrigger>;
 
-export const BuilderTabsTrigger = forwardRef<
+export const CompactTabsTrigger = forwardRef<
   React.ElementRef<typeof UnderlineTabsTrigger>,
   TriggerProps
 >(({ className, ...props }, ref) => (
   <UnderlineTabsTrigger ref={ref} className={cn('text-xs', className)} {...props} />
 ));
-BuilderTabsTrigger.displayName = 'BuilderTabsTrigger';
+CompactTabsTrigger.displayName = 'CompactTabsTrigger';

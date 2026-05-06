@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
-import { BuilderInput } from '../ui';
+import { CompactInput } from '@usertour-packages/ui';
 import { FieldRow } from './field-row';
 
 interface Props {
@@ -21,7 +21,7 @@ export function DynamicNumberField({ label, path, min, max, step = 1, suffix }: 
 
   return (
     <FieldRow label={label} htmlFor={id}>
-      <BuilderInput
+      <CompactInput
         id={id}
         type="number"
         value={value ?? ''}

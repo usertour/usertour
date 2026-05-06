@@ -1,7 +1,7 @@
 import { ThemeDetailPreviewType } from '@usertour/types';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BuilderSelect, type BuilderSelectOption } from '../ui';
+import { CompactSelect, type CompactSelectOption } from '@usertour-packages/ui';
 
 interface Props {
   value: ThemeDetailPreviewType;
@@ -10,7 +10,7 @@ interface Props {
 
 export function WidgetSwitcher({ value, onChange }: Props) {
   const { t } = useTranslation();
-  const options = useMemo<BuilderSelectOption[]>(
+  const options = useMemo<CompactSelectOption[]>(
     () => [
       { value: ThemeDetailPreviewType.TOOLTIP, label: t('themeBuilder.previewTypes.tooltip') },
       { value: ThemeDetailPreviewType.MODAL, label: t('themeBuilder.previewTypes.modal') },
@@ -47,7 +47,7 @@ export function WidgetSwitcher({ value, onChange }: Props) {
   );
 
   return (
-    <BuilderSelect
+    <CompactSelect
       value={value}
       onChange={(next) => onChange(next as ThemeDetailPreviewType)}
       options={options}

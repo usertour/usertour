@@ -29,15 +29,15 @@ import { QuestionTooltip } from '@usertour-packages/tooltip';
 import type { RulesCondition, ThemeVariation } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ConditionsSection } from '../sidebar/conditions-section';
-import { SidebarResizeHandle } from '../sidebar/sidebar-resize-handle';
-import { BuilderIconButton } from '../ui';
 import {
+  ResizeHandle,
+  bodyClass,
+  headerClass,
+  panelClass,
   sectionLabelClass,
-  sidebarBodyClass,
-  sidebarHeaderClass,
-  sidebarPanelClass,
-} from '../ui/tokens';
+} from '@usertour-packages/ui';
+import { ConditionsSection } from '../sidebar/conditions-section';
+import { CompactIconButton } from '@usertour-packages/ui';
 import { VariationRow } from './variation-row';
 
 interface Props {
@@ -175,8 +175,8 @@ export function VariationsSidebar({
   };
 
   return (
-    <div className={sidebarPanelClass} style={{ width }}>
-      <div className={`${sidebarHeaderClass} flex items-center justify-between`}>
+    <div className={panelClass} style={{ width }}>
+      <div className={`${headerClass} flex items-center justify-between`}>
         <div className={`${sectionLabelClass} flex items-center gap-1.5`}>
           <span>{t('themeBuilder.chrome.variations')}</span>
           <QuestionTooltip>
@@ -191,16 +191,16 @@ export function VariationsSidebar({
               ))}
           </QuestionTooltip>
         </div>
-        <BuilderIconButton
+        <CompactIconButton
           onClick={onAdd}
           disabled={disabled}
           aria-label={t('themeBuilder.aria.addVariation')}
         >
           <PlusIcon className="h-3.5 w-3.5" />
-        </BuilderIconButton>
+        </CompactIconButton>
       </div>
 
-      <div className={sidebarBodyClass}>
+      <div className={bodyClass}>
         <div className="space-y-0.5 p-2">
           <VariationRow
             label={t('themeBuilder.chrome.base')}
@@ -306,10 +306,11 @@ export function VariationsSidebar({
       </AlertDialog>
 
       {resize && (
-        <SidebarResizeHandle
+        <ResizeHandle
           edge="right"
           isAtMin={resize.isAtMin}
           onMouseDown={resize.onMouseDown}
+          ariaLabel={t('themeBuilder.aria.resizeSidebar')}
         />
       )}
     </div>

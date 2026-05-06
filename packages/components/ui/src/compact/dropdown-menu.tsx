@@ -7,25 +7,24 @@ import {
 import { cn } from '@usertour-packages/tailwind';
 import { forwardRef } from 'react';
 
-// V2 wrappers around the shared DropdownMenu pieces. Trigger / Root / Content
-// are passthroughs; Item pins to the builder's 12px / tight-row rhythm so
-// menus inside the theme builder stay visually consistent with the rest of
-// the panel.
+// Wrappers around the shared DropdownMenu pieces. Trigger / Root are
+// passthroughs; Content / Item are styled to match the compact 12px / tight-row
+// rhythm used by inspector-style panels.
 
-export const BuilderDropdownMenu = DropdownMenu;
-export const BuilderDropdownMenuTrigger = DropdownMenuTrigger;
+export const CompactDropdownMenu = DropdownMenu;
+export const CompactDropdownMenuTrigger = DropdownMenuTrigger;
 
 type ContentProps = React.ComponentPropsWithoutRef<typeof DropdownMenuContent>;
-export const BuilderDropdownMenuContent = forwardRef<
+export const CompactDropdownMenuContent = forwardRef<
   React.ElementRef<typeof DropdownMenuContent>,
   ContentProps
 >(({ className, ...props }, ref) => (
   <DropdownMenuContent ref={ref} className={cn('min-w-[10rem] p-1', className)} {...props} />
 ));
-BuilderDropdownMenuContent.displayName = 'BuilderDropdownMenuContent';
+CompactDropdownMenuContent.displayName = 'CompactDropdownMenuContent';
 
 type ItemProps = React.ComponentPropsWithoutRef<typeof DropdownMenuItem>;
-export const BuilderDropdownMenuItem = forwardRef<
+export const CompactDropdownMenuItem = forwardRef<
   React.ElementRef<typeof DropdownMenuItem>,
   ItemProps
 >(({ className, ...props }, ref) => (
@@ -35,4 +34,4 @@ export const BuilderDropdownMenuItem = forwardRef<
     {...props}
   />
 ));
-BuilderDropdownMenuItem.displayName = 'BuilderDropdownMenuItem';
+CompactDropdownMenuItem.displayName = 'CompactDropdownMenuItem';

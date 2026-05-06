@@ -12,9 +12,9 @@ interface Props extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'chi
   isAuto?: boolean;
 }
 
-// Swatch + label trigger button. Used as a popover trigger inside ColorField
-// (which owns the popover and color picker panel).
-export const BuilderColorButton = forwardRef<HTMLButtonElement, Props>(
+// Swatch + label trigger button. Typically used as a popover trigger inside
+// a color field that owns the popover and color picker panel.
+export const CompactColorButton = forwardRef<HTMLButtonElement, Props>(
   ({ color, isAuto = false, className, ...props }, ref) => {
     const swatchColor = isHexColor(color) ? color : '#ffffff';
     const display = isAuto ? 'Auto' : isHexColor(color) ? stripHash(color).toUpperCase() : color;
@@ -41,4 +41,4 @@ export const BuilderColorButton = forwardRef<HTMLButtonElement, Props>(
     );
   },
 );
-BuilderColorButton.displayName = 'BuilderColorButton';
+CompactColorButton.displayName = 'CompactColorButton';

@@ -6,6 +6,8 @@ interface Props {
   variant?: 'warning' | 'info' | 'destructive';
 }
 
+// One-line alert for use inside dense form/inspector rows. Caller passes a
+// pre-translated message — i18n-agnostic.
 export function InlineAlert({ message, variant = 'warning' }: Props) {
   return (
     <Alert variant={variant === 'info' ? 'default' : variant}>

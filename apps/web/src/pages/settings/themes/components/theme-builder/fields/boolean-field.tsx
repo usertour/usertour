@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
-import { BuilderSwitch } from '../ui';
+import { CompactSwitch } from '@usertour-packages/ui';
 import { FieldRow } from './field-row';
 
 interface Props {
@@ -14,7 +14,7 @@ export function BooleanField({ path, label }: Props) {
   const value = getField<boolean>(path);
   return (
     <FieldRow label={label} htmlFor={id}>
-      <BuilderSwitch
+      <CompactSwitch
         id={id}
         checked={value}
         disabled={isReadOnly}

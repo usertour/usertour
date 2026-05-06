@@ -1,3 +1,4 @@
+import { InlineAlert } from '@usertour-packages/ui';
 import { useTranslation } from 'react-i18next';
 import { useBuilderContext } from '../builder-context';
 import type { FieldDef } from '../schema/types';
@@ -7,7 +8,6 @@ import { ColorField } from './color-field';
 import { DynamicNumberField } from './dynamic-number-field';
 import { FontFamilyField } from './font-family-field';
 import { ImageUploadField } from './image-upload-field';
-import { InlineAlert } from './inline-alert';
 import { NumberField } from './number-field';
 import { PlacementField } from './placement-field';
 import { SelectField } from './select-field';

@@ -1,12 +1,12 @@
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
-import { BuilderSelect, type BuilderSelectOption } from '../ui';
+import { CompactSelect, type CompactSelectOption } from '@usertour-packages/ui';
 import { FieldRow } from './field-row';
 
 interface Props {
   path: string;
   label: string;
-  options: BuilderSelectOption[];
+  options: CompactSelectOption[];
   vertical?: boolean;
   // When true, the underlying setting is stored as a number; the field
   // converts string ↔ number on read/write. Used for font-weight selects.
@@ -24,7 +24,7 @@ export function SelectField({ path, label, options, vertical, valueAsNumber }: P
 
   return (
     <FieldRow label={label} htmlFor={id} forceVertical={vertical}>
-      <BuilderSelect
+      <CompactSelect
         id={id}
         value={value}
         disabled={isReadOnly}

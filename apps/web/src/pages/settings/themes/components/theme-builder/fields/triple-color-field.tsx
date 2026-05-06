@@ -4,7 +4,7 @@ import { cn } from '@usertour-packages/tailwind';
 import { useId, useState } from 'react';
 import { useBuilderContext } from '../builder-context';
 import { getPath } from '../draft-util';
-import { BuilderColorButton } from '../ui';
+import { CompactColorButton } from '@usertour-packages/ui';
 
 interface CellProps {
   path: string;
@@ -37,7 +37,7 @@ function Cell({ path, label, allowAuto, position }: CellProps) {
       </label>
       <Popover open={open} onOpenChange={isReadOnly ? undefined : setOpen}>
         <PopoverTrigger asChild>
-          <BuilderColorButton
+          <CompactColorButton
             id={id}
             color={displayedColor}
             isAuto={isAuto}

@@ -1,17 +1,16 @@
-// Layout tokens shared across theme-builder. Visual tokens for individual
-// controls (input/select/switch/color button/icon button/save button) are
-// owned by the wrapper components in `./builder-*.tsx` rather than as raw
-// className strings.
+// Layout className tokens for the compact UI family. These are the structural
+// classes — the per-control visual tokens (h-7.5 / muted / depth shadow) live
+// inside each component file.
 
-// Text
+// Section labels (form / inspector titles)
 export const sectionLabelClass = 'text-xs font-medium text-muted-foreground';
 
-// Sidebar list row (variation row)
+// List rows (variation list, navigation)
 export const listRowClass =
   'group flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-muted/50';
 export const listRowSelectedClass = 'bg-primary/10 text-primary hover:bg-primary/15';
 
-// Pills (System tag, etc.)
+// Pills (system / status tags)
 export const pillClass =
   'rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground';
 
@@ -19,12 +18,14 @@ export const pillClass =
 export const topBarClass =
   'relative flex h-15 flex-none items-center justify-between border-b border-border/50 bg-background px-3';
 
-// Sidebar panel chrome. `relative` so the resize handle (positioned absolute)
-// anchors to the panel.
-export const sidebarPanelClass =
+// Side panel chrome. `relative` so absolute-positioned descendants (resize
+// handle, close button, etc.) anchor to the panel.
+export const panelClass =
   'relative flex flex-none flex-col border-r border-border/50 bg-background';
-export const sidebarPanelRightClass =
+export const panelRightClass =
   'relative flex flex-none flex-col border-l border-border/50 bg-background';
-export const sidebarHeaderClass = 'flex-none border-b border-border/50 px-3 py-2.5';
-export const sidebarFooterClass = 'flex-none border-t border-border/50 px-3 py-2';
-export const sidebarBodyClass = 'flex-1 overflow-y-auto';
+
+// Panel sub-regions
+export const headerClass = 'flex-none border-b border-border/50 px-3 py-2.5';
+export const footerClass = 'flex-none border-t border-border/50 px-3 py-2';
+export const bodyClass = 'flex-1 overflow-y-auto';
