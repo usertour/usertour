@@ -18,10 +18,18 @@ The codebase runs **two density registers** that share the same
 type / color / focus / radius vocabulary. Pick the register from
 context — don't introduce a third.
 
-| Register                  | Where it lives                                      | Control height | Radius        | Surface                                              | Border             |
-| ------------------------- | --------------------------------------------------- | -------------- | ------------- | ---------------------------------------------------- | ------------------ |
-| **shadcn default**        | Settings, content tables, auth, marketing, modals   | h-9 / h-10     | `rounded-md`  | single (`bg-transparent` + border)                   | `border-input`     |
-| **v2 chrome / inspector** | theme builder v2, Conditions, future inspectors     | h-7.5 / h-6    | `rounded-lg`  | dual (`bg-muted` passive / `bg-background` active)   | `border-input/60`  |
+The boundary is **inspector / panel surfaces vs. everything else**, not
+"is this page a takeover." All page chrome — list pages, detail pages,
+modals, **and** the top bars of takeover editors (theme builder,
+content builder) — uses shadcn default. v2 chrome only takes over
+inside inspector / property-panel surfaces (theme builder's variations
+sidebar + sections accordion + its own field controls, Conditions
+chips + popovers).
+
+| Register                  | Where it lives                                                                                                                          | Control height | Radius        | Surface                                              | Border             |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------- | ------------- | ---------------------------------------------------- | ------------------ |
+| **shadcn default**        | All page chrome — list / detail headers, takeover top bars (theme builder, content builder), modals, settings, content tables, auth     | h-9 / h-10     | `rounded-md`  | single (`bg-transparent` + border)                   | `border-input`     |
+| **v2 chrome / inspector** | Inspector / panel surfaces — theme builder's variations sidebar + sections accordion + property fields, Conditions chips + popovers + chip editors | h-7.5 / h-6    | `rounded-lg`  | dual (`bg-muted` passive / `bg-background` active)   | `border-input/60`  |
 
 **Both registers share** (this is the "language" half — never break
 these across a register boundary):
@@ -38,11 +46,18 @@ No separate "compact-family" or "conditions-family" component layer
 exists — picking a variant picks the register.
 
 **Why two registers and not one**: the density gap (30 vs 36px, 8 vs
-6px radius, dual vs single surface) signals to the user "this region
-is a tool, mind its rhythm" — same way Notion's properties panel reads
-denser than the main document, or Linear's filter sidebar reads denser
-than its issue list. Don't fight it; **don't mix the two registers in
-the same pane**.
+6px radius, dual vs single surface) signals "you're inside an
+inspector / properties pane, mind its rhythm" — same way Notion's
+properties panel reads denser than the main document. Don't fight it;
+**don't mix the two registers in the same pane**.
+
+**Top-bar atoms** shared across every page (list, detail, takeover):
+ghost `size="icon-sm"` Back button, `<MoreButton>` (32px square),
+`<EditableTitle>` for inline rename, `h-14 sticky top-0 z-10
+border-b border-border/50 bg-background` strip. Theme builder's top
+bar uses these same atoms — its "takeover" feel comes from the
+missing app sidebar and the dense inner panes, not from a different
+top-bar register.
 
 If a feature genuinely belongs in neither register (e.g., marketing
 hero, content viewer with reading typography), document it before
@@ -56,7 +71,7 @@ inventing a third register.
 | ------------------------------------------ | ---------------------------------------------- |
 | `bg-background`                            | Canvas (page, sidebar, top bar)                |
 | `border-border/50`                         | Hairline dividers between regions              |
-| `h-15` (60px)                              | Top bar height (extended in tailwind config)   |
+| `h-14` (56px)                              | Top bar height (used by every detail header — list / detail / takeover) |
 | `px-3 py-2.5` / `px-3 py-2`                | Sidebar header / footer padding                |
 | `flex-1 overflow-y-auto`                   | Sidebar body scroller                          |
 
@@ -134,7 +149,6 @@ Tailwind extends standard 4px steps with these v2-chrome-only sizes
 | `h-7.5 / w-7.5`| 30px  | v2 input / select / compact button height       |
 | `h-6`          | 24px  | v2 compact-sm button (chip popover inline tags) |
 | `h-5.5 / w-5.5`| 22px  | Color swatch size                               |
-| `h-15`         | 60px  | Top bar (theme builder v2)                      |
 
 Standard rhythm in use:
 

@@ -39,5 +39,4 @@ export {
   panelRightClass,
   pillClass,
   sectionLabelClass,
-  topBarClass,
 } from './tokens';

@@ -16,10 +16,6 @@ export const listRowSelectedClass = 'bg-primary/10 text-primary hover:bg-primary
 export const pillClass =
   'rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground';
 
-// Top bar
-export const topBarClass =
-  'relative flex h-15 flex-none items-center justify-between border-b border-border/50 bg-background px-3';
-
 // Side panel chrome. `relative` so absolute-positioned descendants (resize
 // handle, close button, etc.) anchor to the panel.
 export const panelClass =

@@ -4,7 +4,8 @@ import {
 } from '@/contexts/content-localization-list-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
-import { ArrowLeftIcon, ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
+import { ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
+import { RiArrowLeftLine } from '@usertour-packages/icons';
 import { Badge } from '@usertour-packages/badge';
 import { useAws } from '@usertour-packages/builder/src/hooks/use-aws';
 import { Button } from '@usertour-packages/button';
@@ -496,8 +497,8 @@ const ContentLocalizationDetailMain = (props: ContentLocalizationDetailMainProps
     <div className="flex px-6 py-8 xl:px-8 space-x-8 justify-center">
       <div className="flex flex-col space-y-6 grow  max-w-screen-xl mx-auto">
         <div className="flex flex-row space-x-1 items-center">
-          <ArrowLeftIcon
-            className="h-4 w-6 cursor-pointer flex-none"
+          <RiArrowLeftLine
+            className="h-4 w-4 cursor-pointer flex-none"
             onClick={() => {
               navigator(location.pathname.replace(`/${localization.locale}`, ''));
             }}
