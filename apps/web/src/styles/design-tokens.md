@@ -12,6 +12,44 @@ another pattern.
 
 ---
 
+## 0. Two registers, one vocabulary
+
+The codebase runs **two density registers** that share the same
+type / color / focus / radius vocabulary. Pick the register from
+context — don't introduce a third.
+
+| Register                  | Where it lives                                      | Control height | Radius        | Surface                                              | Border             |
+| ------------------------- | --------------------------------------------------- | -------------- | ------------- | ---------------------------------------------------- | ------------------ |
+| **shadcn default**        | Settings, content tables, auth, marketing, modals   | h-9 / h-10     | `rounded-md`  | single (`bg-transparent` + border)                   | `border-input`     |
+| **v2 chrome / inspector** | theme builder v2, Conditions, future inspectors     | h-7.5 / h-6    | `rounded-lg`  | dual (`bg-muted` passive / `bg-background` active)   | `border-input/60`  |
+
+**Both registers share** (this is the "language" half — never break
+these across a register boundary):
+
+- **Type scale**: 14px body (`text-sm`) + 11px metadata (`text-[11px]`)
+- **Focus ring**: 3px ring + `border-ring` for form triggers (Input, Select, Button, FontPicker, ColorButton, EditableTitle)
+- **Color tokens**: `text-foreground` / `text-muted-foreground` / `bg-muted` / `border-input` (palette is identical)
+- **Font weight rules**: `font-medium` for labels and emphasis; no `font-bold` in chrome
+
+**The two registers are cva variants on the same atomic primitives**
+(`<Input variant="default" />` vs. `<Input variant="compact" />`,
+`<Button variant="...compact-*" size="compact" />` vs. shadcn defaults).
+No separate "compact-family" or "conditions-family" component layer
+exists — picking a variant picks the register.
+
+**Why two registers and not one**: the density gap (30 vs 36px, 8 vs
+6px radius, dual vs single surface) signals to the user "this region
+is a tool, mind its rhythm" — same way Notion's properties panel reads
+denser than the main document, or Linear's filter sidebar reads denser
+than its issue list. Don't fight it; **don't mix the two registers in
+the same pane**.
+
+If a feature genuinely belongs in neither register (e.g., marketing
+hero, content viewer with reading typography), document it before
+inventing a third register.
+
+---
+
 ## 1. Layout tokens
 
 | Class                                      | Use                                            |
@@ -33,30 +71,35 @@ Top bar spans the full width above.
 
 ## 2. Color hierarchy
 
-The whole language stands on a **passive vs. active** distinction inside
-`bg-background`:
+The **v2 register** stands on a **passive vs. active** distinction
+inside `bg-background`. The **shadcn default register** uses a single
+bordered-transparent layer (no muted/depth split).
 
-| Layer                              | Surface                                                | Reads as       |
-| ---------------------------------- | ------------------------------------------------------ | -------------- |
-| Canvas                             | `bg-background`                                        | "the page"     |
-| Passive controls (input/select)    | `bg-muted` (no border)                                 | "data field"   |
-| Active controls (icon buttons)     | `bg-background` + triple-shadow (`DEPTH_SHADOW`)       | "do something" |
-| Form inputs (chips / inline edits) | `bg-background` + `border border-input`                | "type here"    |
-| Disabled                           | + `opacity-60` (or `opacity-50` for buttons)           |                |
+| Layer                              | Surface                                                | Reads as       | Register              |
+| ---------------------------------- | ------------------------------------------------------ | -------------- | --------------------- |
+| Canvas                             | `bg-background`                                        | "the page"     | both                  |
+| Passive controls (input/select)    | `bg-muted` (with soft border)                          | "data field"   | v2 chrome only        |
+| Active controls (icon buttons)     | `bg-background` + triple-shadow (`DEPTH_SHADOW`)       | "do something" | v2 chrome only        |
+| Form inputs (chips / inline edits) | `bg-background` + `border border-input`                | "type here"    | v2 chrome             |
+| Default form inputs                | `bg-transparent` + `border border-input`               | "type here"    | shadcn default        |
+| Disabled                           | + `opacity-60` (or `opacity-50` for buttons)           |                | both                  |
 
-**Why two input styles** (muted vs. bordered): theme builder packs many
-form rows densely, so `bg-muted` recedes and lets the depth icon buttons
-hero. Conditions / inline edits surface chips that *are* the content,
-so they need clear edges. **Don't mix the two in the same pane** — pick
-one based on what the surrounding container is doing.
+**Why two input styles inside v2** (muted vs. bordered): theme builder
+packs many form rows densely, so `bg-muted` recedes and lets the depth
+icon buttons hero. Conditions / inline edits surface chips that *are*
+the content, so they need clear edges. **Don't mix the two in the
+same pane** — pick one based on what the surrounding container is
+doing.
 
-Both surfaces are exposed as cva variants on the same atomic primitives
-(`<Input variant="compact-muted" />` vs. `<Input variant="compact" />`)
-— there's no separate Compact-family / Conditions-family layer.
+Both v2 surfaces are exposed as cva variants on the same atomic
+primitives (`<Input variant="compact-muted" />` vs.
+`<Input variant="compact" />`) — there's no separate Compact-family /
+Conditions-family layer.
 
 **Foreground:** prefer `slate-700` / `slate-800` for body text over
 shadcn's near-black. `text-muted-foreground` for labels and secondary
-metadata. Headings stay on `text-foreground`.
+metadata. Headings stay on `text-foreground`. (Foreground rules apply
+to both registers.)
 
 ---
 
@@ -68,13 +111,13 @@ Tailwind base: `--radius` is 8px → `rounded-lg = 8px`,
 **Concentric rule**: inner radius = outer radius − padding. Don't put a
 4px button inside a 16px card; the corners won't sit right.
 
-| Token             | Value | Used for                                                            |
-| ----------------- | ----- | ------------------------------------------------------------------- |
-| `rounded`         | 4px   | List rows, pill labels                                              |
-| `rounded-md`      | 6px   | Subordinate togglers (vertical AND/OR shrunk one tier)              |
-| `rounded-lg`      | 8px   | **Default** for buttons, inputs, chips, popovers, color buttons     |
-| `rounded-[10px]`  | 10px  | (Future) modern CTA buttons — earmarked, not in use yet             |
-| `rounded-[15px]`  | 15px  | Big floating popovers (rename popper, etc.)                         |
+| Token             | Value | Used for                                                                    |
+| ----------------- | ----- | --------------------------------------------------------------------------- |
+| `rounded-sm`      | 4px   | List rows, pill labels, dropdown items                                      |
+| `rounded-md`      | 6px   | **shadcn default** for buttons / inputs / cards (rest-of-site forms)        |
+| `rounded-lg`      | 8px   | **v2 chrome default** for buttons, inputs, chips, popovers, color buttons   |
+| `rounded-[10px]`  | 10px  | (Future) modern CTA buttons — earmarked, not in use yet                     |
+| `rounded-[15px]`  | 15px  | Big floating popovers (rename popper, etc.)                                 |
 
 If you need a value not in this list, you're probably about to break
 the concentric chain — pause and check.
@@ -83,13 +126,15 @@ the concentric chain — pause and check.
 
 ## 4. Spacing rhythm
 
-Tailwind extends standard 4px steps with these for builder use:
+Tailwind extends standard 4px steps with these v2-chrome-only sizes
+(rest-of-site uses shadcn defaults `h-9` / `h-10`):
 
 | Class          | Value | Why we needed it                                |
 | -------------- | ----- | ----------------------------------------------- |
-| `h-7.5 / w-7.5`| 30px  | Input / select / hero button height             |
+| `h-7.5 / w-7.5`| 30px  | v2 input / select / compact button height       |
+| `h-6`          | 24px  | v2 compact-sm button (chip popover inline tags) |
 | `h-5.5 / w-5.5`| 22px  | Color swatch size                               |
-| `h-15`         | 60px  | Top bar                                         |
+| `h-15`         | 60px  | Top bar (theme builder v2)                      |
 
 Standard rhythm in use:
 
@@ -116,19 +161,29 @@ Padding presets:
 
 ## 5. Typography scale
 
-Two-thirds of v2 is at **12px**. Stick to the scale below.
+V2 chrome and the rest of `apps/web` share **shadcn's 14px baseline**
+(`text-sm`). Metadata sits one tier below at 11px. Labels live at the
+body tier (same size as the control they label) — hierarchy comes from
+`font-medium` + `text-muted-foreground`, **not** from size difference.
+Same convention as shadcn's `<Label>` component, which stays at
+`text-sm` to match input text.
 
-| Class           | Size     | Used for                                                                |
-| --------------- | -------- | ----------------------------------------------------------------------- |
-| `text-[10px]`   | 10px     | All-caps pill labels (System pill)                                      |
-| `text-[11px]`   | 11px     | Small label rows (vertical AND/OR shrunk; "If" pill)                    |
-| `text-xs`       | 12px     | **Default** — chip text, input text, button text, list rows, tooltips   |
-| `text-sm`       | 14px     | **Avoid in v2 chrome.** Override shared defaults (e.g. ErrorTooltip)    |
-| `text-base+`    | 16px+    | Marketing surfaces only (auth, onboarding) — not in editor chrome       |
+| Class           | Size     | Used for                                                                                                |
+| --------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `text-[10px]`   | 10px     | All-caps pill labels (System pill)                                                                      |
+| `text-[11px]`   | 11px     | **Metadata only** — "and"/"or" connectors, combobox option hints, priority badges, small-mode pill summary |
+| `text-sm`       | 14px     | **Default everywhere** — chip text, input / select / button text, popover body, field labels, editor titles, tooltips, and the same `default` cva tier rest-of-site forms already use |
+| `text-base+`    | 16px+    | Marketing surfaces only (auth, onboarding) — not in editor chrome                                       |
 
-Weight: `font-medium` (500) for labels and titles, regular for body.
-**Don't use** `font-semibold` / `font-bold` in chrome — the type scale
-is small enough that the visual hierarchy comes from color, not weight.
+Compact controls (`h-7.5` / `h-6`) keep `text-sm`'s native 20px
+line-height — the 30px/24px boxes have just enough room for the 14/20
+text without explicit `leading-*` overrides.
+
+Weight: `font-medium` (500) for labels, sub-titles, and emphasis;
+regular for body. The canon "this is a label" treatment is
+`text-sm font-medium text-muted-foreground`. **Don't use**
+`font-semibold` / `font-bold` in chrome — visual hierarchy comes from
+color and weight, not aggressive bold.
 
 ---
 
@@ -167,9 +222,9 @@ density and surface treatment directly:
 | `SelectTrigger`   | `variant="default" \| "compact" \| "compact-muted"` | same surface choices                                    |
 | `SelectItem`      | `variant="default" \| "compact"`                  | item rhythm                                             |
 | `Switch`          | `variant="default" \| "muted"`                    | unchecked state surface                                 |
-| `UnderlineTabsTrigger` | `variant="default" \| "compact"`              | label `text-sm` vs `text-xs`                            |
+| `UnderlineTabsTrigger` | `variant="default" \| "compact"`              | both `text-sm`; `compact` differs only in surrounding chrome |
 | `DropdownMenuContent` | `variant="default" \| "compact"`               | `min-w-[8rem]` vs no floor + `rounded-lg`               |
-| `DropdownMenuItem` | `variant="default" \| "compact"`                  | tighter padding + `text-xs`                             |
+| `DropdownMenuItem` | `variant="default" \| "compact"`                  | tighter padding (`text-sm` in both)                     |
 | `Button`          | `variant="...compact-ghost \| compact-outline \| compact-secondary \| depth"` + `size="compact \| compact-icon{,-sm,-lg}"` | compact text/icon buttons (replaces former CompactIconButton family) |
 
 **Composition wrappers** in `@usertour-packages/ui/compact/` (these
@@ -198,7 +253,7 @@ primitives went away in favor of atomic variants:
 | `ConditionCombobox`             | cmdk + popover, anchored to `--radix-popper-anchor-width`             |
 | `ConditionPopover{,Content}`    | Popover with z-index injection from ConditionsContext                 |
 | `ConditionDropdownMenu{,Content,Item}` | DropdownMenu with z-index injection from ConditionsContext     |
-| `ConditionErrorTooltip*`        | Error tooltip with z-index injection + `text-xs` override             |
+| `ConditionErrorTooltip*`        | Error tooltip with z-index injection + `text-sm` override             |
 
 **Theme-builder local wrappers** that intentionally aren't shared
 because they couple to app-level state:
@@ -249,8 +304,10 @@ These all caused real bugs we already fixed — don't reintroduce them.
 - **Hard-coded popover widths**: bind to `--radix-popper-anchor-width`
   so the dropdown matches the trigger when the trigger lives in a wider
   panel.
-- **`text-sm` in chrome**: shared library defaults often use 14px;
-  override to `text-xs` for v2 surfaces so type rhythm holds.
+- **Bumping a label one tier smaller than its content**: labels stay at
+  the same size as the control they label (14px). Going to 11 reads as
+  "this is metadata", not "this is a label" — readers lose the visual
+  cue that the row is a labeled field.
 - **`break-all` for chip text**: chops English mid-word. Use
   `break-words` (`overflow-wrap: break-word`).
 

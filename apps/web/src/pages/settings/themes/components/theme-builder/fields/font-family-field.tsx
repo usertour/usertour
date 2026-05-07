@@ -15,7 +15,7 @@ export function FontFamilyField({ path, label }: Props) {
   const value = getField<string>(path) ?? '';
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-xs font-medium leading-none">
+      <label htmlFor={id} className="block text-sm font-medium leading-none">
         {label}
       </label>
       <BuilderFontPicker

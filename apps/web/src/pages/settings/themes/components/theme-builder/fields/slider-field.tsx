@@ -19,10 +19,10 @@ export function SliderField({ path, label, min, max, step = 1, suffix }: Props) 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label htmlFor={id} className="text-xs font-medium">
+        <label htmlFor={id} className="text-sm font-medium">
           {label}
         </label>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           {safe}
           {suffix}
         </span>

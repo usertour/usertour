@@ -51,11 +51,11 @@ const buttonVariants = cva(
         'icon-lg': 'size-10',
         // Compact text button (30px tall, 12px text) — chip / inspector
         // primary action paired with compact inputs.
-        compact: 'h-7.5 px-3 text-xs shadow-sm',
+        compact: 'h-7.5 px-3 text-sm shadow-sm',
         // Smaller compact text button (24px tall, 12px text) — used inside
         // chip-popover editors for tag-like inline buttons (e.g. CSS
         // selector candidates).
-        'compact-sm': 'h-6 px-2 text-xs shadow-sm',
+        'compact-sm': 'h-6 px-2 text-sm shadow-sm',
         // Compact icon-only buttons. Three sizes line up with the
         // CompactIconButton family that previously lived in
         // @usertour-packages/ui:

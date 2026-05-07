@@ -26,7 +26,7 @@ export const UploadAvatarTab = memo<UploadAvatarTabProps>(
       <div className="w-full min-w-0 bg-background rounded-lg p-4">
         <div className="mb-3">
           <h4 className="text-sm font-medium text-foreground">Upload an avatar</h4>
-          <p className="text-xs text-muted-foreground">PNG, JPG, GIF or SVG. Max 1MB.</p>
+          <p className="text-sm text-muted-foreground">PNG, JPG, GIF or SVG. Max 1MB.</p>
         </div>
 
         <Upload
@@ -72,7 +72,7 @@ export const UploadAvatarTab = memo<UploadAvatarTabProps>(
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-foreground truncate">Uploaded avatar</div>
-                <div className="text-xs text-muted-foreground truncate break-all">
+                <div className="text-sm text-muted-foreground truncate break-all">
                   {avatarUrl?.slice(0, 40)}...
                 </div>
               </div>

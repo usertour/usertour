@@ -47,7 +47,7 @@ export function ConditionInlineSelect({
           type="button"
           disabled={disabled}
           className={cn(
-            'inline-flex items-center gap-1 rounded text-xs font-medium text-primary outline-none transition-colors hover:text-primary/80 focus-visible:ring-1 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50',
+            'inline-flex items-center gap-1 rounded text-sm font-medium text-primary outline-none transition-colors hover:text-primary/80 focus-visible:ring-1 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50',
             className,
           )}
         >

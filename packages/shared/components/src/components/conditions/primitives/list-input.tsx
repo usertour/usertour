@@ -63,7 +63,7 @@ export function ListInput({
       <button
         type="button"
         onClick={() => onChange([...items, ''])}
-        className="inline-flex items-center gap-1 self-start rounded text-[11px] font-medium text-primary transition-colors hover:text-primary/80"
+        className="inline-flex items-center gap-1 self-start rounded text-sm font-medium text-primary transition-colors hover:text-primary/80"
       >
         <RiAddLine className="h-3 w-3" />
         {t(addLabelKey)}

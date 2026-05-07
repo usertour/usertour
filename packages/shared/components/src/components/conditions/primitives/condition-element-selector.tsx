@@ -124,7 +124,7 @@ interface FieldProps {
 function Field({ label, tooltip, children }: FieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+      <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
         <span>{label}</span>
         <QuestionTooltip>{tooltip}</QuestionTooltip>
       </div>

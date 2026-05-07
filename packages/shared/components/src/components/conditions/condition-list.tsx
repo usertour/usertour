@@ -68,7 +68,7 @@ function LogicToggler({ logic, onToggle, disabled, isHorizontal }: LogicTogglerP
       className={cn(
         'inline-flex shrink-0 shadow-sm border border-input/60 bg-background font-medium text-muted-foreground transition-colors hover:border-input hover:bg-muted/40 hover:text-foreground focus-visible:bg-muted/40 focus-visible:text-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60',
         isHorizontal
-          ? 'rounded-lg px-3 py-1.5 text-xs items-center gap-1'
+          ? 'rounded-lg px-3 py-1.5 text-sm items-center gap-1'
           : 'h-6 rounded-md px-2 text-[11px] items-center gap-0.5',
       )}
     >

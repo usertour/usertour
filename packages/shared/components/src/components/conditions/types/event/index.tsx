@@ -208,7 +208,7 @@ function EventEditor({ condition, onChange }: EditorProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
-        <div className="text-[11px] font-medium text-muted-foreground">
+        <div className="text-sm font-medium text-muted-foreground">
           {t('conditions.types.event.eventLabel')}
         </div>
         <ConditionCombobox
@@ -367,7 +367,7 @@ function EventWhereSection({ condition, onChange, data }: WhereProps) {
 
   return (
     <div className="flex flex-col gap-2 border-t border-border/50 pt-2">
-      <div className="text-[11px] font-medium text-muted-foreground">
+      <div className="text-sm font-medium text-muted-foreground">
         {t('conditions.types.event.whereLabel')}
       </div>
       <EventScopeContext.Provider value={data.eventId}>

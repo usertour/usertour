@@ -22,7 +22,7 @@ export const ConditionPopoverContent = forwardRef<HTMLDivElement, ContentProps>(
         ref={ref}
         align={align}
         sideOffset={sideOffset}
-        className={cn('w-auto rounded-lg p-3 text-xs shadow-lg', className)}
+        className={cn('w-auto rounded-lg p-3 text-sm shadow-lg', className)}
         style={{ zIndex: popover }}
         {...props}
       >

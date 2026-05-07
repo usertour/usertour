@@ -39,7 +39,7 @@ interface Props {
 
 // Searchable picker. Used wherever the user picks from a long list (attributes,
 // events, contents, segments). Visually matches the rest of the conditions
-// chrome (h-7.5 trigger, text-xs, rounded-lg).
+// chrome (h-7.5 trigger, text-sm, rounded-lg).
 export function ConditionCombobox({
   value,
   onChange,
@@ -74,7 +74,7 @@ export function ConditionCombobox({
           onChange(item.value);
           setOpen(false);
         }}
-        className="text-xs"
+        className="text-sm"
       >
         {item.leading ? (
           <span className="mr-2 inline-flex items-center">{item.leading}</span>
@@ -102,7 +102,7 @@ export function ConditionCombobox({
             // Focus ring matches the atomic Input / SelectTrigger compact
             // family (3px ring + border-ring) so all chip-popover triggers
             // share the same focus treatment.
-            'flex h-7.5 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-xs text-foreground shadow-sm outline-none transition-colors hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
+            'flex h-7.5 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none transition-colors hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
             className,
           )}
         >
@@ -115,13 +115,13 @@ export function ConditionCombobox({
         // fixed 260px — when the trigger lives in a wider editor popover
         // (e.g. event chip's 360px panel) a hard-coded 260px reads as a
         // visible width mismatch with the button right above it.
-        className="w-[var(--radix-popper-anchor-width)] rounded-lg p-0 text-xs"
+        className="w-[var(--radix-popper-anchor-width)] rounded-lg p-0 text-sm"
         align="start"
         sideOffset={6}
         style={{ zIndex: popover }}
       >
         <Command>
-          <CommandInput placeholder={searchPlaceholder} className="h-8 text-xs" />
+          <CommandInput placeholder={searchPlaceholder} className="h-8 text-sm" />
           {/*
            * Use cmdk's CommandList (native overflow-y: auto) rather than
            * Radix ScrollArea here. ScrollArea's viewport relies on h-full
@@ -131,7 +131,7 @@ export function ConditionCombobox({
            * keyboard-nav and CommandEmpty visibility expect to live.
            */}
           <CommandList>
-            <CommandEmpty className="py-3 text-center text-xs text-muted-foreground">
+            <CommandEmpty className="py-3 text-center text-sm text-muted-foreground">
               {emptyText}
             </CommandEmpty>
             {groups

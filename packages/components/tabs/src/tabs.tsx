@@ -80,7 +80,7 @@ const underlineTabsTriggerVariants = cva(
       variant: {
         default: 'text-sm',
         // Compact — used inside dense panels (theme-builder inspector tabs).
-        compact: 'text-xs',
+        compact: 'text-sm',
       },
     },
     defaultVariants: { variant: 'default' },

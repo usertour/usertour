@@ -65,7 +65,7 @@ export function ImageUploadWidget({
 
   return (
     <div className="rounded-lg border bg-background p-4">
-      {description && <p className="mb-3 text-xs text-muted-foreground">{description}</p>}
+      {description && <p className="mb-3 text-sm text-muted-foreground">{description}</p>}
       <Upload
         accept={ACCEPT_IMAGE_TYPES}
         customRequest={handleFile}
@@ -118,7 +118,7 @@ export function ImageUploadWidget({
               <div className="truncate text-sm font-medium text-foreground">
                 {t('themeBuilder.actions.uploadedImage')}
               </div>
-              <div className="truncate break-all text-xs text-muted-foreground">{value}</div>
+              <div className="truncate break-all text-sm text-muted-foreground">{value}</div>
             </div>
           </div>
           <Button

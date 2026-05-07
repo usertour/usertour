@@ -33,7 +33,7 @@ export function ConditionIfCompleted({
         className="data-[state=unchecked]:bg-input"
         onCheckedChange={(checked) => onCheckedChange(checked === true)}
       />
-      <Label htmlFor={id} className="cursor-pointer text-xs font-normal">
+      <Label htmlFor={id} className="cursor-pointer text-sm font-normal">
         {t('conditions.standalone.ifCompleted.label')}
       </Label>
       <QuestionTooltip>

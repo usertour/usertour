@@ -208,7 +208,7 @@ function FrequencyEvery({
             {t('conditions.standalone.frequency.atLeastTwo')}
           </ConditionErrorTooltipContent>
         </ConditionErrorTooltip>
-        <span className="text-xs">{t('conditions.standalone.frequency.timesComma')}</span>
+        <span className="text-sm">{t('conditions.standalone.frequency.timesComma')}</span>
         <Input
           variant="compact"
           type="text"
@@ -223,7 +223,7 @@ function FrequencyEvery({
           options={unitOptions}
           disabled={disabled}
         />
-        <span className="text-xs">{t('conditions.standalone.frequency.apart')}</span>
+        <span className="text-sm">{t('conditions.standalone.frequency.apart')}</span>
         <QuestionTooltip>
           {t('conditions.standalone.frequency.multipleTooltip', {
             contentType,
@@ -238,7 +238,7 @@ function FrequencyEvery({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs">{t('conditions.standalone.frequency.every')}</span>
+      <span className="text-sm">{t('conditions.standalone.frequency.every')}</span>
       <Input
         variant="compact"
         type="text"
@@ -283,7 +283,7 @@ function FrequencyAtLeast({
 }: AtLeastProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs">{t('conditions.standalone.frequency.atLeast')}</span>
+      <span className="text-sm">{t('conditions.standalone.frequency.atLeast')}</span>
       <Input
         variant="compact"
         type="text"
@@ -298,7 +298,7 @@ function FrequencyAtLeast({
         options={unitOptions}
         disabled={disabled}
       />
-      <span className="text-xs">
+      <span className="text-sm">
         {t('conditions.standalone.frequency.afterAny', { contentType })}
       </span>
       <QuestionTooltip>

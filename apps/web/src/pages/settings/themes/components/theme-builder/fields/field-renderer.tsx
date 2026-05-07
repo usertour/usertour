@@ -117,7 +117,7 @@ export function FieldRenderer({ field }: Props) {
     case 'font-family':
       return <FontFamilyField path={field.path} label={t(field.label)} />;
     case 'group-header':
-      return <h4 className="pt-2 text-xs font-medium text-foreground">{t(field.label)}</h4>;
+      return <h4 className="pt-2 text-sm font-medium text-foreground">{t(field.label)}</h4>;
     case 'separator':
       return <div className="my-3 h-px w-full bg-border/60" />;
     case 'dynamic-number': {

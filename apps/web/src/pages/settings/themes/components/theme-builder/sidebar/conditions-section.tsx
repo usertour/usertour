@@ -24,7 +24,7 @@ export function ConditionsSection({
 
   return (
     <div className="space-y-2 border-b border-border/50 px-3 py-3">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <span>
           <Trans
             i18nKey="themeBuilder.chrome.applyWhen"

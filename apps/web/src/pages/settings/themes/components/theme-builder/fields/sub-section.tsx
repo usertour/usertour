@@ -12,7 +12,7 @@ export function SubSection({ label, fields, withSeparator }: Props) {
     <>
       {withSeparator && <div className="my-3 h-px w-full bg-border/60" />}
       <div className="space-y-3">
-        {label && <h4 className="text-xs font-semibold text-foreground">{label}</h4>}
+        {label && <h4 className="text-sm font-semibold text-foreground">{label}</h4>}
         {fields.map((field, index) => (
           <FieldRenderer key={fieldKey(field, index)} field={field} />
         ))}

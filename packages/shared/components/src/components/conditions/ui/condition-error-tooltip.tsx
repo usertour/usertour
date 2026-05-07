@@ -10,7 +10,7 @@ export const ConditionErrorTooltipAnchor = ErrorTooltipAnchor;
 
 type ContentProps = ComponentPropsWithoutRef<typeof ErrorTooltipContent>;
 
-// Wraps shared ErrorTooltipContent with conditions defaults: text-xs (matches
+// Wraps shared ErrorTooltipContent with conditions defaults: text-sm (matches
 // the 12px rhythm of chips, inputs, and inline-sentence rows — the shared
 // default of text-sm reads two tiers too large in this context) and the
 // conditions z-index from context so the bubble stacks above the editor
@@ -21,7 +21,7 @@ export const ConditionErrorTooltipContent = forwardRef<HTMLDivElement, ContentPr
     return (
       <ErrorTooltipContent
         ref={ref}
-        className={cn('text-xs', className)}
+        className={cn('text-sm', className)}
         zIndex={zIndex ?? defaultZIndex}
         {...props}
       >

@@ -31,13 +31,13 @@ const inputVariants = cva(
         // Compact bordered — 30px / 12px / soft border on white. Used in
         // chip-popover form fields and other dense bordered contexts.
         compact:
-          'h-7.5 rounded-lg border border-input bg-background px-3 py-1 text-xs shadow-sm md:text-xs',
-        // Compact muted — 30px / 12px / bg-muted with the same soft border
+          'h-7.5 rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm md:text-sm',
+        // Compact muted — 30px / 14px / bg-muted with the same soft border
         // as bordered (kept so muted+bordered ≈ visual rendering of the
         // legacy CompactInput, which was muted-on-bordered-base by way of
         // class inheritance). Used in dense settings / inspector panels.
         'compact-muted':
-          'h-7.5 rounded-lg border border-input bg-muted px-3 py-1 text-xs shadow-sm md:text-xs',
+          'h-7.5 rounded-lg border border-input bg-muted px-3 py-1 text-sm shadow-sm md:text-sm',
       },
     },
     defaultVariants: { variant: 'default' },

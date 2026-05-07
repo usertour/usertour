@@ -57,13 +57,13 @@ export function BuilderFontPicker({ value, onChange, disabled, id }: Props) {
           // (Input / SelectTrigger / Button / ColorButton) — 3px ring +
           // border-ring + ring/50. Previously this trigger had no
           // focus-visible style at all, so keyboard users got no feedback.
-          className="flex h-7.5 w-full items-center justify-between rounded-lg bg-muted px-3 text-xs text-foreground shadow-sm outline-none transition-colors hover:bg-muted/70 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-7.5 w-full items-center justify-between rounded-lg bg-muted px-3 text-sm text-foreground shadow-sm outline-none transition-colors hover:bg-muted/70 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="truncate">{triggerLabel}</span>
           <RiExpandUpDownLine className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0 text-xs [&_*]:text-xs">
+      <PopoverContent className="w-[280px] p-0 text-sm [&_*]:text-sm">
         <Command>
           <CommandInput placeholder={t('themeBuilder.fontPicker.searchPlaceholder')} />
           <CommandEmpty>{t('themeBuilder.fontPicker.noItemsFound')}</CommandEmpty>

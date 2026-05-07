@@ -91,7 +91,7 @@ export function EditableTitle({ value, onRename, disabled, className }: Props) {
           // Focus ring matches the atomic Input compact family (3px ring +
           // border-ring + ring/50). The rest stays minimal so the inline
           // edit reads as "renaming in place" rather than "form field".
-          '-mx-1 rounded border border-input bg-background px-1 text-xs font-medium text-foreground shadow-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+          '-mx-1 rounded border border-input bg-background px-1 text-sm font-medium text-foreground shadow-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
           className,
         )}
       />
@@ -104,7 +104,7 @@ export function EditableTitle({ value, onRename, disabled, className }: Props) {
       onClick={beginEdit}
       disabled={disabled}
       className={cn(
-        'group flex min-w-0 items-center gap-1 -mx-1 rounded px-1 text-xs font-medium text-foreground transition-colors',
+        'group flex min-w-0 items-center gap-1 -mx-1 rounded px-1 text-sm font-medium text-foreground transition-colors',
         disabled ? 'cursor-default' : 'cursor-pointer hover:bg-muted/40',
         className,
       )}

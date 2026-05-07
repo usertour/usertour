@@ -63,11 +63,11 @@ export function NumberField({
         className={suffix ? 'pr-8' : undefined}
       />
       {suffix && (
-        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-muted-foreground">
+        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">
           {suffix}
         </span>
       )}
-      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+      {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
     </FieldRow>
   );
 }

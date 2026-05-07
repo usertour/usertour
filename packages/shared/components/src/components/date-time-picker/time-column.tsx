@@ -37,7 +37,7 @@ export function TimeColumn({ value, onChange, range, className }: Props) {
             type="button"
             onClick={() => onChange(n)}
             className={cn(
-              'flex w-full items-center justify-center rounded text-xs outline-none transition-colors',
+              'flex w-full items-center justify-center rounded text-sm outline-none transition-colors',
               selected
                 ? 'bg-primary font-medium text-primary-foreground'
                 : 'text-foreground hover:bg-muted/50 focus-visible:bg-muted/50',

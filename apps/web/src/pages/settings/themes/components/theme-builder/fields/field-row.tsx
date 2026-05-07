@@ -20,7 +20,7 @@ export function FieldRow({ label, htmlFor, children, controlClassName, forceVert
   if (isLong) {
     return (
       <div className="space-y-1.5">
-        <label htmlFor={htmlFor} className="block text-xs font-medium leading-none">
+        <label htmlFor={htmlFor} className="block text-sm font-medium leading-none">
           {label}
         </label>
         <div className={cn('relative w-full', controlClassName)}>{children}</div>
@@ -29,7 +29,7 @@ export function FieldRow({ label, htmlFor, children, controlClassName, forceVert
   }
   return (
     <div className="flex items-center">
-      <label htmlFor={htmlFor} className="grow text-xs font-medium leading-9">
+      <label htmlFor={htmlFor} className="grow text-sm font-medium leading-9">
         {label}
       </label>
       <div className={cn('relative w-36 flex-none', controlClassName)}>{children}</div>

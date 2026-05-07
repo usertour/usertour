@@ -42,7 +42,7 @@ export function CompactSelect({
       </SelectTrigger>
       <SelectContent>
         {options.map((opt) => (
-          <SelectItem key={opt.value} value={opt.value} className="text-xs">
+          <SelectItem key={opt.value} value={opt.value} className="text-sm">
             {opt.label}
           </SelectItem>
         ))}

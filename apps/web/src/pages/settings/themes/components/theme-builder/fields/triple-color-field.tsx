@@ -32,7 +32,7 @@ function Cell({ path, label, allowAuto, position }: CellProps) {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-medium leading-none">
+      <label htmlFor={id} className="text-sm font-medium leading-none">
         {label}
       </label>
       <Popover open={open} onOpenChange={isReadOnly ? undefined : setOpen}>

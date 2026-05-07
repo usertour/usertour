@@ -27,11 +27,11 @@ const selectTriggerVariants = cva(
       variant: {
         default: 'h-9 rounded-md bg-transparent text-sm',
         // Compact muted — dense inspector / settings panels (theme builder).
-        'compact-muted': 'h-7.5 rounded-lg bg-muted text-xs',
+        'compact-muted': 'h-7.5 rounded-lg bg-muted text-sm',
         // Compact bordered — chip-popover form fields. Exposed for symmetry
         // with Input; Conditions itself uses a DropdownMenu under the hood
         // (Radix Select doesn't share a layer chain with Popover).
-        compact: 'h-7.5 rounded-lg bg-background text-xs',
+        compact: 'h-7.5 rounded-lg bg-background text-sm',
       },
     },
     defaultVariants: { variant: 'default' },

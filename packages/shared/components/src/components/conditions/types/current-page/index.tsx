@@ -84,7 +84,7 @@ function CurrentPageEditor({ condition, onChange }: EditorProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
-        <div className="text-[11px] font-medium text-muted-foreground">
+        <div className="text-sm font-medium text-muted-foreground">
           {t('conditions.types.currentPage.urlMatches')}
         </div>
         <ListInput
@@ -95,7 +95,7 @@ function CurrentPageEditor({ condition, onChange }: EditorProps) {
         />
       </div>
       <div className="flex flex-col gap-1.5">
-        <div className="text-[11px] font-medium text-muted-foreground">
+        <div className="text-sm font-medium text-muted-foreground">
           {t('conditions.types.currentPage.urlNotMatches')}
         </div>
         <ListInput
@@ -109,7 +109,7 @@ function CurrentPageEditor({ condition, onChange }: EditorProps) {
         href="https://docs.usertour.io/how-to-guides/urls/"
         target="_blank"
         rel="noreferrer"
-        className="text-[11px] text-primary hover:text-primary/80"
+        className="text-sm text-primary hover:text-primary/80"
       >
         {t('conditions.types.currentPage.docsLink')}
       </a>

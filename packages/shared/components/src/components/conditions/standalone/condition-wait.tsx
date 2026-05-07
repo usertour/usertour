@@ -44,7 +44,7 @@ export function ConditionWait({
   return (
     <ConditionErrorTooltip open={openError}>
       <div className="flex items-center gap-2">
-        <span className="text-xs">{t('conditions.standalone.wait.before')}</span>
+        <span className="text-sm">{t('conditions.standalone.wait.before')}</span>
         <ConditionErrorTooltipAnchor asChild>
           <Input
             variant="compact"
@@ -55,7 +55,7 @@ export function ConditionWait({
             className="w-16"
           />
         </ConditionErrorTooltipAnchor>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           {t('conditions.standalone.wait.suffix')}
         </span>
         <QuestionTooltip>{t('conditions.standalone.wait.tooltip')}</QuestionTooltip>

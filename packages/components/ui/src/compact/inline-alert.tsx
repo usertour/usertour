@@ -12,7 +12,7 @@ export function InlineAlert({ message, variant = 'warning' }: Props) {
   return (
     <Alert variant={variant === 'info' ? 'default' : variant}>
       {variant === 'warning' && <WarningIcon className="h-4 w-4" />}
-      <AlertDescription className="text-xs">{message}</AlertDescription>
+      <AlertDescription className="text-sm">{message}</AlertDescription>
     </Alert>
   );
 }

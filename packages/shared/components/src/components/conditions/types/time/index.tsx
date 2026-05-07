@@ -89,7 +89,7 @@ function TimeEditor({ condition, onChange }: EditorProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
-        <div className="text-[11px] font-medium text-muted-foreground">
+        <div className="text-sm font-medium text-muted-foreground">
           {t('conditions.types.time.startLabel')}
         </div>
         <DateTimePicker
@@ -98,7 +98,7 @@ function TimeEditor({ condition, onChange }: EditorProps) {
         />
       </div>
       <div className="flex flex-col gap-1.5">
-        <div className="text-[11px] font-medium text-muted-foreground">
+        <div className="text-sm font-medium text-muted-foreground">
           {t('conditions.types.time.endLabel')}
         </div>
         <DateTimePicker

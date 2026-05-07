@@ -18,7 +18,7 @@ const dropdownMenuContentVariants = cva(
         // --radix-popper-anchor-width don't accidentally inflate when
         // the trigger is narrower than 128px (e.g. tiny time-unit selects
         // inside chip-popover editors). Tighter rounded-lg + p-1 padding.
-        compact: 'rounded-lg p-1 text-xs',
+        compact: 'rounded-lg p-1 text-sm',
       },
     },
     defaultVariants: { variant: 'default' },
@@ -35,7 +35,7 @@ const dropdownMenuItemVariants = cva(
     variants: {
       variant: {
         default: 'px-2 py-1.5 text-sm',
-        compact: 'gap-2 px-2 py-1 text-xs leading-tight',
+        compact: 'gap-2 px-2 py-1 text-sm leading-tight',
       },
     },
     defaultVariants: { variant: 'default' },
@@ -239,7 +239,7 @@ DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
 
 const DropdownMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
-    <span className={cn('ml-auto text-xs tracking-widest opacity-60', className)} {...props} />
+    <span className={cn('ml-auto text-sm tracking-widest opacity-60', className)} {...props} />
   );
 };
 DropdownMenuShortcut.displayName = 'DropdownMenuShortcut';

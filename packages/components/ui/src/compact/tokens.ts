@@ -3,13 +3,13 @@
 // inside each component file.
 
 // Section labels (form / inspector titles)
-export const sectionLabelClass = 'text-xs font-medium text-muted-foreground';
+export const sectionLabelClass = 'text-sm font-medium text-muted-foreground';
 
 // List rows (variation list, navigation). Focus uses bg-shift (no ring)
 // because list rows flow vertically — a 3px ring would visually bleed into
 // the rows above/below. Same pattern as chip surfaces in Conditions.
 export const listRowClass =
-  'group flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-foreground outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:text-foreground';
+  'group flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-foreground outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:text-foreground';
 export const listRowSelectedClass = 'bg-primary/10 text-primary hover:bg-primary/15';
 
 // Pills (system / status tags)
