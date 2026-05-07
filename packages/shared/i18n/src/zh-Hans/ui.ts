@@ -737,13 +737,13 @@ const translations = {
         selector: {
           none: '无',
           elementText: '元素文本',
-          elementTextTooltip: 'Usertour 会选择包含此文本的元素。',
+          elementTextTooltip: '输入元素上的一段文字 —— Usertour 会找到包含这段文字的元素。',
           cssSelector: 'CSS 选择器',
           cssSelectorTooltip:
-            '高级功能:有文本时优先用文本选择。元素没有文本或文本过于通用时可以用 CSS 选择器,两者同时填写则要求两者都匹配。',
+            '用文本选通常更简单也更稳定,优先试这种。元素没有文本,或者文字太通用没法唯一定位时,改用 CSS 选择器。两个都填的话,Usertour 会匹配同时满足两者的元素。',
           ifMultipleMatches: '匹配到多个时',
           ifMultipleMatchesTooltip:
-            '当多个元素都匹配时,可以告诉 Usertour 选第几个。排序规则:先按纵向位置(上优先)、再按横向位置(左优先)。',
+            '有多个元素都匹配时,告诉 Usertour 选哪一个。排序是先上后下、再从左到右 —— 最上面、最左边的那个排第一。',
           select1st: '选第 1 个元素',
           select2nd: '选第 2 个元素',
           select3rd: '选第 3 个元素',

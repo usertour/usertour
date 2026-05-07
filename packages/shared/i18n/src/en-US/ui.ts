@@ -755,13 +755,14 @@ const translations = {
         selector: {
           none: 'None',
           elementText: 'Element text',
-          elementTextTooltip: 'Usertour will select an element containing the text you write here.',
+          elementTextTooltip:
+            'Type some text from the element you want to target — Usertour will find an element that contains it.',
           cssSelector: 'CSS selector',
           cssSelectorTooltip:
-            'Advanced feature: if possible, we recommend selecting elements using text. If an element does not have text, or the text is very generic, you can select it using a CSS selector instead. If both text and CSS selector are filled in, Usertour will select an element matching both.',
+            'Picking by text is usually the easier, more stable option — try that first. Use a CSS selector when the element has no text, or its text is too generic to identify a single element. If you fill in both, Usertour matches an element that satisfies both.',
           ifMultipleMatches: 'If multiple matches',
           ifMultipleMatchesTooltip:
-            'If multiple elements match your criteria, you can tell Usertour which of the elements to select. Elements are sorted first by vertical position and second by horizontal position — i.e. an element higher up on the page and more towards the left takes precedence.',
+            'When more than one element matches, pick which one to use. Matches are ordered top-to-bottom first, then left-to-right — so the highest, leftmost match comes first.',
           select1st: 'select 1st element',
           select2nd: 'select 2nd element',
           select3rd: 'select 3rd element',
