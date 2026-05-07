@@ -1,3 +1,4 @@
+import { useRect } from '@usertour-packages/react-use-rect';
 import {
   ResourceCenterRoot,
   ResourceCenterStyleProvider,
@@ -16,7 +17,7 @@ import {
   ThemeTypesSetting,
 } from '@usertour/types';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const richTextWelcome = [
   {
@@ -252,12 +253,27 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
   const { shouldShowMadeWith } = useSubscriptionContext();
 
   const [expandedState, setExpandedState] = useState(expanded);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRect = useRect(containerRef.current);
 
   useEffect(() => {
     setExpandedState(expanded);
   }, [expanded]);
 
   if (!settings) return null;
+
+  // Cap preview panel height to the available canvas so it doesn't overflow
+  // the simulated browser frame. We honor settings.resourceCenter.maxHeight
+  // up to the container height (minus offset + launcher); above that, the
+  // preview saturates at the container's available space. At runtime,
+  // 100vh is the actual browser viewport, so the cap doesn't apply there.
+  const offsetY = settings.resourceCenter?.offsetY ?? 20;
+  const launcherHeight = settings.resourceCenterLauncherButton?.height ?? 60;
+  const maxHeightSetting = settings.resourceCenter?.maxHeight ?? 700;
+  const availableHeight = containerRect
+    ? Math.max(containerRect.height - offsetY * 2 - launcherHeight - 4, 200)
+    : 600;
+  const previewHeight = Math.min(maxHeightSetting, availableHeight);
 
   const previewContent = (
     <>
@@ -271,7 +287,7 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
   );
 
   return (
-    <div className="w-full h-full scale-100">
+    <div ref={containerRef} className="w-full h-full scale-100">
       <ResourceCenterRoot
         data={defaultResourceCenterPreviewData}
         themeSettings={settings}
@@ -284,7 +300,15 @@ export const ThemePreviewResourceCenter = (props: ThemePreviewResourceCenterProp
         contentListItems={previewContentListItems}
       >
         <ResourceCenterStyleProvider>
-          <ResourceCenterPanel mode="dom" openHeightOverride={600}>
+          {/*
+           * openHeightOverride uses min(maxHeightSetting, availableHeight)
+           * so the preview reacts when the user edits maxHeight (up to
+           * the simulated browser's available space) without overflowing
+           * the canvas. Previously a hard-coded 600 short-circuited the
+           * setting entirely; now small values shrink and large values
+           * saturate at the canvas height.
+           */}
+          <ResourceCenterPanel mode="dom" openHeightOverride={previewHeight}>
             {previewContent}
           </ResourceCenterPanel>
         </ResourceCenterStyleProvider>

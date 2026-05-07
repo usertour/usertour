@@ -473,6 +473,7 @@ export const defaultSettings: ThemeTypesSetting = {
     offsetY: 20,
     normalWidth: 360,
     largeWidth: 480,
+    maxHeight: 700,
     transitionDuration: 450,
     dividerLines: true,
     headerBackground: {
@@ -743,6 +744,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
     offsetY: 20,
     normalWidth: 360,
     largeWidth: 480,
+    maxHeight: 700,
     transitionDuration: 450,
     dividerLines: true,
     headerBackground: {
