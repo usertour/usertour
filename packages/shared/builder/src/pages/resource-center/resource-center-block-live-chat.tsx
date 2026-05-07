@@ -17,8 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { Rules } from '@usertour-packages/shared-components';
+import { Conditions } from '@usertour-packages/shared-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
+import { useTranslation } from 'react-i18next';
 import { Switch } from '@usertour-packages/switch';
 import {
   LauncherIconSource,
@@ -152,6 +153,7 @@ const BlockLiveChatBody = () => {
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
+  const { t } = useTranslation();
 
   if (!currentBlock || currentBlock.type !== ResourceCenterBlockType.LIVE_CHAT) {
     return null;
@@ -324,15 +326,16 @@ const BlockLiveChatBody = () => {
               />
             </div>
             {currentBlock.onlyShowBlock && (
-              <Rules
-                onDataChange={handleConditionsChange}
-                defaultConditions={currentBlock.onlyShowBlockConditions ?? []}
+              <Conditions
+                onChange={handleConditionsChange}
+                conditions={currentBlock.onlyShowBlockConditions ?? []}
                 attributes={attributeList}
                 contents={[]}
                 segments={segmentList}
                 events={eventList}
                 token={token}
                 baseZIndex={EXTENSION_CONTENT_RULES}
+                t={t}
               />
             )}
           </div>

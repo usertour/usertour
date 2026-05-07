@@ -11,11 +11,12 @@ import { PopperEditorMini } from '@usertour-packages/shared-editor';
 import type { Descendant } from '@usertour-packages/shared-editor';
 import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { Rules } from '@usertour-packages/shared-components';
+import { Conditions } from '@usertour-packages/shared-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
+import { useTranslation } from 'react-i18next';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
@@ -56,6 +57,7 @@ const BlockSubPageBody = () => {
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
+  const { t } = useTranslation();
 
   if (!currentBlock || currentBlock.type !== ResourceCenterBlockType.SUB_PAGE) {
     return null;
@@ -149,15 +151,16 @@ const BlockSubPageBody = () => {
               />
             </div>
             {currentBlock.onlyShowBlock && (
-              <Rules
-                onDataChange={handleConditionsChange}
-                defaultConditions={currentBlock.onlyShowBlockConditions ?? []}
+              <Conditions
+                onChange={handleConditionsChange}
+                conditions={currentBlock.onlyShowBlockConditions ?? []}
                 attributes={attributeList}
                 contents={[]}
                 segments={segmentList}
                 events={eventList}
                 token={token}
                 baseZIndex={EXTENSION_CONTENT_RULES}
+                t={t}
               />
             )}
           </div>

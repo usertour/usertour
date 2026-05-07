@@ -1,6 +1,10 @@
 // Button popover content component
 
-import { SelectPopover, SelectPopoverOption, Rules } from '@usertour-packages/shared-components';
+import {
+  Conditions,
+  SelectPopover,
+  SelectPopoverOption,
+} from '@usertour-packages/shared-components';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
@@ -8,6 +12,7 @@ import { Switch } from '@usertour-packages/switch';
 import type { Attribute, Content, ContentVersion, Segment, Step } from '@usertour/types';
 import { RulesCondition, ButtonSemanticType } from '@usertour/types';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ContentActions } from '../../..';
 import type { ContentEditorButtonElement } from '../../../types/editor';
@@ -90,6 +95,8 @@ export const ButtonPopoverContent = memo(
     contentList,
     createStep,
   }: ButtonPopoverContentProps) => {
+    const { t } = useTranslation();
+
     // Wrapper to handle SelectPopover's string return value
     const handleStyleChange = (value: string) => {
       onButtonStyleChange(value as ButtonSemanticType);
@@ -150,15 +157,16 @@ export const ButtonPopoverContent = memo(
             />
           </div>
           {element.data?.disableButton && (
-            <Rules
-              onDataChange={onDisableConditionsChange}
-              defaultConditions={element.data?.disableButtonConditions ?? []}
+            <Conditions
+              onChange={onDisableConditionsChange ?? (() => {})}
+              conditions={element.data?.disableButtonConditions ?? []}
               attributes={attributes}
               contents={contentList}
               segments={segments}
               token={token}
               baseZIndex={zIndex}
               filterItems={BUTTON_CONDITION_FILTER_ITEMS}
+              t={t}
             />
           )}
         </div>
@@ -176,15 +184,16 @@ export const ButtonPopoverContent = memo(
             />
           </div>
           {element.data?.hideButton && (
-            <Rules
-              onDataChange={onHideConditionsChange}
-              defaultConditions={element.data?.hideButtonConditions ?? []}
+            <Conditions
+              onChange={onHideConditionsChange ?? (() => {})}
+              conditions={element.data?.hideButtonConditions ?? []}
               attributes={attributes}
               contents={contentList}
               segments={segments}
               token={token}
               baseZIndex={zIndex}
               filterItems={BUTTON_CONDITION_FILTER_ITEMS}
+              t={t}
             />
           )}
         </div>

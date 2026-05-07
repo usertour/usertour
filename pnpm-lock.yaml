@@ -3478,6 +3478,9 @@ importers:
       react-hook-form:
         specifier: ^7.44.2
         version: 7.53.1(react@18.2.0)
+      react-i18next:
+        specifier: ^15.6.0
+        version: 15.6.1(i18next@25.3.2(typescript@5.3.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.3.3)
       react-redux:
         specifier: ^8.1.1
         version: 8.1.3(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(redux@4.2.1)
@@ -3952,6 +3955,9 @@ importers:
       react-hook-form:
         specifier: ^7.44.2
         version: 7.53.1(react@18.2.0)
+      react-i18next:
+        specifier: ^15.6.0
+        version: 15.6.1(i18next@25.3.2(typescript@5.3.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.3.3)
       react-rnd:
         specifier: ^10.4.1
         version: 10.4.13(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
