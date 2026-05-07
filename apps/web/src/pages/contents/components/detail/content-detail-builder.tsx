@@ -4,7 +4,7 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 import { WebBuilder } from '@usertour-packages/builder';
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface ContentDetailBuilderProps {
@@ -19,20 +19,37 @@ interface ContentDetailBuilderProps {
 export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
   const { contentId, environmentId, contentType, initialStepIndex } = props;
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const { loading: environmentLoading } = useEnvironmentListContext();
   const { loading: attributeLoading } = useAttributeListContext();
   const { loading: subscriptionLoading, shouldShowMadeWith } = useSubscriptionContext();
   const { loading: appLoading } = useAppContext();
 
-  // Clear step query parameter after it's been captured
-  useEffect(() => {
-    if (searchParams.has('step')) {
-      searchParams.delete('step');
-      setSearchParams(searchParams, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Mirror the active step into the URL so refresh / browser back keep the
+  // user in the same panel. Use replace so internal mode flips don't pollute
+  // history (only true page navigations should add entries).
+  const handleStepIndexChange = useCallback(
+    (stepIndex: number | undefined) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          const current = next.get('step');
+          const desired = stepIndex !== undefined ? String(stepIndex) : null;
+          if (current === desired) {
+            return prev;
+          }
+          if (desired === null) {
+            next.delete('step');
+          } else {
+            next.set('step', desired);
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const handleOnSaved = async () => {
     const url = `/env/${environmentId}/${contentType}/${contentId}/detail`;
@@ -49,6 +66,7 @@ export const ContentDetailBuilder = (props: ContentDetailBuilderProps) => {
     <WebBuilder
       {...props}
       initialStepIndex={initialStepIndex}
+      onStepIndexChange={handleStepIndexChange}
       onSaved={handleOnSaved}
       usertourjsUrl={`${import.meta.env.VITE_USERTOUR_JSURL}`}
       shouldShowMadeWith={shouldShowMadeWith}
