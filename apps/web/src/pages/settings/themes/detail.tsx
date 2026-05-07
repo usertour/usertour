@@ -5,17 +5,14 @@ import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { useCallback } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeBuilder } from './components/theme-builder';
-import { ThemeDetailContent } from './components/theme-detail-content';
-import { ThemeDetailHeader } from './components/theme-detail-header';
 import { ContentLoading } from '@/components/molecules/content-loading';
 
 // Inner component that uses the context
 const ThemeDetailInner = () => {
   const { loading, theme, refetch } = useThemeDetailContext();
   const { projectId } = useParams();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [updateMutation] = useMutation(updateTheme);
   const { toast } = useToast();
@@ -41,13 +38,9 @@ const ThemeDetailInner = () => {
     [theme, updateMutation, refetch, toast],
   );
 
-  if (loading) {
-    return <ContentLoading message="Loading theme details..." />;
-  }
-
-  if (searchParams.get('builder') === 'v2' && theme) {
-    const themesListPath = projectId ? `/project/${projectId}/settings/themes` : null;
-    const handleRename = async (name: string) => {
+  const handleRename = useCallback(
+    async (name: string) => {
+      if (!theme) return;
       try {
         await updateMutation({
           variables: {
@@ -62,29 +55,34 @@ const ThemeDetailInner = () => {
         toast({ variant: 'destructive', title: getErrorMessage(error) });
         throw error;
       }
-    };
-    return (
-      <ThemeBuilder
-        theme={theme}
-        onBack={() => navigate(-1)}
-        onSave={handleSave}
-        onRename={handleRename}
-        onActionComplete={(action) => {
-          if (action === 'delete') {
-            if (themesListPath) navigate(themesListPath);
-          } else {
-            refetch();
-          }
-        }}
-      />
-    );
+    },
+    [theme, updateMutation, refetch, toast],
+  );
+
+  if (loading) {
+    return <ContentLoading message="Loading theme details..." />;
   }
 
+  if (!theme) {
+    return null;
+  }
+
+  const themesListPath = projectId ? `/project/${projectId}/settings/themes` : null;
+
   return (
-    <div className="hidden flex-col md:flex">
-      <ThemeDetailHeader />
-      <ThemeDetailContent />
-    </div>
+    <ThemeBuilder
+      theme={theme}
+      onBack={() => navigate(-1)}
+      onSave={handleSave}
+      onRename={handleRename}
+      onActionComplete={(action) => {
+        if (action === 'delete') {
+          if (themesListPath) navigate(themesListPath);
+        } else {
+          refetch();
+        }
+      }}
+    />
   );
 };
 

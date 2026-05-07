@@ -98,8 +98,7 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
     edge: 'left',
   });
 
-  // Warn before closing / refreshing the tab when there are unsaved changes,
-  // matching v1's theme-detail-header behavior.
+  // Warn before closing / refreshing the tab when there are unsaved changes.
   useEvent('beforeunload', (e: BeforeUnloadEvent) => {
     if (draft.hasUnsavedChanges) {
       e.preventDefault();

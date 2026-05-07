@@ -16,7 +16,7 @@ import { ThemePreviewLauncher } from '../../preview/theme-preview-launcher';
 import { ThemePreviewModal } from '../../preview/theme-preview-modal';
 import { ThemePreviewPopper } from '../../preview/theme-preview-popper';
 import { ThemePreviewResourceCenter } from '../../preview/theme-preview-resource-center';
-import type { Rect } from '../../theme-editor';
+import type { Rect } from '../../preview/types';
 import { WidgetSwitcher } from '../top-bar/widget-switcher';
 import { BannerPreview } from './banner-preview';
 import { BrowserFrame } from './browser-frame';
