@@ -25,8 +25,8 @@ import { TopBar } from './top-bar/top-bar';
 import { useResizable } from './use-resizable';
 import { useThemeDraft } from './use-theme-draft';
 
-const LEFT_SIDEBAR = { default: 240, min: 180, max: 360 };
-const RIGHT_SIDEBAR = { default: 280, min: 280, max: 480 };
+const LEFT_SIDEBAR = { default: 280, min: 180, max: 360 };
+const RIGHT_SIDEBAR = { default: 320, min: 280, max: 480 };
 
 interface Props {
   theme: Theme;
