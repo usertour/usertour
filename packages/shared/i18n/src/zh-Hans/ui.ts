@@ -64,6 +64,7 @@ const translations = {
     detail: {
       title: '用户详情',
       breadcrumb: '用户',
+      actionsMenu: '用户操作',
       notFound: '未找到用户。',
       userDetails: '用户详情',
       userAttributes: '用户属性',
@@ -129,6 +130,7 @@ const translations = {
       },
       detail: {
         breadcrumb: '会话',
+        actionsMenu: '会话操作',
         notFound: '未找到会话或数据不完整。',
         unnamedUser: '未命名用户',
         sessionInfo: '会话信息',
@@ -212,6 +214,7 @@ const translations = {
     detail: {
       title: '公司详情',
       breadcrumb: '公司',
+      actionsMenu: '公司操作',
       notFound: '未找到公司。',
       companyDetails: '公司详情',
       companyAttributes: '公司属性',

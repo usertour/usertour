@@ -67,6 +67,7 @@ const translations = {
     detail: {
       title: 'User Detail',
       breadcrumb: 'Users',
+      actionsMenu: 'User actions',
       notFound: 'User not found.',
       userDetails: 'User details',
       userAttributes: 'User attributes',
@@ -138,6 +139,7 @@ const translations = {
       },
       detail: {
         breadcrumb: 'Session',
+        actionsMenu: 'Session actions',
         notFound: 'Session not found or incomplete data.',
         unnamedUser: 'Unnamed user',
         sessionInfo: 'Session info',
@@ -222,6 +224,7 @@ const translations = {
     detail: {
       title: 'Company Detail',
       breadcrumb: 'Companies',
+      actionsMenu: 'Company actions',
       notFound: 'Company not found.',
       companyDetails: 'Company details',
       companyAttributes: 'Company attributes',
