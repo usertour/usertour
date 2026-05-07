@@ -162,7 +162,7 @@ export const ContentDetailHeader = () => {
             />
           </div>
 
-          <MainNav className="ml-2" />
+          <MainNav className="ml-6" />
 
           {/* Right cluster: status + Edit In Builder + Publish + More */}
           <div className="ml-auto flex shrink-0 items-center gap-3">
