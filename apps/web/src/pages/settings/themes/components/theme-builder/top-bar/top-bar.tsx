@@ -1,6 +1,12 @@
+import { Badge } from '@usertour-packages/badge';
 import { Button } from '@usertour-packages/button';
-import { RiArrowLeftLine } from '@usertour-packages/icons';
-import { pillClass } from '@usertour-packages/ui';
+import { RiArrowLeftLine, RiShieldCheckFill } from '@usertour-packages/icons';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@usertour-packages/tooltip';
 import type { Theme } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { ThemeEditDropdownMenu } from '../../theme-edit-dropmenu';
@@ -55,7 +61,33 @@ export function TopBar({
         <div className="flex min-w-0 items-center gap-2">
           <EditableTitle value={theme.name} onRename={onRename} disabled={theme.isSystem} />
           {theme.isSystem && (
-            <span className={pillClass}>{t('themeBuilder.chrome.systemPill')}</span>
+            // Same shape as the System badges on Events / Attributes lists
+            // (shield + sentence-case label, secondary muted surface) so users
+            // recognize the marker across the app. Wrapped in a tooltip so
+            // hovering explains *why* the theme is read-only — v1 had this
+            // info inline as a sentence; pill alone wasn't self-explanatory.
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {/* span wrapper because Badge is a plain function component
+                      without forwardRef — Radix's asChild slot needs the
+                      immediate child to forward refs, and intrinsic <span>
+                      does that natively. */}
+                  <span className="inline-flex cursor-help">
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
+                    >
+                      <RiShieldCheckFill className="h-3 w-3 text-foreground" />
+                      {t('themeBuilder.chrome.systemPill')}
+                    </Badge>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm">
+                  {t('themeBuilder.chrome.systemPillTooltip')}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </div>

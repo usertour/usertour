@@ -351,6 +351,8 @@ const translations = {
       thisVariation: 'this variation',
       applyWhen: 'Apply <1>{{name}}</1> when',
       systemPill: 'System',
+      systemPillTooltip:
+        'This is a standard theme, managed by Usertour. Duplicate it to make changes.',
       // Save button
       save: 'Save',
       saving: 'Saving…',
