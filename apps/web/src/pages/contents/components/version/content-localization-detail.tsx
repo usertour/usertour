@@ -493,7 +493,7 @@ const ContentLocalizationDetailMain = (props: ContentLocalizationDetailMainProps
   const localized = contentLocalization.localized as ContentEditorRoot[][];
 
   return (
-    <div className="flex p-14 mt-12 space-x-8 justify-center ">
+    <div className="flex px-6 py-8 xl:px-8 space-x-8 justify-center">
       <div className="flex flex-col space-y-6 grow  max-w-screen-xl mx-auto">
         <div className="flex flex-row space-x-1 items-center">
           <ArrowLeftIcon

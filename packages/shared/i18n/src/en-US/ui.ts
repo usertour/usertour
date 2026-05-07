@@ -187,6 +187,21 @@ const translations = {
       },
     },
   },
+  contents: {
+    detail: {
+      actionsMenu: 'Content actions',
+      autosaved: 'Autosaved {{when}} ago',
+      published: 'Published {{when}} ago',
+      saving: 'Saving…',
+      editInBuilder: 'Edit In Builder',
+      publish: 'Publish',
+      tabs: {
+        analytics: 'Analytics',
+        content: 'Content',
+        versions: 'Versions',
+      },
+    },
+  },
   companies: {
     actions: {
       deleteCompany: 'Delete company',

@@ -147,7 +147,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/:contentType/:contentId/:type',
     component: ContentDetail,
-    layout: AdminDetailLayout,
+    layout: AdminSubpageLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'ContentDetail',
@@ -156,7 +156,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/env/:envId/:contentType/:contentId/localization/:locateCode',
     component: ContentLocalization,
-    layout: AdminDetailLayout,
+    layout: AdminSubpageLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'ContentLocalization',

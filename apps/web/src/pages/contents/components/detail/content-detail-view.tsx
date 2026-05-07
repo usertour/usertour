@@ -41,15 +41,18 @@ function ContentDetailViewInner(props: ContentDetailViewProps) {
   }
 
   return (
-    <>
+    // AdminSubpageLayout's content card uses `flex h-full w-full` (default
+    // flex-row) for its inner sidebar-wrapper. Without an explicit flex-col
+    // here, header + route content would sit side-by-side instead of stacked.
+    <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
       <ContentDetailHeader />
       {type === 'detail' && contentType === ContentTypeName.TRACKERS && (
-        <div className="p-14 mt-12">
+        <div className="px-6 py-8 xl:px-8">
           <ContentDetailTrackerEditor />
         </div>
       )}
       {type === 'detail' && contentType !== ContentTypeName.TRACKERS && (
-        <div className="p-14 mt-12 ">
+        <div className="px-6 py-8 xl:px-8">
           <div className="flex flex-row space-x-8 justify-center max-w-screen-xl mx-auto">
             <ContentDetailSettings />
             <ContentDetailContent />
@@ -59,7 +62,7 @@ function ContentDetailViewInner(props: ContentDetailViewProps) {
       {type === 'versions' && <ContentDetailVersion />}
       {type === 'analytics' && <ContentDetailAnalytics contentId={contentId} />}
       {type === 'localization' && <ContentLocalizationList />}
-    </>
+    </div>
   );
 }
 

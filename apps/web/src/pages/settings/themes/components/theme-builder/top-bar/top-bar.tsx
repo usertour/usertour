@@ -5,7 +5,7 @@ import type { Theme } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { ThemeEditDropdownMenu } from '../../theme-edit-dropmenu';
 import { BuilderSaveButton } from '../ui';
-import { EditableTitle } from './editable-title';
+import { EditableTitle } from '@/components/molecules/editable-title';
 
 interface Props {
   theme: Theme;

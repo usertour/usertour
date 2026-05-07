@@ -18,14 +18,16 @@ interface SectionBreadcrumbHeaderProps {
 
 // Lightweight breadcrumb header for sidebar-inner detail pages (user / company
 // / session detail). It deliberately reads as a region marker rather than a
-// global top bar — h-12 instead of h-16, no heavy surface, just a hairline
-// border to separate from the content scroll. The last item is treated as
-// the current page (medium weight, no link); everything before it gets the
-// muted-link treatment.
+// global top bar — no heavy surface, just a hairline border to separate from
+// the content scroll. h-14 keeps it level with content-detail's richer header
+// so users don't see the top bar height jump when they navigate between
+// detail pages. The last breadcrumb item is treated as the current page
+// (medium weight, no link); everything before it gets the muted-link
+// treatment.
 export function SectionBreadcrumbHeader({ items, menu, className }: SectionBreadcrumbHeaderProps) {
   return (
     <div className={cn('sticky top-0 z-10 border-b border-border/50 bg-background', className)}>
-      <div className="flex h-12 w-full min-w-0 items-center gap-2 px-4">
+      <div className="flex h-14 w-full min-w-0 items-center gap-2 px-4">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const baseClass = 'min-w-0 truncate text-sm';

@@ -178,6 +178,21 @@ const translations = {
       },
     },
   },
+  contents: {
+    detail: {
+      actionsMenu: '内容操作',
+      autosaved: '{{when}}前自动保存',
+      published: '{{when}}前发布',
+      saving: '保存中…',
+      editInBuilder: '在构建器中编辑',
+      publish: '发布',
+      tabs: {
+        analytics: '分析',
+        content: '内容',
+        versions: '版本',
+      },
+    },
+  },
   companies: {
     actions: {
       deleteCompany: '删除公司',
