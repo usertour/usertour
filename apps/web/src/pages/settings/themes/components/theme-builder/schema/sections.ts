@@ -174,7 +174,7 @@ export const builderSections: BuilderSection[] = [
   {
     id: 'avatar',
     label: 'themeBuilder.sections.avatar',
-    previewWidget: ThemeDetailPreviewType.TOOLTIP,
+    previewWidget: ThemeDetailPreviewType.BUBBLE,
     fields: [
       { type: 'avatar-type', basePath: 'avatar' },
       {
@@ -416,7 +416,7 @@ export const builderSections: BuilderSection[] = [
   {
     id: 'buttons',
     label: 'themeBuilder.sections.buttons',
-    previewWidget: ThemeDetailPreviewType.TOOLTIP,
+    previewWidget: ThemeDetailPreviewType.MODAL,
     fields: [
       {
         type: 'number',
