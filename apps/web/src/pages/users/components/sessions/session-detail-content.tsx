@@ -363,7 +363,12 @@ const SessionDetailContentInner = ({
                       {bizUser?.id ? (
                         <Link
                           to={`/env/${environmentId}/user/${bizUser.id}`}
-                          className="text-primary hover:underline underline-offset-2 truncate"
+                          // block + truncate so overflow:hidden actually
+                          // applies — Link is an <a> (inline by default),
+                          // and inline elements ignore overflow rules,
+                          // letting unbroken long names spill past the card.
+                          className="block truncate text-primary hover:underline underline-offset-2"
+                          title={userName}
                         >
                           {userName}
                         </Link>
@@ -379,7 +384,8 @@ const SessionDetailContentInner = ({
                     <div className="w-3/5 min-w-0 break-words">
                       <Link
                         to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/detail`}
-                        className="text-primary hover:underline underline-offset-2 truncate"
+                        className="block truncate text-primary hover:underline underline-offset-2"
+                        title={content?.name ?? undefined}
                       >
                         {content?.name}
                       </Link>
