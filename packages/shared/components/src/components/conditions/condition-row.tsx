@@ -151,7 +151,7 @@ export function ConditionRow({
             type="button"
             variant="compact-ghost"
             size="compact-icon-sm"
-            aria-label="Remove group"
+            aria-label={t('conditions.actions.removeGroup')}
             onClick={onRemove}
             className="absolute right-1 top-1 opacity-0 transition-opacity group-hover/condition:opacity-100 focus-visible:opacity-100"
           >
@@ -174,13 +174,13 @@ export function ConditionRow({
         )}
       >
         <span className="min-w-0 flex-1 truncate px-3 py-1.5">
-          Unknown condition: {condition.type}
+          {t('conditions.errors.unknownCondition', { type: condition.type })}
         </span>
         {!disabled && (
           <button
             type="button"
             onClick={onRemove}
-            aria-label="Remove"
+            aria-label={t('conditions.actions.removeCondition')}
             className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none"
           >
             <RiCloseLine className="h-3.5 w-3.5" />
@@ -210,7 +210,7 @@ export function ConditionRow({
           <button
             type="button"
             onClick={onRemove}
-            aria-label="Remove condition"
+            aria-label={t('conditions.actions.removeCondition')}
             className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none group-hover/condition:text-muted-foreground"
           >
             <RiCloseLine className="h-3.5 w-3.5" />

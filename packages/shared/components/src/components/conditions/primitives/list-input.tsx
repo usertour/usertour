@@ -52,7 +52,7 @@ export function ListInput({
             type="button"
             variant="compact-ghost"
             size="compact-icon-sm"
-            aria-label="Remove"
+            aria-label={t('conditions.actions.removeValue')}
             onClick={() => handleRemove(index)}
             disabled={items.length === 1 && !value}
           >

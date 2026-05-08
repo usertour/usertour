@@ -661,6 +661,9 @@ const translations = {
     actions: {
       addCondition: 'Add condition',
       addValue: 'Add value',
+      removeCondition: 'Remove condition',
+      removeGroup: 'Remove group',
+      removeValue: 'Remove',
     },
     logic: {
       and: 'AND',
@@ -914,6 +917,7 @@ const translations = {
       },
     },
     errors: {
+      unknownCondition: 'Unknown condition: {{type}}',
       userAttr: {
         selectAttribute: 'Please select an attribute',
         selectOperator: 'Please select a condition',

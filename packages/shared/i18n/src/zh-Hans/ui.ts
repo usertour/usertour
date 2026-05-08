@@ -642,6 +642,9 @@ const translations = {
     actions: {
       addCondition: '添加条件',
       addValue: '添加值',
+      removeCondition: '移除条件',
+      removeGroup: '移除分组',
+      removeValue: '移除',
     },
     logic: {
       and: '并且',
@@ -890,6 +893,7 @@ const translations = {
       },
     },
     errors: {
+      unknownCondition: '未知条件类型:{{type}}',
       userAttr: {
         selectAttribute: '请选择一个属性',
         selectOperator: '请选择一个条件',
