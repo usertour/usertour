@@ -237,27 +237,39 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
         />
       )}
 
-      {showValueInput && (
-        <Input
-          variant="compact"
-          type={inputType}
-          value={data.value ?? ''}
-          onChange={(e) => handleValueChange(e.target.value)}
-          placeholder={t('conditions.types.userAttr.valuePlaceholder')}
-        />
-      )}
-
-      {showValueInput && showBetween && (
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground">{t('conditions.operators.and')}</span>
+      {showValueInput &&
+        (showBetween ? (
+          // Range endpoints share one row with "and" between — visually
+          // mirrors the natural reading "between 2 and 3" and matches v1's
+          // RulesUserAttribute layout. flex-1 splits the row so each input
+          // gets equal width without crowding the connector word.
+          <div className="flex items-center gap-2">
+            <Input
+              variant="compact"
+              type={inputType}
+              value={data.value ?? ''}
+              onChange={(e) => handleValueChange(e.target.value)}
+              placeholder={t('conditions.types.userAttr.valuePlaceholder')}
+              className="flex-1"
+            />
+            <span className="text-sm text-muted-foreground">{t('conditions.operators.and')}</span>
+            <Input
+              variant="compact"
+              type={inputType}
+              value={data.value2 ?? ''}
+              onChange={(e) => handleValue2Change(e.target.value)}
+              className="flex-1"
+            />
+          </div>
+        ) : (
           <Input
             variant="compact"
             type={inputType}
-            value={data.value2 ?? ''}
-            onChange={(e) => handleValue2Change(e.target.value)}
+            value={data.value ?? ''}
+            onChange={(e) => handleValueChange(e.target.value)}
+            placeholder={t('conditions.types.userAttr.valuePlaceholder')}
           />
-        </div>
-      )}
+        ))}
 
       {showListInput && (
         <ListInput

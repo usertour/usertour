@@ -236,26 +236,38 @@ function EventAttrEditor({ condition, onChange }: EditorProps) {
           placeholder={t('conditions.types.userAttr.operatorPlaceholder')}
         />
       )}
-      {showValueInput && (
-        <Input
-          variant="compact"
-          type={inputType}
-          value={data.value ?? ''}
-          onChange={(e) => onChange(writeData(condition, { value: e.target.value }))}
-          placeholder={t('conditions.types.userAttr.valuePlaceholder')}
-        />
-      )}
-      {showValueInput && showBetween && (
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground">{t('conditions.operators.and')}</span>
+      {showValueInput &&
+        (showBetween ? (
+          // Range endpoints share one row — see user-attr/index.tsx for the
+          // reasoning; this mirrors the same layout for event-attr's
+          // numeric-range case.
+          <div className="flex items-center gap-2">
+            <Input
+              variant="compact"
+              type={inputType}
+              value={data.value ?? ''}
+              onChange={(e) => onChange(writeData(condition, { value: e.target.value }))}
+              placeholder={t('conditions.types.userAttr.valuePlaceholder')}
+              className="flex-1"
+            />
+            <span className="text-sm text-muted-foreground">{t('conditions.operators.and')}</span>
+            <Input
+              variant="compact"
+              type={inputType}
+              value={data.value2 ?? ''}
+              onChange={(e) => onChange(writeData(condition, { value2: e.target.value }))}
+              className="flex-1"
+            />
+          </div>
+        ) : (
           <Input
             variant="compact"
             type={inputType}
-            value={data.value2 ?? ''}
-            onChange={(e) => onChange(writeData(condition, { value2: e.target.value }))}
+            value={data.value ?? ''}
+            onChange={(e) => onChange(writeData(condition, { value: e.target.value }))}
+            placeholder={t('conditions.types.userAttr.valuePlaceholder')}
           />
-        </div>
-      )}
+        ))}
       {showListInput && (
         <ListInput
           values={data.listValues ?? []}
