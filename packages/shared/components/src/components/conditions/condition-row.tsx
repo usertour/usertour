@@ -111,13 +111,16 @@ export function ConditionRow({
     setOpen(false);
     // Closing — normalize first (strips in-flight UI artifacts like empty
     // list rows) so what we validate / persist matches what the runtime
-    // will see. Then validate; when invalid, stay flagged but don't
-    // propagate the bad data upward. Matches v1 (rules-user-attribute.tsx
-    // handleOpenChange returns early on showError).
+    // will see. Then validate and propagate either way: invalid edits
+    // also commit so the save-time gate catches them via validateConditions
+    // on the committed tree. Without this, a user clearing a value would
+    // see the chip turn red but the parent still holding the old valid
+    // value — Save would silently succeed and persist the old data,
+    // discarding the user's "delete this" intent. Now the gate blocks
+    // save until the user either fixes the value or backs out.
     const finalized = schema?.normalize?.(draft) ?? draft;
     const result = schema?.validate?.(finalized, validateContext);
     setErrorKey(result?.key ?? null);
-    if (result) return;
     if (!isEqual(finalized, condition)) {
       onChange(finalized);
     }
