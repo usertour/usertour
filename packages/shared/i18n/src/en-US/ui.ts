@@ -987,6 +987,7 @@ const translations = {
         enterSecondCount: 'Please enter the second count',
         enterTimeWindow: 'Please enter a time value',
         enterSecondTimeWindow: 'Please enter the second time value',
+        invalidWhere: 'One or more filter conditions are incomplete — open the event to fix them.',
       },
       eventAttr: {
         selectAttribute: 'Please select an event attribute',

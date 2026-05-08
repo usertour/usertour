@@ -958,6 +958,7 @@ const translations = {
         enterSecondCount: '请输入第二个次数',
         enterTimeWindow: '请输入时间值',
         enterSecondTimeWindow: '请输入第二个时间值',
+        invalidWhere: '过滤条件中有未填写完整的项目,展开事件后修复。',
       },
       eventAttr: {
         selectAttribute: '请选择一个事件属性',

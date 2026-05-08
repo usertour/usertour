@@ -15,6 +15,7 @@ import {
   useSummaryTextClass,
 } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
+import { validateConditions } from '../../validate';
 import { validateEvent } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { ConditionInlineSelect } from '../../ui/condition-inline-select';
@@ -398,5 +399,19 @@ export const eventSchema: ConditionTypeSchema<EventData> = {
   // logic select + two number inputs + a unit select, which doesn't fit in
   // 300 without ugly wrapping.
   editorWidthClassName: 'w-[360px]',
-  validate: (condition) => validateEvent(readData(condition)),
+  // Validate the event's own fields first; if those pass, recurse into the
+  // where-clause so an invalid event-attr / page-pattern / nested group
+  // inside Where also flags the outer Event chip when its popover closes.
+  // Without this recursion the inner row shows red but the closed Event
+  // chip looks clean — easy to miss on save.
+  validate: (condition, ctx) => {
+    const data = readData(condition);
+    const own = validateEvent(data);
+    if (own) return own;
+    const where = data.whereConditions ?? [];
+    if (where.length > 0 && validateConditions(where, ctx).length > 0) {
+      return { key: 'conditions.errors.event.invalidWhere' };
+    }
+    return undefined;
+  },
 };
