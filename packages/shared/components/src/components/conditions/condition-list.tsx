@@ -26,6 +26,13 @@ interface Props {
   // add-condition dropdown so 'group' is hidden one level down, capping
   // group nesting at depth 1 (matches v1 RulesGroup).
   isNested?: boolean;
+  // Label for the first row's leading badge in vertical mode. Defaults to
+  // 'if' (the conditional intro: "If [x] AND [y]"). Use 'where' inside an
+  // event filter so the chip reads "Where [x] AND [y]" — distinct from the
+  // outer If clause and aligned with SQL-style where-clause semantics.
+  // Only the immediate top-level row gets this badge; nested groups keep
+  // their own list semantics ([If]) regardless of the parent context.
+  firstRowLabel?: 'if' | 'where';
 }
 
 // Backfill missing ids without re-rolling them on every render. Only mints
@@ -89,6 +96,7 @@ export function ConditionList({
   className,
   filterItems: filterItemsOverride,
   isNested,
+  firstRowLabel = 'if',
 }: Props) {
   const { isHorizontal, isShowIf, disabled } = useConditionsContext();
   const t = useConditionsT();
@@ -182,12 +190,15 @@ export function ConditionList({
       {items.map((condition, index) => {
         let prefix: React.ReactNode = null;
         if (index === 0 && isShowIf) {
-          // Static "If" label — shrunk to match the AND/OR toggler one tier
-          // so prefix-to-chip rhythm is consistent and the connectors read
-          // as a column of like-sized pills.
+          // Static "If" / "Where" label — shrunk to match the AND/OR toggler
+          // one tier so prefix-to-chip rhythm is consistent and the
+          // connectors read as a column of like-sized pills. "Where" is
+          // chosen by the event filter editor so the role of this list
+          // (filter clause vs. top-level conditional) is visible without a
+          // separate section header.
           prefix = (
-            <div className="inline-flex h-6 w-[44px] shrink-0 items-center justify-center rounded-md border border-input/60 bg-secondary text-[11px] font-medium text-secondary-foreground shadow-sm">
-              {t('conditions.logic.if')}
+            <div className="inline-flex h-6 min-w-[44px] shrink-0 items-center justify-center rounded-md border border-input/60 bg-secondary px-1.5 text-[11px] font-medium text-secondary-foreground shadow-sm">
+              {t(`conditions.logic.${firstRowLabel}`)}
             </div>
           );
         } else if (index > 0) {

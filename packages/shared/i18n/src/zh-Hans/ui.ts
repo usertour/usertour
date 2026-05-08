@@ -688,6 +688,7 @@ const translations = {
       and: '并且',
       or: '或者',
       if: '当',
+      where: '满足',
     },
     operators: {
       and: '且',
@@ -847,7 +848,6 @@ const translations = {
         times: '次',
         ago: '前',
         where: '其中',
-        whereLabel: '过滤条件',
         addWhere: '添加过滤条件',
         removeWhere: '移除',
         conditionCount_other: '{{count}} 个条件',

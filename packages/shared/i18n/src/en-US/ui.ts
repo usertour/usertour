@@ -712,6 +712,7 @@ const translations = {
       and: 'AND',
       or: 'OR',
       if: 'If',
+      where: 'Where',
     },
     operators: {
       and: 'and',
@@ -873,7 +874,6 @@ const translations = {
         times: 'times',
         ago: 'ago',
         where: 'where',
-        whereLabel: 'Where',
         addWhere: 'Add filter',
         removeWhere: 'Remove',
         conditionCount_one: '{{count}} condition',

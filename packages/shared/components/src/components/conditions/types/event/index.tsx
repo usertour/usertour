@@ -358,23 +358,27 @@ interface WhereProps {
 // a stored copy drifting away from the parent (e.g. legacy data, or any
 // path that mutated the parent eventId without re-stamping children).
 function EventWhereSection({ condition, onChange, data }: WhereProps) {
-  const t = useConditionsT();
   const where = data.whereConditions ?? [];
 
   const handleWhereChange = (next: RulesCondition[]) => {
     onChange(writeData(condition, { whereConditions: next.length > 0 ? next : undefined }));
   };
 
+  // No section title — the [Where] badge on the first row introduces the
+  // clause role on its own. v0 had a "Where" header above an [If] badge,
+  // which read as the same word twice. Encoding the role into the badge
+  // keeps the SQL-style "Where x AND y" reading and removes the
+  // duplication. Nested groups inside intentionally keep [If] (group is
+  // a self-contained sub-expression, the outer Where doesn't propagate
+  // into parens).
   return (
     <div className="flex flex-col gap-2 border-t border-border/50 pt-2">
-      <div className="text-sm font-medium text-muted-foreground">
-        {t('conditions.types.event.whereLabel')}
-      </div>
       <EventScopeContext.Provider value={data.eventId}>
         <ConditionList
           conditions={where}
           onChange={handleWhereChange}
           filterItems={['event-attr', 'group']}
+          firstRowLabel="where"
         />
       </EventScopeContext.Provider>
     </div>
