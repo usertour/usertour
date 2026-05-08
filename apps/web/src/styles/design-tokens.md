@@ -20,15 +20,14 @@ context — don't introduce a third.
 
 The boundary is **inspector / panel surfaces vs. everything else**, not
 "is this page a takeover." All page chrome — list pages, detail pages,
-modals, **and** the top bars of takeover editors (theme builder,
-content builder) — uses shadcn default. v2 chrome only takes over
-inside inspector / property-panel surfaces (theme builder's variations
-sidebar + sections accordion + its own field controls, Conditions
-chips + popovers).
+modals, **and** the top bars of takeover editors (content builder) —
+uses shadcn default. v2 chrome only takes over inside inspector /
+property-panel surfaces (theme builder's variations sidebar + sections
+accordion + its own field controls, Conditions chips + popovers).
 
 | Register                  | Where it lives                                                                                                                          | Control height | Radius        | Surface                                              | Border             |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------- | ------------- | ---------------------------------------------------- | ------------------ |
-| **shadcn default**        | All page chrome — list / detail headers, takeover top bars (theme builder, content builder), modals, settings, content tables, auth     | h-9 / h-10     | `rounded-md`  | single (`bg-transparent` + border)                   | `border-input`     |
+| **shadcn default**        | All page chrome — list / detail headers (incl. theme builder, which sits in the sidebar shell as theme's detail), content builder takeover top bar, modals, settings, content tables, auth | h-9 / h-10     | `rounded-md`  | single (`bg-transparent` + border)                   | `border-input`     |
 | **v2 chrome / inspector** | Inspector / panel surfaces — theme builder's variations sidebar + sections accordion + property fields, Conditions chips + popovers + chip editors | h-7.5 / h-6    | `rounded-lg`  | dual (`bg-muted` passive / `bg-background` active)   | `border-input/60`  |
 
 **Both registers share** (this is the "language" half — never break
@@ -55,9 +54,24 @@ properties panel reads denser than the main document. Don't fight it;
 ghost `size="icon-sm"` Back button, `<MoreButton>` (32px square),
 `<EditableTitle>` for inline rename, `h-14 sticky top-0 z-10
 border-b border-border/50 bg-background` strip. Theme builder's top
-bar uses these same atoms — its "takeover" feel comes from the
-missing app sidebar and the dense inner panes, not from a different
-top-bar register.
+bar uses these same atoms; its dense inner panes are what mark it as
+a builder, not a different top-bar register.
+
+**Structural placement (sidebar shell vs takeover)** — this is a
+separate decision from chrome register, made by asking "is there a
+separate detail page upstream?":
+- **No upstream detail / this page *is* the detail** → `AdminSubpageLayout`
+  (sidebar shell). Covers user / company / session / content detail
+  + theme builder (theme has no separate read-only detail page; the
+  builder doubles as detail).
+- **Upstream detail exists, this page is the focused-edit mode launched
+  from it** → `AdminBuilderLayout` (takeover). Currently **only**
+  content builder qualifies: `/env/X/flow/Y/detail` is the real detail
+  page (in the sidebar shell), `/builder/Z` is the takeover entered via
+  "Edit in Builder". Don't try to align content builder with theme
+  builder's structure — three inner panes + admin sidebar is too
+  cramped, and the upstream detail already carries the navigation /
+  metadata role.
 
 If a feature genuinely belongs in neither register (e.g., marketing
 hero, content viewer with reading typography), document it before
@@ -324,6 +338,19 @@ These all caused real bugs we already fixed — don't reintroduce them.
   cue that the row is a labeled field.
 - **`break-all` for chip text**: chops English mid-word. Use
   `break-words` (`overflow-wrap: break-word`).
+- **`truncate` on inline `<a>` / `<span>`**: doesn't work — inline
+  elements ignore `overflow:hidden`, and truncate's
+  `white-space:nowrap` *also* cancels the parent's `break-words`, so
+  long unbroken strings spill straight past their container. Promote
+  the link to `block truncate` (or wrap it in `inline-flex` so the
+  inner span becomes a flex item with proper sizing). Burn from
+  session detail's Session info card.
+- **No width cap on a breadcrumb / title slot**: `EditableTitle`'s
+  inner truncate only fires once the parent flex item is forced to
+  shrink, so without a `max-w` cap a 100-char name eats half the
+  header before truncating. Cap the breadcrumb container at
+  `max-w-sm`, and add `min-w-0 max-w-full` on the inline edit input
+  so HTML `size` doesn't blow past the cap in edit mode.
 
 ---
 
