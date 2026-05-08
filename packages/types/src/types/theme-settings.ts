@@ -117,7 +117,7 @@ export type ThemeTypesSetting = {
     linkColor: string;
   };
   border: {
-    borderRadius: string;
+    borderRadius: number;
     borderWidthEnabled: boolean;
     borderWidth: number;
     borderColor: string;
@@ -248,7 +248,7 @@ export const defaultSettings: ThemeTypesSetting = {
   border: {
     borderColor: 'Auto',
     borderWidth: 1,
-    borderRadius: '10',
+    borderRadius: 10,
     borderWidthEnabled: false,
   },
   survey: {
@@ -519,7 +519,7 @@ export const standardDarkSettings: ThemeTypesSetting = {
   border: {
     borderColor: 'Auto',
     borderWidth: 1,
-    borderRadius: '10',
+    borderRadius: 10,
     borderWidthEnabled: false,
   },
   survey: {
