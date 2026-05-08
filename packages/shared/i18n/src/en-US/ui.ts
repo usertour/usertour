@@ -396,6 +396,52 @@ const translations = {
         'Create theme variations that automatically apply based on user attributes. All matching variations will be applied in the order shown below.\n\nExamples:\n• Apply dark theme when user has dark mode enabled\n• Use premium colors for paid users',
       applyWhen:
         'This variation overrides the Base theme when its conditions match the current user. All matching variations are applied in the order shown in the list — drag to reorder.',
+      // Tooltip — Tooltip section
+      tooltipMissingTargetTolerance:
+        "Specifies how long to wait for the target element to appear. If the element doesn't show up within this time, the 'Missing tooltip target behavior' setting below will be applied.",
+      tooltipMissingTargetBehavior:
+        'Determines the fallback action when the target element cannot be found within the tolerance time specified above.',
+      // Modal
+      modalBackdropClickBehavior:
+        'Controls the action when users click the backdrop area outside the modal.',
+      // Bubble
+      bubblePlacement: 'Specifies the corner position where the speech bubble will appear.',
+      bubbleOffsetX: 'The horizontal distance in pixels from the browser window edge.',
+      bubbleOffsetY: 'The vertical distance in pixels from the browser window edge.',
+      // Banner
+      bannerAnimationDuration: 'The banner reveal animation duration in milliseconds.',
+      bannerAnimationTiming: 'The easing curve for the banner reveal animation.',
+      // Checklist
+      checklistWidth: 'The width in pixels of the checklist',
+      checklistPlacement: 'Controls which corner the checklist should be placed at.',
+      checklistOffsetX:
+        'How far in pixels from the horizontal edge of the browser window the checklist should be positioned.',
+      checklistOffsetY:
+        'How far in pixels from the vertical edge of the browser window the checklist should be positioned.',
+      checklistCompletedTaskDecoration: 'Controls the text decoration of the completed task.',
+      // Checklist launcher
+      checklistLauncherHeight: 'The height in pixels of the checklist launcher',
+      checklistLauncherPlacement:
+        'Controls which corner the checklist launcher should be placed at.',
+      checklistLauncherOffsetX:
+        'How far in pixels from the horizontal edge of the browser window the checklist launcher should be positioned.',
+      checklistLauncherOffsetY:
+        'How far in pixels from the vertical edge of the browser window the checklist launcher should be positioned.',
+      // Resource center
+      resourceCenterHeaderBackground: 'The background style for the resource center header area.',
+      resourceCenterPlacement: 'Controls which corner the resource center panel should appear at.',
+      resourceCenterOffsetX: 'Horizontal offset from the edge of the viewport in pixels.',
+      resourceCenterOffsetY: 'Vertical offset from the edge of the viewport in pixels.',
+      resourceCenterNormalWidth: 'The default width of the resource center panel.',
+      resourceCenterLargeWidth: 'The expanded width used for larger block types.',
+      resourceCenterMaxHeight: 'Maximum height of the resource center panel in pixels.',
+      // Resource center launcher
+      resourceCenterLauncherIcon: 'The icon displayed in the launcher button.',
+      resourceCenterLauncherHeight: 'The height of the launcher button in pixels.',
+      resourceCenterLauncherImageHeight: 'The height of the icon image inside the launcher button.',
+      resourceCenterLauncherBorderRadius:
+        'The border radius of the launcher button. Leave blank for a round launcher.',
+      resourceCenterLauncherTextMode: 'Controls what text is shown next to the launcher icon.',
     },
     placeholders: {
       auto: 'Auto',

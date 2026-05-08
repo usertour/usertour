@@ -1,4 +1,5 @@
 import { Slider } from '@usertour-packages/slider';
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
 
@@ -9,9 +10,10 @@ interface Props {
   max: number;
   step?: number;
   suffix?: string;
+  tooltip?: string;
 }
 
-export function SliderField({ path, label, min, max, step = 1, suffix }: Props) {
+export function SliderField({ path, label, min, max, step = 1, suffix, tooltip }: Props) {
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<number>(path);
@@ -19,9 +21,12 @@ export function SliderField({ path, label, min, max, step = 1, suffix }: Props) 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label htmlFor={id} className="text-sm font-medium">
-          {label}
-        </label>
+        <span className="inline-flex items-center gap-1">
+          <label htmlFor={id} className="text-sm font-medium">
+            {label}
+          </label>
+          {tooltip && <QuestionTooltip>{tooltip}</QuestionTooltip>}
+        </span>
         <span className="text-sm text-muted-foreground">
           {safe}
           {suffix}

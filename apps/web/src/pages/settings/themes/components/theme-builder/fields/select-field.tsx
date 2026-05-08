@@ -11,9 +11,10 @@ interface Props {
   // When true, the underlying setting is stored as a number; the field
   // converts string ↔ number on read/write. Used for font-weight selects.
   valueAsNumber?: boolean;
+  tooltip?: string;
 }
 
-export function SelectField({ path, label, options, vertical, valueAsNumber }: Props) {
+export function SelectField({ path, label, options, vertical, valueAsNumber, tooltip }: Props) {
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const raw = valueAsNumber ? getField<number>(path) : getField<string>(path);
@@ -23,7 +24,7 @@ export function SelectField({ path, label, options, vertical, valueAsNumber }: P
   };
 
   return (
-    <FieldRow label={label} htmlFor={id} forceVertical={vertical}>
+    <FieldRow label={label} htmlFor={id} forceVertical={vertical} tooltip={tooltip}>
       <CompactSelect
         id={id}
         value={value}

@@ -1,3 +1,4 @@
+import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { cn } from '@usertour-packages/tailwind';
 import type { ReactNode } from 'react';
 
@@ -13,25 +14,38 @@ interface Props {
   // Force vertical layout regardless of label length. Used by fields like
   // tooltip's missing-target-behavior where v1 sets `vertical={true}`.
   forceVertical?: boolean;
+  // Optional explainer rendered as a `?`-icon QuestionTooltip next to the
+  // label. Mirrors v1's per-setting tooltips (`tooltip="..."` on
+  // ThemeSettingSelect / ThemeSettingInput).
+  tooltip?: string;
 }
 
-export function FieldRow({ label, htmlFor, children, controlClassName, forceVertical }: Props) {
+export function FieldRow({
+  label,
+  htmlFor,
+  children,
+  controlClassName,
+  forceVertical,
+  tooltip,
+}: Props) {
   const isLong = forceVertical || label.length > LONG_LABEL_THRESHOLD;
   if (isLong) {
     return (
       <div className="space-y-1.5">
-        <label htmlFor={htmlFor} className="block text-sm font-medium leading-none">
-          {label}
-        </label>
+        <div className="flex items-center gap-1 text-sm font-medium leading-none">
+          <label htmlFor={htmlFor}>{label}</label>
+          {tooltip && <QuestionTooltip>{tooltip}</QuestionTooltip>}
+        </div>
         <div className={cn('relative w-full', controlClassName)}>{children}</div>
       </div>
     );
   }
   return (
     <div className="flex items-center">
-      <label htmlFor={htmlFor} className="grow text-sm font-medium leading-9">
-        {label}
-      </label>
+      <div className="flex grow items-center gap-1 text-sm font-medium leading-9">
+        <label htmlFor={htmlFor}>{label}</label>
+        {tooltip && <QuestionTooltip>{tooltip}</QuestionTooltip>}
+      </div>
       <div className={cn('relative w-36 flex-none', controlClassName)}>{children}</div>
     </div>
   );

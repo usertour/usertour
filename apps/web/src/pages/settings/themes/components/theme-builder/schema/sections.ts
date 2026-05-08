@@ -482,6 +482,7 @@ export const builderSections: BuilderSection[] = [
         type: 'placement',
         path: 'bubble.placement',
         label: 'themeBuilder.fields.common.placement',
+        tooltip: 'themeBuilder.tooltips.bubblePlacement',
         labels: {
           position: 'themeBuilder.fields.common.placement',
           offsetX: 'themeBuilder.fields.common.offsetLeft',
@@ -516,6 +517,7 @@ export const builderSections: BuilderSection[] = [
         type: 'number',
         path: 'tooltip.missingTargetTolerance',
         label: 'themeBuilder.fields.tooltip.missingTargetTolerance',
+        tooltip: 'themeBuilder.tooltips.tooltipMissingTargetTolerance',
         min: 0,
         max: 10,
         suffix: 's',
@@ -525,6 +527,7 @@ export const builderSections: BuilderSection[] = [
         type: 'select',
         path: 'tooltip.missingTargetBehavior',
         label: 'themeBuilder.fields.tooltip.missingTargetBehavior',
+        tooltip: 'themeBuilder.tooltips.tooltipMissingTargetBehavior',
         vertical: true,
         options: [
           {
@@ -565,6 +568,7 @@ export const builderSections: BuilderSection[] = [
         type: 'select',
         path: 'modal.backdropClickBehavior',
         label: 'themeBuilder.fields.modal.backdropClickBehavior',
+        tooltip: 'themeBuilder.tooltips.modalBackdropClickBehavior',
         vertical: true,
         options: [
           { value: 'do-nothing', label: 'themeBuilder.options.modalBackdropClick.doNothing' },
@@ -617,6 +621,7 @@ export const builderSections: BuilderSection[] = [
         type: 'number',
         path: 'banner.animationDuration',
         label: 'themeBuilder.fields.banner.animationDuration',
+        tooltip: 'themeBuilder.tooltips.bannerAnimationDuration',
         min: 0,
         max: 1000,
         suffix: 'ms',
@@ -625,6 +630,7 @@ export const builderSections: BuilderSection[] = [
         type: 'select',
         path: 'banner.animationTiming',
         label: 'themeBuilder.fields.banner.animationStyle',
+        tooltip: 'themeBuilder.tooltips.bannerAnimationTiming',
         options: [
           { value: 'smooth', label: 'themeBuilder.options.bannerAnimation.smooth' },
           { value: 'snappy', label: 'themeBuilder.options.bannerAnimation.snappy' },
@@ -644,6 +650,7 @@ export const builderSections: BuilderSection[] = [
         type: 'number',
         path: 'checklist.width',
         label: 'themeBuilder.fields.common.width',
+        tooltip: 'themeBuilder.tooltips.checklistWidth',
         min: 240,
         max: 600,
         suffix: 'px',
@@ -652,6 +659,7 @@ export const builderSections: BuilderSection[] = [
         type: 'placement',
         path: 'checklist.placement',
         label: 'themeBuilder.fields.common.placement',
+        tooltip: 'themeBuilder.tooltips.checklistPlacement',
         options: PLACEMENT_FIVE,
         labels: {
           position: 'themeBuilder.fields.common.placement',
@@ -676,6 +684,7 @@ export const builderSections: BuilderSection[] = [
         type: 'select',
         path: 'checklist.completedTaskTextDecoration',
         label: 'themeBuilder.fields.checklist.completedTaskTextDecoration',
+        tooltip: 'themeBuilder.tooltips.checklistCompletedTaskDecoration',
         vertical: true,
         options: [
           { value: 'none', label: 'themeBuilder.options.textDecoration.none' },
@@ -694,6 +703,7 @@ export const builderSections: BuilderSection[] = [
         type: 'number',
         path: 'checklistLauncher.height',
         label: 'themeBuilder.fields.common.height',
+        tooltip: 'themeBuilder.tooltips.checklistLauncherHeight',
         min: 32,
         max: 80,
         suffix: 'px',
@@ -717,6 +727,7 @@ export const builderSections: BuilderSection[] = [
         type: 'placement',
         path: 'checklistLauncher.placement',
         label: 'themeBuilder.fields.common.placement',
+        tooltip: 'themeBuilder.tooltips.checklistLauncherPlacement',
         options: PLACEMENT_FIVE,
         labels: {
           position: 'themeBuilder.fields.common.placement',
@@ -775,6 +786,7 @@ export const builderSections: BuilderSection[] = [
             type: 'select',
             path: 'resourceCenter.headerBackground.type',
             label: 'themeBuilder.fields.resourceCenter.type',
+            tooltip: 'themeBuilder.tooltips.resourceCenterHeaderBackground',
             options: [
               { value: 'none', label: 'themeBuilder.options.headerBackgroundType.none' },
               { value: 'color', label: 'themeBuilder.options.headerBackgroundType.color' },
@@ -843,12 +855,14 @@ export const builderSections: BuilderSection[] = [
             type: 'select',
             path: 'resourceCenter.placement',
             label: 'themeBuilder.fields.common.placement',
+            tooltip: 'themeBuilder.tooltips.resourceCenterPlacement',
             options: RC_PLACEMENT_FOUR,
           },
           {
             type: 'number',
             path: 'resourceCenter.offsetX',
             label: 'themeBuilder.fields.common.offsetX',
+            tooltip: 'themeBuilder.tooltips.resourceCenterOffsetX',
             min: 0,
             max: 200,
             suffix: 'px',
@@ -857,6 +871,7 @@ export const builderSections: BuilderSection[] = [
             type: 'number',
             path: 'resourceCenter.offsetY',
             label: 'themeBuilder.fields.common.offsetY',
+            tooltip: 'themeBuilder.tooltips.resourceCenterOffsetY',
             min: 0,
             max: 200,
             suffix: 'px',
@@ -865,6 +880,7 @@ export const builderSections: BuilderSection[] = [
             type: 'number',
             path: 'resourceCenter.normalWidth',
             label: 'themeBuilder.fields.resourceCenter.normalWidth',
+            tooltip: 'themeBuilder.tooltips.resourceCenterNormalWidth',
             min: 240,
             max: 600,
             suffix: 'px',
@@ -873,6 +889,7 @@ export const builderSections: BuilderSection[] = [
             type: 'number',
             path: 'resourceCenter.largeWidth',
             label: 'themeBuilder.fields.resourceCenter.largeWidth',
+            tooltip: 'themeBuilder.tooltips.resourceCenterLargeWidth',
             min: 320,
             max: 800,
             suffix: 'px',
@@ -881,6 +898,7 @@ export const builderSections: BuilderSection[] = [
             type: 'number',
             path: 'resourceCenter.maxHeight',
             label: 'themeBuilder.fields.resourceCenter.maxHeight',
+            tooltip: 'themeBuilder.tooltips.resourceCenterMaxHeight',
             min: 200,
             max: 1200,
             suffix: 'px',
@@ -914,6 +932,7 @@ export const builderSections: BuilderSection[] = [
         type: 'select',
         path: 'resourceCenterLauncherButton.iconType',
         label: 'themeBuilder.fields.resourceCenterLauncher.iconType',
+        tooltip: 'themeBuilder.tooltips.resourceCenterLauncherIcon',
         vertical: true,
         options: [
           {
@@ -938,6 +957,7 @@ export const builderSections: BuilderSection[] = [
         type: 'number',
         path: 'resourceCenterLauncherButton.height',
         label: 'themeBuilder.fields.common.height',
+        tooltip: 'themeBuilder.tooltips.resourceCenterLauncherHeight',
         min: 24,
         max: 80,
         suffix: 'px',
@@ -946,6 +966,7 @@ export const builderSections: BuilderSection[] = [
         type: 'number',
         path: 'resourceCenterLauncherButton.imageHeight',
         label: 'themeBuilder.fields.resourceCenterLauncher.imageHeight',
+        tooltip: 'themeBuilder.tooltips.resourceCenterLauncherImageHeight',
         min: 16,
         max: 80,
         suffix: 'px',
@@ -955,6 +976,7 @@ export const builderSections: BuilderSection[] = [
         type: 'number',
         path: 'resourceCenterLauncherButton.borderRadius',
         label: 'themeBuilder.fields.common.borderRadius',
+        tooltip: 'themeBuilder.tooltips.resourceCenterLauncherBorderRadius',
         min: 0,
         max: 40,
         suffix: 'px',
@@ -965,6 +987,7 @@ export const builderSections: BuilderSection[] = [
         type: 'select',
         path: 'resourceCenterLauncherButton.textMode',
         label: 'themeBuilder.fields.resourceCenterLauncher.textMode',
+        tooltip: 'themeBuilder.tooltips.resourceCenterLauncherTextMode',
         vertical: true,
         options: [
           {

@@ -12,15 +12,16 @@ interface Props {
   max?: number;
   step?: number;
   suffix?: string;
+  tooltip?: string;
 }
 
-export function DynamicNumberField({ label, path, min, max, step = 1, suffix }: Props) {
+export function DynamicNumberField({ label, path, min, max, step = 1, suffix, tooltip }: Props) {
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
   const value = getField<number>(path);
 
   return (
-    <FieldRow label={label} htmlFor={id}>
+    <FieldRow label={label} htmlFor={id} tooltip={tooltip}>
       <Input
         variant="compact-muted"
         id={id}

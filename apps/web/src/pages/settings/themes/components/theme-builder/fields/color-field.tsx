@@ -13,9 +13,17 @@ interface Props {
   allowAuto?: boolean;
   autoFallback?: ColorResolver;
   vertical?: boolean;
+  tooltip?: string;
 }
 
-export function ColorField({ path, label, allowAuto = false, autoFallback, vertical }: Props) {
+export function ColorField({
+  path,
+  label,
+  allowAuto = false,
+  autoFallback,
+  vertical,
+  tooltip,
+}: Props) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const { activeSettings, finalSettings, getField, setField, isReadOnly } = useBuilderContext();
@@ -29,7 +37,7 @@ export function ColorField({ path, label, allowAuto = false, autoFallback, verti
   const displayedColor = isAuto ? (typeof fallback === 'string' ? fallback : '#FFFFFF') : value;
 
   return (
-    <FieldRow label={label} htmlFor={id} forceVertical={vertical}>
+    <FieldRow label={label} htmlFor={id} forceVertical={vertical} tooltip={tooltip}>
       <Popover open={open} onOpenChange={isReadOnly ? undefined : setOpen}>
         <PopoverTrigger asChild>
           <CompactColorButton

@@ -379,6 +379,44 @@ const translations = {
         '创建会根据用户属性自动应用的主题变体。所有匹配的变体会按下方列表的顺序依次应用。\n\n示例：\n• 当用户启用深色模式时应用深色主题\n• 为付费用户使用高级配色',
       applyWhen:
         '当条件匹配当前用户时，本变体覆盖基础主题。所有匹配的变体会按列表中显示的顺序依次应用 — 拖动以调整顺序。',
+      // Tooltip
+      tooltipMissingTargetTolerance:
+        '等待目标元素出现的时间。超过这个时间元素仍未出现,则会应用下面"目标元素缺失时的行为"设置。',
+      tooltipMissingTargetBehavior: '当超出上面设置的容忍时间还找不到目标元素时执行的回退动作。',
+      // Modal
+      modalBackdropClickBehavior: '控制用户点击 modal 外部背景区域时的行为。',
+      // Bubble
+      bubblePlacement: '气泡显示的角落位置。',
+      bubbleOffsetX: '距离浏览器窗口边缘的水平距离(像素)。',
+      bubbleOffsetY: '距离浏览器窗口边缘的垂直距离(像素)。',
+      // Banner
+      bannerAnimationDuration: 'Banner 出现动画的时长(毫秒)。',
+      bannerAnimationTiming: 'Banner 出现动画的缓动曲线。',
+      // Checklist
+      checklistWidth: 'Checklist 的宽度(像素)。',
+      checklistPlacement: '控制 checklist 显示在哪个角落。',
+      checklistOffsetX: 'Checklist 距离浏览器窗口水平边缘的距离(像素)。',
+      checklistOffsetY: 'Checklist 距离浏览器窗口垂直边缘的距离(像素)。',
+      checklistCompletedTaskDecoration: '已完成任务的文本装饰样式。',
+      // Checklist launcher
+      checklistLauncherHeight: 'Checklist 触发器的高度(像素)。',
+      checklistLauncherPlacement: '控制 checklist 触发器显示在哪个角落。',
+      checklistLauncherOffsetX: 'Checklist 触发器距离浏览器窗口水平边缘的距离(像素)。',
+      checklistLauncherOffsetY: 'Checklist 触发器距离浏览器窗口垂直边缘的距离(像素)。',
+      // Resource center
+      resourceCenterHeaderBackground: 'Resource center 头部区域的背景样式。',
+      resourceCenterPlacement: '控制 resource center 面板显示在哪个角落。',
+      resourceCenterOffsetX: '距离视口水平边缘的偏移量(像素)。',
+      resourceCenterOffsetY: '距离视口垂直边缘的偏移量(像素)。',
+      resourceCenterNormalWidth: 'Resource center 面板的默认宽度。',
+      resourceCenterLargeWidth: '更大的 block 类型使用的展开宽度。',
+      resourceCenterMaxHeight: 'Resource center 面板的最大高度(像素)。',
+      // Resource center launcher
+      resourceCenterLauncherIcon: '触发器按钮中显示的图标。',
+      resourceCenterLauncherHeight: '触发器按钮的高度(像素)。',
+      resourceCenterLauncherImageHeight: '触发器按钮内图标图片的高度。',
+      resourceCenterLauncherBorderRadius: '触发器按钮的圆角。留空时显示为圆形触发器。',
+      resourceCenterLauncherTextMode: '控制触发器图标旁显示什么文字。',
     },
     placeholders: {
       auto: '自动',

@@ -15,6 +15,7 @@ interface Props {
   optional?: boolean;
   placeholder?: string;
   validate?: (value: number) => string | undefined;
+  tooltip?: string;
 }
 
 export function NumberField({
@@ -27,6 +28,7 @@ export function NumberField({
   optional,
   placeholder,
   validate,
+  tooltip,
 }: Props) {
   const id = useId();
   const { getField, setField, isReadOnly } = useBuilderContext();
@@ -48,7 +50,7 @@ export function NumberField({
   };
 
   return (
-    <FieldRow label={label} htmlFor={id}>
+    <FieldRow label={label} htmlFor={id} tooltip={tooltip}>
       <Input
         variant="compact-muted"
         id={id}

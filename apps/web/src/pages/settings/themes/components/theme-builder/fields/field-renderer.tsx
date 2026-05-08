@@ -32,6 +32,10 @@ export function FieldRenderer({ field }: Props) {
     return null;
   }
 
+  // `tooltip` (when set) is also a translation key — resolve once here so leaf
+  // field components stay i18n-agnostic, matching the `label` convention.
+  const tooltip = 'tooltip' in field && field.tooltip ? t(field.tooltip) : undefined;
+
   switch (field.type) {
     case 'color':
       return (
@@ -41,6 +45,7 @@ export function FieldRenderer({ field }: Props) {
           allowAuto={field.allowAuto}
           autoFallback={field.autoFallback}
           vertical={field.vertical}
+          tooltip={tooltip}
         />
       );
     case 'number':
@@ -64,6 +69,7 @@ export function FieldRenderer({ field }: Props) {
                 }
               : undefined
           }
+          tooltip={tooltip}
         />
       );
     case 'slider':
@@ -75,10 +81,11 @@ export function FieldRenderer({ field }: Props) {
           max={field.max}
           step={field.step}
           suffix={field.suffix}
+          tooltip={tooltip}
         />
       );
     case 'boolean':
-      return <BooleanField path={field.path} label={t(field.label)} />;
+      return <BooleanField path={field.path} label={t(field.label)} tooltip={tooltip} />;
     case 'select':
       return (
         <SelectField
@@ -87,6 +94,7 @@ export function FieldRenderer({ field }: Props) {
           options={field.options.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
           vertical={field.vertical}
           valueAsNumber={field.valueAsNumber}
+          tooltip={tooltip}
         />
       );
     case 'text':
@@ -95,6 +103,7 @@ export function FieldRenderer({ field }: Props) {
           path={field.path}
           label={t(field.label)}
           placeholder={field.placeholder ? t(field.placeholder) : undefined}
+          tooltip={tooltip}
         />
       );
     case 'placement':
@@ -115,7 +124,7 @@ export function FieldRenderer({ field }: Props) {
         />
       );
     case 'font-family':
-      return <FontFamilyField path={field.path} label={t(field.label)} />;
+      return <FontFamilyField path={field.path} label={t(field.label)} tooltip={tooltip} />;
     case 'group-header':
       return <h4 className="pt-2 text-sm font-medium text-foreground">{t(field.label)}</h4>;
     case 'separator':
@@ -132,6 +141,7 @@ export function FieldRenderer({ field }: Props) {
           max={field.max}
           step={field.step}
           suffix={field.suffix}
+          tooltip={tooltip}
         />
       );
     }
