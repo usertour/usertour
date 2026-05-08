@@ -961,6 +961,8 @@ const translations = {
     },
     errors: {
       unknownCondition: 'Unknown condition: {{type}}',
+      incompleteSaveBlocked:
+        'Some conditions are incomplete. Open the highlighted ones and finish them before saving.',
       userAttr: {
         selectAttribute: 'Please select an attribute',
         selectOperator: 'Please select a condition',

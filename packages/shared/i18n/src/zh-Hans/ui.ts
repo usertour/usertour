@@ -932,6 +932,7 @@ const translations = {
     },
     errors: {
       unknownCondition: '未知条件类型:{{type}}',
+      incompleteSaveBlocked: '有条件未填写完整,先展开标红的条件修复后再保存。',
       userAttr: {
         selectAttribute: '请选择一个属性',
         selectOperator: '请选择一个条件',

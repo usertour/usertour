@@ -22,6 +22,7 @@ import {
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BuilderMode, useBuilderContext, useChecklistContext } from '../../contexts';
+import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
 
@@ -177,10 +178,23 @@ const ChecklistItemBody = () => {
 };
 
 const ChecklistItemFooter = () => {
-  const { saveCurrentItem, isLoading } = useChecklistContext();
+  const { saveCurrentItem, currentItem, isLoading } = useChecklistContext();
+  const gate = useConditionsSaveGate();
+  const handleSave = () => {
+    if (
+      !gate(
+        currentItem?.completeConditions,
+        currentItem?.onlyShowTaskConditions,
+        currentItem?.clickedActions,
+      )
+    ) {
+      return;
+    }
+    saveCurrentItem();
+  };
   return (
     <CardFooter className="flex-none p-5">
-      <Button className="w-full h-10" disabled={isLoading} onClick={saveCurrentItem}>
+      <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
         Save
       </Button>

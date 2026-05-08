@@ -30,6 +30,7 @@ import {
 import { isRichTextEmpty } from '@usertour/helpers';
 import type { ReactNode } from 'react';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
+import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
 import { IconPicker } from '../../components/icon-picker';
@@ -346,10 +347,15 @@ const BlockLiveChatBody = () => {
 };
 
 const BlockLiveChatFooter = () => {
-  const { saveCurrentBlock, isLoading } = useResourceCenterContext();
+  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterContext();
+  const gate = useConditionsSaveGate();
+  const handleSave = () => {
+    if (!gate(currentBlock?.onlyShowBlockConditions)) return;
+    saveCurrentBlock();
+  };
   return (
     <CardFooter className="flex-none p-5">
-      <Button className="w-full h-10" disabled={isLoading} onClick={saveCurrentBlock}>
+      <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
         Save
       </Button>
