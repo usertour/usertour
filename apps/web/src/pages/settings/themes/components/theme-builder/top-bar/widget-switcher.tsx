@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { ThemeDetailPreviewType } from '@usertour/types';
-import type { ComponentType, SVGProps } from 'react';
+import type { ComponentType } from 'react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -32,7 +32,12 @@ interface WidgetOption {
   // visually grouped by content type and matches the sidebar nav so users
   // bridge "Flows in sidebar" → "Tooltip/Modal/Bubble/NPS in here" without a
   // second mental hop.
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  //
+  // Typed by the only prop we actually pass (`className`) so it accepts both
+  // icon families: @usertour-packages/icons (IconProps) and remixicon
+  // (RemixiconProps). SVGProps<SVGSVGElement> would be too loose — both
+  // families forbid `children`, which SVGProps allows.
+  Icon: ComponentType<{ className?: string }>;
 }
 
 export function WidgetSwitcher({ value, onChange }: Props) {
