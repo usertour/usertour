@@ -355,6 +355,10 @@ const translations = {
       uploading: '上传中',
       uploadedImage: '已上传图片',
       uploadedLogo: '已上传 Logo',
+      uploadedAvatar: '已上传头像',
+      removeAvatar: '移除头像',
+      uploadAvatarTitle: '上传头像',
+      uploadAvatarHint: '支持 PNG / JPG / GIF / SVG,最大 1MB。',
     },
     aria: {
       back: '返回',
@@ -379,6 +383,7 @@ const translations = {
     placeholders: {
       auto: '自动',
       round: '圆形',
+      selectWidget: '选择 widget…',
     },
     validation: {
       toleranceMax: '最大值为 {{max}}',

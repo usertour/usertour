@@ -118,7 +118,7 @@ export function WidgetSwitcher({ value, onChange }: Props) {
             <span className="truncate">{selected.label}</span>
           </span>
         ) : (
-          <SelectValue placeholder="Select widget…" />
+          <SelectValue placeholder={t('themeBuilder.placeholders.selectWidget')} />
         )}
       </SelectTrigger>
       <SelectContent>

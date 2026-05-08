@@ -372,6 +372,10 @@ const translations = {
       uploading: 'Uploading',
       uploadedImage: 'Uploaded image',
       uploadedLogo: 'Uploaded logo',
+      uploadedAvatar: 'Uploaded avatar',
+      removeAvatar: 'Remove avatar',
+      uploadAvatarTitle: 'Upload an avatar',
+      uploadAvatarHint: 'PNG, JPG, GIF or SVG. Max 1MB.',
     },
     aria: {
       back: 'Back',
@@ -396,6 +400,7 @@ const translations = {
     placeholders: {
       auto: 'Auto',
       round: 'Round',
+      selectWidget: 'Select widget…',
     },
     validation: {
       toleranceMax: 'Maximum value is {{max}}',
