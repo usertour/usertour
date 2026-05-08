@@ -42,7 +42,10 @@ export function TopBar({
     // fields) keep the v2 compact chrome — only the outer header reads as
     // shadcn page chrome.
     <div className="relative flex h-14 flex-none items-center justify-between border-b border-border/50 bg-background px-4">
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+      {/* max-w-sm caps how wide the editable title can grow before
+          truncating — matches content detail header so long theme names
+          don't swallow the header chrome. */}
+      <div className="flex min-w-0 max-w-sm flex-1 items-center gap-2">
         <button
           type="button"
           onClick={() => themesListPath && navigate(themesListPath)}

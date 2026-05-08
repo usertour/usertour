@@ -145,7 +145,10 @@ export const ContentDetailHeader = () => {
               (Flows / Checklists / Banners / etc.) so the breadcrumb tells the
               user which list they came from, and the back action goes to the
               matching list page. */}
-          <div className="flex min-w-0 items-center gap-2">
+          {/* max-w-sm caps how wide the editable title can grow before
+              truncating — without it a long flow name swallows half the
+              header before EditableTitle's inner truncate kicks in. */}
+          <div className="flex min-w-0 max-w-sm items-center gap-2">
             <button
               type="button"
               onClick={handleBack}

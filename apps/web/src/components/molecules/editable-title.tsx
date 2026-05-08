@@ -91,7 +91,11 @@ export function EditableTitle({ value, onRename, disabled, className }: Props) {
           // Focus ring matches the atomic Input compact family (3px ring +
           // border-ring + ring/50). The rest stays minimal so the inline
           // edit reads as "renaming in place" rather than "form field".
-          '-mx-1 rounded border border-input bg-background px-1 text-sm font-medium text-foreground shadow-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+          // min-w-0 + max-w-full lets the parent's max-w cap kick in even
+          // when the HTML size attr requests an intrinsic width far wider
+          // than the breadcrumb slot — long names just scroll inside the
+          // capped field instead of blowing out the header.
+          'min-w-0 max-w-full -mx-1 rounded border border-input bg-background px-1 text-sm font-medium text-foreground shadow-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
           className,
         )}
       />
@@ -108,7 +112,7 @@ export function EditableTitle({ value, onRename, disabled, className }: Props) {
         disabled ? 'cursor-default' : 'cursor-pointer hover:bg-muted/40',
         className,
       )}
-      title={disabled ? undefined : 'Click to rename'}
+      title={value}
     >
       <span className="truncate">{value}</span>
       {!disabled && (
