@@ -339,6 +339,7 @@ const translations = {
       applyWhen: '当满足以下条件时应用 <1>{{name}}</1>',
       systemPill: '系统',
       systemPillTooltip: '这是 Usertour 提供的标准主题。复制后可以编辑。',
+      themes: '主题',
       save: '保存',
       saving: '保存中…',
       saved: '已保存',

@@ -72,7 +72,6 @@ const ThemeDetailInner = () => {
   return (
     <ThemeBuilder
       theme={theme}
-      onBack={() => navigate(-1)}
       onSave={handleSave}
       onRename={handleRename}
       onActionComplete={(action) => {

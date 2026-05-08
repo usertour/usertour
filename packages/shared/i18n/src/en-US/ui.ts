@@ -353,6 +353,8 @@ const translations = {
       systemPill: 'System',
       systemPillTooltip:
         'This is a standard theme, managed by Usertour. Duplicate it to make changes.',
+      // Breadcrumb root linking back to the themes list
+      themes: 'Themes',
       // Save button
       save: 'Save',
       saving: 'Saving…',

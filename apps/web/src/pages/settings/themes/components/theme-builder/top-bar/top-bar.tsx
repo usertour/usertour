@@ -1,6 +1,5 @@
 import { Badge } from '@usertour-packages/badge';
-import { Button } from '@usertour-packages/button';
-import { RiArrowLeftLine, RiShieldCheckFill } from '@usertour-packages/icons';
+import { RiArrowRightSLine, RiShieldCheckFill } from '@usertour-packages/icons';
 import {
   Tooltip,
   TooltipContent,
@@ -9,6 +8,7 @@ import {
 } from '@usertour-packages/tooltip';
 import type { Theme } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from '../../theme-edit-dropmenu';
 import { BuilderSaveButton } from '../ui';
 import { EditableTitle } from '@/components/molecules/editable-title';
@@ -16,7 +16,6 @@ import { MoreButton } from '@/components/molecules/section-breadcrumb-header';
 
 interface Props {
   theme: Theme;
-  onBack: () => void;
   onRename: (name: string) => Promise<void>;
   onActionComplete: (action: string) => void;
   hasUnsavedChanges: boolean;
@@ -26,7 +25,6 @@ interface Props {
 
 export function TopBar({
   theme,
-  onBack,
   onRename,
   onActionComplete,
   hasUnsavedChanges,
@@ -34,30 +32,26 @@ export function TopBar({
   onSave,
 }: Props) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { projectId } = useParams();
+  const themesListPath = projectId ? `/project/${projectId}/settings/themes` : null;
   return (
-    // h-14 + ghost icon-sm back / MoreButton — same chrome metrics as
-    // content detail's header (and SectionBreadcrumbHeader). Theme builder is
-    // still a takeover (no app sidebar), but its top-bar now reads with the
-    // same vocabulary so users don't see a register jump between content
-    // detail and theme builder. v2 chrome density still owns the inner panes
-    // (variations sidebar, sections accordion, color/number fields).
+    // h-14 breadcrumb-style header. Mirrors content detail's "<Plural> ▸
+    // <name>" pattern so users see one consistent header vocabulary across
+    // detail pages. Inner panes (variations sidebar, sections accordion,
+    // fields) keep the v2 compact chrome — only the outer header reads as
+    // shadcn page chrome.
     <div className="relative flex h-14 flex-none items-center justify-between border-b border-border/50 bg-background px-4">
-      {/* Title sits next to the back button as a left-aligned breadcrumb
-          ("← Standard Light 2") rather than centered over the canvas.
-          Editor chrome reads as utility, not a stage; an inline editable
-          title also keeps its position stable as the user types instead
-          of jumping horizontally with each keystroke. min-w-0 lets the
-          editable title's truncate take effect when the name is long. */}
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={onBack}
-          aria-label={t('themeBuilder.aria.back')}
+          onClick={() => themesListPath && navigate(themesListPath)}
+          disabled={!themesListPath}
+          className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <RiArrowLeftLine className="h-4 w-4" />
-        </Button>
+          {t('themeBuilder.chrome.themes')}
+        </button>
+        <RiArrowRightSLine className="h-4 w-4 shrink-0 text-muted-foreground/60" />
         <div className="flex min-w-0 items-center gap-2">
           <EditableTitle value={theme.name} onRename={onRename} disabled={theme.isSystem} />
           {theme.isSystem && (

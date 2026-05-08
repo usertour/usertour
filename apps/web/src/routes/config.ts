@@ -12,7 +12,6 @@ import { ContentBuilder, ContentDetail, ContentList, ContentLocalization } from 
 import { Dashboard } from '@/pages/dashboard';
 import {
   AdminBuilderLayout,
-  AdminDetailLayout,
   AdminSubpageLayout,
   AdminListLayout,
   AdminSettingsLayout,
@@ -194,7 +193,7 @@ const config: CustomRouteConfig[] = [
   {
     path: '/project/:projectId/settings/theme/:themeId',
     component: SettingsThemeDetail,
-    layout: AdminDetailLayout,
+    layout: AdminSubpageLayout,
     loginRequired: true,
     redirectIfLogged: false,
     title: 'SettingsThemeDetail',

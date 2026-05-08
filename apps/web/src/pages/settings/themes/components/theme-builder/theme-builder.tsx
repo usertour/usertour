@@ -30,7 +30,6 @@ const RIGHT_SIDEBAR = { default: 320, min: 280, max: 480 };
 
 interface Props {
   theme: Theme;
-  onBack: () => void;
   onSave: (payload: { settings: ThemeTypesSetting; variations: ThemeVariation[] }) => Promise<void>;
   onRename: (name: string) => Promise<void>;
   onActionComplete: (action: string) => void;
@@ -39,7 +38,7 @@ interface Props {
 const mergeWithDefaults = (settings: ThemeTypesSetting): ThemeTypesSetting =>
   deepmerge(defaultSettings, settings) as ThemeTypesSetting;
 
-export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete }: Props) {
+export function ThemeBuilder({ theme, onSave, onRename, onActionComplete }: Props) {
   const [activeWidgetType, setActiveWidgetType] = useState<ThemeDetailPreviewType>(
     ThemeDetailPreviewType.TOOLTIP,
   );
@@ -151,10 +150,12 @@ export function ThemeBuilder({ theme, onBack, onSave, onRename, onActionComplete
 
   return (
     <BuilderProvider value={builderContextValue}>
-      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      {/* AdminSubpageLayout's content card is `flex h-full w-full` (flex-row);
+          we stack TopBar + 3-column body vertically and let the inner panes
+          own their own scroll. */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
         <TopBar
           theme={theme}
-          onBack={onBack}
           onRename={onRename}
           onActionComplete={onActionComplete}
           hasUnsavedChanges={draft.hasUnsavedChanges}
