@@ -398,50 +398,47 @@ const translations = {
         'This variation overrides the Base theme when its conditions match the current user. All matching variations are applied in the order shown in the list — drag to reorder.',
       // Tooltip — Tooltip section
       tooltipMissingTargetTolerance:
-        "Specifies how long to wait for the target element to appear. If the element doesn't show up within this time, the 'Missing tooltip target behavior' setting below will be applied.",
+        "How long to wait for the target element to appear. If it doesn't appear within this time, the 'Missing target behavior' setting below kicks in.",
       tooltipMissingTargetBehavior:
-        'Determines the fallback action when the target element cannot be found within the tolerance time specified above.',
+        "Fallback action when the target element can't be found within the tolerance above.",
       // Modal
-      modalBackdropClickBehavior:
-        'Controls the action when users click the backdrop area outside the modal.',
+      modalBackdropClickBehavior: 'What happens when users click the backdrop outside the modal.',
       // Bubble
-      bubblePlacement: 'Specifies the corner position where the speech bubble will appear.',
-      bubbleOffsetX: 'The horizontal distance in pixels from the browser window edge.',
-      bubbleOffsetY: 'The vertical distance in pixels from the browser window edge.',
+      bubblePlacement: 'Where the speech bubble appears on screen.',
+      bubbleOffsetX: 'Horizontal distance in pixels from the nearest side of the viewport.',
+      bubbleOffsetY: 'Vertical distance in pixels from the top or bottom of the viewport.',
       // Banner
-      bannerAnimationDuration: 'The banner reveal animation duration in milliseconds.',
-      bannerAnimationTiming: 'The easing curve for the banner reveal animation.',
+      bannerAnimationDuration: 'Duration of the banner reveal animation, in milliseconds.',
+      bannerAnimationTiming: 'Easing curve for the banner reveal animation.',
       // Checklist
-      checklistWidth: 'The width in pixels of the checklist',
-      checklistPlacement: 'Controls which corner the checklist should be placed at.',
-      checklistOffsetX:
-        'How far in pixels from the horizontal edge of the browser window the checklist should be positioned.',
-      checklistOffsetY:
-        'How far in pixels from the vertical edge of the browser window the checklist should be positioned.',
-      checklistCompletedTaskDecoration: 'Controls the text decoration of the completed task.',
+      checklistWidth: 'Width of the checklist in pixels.',
+      checklistPlacement: 'Where the checklist appears on screen.',
+      checklistOffsetX: 'Horizontal distance in pixels from the nearest side of the viewport.',
+      checklistOffsetY: 'Vertical distance in pixels from the top or bottom of the viewport.',
+      checklistCompletedTaskDecoration: 'Text decoration applied to completed tasks.',
       // Checklist launcher
-      checklistLauncherHeight: 'The height in pixels of the checklist launcher',
-      checklistLauncherPlacement:
-        'Controls which corner the checklist launcher should be placed at.',
+      checklistLauncherHeight: 'Height of the checklist launcher in pixels.',
+      checklistLauncherPlacement: 'Where the checklist launcher appears on screen.',
       checklistLauncherOffsetX:
-        'How far in pixels from the horizontal edge of the browser window the checklist launcher should be positioned.',
+        'Horizontal distance in pixels from the nearest side of the viewport.',
       checklistLauncherOffsetY:
-        'How far in pixels from the vertical edge of the browser window the checklist launcher should be positioned.',
+        'Vertical distance in pixels from the top or bottom of the viewport.',
       // Resource center
-      resourceCenterHeaderBackground: 'The background style for the resource center header area.',
-      resourceCenterPlacement: 'Controls which corner the resource center panel should appear at.',
-      resourceCenterOffsetX: 'Horizontal offset from the edge of the viewport in pixels.',
-      resourceCenterOffsetY: 'Vertical offset from the edge of the viewport in pixels.',
-      resourceCenterNormalWidth: 'The default width of the resource center panel.',
-      resourceCenterLargeWidth: 'The expanded width used for larger block types.',
-      resourceCenterMaxHeight: 'Maximum height of the resource center panel in pixels.',
+      resourceCenterHeaderBackground: 'Background style for the resource center header.',
+      resourceCenterPlacement: 'Where the resource center panel appears on screen.',
+      resourceCenterOffsetX: 'Horizontal offset in pixels from the nearest side of the viewport.',
+      resourceCenterOffsetY: 'Vertical offset in pixels from the top or bottom of the viewport.',
+      resourceCenterNormalWidth: 'Default width of the resource center panel.',
+      resourceCenterLargeWidth: 'Wider width used by blocks that need more space.',
+      resourceCenterMaxHeight: 'Maximum height of the resource center panel, in pixels.',
       // Resource center launcher
-      resourceCenterLauncherIcon: 'The icon displayed in the launcher button.',
-      resourceCenterLauncherHeight: 'The height of the launcher button in pixels.',
-      resourceCenterLauncherImageHeight: 'The height of the icon image inside the launcher button.',
+      resourceCenterLauncherIcon: 'Icon shown in the launcher button.',
+      resourceCenterLauncherHeight: 'Height of the launcher button in pixels.',
+      resourceCenterLauncherImageHeight:
+        'Height of the custom icon image inside the launcher button.',
       resourceCenterLauncherBorderRadius:
-        'The border radius of the launcher button. Leave blank for a round launcher.',
-      resourceCenterLauncherTextMode: 'Controls what text is shown next to the launcher icon.',
+        'Border radius of the launcher button. Leave blank for a fully round launcher.',
+      resourceCenterLauncherTextMode: 'What text appears next to the launcher icon.',
     },
     placeholders: {
       auto: 'Auto',
