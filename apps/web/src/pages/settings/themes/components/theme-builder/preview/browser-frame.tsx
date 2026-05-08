@@ -11,9 +11,13 @@ interface Props {
 // Browser chrome wrapper for widget previews. Forwards a ref to the inner
 // content area so widget previews can measure the actual viewport for
 // positioning anchored elements (tooltips, etc).
+//
+// min-w-[640px] keeps modal / banner widgets renderable when sidebars are
+// pushed wide; overflow gets clipped by the surrounding pane rather than
+// letting the frame collapse below the widget's native size.
 export const BrowserFrame = forwardRef<HTMLDivElement, Props>(({ children, chromeAction }, ref) => {
   return (
-    <div className="flex h-full w-full max-w-[1200px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
+    <div className="flex h-full w-full min-w-[640px] max-w-[1200px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
       {/* Window controls + nav arrows + URL bar */}
       <div className="flex h-11 flex-none items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-2.5">
