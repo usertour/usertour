@@ -4,12 +4,7 @@ import {
   generateStateColors,
   mergeThemeDefaultSettings,
 } from '@usertour/helpers';
-import {
-  type RulesCondition,
-  type ThemeTypesSetting,
-  type ThemeVariation,
-  defaultSettings,
-} from '@usertour/types';
+import type { RulesCondition, ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import isEqual from 'fast-deep-equal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cloneDeep, getPath, setPath } from './draft-util';
@@ -278,20 +273,28 @@ export function useThemeDraft({
 
   const finalSettings = useMemo(() => convertSettings(activeSettings), [activeSettings]);
 
-  const addVariation = useCallback((name?: string): string => {
-    const id = cuid();
-    const next: ThemeVariation = {
-      id,
-      name: name ?? '',
-      conditions: [],
-      settings: cloneDeep(defaultSettings),
-    };
-    setVariations((prev) => {
-      const fallbackName = name ?? `Variation ${prev.length + 1}`;
-      return [...prev, { ...next, name: next.name || fallbackName }];
-    });
-    return id;
-  }, []);
+  // Seed new variations from the current Base, not from `defaultSettings`.
+  // Variations are deltas off Base for a specific audience — starting from
+  // factory defaults would wipe out everything the author has tuned in
+  // Base and force them to redo it before they can begin diverging. To
+  // duplicate an existing variation, that's a separate explicit action.
+  const addVariation = useCallback(
+    (name?: string): string => {
+      const id = cuid();
+      const next: ThemeVariation = {
+        id,
+        name: name ?? '',
+        conditions: [],
+        settings: cloneDeep(base),
+      };
+      setVariations((prev) => {
+        const fallbackName = name ?? `Variation ${prev.length + 1}`;
+        return [...prev, { ...next, name: next.name || fallbackName }];
+      });
+      return id;
+    },
+    [base],
+  );
 
   const removeVariation = useCallback((id: string) => {
     setVariations((prev) => prev.filter((v) => v.id !== id));
