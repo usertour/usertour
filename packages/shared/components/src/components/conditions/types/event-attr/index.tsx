@@ -83,6 +83,16 @@ function EventAttrSummary({ condition }: { condition: RulesCondition }) {
   const operator = operatorOptions.find((o) => o.value === data.logic) ?? operatorOptions[0];
   const operatorLabel = operator ? t(operator.labelKey) : '';
 
+  // Date attributes are stored as ISO `yyyy-MM-dd`; reformat to the
+  // Apple-style label the picker trigger uses so chip and picker read
+  // alike. See user-attr/index.tsx for the same formatStored helper.
+  const formatStored = (raw: string): string => {
+    if (!raw) return '';
+    if (attribute.dataType !== AttributeDataType.DateTime) return raw;
+    const parsed = new Date(`${raw}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? raw : format(parsed, 'MMM d, yyyy');
+  };
+
   let valueText = '';
   if (attribute.dataType === AttributeDataType.List && data.listValues?.length) {
     valueText = data.listValues.join(', ');
@@ -90,7 +100,7 @@ function EventAttrSummary({ condition }: { condition: RulesCondition }) {
     !VALUELESS_OPERATORS.has(operator?.value ?? '') &&
     attribute.dataType !== AttributeDataType.Boolean
   ) {
-    valueText = data.value ?? '';
+    valueText = formatStored(data.value ?? '');
   }
 
   const template = valueText ? splitOperatorTemplate(operatorLabel) : null;
@@ -121,7 +131,7 @@ function EventAttrSummary({ condition }: { condition: RulesCondition }) {
           <>
             {' '}
             <span className="text-muted-foreground">{t('conditions.operators.and')}</span>{' '}
-            <span className="font-semibold">{data.value2}</span>
+            <span className="font-semibold">{formatStored(data.value2 ?? '')}</span>
           </>
         )}
       </span>

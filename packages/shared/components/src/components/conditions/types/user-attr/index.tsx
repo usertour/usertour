@@ -69,6 +69,19 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
   const operator = operatorOptions.find((o) => o.value === data.logic) ?? operatorOptions[0];
   const operatorLabel = operator ? t(operator.labelKey) : '';
 
+  // Date attributes are stored as ISO `yyyy-MM-dd` for portability but the
+  // chip should read with the same Apple-style label the picker trigger
+  // uses (`MMM d, yyyy`). Parse the stored ISO into a Date and reformat
+  // for display only — does not touch the persisted value. Falls back to
+  // the raw string if parsing fails (defensive: legacy data could carry
+  // non-ISO strings).
+  const formatStored = (raw: string): string => {
+    if (!raw) return '';
+    if (attribute.dataType !== AttributeDataType.DateTime) return raw;
+    const parsed = new Date(`${raw}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? raw : format(parsed, 'MMM d, yyyy');
+  };
+
   let valueText = '';
   if (attribute.dataType === AttributeDataType.List && data.listValues?.length) {
     valueText = data.listValues.join(', ');
@@ -76,10 +89,10 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
     !VALUELESS_OPERATORS.has(operator?.value ?? '') &&
     attribute.dataType !== AttributeDataType.Boolean
   ) {
-    valueText = data.value ?? '';
+    valueText = formatStored(data.value ?? '');
   }
 
-  const between = data.logic === 'between' ? (data.value2 ?? '') : '';
+  const between = data.logic === 'between' ? formatStored(data.value2 ?? '') : '';
   const template = valueText ? splitOperatorTemplate(operatorLabel) : null;
 
   return (
