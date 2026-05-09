@@ -736,6 +736,9 @@ const translations = {
       beforeDate: 'before a specific date',
       onDate: 'on a specific date',
       afterDate: 'after a specific date',
+      beforeDateSummary: 'before ...',
+      onDateSummary: 'on ...',
+      afterDateSummary: 'after ...',
     },
     types: {
       group: {

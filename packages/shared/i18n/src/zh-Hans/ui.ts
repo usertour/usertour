@@ -712,6 +712,9 @@ const translations = {
       beforeDate: '在某个日期之前',
       onDate: '在某个日期',
       afterDate: '在某个日期之后',
+      beforeDateSummary: '早于 ...',
+      onDateSummary: '在 ...',
+      afterDateSummary: '晚于 ...',
     },
     types: {
       group: {

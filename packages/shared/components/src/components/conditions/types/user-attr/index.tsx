@@ -68,7 +68,7 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
 
   const operatorOptions = operatorsFor(attribute.dataType);
   const operator = operatorOptions.find((o) => o.value === data.logic) ?? operatorOptions[0];
-  const operatorLabel = operator ? t(operator.labelKey) : '';
+  const operatorLabel = operator ? t(operator.summaryLabelKey ?? operator.labelKey) : '';
 
   // Date attributes are stored as ISO `yyyy-MM-dd` for portability but the
   // chip should read with the same Apple-style label the picker trigger

@@ -3,9 +3,17 @@ import { AttributeDataType } from '@usertour/types';
 // Operator logic values keyed off attribute datatype. The `labelKey` is an i18n
 // key (resolved at render time) — kept as keys here so this module stays
 // translation-free and importable from non-React contexts.
+//
+// `summaryLabelKey` is the chip-form label when the dropdown phrasing reads
+// awkwardly inline with a value. Optional: dropdown ("on a specific date")
+// is self-explanatory standalone, but the chip sentence "<attr> on a
+// specific date <value>" doubles up — the value IS the specific date. Chip
+// rendering prefers `summaryLabelKey ?? labelKey`. Use `...` placeholder
+// (handled by splitOperatorTemplate) so the value gets spliced in.
 export interface OperatorEntry {
   value: string;
   labelKey: string;
+  summaryLabelKey?: string;
 }
 
 export const OPERATORS_BY_DATATYPE: Record<number, OperatorEntry[]> = {
@@ -48,9 +56,21 @@ export const OPERATORS_BY_DATATYPE: Record<number, OperatorEntry[]> = {
     { value: 'lessThan', labelKey: 'conditions.operators.daysAgoLessThan' },
     { value: 'exactly', labelKey: 'conditions.operators.daysAgoExactly' },
     { value: 'moreThan', labelKey: 'conditions.operators.daysAgoMoreThan' },
-    { value: 'before', labelKey: 'conditions.operators.beforeDate' },
-    { value: 'on', labelKey: 'conditions.operators.onDate' },
-    { value: 'after', labelKey: 'conditions.operators.afterDate' },
+    {
+      value: 'before',
+      labelKey: 'conditions.operators.beforeDate',
+      summaryLabelKey: 'conditions.operators.beforeDateSummary',
+    },
+    {
+      value: 'on',
+      labelKey: 'conditions.operators.onDate',
+      summaryLabelKey: 'conditions.operators.onDateSummary',
+    },
+    {
+      value: 'after',
+      labelKey: 'conditions.operators.afterDate',
+      summaryLabelKey: 'conditions.operators.afterDateSummary',
+    },
     { value: 'any', labelKey: 'conditions.operators.hasAnyValue' },
     { value: 'empty', labelKey: 'conditions.operators.isEmpty' },
   ],
