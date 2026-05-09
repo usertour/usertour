@@ -603,20 +603,11 @@ const translations = {
         extraBold: 'Extra bold 800',
         black: 'Black 900',
       },
-      placement: {
+      placementCornerCenter: {
         topLeft: 'Top left',
-        topCenter: 'Top center',
         topRight: 'Top right',
         bottomLeft: 'Bottom left',
-        bottomCenter: 'Bottom center',
         bottomRight: 'Bottom right',
-        center: 'Center',
-      },
-      placementCornerCenter: {
-        topLeft: 'Top Left',
-        topRight: 'Top Right',
-        bottomLeft: 'Bottom Left',
-        bottomRight: 'Bottom Right',
         center: 'Center',
       },
       progressBarType: {
@@ -646,7 +637,7 @@ const translations = {
         linear: 'Linear',
       },
       textDecoration: {
-        none: 'None (no line-through)',
+        none: 'None',
         lineThrough: 'Line-through',
       },
       headerBackgroundType: {

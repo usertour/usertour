@@ -579,15 +579,6 @@ const translations = {
         extraBold: '特粗 800',
         black: '极粗 900',
       },
-      placement: {
-        topLeft: '左上',
-        topCenter: '上中',
-        topRight: '右上',
-        bottomLeft: '左下',
-        bottomCenter: '下中',
-        bottomRight: '右下',
-        center: '居中',
-      },
       placementCornerCenter: {
         topLeft: '左上',
         topRight: '右上',
@@ -622,7 +613,7 @@ const translations = {
         linear: '线性',
       },
       textDecoration: {
-        none: '无（无删除线）',
+        none: '无',
         lineThrough: '删除线',
       },
       headerBackgroundType: {
