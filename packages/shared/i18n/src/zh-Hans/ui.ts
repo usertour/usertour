@@ -608,8 +608,8 @@ const translations = {
         bottom: '底部',
       },
       missingTargetBehavior: {
-        autoDismiss: '自动关闭',
-        useBubble: '改用气泡',
+        autoDismiss: '结束 flow',
+        useBubble: '改为显示气泡',
       },
       modalBackdropClick: {
         doNothing: '什么也不做',

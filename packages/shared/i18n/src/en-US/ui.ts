@@ -632,8 +632,8 @@ const translations = {
         bottom: 'Bottom',
       },
       missingTargetBehavior: {
-        autoDismiss: 'Auto dismiss',
-        useBubble: 'Use bubble',
+        autoDismiss: 'Dismiss the flow',
+        useBubble: 'Show a speech bubble instead',
       },
       modalBackdropClick: {
         doNothing: 'Do nothing',
