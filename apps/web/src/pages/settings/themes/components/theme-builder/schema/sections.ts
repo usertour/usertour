@@ -998,6 +998,13 @@ export const builderSections: BuilderSection[] = [
         ],
       },
       {
+        type: 'color',
+        path: 'resourceCenterLauncherButton.color.foreground',
+        label: 'themeBuilder.fields.common.fontColor',
+        allowAuto: true,
+        vertical: true,
+      },
+      {
         type: 'triple-color',
         paths: [
           'resourceCenterLauncherButton.color.background',
@@ -1010,13 +1017,6 @@ export const builderSections: BuilderSection[] = [
           'themeBuilder.fields.common.active',
         ],
         allowAuto: ALL_AUTO,
-      },
-      {
-        type: 'color',
-        path: 'resourceCenterLauncherButton.color.foreground',
-        label: 'themeBuilder.fields.common.fontColor',
-        allowAuto: true,
-        vertical: true,
       },
     ],
   },
