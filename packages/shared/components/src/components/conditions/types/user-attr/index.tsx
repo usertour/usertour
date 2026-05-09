@@ -82,13 +82,16 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
     return Number.isNaN(parsed.getTime()) ? raw : format(parsed, 'MMM d, yyyy');
   };
 
+  // Valueless operators (`is empty` / `has any value`) make the value
+  // irrelevant — the chip should read just "<attr> is empty", not still
+  // show the leftover values the user typed before switching operators.
+  // Gate both the List and the scalar branch on this check.
+  const isValueless = VALUELESS_OPERATORS.has(operator?.value ?? '');
+
   let valueText = '';
-  if (attribute.dataType === AttributeDataType.List && data.listValues?.length) {
+  if (!isValueless && attribute.dataType === AttributeDataType.List && data.listValues?.length) {
     valueText = data.listValues.join(', ');
-  } else if (
-    !VALUELESS_OPERATORS.has(operator?.value ?? '') &&
-    attribute.dataType !== AttributeDataType.Boolean
-  ) {
+  } else if (!isValueless && attribute.dataType !== AttributeDataType.Boolean) {
     valueText = formatStored(data.value ?? '');
   }
 
@@ -206,8 +209,14 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
     onChange(writeData(condition, { value2 }));
   };
 
+  // Keep trailing empty rows in state while editing — ListInput appends an
+  // empty slot when the user clicks "Add value", and stripping empties on
+  // every change would cancel that out (the new slot would land empty,
+  // get filtered, ListInput re-renders the same single placeholder, and
+  // the click looks dead). Empties are stripped on popover close via
+  // schema.normalize, so persisted data still has no empties.
   const handleListChange = (listValues: string[]) => {
-    onChange(writeData(condition, { listValues: listValues.filter((v) => v !== '') }));
+    onChange(writeData(condition, { listValues }));
   };
 
   const showValueInput =
@@ -312,5 +321,18 @@ export const userAttrSchema: ConditionTypeSchema<UserAttrData> = {
   defaultData: () => ({}),
   Summary: UserAttrSummary,
   Editor: UserAttrEditor,
+  // Strip in-flight empty list rows on close so persisted data is clean.
+  // The editor keeps trailing empties in state to make the "Add value"
+  // affordance work; this is the place to compact them.
+  normalize: (condition) => {
+    const data = readData(condition);
+    if (!data.listValues || data.listValues.every((v) => v !== '')) {
+      return condition;
+    }
+    return {
+      ...condition,
+      data: { ...data, listValues: data.listValues.filter((v) => v !== '') },
+    };
+  },
   validate: (condition, ctx) => validateUserAttr(readData(condition), ctx.attributes),
 };

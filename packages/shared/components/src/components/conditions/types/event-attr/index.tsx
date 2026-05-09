@@ -93,13 +93,13 @@ function EventAttrSummary({ condition }: { condition: RulesCondition }) {
     return Number.isNaN(parsed.getTime()) ? raw : format(parsed, 'MMM d, yyyy');
   };
 
+  // Valueless operators clear the value role — see user-attr/index.tsx.
+  const isValueless = VALUELESS_OPERATORS.has(operator?.value ?? '');
+
   let valueText = '';
-  if (attribute.dataType === AttributeDataType.List && data.listValues?.length) {
+  if (!isValueless && attribute.dataType === AttributeDataType.List && data.listValues?.length) {
     valueText = data.listValues.join(', ');
-  } else if (
-    !VALUELESS_OPERATORS.has(operator?.value ?? '') &&
-    attribute.dataType !== AttributeDataType.Boolean
-  ) {
+  } else if (!isValueless && attribute.dataType !== AttributeDataType.Boolean) {
     valueText = formatStored(data.value ?? '');
   }
 
@@ -279,11 +279,12 @@ function EventAttrEditor({ condition, onChange }: EditorProps) {
           />
         ))}
       {showListInput && (
+        // Keep trailing empty rows so "Add value" works — see user-attr
+        // for the rationale. Empties are stripped by schema.normalize on
+        // popover close.
         <ListInput
           values={data.listValues ?? []}
-          onChange={(listValues) =>
-            onChange(writeData(condition, { listValues: listValues.filter(Boolean) }))
-          }
+          onChange={(listValues) => onChange(writeData(condition, { listValues }))}
           placeholder={t('conditions.types.userAttr.valuePlaceholder')}
         />
       )}
@@ -309,5 +310,16 @@ export const eventAttrSchema: ConditionTypeSchema<EventAttrData> = {
   defaultData: () => ({}),
   Summary: EventAttrSummary,
   Editor: EventAttrEditor,
+  // Strip in-flight empty list rows on close — same pattern as user-attr.
+  normalize: (condition) => {
+    const data = readData(condition);
+    if (!data.listValues || data.listValues.every((v) => v !== '')) {
+      return condition;
+    }
+    return {
+      ...condition,
+      data: { ...data, listValues: data.listValues.filter((v) => v !== '') },
+    };
+  },
   validate: (condition, ctx) => validateEventAttr(readData(condition), ctx.attributes),
 };
