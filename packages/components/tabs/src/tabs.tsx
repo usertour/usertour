@@ -87,7 +87,7 @@ const underlineTabsTriggerVariants = cva(
   },
 );
 
-interface UnderlineTabsTriggerProps
+export interface UnderlineTabsTriggerProps
   extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>,
     VariantProps<typeof underlineTabsTriggerVariants> {}
 

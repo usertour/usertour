@@ -107,7 +107,7 @@ const DropdownMenuSubContent = React.forwardRef<
 ));
 DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName;
 
-interface DropdownMenuContentProps
+export interface DropdownMenuContentProps
   extends React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>,
     VariantProps<typeof dropdownMenuContentVariants> {}
 
@@ -126,7 +126,7 @@ const DropdownMenuContent = React.forwardRef<
 ));
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
-interface DropdownMenuItemProps
+export interface DropdownMenuItemProps
   extends React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item>,
     VariantProps<typeof dropdownMenuItemVariants> {
   inset?: boolean;
