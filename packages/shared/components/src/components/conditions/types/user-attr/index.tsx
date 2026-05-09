@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 import {
   useConditionsContext,
   useConditionsT,
+  useConditionsZIndex,
   useSummaryTextClass,
 } from '../../conditions-context';
 import { ListInput } from '../../primitives/list-input';
@@ -149,6 +150,7 @@ const BIZ_GROUP_KEYS: { biz: number; headingKey: string }[] = [
 function UserAttrEditor({ condition, onChange }: EditorProps) {
   const t = useConditionsT();
   const { attributes } = useConditionsContext();
+  const { popover: popoverZIndex } = useConditionsZIndex();
   const data = readData(condition);
   const attribute = findAttribute(attributes, data.attrId);
 
@@ -306,6 +308,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
           mode="date"
           value={data.value ? new Date(`${data.value}T00:00:00`) : undefined}
           onChange={(d) => handleValueChange(d ? format(d, 'yyyy-MM-dd') : '')}
+          zIndex={popoverZIndex}
         />
       )}
     </div>

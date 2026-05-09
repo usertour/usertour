@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import {
   useConditionsContext,
   useConditionsT,
+  useConditionsZIndex,
   useSummaryTextClass,
 } from '../../conditions-context';
 import { ListInput } from '../../primitives/list-input';
@@ -149,6 +150,7 @@ interface EditorProps {
 function EventAttrEditor({ condition, onChange }: EditorProps) {
   const t = useConditionsT();
   const { attributes } = useConditionsContext();
+  const { popover: popoverZIndex } = useConditionsZIndex();
   const eventId = useEventScope();
   const data = readData(condition);
 
@@ -295,6 +297,7 @@ function EventAttrEditor({ condition, onChange }: EditorProps) {
           onChange={(d) =>
             onChange(writeData(condition, { value: d ? format(d, 'yyyy-MM-dd') : '' }))
           }
+          zIndex={popoverZIndex}
         />
       )}
     </div>

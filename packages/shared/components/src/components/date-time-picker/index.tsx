@@ -19,6 +19,12 @@ interface Props {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  // Conditions render this picker inside a Radix popover whose z-index is
+  // way above the default `z-50`; without this prop the calendar Portal
+  // gets stuck below the parent (e.g., builder chrome at z=11003 pins the
+  // calendar at z=50, hidden behind the conditions popover). Callers
+  // inside Conditions should pass `useConditionsZIndex().popover`.
+  zIndex?: number;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -57,6 +63,7 @@ export function DateTimePicker({
   disabled,
   placeholder,
   className,
+  zIndex,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -112,7 +119,16 @@ export function DateTimePicker({
           <span className="truncate">{triggerLabel}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="flex w-auto p-0" align="start" sideOffset={4}>
+      <PopoverContent
+        className="flex w-auto p-0"
+        align="start"
+        sideOffset={4}
+        style={zIndex ? { zIndex } : undefined}
+        // Stay inside the parent's stacking context — Radix Portal lifts to
+        // body and gets pinned by every elevated popover/modal in builder
+        // chrome. Mirrors v1 RulesAttributeDatePicker.
+        withoutPortal
+      >
         <Calendar
           mode="single"
           selected={value}

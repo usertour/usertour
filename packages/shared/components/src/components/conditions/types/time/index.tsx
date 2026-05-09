@@ -2,7 +2,7 @@ import { TimeIcon } from '@usertour-packages/icons';
 import type { RulesCondition, TimeConditionData } from '@usertour/types';
 import { format } from 'date-fns';
 import { DateTimePicker } from '../../../date-time-picker';
-import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
+import { useConditionsT, useConditionsZIndex, useSummaryTextClass } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTime } from '../../validators';
 import { EMPTY_PARSED, type ParsedTime, formatPretty, readParts, writeData } from './utils';
@@ -78,6 +78,7 @@ const dateToParts = (d: Date | undefined): ParsedTime => {
 
 function TimeEditor({ condition, onChange }: EditorProps) {
   const t = useConditionsT();
+  const { popover: popoverZIndex } = useConditionsZIndex();
   const { start, end } = readParts(condition.data as TimeConditionData | undefined);
 
   const commit = (next: { start?: ParsedTime; end?: ParsedTime }) => {
@@ -95,6 +96,7 @@ function TimeEditor({ condition, onChange }: EditorProps) {
         <DateTimePicker
           value={partsToDate(start)}
           onChange={(d) => commit({ start: dateToParts(d) })}
+          zIndex={popoverZIndex}
         />
       </div>
       <div className="flex flex-col gap-1.5">
@@ -104,6 +106,7 @@ function TimeEditor({ condition, onChange }: EditorProps) {
         <DateTimePicker
           value={partsToDate(end)}
           onChange={(d) => commit({ end: dateToParts(d) })}
+          zIndex={popoverZIndex}
         />
       </div>
     </div>
