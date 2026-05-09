@@ -147,6 +147,7 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
             disabled={isViewOnly}
             baseZIndex={WebZIndex.RULES}
             t={t}
+            addLabelKey="conditions.actions.addFilter"
           />
         </div>
       )}

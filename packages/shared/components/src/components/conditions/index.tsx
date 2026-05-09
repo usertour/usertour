@@ -33,6 +33,12 @@ interface ConditionsProps {
   // Optional translator. If omitted, translation keys pass through unchanged.
   // Apps wire this with the `t` from `useTranslation()`.
   t?: ConditionsTranslator;
+
+  // Override for the "Add condition" trigger label. Filter-shaped contexts
+  // (segment / data-table filtering) pass `'conditions.actions.addFilter'`
+  // so the verb reads as "Add filter" — gating contexts (autostart, button
+  // disable, RC block display) keep the default condition phrasing.
+  addLabelKey?: string;
 }
 
 const defaultTranslator: ConditionsTranslator = (key) => key;
@@ -60,6 +66,7 @@ export function Conditions({
   disabled = false,
   baseZIndex,
   t,
+  addLabelKey = 'conditions.actions.addCondition',
 }: ConditionsProps) {
   const translator = t ?? defaultTranslator;
   const value = useMemo(
@@ -78,6 +85,7 @@ export function Conditions({
       onElementChange,
       token,
       t: translator,
+      addLabelKey,
     }),
     [
       attributes,
@@ -94,6 +102,7 @@ export function Conditions({
       onElementChange,
       token,
       translator,
+      addLabelKey,
     ],
   );
 

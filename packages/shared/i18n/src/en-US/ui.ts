@@ -694,6 +694,7 @@ const translations = {
   conditions: {
     actions: {
       addCondition: 'Add condition',
+      addFilter: 'Add filter',
       addValue: 'Add value',
       removeCondition: 'Remove condition',
       removeGroup: 'Remove group',

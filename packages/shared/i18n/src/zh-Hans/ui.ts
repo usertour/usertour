@@ -670,6 +670,7 @@ const translations = {
   conditions: {
     actions: {
       addCondition: '添加条件',
+      addFilter: '添加筛选',
       addValue: '添加值',
       removeCondition: '移除条件',
       removeGroup: '移除分组',

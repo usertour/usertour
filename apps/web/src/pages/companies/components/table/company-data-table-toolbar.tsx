@@ -153,6 +153,7 @@ export const CompanyDataTableToolbar = ({
             disabled={isViewOnly}
             baseZIndex={WebZIndex.RULES}
             t={t}
+            addLabelKey="conditions.actions.addFilter"
           />
         </div>
       )}

@@ -31,6 +31,10 @@ interface ConditionsContextValue {
   // Translator. When omitted, keys pass through unchanged so the tree still
   // renders something (useful for tests / runtime contexts without i18n).
   t: ConditionsTranslator;
+  // i18n key for the "Add condition" trigger label. Lets consumers in
+  // filter-shaped contexts (segment toolbars, data-table filters) say
+  // "Add filter" without changing the verb everywhere else.
+  addLabelKey: string;
 }
 
 const ConditionsContext = createContext<ConditionsContextValue | undefined>(undefined);

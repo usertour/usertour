@@ -42,7 +42,7 @@ export function AddConditionDropdown({
   isNested,
 }: Props) {
   const t = useConditionsT();
-  const { filterItems: ctxFilter, disabled, isHorizontal } = useConditionsContext();
+  const { filterItems: ctxFilter, disabled, isHorizontal, addLabelKey } = useConditionsContext();
   const filterItems = filterItemsOverride ?? ctxFilter;
   const schemas = listAvailableSchemas(filterItems).filter((s) =>
     isNested ? s.type !== 'group' : true,
@@ -82,7 +82,7 @@ export function AddConditionDropdown({
           )}
         >
           <PlusIcon className="h-3.5 w-3.5" />
-          {t('conditions.actions.addCondition')}
+          {t(addLabelKey)}
         </button>
       </ConditionDropdownMenuTrigger>
       <ConditionDropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
