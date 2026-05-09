@@ -206,7 +206,6 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
         <AnalyticsNPS
           key={analytics.question.data.cvid}
           questionAnalytics={analytics}
-          totalViews={totalViews}
           content={content}
           onRollingWindowChange={handleRollingWindowChange}
         />
@@ -220,7 +219,6 @@ export const AnalyticsQuestion = (props: { contentId: string }) => {
         <AnalyticsScale
           key={analytics.question.data.cvid}
           questionAnalytics={analytics}
-          totalViews={totalViews}
           content={content}
           onRollingWindowChange={handleRollingWindowChange}
         />

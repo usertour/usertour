@@ -20,7 +20,6 @@ import { QuestionStarRating } from '@/components/molecules/question';
 
 interface AnalyticsScaleProps {
   questionAnalytics: ContentQuestionAnalytics;
-  totalViews: number;
   content: Content;
   onRollingWindowChange: (success: boolean) => void;
 }
@@ -56,8 +55,8 @@ const completeDistribution = (min: number, max: number, distribution: AnswerCoun
 };
 
 export const AnalyticsScale = (props: AnalyticsScaleProps) => {
-  const { questionAnalytics, totalViews, content, onRollingWindowChange } = props;
-  const { averageByDay, answer, question } = questionAnalytics;
+  const { questionAnalytics, content, onRollingWindowChange } = props;
+  const { averageByDay, question } = questionAnalytics;
   const rollingWindow = content.config?.rollWindowConfig ?? CONSTANTS.DEFAULT_ROLLING_WINDOW;
   const [selectedDay, setSelectedDay] = useState<AverageByDay | null>(null);
   const { invoke: updateContent } = useUpdateContentMutation();
@@ -84,11 +83,11 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
     [averageByDay],
   );
 
-  const total = answer?.reduce((acc, item) => acc + item.count, 0) || 0;
   const lastDay = averageByDay?.[averageByDay.length - 1];
 
-  const totalResponses = selectedDay?.metrics.total ?? total ?? 0;
-  const rate = totalViews > 0 ? Math.round(((totalResponses ?? 0) / totalViews) * 100) : 0;
+  const totalResponses = selectedDay?.metrics.total ?? lastDay?.metrics.total ?? 0;
+  const views = selectedDay?.metrics.views ?? lastDay?.metrics.views ?? 0;
+  const rate = views > 0 ? Math.round((totalResponses / views) * 100) : 0;
   const average = lastDay?.metrics.average ?? 0;
 
   const startDate = selectedDay?.startDate
