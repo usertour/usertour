@@ -15,6 +15,10 @@
 export { CompactSelect, type CompactSelectOption } from './select';
 export { CompactColorButton } from './color-button';
 export {
+  CompactPopoverTrigger,
+  type CompactPopoverTriggerProps,
+} from './popover-trigger';
+export {
   CompactDropdownMenu,
   CompactDropdownMenuTrigger,
   CompactDropdownMenuContent,

@@ -9,6 +9,7 @@ import {
 import { RiCheckLine, RiExpandUpDownLine } from '@usertour-packages/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
+import { CompactPopoverTrigger } from '@usertour-packages/ui';
 import { type ReactNode, useState } from 'react';
 import { useConditionsZIndex } from '../conditions-context';
 
@@ -94,21 +95,14 @@ export function ConditionCombobox({
   return (
     <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
+        <CompactPopoverTrigger
           disabled={disabled}
           aria-expanded={open}
-          className={cn(
-            // Focus ring matches the atomic Input / SelectTrigger compact
-            // family (3px ring + border-ring) so all chip-popover triggers
-            // share the same focus treatment.
-            'flex h-7.5 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none transition-colors hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
-            className,
-          )}
+          className={cn('justify-between', className)}
         >
           <span className="truncate text-left">{display}</span>
           <RiExpandUpDownLine className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
-        </button>
+        </CompactPopoverTrigger>
       </PopoverTrigger>
       <PopoverContent
         // Match the trigger width via the Radix popper variable instead of a

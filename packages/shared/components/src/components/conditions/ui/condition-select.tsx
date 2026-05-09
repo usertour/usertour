@@ -1,5 +1,6 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour-packages/tailwind';
+import { CompactPopoverTrigger } from '@usertour-packages/ui';
 import {
   ConditionDropdownMenu,
   ConditionDropdownMenuContent,
@@ -44,23 +45,16 @@ export function ConditionSelect({
   return (
     <ConditionDropdownMenu>
       <ConditionDropdownMenuTrigger asChild>
-        <button
+        <CompactPopoverTrigger
           id={id}
-          type="button"
           disabled={disabled}
-          className={cn(
-            // Focus ring matches the atomic Input / SelectTrigger compact
-            // family (3px ring + border-ring) so all chip-popover triggers
-            // share the same focus treatment.
-            'inline-flex h-7.5 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
-            className,
-          )}
+          className={cn('justify-between gap-2', className)}
         >
           <span className={cn('truncate', !selected && 'text-muted-foreground')}>
             {selected?.label ?? placeholder}
           </span>
           <CaretSortIcon className="h-4 w-4 shrink-0 opacity-50" />
-        </button>
+        </CompactPopoverTrigger>
       </ConditionDropdownMenuTrigger>
       <ConditionDropdownMenuContent
         align="start"

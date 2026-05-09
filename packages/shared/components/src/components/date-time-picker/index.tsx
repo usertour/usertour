@@ -2,6 +2,7 @@ import { CalendarIcon } from '@radix-ui/react-icons';
 import { Calendar } from '@usertour-packages/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
+import { CompactPopoverTrigger } from '@usertour-packages/ui';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { TimeColumn } from './time-column';
@@ -104,22 +105,13 @@ export function DateTimePicker({
   return (
     <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
+        <CompactPopoverTrigger
           disabled={disabled}
-          // Match the conditions-popover trigger family (ConditionCombobox /
-          // OperatorSelect): light `hover:bg-muted/40`, not the shadcn
-          // outline-button default that flips bg + text to `accent`. Same
-          // popover, same hover language.
-          className={cn(
-            'flex h-7.5 w-full items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm font-normal text-foreground shadow-sm outline-none transition-colors hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
-            !value && 'text-muted-foreground',
-            className,
-          )}
+          className={cn('gap-2 font-normal', !value && 'text-muted-foreground', className)}
         >
           <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">{triggerLabel}</span>
-        </button>
+        </CompactPopoverTrigger>
       </PopoverTrigger>
       <PopoverContent
         className="flex w-auto p-0"
