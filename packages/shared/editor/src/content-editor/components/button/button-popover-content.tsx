@@ -26,11 +26,12 @@ const BUTTON_STYLE_OPTIONS: SelectPopoverOption[] = [
   { value: BUTTON_STYLES.SECONDARY, name: 'Secondary' },
 ];
 
-// Button condition filter items (exclude segment and content)
+// Disable/Hide-button conditions evaluate at render time against the
+// current viewer state, so per-event predicates ("user fired event X")
+// don't make sense here — exclude `event` along with segment/content.
 const BUTTON_CONDITION_FILTER_ITEMS = [
   'user-attr',
   'current-page',
-  'event',
   'element',
   'text-input',
   'text-fill',
