@@ -59,13 +59,21 @@ export function getConditionSchema(type: string): AnySchema | undefined {
   return CONDITION_SCHEMAS.find((s) => s.type === type);
 }
 
-// Filter the schemas exposed by the add-condition dropdown. An empty / missing
-// filter means "show every registered, non-hidden schema" — which is rarely
-// what a consumer wants; the Conditions component normalizes a missing prop to
-// DEFAULT_CONDITION_TYPES before reaching here.
+// Filter the schemas exposed by the add-condition dropdown. The
+// `filterItems` array's order drives display order — consumers like the
+// event Where slot pass `['event-attr', 'group']` and want event-attr on
+// top; iterating CONDITION_SCHEMAS would silently reimpose registry order
+// and contradict that. autostart's `DEFAULT_CONDITION_TYPES` is itself
+// already in the desired order, so the default UX is unchanged.
+//
+// An empty / missing filter means "show every registered, non-hidden
+// schema" — which is rarely what a consumer wants; the Conditions
+// component normalizes a missing prop to DEFAULT_CONDITION_TYPES before
+// reaching here.
 export function listAvailableSchemas(filterItems: string[]): AnySchema[] {
   if (!filterItems || filterItems.length === 0) {
     return CONDITION_SCHEMAS.filter((s) => !HIDDEN_FROM_DROPDOWN.has(s.type));
   }
-  return CONDITION_SCHEMAS.filter((s) => filterItems.includes(s.type));
+  const byType = new Map(CONDITION_SCHEMAS.map((s) => [s.type, s]));
+  return filterItems.map((type) => byType.get(type)).filter((s): s is AnySchema => s !== undefined);
 }
