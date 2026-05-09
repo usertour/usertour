@@ -755,10 +755,16 @@ export class ContentOrchestratorService {
           )
         : evaluatedContentVersions;
 
-    // Strategy 1: Try to start by latest activated content version
-    // Skip for single-session types — once dismissed, the previously activated version
-    // must not be re-shown to the same user.
-    if (!isSingleSessionContentType(contentType)) {
+    // Strategy 1: Try to start by latest activated content version (resumes a
+    // still-active session). Skip for show-only types (Banner) — those gate
+    // visibility on auto-start rules every toggle, so a non-matching page must
+    // hide the banner regardless of whether a prior session is still active.
+    // Resource Center stays on this path so a page refresh resumes the active
+    // session even on pages that don't match its auto-start rules; see-once is
+    // still preserved upstream because filterSingleSessionContentVersions has
+    // already dropped versions whose only sessions are dismissed/completed, and
+    // findLatestActivatedCustomContentVersions further requires an activeSession.
+    if (!isShowOnlyContentType(contentType)) {
       const latestVersionResult = await this.tryStartByLatestActivatedContentVersion(
         context,
         availableVersions,
