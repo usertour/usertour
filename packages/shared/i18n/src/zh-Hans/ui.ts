@@ -613,7 +613,7 @@ const translations = {
       },
       modalBackdropClick: {
         doNothing: '什么也不做',
-        dismissFlow: '关闭流程',
+        dismissFlow: '结束 flow',
       },
       bannerAnimation: {
         smooth: '平滑',

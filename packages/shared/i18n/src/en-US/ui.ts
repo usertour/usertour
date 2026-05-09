@@ -637,7 +637,7 @@ const translations = {
       },
       modalBackdropClick: {
         doNothing: 'Do nothing',
-        dismissFlow: 'Dismiss flow',
+        dismissFlow: 'Dismiss the flow',
       },
       bannerAnimation: {
         smooth: 'Smooth',
