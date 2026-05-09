@@ -24,14 +24,15 @@ interface Props {
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 
-// Apple / Stripe / Calendly conventional English-locale datetime label —
-// "May 15, 2026 at 4:19 PM". `at` reads as the natural English connector
-// between the day and the clock time, and 12h with AM/PM matches the
-// US-default scheduling convention. Popover columns stay 24h because
-// converting them to 12h + AM/PM is a bigger refactor.
+// Comma-separated convention (Linear / Stripe / Github) — reads cleanly
+// both standalone ("May 15, 2026, 4:19 PM") and inside operator phrases
+// like "between X and Y" where the `at` form would clash with `and`.
+// 12h with AM/PM matches the US-default scheduling convention. Popover
+// columns stay 24h because converting them to 12h + AM/PM is a bigger
+// refactor.
 const TRIGGER_FORMAT: Record<DateTimePickerMode, string> = {
   date: 'MMM d, yyyy',
-  datetime: "MMM d, yyyy 'at' h:mm a",
+  datetime: 'MMM d, yyyy, h:mm a',
 };
 
 const DEFAULT_PLACEHOLDER: Record<DateTimePickerMode, string> = {

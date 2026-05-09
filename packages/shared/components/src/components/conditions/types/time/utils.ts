@@ -90,9 +90,13 @@ export const writeData = (start: ParsedTime, end: ParsedTime): TimeConditionData
   return out;
 };
 
-// Display the parts as a human-readable line (e.g., "Apr 28, 2026, 09:30").
-// Constructs the Date locally from y/m/d for the same timezone reasons as
-// partsToISO; falls back to the raw string if parsing fails.
+// Display the parts as a human-readable line — matches the
+// DateTimePicker trigger format ("May 15, 2026, 4:19 PM"). Comma
+// separator chosen over `at` because chip summaries often wrap the
+// formatted output in operator phrases like "between X and Y", where
+// the `at` form clashes with the operator's `and` and forces the
+// reader to parse two layers of prepositions. Falls back to the raw
+// string if parsing fails.
 export const formatPretty = (parts: ParsedTime): string => {
   if (!parts.date) return '';
   const segments = parts.date.split('-').map((s) => Number.parseInt(s, 10));
@@ -100,6 +104,8 @@ export const formatPretty = (parts: ParsedTime): string => {
     return `${parts.date}, ${parts.hour}:${parts.minute}`;
   }
   const [yyyy, mm, dd] = segments;
-  const d = new Date(yyyy, mm - 1, dd);
-  return `${format(d, 'PP')}, ${parts.hour}:${parts.minute}`;
+  const hour = Number.parseInt(parts.hour || '0', 10);
+  const minute = Number.parseInt(parts.minute || '0', 10);
+  const d = new Date(yyyy, mm - 1, dd, hour, minute);
+  return format(d, 'MMM d, yyyy, h:mm a');
 };
