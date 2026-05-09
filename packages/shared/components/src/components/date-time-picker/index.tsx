@@ -24,9 +24,14 @@ interface Props {
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 
+// Apple / Stripe / Calendly conventional English-locale datetime label —
+// "May 15, 2026 at 4:19 PM". `at` reads as the natural English connector
+// between the day and the clock time, and 12h with AM/PM matches the
+// US-default scheduling convention. Popover columns stay 24h because
+// converting them to 12h + AM/PM is a bigger refactor.
 const TRIGGER_FORMAT: Record<DateTimePickerMode, string> = {
   date: 'MMM d, yyyy',
-  datetime: 'MMM d, yyyy · HH:mm',
+  datetime: "MMM d, yyyy 'at' h:mm a",
 };
 
 const DEFAULT_PLACEHOLDER: Record<DateTimePickerMode, string> = {
@@ -115,30 +120,30 @@ export function DateTimePicker({
           initialFocus
         />
         {mode === 'datetime' && (
-          // Time columns — fixed height matches a typical 6-row Calendar so
-          // the columns don't end mid-month, and the inner scroll keeps
-          // its own bounds. Border separates them from the Calendar.
-          <div className="flex border-l">
-            <div className="flex flex-col items-stretch border-r">
-              <div className="px-3 pt-3 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                Hour
-              </div>
+          // Time pane — `HH:MM` summary spans both columns at the top so
+          // users see the current selection at a glance, then two scroll
+          // columns underneath. Replaces the per-column "HOUR" / "MIN"
+          // labels because the colon-formatted summary already implies the
+          // layout. Fixed column height matches a typical 6-row Calendar
+          // so the columns don't end mid-month.
+          <div className="flex flex-col border-l">
+            <div className="border-b px-3 py-2 text-center text-sm font-medium tabular-nums">
+              {String(draft.getHours()).padStart(2, '0')}
+              <span className="px-1 text-muted-foreground">:</span>
+              {String(draft.getMinutes()).padStart(2, '0')}
+            </div>
+            <div className="flex">
               <TimeColumn
                 value={draft.getHours()}
                 onChange={handleHourChange}
                 range={HOURS}
-                className="h-64 w-12 px-1 pb-1"
+                className="h-64 w-12 border-r px-1 py-1"
               />
-            </div>
-            <div className="flex flex-col items-stretch">
-              <div className="px-3 pt-3 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                Min
-              </div>
               <TimeColumn
                 value={draft.getMinutes()}
                 onChange={handleMinuteChange}
                 range={MINUTES}
-                className="h-64 w-12 px-1 pb-1"
+                className="h-64 w-12 px-1 py-1"
               />
             </div>
           </div>

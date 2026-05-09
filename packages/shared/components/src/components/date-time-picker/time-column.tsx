@@ -37,10 +37,14 @@ export function TimeColumn({ value, onChange, range, className }: Props) {
             type="button"
             onClick={() => onChange(n)}
             className={cn(
+              // Hover matches the Calendar's neutral hover (bg-accent /
+              // bg-muted) so date and time sides of the picker share one
+              // visual register; selected stays primary, identical to the
+              // Calendar's selected day.
               'flex w-full items-center justify-center rounded text-sm outline-none transition-colors',
               selected
                 ? 'bg-primary font-medium text-primary-foreground'
-                : 'text-foreground hover:bg-muted/50 focus-visible:bg-muted/50',
+                : 'text-foreground hover:bg-accent focus-visible:bg-accent',
             )}
             style={{ height: ROW_HEIGHT }}
           >
