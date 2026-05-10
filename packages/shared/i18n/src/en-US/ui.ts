@@ -191,7 +191,6 @@ const translations = {
     detail: {
       actionsMenu: 'Content actions',
       autosaved: 'Autosaved {{when}} ago',
-      published: 'Published {{when}} ago',
       saving: 'Saving…',
       editInBuilder: 'Edit In Builder',
       publish: 'Publish',

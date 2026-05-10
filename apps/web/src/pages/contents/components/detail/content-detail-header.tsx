@@ -5,6 +5,7 @@ import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useContentBuilder } from '@/hooks/useContentBuilder';
 import { useContentPublishState } from '@/hooks/use-content-publish-state';
+import { isVersionPublished } from '@/utils/content';
 import { useMutation } from '@apollo/client';
 import { EnterIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
@@ -123,16 +124,20 @@ export const ContentDetailHeader = () => {
     }
   };
 
-  const showAutosaved = content.editedVersionId !== content.publishedVersionId && version;
-  const showPublished =
-    content.editedVersionId === content.publishedVersionId && content.publishedAt;
-  const statusText = showAutosaved
-    ? t('contents.detail.autosaved', {
-        when: formatDistanceToNow(new Date(version.updatedAt)),
-      })
-    : showPublished
-      ? t('contents.detail.published', {
-          when: formatDistanceToNow(new Date(content.publishedAt as string)),
+  // Show "Autosaved {when}" only when the edited version isn't already
+  // live somewhere — meaning there's local draft work that hasn't been
+  // pushed. When the edited version IS live, the header stays clean
+  // (no "Published" badge): per-env publish times don't reduce to one
+  // number for an env-less header, and the version list surfaces that
+  // detail when needed. Live-status check uses contentOnEnvironments
+  // rather than the legacy `publishedVersionId` field.
+  const editedIsLive = Boolean(
+    content.editedVersionId && isVersionPublished(content, content.editedVersionId),
+  );
+  const statusText =
+    !editedIsLive && version
+      ? t('contents.detail.autosaved', {
+          when: formatDistanceToNow(new Date(version.updatedAt)),
         })
       : null;
 
