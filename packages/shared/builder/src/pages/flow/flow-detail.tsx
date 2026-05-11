@@ -22,8 +22,10 @@ import { cn } from '@usertour-packages/tailwind';
 import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getThemeWidthByStepType } from '@usertour-packages/widget';
 import { BuilderMode, useBuilderContext } from '../../contexts';
+import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useCurrentTheme } from '../../hooks/use-current-theme';
 import { useAutoSidebarPosition } from '../../hooks/use-auto-sidebar-position';
+import { collectStepActions } from '../../utils/collect-step-actions';
 import { ContentAlignment } from '../../components/content-alignment';
 import { ContentModal } from '../../components/content-modal';
 import { ContentModalPlacement } from '../../components/content-modal-placement';
@@ -255,6 +257,7 @@ const FlowBuilderDetailFooter = () => {
   const { invoke: addContentStep } = useAddContentStepMutation();
   const { invoke: updateContentStep } = useUpdateContentStepMutation();
   const { toast } = useToast();
+  const actionsGate = useActionsSaveGate();
 
   const handleSave = useCallback(async () => {
     if (!currentStep || !backupStepData) {
@@ -269,6 +272,15 @@ const FlowBuilderDetailFooter = () => {
         (currentStep.target?.type === 'manual' && !currentStep.target?.customSelector))
     ) {
       setIsShowError(true);
+      return;
+    }
+    // Validate every action list across the step before save: target
+    // placement ("When target element is clicked") + each element's
+    // data.actions (button, multi-choice, NPS, scale, star-rating). v1 left
+    // these unvalidated, so incomplete actions silently shipped and failed
+    // at runtime — block here so the chip's red state actually gates save.
+    const stepActionLists = collectStepActions(currentStep);
+    if (!actionsGate(...stepActionLists)) {
       return;
     }
     try {
@@ -329,7 +341,7 @@ const FlowBuilderDetailFooter = () => {
     }
     setIsLoading(false);
     setCurrentMode({ mode: BuilderMode.FLOW });
-  }, [currentStep, currentIndex, backupStepData, contentRef]);
+  }, [currentStep, currentIndex, backupStepData, contentRef, actionsGate]);
 
   return (
     <CardFooter className="flex-none p-5">

@@ -9,15 +9,9 @@ import { useContentListContext } from '@usertour-packages/contexts';
 import { updateContentStep } from '@usertour-packages/gql';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { getDefaultDataForType } from '../../utils/default-data';
-import { defaultStep, getErrorMessage, hasActionError, hasError } from '@usertour/helpers';
-import {
-  AttributeBizTypes,
-  Attribute,
-  ContentVersion,
-  RulesCondition,
-  Step,
-} from '@usertour/types';
+import { getErrorMessage, hasError } from '@usertour/helpers';
+import { validateActions } from '@usertour-packages/shared-editor';
+import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { cn } from '@usertour-packages/tailwind';
 import { useToast } from '@usertour-packages/use-toast';
@@ -65,7 +59,7 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
     currentVersion,
     isWebBuilder,
     currentContent,
-    createStep,
+    createNewStep,
     setCurrentMode,
   } = useBuilderContext();
 
@@ -77,17 +71,6 @@ const FlowBuilderTriggerBody = (props: { attributes: Attribute[]; loading: boole
   useEffect(() => {
     setShowError(false);
   }, []);
-
-  const createNewStep = (currentVersion: ContentVersion, sequence: number) => {
-    const step: Step = {
-      ...defaultStep,
-      type: 'tooltip',
-      name: 'Untitled',
-      data: getDefaultDataForType('tooltip'),
-      sequence,
-    };
-    return createStep(currentVersion, step);
-  };
 
   const handleOnActionsChange = (actions: RulesCondition[], index: number) => {
     setShowError(false);
@@ -233,7 +216,19 @@ const FlowBuilderTriggerFooter = (props: { attributes: Attribute[] }) => {
     }
     for (let index = 0; index < currentStep.trigger.length; index++) {
       const { actions, conditions } = currentStep.trigger[index];
-      if (hasError(conditions, attributes) || hasActionError(actions)) {
+      const actionFailures = validateActions(actions, {
+        attributes,
+        currentVersion,
+        currentStep,
+      });
+      if (hasError(conditions, attributes)) {
+        return;
+      }
+      // Incomplete actions: signal the outer ContentError so the trigger
+      // card lights up red and the tooltip surfaces a reason — otherwise
+      // Save would silent-return with no visible cue.
+      if (actionFailures.length > 0) {
+        setShowError(true);
         return;
       }
       if (conditions.length === 0 || actions.length === 0) {

@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { SelectorDialog } from '@usertour-packages/shared-components';
-import { ContentActions } from '@usertour-packages/shared-editor';
+import { Actions } from '@usertour-packages/shared-editor';
 import { Switch } from '@usertour-packages/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
@@ -27,6 +27,7 @@ import {
   StepScreenshot,
 } from '@usertour/types';
 import { ChangeEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from './content-error';
 
 export interface ContentPlacementProps {
@@ -70,6 +71,7 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
     title = 'Element',
     subTitle = 'Show tooltip on this element',
   } = props;
+  const { t } = useTranslation();
 
   const handleSequenceChange = (value: string) => {
     onTargetChange({ sequence: value });
@@ -324,17 +326,17 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
               <div className="items-center  space-y-2">
                 <Label>When target element is clicked</Label>
 
-                <ContentActions
-                  zIndex={zIndex + EXTENSION_SELECT}
-                  isShowIf={false}
-                  isShowLogic={false}
+                <Actions
+                  baseZIndex={zIndex + EXTENSION_SELECT}
                   currentStep={currentStep}
                   currentVersion={currentVersion}
-                  onDataChange={handleActionChange}
-                  defaultConditions={target?.actions || []}
+                  conditions={target?.actions || []}
+                  onChange={handleActionChange}
                   attributes={attributeList}
                   contents={contents}
                   createStep={createStep}
+                  token={token}
+                  t={t}
                 />
               </div>
             </div>

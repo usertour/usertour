@@ -1,7 +1,8 @@
 import { EXTENSION_SELECT } from '@usertour-packages/constants';
 import { Label } from '@usertour-packages/label';
-import { ContentActions } from '@usertour-packages/shared-editor';
+import { Actions } from '@usertour-packages/shared-editor';
 import { Attribute, Content, ContentVersion, Step } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { useContentPlacement } from './content-placement-context';
 
 interface ContentPlacementActionsProps {
@@ -22,6 +23,7 @@ export const ContentPlacementActions = ({
   createStep,
 }: ContentPlacementActionsProps) => {
   const { target, zIndex, onTargetChange } = useContentPlacement();
+  const { t } = useTranslation();
 
   // Render custom children if provided
   if (children) {
@@ -31,17 +33,16 @@ export const ContentPlacementActions = ({
   return (
     <div className="flex flex-col space-y-2">
       <Label>When target element is clicked</Label>
-      <ContentActions
-        zIndex={zIndex + EXTENSION_SELECT}
-        isShowIf={false}
-        isShowLogic={false}
+      <Actions
+        baseZIndex={zIndex + EXTENSION_SELECT}
         currentStep={currentStep}
         currentVersion={currentVersion}
-        onDataChange={(actions) => onTargetChange({ actions })}
-        defaultConditions={target?.actions || []}
+        conditions={target?.actions || []}
+        onChange={(actions) => onTargetChange({ actions })}
         attributes={attributeList}
         contents={contents}
         createStep={createStep}
+        t={t}
       />
     </div>
   );

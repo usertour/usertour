@@ -5,7 +5,7 @@ import { Button } from '@usertour-packages/button';
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
 import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
-import { ContentActions, PopperEditorMini } from '@usertour-packages/shared-editor';
+import { Actions, PopperEditorMini } from '@usertour-packages/shared-editor';
 import type { Descendant } from '@usertour-packages/shared-editor';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { Label } from '@usertour-packages/label';
@@ -22,6 +22,7 @@ import {
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
+import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
@@ -143,10 +144,8 @@ const BlockActionBody = () => {
           {/* When block is clicked */}
           <div className="flex flex-col space-y-2">
             <Label>When block is clicked</Label>
-            <ContentActions
-              zIndex={zIndex + EXTENSION_SELECT}
-              isShowIf={false}
-              isShowLogic={false}
+            <Actions
+              baseZIndex={zIndex + EXTENSION_SELECT}
               currentStep={undefined}
               filterItems={[
                 ContentActionsItemType.FLOW_START,
@@ -154,10 +153,12 @@ const BlockActionBody = () => {
                 ContentActionsItemType.JAVASCRIPT_EVALUATE,
               ]}
               currentVersion={undefined}
-              onDataChange={handleClickedActionsChange}
-              defaultConditions={currentBlock.clickedActions ?? []}
+              onChange={handleClickedActionsChange}
+              conditions={currentBlock.clickedActions ?? []}
               attributes={attributeList}
               contents={contents}
+              token={token}
+              t={t}
             />
           </div>
 
@@ -196,9 +197,19 @@ const BlockActionBody = () => {
 
 const BlockActionFooter = () => {
   const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterContext();
-  const gate = useConditionsSaveGate();
+  const conditionsGate = useConditionsSaveGate();
+  const actionsGate = useActionsSaveGate();
   const handleSave = () => {
-    if (!gate(currentBlock?.onlyShowBlockConditions)) return;
+    if (!conditionsGate(currentBlock?.onlyShowBlockConditions)) return;
+    // clickedActions only exists on the ACTION block variant of the
+    // ResourceCenterBlock union. Footer renders inside the action page so
+    // currentBlock is known to be the ACTION shape; narrow via the type
+    // discriminator so TS lets us read the field.
+    const clickedActions =
+      currentBlock?.type === ResourceCenterBlockType.ACTION
+        ? currentBlock.clickedActions
+        : undefined;
+    if (!actionsGate(clickedActions)) return;
     saveCurrentBlock();
   };
   return (

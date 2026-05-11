@@ -10,7 +10,7 @@ import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour-packages/shared-components';
-import { ContentActions } from '@usertour-packages/shared-editor';
+import { Actions } from '@usertour-packages/shared-editor';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
 import {
@@ -22,6 +22,7 @@ import {
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BuilderMode, useBuilderContext, useChecklistContext } from '../../contexts';
+import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
@@ -112,10 +113,8 @@ const ChecklistItemBody = () => {
           </div>
           <div className="flex flex-col space-y-2">
             <Label>When task is clicked</Label>
-            <ContentActions
-              zIndex={zIndex + EXTENSION_SELECT}
-              isShowIf={false}
-              isShowLogic={false}
+            <Actions
+              baseZIndex={zIndex + EXTENSION_SELECT}
               currentStep={undefined}
               filterItems={[
                 ContentActionsItemType.CHECKLIST_DISMIS,
@@ -124,10 +123,12 @@ const ChecklistItemBody = () => {
                 ContentActionsItemType.JAVASCRIPT_EVALUATE,
               ]}
               currentVersion={undefined}
-              onDataChange={handleRulesChange('clickedActions')}
-              defaultConditions={currentItem?.clickedActions ?? []}
+              onChange={handleRulesChange('clickedActions')}
+              conditions={currentItem?.clickedActions ?? []}
               attributes={attributeList}
               contents={contents}
+              token={token}
+              t={t}
             />
           </div>
           <div className="flex flex-col space-y-2">
@@ -179,15 +180,16 @@ const ChecklistItemBody = () => {
 
 const ChecklistItemFooter = () => {
   const { saveCurrentItem, currentItem, isLoading } = useChecklistContext();
-  const gate = useConditionsSaveGate();
+  const conditionsGate = useConditionsSaveGate();
+  const actionsGate = useActionsSaveGate();
   const handleSave = () => {
-    if (
-      !gate(
-        currentItem?.completeConditions,
-        currentItem?.onlyShowTaskConditions,
-        currentItem?.clickedActions,
-      )
-    ) {
+    // Conditions and actions are validated by different schema registries —
+    // routing actions through the conditions gate (as the v1 wiring did)
+    // silently no-ops because no condition schema matches an action type.
+    if (!conditionsGate(currentItem?.completeConditions, currentItem?.onlyShowTaskConditions)) {
+      return;
+    }
+    if (!actionsGate(currentItem?.clickedActions)) {
       return;
     }
     saveCurrentItem();

@@ -8,7 +8,9 @@ import {
 } from '@usertour-packages/widget';
 import { RulesCondition, ButtonSemanticType, DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/types';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
+import { validateActions } from '../../../actions';
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
   ContentEditorButtonElement,
@@ -49,7 +51,11 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
     actionItems,
   } = useContentEditorContext();
   const [isShowError, setIsShowError] = useState<boolean>(false);
+  // Tracks which class of error to show in the tooltip — empty vs.
+  // incomplete — so the message reads accurately to the cause.
+  const [errorKind, setErrorKind] = useState<'empty' | 'incomplete' | null>(null);
   const [isOpen, setIsOpen] = useState<boolean | undefined>();
+  const { t } = useTranslation();
 
   // Detect rendering context (editor preview or banner context)
   const buttonContext = useButtonContext();
@@ -181,11 +187,27 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
     [element, id, updateElement],
   );
 
-  // Error state effect
+  // Error state effect. The button is invalid if it has no actions OR if
+  // any configured action is itself incomplete (e.g., STEP_GOTO with no
+  // step selected, PAGE_NAVIGATE with empty URL). Prior to this, only the
+  // empty case lit up — incomplete actions left the inner chip red but
+  // the outer button looked fine, an inconsistent signal users had to
+  // read across two scopes.
   useEffect(() => {
-    const isEmptyActions = !element?.data?.actions || element?.data?.actions.length === 0;
-    setIsShowError(isEmptyActions && !isOpen);
-  }, [element?.data?.actions, isOpen]);
+    const actions = element?.data?.actions;
+    const isEmpty = !actions || actions.length === 0;
+    const hasIncompleteAction =
+      !isEmpty &&
+      validateActions(actions, {
+        attributes,
+        contents: contentList,
+        currentVersion,
+        currentStep,
+      }).length > 0;
+    const kind: typeof errorKind = isEmpty ? 'empty' : hasIncompleteAction ? 'incomplete' : null;
+    setErrorKind(kind);
+    setIsShowError(kind !== null && !isOpen);
+  }, [element?.data?.actions, isOpen, attributes, contentList, currentVersion, currentStep]);
 
   return (
     <EditorErrorTooltip open={isShowError}>
@@ -234,7 +256,9 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
         </PopoverContent>
       </Popover>
       <EditorErrorTooltipContent style={{ zIndex: zIndex }}>
-        Please select at least one action
+        {errorKind === 'incomplete'
+          ? t('actions.errors.button.incomplete')
+          : t('actions.errors.button.empty')}
       </EditorErrorTooltipContent>
     </EditorErrorTooltip>
   );

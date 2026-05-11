@@ -14,7 +14,7 @@ import { RulesCondition, ButtonSemanticType } from '@usertour/types';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ContentActions } from '../../..';
+import { Actions } from '../../../actions';
 import type { ContentEditorButtonElement } from '../../../types/editor';
 import { BUTTON_STYLES } from '../../constants';
 import { ActionButtonsBase, MarginControls } from '../../shared';
@@ -131,18 +131,17 @@ export const ButtonPopoverContent = memo(
         />
 
         <Label>When button is clicked</Label>
-        <ContentActions
-          zIndex={zIndex}
-          isShowIf={false}
-          isShowLogic={false}
+        <Actions
+          baseZIndex={zIndex}
           currentStep={currentStep}
           currentVersion={currentVersion}
-          onDataChange={onActionChange}
-          defaultConditions={element?.data?.actions ?? []}
+          onChange={onActionChange}
+          conditions={element?.data?.actions ?? []}
           attributes={attributes}
           filterItems={actionItems}
           contents={contentList}
           createStep={createStep}
+          t={t}
         />
 
         <div className="flex flex-col space-y-2">

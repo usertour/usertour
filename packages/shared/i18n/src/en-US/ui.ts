@@ -990,6 +990,108 @@ const translations = {
       },
     },
   },
+  actions: {
+    actions: {
+      addAction: 'Add action',
+      removeAction: 'Remove action',
+    },
+    types: {
+      stepGoto: {
+        label: 'Go to step',
+        prefix: 'Go to step',
+        placeholder: 'Pick a step',
+        addNewStep: 'Add new step',
+        duplicateStep: 'Duplicate step',
+        bubble: 'Speech bubble',
+        tooltip: 'Tooltip',
+        modal: 'Modal',
+        hidden: 'Hidden',
+        currentBadge: 'Current',
+      },
+      flowDismiss: {
+        label: 'Dismiss flow',
+        summary: 'Dismiss flow',
+      },
+      launcherDismiss: {
+        label: 'Dismiss launcher',
+        summary: 'Dismiss launcher',
+      },
+      checklistDismiss: {
+        label: 'Dismiss checklist',
+        summary: 'Dismiss checklist',
+      },
+      bannerDismiss: {
+        label: 'Dismiss banner',
+        summary: 'Dismiss banner',
+      },
+      flowStart: {
+        label: 'Start new flow / checklist',
+        placeholder: 'Pick a flow or checklist',
+        selectContent: 'Select content…',
+        selectStep: 'Select step…',
+        searchContent: 'Search flow / checklist…',
+        searchStep: 'Search steps…',
+        empty: 'No items found.',
+        flow: 'Flow',
+        checklist: 'Checklist',
+        stepLabel: 'Step to start at',
+        steps: 'Steps',
+        heading: {
+          flow: 'Flow',
+          checklist: 'Checklist',
+        },
+        start: {
+          flow: 'Start flow',
+          checklist: 'Start checklist',
+        },
+        atStep: ', at step ',
+      },
+      pageNavigate: {
+        label: 'Navigate to page',
+        placeholder: 'Enter URL',
+        prefix: 'Navigate to',
+        urlLabel: 'URL to navigate to',
+        sameTab: 'Same tab',
+        newTab: 'New tab',
+      },
+      javascriptEvaluate: {
+        label: 'Evaluate JavaScript',
+        placeholder: 'Evaluate code…',
+        prefix: 'Evaluate',
+      },
+    },
+    errors: {
+      unknownAction: 'Unknown action type "{{type}}".',
+      incompleteSaveBlocked:
+        'Some actions are incomplete. Open the highlighted ones and finish them before saving.',
+      button: {
+        empty: 'Please add at least one action',
+        incomplete: 'One or more actions are incomplete — open the button to fix them',
+      },
+      question: {
+        incomplete: 'One or more actions are incomplete — open the question to fix them',
+      },
+      trigger: {
+        emptyConditions: 'Please add at least 1 condition',
+        emptyActions: 'Please add at least 1 action',
+        incompleteActions:
+          'One or more actions are incomplete — open the highlighted chips to fix them',
+      },
+      stepGoto: {
+        selectStep: 'Please select a step',
+      },
+      flowStart: {
+        selectFlow: 'Please select a flow',
+        selectChecklist: 'Please select a checklist',
+      },
+      pageNavigate: {
+        enterUrl: 'Enter the navigator URL',
+      },
+      javascriptEvaluate: {
+        enterCode: 'Enter the code',
+      },
+    },
+  },
 };
 
 export default translations;

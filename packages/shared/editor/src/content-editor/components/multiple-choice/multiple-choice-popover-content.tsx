@@ -14,7 +14,8 @@ import {
 import { BizAttributeTypes } from '@usertour/types';
 import { memo, useCallback, useMemo } from 'react';
 
-import { ContentActions } from '../../../actions';
+import { useTranslation } from 'react-i18next';
+import { Actions } from '../../../actions';
 import type {
   ContentEditorMultipleChoiceElement,
   ContentEditorMultipleChoiceOption,
@@ -32,6 +33,7 @@ export const MultipleChoicePopoverContent = memo(
   ({ localData, handleDataChange, contextProps }: MultipleChoicePopoverContentProps) => {
     const { zIndex, currentStep, currentVersion, contentList, createStep, attributes, projectId } =
       contextProps;
+    const { t } = useTranslation();
 
     // Handle option field change
     const handleOptionChange = useCallback(
@@ -106,17 +108,16 @@ export const MultipleChoicePopoverContent = memo(
         </div>
 
         <Label>When answer is submitted</Label>
-        <ContentActions
-          zIndex={zIndex}
-          isShowIf={false}
-          isShowLogic={false}
+        <Actions
+          baseZIndex={zIndex}
           currentStep={currentStep}
           currentVersion={currentVersion}
-          onDataChange={(actions) => handleDataChange({ actions })}
-          defaultConditions={localData.actions || []}
+          onChange={(actions) => handleDataChange({ actions })}
+          conditions={localData.actions || []}
           attributes={attributes}
           contents={contentList}
           createStep={createStep}
+          t={t}
         />
 
         <div className="space-y-2">

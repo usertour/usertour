@@ -5,7 +5,8 @@ import { Label } from '@usertour-packages/label';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { memo } from 'react';
 
-import { ContentActions } from '../../actions';
+import { useTranslation } from 'react-i18next';
+import { Actions } from '../../actions';
 import type { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 
 // Types
@@ -67,21 +68,21 @@ export const ContentActionsField = memo<ContentActionsFieldProps>(
   ({ actions, onActionsChange, contextProps }) => {
     const { zIndex, currentStep, currentVersion, contentList, createStep, attributes } =
       contextProps;
+    const { t } = useTranslation();
 
     return (
       <>
         <Label>When answer is submitted</Label>
-        <ContentActions
-          zIndex={zIndex}
-          isShowIf={false}
-          isShowLogic={false}
+        <Actions
+          baseZIndex={zIndex}
           currentStep={currentStep}
           currentVersion={currentVersion}
-          onDataChange={onActionsChange}
-          defaultConditions={actions || []}
+          onChange={onActionsChange}
+          conditions={actions || []}
           attributes={attributes}
           contents={contentList}
           createStep={createStep}
+          t={t}
         />
       </>
     );

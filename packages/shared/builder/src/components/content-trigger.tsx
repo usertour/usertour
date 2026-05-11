@@ -8,9 +8,9 @@ import {
   DEFAULT_CONDITION_TYPES,
   validateConditions,
 } from '@usertour-packages/shared-components';
-import { ContentActions } from '@usertour-packages/shared-editor';
+import { Actions, validateActions } from '@usertour-packages/shared-editor';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from './content-error';
 
@@ -64,10 +64,18 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
   // syncs with the prop on the way in but updates immediately on every
   // change on the way out.
   const [localConditions, setLocalConditions] = useState<RulesCondition[]>(conditions);
+  // Same controlled-buffer trick as conditions: parent only writes back
+  // valid payloads, so the local copy is what the chip row renders while
+  // the user edits a draft.
+  const [localActions, setLocalActions] = useState<RulesCondition[]>(actions);
 
   useEffect(() => {
     setLocalConditions(conditions);
   }, [conditions]);
+
+  useEffect(() => {
+    setLocalActions(actions);
+  }, [actions]);
 
   const handleConditionsChange = useCallback(
     (conds: RulesCondition[]) => {
@@ -81,10 +89,45 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
     [attributeList, contents, onConditonsChange],
   );
 
+  const handleActionsChange = useCallback(
+    (next: RulesCondition[]) => {
+      setLocalActions(next);
+      const failures = validateActions(next, {
+        attributes: attributeList,
+        contents,
+        currentVersion,
+        currentStep,
+      });
+      onActionsChange(next, failures.length > 0);
+    },
+    [attributeList, contents, currentVersion, currentStep, onActionsChange],
+  );
+
+  // Live recomputation of "is some action incomplete?" — used to decide
+  // whether the trigger card lights up red. Without this, the outer card
+  // only flagged empty conditions/actions; an incomplete action chip lit
+  // up red on its own but the surrounding card looked fine, leaving Save
+  // (which silently blocks on incomplete actions) appearing dead.
+  const hasIncompleteActions = useMemo(() => {
+    if (localActions.length === 0) return false;
+    return (
+      validateActions(localActions, {
+        attributes: attributeList,
+        contents,
+        currentVersion,
+        currentStep,
+      }).length > 0
+    );
+  }, [localActions, attributeList, contents, currentVersion, currentStep]);
+
   return (
     <>
       <div className="flex flex-col border shadow p-2 rounded-lg space-y-4 relative">
-        <ContentError open={showError && (actions.length === 0 || conditions.length === 0)}>
+        <ContentError
+          open={
+            showError && (actions.length === 0 || conditions.length === 0 || hasIncompleteActions)
+          }
+        >
           <ContentErrorAnchor>
             <Conditions
               conditions={localConditions}
@@ -107,17 +150,17 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               t={t}
             />
             <Label>Action to perform when triggered</Label>
-            <ContentActions
-              zIndex={zIndex + EXTENSION_SELECT}
-              isShowIf={false}
-              isShowLogic={false}
+            <Actions
+              baseZIndex={zIndex + EXTENSION_SELECT}
               currentStep={currentStep}
               currentVersion={currentVersion}
-              onDataChange={onActionsChange}
-              defaultConditions={actions}
+              conditions={localActions}
+              onChange={handleActionsChange}
               attributes={attributeList}
               contents={contents}
               createStep={createStep}
+              token={token}
+              t={t}
             />
           </ContentErrorAnchor>
           <ContentErrorContent
@@ -125,8 +168,14 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               zIndex: EXTENSION_CONTENT_RULES,
             }}
           >
-            {conditions.length === 0 && 'please add at least 1 conditon'}
-            {conditions.length > 0 && actions.length === 0 && 'please add at least 1 action'}
+            {conditions.length === 0 && t('actions.errors.trigger.emptyConditions')}
+            {conditions.length > 0 &&
+              actions.length === 0 &&
+              t('actions.errors.trigger.emptyActions')}
+            {conditions.length > 0 &&
+              actions.length > 0 &&
+              hasIncompleteActions &&
+              t('actions.errors.trigger.incompleteActions')}
           </ContentErrorContent>
         </ContentError>
         <Button

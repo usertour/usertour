@@ -960,6 +960,106 @@ const translations = {
       },
     },
   },
+  actions: {
+    actions: {
+      addAction: '添加动作',
+      removeAction: '移除动作',
+    },
+    types: {
+      stepGoto: {
+        label: '跳转到步骤',
+        prefix: '跳转到步骤',
+        placeholder: '选择一个步骤',
+        addNewStep: '新建步骤',
+        duplicateStep: '复制步骤',
+        bubble: '气泡',
+        tooltip: '工具提示',
+        modal: '模态框',
+        hidden: '隐藏',
+        currentBadge: '当前',
+      },
+      flowDismiss: {
+        label: '关闭引导流程',
+        summary: '关闭引导流程',
+      },
+      launcherDismiss: {
+        label: '关闭启动器',
+        summary: '关闭启动器',
+      },
+      checklistDismiss: {
+        label: '关闭任务清单',
+        summary: '关闭任务清单',
+      },
+      bannerDismiss: {
+        label: '关闭横幅',
+        summary: '关闭横幅',
+      },
+      flowStart: {
+        label: '启动新的流程或任务清单',
+        placeholder: '选择流程或任务清单',
+        selectContent: '选择内容…',
+        selectStep: '选择步骤…',
+        searchContent: '搜索流程或任务清单…',
+        searchStep: '搜索步骤…',
+        empty: '没有匹配项。',
+        flow: '流程',
+        checklist: '任务清单',
+        stepLabel: '从此步骤开始',
+        steps: '步骤',
+        heading: {
+          flow: '流程',
+          checklist: '任务清单',
+        },
+        start: {
+          flow: '启动流程',
+          checklist: '启动任务清单',
+        },
+        atStep: ',从步骤 ',
+      },
+      pageNavigate: {
+        label: '页面跳转',
+        placeholder: '请输入 URL',
+        prefix: '跳转到',
+        urlLabel: '要跳转到的 URL',
+        sameTab: '当前标签',
+        newTab: '新标签',
+      },
+      javascriptEvaluate: {
+        label: '执行 JavaScript',
+        placeholder: '执行代码…',
+        prefix: '执行',
+      },
+    },
+    errors: {
+      unknownAction: '未知的动作类型 "{{type}}"。',
+      incompleteSaveBlocked: '有动作未填写完整,先展开标红的动作修复后再保存。',
+      button: {
+        empty: '请至少添加一个动作',
+        incomplete: '存在未填写完整的动作 — 打开按钮修复',
+      },
+      question: {
+        incomplete: '存在未填写完整的动作 — 打开问题修复',
+      },
+      trigger: {
+        emptyConditions: '请至少添加 1 个条件',
+        emptyActions: '请至少添加 1 个动作',
+        incompleteActions: '存在未填写完整的动作 — 打开标红的项修复',
+      },
+      stepGoto: {
+        selectStep: '请选择一个步骤',
+      },
+      flowStart: {
+        selectFlow: '请选择一个流程',
+        selectChecklist: '请选择一个任务清单',
+      },
+      pageNavigate: {
+        enterUrl: '请输入跳转的 URL',
+      },
+      javascriptEvaluate: {
+        enterCode: '请输入代码',
+      },
+    },
+  },
 };
 
 export default translations;

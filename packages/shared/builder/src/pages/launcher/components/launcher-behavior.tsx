@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { TooltipIcon } from '@usertour-packages/icons';
-import { ContentActions } from '@usertour-packages/shared-editor';
+import { Actions } from '@usertour-packages/shared-editor';
+import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import {
   ContentActionsItemType,
@@ -71,6 +72,7 @@ export const LauncherBehavior = () => {
   const { contents } = useContentListContext();
   const { attributeList } = useAttributeListContext();
   const { localData, updateLocalDataBehavior, setLauncherTooltip } = useLauncherContext();
+  const { t } = useTranslation();
 
   const handleStateChange = useCallback(
     (key: keyof LauncherBehaviorType) => (value: string | RulesCondition[]) => {
@@ -146,14 +148,12 @@ export const LauncherBehavior = () => {
             value={LauncherActionType.PERFORM_ACTION}
             className="bg-background p-2 rounded-lg"
           >
-            <ContentActions
-              zIndex={zIndex + EXTENSION_SELECT}
-              isShowIf={false}
-              isShowLogic={false}
+            <Actions
+              baseZIndex={zIndex + EXTENSION_SELECT}
               currentStep={undefined}
               currentVersion={currentVersion}
-              onDataChange={handleStateChange('actions')}
-              defaultConditions={localData.behavior.actions}
+              onChange={handleStateChange('actions')}
+              conditions={localData.behavior.actions}
               attributes={attributeList}
               contents={contents}
               filterItems={[
@@ -162,6 +162,7 @@ export const LauncherBehavior = () => {
                 ContentActionsItemType.PAGE_NAVIGATE,
                 ContentActionsItemType.FLOW_START,
               ]}
+              t={t}
             />
           </TabsContent>
         </Tabs>
