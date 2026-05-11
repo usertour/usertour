@@ -1,6 +1,6 @@
 import { CompanyListProvider } from '@/contexts/company-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { DotsVerticalIcon } from '@radix-ui/react-icons';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { EditIcon } from '@usertour-packages/icons';
 import { Separator } from '@usertour-packages/separator';
@@ -71,7 +71,7 @@ const CompanyListContentInner = ({ environmentId }: { environmentId: string | un
               }}
             >
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <DotsVerticalIcon className="h-4 w-4 " />
+                <DotsHorizontalIcon className="h-4 w-4 " />
               </Button>
             </CompanyEditDropdownMenu>
           )}

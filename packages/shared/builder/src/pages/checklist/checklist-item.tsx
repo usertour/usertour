@@ -9,8 +9,7 @@ import { SpinnerIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { Rules } from '@usertour-packages/shared-components';
-import { defaultRulesItems } from '@usertour-packages/shared-components';
+import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour-packages/shared-components';
 import { ContentActions } from '@usertour-packages/shared-editor';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { Switch } from '@usertour-packages/switch';
@@ -21,7 +20,9 @@ import {
   RulesType,
 } from '@usertour/types';
 import { useId } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BuilderMode, useBuilderContext, useChecklistContext } from '../../contexts';
+import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
 
@@ -57,6 +58,7 @@ const ChecklistItemBody = () => {
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
+  const { t } = useTranslation();
   const handleInputChange =
     (field: keyof ChecklistItemType) => (e: React.ChangeEvent<HTMLInputElement> | boolean) => {
       setCurrentItem((prev) =>
@@ -130,16 +132,17 @@ const ChecklistItemBody = () => {
           </div>
           <div className="flex flex-col space-y-2">
             <Label>Mark completed</Label>
-            <Rules
-              onDataChange={handleRulesChange('completeConditions')}
-              defaultConditions={currentItem?.completeConditions ?? []}
-              filterItems={[...defaultRulesItems, RulesType.TASK_IS_CLICKED]}
+            <Conditions
+              onChange={handleRulesChange('completeConditions')}
+              conditions={currentItem?.completeConditions ?? []}
+              filterItems={[...DEFAULT_CONDITION_TYPES, RulesType.TASK_IS_CLICKED]}
               attributes={attributeList}
               contents={contents}
               segments={segmentList}
               events={eventList}
               token={token}
               baseZIndex={EXTENSION_CONTENT_RULES}
+              t={t}
             />
           </div>
           <div className="flex flex-col space-y-2">
@@ -155,15 +158,16 @@ const ChecklistItemBody = () => {
               />
             </div>
             {currentItem?.onlyShowTask && (
-              <Rules
-                onDataChange={handleRulesChange('onlyShowTaskConditions')}
-                defaultConditions={currentItem?.onlyShowTaskConditions ?? []}
+              <Conditions
+                onChange={handleRulesChange('onlyShowTaskConditions')}
+                conditions={currentItem?.onlyShowTaskConditions ?? []}
                 attributes={attributeList}
                 contents={contents}
                 segments={segmentList}
                 events={eventList}
                 token={token}
                 baseZIndex={EXTENSION_CONTENT_RULES}
+                t={t}
               />
             )}
           </div>
@@ -174,10 +178,23 @@ const ChecklistItemBody = () => {
 };
 
 const ChecklistItemFooter = () => {
-  const { saveCurrentItem, isLoading } = useChecklistContext();
+  const { saveCurrentItem, currentItem, isLoading } = useChecklistContext();
+  const gate = useConditionsSaveGate();
+  const handleSave = () => {
+    if (
+      !gate(
+        currentItem?.completeConditions,
+        currentItem?.onlyShowTaskConditions,
+        currentItem?.clickedActions,
+      )
+    ) {
+      return;
+    }
+    saveCurrentItem();
+  };
   return (
     <CardFooter className="flex-none p-5">
-      <Button className="w-full h-10" disabled={isLoading} onClick={saveCurrentItem}>
+      <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
         Save
       </Button>

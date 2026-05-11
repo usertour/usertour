@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { Badge } from '@usertour-packages/badge';
 import { RiShieldCheckFill } from '@usertour-packages/icons';
@@ -46,7 +45,6 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
             <TableHead>Display name</TableHead>
             <TableHead>Code name</TableHead>
             <TableHead className="w-28 hidden sm:table-cell">Data type</TableHead>
-            <TableHead className="w-48 hidden lg:table-cell">CreatedAt</TableHead>
             <TableHead className="w-20" />
           </TableRow>
         </TableHeader>
@@ -85,9 +83,6 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
                   {attribute.dataType === 6 && 'RandomAB'}
                   {attribute.dataType === 7 && 'RandomNumber'}
                 </TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  {format(new Date(attribute.createdAt), 'PPpp')}
-                </TableCell>
                 <TableCell>
                   <AttributeListAction attribute={attribute} />
                 </TableCell>
@@ -95,7 +90,7 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">
+              <TableCell colSpan={4} className="h-24 text-center">
                 No results.
               </TableCell>
             </TableRow>

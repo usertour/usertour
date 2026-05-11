@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour-packages/table';
-import { format } from 'date-fns';
 import { Badge } from '@usertour-packages/badge';
 import { RiShieldCheckFill } from '@usertour-packages/icons';
 import { EventListAction } from './event-list-action';
@@ -28,7 +27,6 @@ export const EventListContent = () => {
           <TableRow>
             <TableHead>Display name</TableHead>
             <TableHead>Code name</TableHead>
-            <TableHead className="w-48 hidden lg:table-cell">CreatedAt</TableHead>
             <TableHead className="w-20" />
           </TableRow>
         </TableHeader>
@@ -60,9 +58,6 @@ export const EventListContent = () => {
                     </div>
                   </TableCell>
                   <TableCell className="truncate">{event.codeName}</TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {format(new Date(event.createdAt), 'PPpp')}
-                  </TableCell>
                   <TableCell>
                     <EventListAction event={event} />
                   </TableCell>
@@ -70,7 +65,7 @@ export const EventListContent = () => {
               ))
           ) : (
             <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center">
+              <TableCell colSpan={3} className="h-24 text-center">
                 No results.
               </TableCell>
             </TableRow>

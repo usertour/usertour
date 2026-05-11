@@ -14,7 +14,6 @@ import { RollingWindowDialog } from './components/rolling-window-dialog';
 
 interface AnalyticsNPSProps {
   questionAnalytics: ContentQuestionAnalytics;
-  totalViews: number;
   content: Content;
   onRollingWindowChange: (success: boolean) => void;
 }
@@ -33,7 +32,7 @@ const CONSTANTS = {
 const formatDate = (date: string) => format(new Date(date), 'MMM dd, yyyy');
 
 export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
-  const { questionAnalytics, totalViews, content, onRollingWindowChange } = props;
+  const { questionAnalytics, content, onRollingWindowChange } = props;
   const { npsAnalysisByDay, question } = questionAnalytics;
   const rollingWindow = content.config?.rollWindowConfig ?? CONSTANTS.DEFAULT_ROLLING_WINDOW;
   const [selectedDay, setSelectedDay] = useState<NPSByDay | null>(null);
@@ -59,7 +58,8 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
   const lastDay = npsAnalysisByDay?.[npsAnalysisByDay.length - 1];
 
   const totalResponses = selectedDay?.metrics.total ?? lastDay?.metrics.total ?? 0;
-  const rate = totalViews > 0 ? Math.round(((totalResponses ?? 0) / totalViews) * 100) : 0;
+  const views = selectedDay?.metrics.views ?? lastDay?.metrics.views ?? 0;
+  const rate = views > 0 ? Math.round((totalResponses / views) * 100) : 0;
 
   const startDate = selectedDay?.startDate
     ? formatDate(selectedDay.startDate)

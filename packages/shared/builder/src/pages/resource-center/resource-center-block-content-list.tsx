@@ -25,7 +25,7 @@ import { Label } from '@usertour-packages/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Skeleton } from '@usertour-packages/skeleton';
-import { Rules } from '@usertour-packages/shared-components';
+import { Conditions } from '@usertour-packages/shared-components';
 import { PopperEditorMini } from '@usertour-packages/shared-editor';
 import type { Descendant } from '@usertour-packages/shared-editor';
 import {
@@ -52,7 +52,9 @@ import {
 } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BuilderMode, useBuilderContext, useResourceCenterContext } from '../../contexts';
+import { useConditionsSaveGate } from '../../hooks/use-conditions-save-gate';
 import { useToken } from '../../hooks/use-token';
 import { SidebarContainer } from '../sidebar';
 import { IconPicker } from '../../components/icon-picker';
@@ -160,6 +162,7 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
+  const { t } = useTranslation();
   const [addOpen, setAddOpen] = useState(false);
 
   const { contents: flowContents, loading: flowsLoading } = useContentListQuery({
@@ -553,15 +556,16 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
               />
             </div>
             {currentBlock.onlyShowBlock && (
-              <Rules
-                onDataChange={handleConditionsChange}
-                defaultConditions={currentBlock.onlyShowBlockConditions ?? []}
+              <Conditions
+                onChange={handleConditionsChange}
+                conditions={currentBlock.onlyShowBlockConditions ?? []}
                 attributes={attributeList}
                 contents={[]}
                 segments={segmentList}
                 events={eventList}
                 token={token}
                 baseZIndex={EXTENSION_CONTENT_RULES}
+                t={t}
               />
             )}
           </div>
@@ -572,10 +576,15 @@ const BlockContentListBody = ({ onEditItem }: BlockContentListBodyProps) => {
 };
 
 const BlockContentListFooter = () => {
-  const { saveCurrentBlock, isLoading } = useResourceCenterContext();
+  const { saveCurrentBlock, currentBlock, isLoading } = useResourceCenterContext();
+  const gate = useConditionsSaveGate();
+  const handleSave = () => {
+    if (!gate(currentBlock?.onlyShowBlockConditions)) return;
+    saveCurrentBlock();
+  };
   return (
     <CardFooter className="flex-none p-5">
-      <Button className="w-full h-10" disabled={isLoading} onClick={saveCurrentBlock}>
+      <Button className="w-full h-10" disabled={isLoading} onClick={handleSave}>
         {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
         Save
       </Button>
@@ -616,6 +625,7 @@ const ContentListItemEditorBody = ({ itemIndex }: ContentListItemEditorBodyProps
   const { token } = useToken();
   const { segmentList } = useSegmentListQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
+  const { t } = useTranslation();
 
   if (!currentBlock || currentBlock.type !== ResourceCenterBlockType.CONTENT_LIST) {
     return null;
@@ -719,15 +729,16 @@ const ContentListItemEditorBody = ({ itemIndex }: ContentListItemEditorBodyProps
               />
             </div>
             {item.onlyShowItem && (
-              <Rules
-                onDataChange={handleOnlyShowItemConditionsChange}
-                defaultConditions={item.onlyShowItemConditions ?? []}
+              <Conditions
+                onChange={handleOnlyShowItemConditionsChange}
+                conditions={item.onlyShowItemConditions ?? []}
                 attributes={attributeList}
                 contents={[]}
                 segments={segmentList}
                 events={eventList}
                 token={token}
                 baseZIndex={EXTENSION_CONTENT_RULES}
+                t={t}
               />
             )}
           </div>

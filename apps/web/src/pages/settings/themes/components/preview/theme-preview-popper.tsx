@@ -13,7 +13,7 @@ import type { ContentEditorRoot } from '@usertour/types';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
 import { PREVIEW_BASIC } from '@usertour-packages/constants';
 import { useRef } from 'react';
-import { Rect } from '../theme-editor';
+import { Rect } from './types';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface ThemePreviewPopperProps {

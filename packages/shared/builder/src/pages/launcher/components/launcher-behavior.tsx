@@ -120,16 +120,10 @@ export const LauncherBehavior = () => {
           onValueChange={handleStateChange('actionType')}
         >
           <TabsList className="grid w-full grid-cols-2 bg-background">
-            <TabsTrigger
-              value="show-tooltip"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
+            <TabsTrigger value="show-tooltip" variant="primary">
               Show tooltip
             </TabsTrigger>
-            <TabsTrigger
-              value="perform-action"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
+            <TabsTrigger value="perform-action" variant="primary">
               Perform action
             </TabsTrigger>
           </TabsList>

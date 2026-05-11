@@ -1351,8 +1351,9 @@ export const extractBannerAttrCodes = (contents: ContentEditorRoot[] | undefined
 /**
  * Extracts every user-attribute code referenced across a resource-center block tree:
  * block names (RichTextNode[]), RICH_TEXT / SUB_PAGE content (ContentEditorRoot[]),
- * and CONTENT_LIST item navigateUrl (RichTextNode[]). Used to preload session.attributes
- * so the SDK can resolve user-attribute placeholders without a round trip.
+ * ACTION clickedActions, and CONTENT_LIST item navigateUrl (RichTextNode[]). Used to
+ * preload session.attributes so the SDK can resolve user-attribute placeholders
+ * without a round trip.
  */
 export const extractResourceCenterAttrCodes = (blocks: ResourceCenterBlock[]): string[] => {
   const attrCodes: string[] = [];
@@ -1366,6 +1367,9 @@ export const extractResourceCenterAttrCodes = (blocks: ResourceCenterBlock[]): s
       block.content
     ) {
       attrCodes.push(...extractUserAttrCodes(block.content as ContentEditorRoot[]));
+    }
+    if (block.type === ResourceCenterBlockType.ACTION && Array.isArray(block.clickedActions)) {
+      attrCodes.push(...extractAttrCodesFromActions(block.clickedActions));
     }
     if (block.type === ResourceCenterBlockType.CONTENT_LIST) {
       for (const item of block.contentItems ?? []) {

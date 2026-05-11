@@ -22,7 +22,8 @@ const ErrorTooltipTrigger = React.forwardRef<
 
 ErrorTooltipTrigger.displayName = 'ErrorTooltipTrigger';
 
-interface ErrorTooltipContentProps extends React.ComponentPropsWithoutRef<typeof PopoverContent> {
+export interface ErrorTooltipContentProps
+  extends React.ComponentPropsWithoutRef<typeof PopoverContent> {
   zIndex?: number;
 }
 

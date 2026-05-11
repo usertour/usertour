@@ -5,5 +5,6 @@ module.exports = {
   testMatch: ['<rootDir>/src/**/*.test.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@usertour/types$': '<rootDir>/../../packages/types/src/index.ts',
   },
 };

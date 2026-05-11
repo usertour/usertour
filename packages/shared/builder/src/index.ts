@@ -1,4 +1,5 @@
 export { WebBuilder } from './app/';
+export type { WebBuilderProps } from './app/';
 export { debug } from './utils/logger';
 export { getBoundingClientRect } from './utils/common';
 export { computeNodeInset } from './utils/dom';

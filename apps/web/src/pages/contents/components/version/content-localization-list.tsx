@@ -19,7 +19,7 @@ export const ContentLocalizationList = () => {
     <>
       <LocalizationListProvider projectId={project?.id}>
         <ContentLocalizationListProvider versionId={version?.id}>
-          <div className="flex p-14 mt-12 space-x-8 justify-center ">
+          <div className="flex px-6 py-8 xl:px-8 space-x-8 justify-center">
             <Card className="flex flex-col p-4 space-y-6 w-full  max-w-screen-xl mx-auto">
               <h3 className="text-lg font-medium">Localization</h3>
               <Separator />

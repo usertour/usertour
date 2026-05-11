@@ -36,15 +36,19 @@ const deriveStatus = (
 
   const has = (codeName: BizEvents) => !!bizEvent.find((e) => e?.event?.codeName === codeName);
 
+  // Terminal-first: a session that has been dismissed is closed for good,
+  // even if it had completed first. Status badge represents lifecycle
+  // ("still alive?"); the Progress column already carries the
+  // success-or-not signal as "Completed in 20s" / "50%, Step 4".
   if (contentType === ContentDataType.FLOW) {
-    if (has(BizEvents.FLOW_COMPLETED)) return 'completed';
     if (has(BizEvents.FLOW_ENDED)) return 'dismissed';
+    if (has(BizEvents.FLOW_COMPLETED)) return 'completed';
     return 'active';
   }
 
   if (contentType === ContentDataType.CHECKLIST) {
-    if (has(BizEvents.CHECKLIST_COMPLETED)) return 'completed';
     if (has(BizEvents.CHECKLIST_DISMISSED)) return 'dismissed';
+    if (has(BizEvents.CHECKLIST_COMPLETED)) return 'completed';
     return 'active';
   }
 
@@ -129,7 +133,7 @@ export const FlowProgressCell = ({
   return (
     <div className="flex flex-col min-w-0">
       {isComplete ? (
-        <span className="text-sm text-muted-foreground">{`Finished in ${completeDate}`}</span>
+        <span className="text-sm text-muted-foreground">{`Completed in ${completeDate}`}</span>
       ) : (
         <span className="text-sm tabular-nums font-medium">
           {lastSeenBizEvent?.data?.flow_step_progress ?? 0}%
@@ -158,7 +162,7 @@ export const ChecklistProgressCell = ({
   );
 
   if (isComplete) {
-    return <span className="text-sm text-muted-foreground">{`Finished in ${completeDate}`}</span>;
+    return <span className="text-sm text-muted-foreground">{`Completed in ${completeDate}`}</span>;
   }
   return <span className="text-sm tabular-nums font-medium">{progress}%</span>;
 };

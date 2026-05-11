@@ -2,15 +2,12 @@ import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useTranslation } from 'react-i18next';
-import {
-  CalendarIcon,
-  ChevronRightIcon,
-  CopyIcon,
-  DotsHorizontalIcon,
-  EnvelopeClosedIcon,
-  IdCardIcon,
-} from '@radix-ui/react-icons';
+import { CalendarIcon, CopyIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, Delete2Icon } from '@usertour-packages/icons';
+import {
+  MoreButton,
+  SectionBreadcrumbHeader,
+} from '@/components/molecules/section-breadcrumb-header';
 import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import {
   AttributeBizTypes,
@@ -171,44 +168,35 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
 
   return (
     <>
-      <div className="border-b bg-white flex-row md:flex w-full sticky top-0 z-10 justify-between items-center">
-        <div className="flex h-16 items-center px-4 w-full gap-2 min-w-0">
-          <button
-            type="button"
-            onClick={() => navigator(`/env/${environmentId}/users`)}
-            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
-          >
-            {t('users.detail.breadcrumb')}
-          </button>
-          <ChevronRightIcon className="h-4 w-4 text-muted-foreground/60 shrink-0" />
-          <span className="text-sm font-medium truncate min-w-0">
-            {(bizUser?.data as any)?.name ||
+      <SectionBreadcrumbHeader
+        items={[
+          { label: t('users.detail.breadcrumb'), to: `/env/${environmentId}/users` },
+          {
+            label:
+              (bizUser?.data as any)?.name ||
               (bizUser?.data as any)?.email ||
               bizUser?.externalId ||
-              t('users.detail.unnamedUser')}
-          </span>
-          <div className="ml-auto shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary">
-                  <span className="sr-only">Actions</span>
-                  <DotsHorizontalIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => setShowDeleteDialog(true)}
-                  disabled={isViewOnly}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Delete2Icon className="mr-2 h-4 w-4" />
-                  {t('users.actions.deleteUser')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
+              t('users.detail.unnamedUser'),
+          },
+        ]}
+        menu={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <MoreButton aria-label={t('users.detail.actionsMenu')} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isViewOnly}
+                className="text-destructive focus:text-destructive"
+              >
+                <Delete2Icon className="mr-2 h-4 w-4" />
+                {t('users.actions.deleteUser')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
+      />
       <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-6 xl:p-8">
         {/* Identity header */}
         <div className="flex items-start gap-4 px-1">
