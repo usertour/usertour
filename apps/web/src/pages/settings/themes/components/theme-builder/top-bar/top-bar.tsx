@@ -21,6 +21,17 @@ interface Props {
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   onSave: () => void;
+  // Covers both system-preset themes and Viewer-role users. Used to gate
+  // rename + save; the System pill below still reads only `theme.isSystem`
+  // because that badge specifically signals "this is a preset", not "you
+  // can't write".
+  isReadOnly: boolean;
+  // Viewer-role gate, used to disable the actions dropdown (Duplicate /
+  // Delete / Set-as-default). Distinct from `isReadOnly` because a system
+  // theme should still expose the dropdown so non-Viewer users can
+  // Duplicate it — only Viewers lose the menu entirely. Mirrors the
+  // ThemeEditDropdownMenu `disabled` prop usage in theme-list-preview.
+  isViewOnly: boolean;
 }
 
 export function TopBar({
@@ -30,6 +41,8 @@ export function TopBar({
   hasUnsavedChanges,
   isSaving,
   onSave,
+  isReadOnly,
+  isViewOnly,
 }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -56,7 +69,7 @@ export function TopBar({
         </button>
         <RiArrowRightSLine className="h-4 w-4 shrink-0 text-muted-foreground/60" />
         <div className="flex min-w-0 items-center gap-2">
-          <EditableTitle value={theme.name} onRename={onRename} disabled={theme.isSystem} />
+          <EditableTitle value={theme.name} onRename={onRename} disabled={isReadOnly} />
           {theme.isSystem && (
             // Same shape as the System badges on Events / Attributes lists
             // (shield + sentence-case label, secondary muted surface) so users
@@ -94,9 +107,9 @@ export function TopBar({
           hasUnsavedChanges={hasUnsavedChanges}
           isSaving={isSaving}
           onSave={onSave}
-          disabled={theme.isSystem}
+          disabled={isReadOnly}
         />
-        <ThemeEditDropdownMenu theme={theme} onSubmit={onActionComplete}>
+        <ThemeEditDropdownMenu theme={theme} onSubmit={onActionComplete} disabled={isViewOnly}>
           <MoreButton aria-label={t('themeBuilder.aria.themeActions')} />
         </ThemeEditDropdownMenu>
       </div>
