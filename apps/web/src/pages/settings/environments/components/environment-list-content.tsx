@@ -13,7 +13,6 @@ import {
 } from '@usertour-packages/table';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Badge } from '@usertour-packages/badge';
-import { format } from 'date-fns';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { EnvironmentListAction } from './environment-list-action';
 
@@ -46,9 +45,6 @@ const EnvironmentListContentTableRow = (props: EnvironmentListContentTableRowPro
           </Button>
         </div>
       </TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {format(new Date(environment.createdAt), 'PPpp')}
-      </TableCell>
       <TableCell>
         <EnvironmentListAction environment={environment} environmentCount={environmentCount} />
       </TableCell>
@@ -75,7 +71,6 @@ export const EnvironmentListContent = () => {
                 https://docs.usertour.io for more details.
               </QuestionTooltip>
             </TableHead>
-            <TableHead className="w-48 hidden lg:table-cell">CreatedAt</TableHead>
             <TableHead className="w-20" />
           </TableRow>
         </TableHeader>
@@ -90,7 +85,7 @@ export const EnvironmentListContent = () => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center">
+              <TableCell colSpan={3} className="h-24 text-center">
                 No results.
               </TableCell>
             </TableRow>
