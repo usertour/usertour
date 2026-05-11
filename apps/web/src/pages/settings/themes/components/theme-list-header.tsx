@@ -3,7 +3,7 @@ import { useThemeListContext } from '@/contexts/theme-list-context';
 import { Button } from '@usertour-packages/button';
 import { useState } from 'react';
 import { ThemeCreateForm } from './theme-create-form';
-import { PlusIcon } from 'lucide-react';
+import { RiAddLine } from '@usertour-packages/icons';
 
 import { useTranslation } from 'react-i18next';
 
@@ -29,7 +29,7 @@ export const ThemeListHeader = () => {
           <div className="flex flex-row justify-between ">
             <h3 className="text-2xl font-semibold tracking-tight">{t('common.theme')}</h3>
             <Button onClick={handleCreateTheme} disabled={isViewOnly}>
-              <PlusIcon className="h-4 w-4" />
+              <RiAddLine className="mr-2 h-4 w-4" />
               {t('themes.listHeader.newTheme')}
             </Button>
           </div>

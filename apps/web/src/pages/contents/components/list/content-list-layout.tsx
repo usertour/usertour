@@ -1,11 +1,10 @@
 import { ContentListSkeleton } from '@/components/molecules/skeleton';
 import { useContentListContext } from '@/contexts/content-list-context';
 import { useAppContext } from '@/contexts/app-context';
-import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { Separator } from '@usertour-packages/separator';
 import { EmptyPlaceholder } from '@/components/molecules/segment/ui';
-import { ArrowRightIcon } from '@usertour-packages/icons';
+import { ArrowRightIcon, RiAddLine } from '@usertour-packages/icons';
 import { useContentCount } from '@usertour-packages/shared-hooks';
 import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
@@ -38,7 +37,7 @@ interface CreateButtonProps {
 
 const CreateButton = memo(({ onClick, disabled, text, id, className }: CreateButtonProps) => (
   <Button onClick={onClick} className={className} id={id} disabled={disabled}>
-    <PlusCircledIcon className="mr-2 h-4 w-4" />
+    <RiAddLine className="mr-2 h-4 w-4" />
     {text}
   </Button>
 ));

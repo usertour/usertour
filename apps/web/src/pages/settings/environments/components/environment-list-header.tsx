@@ -1,6 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { OpenInNewWindowIcon, PlusIcon } from '@radix-ui/react-icons';
+import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { RiAddLine } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { useState } from 'react';
 import { EnvironmentCreateForm } from './environment-create-form';
@@ -23,7 +24,7 @@ export const EnvironmentListHeader = () => {
           <div className="flex flex-row justify-between ">
             <h3 className="text-2xl font-semibold tracking-tight">Environments</h3>
             <Button onClick={handleCreate} className="flex-none" disabled={isViewOnly}>
-              <PlusIcon className="w-4 h-4" />
+              <RiAddLine className="mr-2 h-4 w-4" />
               New Environment
             </Button>
           </div>

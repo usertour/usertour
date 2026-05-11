@@ -1,5 +1,6 @@
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { RiAddLine } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { useState } from 'react';
 import { LocalizationCreateForm } from './localization-create-form';
@@ -22,6 +23,7 @@ export const LocalizationListHeader = () => {
           <div className="flex flex-row justify-between ">
             <h3 className="text-2xl font-semibold tracking-tight">Localization</h3>
             <Button onClick={handleCreate} className="flex-none">
+              <RiAddLine className="mr-2 h-4 w-4" />
               New Localization
             </Button>
           </div>

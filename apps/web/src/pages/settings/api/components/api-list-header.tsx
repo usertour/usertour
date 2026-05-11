@@ -1,5 +1,6 @@
 import { Button } from '@usertour-packages/button';
-import { OpenInNewWindowIcon, PlusIcon } from '@radix-ui/react-icons';
+import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { RiAddLine } from '@usertour-packages/icons';
 import { useState } from 'react';
 import { ApiCreateForm } from './api-create-form';
 import { useAppContext } from '@/contexts/app-context';
@@ -15,8 +16,8 @@ export const ApiListHeader = () => {
           <h3 className="text-2xl font-semibold tracking-tight">
             API keys for {environment?.name}
           </h3>
-          <Button variant="default" onClick={() => setIsCreateModalVisible(true)}>
-            <PlusIcon className="mr-2 h-4 w-4" />
+          <Button onClick={() => setIsCreateModalVisible(true)}>
+            <RiAddLine className="mr-2 h-4 w-4" />
             New API key
           </Button>
         </div>
