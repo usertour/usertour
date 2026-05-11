@@ -18,8 +18,7 @@ import { PopperEditorMini } from '../../richtext-editor/editor';
 import { LINK_OPEN_TYPE } from '../constants';
 
 // Style constants
-const TAB_TRIGGER_CLASS =
-  'w-1/2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground';
+const TAB_TRIGGER_CLASS = 'w-1/2';
 
 // Component props types
 interface DeleteLinkButtonProps {
@@ -78,10 +77,10 @@ const OpenTypeTabs = memo(({ defaultValue, onValueChange }: OpenTypeTabsProps) =
   return (
     <Tabs className="w-full" defaultValue={defaultValue} onValueChange={onValueChange}>
       <TabsList className="h-auto w-full">
-        <TabsTrigger value={LINK_OPEN_TYPE.SAME} className={TAB_TRIGGER_CLASS}>
+        <TabsTrigger value={LINK_OPEN_TYPE.SAME} className={TAB_TRIGGER_CLASS} variant="primary">
           Same tab
         </TabsTrigger>
-        <TabsTrigger value={LINK_OPEN_TYPE.NEW} className={TAB_TRIGGER_CLASS}>
+        <TabsTrigger value={LINK_OPEN_TYPE.NEW} className={TAB_TRIGGER_CLASS} variant="primary">
           New tab
         </TabsTrigger>
       </TabsList>

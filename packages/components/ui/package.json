@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@base-ui/react": "1.0.0-rc.2",
-    "class-variance-authority": "^0.4.0",
     "@tabler/icons-react": "^3.31.0",
     "@usertour-packages/alert": "workspace:*",
     "@usertour-packages/button": "workspace:*",
@@ -24,7 +23,8 @@
     "@usertour-packages/switch": "workspace:*",
     "@usertour-packages/tabs": "workspace:*",
     "@usertour-packages/tailwind": "workspace:*",
-    "@usertour-packages/textarea": "workspace:*"
+    "@usertour-packages/textarea": "workspace:*",
+    "class-variance-authority": "^0.4.0"
   },
   "peerDependencies": {
     "react": "^18.2.0"

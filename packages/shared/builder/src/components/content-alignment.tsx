@@ -53,16 +53,10 @@ export const ContentAlignment = (props: ContentAlignmentProps) => {
           className="grid w-full grid-cols-2 bg-background-700"
           aria-label="Alignment options"
         >
-          <TabsTrigger
-            value="auto"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
+          <TabsTrigger value="auto" variant="primary">
             Auto
           </TabsTrigger>
-          <TabsTrigger
-            value="fixed"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
+          <TabsTrigger value="fixed" variant="primary">
             Fixed
           </TabsTrigger>
         </TabsList>
