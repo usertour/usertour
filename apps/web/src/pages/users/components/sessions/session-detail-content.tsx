@@ -2,11 +2,13 @@ import {
   ActivityLogIcon,
   CalendarIcon,
   ChevronDownIcon,
-  ChevronRightIcon,
   ChevronUpIcon,
-  DotsHorizontalIcon,
 } from '@radix-ui/react-icons';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+  MoreButton,
+  SectionBreadcrumbHeader,
+} from '@/components/molecules/section-breadcrumb-header';
 import { useQuerySessionDetailQuery } from '@usertour-packages/shared-hooks';
 import { BizEvent, BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -22,7 +24,6 @@ import {
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
-import { Button } from '@usertour-packages/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
 import { QuestionAnswer, SessionResponse } from '@/components/molecules/session-detail';
@@ -151,52 +152,32 @@ const SessionDetailContentInner = ({
 
   return (
     <>
-      <div className="border-b bg-white flex-row md:flex w-full sticky top-0 z-10 justify-between items-center">
-        <div className="flex h-16 items-center px-4 w-full gap-2 min-w-0">
-          <button
-            type="button"
-            onClick={() => navigator(`/env/${environmentId}/users`)}
-            className="text-sm text-muted-foreground hover:text-foreground shrink-0"
+      <SectionBreadcrumbHeader
+        items={[
+          { label: t('users.detail.breadcrumb'), to: `/env/${environmentId}/users` },
+          {
+            label: userName,
+            to: bizUser?.id ? `/env/${environmentId}/user/${bizUser.id}` : undefined,
+            className: 'max-w-[220px]',
+          },
+          { label: t('users.sessions.detail.breadcrumb') },
+        ]}
+        menu={
+          <SessionActionDropdownMenu
+            session={session}
+            showViewDetails={false}
+            showViewResponse={false}
+            onDeleteSuccess={() => {
+              navigator(`/env/${environmentId}/users`);
+            }}
+            onEndSuccess={() => {
+              refetch();
+            }}
           >
-            {t('users.detail.breadcrumb')}
-          </button>
-          <ChevronRightIcon className="h-4 w-4 text-muted-foreground/60 shrink-0" />
-          {bizUser?.id ? (
-            <Link
-              to={`/env/${environmentId}/user/${bizUser.id}`}
-              className="text-sm text-muted-foreground hover:text-foreground truncate min-w-0 max-w-[220px]"
-            >
-              {userName}
-            </Link>
-          ) : (
-            <span className="text-sm text-muted-foreground truncate min-w-0 max-w-[220px]">
-              {userName}
-            </span>
-          )}
-          <ChevronRightIcon className="h-4 w-4 text-muted-foreground/60 shrink-0" />
-          <span className="text-sm font-medium truncate min-w-0">
-            {t('users.sessions.detail.breadcrumb')}
-          </span>
-          <div className="ml-auto shrink-0">
-            <SessionActionDropdownMenu
-              session={session}
-              showViewDetails={false}
-              showViewResponse={false}
-              onDeleteSuccess={() => {
-                navigator(`/env/${environmentId}/users`);
-              }}
-              onEndSuccess={() => {
-                refetch();
-              }}
-            >
-              <Button variant="secondary">
-                <span className="sr-only">Actions</span>
-                <DotsHorizontalIcon className="h-4 w-4" />
-              </Button>
-            </SessionActionDropdownMenu>
-          </div>
-        </div>
-      </div>
+            <MoreButton aria-label={t('users.sessions.detail.actionsMenu')} />
+          </SessionActionDropdownMenu>
+        }
+      />
       <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-6 xl:p-8">
         {/* Identity header */}
         <div className="flex items-start gap-4 px-1">
@@ -382,7 +363,12 @@ const SessionDetailContentInner = ({
                       {bizUser?.id ? (
                         <Link
                           to={`/env/${environmentId}/user/${bizUser.id}`}
-                          className="text-primary hover:underline underline-offset-2 truncate"
+                          // block + truncate so overflow:hidden actually
+                          // applies — Link is an <a> (inline by default),
+                          // and inline elements ignore overflow rules,
+                          // letting unbroken long names spill past the card.
+                          className="block truncate text-primary hover:underline underline-offset-2"
+                          title={userName}
                         >
                           {userName}
                         </Link>
@@ -398,7 +384,8 @@ const SessionDetailContentInner = ({
                     <div className="w-3/5 min-w-0 break-words">
                       <Link
                         to={`/env/${environmentId}/${routeContentTypes}/${content?.id}/detail`}
-                        className="text-primary hover:underline underline-offset-2 truncate"
+                        className="block truncate text-primary hover:underline underline-offset-2"
+                        title={content?.name ?? undefined}
                       >
                         {content?.name}
                       </Link>

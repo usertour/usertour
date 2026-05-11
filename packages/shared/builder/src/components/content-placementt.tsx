@@ -111,16 +111,10 @@ export const ContentPlacement = (props: ContentPlacementProps) => {
       <h1 className="text-sm">{title}</h1>
       <Tabs defaultValue={target?.type ?? 'auto'} onValueChange={handlePlacementTypeChange}>
         <TabsList className="grid w-full grid-cols-2 bg-background-700">
-          <TabsTrigger
-            value="auto"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
+          <TabsTrigger value="auto" variant="primary">
             Auto
           </TabsTrigger>
-          <TabsTrigger
-            value="manual"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
+          <TabsTrigger value="manual" variant="primary">
             Manual
           </TabsTrigger>
         </TabsList>

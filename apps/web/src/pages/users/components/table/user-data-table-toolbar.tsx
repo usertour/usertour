@@ -5,11 +5,11 @@ import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { Table } from '@tanstack/react-table';
 import { WebZIndex } from '@usertour-packages/constants';
-import { Rules } from '@usertour-packages/shared-components';
+import { Conditions, validateConditions } from '@usertour-packages/shared-components';
 import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AddUserManualSegment } from '../operations';
 import { UserSegmentCreateDialog } from '../dialogs';
 import { DataTableViewOptions } from '@/components/molecules/segment/table';
@@ -46,6 +46,22 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
   // Track the last processed conditions to prevent infinite loops
   const lastProcessedConditionsRef = useRef<RulesCondition[] | null>(null);
 
+  // Conditions live as local state so the controlled Conditions component
+  // can mutate them on every keystroke without round-tripping through the
+  // segment context. Resets when the active segment changes.
+  const [conditions, setConditions] = useState<RulesCondition[]>(() =>
+    JSON.parse(JSON.stringify(currentSegment.data || [])),
+  );
+  useEffect(() => {
+    setConditions(JSON.parse(JSON.stringify(currentSegment.data || [])));
+    lastProcessedConditionsRef.current = null;
+  }, [currentSegment.id]);
+
+  const filteredAttributes = useMemo(
+    () => attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || [],
+    [attributeList],
+  );
+
   const [open, setOpen] = useState(false);
   const handleOnClose = () => {
     setOpen(false);
@@ -80,36 +96,33 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
     [currentSegment, mutation, refetchUserList, toast],
   );
 
-  const handleDataChange = useCallback(
-    async (conditions: RulesCondition[], hasError: boolean) => {
+  const handleConditionsChange = useCallback(
+    async (next: RulesCondition[]) => {
+      // Always reflect the latest input in the controlled component, even
+      // while invalid — visual fidelity matters more than gating here.
+      setConditions(next);
+
       const segment = currentSegmentRef.current;
+      if (!segment) return;
 
-      // Early return if error or no segment
-      if (hasError || !segment) {
-        return;
-      }
+      // Skip downstream side effects for invalid conditions — pushing them
+      // into the live query would break the segment fetch.
+      const failures = validateConditions(next, { attributes: filteredAttributes });
+      if (failures.length > 0) return;
 
-      // Check if conditions are the same as the last processed ones (prevents infinite loop)
+      // Dedup against the last persisted snapshot — onChange fires per
+      // keystroke and can land on the same final shape repeatedly.
       const isSameAsLastProcessed =
         lastProcessedConditionsRef.current !== null &&
-        conditionsIsSame(conditions, lastProcessedConditionsRef.current);
+        conditionsIsSame(next, lastProcessedConditionsRef.current);
+      lastProcessedConditionsRef.current = next;
+      if (isSameAsLastProcessed) return;
 
-      // Always update the ref to track current state
-      lastProcessedConditionsRef.current = conditions;
-
-      if (isSameAsLastProcessed) {
-        return;
-      }
-
-      setQuery((prev) => ({ ...prev, data: conditions }));
-
-      if (conditions.length === 0) {
-        return;
-      }
-
-      setCurrentConditions({ segmentId: segment.id, data: conditions });
+      setQuery((prev) => ({ ...prev, data: next }));
+      if (next.length === 0) return;
+      setCurrentConditions({ segmentId: segment.id, data: next });
     },
-    [setCurrentConditions, setQuery],
+    [filteredAttributes, setCurrentConditions, setQuery],
   );
 
   const handleSearchChange = useCallback(
@@ -124,19 +137,17 @@ export const UserDataTableToolbar = ({ table, currentSegment }: UserDataTableToo
     <>
       {showFilterBar && (
         <div className="flex items-center justify-between">
-          <Rules
-            onDataChange={handleDataChange}
-            defaultConditions={JSON.parse(JSON.stringify(currentSegment.data || []))}
-            isHorizontal={true}
+          <Conditions
+            conditions={conditions}
+            onChange={handleConditionsChange}
+            isHorizontal
             isShowIf={false}
-            key={currentSegment.id}
             filterItems={['group', 'user-attr']}
-            addButtonText={t('common.addFilter')}
-            attributes={
-              attributeList?.filter((attr) => attr.bizType === AttributeBizTypes.User) || []
-            }
+            attributes={filteredAttributes}
             disabled={isViewOnly}
             baseZIndex={WebZIndex.RULES}
+            t={t}
+            addLabelKey="conditions.actions.addFilter"
           />
         </div>
       )}

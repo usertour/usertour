@@ -4,6 +4,7 @@ import { SpinnerIcon } from '@usertour-packages/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
+import { isVersionPublished } from '@/utils/content';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-packages/button';
@@ -87,11 +88,15 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
     envToken: string,
   ) => {
     let versionId = content.editedVersionId;
-    if (content?.published && content.editedVersionId === content.publishedVersionId) {
+    // Fork only when the version we'd open is currently live in some
+    // environment. Reads contentOnEnvironments (per-env source of truth)
+    // instead of the legacy Content.publishedVersionId field — same fix
+    // as useContentBuilder, see schema deprecation note on the field.
+    if (versionId && isVersionPublished(content, versionId)) {
       const { data } = await createVersion({
         variables: {
           data: {
-            versionId: content.editedVersionId,
+            versionId,
           },
         },
       });

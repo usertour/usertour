@@ -137,11 +137,13 @@ export type NPSAnalysis = {
   };
   npsScore: number;
   total: number;
+  views: number;
 };
 
 export type RateAnalysis = {
   total: number;
   average: number;
+  views: number;
 };
 
 export type NPSByDay = {

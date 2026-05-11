@@ -26,7 +26,7 @@ export const ContentDetailAnalytics = (props: { contentId: string }) => {
     <>
       <AnalyticsProvider contentId={contentId}>
         <BizSessionProvider contentId={contentId}>
-          <div className="p-14 mt-12 ">
+          <div className="px-6 py-8 xl:px-8">
             <div className="space-y-4 justify-center flex flex-col  max-w-screen-xl mx-auto">
               <AnalyticsHeader />
               <AnalyticsViews />

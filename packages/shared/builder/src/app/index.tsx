@@ -1,5 +1,5 @@
 import { useThemeListContext } from '@usertour-packages/contexts';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BuilderMode, useBuilderContext } from '../contexts';
 import { WebBuilderProvider, useWebBuilderProvider } from '../contexts/web-builder-provider';
 import { WebBuilderLoading } from '../components/web-builder-loading';
@@ -72,14 +72,20 @@ export interface WebBuilderProps {
   isLoading?: boolean;
   initialStepIndex?: number;
   shouldShowMadeWith?: boolean;
+  onStepIndexChange?: (stepIndex: number | undefined) => void;
 }
 
 // Inner component that uses the provider context
 function WebBuilderContent(props: WebBuilderProps) {
   const { contentId, environmentId, versionId, projectId, envToken, initialStepIndex } = props;
-  const { initContent } = useBuilderContext();
+  const { initContent, currentMode, currentIndex } = useBuilderContext();
   const { isLoading: providerLoading } = useWebBuilderProvider();
   const [isInitializing, setIsInitializing] = useState(true);
+  const onStepIndexChangeRef = useRef(props.onStepIndexChange);
+
+  useEffect(() => {
+    onStepIndexChangeRef.current = props.onStepIndexChange;
+  }, [props.onStepIndexChange]);
 
   useEffect(() => {
     (async () => {
@@ -95,6 +101,19 @@ function WebBuilderContent(props: WebBuilderProps) {
       setIsInitializing(false);
     })();
   }, []);
+
+  // Mirror the active step into the URL so deep-links and refresh keep the
+  // user in the same panel. Skip while initializing to avoid clobbering the
+  // initial ?step=N before initContent has had a chance to read it.
+  useEffect(() => {
+    if (isInitializing) {
+      return;
+    }
+    const isStepMode =
+      currentMode.mode === BuilderMode.FLOW_STEP_DETAIL ||
+      currentMode.mode === BuilderMode.FLOW_STEP_TRIGGER;
+    onStepIndexChangeRef.current?.(isStepMode ? currentIndex : undefined);
+  }, [currentMode.mode, currentIndex, isInitializing]);
 
   // Show loading if any provider is loading or if we're still initializing
   if (providerLoading || isInitializing) {

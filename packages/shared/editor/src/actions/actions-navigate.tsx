@@ -133,16 +133,10 @@ const NavigationTabs = ({
   return (
     <Tabs className="w-full" defaultValue={openType} onValueChange={onOpenTypeChange}>
       <TabsList className="h-auto w-full">
-        <TabsTrigger
-          value="same"
-          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground w-1/2"
-        >
+        <TabsTrigger value="same" className="w-1/2" variant="primary">
           Same tab
         </TabsTrigger>
-        <TabsTrigger
-          value="new"
-          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground w-1/2"
-        >
+        <TabsTrigger value="new" className="w-1/2" variant="primary">
           New tab
         </TabsTrigger>
       </TabsList>

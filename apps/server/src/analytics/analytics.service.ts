@@ -185,6 +185,7 @@ interface NPSMetricsByDay extends BaseMetricsByDay {
     passives: { count: number; percentage: number };
     detractors: { count: number; percentage: number };
     total: number;
+    views: number;
     npsScore: number;
   };
 }
@@ -193,6 +194,7 @@ interface RatingMetricsByDay extends BaseMetricsByDay {
   metrics: {
     average: number;
     total: number;
+    views: number;
   };
 }
 
@@ -491,6 +493,17 @@ export class AnalyticsService {
       return false;
     }
 
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+    });
+    const startEventCodeName = EVENT_TYPE_MAPPING[content.type as ContentType]?.start;
+    const startEvent =
+      environment && startEventCodeName
+        ? await this.prisma.event.findFirst({
+            where: { projectId: environment.projectId, codeName: startEventCodeName },
+          })
+        : null;
+
     const rollWindowConfig: RollWindowConfig =
       (content.config as any)?.rollWindowConfig ?? defaultRollWindowConfig;
 
@@ -519,6 +532,7 @@ export class AnalyticsService {
         endDateStr,
         rollingWindow,
         timezone,
+        startEvent?.id ?? null,
       );
       ret.push(response);
     }
@@ -550,6 +564,7 @@ export class AnalyticsService {
     endDateStr: string,
     rollingWindow: number,
     timezone: string,
+    startEventId: string | null,
   ) {
     const questionCvid = question.data.cvid;
     const field = getAggregationField(question);
@@ -598,6 +613,7 @@ export class AnalyticsService {
         rollingWindow,
         'nps',
         timezone,
+        startEventId,
       );
 
       response.npsAnalysisByDay = npsAnalysisByDay;
@@ -611,6 +627,7 @@ export class AnalyticsService {
         rollingWindow,
         'rating',
         timezone,
+        startEventId,
       );
       response.averageByDay = averageByDay;
     }
@@ -1757,6 +1774,7 @@ export class AnalyticsService {
     rollingWindow: number,
     type: 'nps' | 'rating',
     timezone: string,
+    startEventId: string | null,
   ): Promise<Array<NPSMetricsByDay | RatingMetricsByDay>> {
     const data: Array<NPSMetricsByDay | RatingMetricsByDay> = [];
     const startDate = startOfDay(toZonedTime(new Date(startDateStr), timezone));
@@ -1782,10 +1800,25 @@ export class AnalyticsService {
         'numberAnswer',
       );
 
+      // Count sessions that saw the content within the same window — used as
+      // the response-rate denominator so it stays aligned with the rolling
+      // window (totalViews from queryContentAnalytics is bound to the dashboard
+      // date range, which mismatches and produces >100% rates).
+      const views = startEventId
+        ? await this.aggregationByEvent({
+            environmentId,
+            contentId,
+            eventId: startEventId,
+            startDateStr: windowStartDate.toISOString(),
+            endDateStr: windowEndDate.toISOString(),
+            isDistinct: false,
+          })
+        : 0;
+
       // Calculate metrics based on type
       const metrics = isNps
-        ? this.calculateNPSMetrics(distribution)
-        : this.calculateRatingMetrics(distribution);
+        ? { ...this.calculateNPSMetrics(distribution), views }
+        : { ...this.calculateRatingMetrics(distribution), views };
 
       const baseData: BaseMetricsByDay = {
         day: currentDate,
@@ -1844,6 +1877,15 @@ export class AnalyticsService {
       .reduce((sum, item) => sum + item.count, 0);
 
     const total = promoters + passives + detractors;
+    if (total === 0) {
+      return {
+        promoters: { count: 0, percentage: 0 },
+        passives: { count: 0, percentage: 0 },
+        detractors: { count: 0, percentage: 0 },
+        total: 0,
+        npsScore: 0,
+      };
+    }
     // Calculate exact percentages for NPS calculation (no rounding)
     const promotersPercentageExact = (promoters / total) * 100;
     const detractorsPercentageExact = (detractors / total) * 100;

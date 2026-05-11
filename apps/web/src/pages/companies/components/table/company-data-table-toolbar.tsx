@@ -6,10 +6,10 @@ import { useCompanyListContext } from '@/contexts/company-list-context';
 import { Table } from '@tanstack/react-table';
 import { useTranslation } from 'react-i18next';
 import { WebZIndex } from '@usertour-packages/constants';
-import { Rules } from '@usertour-packages/shared-components';
+import { Conditions, validateConditions } from '@usertour-packages/shared-components';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AddCompanyManualSegment } from '../operations';
 import { CompanySegmentCreateDialog } from '../dialogs';
 import { DataTableViewOptions } from '@/components/molecules/segment/table';
@@ -52,12 +52,24 @@ export const CompanyDataTableToolbar = ({
   const { hasSelection, getSelectedCount } = useTableSelection(table);
   const { isViewOnly, environment } = useAppContext();
 
-  // Use ref to store currentSegment to avoid recreating handleDataChange when segment object changes
+  // Use ref to store currentSegment to avoid recreating the change handler
+  // when segment object changes
   const currentSegmentRef = useRef(currentSegment);
   currentSegmentRef.current = currentSegment;
 
   // Track the last processed conditions to prevent infinite loops
   const lastProcessedConditionsRef = useRef<RulesCondition[] | null>(null);
+
+  // Conditions are controlled by this toolbar — local state mirrors what's
+  // shown in the Conditions component, resets when the active segment
+  // changes.
+  const [conditions, setConditions] = useState<RulesCondition[]>(() =>
+    JSON.parse(JSON.stringify(currentSegment.data || [])),
+  );
+  useEffect(() => {
+    setConditions(JSON.parse(JSON.stringify(currentSegment.data || [])));
+    lastProcessedConditionsRef.current = null;
+  }, [currentSegment.id]);
 
   const [open, setOpen] = useState(false);
   const handleOnClose = () => {
@@ -93,36 +105,30 @@ export const CompanyDataTableToolbar = ({
     [currentSegment, mutation, refetchCompanyList, toast],
   );
 
-  const handleDataChange = useCallback(
-    async (conditions: RulesCondition[], hasError: boolean) => {
+  const handleConditionsChange = useCallback(
+    async (next: RulesCondition[]) => {
+      // Reflect every keystroke in the controlled component's value.
+      setConditions(next);
+
       const segment = currentSegmentRef.current;
+      if (!segment) return;
 
-      // Early return if error or no segment
-      if (hasError || !segment) {
-        return;
-      }
+      // Skip downstream side effects for invalid conditions to keep the live
+      // segment query from blowing up on partial input.
+      const failures = validateConditions(next, { attributes: filteredAttributes });
+      if (failures.length > 0) return;
 
-      // Check if conditions are the same as the last processed ones (prevents infinite loop)
       const isSameAsLastProcessed =
         lastProcessedConditionsRef.current !== null &&
-        conditionsIsSame(conditions, lastProcessedConditionsRef.current);
+        conditionsIsSame(next, lastProcessedConditionsRef.current);
+      lastProcessedConditionsRef.current = next;
+      if (isSameAsLastProcessed) return;
 
-      // Always update the ref to track current state
-      lastProcessedConditionsRef.current = conditions;
-
-      if (isSameAsLastProcessed) {
-        return;
-      }
-
-      setQuery((prev) => ({ ...prev, data: conditions }));
-
-      if (conditions.length === 0) {
-        return;
-      }
-
-      setCurrentConditions({ segmentId: segment.id, data: conditions });
+      setQuery((prev) => ({ ...prev, data: next }));
+      if (next.length === 0) return;
+      setCurrentConditions({ segmentId: segment.id, data: next });
     },
-    [setCurrentConditions, setQuery],
+    [filteredAttributes, setCurrentConditions, setQuery],
   );
 
   const handleSearchChange = useCallback(
@@ -137,17 +143,17 @@ export const CompanyDataTableToolbar = ({
     <>
       {showFilterBar && (
         <div className="flex items-center justify-between">
-          <Rules
-            onDataChange={handleDataChange}
-            defaultConditions={JSON.parse(JSON.stringify(currentSegment.data || []))}
-            isHorizontal={true}
+          <Conditions
+            conditions={conditions}
+            onChange={handleConditionsChange}
+            isHorizontal
             isShowIf={false}
-            key={currentSegment.id}
             filterItems={['group', 'user-attr']}
-            addButtonText={t('common.addFilter')}
             attributes={filteredAttributes}
             disabled={isViewOnly}
             baseZIndex={WebZIndex.RULES}
+            t={t}
+            addLabelKey="conditions.actions.addFilter"
           />
         </div>
       )}

@@ -114,7 +114,7 @@ server.use(async (socket, next) => {
 });
 ```
 
-`initializeSocketData` does the database resolution (`ensureBizUser`, `getBizCompany`, session restoration if session IDs were sent — they are not currently). Roughly 2–3 round trips of WS protocol overhead before `connect` fires on the client.
+`initializeSocketData` does the database resolution (`ensureBizUser`, `getBizCompany`, and session re-hydration via `initializeSessions` when the auth payload carries session IDs — see [Session resumption](#session-resumption) below). Roughly 2–3 round trips of WS protocol overhead before `connect` fires on the client.
 
 ### Reconnection
 
@@ -129,11 +129,35 @@ server.use(async (socket, next) => {
 | `randomizationFactor` | `0.5` | ±50% jitter |
 | `timeout` | `5000ms` | per-handshake timeout |
 
-On reconnect, the `auth` callback runs again with the **current** `authCredentials` (so credential changes mid-flight take effect), and the server runs `initializeSocketData` from scratch — building a fresh `socketData` for the new `socket.id`.
-
-**Session state is not restored on reconnect**: the SDK does not include `flowSessionId` / `checklistSessionId` in the auth payload. After a transient drop, the user lands on an empty `socketData`; the next `EndBatch` triggers `toggleContents`, which evaluates eligibility from scratch. Whether the previous flow resumes depends on whether `BizSession` is still active in the database and whether `toggleContents` picks it up — this is implementation-dependent and warrants verification if the user-facing impact matters.
+On reconnect, the `auth` callback runs again with the **current** `authCredentials` (so credential changes mid-flight take effect), and the server runs `initializeSocketData` against the new `socket.id`. The fresh `socketData` is re-hydrated with active sessions when the auth payload carries their IDs — see [Session resumption](#session-resumption) below.
 
 `sendBuffer` (messages emitted while disconnected) is preserved across reconnect by `socket.io-client` and flushed once `connect` fires.
+
+#### Session resumption
+
+The SDK keeps the active session IDs on `authCredentials`, so reconnect handshakes carry them and the server rebuilds `socketData` with the live sessions intact:
+
+```ts
+// usertour-core.ts syncSocketCredentials (line 1586)
+this.socketService.updateCredentials({
+  externalUserId,
+  externalCompanyId,
+  token,
+  flowSessionId: this.activatedTour?.getSessionId(),
+  checklistSessionId: this.activatedChecklist?.getSessionId(),
+  bannerSessionId: this.activatedBanner?.getSessionId(),
+  resourceCenterSessionId: this.activatedResourceCenter?.getSessionId(),
+  launchers: this.launchers.map(l => l.getContentId()),
+  clientConditions,
+  clientContext,
+});
+```
+
+`syncSocketCredentials()` is called from `handleServerMessageSucceeded()` — every successful server message pushes a fresh snapshot of the active session IDs into `authCredentials`. The `auth` callback returns `authCredentials` on every (re)connect, so the server's `initializeSocketData → initializeSessions` Promise.all (`web-socket-v2.service.ts` lines 158–176) re-fetches each `BizSession` by id and assigns them back to `socketData.flowSession` / `checklistSession` / etc.
+
+End result: a transient disconnect (e.g. tab background → ping timeout → reconnect) restores the same `socketData` shape on the new socket, so any in-progress flow / checklist / banner / resource-center continues without restart.
+
+**Caveat:** the snapshot is only as fresh as the most recent `handleServerMessageSucceeded`. If a session is activated by client-side code with no immediate server round-trip, the credentials sync waits until the next server message before that activation lands in `authCredentials`. In practice the activation paths route through server messages (`SetFlowSession`, etc.), so this window is small.
 
 `connect_error` (e.g. server-side handshake auth rejection) is **not** handled specially — the default reconnection loop continues retrying. The SDK's CONNECT_TIMEOUT (30s) is an application-layer safety net only; the underlying socket keeps trying on its own schedule.
 
@@ -251,6 +275,4 @@ The server-side upsert guard (added in v0.7.1.3) catches this on the upsert path
 
 ### 6. Reconnect during healthy session
 
-Network drops mid-emit → `socket.io-client` auto-reconnects with current auth → server rebuilds `socketData` from scratch → `sendBuffer` flushes onto new socket → ack returns. Caller observes elevated latency but no failure (assuming reconnect completes within `EMIT_TIMEOUT`).
-
-Session state is **not** restored across reconnect (see [Reconnection](#reconnection) above). The next `EndBatch` re-evaluates eligibility from a clean slate.
+Network drops mid-emit → `socket.io-client` auto-reconnects with current auth → server rebuilds `socketData`, re-hydrating any active sessions from the IDs in the auth payload (see [Session resumption](#session-resumption) above) → `sendBuffer` flushes onto new socket → ack returns. Caller observes elevated latency but no failure (assuming reconnect completes within `EMIT_TIMEOUT`), and any in-progress flow continues seamlessly.

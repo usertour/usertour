@@ -19,6 +19,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
+    "types": ["jest", "node"],
     "paths": {
       "@/*": ["./src/*"]
     }

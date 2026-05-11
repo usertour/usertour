@@ -2,10 +2,16 @@ import { Button } from '@usertour-packages/button';
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
 import { Delete2Icon } from '@usertour-packages/icons';
 import { Label } from '@usertour-packages/label';
-import { Rules, RulesWait } from '@usertour-packages/shared-components';
-import { defaultRulesItems } from '@usertour-packages/shared-components/src/components/rules';
+import {
+  ConditionWait,
+  Conditions,
+  DEFAULT_CONDITION_TYPES,
+  validateConditions,
+} from '@usertour-packages/shared-components';
 import { ContentActions } from '@usertour-packages/shared-editor';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from './content-error';
 
 interface ContentTriggerProps {
@@ -48,30 +54,57 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
     onWaitChange,
     wait,
   } = props;
+  const { t } = useTranslation();
+
+  // v2 Conditions is controlled (parent owns the displayed value) — v1 Rules
+  // managed its own state. The trigger's parent only writes back valid
+  // payloads, so without a local buffer a freshly-added (initially-invalid)
+  // condition would round-trip to nothing and disappear from the UI. Mirror
+  // v1's "always show what the user picked" by holding a local copy that
+  // syncs with the prop on the way in but updates immediately on every
+  // change on the way out.
+  const [localConditions, setLocalConditions] = useState<RulesCondition[]>(conditions);
+
+  useEffect(() => {
+    setLocalConditions(conditions);
+  }, [conditions]);
+
+  const handleConditionsChange = useCallback(
+    (conds: RulesCondition[]) => {
+      setLocalConditions(conds);
+      const failures = validateConditions(conds, {
+        attributes: attributeList,
+        contents,
+      });
+      onConditonsChange(conds, failures.length > 0);
+    },
+    [attributeList, contents, onConditonsChange],
+  );
 
   return (
     <>
       <div className="flex flex-col border shadow p-2 rounded-lg space-y-4 relative">
         <ContentError open={showError && (actions.length === 0 || conditions.length === 0)}>
           <ContentErrorAnchor>
-            <Rules
-              onDataChange={onConditonsChange}
-              defaultConditions={conditions}
+            <Conditions
+              conditions={localConditions}
+              onChange={handleConditionsChange}
               attributes={attributeList}
               contents={contents}
               currentContent={currentContent}
               token={token}
-              filterItems={defaultRulesItems.filter(
+              filterItems={DEFAULT_CONDITION_TYPES.filter(
                 (item) => item !== 'segment' && item !== 'content' && item !== 'event',
               )}
               onElementChange={onRulesConditionElementChange}
               baseZIndex={EXTENSION_CONTENT_RULES}
+              t={t}
             />
-            <RulesWait
+            <ConditionWait
               defaultValue={wait}
               onValueChange={onWaitChange}
               disabled={false}
-              baseZIndex={EXTENSION_CONTENT_RULES}
+              t={t}
             />
             <Label>Action to perform when triggered</Label>
             <ContentActions

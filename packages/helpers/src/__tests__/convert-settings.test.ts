@@ -47,7 +47,7 @@ describe('convert-settings', () => {
       linkColor: 'Auto',
     },
     border: {
-      borderRadius: '10',
+      borderRadius: 10,
       borderWidthEnabled: false,
       borderWidth: 1,
       borderColor: 'Auto',
@@ -235,6 +235,8 @@ describe('convert-settings', () => {
         active: 'Auto',
       },
       padding: 8,
+      animationDuration: 320,
+      animationTiming: 'smooth',
     },
     focusHighlight: {
       color: 'Auto',

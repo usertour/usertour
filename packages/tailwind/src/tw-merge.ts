@@ -152,6 +152,10 @@ const customTwMerge = extendTailwindMerge({
           border: ['sdk-btn-primary', 'sdk-btn-secondary'],
         },
       ],
+
+      // boxShadow group - register custom shadow tokens so cn() treats them
+      // as conflicting with built-in shadow-{sm,md,lg,...}.
+      shadow: ['shadow-popper', 'shadow-toolbar'],
     },
   },
 });
