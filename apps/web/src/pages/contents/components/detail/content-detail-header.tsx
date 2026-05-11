@@ -16,6 +16,7 @@ import { useToast } from '@usertour-packages/use-toast';
 import { ContentDataType } from '@usertour/types';
 import { getErrorMessage } from '@usertour/helpers';
 import { formatDistanceToNow } from 'date-fns';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useEvent } from 'react-use';
 import { useTranslation } from 'react-i18next';
@@ -62,7 +63,14 @@ function MainNav({ className }: MainNavProps) {
           >
             {t(`contents.detail.tabs.${tab.key}`)}
             {active && (
-              <span className="pointer-events-none absolute -bottom-2 left-0 right-0 h-0.5 rounded-full bg-primary" />
+              // Shared layoutId so framer-motion interpolates the bar's
+              // position between tabs on route change — same trick the
+              // atomic Tabs uses for its sliding pill.
+              <motion.span
+                layoutId="content-detail-active-tab"
+                className="pointer-events-none absolute -bottom-2 left-0 right-0 h-0.5 rounded-full bg-primary"
+                transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+              />
             )}
           </Link>
         );
