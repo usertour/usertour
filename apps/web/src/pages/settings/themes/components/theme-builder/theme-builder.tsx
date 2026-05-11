@@ -1,3 +1,4 @@
+import { useAppContext } from '@/contexts/app-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { StorageKeys } from '@usertour-packages/constants';
 import { validateConditions } from '@usertour-packages/shared-components';
@@ -45,6 +46,12 @@ export function ThemeBuilder({ theme, onSave, onRename, onActionComplete }: Prop
   const [activeVariationId, setActiveVariationId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const { isViewOnly } = useAppContext();
+  // Read-only when the theme itself is a system preset OR when the
+  // current viewer holds the Viewer role. Both gate every write surface
+  // (setField, save, rename, variation add/remove/reorder).
+  const isReadOnly = !!theme.isSystem || isViewOnly;
+
   const initialBase = useMemo(() => mergeWithDefaults(theme.settings), [theme.settings]);
   const initialVariations = useMemo(() => theme.variations ?? [], [theme.variations]);
 
@@ -60,10 +67,10 @@ export function ThemeBuilder({ theme, onSave, onRename, onActionComplete }: Prop
   }, []);
 
   const onAddVariation = useCallback(() => {
-    if (theme.isSystem) return;
+    if (isReadOnly) return;
     const id = draft.addVariation();
     setActiveVariationId(id);
-  }, [draft, theme.isSystem]);
+  }, [draft, isReadOnly]);
 
   const onDeleteVariation = useCallback(
     (id: string) => {
@@ -143,9 +150,9 @@ export function ThemeBuilder({ theme, onSave, onRename, onActionComplete }: Prop
       finalSettings: draft.finalSettings,
       getField: draft.getField,
       setField: draft.setField,
-      isReadOnly: !!theme.isSystem,
+      isReadOnly,
     }),
-    [draft.activeSettings, draft.finalSettings, draft.getField, draft.setField, theme.isSystem],
+    [draft.activeSettings, draft.finalSettings, draft.getField, draft.setField, isReadOnly],
   );
 
   return (
@@ -161,6 +168,8 @@ export function ThemeBuilder({ theme, onSave, onRename, onActionComplete }: Prop
           hasUnsavedChanges={draft.hasUnsavedChanges}
           isSaving={isSaving}
           onSave={handleSave}
+          isReadOnly={isReadOnly}
+          isViewOnly={isViewOnly}
         />
         <div className="flex flex-1 overflow-hidden">
           <VariationsSidebar
@@ -177,7 +186,7 @@ export function ThemeBuilder({ theme, onSave, onRename, onActionComplete }: Prop
               }
             }}
             onReorder={draft.reorderVariations}
-            disabled={theme.isSystem}
+            disabled={isReadOnly}
             width={leftResizable.width}
             resize={{
               isAtMin: leftResizable.isAtMin,
