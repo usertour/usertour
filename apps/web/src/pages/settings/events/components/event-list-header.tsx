@@ -24,7 +24,7 @@ export const EventListHeader = () => {
             <h3 className="text-2xl font-semibold tracking-tight">Events</h3>
             <Button onClick={handleCreate} disabled={isViewOnly}>
               <RiAddLine className="mr-2 h-4 w-4" />
-              New Events
+              New Event
             </Button>
           </div>
         </div>
