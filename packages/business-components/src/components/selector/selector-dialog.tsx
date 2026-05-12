@@ -19,7 +19,7 @@ import {
 } from '@usertour-packages/form';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
-import { useOpenSelector } from '@usertour-packages/shared-hooks';
+import { useOpenSelector } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';

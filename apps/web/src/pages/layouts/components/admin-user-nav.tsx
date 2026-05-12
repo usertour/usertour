@@ -16,7 +16,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
-import { useActiveUserProjectMutation } from '@usertour-packages/shared-hooks';
+import { useActiveUserProjectMutation } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import isHotkey from 'is-hotkey';
 import { usePostHog } from 'posthog-js/react';

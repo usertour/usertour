@@ -12,7 +12,7 @@ import type { Descendant } from '@usertour-packages/editor';
 import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Conditions } from '@usertour-packages/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
+import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/hooks';
 import { Switch } from '@usertour-packages/switch';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';

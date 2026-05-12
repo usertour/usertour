@@ -28,7 +28,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useResetUserPasswordByCodeMutation } from '@usertour-packages/shared-hooks';
+import { useResetUserPasswordByCodeMutation } from '@usertour-packages/hooks';
 
 const formSchema = z.object({
   password: z

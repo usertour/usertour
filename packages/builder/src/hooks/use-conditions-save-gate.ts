@@ -1,6 +1,6 @@
 import { validateConditions } from '@usertour-packages/business-components';
 import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
+import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';

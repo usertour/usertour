@@ -11,7 +11,7 @@ import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour-packages/business-components';
 import { Actions } from '@usertour-packages/editor';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
+import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/hooks';
 import { Switch } from '@usertour-packages/switch';
 import {
   ChecklistItemType,

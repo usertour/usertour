@@ -21,7 +21,7 @@ import {
   useGetContentVersionLazyQuery,
   useAddContentStepsMutation,
   useAddContentStepMutation,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 
 export enum BuilderMode {
   ELEMENT_SELECTOR = 'element-selector',

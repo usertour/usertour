@@ -1,10 +1,7 @@
 import { Button } from '@usertour-packages/button';
 import { Input } from '@usertour-packages/input';
 import { useState, useCallback, useEffect } from 'react';
-import {
-  useListIntegrationsQuery,
-  useUpdateIntegrationMutation,
-} from '@usertour-packages/shared-hooks';
+import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import {

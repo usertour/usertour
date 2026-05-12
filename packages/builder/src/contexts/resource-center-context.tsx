@@ -21,7 +21,7 @@ import {
 import { useDebouncedCallback } from 'use-debounce';
 import { useEvent } from 'react-use';
 import { BuilderMode, useBuilderContext } from './builder-context';
-import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
+import { useUpdateContentVersionMutation } from '@usertour-packages/hooks';
 import { deepClone } from '@usertour/helpers';
 
 export interface ResourceCenterProviderProps {

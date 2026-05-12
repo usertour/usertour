@@ -3,7 +3,7 @@
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
 import { PopoverArrow } from '@usertour-packages/popover';
 import { ColorPickerPanel } from '@usertour-packages/ui';
-import { useCurrentUserId } from '@usertour-packages/shared-hooks';
+import { useCurrentUserId } from '@usertour-packages/hooks';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useSlate } from 'slate-react';
 

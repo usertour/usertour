@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
-import { useDeleteIntegrationObjectMappingMutation } from '@usertour-packages/shared-hooks';
+import { useDeleteIntegrationObjectMappingMutation } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import {

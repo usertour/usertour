@@ -10,7 +10,7 @@ import { SpinnerIcon } from '@usertour-packages/icons';
 import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Conditions } from '@usertour-packages/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
+import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/hooks';
 import { Switch } from '@usertour-packages/switch';
 import { ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { useTranslation } from 'react-i18next';

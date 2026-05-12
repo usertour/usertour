@@ -1,7 +1,4 @@
-import {
-  useAdminSettingsQuery,
-  useUpdateInstanceLicenseMutation,
-} from '@usertour-packages/shared-hooks';
+import { useAdminSettingsQuery, useUpdateInstanceLicenseMutation } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';

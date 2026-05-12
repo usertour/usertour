@@ -14,7 +14,7 @@ import {
   useQueryTooltipTargetMissingSessionsLazyQuery,
   type StepAnalytics,
   type TooltipTargetMissingResponse,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';

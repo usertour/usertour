@@ -5,7 +5,7 @@ import { Button } from '@usertour-packages/button';
 import { Separator } from '@usertour-packages/separator';
 import { EmptyPlaceholder } from '@/components/molecules/segment/ui';
 import { ArrowRightIcon, RiAddLine } from '@usertour-packages/icons';
-import { useContentCount } from '@usertour-packages/shared-hooks';
+import { useContentCount } from '@usertour-packages/hooks';
 import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
 import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';

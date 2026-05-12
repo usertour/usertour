@@ -1,6 +1,6 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ColorPickerPanel } from '@usertour-packages/ui';
-import { useCurrentUserId } from '@usertour-packages/shared-hooks';
+import { useCurrentUserId } from '@usertour-packages/hooks';
 import { cn } from '@usertour-packages/tailwind';
 import { useId, useState } from 'react';
 import { useBuilderContext } from '../builder-context';

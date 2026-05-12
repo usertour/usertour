@@ -9,7 +9,7 @@ import {
   useGetSubscriptionByProjectIdQuery,
   useGetProjectConfigQuery,
   useGetSubscriptionUsageQuery,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { ReactNode, createContext, useCallback, useContext, useMemo } from 'react';
 
 export interface SubscriptionProviderProps {

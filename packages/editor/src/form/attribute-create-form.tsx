@@ -37,7 +37,7 @@ import {
 import {
   CreateAttributeMutationVariables,
   useCreateAttributeMutation,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';

@@ -10,7 +10,7 @@ import {
   IntegrationObjectMappingItem,
 } from '@usertour/types';
 import { useState } from 'react';
-import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
+import { useListAttributesQuery } from '@usertour-packages/hooks';
 import { cn } from '@usertour-packages/tailwind';
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (

@@ -1,5 +1,5 @@
 import { EventTrackerIcon } from '@usertour-packages/icons';
-import { useListAttributeOnEventsQuery } from '@usertour-packages/shared-hooks';
+import { useListAttributeOnEventsQuery } from '@usertour-packages/hooks';
 import {
   type Attribute,
   AttributeBizTypes,

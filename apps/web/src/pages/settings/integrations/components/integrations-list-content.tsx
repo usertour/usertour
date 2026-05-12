@@ -13,7 +13,7 @@ import {
   useListIntegrationsQuery,
   useUpdateIntegrationMutation,
   useGetSalesforceAuthUrlQuery,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { IntegrationModel } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';

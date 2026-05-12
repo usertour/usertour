@@ -1,6 +1,6 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
 import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
-import { useChecklistPreviewAnimation } from '@usertour-packages/shared-hooks';
+import { useChecklistPreviewAnimation } from '@usertour-packages/hooks';
 import {
   ChecklistContainer,
   ChecklistDismiss,

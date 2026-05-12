@@ -3,7 +3,7 @@ import {
   AccessToken,
   useDeleteAccessTokenMutation,
   useGetAccessTokenQuery,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { DotsHorizontalIcon, EyeOpenIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import {

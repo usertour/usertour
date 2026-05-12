@@ -12,7 +12,7 @@ import {
   useResourceCenterContext as useWidgetResourceCenterContext,
 } from '@usertour-packages/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour-packages/editor';
-import { useContentListQuery } from '@usertour-packages/shared-hooks';
+import { useContentListQuery } from '@usertour-packages/hooks';
 import {
   ContentDataType,
   ContentEditorElementType,

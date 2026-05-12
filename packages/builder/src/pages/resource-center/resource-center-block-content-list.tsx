@@ -32,7 +32,7 @@ import {
   useContentListQuery,
   useListEventsQuery,
   useSegmentListQuery,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { Switch } from '@usertour-packages/switch';
 import {
   QuestionTooltip,

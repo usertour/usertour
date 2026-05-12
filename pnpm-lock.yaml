@@ -662,6 +662,9 @@ importers:
       '@usertour-packages/gql':
         specifier: workspace:^
         version: link:../../packages/gql
+      '@usertour-packages/hooks':
+        specifier: workspace:^
+        version: link:../../packages/hooks
       '@usertour-packages/hover-card':
         specifier: workspace:^
         version: link:../../packages/components/hover-card
@@ -704,9 +707,6 @@ importers:
       '@usertour-packages/separator':
         specifier: workspace:^
         version: link:../../packages/components/separator
-      '@usertour-packages/shared-hooks':
-        specifier: workspace:^
-        version: link:../../packages/shared/hooks
       '@usertour-packages/skeleton':
         specifier: workspace:^
         version: link:../../packages/components/skeleton
@@ -1041,6 +1041,9 @@ importers:
       '@usertour-packages/gql':
         specifier: workspace:^
         version: link:../gql
+      '@usertour-packages/hooks':
+        specifier: workspace:^
+        version: link:../hooks
       '@usertour-packages/hover-card':
         specifier: workspace:^
         version: link:../components/hover-card
@@ -1077,9 +1080,6 @@ importers:
       '@usertour-packages/separator':
         specifier: workspace:^
         version: link:../components/separator
-      '@usertour-packages/shared-hooks':
-        specifier: workspace:^
-        version: link:../shared/hooks
       '@usertour-packages/skeleton':
         specifier: workspace:^
         version: link:../components/skeleton
@@ -1291,6 +1291,9 @@ importers:
       '@usertour-packages/gql':
         specifier: workspace:^
         version: link:../gql
+      '@usertour-packages/hooks':
+        specifier: workspace:^
+        version: link:../hooks
       '@usertour-packages/hover-card':
         specifier: workspace:^
         version: link:../components/hover-card
@@ -1324,9 +1327,6 @@ importers:
       '@usertour-packages/separator':
         specifier: workspace:^
         version: link:../components/separator
-      '@usertour-packages/shared-hooks':
-        specifier: workspace:^
-        version: link:../shared/hooks
       '@usertour-packages/slider':
         specifier: workspace:^
         version: link:../components/slider
@@ -3569,6 +3569,9 @@ importers:
       '@usertour-packages/form':
         specifier: workspace:^
         version: link:../components/form
+      '@usertour-packages/hooks':
+        specifier: workspace:^
+        version: link:../hooks
       '@usertour-packages/icons':
         specifier: workspace:^
         version: link:../icons
@@ -3593,9 +3596,6 @@ importers:
       '@usertour-packages/select':
         specifier: workspace:^
         version: link:../components/select
-      '@usertour-packages/shared-hooks':
-        specifier: workspace:^
-        version: link:../shared/hooks
       '@usertour-packages/skeleton':
         specifier: workspace:^
         version: link:../components/skeleton
@@ -3858,6 +3858,64 @@ importers:
       typescript:
         specifier: ^5.0.2
         version: 5.3.3
+
+  packages/hooks:
+    dependencies:
+      '@apollo/client':
+        specifier: ^3.7.17
+        version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
+      '@usertour-packages/constants':
+        specifier: workspace:^
+        version: link:../constants
+      '@usertour-packages/gql':
+        specifier: workspace:^
+        version: link:../gql
+      '@usertour/helpers':
+        specifier: workspace:^
+        version: link:../helpers
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      react-use:
+        specifier: ^17.4.0
+        version: 17.5.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.37
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: ^18.0.11
+        version: 18.2.7
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.3.4
+        version: 0.3.5(eslint@8.57.1)
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+      vite:
+        specifier: ^4.3.9
+        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
   packages/i18n: {}
 
@@ -4143,64 +4201,6 @@ importers:
       '@types/resize-observer-browser':
         specifier: ^0.1.4
         version: 0.1.11
-
-  packages/shared/hooks:
-    dependencies:
-      '@apollo/client':
-        specifier: ^3.7.17
-        version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
-      '@usertour-packages/constants':
-        specifier: workspace:^
-        version: link:../../constants
-      '@usertour-packages/gql':
-        specifier: workspace:^
-        version: link:../../gql
-      '@usertour/helpers':
-        specifier: workspace:^
-        version: link:../../helpers
-      '@usertour/types':
-        specifier: workspace:^
-        version: link:../../types
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
-      react-use:
-        specifier: ^17.4.0
-        version: 17.5.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.3.3
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
   packages/tailwind:
     dependencies:

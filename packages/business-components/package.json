@@ -44,7 +44,7 @@
     "@usertour-packages/scroll-area": "workspace:^",
     "@usertour-packages/select": "workspace:^",
     "@usertour-packages/separator": "workspace:^",
-    "@usertour-packages/shared-hooks": "workspace:^",
+    "@usertour-packages/hooks": "workspace:^",
     "@usertour-packages/widget": "workspace:^",
     "@usertour/helpers": "workspace:^",
     "@usertour-packages/slider": "workspace:^",

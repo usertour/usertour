@@ -9,7 +9,7 @@ import {
   type ThemeVariation,
   defaultSettings,
 } from '@usertour/types';
-import { useCurrentUserId } from '@usertour-packages/shared-hooks';
+import { useCurrentUserId } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';

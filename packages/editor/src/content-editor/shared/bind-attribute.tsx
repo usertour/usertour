@@ -12,7 +12,7 @@ import {
 import { Label } from '@usertour-packages/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
-import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
+import { useListAttributesQuery } from '@usertour-packages/hooks';
 import { Switch } from '@usertour-packages/switch';
 import { cn } from '@usertour-packages/tailwind';
 import { QuestionTooltip } from '@usertour-packages/tooltip';

@@ -12,7 +12,7 @@ import {
 import { useDebouncedCallback } from 'use-debounce';
 import { useEvent } from 'react-use';
 import { BuilderMode, useBuilderContext } from './builder-context';
-import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
+import { useUpdateContentVersionMutation } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { deepClone } from '@usertour/helpers';
 import { defaultLauncherData } from '../utils/default-data';

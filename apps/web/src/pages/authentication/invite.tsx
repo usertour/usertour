@@ -1,6 +1,6 @@
 import { CardContent, CardFooter } from '@usertour-packages/card';
 import { useParams } from 'react-router-dom';
-import { useGetInviteQuery } from '@usertour-packages/shared-hooks';
+import { useGetInviteQuery } from '@usertour-packages/hooks';
 import {
   SignInDivider,
   SignInForm,

@@ -46,10 +46,7 @@ import { PlusIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { useToast } from '@usertour-packages/use-toast';
 import { ContentType } from '../../components/content-type';
 import { FlowPlacement } from './components/flow-placement';
-import {
-  useAddContentStepMutation,
-  useUpdateContentStepMutation,
-} from '@usertour-packages/shared-hooks';
+import { useAddContentStepMutation, useUpdateContentStepMutation } from '@usertour-packages/hooks';
 import { ContentBubble } from '../../components/content-bubble';
 
 const FlowBuilderDetailHeader = () => {

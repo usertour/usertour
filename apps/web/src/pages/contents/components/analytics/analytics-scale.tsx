@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { useState, useMemo } from 'react';
 import { cn } from '@usertour-packages/tailwind';
 import { ArrowRightIcon } from '@usertour-packages/icons';
-import { useUpdateContentMutation } from '@usertour-packages/shared-hooks';
+import { useUpdateContentMutation } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
 import { ContentEditorElementType } from '@usertour-packages/editor';

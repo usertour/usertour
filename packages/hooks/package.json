@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/shared-hooks",
+  "name": "@usertour-packages/hooks",
   "private": true,
   "version": "0.0.0",
   "type": "module",

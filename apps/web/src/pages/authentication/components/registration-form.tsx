@@ -20,7 +20,7 @@ import { Input } from '@usertour-packages/input';
 import { Link, useParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
-import { useSignupMutation } from '@usertour-packages/shared-hooks';
+import { useSignupMutation } from '@usertour-packages/hooks';
 
 // Form validation schema
 const registFormSchema = z.object({

@@ -20,3 +20,4 @@ packages:
   - "packages/finder"
   - "packages/gql"
   - "packages/i18n"
+  - "packages/hooks"

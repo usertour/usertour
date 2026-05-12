@@ -21,7 +21,7 @@ import { cn } from '@usertour-packages/tailwind';
 import {
   useCreateCheckoutSessionMutation,
   useCreatePortalSessionMutation,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { Separator } from '@usertour-packages/separator';
 import { PlanType } from '@usertour/types';
 import { Progress } from '@usertour-packages/progress';

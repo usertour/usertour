@@ -11,7 +11,7 @@ import {
 } from '@usertour-packages/alert-dialog';
 import { Button } from '@usertour-packages/button';
 import { conditionsIsSame, getErrorMessage } from '@usertour/helpers';
-import { useUpdateSegmentMutation } from '@usertour-packages/shared-hooks';
+import { useUpdateSegmentMutation } from '@usertour-packages/hooks';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useState } from 'react';

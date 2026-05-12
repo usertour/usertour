@@ -21,7 +21,7 @@ import { BuilderMode, useBuilderContext } from '../../contexts';
 import { TriggerProvider, useTriggerContext } from '../../contexts';
 import { useToken } from '../../hooks/use-token';
 import { SidebarMini } from '../sidebar/sidebar-mini';
-import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
+import { useListAttributesQuery } from '@usertour-packages/hooks';
 
 const FlowBuilderTriggerHeader = () => {
   const { setCurrentMode, currentStep, currentContent, currentIndex } = useBuilderContext();

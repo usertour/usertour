@@ -16,7 +16,7 @@ import { Input } from '@usertour-packages/input';
 import { Skeleton } from '@usertour-packages/skeleton';
 import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
-import { useGlobalConfigQuery, useSetupSystemAdminMutation } from '@usertour-packages/shared-hooks';
+import { useGlobalConfigQuery, useSetupSystemAdminMutation } from '@usertour-packages/hooks';
 import { useForm } from 'react-hook-form';
 import { Navigate } from 'react-router-dom';
 import * as z from 'zod';

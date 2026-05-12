@@ -16,7 +16,7 @@ import { deepClone } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 
 import { BuilderMode, useBuilderContext } from './builder-context';
-import { useUpdateContentVersionMutation } from '@usertour-packages/shared-hooks';
+import { useUpdateContentVersionMutation } from '@usertour-packages/hooks';
 import { getEmptyDataForType } from '../utils/default-data';
 
 export interface BannerProviderProps {

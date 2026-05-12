@@ -50,7 +50,7 @@
     "@usertour-packages/textarea": "workspace:^",
     "@usertour-packages/radio-group": "workspace:^",
     "@usertour-packages/business-components": "workspace:^",
-    "@usertour-packages/shared-hooks": "workspace:^",
+    "@usertour-packages/hooks": "workspace:^",
     "@usertour-packages/dialog": "workspace:^",
     "@usertour-packages/badge": "workspace:^",
     "@hookform/resolvers": "^3.1.1",
