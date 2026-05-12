@@ -68,7 +68,7 @@ importers:
         version: link:../../packages/dom
       '@usertour-packages/finder':
         specifier: workspace:^
-        version: link:../../packages/shared/finder
+        version: link:../../packages/finder
       '@usertour-packages/frame':
         specifier: workspace:*
         version: link:../../packages/components/frame
@@ -619,7 +619,7 @@ importers:
         version: link:../../packages/components/badge
       '@usertour-packages/builder':
         specifier: workspace:^
-        version: link:../../packages/shared/builder
+        version: link:../../packages/builder
       '@usertour-packages/business-components':
         specifier: workspace:^
         version: link:../../packages/business-components
@@ -658,13 +658,13 @@ importers:
         version: link:../../packages/components/form
       '@usertour-packages/gql':
         specifier: workspace:^
-        version: link:../../packages/shared/gql
+        version: link:../../packages/gql
       '@usertour-packages/hover-card':
         specifier: workspace:^
         version: link:../../packages/components/hover-card
       '@usertour-packages/i18n':
         specifier: workspace:^
-        version: link:../../packages/shared/i18n
+        version: link:../../packages/i18n
       '@usertour-packages/icons':
         specifier: workspace:^
         version: link:../../packages/icons
@@ -928,6 +928,304 @@ importers:
         specifier: ^4.4.5
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
+  packages/builder:
+    dependencies:
+      '@apollo/client':
+        specifier: ^3.7.17
+        version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
+      '@dnd-kit/core':
+        specifier: ^6.1.0
+        version: 6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/sortable':
+        specifier: ^8.0.0
+        version: 8.0.0(@dnd-kit/core@6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@18.2.0)
+      '@floating-ui/dom':
+        specifier: ^1.4.4
+        version: 1.7.4
+      '@floating-ui/react':
+        specifier: ^0.24.3
+        version: 0.24.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@floating-ui/react-dom':
+        specifier: ^2.0.0
+        version: 2.1.6(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@hookform/resolvers':
+        specifier: ^3.1.1
+        version: 3.9.1(react-hook-form@7.53.1(react@18.2.0))
+      '@plasmohq/messaging':
+        specifier: ^0.5.0
+        version: 0.5.0(react@18.2.0)
+      '@plasmohq/storage':
+        specifier: ^1.7.2
+        version: 1.12.0(react@18.2.0)
+      '@radix-ui/react-dialog':
+        specifier: ^1.0.4
+        version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@radix-ui/react-dropdown-menu':
+        specifier: ^2.0.5
+        version: 2.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@radix-ui/react-icons':
+        specifier: ^1.3.0
+        version: 1.3.1(react@18.2.0)
+      '@radix-ui/react-slider':
+        specifier: ^1.1.2
+        version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@radix-ui/react-slot':
+        specifier: ^1.0.2
+        version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
+      '@reduxjs/toolkit':
+        specifier: ^1.9.5
+        version: 1.9.7(react-redux@8.1.3(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(redux@4.2.1))(react@18.2.0)
+      '@types/animejs':
+        specifier: ^3.1.12
+        version: 3.1.12
+      '@usertour-packages/alert':
+        specifier: workspace:^
+        version: link:../components/alert
+      '@usertour-packages/alert-dialog':
+        specifier: workspace:^
+        version: link:../components/alert-dialog
+      '@usertour-packages/avatar':
+        specifier: workspace:^
+        version: link:../components/avatar
+      '@usertour-packages/badge':
+        specifier: workspace:^
+        version: link:../components/badge
+      '@usertour-packages/business-components':
+        specifier: workspace:^
+        version: link:../business-components
+      '@usertour-packages/button':
+        specifier: workspace:^
+        version: link:../components/button
+      '@usertour-packages/calendar':
+        specifier: workspace:^
+        version: link:../components/calendar
+      '@usertour-packages/card':
+        specifier: workspace:^
+        version: link:../components/card
+      '@usertour-packages/checkbox':
+        specifier: workspace:^
+        version: link:../components/checkbox
+      '@usertour-packages/command':
+        specifier: workspace:^
+        version: link:../components/command
+      '@usertour-packages/constants':
+        specifier: workspace:^
+        version: link:../constants
+      '@usertour-packages/context-menu':
+        specifier: workspace:^
+        version: link:../components/context-menu
+      '@usertour-packages/contexts':
+        specifier: workspace:^
+        version: link:../contexts
+      '@usertour-packages/dialog':
+        specifier: workspace:^
+        version: link:../components/dialog
+      '@usertour-packages/dropdown-menu':
+        specifier: workspace:^
+        version: link:../components/dropdown-menu
+      '@usertour-packages/finder':
+        specifier: workspace:^
+        version: link:../finder
+      '@usertour-packages/form':
+        specifier: workspace:^
+        version: link:../components/form
+      '@usertour-packages/frame':
+        specifier: workspace:^
+        version: link:../components/frame
+      '@usertour-packages/gql':
+        specifier: workspace:^
+        version: link:../gql
+      '@usertour-packages/hover-card':
+        specifier: workspace:^
+        version: link:../components/hover-card
+      '@usertour-packages/icons':
+        specifier: workspace:^
+        version: link:../icons
+      '@usertour-packages/input':
+        specifier: workspace:^
+        version: link:../components/input
+      '@usertour-packages/label':
+        specifier: workspace:^
+        version: link:../components/label
+      '@usertour-packages/menubar':
+        specifier: workspace:^
+        version: link:../components/menubar
+      '@usertour-packages/popover':
+        specifier: workspace:^
+        version: link:../components/popover
+      '@usertour-packages/radio-group':
+        specifier: workspace:^
+        version: link:../components/radio-group
+      '@usertour-packages/react-compose-refs':
+        specifier: workspace:^
+        version: link:../radix/compose-refs
+      '@usertour-packages/react-use-size':
+        specifier: workspace:^
+        version: link:../radix/use-size
+      '@usertour-packages/scroll-area':
+        specifier: workspace:^
+        version: link:../components/scroll-area
+      '@usertour-packages/select':
+        specifier: workspace:^
+        version: link:../components/select
+      '@usertour-packages/separator':
+        specifier: workspace:^
+        version: link:../components/separator
+      '@usertour-packages/shared-editor':
+        specifier: workspace:^
+        version: link:../shared/editor
+      '@usertour-packages/shared-hooks':
+        specifier: workspace:^
+        version: link:../shared/hooks
+      '@usertour-packages/skeleton':
+        specifier: workspace:^
+        version: link:../components/skeleton
+      '@usertour-packages/slider':
+        specifier: workspace:^
+        version: link:../components/slider
+      '@usertour-packages/switch':
+        specifier: workspace:^
+        version: link:../components/switch
+      '@usertour-packages/table':
+        specifier: workspace:^
+        version: link:../components/table
+      '@usertour-packages/tabs':
+        specifier: workspace:^
+        version: link:../components/tabs
+      '@usertour-packages/tailwind':
+        specifier: workspace:^
+        version: link:../tailwind
+      '@usertour-packages/textarea':
+        specifier: workspace:^
+        version: link:../components/textarea
+      '@usertour-packages/tooltip':
+        specifier: workspace:^
+        version: link:../components/tooltip
+      '@usertour-packages/ui':
+        specifier: workspace:^
+        version: link:../components/ui
+      '@usertour-packages/use-toast':
+        specifier: workspace:^
+        version: link:../components/use-toast
+      '@usertour-packages/widget':
+        specifier: workspace:^
+        version: link:../widget
+      '@usertour/helpers':
+        specifier: workspace:^
+        version: link:../helpers
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
+      animejs:
+        specifier: ^3.2.1
+        version: 3.2.2
+      apollo3-cache-persist:
+        specifier: ^0.14.1
+        version: 0.14.1(@apollo/client@3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))
+      axios:
+        specifier: ^1.6.0
+        version: 1.7.7(debug@4.4.3)
+      clsx:
+        specifier: ^2.0.0
+        version: 2.1.1
+      deepmerge-ts:
+        specifier: ^7.1.3
+        version: 7.1.3
+      escape-html:
+        specifier: ^1.0.3
+        version: 1.0.3
+      is-hotkey:
+        specifier: ^0.2.0
+        version: 0.2.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      rc-upload:
+        specifier: ^4.3.5
+        version: 4.8.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      react:
+        specifier: 18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: 18.2.0
+        version: 18.2.0(react@18.2.0)
+      react-hook-form:
+        specifier: ^7.44.2
+        version: 7.53.1(react@18.2.0)
+      react-i18next:
+        specifier: ^15.6.0
+        version: 15.6.1(i18next@25.3.2(typescript@5.3.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.3.3)
+      react-redux:
+        specifier: ^8.1.1
+        version: 8.1.3(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(redux@4.2.1)
+      react-use:
+        specifier: ^17.4.0
+        version: 17.5.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      use-debounce:
+        specifier: ^10.0.5
+        version: 10.0.5(react@18.2.0)
+      zod:
+        specifier: ^3.21.4
+        version: 3.23.8
+    devDependencies:
+      '@types/chrome':
+        specifier: 0.0.241
+        version: 0.0.241
+      '@types/lodash':
+        specifier: ^4.17.13
+        version: 4.17.13
+      '@types/node':
+        specifier: 20.4.2
+        version: 20.4.2
+      '@types/react':
+        specifier: ^18.0.37
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: ^18.0.11
+        version: 18.2.7
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.3.3(vite@4.5.5(@types/node@20.4.2)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
+      autoprefixer:
+        specifier: ^10.4.14
+        version: 10.4.20(postcss@8.4.47)
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.3.4
+        version: 0.3.5(eslint@8.57.1)
+      postcss:
+        specifier: ^8.4.27
+        version: 8.4.47
+      postcss-import:
+        specifier: ^15.1.0
+        version: 15.1.0(postcss@8.4.47)
+      prettier:
+        specifier: 3.0.0
+        version: 3.0.0
+      tailwindcss:
+        specifier: ^3.4.10
+        version: 3.4.14(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.4.2)(typescript@5.3.3))
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+      vite:
+        specifier: ^4.3.9
+        version: 4.5.5(@types/node@20.4.2)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
+
   packages/business-components:
     dependencies:
       '@codemirror/lang-javascript':
@@ -992,7 +1290,7 @@ importers:
         version: link:../components/form
       '@usertour-packages/gql':
         specifier: workspace:^
-        version: link:../shared/gql
+        version: link:../gql
       '@usertour-packages/hover-card':
         specifier: workspace:^
         version: link:../components/hover-card
@@ -3126,6 +3424,58 @@ importers:
         specifier: ^5.0.2
         version: 5.3.3
 
+  packages/contexts:
+    dependencies:
+      '@apollo/client':
+        specifier: ^3.7.17
+        version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
+      '@tanstack/react-table':
+        specifier: ^8.9.3
+        version: 8.20.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@usertour-packages/gql':
+        specifier: workspace:^
+        version: link:../gql
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.37
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: ^18.0.11
+        version: 18.2.7
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.3.4
+        version: 0.3.5(eslint@8.57.1)
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+      vite:
+        specifier: ^4.3.9
+        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
+
   packages/dom:
     dependencies:
       '@babel/runtime':
@@ -3150,6 +3500,80 @@ importers:
       '@testing-library/react':
         specifier: ^10.4.8
         version: 10.4.9(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+
+  packages/finder:
+    dependencies:
+      '@medv/finder':
+        specifier: ^3.1.0
+        version: 3.2.0
+    devDependencies:
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.3.4
+        version: 0.3.5(eslint@8.57.1)
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+      vite:
+        specifier: ^4.3.9
+        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
+
+  packages/gql:
+    dependencies:
+      '@apollo/client':
+        specifier: ^3.7.17
+        version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.37
+        version: 18.2.15
+      '@types/react-dom':
+        specifier: ^18.0.11
+        version: 18.2.7
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.59.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.59.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
+      eslint:
+        specifier: ^8.38.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.3.4
+        version: 0.3.5(eslint@8.57.1)
+      typescript:
+        specifier: ^5.0.2
+        version: 5.3.3
+      vite:
+        specifier: ^4.3.9
+        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
   packages/helpers:
     dependencies:
@@ -3208,6 +3632,8 @@ importers:
       typescript:
         specifier: ^5.0.2
         version: 5.3.3
+
+  packages/i18n: {}
 
   packages/icons:
     dependencies:
@@ -3492,356 +3918,6 @@ importers:
         specifier: ^0.1.4
         version: 0.1.11
 
-  packages/shared/builder:
-    dependencies:
-      '@apollo/client':
-        specifier: ^3.7.17
-        version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
-      '@dnd-kit/core':
-        specifier: ^6.1.0
-        version: 6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/sortable':
-        specifier: ^8.0.0
-        version: 8.0.0(@dnd-kit/core@6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@18.2.0)
-      '@floating-ui/dom':
-        specifier: ^1.4.4
-        version: 1.7.4
-      '@floating-ui/react':
-        specifier: ^0.24.3
-        version: 0.24.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@floating-ui/react-dom':
-        specifier: ^2.0.0
-        version: 2.1.6(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@hookform/resolvers':
-        specifier: ^3.1.1
-        version: 3.9.1(react-hook-form@7.53.1(react@18.2.0))
-      '@plasmohq/messaging':
-        specifier: ^0.5.0
-        version: 0.5.0(react@18.2.0)
-      '@plasmohq/storage':
-        specifier: ^1.7.2
-        version: 1.12.0(react@18.2.0)
-      '@radix-ui/react-dialog':
-        specifier: ^1.0.4
-        version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@radix-ui/react-dropdown-menu':
-        specifier: ^2.0.5
-        version: 2.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@radix-ui/react-icons':
-        specifier: ^1.3.0
-        version: 1.3.1(react@18.2.0)
-      '@radix-ui/react-slider':
-        specifier: ^1.1.2
-        version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@radix-ui/react-slot':
-        specifier: ^1.0.2
-        version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
-      '@reduxjs/toolkit':
-        specifier: ^1.9.5
-        version: 1.9.7(react-redux@8.1.3(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(redux@4.2.1))(react@18.2.0)
-      '@types/animejs':
-        specifier: ^3.1.12
-        version: 3.1.12
-      '@usertour-packages/alert':
-        specifier: workspace:^
-        version: link:../../components/alert
-      '@usertour-packages/alert-dialog':
-        specifier: workspace:^
-        version: link:../../components/alert-dialog
-      '@usertour-packages/avatar':
-        specifier: workspace:^
-        version: link:../../components/avatar
-      '@usertour-packages/badge':
-        specifier: workspace:^
-        version: link:../../components/badge
-      '@usertour-packages/business-components':
-        specifier: workspace:^
-        version: link:../../business-components
-      '@usertour-packages/button':
-        specifier: workspace:^
-        version: link:../../components/button
-      '@usertour-packages/calendar':
-        specifier: workspace:^
-        version: link:../../components/calendar
-      '@usertour-packages/card':
-        specifier: workspace:^
-        version: link:../../components/card
-      '@usertour-packages/checkbox':
-        specifier: workspace:^
-        version: link:../../components/checkbox
-      '@usertour-packages/command':
-        specifier: workspace:^
-        version: link:../../components/command
-      '@usertour-packages/constants':
-        specifier: workspace:^
-        version: link:../../constants
-      '@usertour-packages/context-menu':
-        specifier: workspace:^
-        version: link:../../components/context-menu
-      '@usertour-packages/contexts':
-        specifier: workspace:^
-        version: link:../contexts
-      '@usertour-packages/dialog':
-        specifier: workspace:^
-        version: link:../../components/dialog
-      '@usertour-packages/dropdown-menu':
-        specifier: workspace:^
-        version: link:../../components/dropdown-menu
-      '@usertour-packages/finder':
-        specifier: workspace:^
-        version: link:../finder
-      '@usertour-packages/form':
-        specifier: workspace:^
-        version: link:../../components/form
-      '@usertour-packages/frame':
-        specifier: workspace:^
-        version: link:../../components/frame
-      '@usertour-packages/gql':
-        specifier: workspace:^
-        version: link:../gql
-      '@usertour-packages/hover-card':
-        specifier: workspace:^
-        version: link:../../components/hover-card
-      '@usertour-packages/icons':
-        specifier: workspace:^
-        version: link:../../icons
-      '@usertour-packages/input':
-        specifier: workspace:^
-        version: link:../../components/input
-      '@usertour-packages/label':
-        specifier: workspace:^
-        version: link:../../components/label
-      '@usertour-packages/menubar':
-        specifier: workspace:^
-        version: link:../../components/menubar
-      '@usertour-packages/popover':
-        specifier: workspace:^
-        version: link:../../components/popover
-      '@usertour-packages/radio-group':
-        specifier: workspace:^
-        version: link:../../components/radio-group
-      '@usertour-packages/react-compose-refs':
-        specifier: workspace:^
-        version: link:../../radix/compose-refs
-      '@usertour-packages/react-use-size':
-        specifier: workspace:^
-        version: link:../../radix/use-size
-      '@usertour-packages/scroll-area':
-        specifier: workspace:^
-        version: link:../../components/scroll-area
-      '@usertour-packages/select':
-        specifier: workspace:^
-        version: link:../../components/select
-      '@usertour-packages/separator':
-        specifier: workspace:^
-        version: link:../../components/separator
-      '@usertour-packages/shared-editor':
-        specifier: workspace:^
-        version: link:../editor
-      '@usertour-packages/shared-hooks':
-        specifier: workspace:^
-        version: link:../hooks
-      '@usertour-packages/skeleton':
-        specifier: workspace:^
-        version: link:../../components/skeleton
-      '@usertour-packages/slider':
-        specifier: workspace:^
-        version: link:../../components/slider
-      '@usertour-packages/switch':
-        specifier: workspace:^
-        version: link:../../components/switch
-      '@usertour-packages/table':
-        specifier: workspace:^
-        version: link:../../components/table
-      '@usertour-packages/tabs':
-        specifier: workspace:^
-        version: link:../../components/tabs
-      '@usertour-packages/tailwind':
-        specifier: workspace:^
-        version: link:../../tailwind
-      '@usertour-packages/textarea':
-        specifier: workspace:^
-        version: link:../../components/textarea
-      '@usertour-packages/tooltip':
-        specifier: workspace:^
-        version: link:../../components/tooltip
-      '@usertour-packages/ui':
-        specifier: workspace:^
-        version: link:../../components/ui
-      '@usertour-packages/use-toast':
-        specifier: workspace:^
-        version: link:../../components/use-toast
-      '@usertour-packages/widget':
-        specifier: workspace:^
-        version: link:../../widget
-      '@usertour/helpers':
-        specifier: workspace:^
-        version: link:../../helpers
-      '@usertour/types':
-        specifier: workspace:^
-        version: link:../../types
-      animejs:
-        specifier: ^3.2.1
-        version: 3.2.2
-      apollo3-cache-persist:
-        specifier: ^0.14.1
-        version: 0.14.1(@apollo/client@3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0)))
-      axios:
-        specifier: ^1.6.0
-        version: 1.7.7(debug@4.4.3)
-      clsx:
-        specifier: ^2.0.0
-        version: 2.1.1
-      deepmerge-ts:
-        specifier: ^7.1.3
-        version: 7.1.3
-      escape-html:
-        specifier: ^1.0.3
-        version: 1.0.3
-      is-hotkey:
-        specifier: ^0.2.0
-        version: 0.2.0
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
-      rc-upload:
-        specifier: ^4.3.5
-        version: 4.8.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      react:
-        specifier: 18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: 18.2.0
-        version: 18.2.0(react@18.2.0)
-      react-hook-form:
-        specifier: ^7.44.2
-        version: 7.53.1(react@18.2.0)
-      react-i18next:
-        specifier: ^15.6.0
-        version: 15.6.1(i18next@25.3.2(typescript@5.3.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.3.3)
-      react-redux:
-        specifier: ^8.1.1
-        version: 8.1.3(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(redux@4.2.1)
-      react-use:
-        specifier: ^17.4.0
-        version: 17.5.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      use-debounce:
-        specifier: ^10.0.5
-        version: 10.0.5(react@18.2.0)
-      zod:
-        specifier: ^3.21.4
-        version: 3.23.8
-    devDependencies:
-      '@types/chrome':
-        specifier: 0.0.241
-        version: 0.0.241
-      '@types/lodash':
-        specifier: ^4.17.13
-        version: 4.17.13
-      '@types/node':
-        specifier: 20.4.2
-        version: 20.4.2
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.4.2)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      autoprefixer:
-        specifier: ^10.4.14
-        version: 10.4.20(postcss@8.4.47)
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      postcss:
-        specifier: ^8.4.27
-        version: 8.4.47
-      postcss-import:
-        specifier: ^15.1.0
-        version: 15.1.0(postcss@8.4.47)
-      prettier:
-        specifier: 3.0.0
-        version: 3.0.0
-      tailwindcss:
-        specifier: ^3.4.10
-        version: 3.4.14(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.4.2)(typescript@5.3.3))
-      typescript:
-        specifier: ^5.0.2
-        version: 5.3.3
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.4.2)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
-  packages/shared/contexts:
-    dependencies:
-      '@apollo/client':
-        specifier: ^3.7.17
-        version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
-      '@tanstack/react-table':
-        specifier: ^8.9.3
-        version: 8.20.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/gql':
-        specifier: workspace:^
-        version: link:../gql
-      '@usertour/types':
-        specifier: workspace:^
-        version: link:../../types
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.3.3
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
   packages/shared/editor:
     dependencies:
       '@codemirror/lang-javascript':
@@ -4068,80 +4144,6 @@ importers:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
-  packages/shared/finder:
-    dependencies:
-      '@medv/finder':
-        specifier: ^3.1.0
-        version: 3.2.0
-    devDependencies:
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.3.3
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
-  packages/shared/gql:
-    dependencies:
-      '@apollo/client':
-        specifier: ^3.7.17
-        version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.0.37
-        version: 18.2.15
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.2.7
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.3.3))(eslint@8.57.1)(typescript@5.3.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.3.3)
-      '@vitejs/plugin-react':
-        specifier: ^4.0.0
-        version: 4.3.3(vite@4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0))
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.2(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.3.4
-        version: 0.3.5(eslint@8.57.1)
-      typescript:
-        specifier: ^5.0.2
-        version: 5.3.3
-      vite:
-        specifier: ^4.3.9
-        version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
   packages/shared/hooks:
     dependencies:
       '@apollo/client':
@@ -4152,7 +4154,7 @@ importers:
         version: link:../../constants
       '@usertour-packages/gql':
         specifier: workspace:^
-        version: link:../gql
+        version: link:../../gql
       '@usertour/helpers':
         specifier: workspace:^
         version: link:../../helpers
@@ -4199,8 +4201,6 @@ importers:
       vite:
         specifier: ^4.3.9
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
-
-  packages/shared/i18n: {}
 
   packages/tailwind:
     dependencies:

@@ -14,3 +14,8 @@ packages:
   - "packages/helpers"
   - "packages/types"
   - "packages/business-components"
+  - "packages/builder"
+  - "packages/contexts"
+  - "packages/finder"
+  - "packages/gql"
+  - "packages/i18n"
