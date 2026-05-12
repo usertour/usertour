@@ -3,7 +3,7 @@ import { useThemeListContext } from '@/contexts/theme-list-context';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour-packages/widget';
 import { ContentEditorSerialize, useSettingsStyles } from '@usertour-packages/widget';
-import { GoogleFontCss } from '@usertour-packages/shared-components';
+import { GoogleFontCss } from '@usertour-packages/business-components';
 import { ScaledPreviewContainer } from '@usertour-packages/ui';
 import { Theme } from '@usertour/types';
 import { PREVIEW_BASIC } from '@usertour-packages/constants';

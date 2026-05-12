@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { StorageKeys } from '@usertour-packages/constants';
-import { validateConditions } from '@usertour-packages/shared-components';
+import { validateConditions } from '@usertour-packages/business-components';
 import {
   type Theme,
   ThemeDetailPreviewType,

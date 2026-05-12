@@ -6,7 +6,7 @@ import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Badge } from '@usertour-packages/badge';
 import { stepIsReachable } from '@usertour-packages/builder/src/utils/content-validate';
 import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour-packages/icons';
-import { GoogleFontCss } from '@usertour-packages/shared-components';
+import { GoogleFontCss } from '@usertour-packages/business-components';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import {

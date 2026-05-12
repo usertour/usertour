@@ -34,7 +34,7 @@ doesn't relitigate the basics.
                        ┌────────▼─────────┐
                        │    L3 Domain     │
                        │  shared-editor   │
-                       │ shared-components│
+                       │business-components│
                        └────────┬─────────┘
                                 │
                        ┌────────▼─────────┐
@@ -126,9 +126,10 @@ page or flow.
   editor + business element popovers (button / multi-choice / NPS / scale /
   star-rating). **ContentEditor and rich editor are an integral unit; they
   do not split into smaller packages.**
-- `@usertour-packages/shared-components` — *currently mixed*; see "Known
-  drift" below. Hosts the Conditions chip editor and a handful of
-  business components.
+- `@usertour-packages/business-components` — hosts the Conditions chip
+  editor (L3) plus a handful of business components (SelectorDialog,
+  ElementSelector, GoogleFontCss, AttributeCreateForm — closer to L4).
+  See "Known drift" below.
 
 **Rule of thumb**: knows about content elements, rules, segments,
 attributes — but does not know which page is rendering it.
@@ -157,7 +158,7 @@ The layering above is the target. Current state has a few honest gaps:
 
 | Package | Drift | Resolution path |
 |---|---|---|
-| `@usertour-packages/shared-components` | Contains L3 (Conditions chip editor) plus L4 (SelectorDialog, ElementSelector, GoogleFontCss, AttributeCreateForm) plus L2 context (rules-group-context). | Rename to reflect "business components" and split internal subdirectories along L3/L4 lines. Tracked as follow-up. |
+| `@usertour-packages/business-components` | Internally mixes L3 (Conditions chip editor) and L4 (SelectorDialog, ElementSelector, GoogleFontCss, AttributeCreateForm). Accepted as a deliberate "business components" grouping — splitting Conditions into a separate package would scatter the business-UI surface area without a real consumer that wants one but not the other. | None planned. Internal subdirectories (`conditions/` / `selector/` / `theme/` / `form/`) already segment by concern. |
 | `@usertour-packages/shared-editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
 | L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling shared-hooks (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
 
@@ -188,8 +189,6 @@ Does it use React?
 
 ## Open follow-ups (not part of this RFC)
 
-- Rename `shared-components` → `business-components` and split internal
-  subdirectories along L3/L4 lines.
 - Audit L1 components for hidden L2 hook dependencies (akin to the
   `ColorPickerPanel` → `userId` inversion).
 - Decide whether the `shared-*` prefix carries meaning today; drop where

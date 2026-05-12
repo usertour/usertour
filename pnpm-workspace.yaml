@@ -13,3 +13,4 @@ packages:
   - "packages/license"
   - "packages/helpers"
   - "packages/types"
+  - "packages/business-components"

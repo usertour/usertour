@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { Conditions } from '@usertour-packages/shared-components';
+import { Conditions } from '@usertour-packages/business-components';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { useTranslation } from 'react-i18next';
 import { Switch } from '@usertour-packages/switch';

@@ -10,7 +10,7 @@ import {
   ConditionWait,
   Conditions,
   validateConditions,
-} from '@usertour-packages/shared-components';
+} from '@usertour-packages/business-components';
 import { useContentListQuery } from '@usertour-packages/shared-hooks';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';

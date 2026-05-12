@@ -7,7 +7,7 @@ import {
   Conditions,
   DEFAULT_CONDITION_TYPES,
   validateConditions,
-} from '@usertour-packages/shared-components';
+} from '@usertour-packages/business-components';
 import { Actions, validateActions } from '@usertour-packages/shared-editor';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';

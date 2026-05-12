@@ -25,7 +25,7 @@ import { Label } from '@usertour-packages/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Skeleton } from '@usertour-packages/skeleton';
-import { Conditions } from '@usertour-packages/shared-components';
+import { Conditions } from '@usertour-packages/business-components';
 import { PopperEditorMini } from '@usertour-packages/shared-editor';
 import type { Descendant } from '@usertour-packages/shared-editor';
 import {

@@ -1,4 +1,4 @@
-import { validateConditions } from '@usertour-packages/shared-components';
+import { validateConditions } from '@usertour-packages/business-components';
 import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
 import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/shared-hooks';
 import { useToast } from '@usertour-packages/use-toast';

@@ -2,7 +2,7 @@ import { Crosshair2Icon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { EXTENSION_SELECT } from '@usertour-packages/constants';
 import { Label } from '@usertour-packages/label';
-import { SelectorDialog } from '@usertour-packages/shared-components';
+import { SelectorDialog } from '@usertour-packages/business-components';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Switch } from '@usertour-packages/switch';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from '../content-error';
