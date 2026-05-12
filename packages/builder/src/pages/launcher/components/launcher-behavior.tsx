@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { TooltipIcon } from '@usertour-packages/icons';
-import { Actions, validateActions } from '@usertour-packages/editor';
+import { Actions } from '@usertour-packages/editor';
 import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import {
@@ -21,7 +21,7 @@ import {
   LauncherTriggerEvent,
   RulesCondition,
 } from '@usertour/types';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useBuilderContext, useLauncherContext } from '../../../contexts';
 import { BuilderMode } from '../../../contexts';
 
@@ -71,29 +71,8 @@ export const LauncherBehavior = () => {
   const { setCurrentMode, zIndex, currentVersion } = useBuilderContext();
   const { contents } = useContentListContext();
   const { attributeList } = useAttributeListContext();
-  const { localData, updateLocalDataBehavior, setLauncherTooltip, setSaveValidator } =
-    useLauncherContext();
+  const { localData, updateLocalDataBehavior, setLauncherTooltip } = useLauncherContext();
   const { t } = useTranslation();
-
-  // Register a save-time validator on the launcher context so the debounced
-  // auto-save skips writing while behavior.actions contains incomplete
-  // chips. LauncherProvider sits above the attribute / content providers,
-  // so we inject the validator from here where they're available.
-  useEffect(() => {
-    setSaveValidator((data) => {
-      const actions = data.behavior?.actions;
-      if (!actions?.length) return true;
-      return (
-        validateActions(actions, {
-          attributes: attributeList ?? undefined,
-          contents: contents ?? undefined,
-          currentVersion: currentVersion ?? undefined,
-          currentStep: undefined,
-        }).length === 0
-      );
-    });
-    return () => setSaveValidator(null);
-  }, [setSaveValidator, attributeList, contents, currentVersion]);
 
   const handleStateChange = useCallback(
     (key: keyof LauncherBehaviorType) => (value: string | RulesCondition[]) => {

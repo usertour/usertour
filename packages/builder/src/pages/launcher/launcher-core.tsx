@@ -2,6 +2,7 @@
 
 import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
 import { ScrollArea } from '@usertour-packages/scroll-area';
+import { LauncherActionType } from '@usertour/types';
 import { useBuilderContext, useLauncherContext } from '../../contexts';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { SidebarContainer } from '../sidebar';
@@ -46,11 +47,15 @@ const LauncherCoreFooter = () => {
   const actionsGate = useActionsSaveGate();
 
   const handleSave = async () => {
-    // Block the explicit Save click on incomplete behavior actions. The
-    // launcher context's debounced auto-save also gates on validateActions
-    // so bad data never reaches the DB; this gate adds a toast for the
-    // direct Save click.
-    if (!actionsGate(localData?.behavior?.actions)) {
+    // Block the explicit Save click on incomplete behavior actions when the
+    // perform-action tab is active. In show-tooltip mode the actions list is
+    // hidden — any residue on data.behavior.actions is stale and shouldn't
+    // gate saves. The launcher context's debounced auto-save applies the
+    // same actionType check; this gate adds a toast for the direct click.
+    if (
+      localData?.behavior?.actionType === LauncherActionType.PERFORM_ACTION &&
+      !actionsGate(localData?.behavior?.actions)
+    ) {
       return;
     }
     await flushSave();
