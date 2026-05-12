@@ -28,12 +28,12 @@ doesn't relitigate the basics.
                                 │
                        ┌────────▼─────────┐
                        │     L4 Pages     │
-                       │  shared-builder  │
+                       │     builder      │
                        └────────┬─────────┘
                                 │
                        ┌────────▼─────────┐
                        │    L3 Domain     │
-                       │  shared-editor   │
+                       │     editor       │
                        │business-components│
                        └────────┬─────────┘
                                 │
@@ -104,7 +104,7 @@ element selector handshake — it belongs in L3, not L1.
 
 Data access, shared contexts, internationalization, runtime engines.
 
-- `@usertour-packages/shared-hooks` — Apollo / React hooks
+- `@usertour-packages/hooks` — Apollo / React hooks
 - `@usertour-packages/contexts` — React context providers
 - `@usertour-packages/gql` — GraphQL operations and generated types
 - `@usertour-packages/i18n` — translation bundles
@@ -160,7 +160,7 @@ The layering above is the target. Current state has a few honest gaps:
 |---|---|---|
 | `@usertour-packages/business-components` | Internally mixes L3 (Conditions chip editor) and L4 (SelectorDialog, ElementSelector, GoogleFontCss, AttributeCreateForm). Accepted as a deliberate "business components" grouping — splitting Conditions into a separate package would scatter the business-UI surface area without a real consumer that wants one but not the other. | None planned. Internal subdirectories (`conditions/` / `selector/` / `theme/` / `form/`) already segment by concern. |
 | `@usertour-packages/editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
-| L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling shared-hooks (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
+| L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling `@usertour-packages/hooks` (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
 
 ## Decision tree
 
@@ -184,12 +184,8 @@ Does it use React?
 - Atomic UI splitting granularity — `packages/components/*` shape is
   treated as given.
 - ContentEditor's internal architecture.
-- Whether all `shared-*` packages should drop the prefix — naming
-  cleanup is a separate motivated decision, not driven by layering.
 
 ## Open follow-ups (not part of this RFC)
 
 - Audit L1 components for hidden L2 hook dependencies (akin to the
   `ColorPickerPanel` → `userId` inversion).
-- Decide whether the `shared-*` prefix carries meaning today; drop where
-  it does not.

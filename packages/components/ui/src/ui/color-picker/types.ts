@@ -16,7 +16,7 @@ export type ColorPickerPanelProps = {
   // context should pass the current user's id from useCurrentUserId() so
   // each operator gets their own swatch history. Kept as a prop (rather
   // than reading the user hook inside) so this component stays decoupled
-  // from shared-hooks / Apollo and can live in @usertour-packages/ui.
+  // from @usertour-packages/hooks (Apollo) and can live in @usertour-packages/ui.
   userId?: string | null;
 };
 

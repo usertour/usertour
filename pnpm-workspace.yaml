@@ -4,7 +4,6 @@ packages:
   - "apps/server"
   - "packages/components/*"
   - "packages/radix/*"
-  - "packages/shared/*"
   - "packages/constants"
   - "packages/dom"
   - "packages/icons"
