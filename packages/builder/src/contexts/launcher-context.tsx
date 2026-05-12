@@ -36,6 +36,7 @@ export interface LauncherContextValue {
   launcherTarget: LauncherData['target'] | undefined;
   setLauncherTarget: React.Dispatch<React.SetStateAction<LauncherData['target'] | undefined>>;
   flushSave: () => Promise<void>;
+  setSaveValidator: (fn: ((data: LauncherData) => boolean) | null) => void;
 }
 
 export const LauncherContext = createContext<LauncherContextValue | undefined>(undefined);
@@ -90,8 +91,23 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     [currentVersion, updateContentVersionMutation, fetchContentAndVersion, toast, setIsLoading],
   );
 
-  // Create a debounced version of saveData
+  // Save-time validator registered by children that have access to the
+  // attribute / content providers (LauncherBehavior). Held in a ref so the
+  // debounced callback below doesn't need to recreate when the validator
+  // closure changes. Returns false to veto a save — used to skip writing
+  // incomplete action chips while the user is still filling them out.
+  const saveValidatorRef = useRef<((data: LauncherData) => boolean) | null>(null);
+  const setSaveValidator = useCallback((fn: ((data: LauncherData) => boolean) | null) => {
+    saveValidatorRef.current = fn;
+  }, []);
+
+  // Debounced auto-save. Skip persisting when the validator vetoes — the
+  // red chip + tooltip already surface the issue, and LauncherCoreFooter's
+  // actionsGate catches the same condition on the explicit Save click.
+  // Once the user fixes the field a new update fires the debounce again
+  // and validation lets it through.
   const debouncedSaveData = useDebouncedCallback((newData: LauncherData) => {
+    if (saveValidatorRef.current && !saveValidatorRef.current(newData)) return;
     saveData(newData);
   }, 500);
 
@@ -217,6 +233,7 @@ export function LauncherProvider(props: LauncherProviderProps): JSX.Element {
     launcherTarget,
     setLauncherTarget,
     flushSave,
+    setSaveValidator,
   };
 
   return <LauncherContext.Provider value={value}>{children}</LauncherContext.Provider>;

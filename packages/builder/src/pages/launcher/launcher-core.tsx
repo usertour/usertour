@@ -46,12 +46,10 @@ const LauncherCoreFooter = () => {
   const actionsGate = useActionsSaveGate();
 
   const handleSave = async () => {
-    // Block the explicit Save click on incomplete behavior actions. (Note:
-    // the launcher context auto-saves on every behavior update, so bad
-    // data may already be in the DB by the time the user clicks Save —
-    // gating here still prevents the user from dismissing the sidebar
-    // while the chip is red, matching the friction point we set in
-    // checklist-item / resource-center-block-action.)
+    // Block the explicit Save click on incomplete behavior actions. The
+    // launcher context's debounced auto-save also gates on validateActions
+    // so bad data never reaches the DB; this gate adds a toast for the
+    // direct Save click.
     if (!actionsGate(localData?.behavior?.actions)) {
       return;
     }
