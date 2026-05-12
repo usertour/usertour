@@ -1,4 +1,3 @@
-import { Button } from '@usertour-packages/button';
 import { RiCloseLine } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
 import type { RulesCondition } from '@usertour/types';
@@ -145,16 +144,14 @@ export function ActionRow({ condition, onChange, onRemove, autoOpen, onAutoOpene
           <Summary condition={condition} />
         </div>
         {!disabled && (
-          <Button
+          <button
             type="button"
-            variant="compact-ghost"
-            size="compact-icon-sm"
-            aria-label={t('actions.actions.removeAction')}
             onClick={onRemove}
-            className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 rounded-none text-muted-foreground/50 hover:bg-muted/60 hover:text-foreground"
+            aria-label={t('actions.actions.removeAction')}
+            className="flex w-7 shrink-0 items-center justify-center border-l border-input/60 text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none group-hover/action:text-muted-foreground"
           >
             <RiCloseLine className="h-3.5 w-3.5" />
-          </Button>
+          </button>
         )}
       </div>
     );
