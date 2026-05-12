@@ -1,7 +1,7 @@
 import { RiCloseLine } from '@usertour-packages/icons';
 import { cn } from '@usertour-packages/tailwind';
+import { isEqual } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
-import isEqual from 'fast-deep-equal';
 import { useEffect, useRef, useState } from 'react';
 import { useActionsContext, useActionsT } from './actions-context';
 import { ActionEditor } from './action-editor';
