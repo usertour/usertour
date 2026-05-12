@@ -5,7 +5,7 @@ import { useState } from 'react';
 import {
   useGetProjectLicenseInfoQuery,
   useUpdateProjectLicenseMutation,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { Separator } from '@usertour-packages/separator';
 import { Skeleton } from '@usertour-packages/skeleton';
 import { CopyIcon } from 'lucide-react';

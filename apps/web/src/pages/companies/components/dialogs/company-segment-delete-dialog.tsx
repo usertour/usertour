@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
-import { useDeleteSegmentMutation } from '@usertour-packages/shared-hooks';
+import { useDeleteSegmentMutation } from '@usertour-packages/hooks';
 import { memo, useCallback } from 'react';
 
 interface CompanySegmentDeleteDialogProps {

@@ -32,7 +32,7 @@ import {
 import {
   useGetSubscriptionByProjectIdQuery,
   useInviteTeamMemberMutation,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { PlanType, TeamMemberRole } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';

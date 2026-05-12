@@ -1,6 +1,6 @@
 'use client';
 
-import { useGlobalConfigQuery } from '@usertour-packages/shared-hooks';
+import { useGlobalConfigQuery } from '@usertour-packages/hooks';
 import { Link } from 'react-router-dom';
 
 export const SignUpLink = ({

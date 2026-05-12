@@ -8,7 +8,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { getErrorMessage } from '@usertour/helpers';
-import { useDeleteContentMutation } from '@usertour-packages/shared-hooks';
+import { useDeleteContentMutation } from '@usertour-packages/hooks';
 import { Content, ContentDataType } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';

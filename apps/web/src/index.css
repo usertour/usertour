@@ -1,6 +1,6 @@
-@import '../../../packages/shared/assets/sdk/index.css';
+@import '../../../packages/assets/sdk/index.css';
 @import 'tailwindcss/base';
-@import '../../../packages/shared/assets/web/base.css';
+@import '../../../packages/assets/web/base.css';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 

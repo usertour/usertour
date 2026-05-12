@@ -1,5 +1,5 @@
 import { useUserListContext } from '@/contexts/user-list-context';
-import { useDeleteBizUserOnSegmentMutation } from '@usertour-packages/shared-hooks';
+import { useDeleteBizUserOnSegmentMutation } from '@usertour-packages/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 

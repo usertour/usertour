@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import { useChangeTeamMemberRoleMutation } from '@usertour-packages/shared-hooks';
+import { useChangeTeamMemberRoleMutation } from '@usertour-packages/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import type { TeamMember } from '@usertour/types';
 import { TeamMemberRole } from '@usertour/types';

@@ -1,4 +1,4 @@
-import { useDeleteThemeMutation } from '@usertour-packages/shared-hooks';
+import { useDeleteThemeMutation } from '@usertour-packages/hooks';
 import {
   AlertDialog,
   AlertDialogCancel,

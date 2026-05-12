@@ -27,7 +27,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useGlobalConfigQuery } from '@usertour-packages/shared-hooks';
+import { useGlobalConfigQuery } from '@usertour-packages/hooks';
 import { Skeleton } from '@usertour-packages/skeleton';
 import { SignUpDisabledCard } from './components/sign-up-disabled-card';
 

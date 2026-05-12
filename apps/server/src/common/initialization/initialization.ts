@@ -31,6 +31,7 @@ export const defaultEvents = [
   {
     displayName: 'Page Viewed',
     codeName: BizEvents.PAGE_VIEWED,
+    description: 'When a page is viewed in your app',
     attributes: [
       EventAttributes.LOCALE_CODE,
       EventAttributes.PAGE_URL,
@@ -41,6 +42,7 @@ export const defaultEvents = [
   {
     displayName: 'Flow Started',
     codeName: BizEvents.FLOW_STARTED,
+    description: 'When a flow session starts',
     attributes: [
       EventAttributes.FLOW_ID,
       EventAttributes.FLOW_NAME,
@@ -57,6 +59,7 @@ export const defaultEvents = [
   {
     displayName: 'Flow Dismissed/Ended',
     codeName: BizEvents.FLOW_ENDED,
+    description: 'When a flow is dismissed',
     attributes: [
       EventAttributes.FLOW_END_REASON,
       EventAttributes.FLOW_ID,
@@ -78,6 +81,7 @@ export const defaultEvents = [
   {
     displayName: 'Flow Step Seen',
     codeName: BizEvents.FLOW_STEP_SEEN,
+    description: 'When a flow step becomes visible',
     attributes: [
       EventAttributes.FLOW_ID,
       EventAttributes.FLOW_NAME,
@@ -98,6 +102,7 @@ export const defaultEvents = [
   {
     displayName: 'Flow Step Completed',
     codeName: BizEvents.FLOW_STEP_COMPLETED,
+    description: "When a flow step's completion conditions are met",
     attributes: [
       EventAttributes.FLOW_ID,
       EventAttributes.FLOW_NAME,
@@ -118,6 +123,7 @@ export const defaultEvents = [
   {
     displayName: 'Flow Completed',
     codeName: BizEvents.FLOW_COMPLETED,
+    description: 'When a flow reaches a goal step',
     attributes: [
       EventAttributes.FLOW_ID,
       EventAttributes.FLOW_NAME,
@@ -138,6 +144,7 @@ export const defaultEvents = [
   {
     displayName: 'Tooltip Target Missing',
     codeName: BizEvents.TOOLTIP_TARGET_MISSING,
+    description: 'When a tooltip step cannot find its anchor element on the page',
     attributes: [
       EventAttributes.FLOW_ID,
       EventAttributes.FLOW_NAME,
@@ -158,6 +165,7 @@ export const defaultEvents = [
   {
     displayName: 'Launcher Activated',
     codeName: BizEvents.LAUNCHER_ACTIVATED,
+    description: 'When a launcher is activated by click or hover',
     attributes: [
       EventAttributes.LAUNCHER_ID,
       EventAttributes.LAUNCHER_NAME,
@@ -173,6 +181,7 @@ export const defaultEvents = [
   {
     displayName: 'Launcher Dismissed',
     codeName: BizEvents.LAUNCHER_DISMISSED,
+    description: 'When a launcher is dismissed',
     attributes: [
       EventAttributes.LAUNCHER_ID,
       EventAttributes.LAUNCHER_NAME,
@@ -188,6 +197,7 @@ export const defaultEvents = [
   {
     displayName: 'Launcher Seen',
     codeName: BizEvents.LAUNCHER_SEEN,
+    description: 'When a launcher becomes visible',
     attributes: [
       EventAttributes.LAUNCHER_ID,
       EventAttributes.LAUNCHER_NAME,
@@ -203,6 +213,7 @@ export const defaultEvents = [
   {
     displayName: 'Banner Seen',
     codeName: BizEvents.BANNER_SEEN,
+    description: 'When a banner becomes visible',
     attributes: [
       EventAttributes.BANNER_ID,
       EventAttributes.BANNER_NAME,
@@ -218,6 +229,7 @@ export const defaultEvents = [
   {
     displayName: 'Banner Dismissed',
     codeName: BizEvents.BANNER_DISMISSED,
+    description: 'When a banner is dismissed',
     attributes: [
       EventAttributes.BANNER_END_REASON,
       EventAttributes.BANNER_ID,
@@ -234,6 +246,7 @@ export const defaultEvents = [
   {
     displayName: 'Resource Center Started',
     codeName: BizEvents.RESOURCE_CENTER_STARTED,
+    description: 'When a Resource Center session starts',
     attributes: [
       EventAttributes.RESOURCE_CENTER_ID,
       EventAttributes.RESOURCE_CENTER_NAME,
@@ -250,6 +263,7 @@ export const defaultEvents = [
   {
     displayName: 'Resource Center Opened',
     codeName: BizEvents.RESOURCE_CENTER_OPENED,
+    description: 'When the Resource Center panel is opened',
     attributes: [
       EventAttributes.RESOURCE_CENTER_ID,
       EventAttributes.RESOURCE_CENTER_NAME,
@@ -265,6 +279,7 @@ export const defaultEvents = [
   {
     displayName: 'Resource Center Closed',
     codeName: BizEvents.RESOURCE_CENTER_CLOSED,
+    description: 'When the Resource Center panel is closed',
     attributes: [
       EventAttributes.RESOURCE_CENTER_ID,
       EventAttributes.RESOURCE_CENTER_NAME,
@@ -280,6 +295,7 @@ export const defaultEvents = [
   {
     displayName: 'Resource Center Clicked',
     codeName: BizEvents.RESOURCE_CENTER_CLICKED,
+    description: 'When a block inside the Resource Center is clicked',
     attributes: [
       EventAttributes.RESOURCE_CENTER_ID,
       EventAttributes.RESOURCE_CENTER_NAME,
@@ -299,6 +315,7 @@ export const defaultEvents = [
   {
     displayName: 'Resource Center Dismissed',
     codeName: BizEvents.RESOURCE_CENTER_DISMISSED,
+    description: 'When the Resource Center session is dismissed',
     attributes: [
       EventAttributes.RESOURCE_CENTER_END_REASON,
       EventAttributes.RESOURCE_CENTER_ID,
@@ -315,6 +332,7 @@ export const defaultEvents = [
   {
     displayName: 'Question Answered',
     codeName: BizEvents.QUESTION_ANSWERED,
+    description: 'When a survey question is answered',
     attributes: [
       EventAttributes.FLOW_ID,
       EventAttributes.FLOW_NAME,
@@ -335,6 +353,7 @@ export const defaultEvents = [
   {
     displayName: 'Checklist Completed',
     codeName: BizEvents.CHECKLIST_COMPLETED,
+    description: 'When all checklist tasks are complete',
     attributes: [
       EventAttributes.LOCALE_CODE,
       EventAttributes.PAGE_URL,
@@ -350,6 +369,7 @@ export const defaultEvents = [
   {
     displayName: 'Checklist Dismissed/Ended',
     codeName: BizEvents.CHECKLIST_DISMISSED,
+    description: 'When a checklist is dismissed',
     attributes: [
       EventAttributes.CHECKLIST_END_REASON,
       EventAttributes.LOCALE_CODE,
@@ -366,6 +386,7 @@ export const defaultEvents = [
   {
     displayName: 'Checklist Hidden',
     codeName: BizEvents.CHECKLIST_HIDDEN,
+    description: 'When the checklist panel is collapsed to its launcher',
     attributes: [
       EventAttributes.CHECKLIST_VERSION_NUMBER,
       EventAttributes.CHECKLIST_NAME,
@@ -381,6 +402,7 @@ export const defaultEvents = [
   {
     displayName: 'Checklist Shown',
     codeName: BizEvents.CHECKLIST_SEEN,
+    description: 'When the checklist panel is expanded',
     attributes: [
       EventAttributes.PAGE_URL,
       EventAttributes.VIEWPORT_HEIGHT,
@@ -396,6 +418,7 @@ export const defaultEvents = [
   {
     displayName: 'Checklist Started',
     codeName: BizEvents.CHECKLIST_STARTED,
+    description: 'When a checklist session starts',
     attributes: [
       EventAttributes.VIEWPORT_WIDTH,
       EventAttributes.LOCALE_CODE,
@@ -412,6 +435,7 @@ export const defaultEvents = [
   {
     displayName: 'Checklist Task Clicked',
     codeName: BizEvents.CHECKLIST_TASK_CLICKED,
+    description: 'When a checklist task is clicked',
     attributes: [
       EventAttributes.CHECKLIST_SESSION_ID,
       EventAttributes.CHECKLIST_NAME,
@@ -430,6 +454,7 @@ export const defaultEvents = [
   {
     displayName: 'Checklist Task Completed',
     codeName: BizEvents.CHECKLIST_TASK_COMPLETED,
+    description: "When a checklist task's completion conditions are met",
     attributes: [
       EventAttributes.PAGE_URL,
       EventAttributes.CHECKLIST_VERSION_NUMBER,
@@ -933,26 +958,25 @@ const initializationAttributes = async (tx: Prisma.TransactionClient, projectId:
 };
 
 const initializationEvents = async (tx: Prisma.TransactionClient, projectId: string) => {
-  const predefined = true;
-
-  // Get existing events
-  const existingEvents = await tx.event.findMany({
-    where: { projectId, predefined: true },
-    select: { codeName: true },
-  });
-  const existingCodeNames = new Set(existingEvents.map((e) => e.codeName));
-
-  // Filter out existing events
-  const newEvents = defaultEvents.filter((event) => !existingCodeNames.has(event.codeName));
-
-  if (newEvents.length > 0) {
-    return await tx.event.createMany({
-      data: newEvents.map(({ displayName, codeName }) => ({
-        displayName,
-        codeName,
+  for (const event of defaultEvents) {
+    await tx.event.upsert({
+      where: {
+        codeName_projectId: {
+          projectId,
+          codeName: event.codeName,
+        },
+      },
+      create: {
+        displayName: event.displayName,
+        codeName: event.codeName,
+        description: event.description,
         projectId,
-        predefined,
-      })),
+        predefined: true,
+      },
+      update: {
+        displayName: event.displayName,
+        description: event.description,
+      },
     });
   }
 };

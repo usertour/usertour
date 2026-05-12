@@ -10,7 +10,7 @@ import type { BuilderSection, FieldDef } from './types';
 
 // All `label`, option labels, alert messages, etc. are translation keys; the
 // FieldRenderer / consuming components resolve them via `t()` at render time.
-// Keys live under `themeBuilder.*` in `packages/shared/i18n/src/{en-US,zh-Hans}/ui.ts`.
+// Keys live under `themeBuilder.*` in `packages/i18n/src/{en-US,zh-Hans}/ui.ts`.
 
 const FONT_WEIGHT_OPTIONS = [
   { value: '100', label: 'themeBuilder.options.fontWeight.thin' },

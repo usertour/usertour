@@ -9,7 +9,7 @@ import {
   MoreButton,
   SectionBreadcrumbHeader,
 } from '@/components/molecules/section-breadcrumb-header';
-import { useQuerySessionDetailQuery } from '@usertour-packages/shared-hooks';
+import { useQuerySessionDetailQuery } from '@usertour-packages/hooks';
 import { BizEvent, BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';

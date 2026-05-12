@@ -5,7 +5,7 @@ import {
   useGetSalesforceAuthUrlQuery,
   useDisconnectIntegrationMutation,
   useGetIntegrationObjectMappingsQuery,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { integrations } from '@/utils/integration';

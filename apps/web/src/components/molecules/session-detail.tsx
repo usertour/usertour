@@ -9,7 +9,7 @@ import {
 } from '@usertour-packages/table';
 import { Badge } from '@usertour-packages/badge';
 import { BizEvent } from '@usertour/types';
-import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/shared-editor';
+import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/editor';
 import { cn } from '@usertour-packages/tailwind';
 import { QuestionStarRating } from './question';
 import type { QuestionWithAnswer } from '@/utils/session';

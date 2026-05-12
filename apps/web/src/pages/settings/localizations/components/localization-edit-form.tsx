@@ -21,7 +21,7 @@ import {
 } from '@usertour-packages/form';
 import { updateLocalization } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { LocateItem, LocateSelect } from '@usertour-packages/shared-components';
+import { LocateItem, LocateSelect } from '@usertour-packages/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Localization } from '@usertour/types';

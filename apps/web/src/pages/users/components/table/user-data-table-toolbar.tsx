@@ -5,7 +5,7 @@ import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { Table } from '@tanstack/react-table';
 import { WebZIndex } from '@usertour-packages/constants';
-import { Conditions, validateConditions } from '@usertour-packages/shared-components';
+import { Conditions, validateConditions } from '@usertour-packages/business-components';
 import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';

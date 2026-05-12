@@ -22,7 +22,7 @@ import {
 } from '@usertour-packages/form';
 import { createLocalization } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
-import { LocateItem, LocateSelect } from '@usertour-packages/shared-components';
+import { LocateItem, LocateSelect } from '@usertour-packages/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { useToast } from '@usertour-packages/use-toast';

@@ -195,7 +195,10 @@ Table Content {
   versions Version [not null]
   editedVersion Version
   publishedVersion Version
-  publishedVersionId String [unique]
+  publishedVersionId String [unique, note: '@deprecated Legacy field from before `contentOnEnvironments` existed. The real
+per-environment published version lives in `contentOnEnvironments[env].publishedVersionId`.
+Resolve via `getPublishedVersionId` (serving) or `resolveContentVersionId` (analytics).
+Reading this field directly picks the wrong version in multi-environment setups.']
   editedVersionId String [unique]
   bizSession BizSession [not null]
   contentOnEnvironments ContentOnEnvironment [not null]

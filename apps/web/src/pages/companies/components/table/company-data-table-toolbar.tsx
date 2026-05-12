@@ -6,7 +6,7 @@ import { useCompanyListContext } from '@/contexts/company-list-context';
 import { Table } from '@tanstack/react-table';
 import { useTranslation } from 'react-i18next';
 import { WebZIndex } from '@usertour-packages/constants';
-import { Conditions, validateConditions } from '@usertour-packages/shared-components';
+import { Conditions, validateConditions } from '@usertour-packages/business-components';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
