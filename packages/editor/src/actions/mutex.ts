@@ -1,17 +1,14 @@
 import { ContentActionsItemType } from '@usertour/types';
 
-// Cross-action mutex rules. Some action combinations don't make runtime
-// sense and would produce undefined behavior — e.g., STEP_GOTO inside the
-// same list as FLOW_DISMIS / FLOW_START means "go to step X *and* dismiss
-// or restart the flow that owns step X". v1 actions-group.tsx encoded
-// these as inline filters; we centralize them so the add-action dropdown
-// and any future validation pass share one source of truth.
+// Cross-action mutex rules expressed as pairwise sets. STEP_GOTO clashes
+// with FLOW_DISMIS ("go to step X *and* dismiss the flow that owns it")
+// and with FLOW_START ("go to step X *and* restart the flow"), but
+// FLOW_DISMIS + FLOW_START intentionally coexist — dismissing the current
+// flow and starting a new one in the same click is a real pattern.
+// Encoded as two 2-sets instead of one 3-set so the third edge stays open.
 const MUTEX_GROUPS: ReadonlyArray<ReadonlySet<string>> = [
-  new Set<string>([
-    ContentActionsItemType.STEP_GOTO,
-    ContentActionsItemType.FLOW_DISMIS,
-    ContentActionsItemType.FLOW_START,
-  ]),
+  new Set<string>([ContentActionsItemType.STEP_GOTO, ContentActionsItemType.FLOW_DISMIS]),
+  new Set<string>([ContentActionsItemType.STEP_GOTO, ContentActionsItemType.FLOW_START]),
 ];
 
 // Returns the set of action types that should be hidden from the dropdown
