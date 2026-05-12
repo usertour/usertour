@@ -22,8 +22,8 @@ import type {
   ContentEditorRootElement,
   ContentEditorTextElement,
   CustomElement,
-} from '@usertour-packages/shared-editor';
-import { ContentEditorElementType } from '@usertour-packages/shared-editor';
+} from '@usertour-packages/editor';
+import { ContentEditorElementType } from '@usertour-packages/editor';
 import type { ContentVersion, Localization, Step } from '@usertour/types';
 import { cn } from '@usertour-packages/tailwind';
 import Upload from 'rc-upload';

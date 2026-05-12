@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@usertour-packages/select';
 import { SelectorDialog } from '@usertour-packages/business-components';
-import { Actions } from '@usertour-packages/shared-editor';
+import { Actions } from '@usertour-packages/editor';
 import { Switch } from '@usertour-packages/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import { QuestionTooltip } from '@usertour-packages/tooltip';

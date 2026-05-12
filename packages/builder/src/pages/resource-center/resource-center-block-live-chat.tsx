@@ -6,8 +6,8 @@ import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packag
 import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
 import { useAttributeListContext } from '@usertour-packages/contexts';
 import { SpinnerIcon } from '@usertour-packages/icons';
-import { PopperEditorMini, CodeEditor } from '@usertour-packages/shared-editor';
-import type { Descendant } from '@usertour-packages/shared-editor';
+import { PopperEditorMini, CodeEditor } from '@usertour-packages/editor';
+import type { Descendant } from '@usertour-packages/editor';
 import { Label } from '@usertour-packages/label';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import {

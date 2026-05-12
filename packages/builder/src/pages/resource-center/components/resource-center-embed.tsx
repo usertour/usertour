@@ -11,7 +11,7 @@ import {
   ResourceCenterFooter,
   useResourceCenterContext as useWidgetResourceCenterContext,
 } from '@usertour-packages/widget';
-import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
+import { ContentEditor, ContentEditorRoot } from '@usertour-packages/editor';
 import { useContentListQuery } from '@usertour-packages/shared-hooks';
 import {
   ContentDataType,

@@ -15,7 +15,7 @@ import {
   ContentEditor,
   ContentEditorElementType,
   ContentEditorRoot,
-} from '@usertour-packages/shared-editor';
+} from '@usertour-packages/editor';
 import {
   Attribute,
   AvatarType,

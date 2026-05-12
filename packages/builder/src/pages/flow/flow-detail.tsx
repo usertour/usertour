@@ -40,7 +40,7 @@ import {
   useThemeListContext,
 } from '@usertour-packages/contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';
-import { ContentEditorRoot } from '@usertour-packages/shared-editor';
+import { ContentEditorRoot } from '@usertour-packages/editor';
 import { getErrorMessage, hasMissingRequiredData } from '@usertour/helpers';
 import { PlusIcon, SpinnerIcon } from '@usertour-packages/icons';
 import { useToast } from '@usertour-packages/use-toast';

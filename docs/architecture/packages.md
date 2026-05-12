@@ -121,7 +121,7 @@ business workflow".
 Reusable modules carrying business knowledge but not bound to a specific
 page or flow.
 
-- `@usertour-packages/shared-editor` — ContentEditor framework + rich-text
+- `@usertour-packages/editor` — ContentEditor framework + rich-text
   editor (PopperEditor, PopperEditorMini, CodeEditor) + Actions chip
   editor + business element popovers (button / multi-choice / NPS / scale /
   star-rating). **ContentEditor and rich editor are an integral unit; they
@@ -159,7 +159,7 @@ The layering above is the target. Current state has a few honest gaps:
 | Package | Drift | Resolution path |
 |---|---|---|
 | `@usertour-packages/business-components` | Internally mixes L3 (Conditions chip editor) and L4 (SelectorDialog, ElementSelector, GoogleFontCss, AttributeCreateForm). Accepted as a deliberate "business components" grouping — splitting Conditions into a separate package would scatter the business-UI surface area without a real consumer that wants one but not the other. | None planned. Internal subdirectories (`conditions/` / `selector/` / `theme/` / `form/`) already segment by concern. |
-| `@usertour-packages/shared-editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
+| `@usertour-packages/editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
 | L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling shared-hooks (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
 
 ## Decision tree

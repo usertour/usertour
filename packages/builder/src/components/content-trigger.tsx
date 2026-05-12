@@ -8,7 +8,7 @@ import {
   DEFAULT_CONDITION_TYPES,
   validateConditions,
 } from '@usertour-packages/business-components';
-import { Actions, validateActions } from '@usertour-packages/shared-editor';
+import { Actions, validateActions } from '@usertour-packages/editor';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,5 @@
 import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
-import { validateActions } from '@usertour-packages/shared-editor';
+import { validateActions } from '@usertour-packages/editor';
 import { useToast } from '@usertour-packages/use-toast';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';

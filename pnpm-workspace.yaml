@@ -16,6 +16,7 @@ packages:
   - "packages/business-components"
   - "packages/builder"
   - "packages/contexts"
+  - "packages/editor"
   - "packages/finder"
   - "packages/gql"
   - "packages/i18n"

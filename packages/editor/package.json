@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/shared-editor",
+  "name": "@usertour-packages/editor",
   "private": true,
   "version": "0.0.1",
   "type": "module",

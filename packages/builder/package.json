@@ -62,7 +62,7 @@
     "@usertour-packages/select": "workspace:^",
     "@usertour-packages/separator": "workspace:^",
     "@usertour-packages/business-components": "workspace:^",
-    "@usertour-packages/shared-editor": "workspace:^",
+    "@usertour-packages/editor": "workspace:^",
     "@usertour-packages/shared-hooks": "workspace:^",
     "@usertour/helpers": "workspace:^",
     "@usertour-packages/slider": "workspace:^",

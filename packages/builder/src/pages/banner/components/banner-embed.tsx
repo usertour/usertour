@@ -2,7 +2,7 @@ import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
 import { useAttributeListContext } from '@usertour-packages/contexts';
 import { useSize } from '@usertour-packages/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour-packages/widget';
-import { ContentEditor } from '@usertour-packages/shared-editor';
+import { ContentEditor } from '@usertour-packages/editor';
 import type { ContentEditorRoot } from '@usertour/types';
 import {
   DEFAULT_BANNER_DATA,

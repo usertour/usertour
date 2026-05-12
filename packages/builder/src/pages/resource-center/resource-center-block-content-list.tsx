@@ -26,8 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popo
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { Skeleton } from '@usertour-packages/skeleton';
 import { Conditions } from '@usertour-packages/business-components';
-import { PopperEditorMini } from '@usertour-packages/shared-editor';
-import type { Descendant } from '@usertour-packages/shared-editor';
+import { PopperEditorMini } from '@usertour-packages/editor';
+import type { Descendant } from '@usertour-packages/editor';
 import {
   useContentListQuery,
   useListEventsQuery,

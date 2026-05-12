@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour-packages/dropdown-menu';
 import { TooltipIcon } from '@usertour-packages/icons';
-import { Actions } from '@usertour-packages/shared-editor';
+import { Actions } from '@usertour-packages/editor';
 import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
 import {

@@ -8,7 +8,7 @@ import {
   LauncherPopperContentPotal,
   LauncherRoot,
 } from '@usertour-packages/widget';
-import { ContentEditor, ContentEditorRoot } from '@usertour-packages/shared-editor';
+import { ContentEditor, ContentEditorRoot } from '@usertour-packages/editor';
 import { getEmptyDataForType } from '../../../utils/default-data';
 import {
   ContentActionsItemType,

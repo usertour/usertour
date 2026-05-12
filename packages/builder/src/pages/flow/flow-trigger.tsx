@@ -10,7 +10,7 @@ import { updateContentStep } from '@usertour-packages/gql';
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { ScrollArea } from '@usertour-packages/scroll-area';
 import { getErrorMessage, hasError } from '@usertour/helpers';
-import { validateActions } from '@usertour-packages/shared-editor';
+import { validateActions } from '@usertour-packages/editor';
 import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { cn } from '@usertour-packages/tailwind';

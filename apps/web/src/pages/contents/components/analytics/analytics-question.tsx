@@ -1,6 +1,6 @@
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
-import { ContentEditorElementType } from '@usertour-packages/shared-editor';
+import { ContentEditorElementType } from '@usertour-packages/editor';
 import { useQueryContentQuestionAnalyticsQuery } from '@usertour-packages/shared-hooks';
 import { endOfDay, format, startOfDay } from 'date-fns';
 
