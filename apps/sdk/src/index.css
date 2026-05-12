@@ -1,7 +1,7 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
-@import '../../../packages/shared/assets/sdk/index.css';
+@import '../../../packages/assets/sdk/index.css';
 
 @config "../tailwind.config.js";
 

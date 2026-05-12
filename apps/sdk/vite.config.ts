@@ -70,7 +70,7 @@ const createBuildPlugins = (env: 'development' | 'production') => [
   viteStaticCopy({
     targets: [
       {
-        src: '../../packages/shared/assets/sdk/index.css',
+        src: '../../packages/assets/sdk/index.css',
         dest: 'css/',
       },
     ],
