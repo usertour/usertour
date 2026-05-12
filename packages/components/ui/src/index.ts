@@ -16,6 +16,8 @@ export {
   ErrorTooltipTrigger,
   ErrorTooltipAnchor,
 } from './ui/error-tooltip';
+export { ColorPicker, ColorPickerPanel } from './ui/color-picker';
+export type { ColorPickerProps, ColorPickerPanelProps } from './ui/color-picker';
 export {
   ScaledPreviewContainer,
   AutoScaledPreviewContainer,

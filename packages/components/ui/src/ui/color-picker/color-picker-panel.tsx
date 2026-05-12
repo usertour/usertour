@@ -4,7 +4,6 @@ import { Button } from '@usertour-packages/button';
 import { StorageKeys } from '@usertour-packages/constants';
 import { CheckboxIcon, Delete2Icon, EditIcon, RemoveColorIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
-import { useCurrentUserId } from '@usertour-packages/shared-hooks';
 import {
   Tabs,
   UnderlineTabsContent,
@@ -256,8 +255,7 @@ RecentColors.displayName = 'RecentColors';
 // ============================================================================
 
 export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
-  const { color = '', onChange, isAuto = false, showAutoButton = true } = props;
-  const uid = useCurrentUserId();
+  const { color = '', onChange, isAuto = false, showAutoButton = true, userId } = props;
   const [inputColor, setInputColor] = useState(!isAuto ? color : '');
   const [recentColors, setRecentColors] = useState<string[]>([]);
   const [isEditingRecent, setIsEditingRecent] = useState(false);
@@ -265,8 +263,9 @@ export const ColorPickerPanel = (props: ColorPickerPanelProps) => {
 
   // Build user-specific storage key
   const storageKey = useMemo(
-    () => (uid ? `${StorageKeys.COLOR_PICKER_RECENT}-${uid}` : StorageKeys.COLOR_PICKER_RECENT),
-    [uid],
+    () =>
+      userId ? `${StorageKeys.COLOR_PICKER_RECENT}-${userId}` : StorageKeys.COLOR_PICKER_RECENT,
+    [userId],
   );
 
   // Load recent colors on mount or when storageKey changes

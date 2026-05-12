@@ -36,10 +36,3 @@ export { SelectorDialog } from './components/selector/selector-dialog';
 // Generic composition UI primitives live in @usertour-packages/ui —
 // import them from there directly. Examples: SelectPopover, DateTimePicker,
 // ErrorTooltip, ScaledPreviewContainer, LoadingContainer, LocateSelect.
-// ColorPicker still lives here — `ColorPickerPanel` pulls in
-// `useCurrentUserId` from `@usertour-packages/shared-hooks` to scope
-// "recent colors" storage per user, which would force `@usertour-packages/ui`
-// to depend on shared-hooks (Apollo). Pending a follow-up refactor that
-// promotes userId to a prop so the panel becomes truly generic UI.
-export { ColorPicker, ColorPickerPanel } from './components/color-picker';
-export type { ColorPickerProps, ColorPickerPanelProps } from './components/color-picker';

@@ -2,7 +2,8 @@
 
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
 import { PopoverArrow } from '@usertour-packages/popover';
-import { ColorPickerPanel } from '@usertour-packages/shared-components';
+import { ColorPickerPanel } from '@usertour-packages/ui';
+import { useCurrentUserId } from '@usertour-packages/shared-hooks';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useSlate } from 'slate-react';
 
@@ -28,6 +29,7 @@ export const ColorButton = memo(({ config }: ColorButtonProps) => {
   const editor = useSlate();
   const { zIndex } = usePopperEditorContext();
   const [open, setOpen] = useState(false);
+  const userId = useCurrentUserId();
 
   // Get current color from editor marks
   // Note: Don't use useMemo here - editor reference is stable but marks change,
@@ -54,11 +56,16 @@ export const ColorButton = memo(({ config }: ColorButtonProps) => {
   const popoverContent = useMemo(
     () => (
       <>
-        <ColorPickerPanel color={currentColor} onChange={handleColorChange} showAutoButton />
+        <ColorPickerPanel
+          color={currentColor}
+          onChange={handleColorChange}
+          showAutoButton
+          userId={userId}
+        />
         <PopoverArrow className="fill-background" width={20} height={10} />
       </>
     ),
-    [currentColor, handleColorChange],
+    [currentColor, handleColorChange, userId],
   );
 
   return (

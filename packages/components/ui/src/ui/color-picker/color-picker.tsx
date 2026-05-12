@@ -17,6 +17,7 @@ export const ColorPicker = (props: ColorPickerProps) => {
     autoColor = '',
     showAutoButton = false,
     disabled = false,
+    userId,
   } = props;
   const [color, setColor] = useState<string>(isAutoColor ? autoColor : defaultColor);
   const [isAuto, setIsAuto] = useState(isAutoColor);
@@ -76,6 +77,7 @@ export const ColorPicker = (props: ColorPickerProps) => {
           isAuto={isAuto}
           onChange={handleColorChange}
           showAutoButton={showAutoButton}
+          userId={userId}
         />
         <PopoverArrow className="fill-background" width={20} height={10} />
       </PopoverContent>

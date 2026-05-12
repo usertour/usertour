@@ -1,5 +1,6 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { ColorPickerPanel } from '@usertour-packages/shared-components';
+import { ColorPickerPanel } from '@usertour-packages/ui';
+import { useCurrentUserId } from '@usertour-packages/shared-hooks';
 import { useId, useState } from 'react';
 import { useBuilderContext } from '../builder-context';
 import { getPath } from '../draft-util';
@@ -27,6 +28,7 @@ export function ColorField({
   const id = useId();
   const [open, setOpen] = useState(false);
   const { activeSettings, finalSettings, getField, setField, isReadOnly } = useBuilderContext();
+  const userId = useCurrentUserId();
   const value = getField<string>(path) ?? '';
   const isAuto = value === 'Auto';
 
@@ -56,6 +58,7 @@ export function ColorField({
             color={isAuto ? '#FFFFFF' : value}
             isAuto={isAuto}
             showAutoButton={allowAuto}
+            userId={userId}
             onChange={(autoFlag, color) => {
               setOpen(false);
               setField(path, autoFlag ? 'Auto' : color || '');

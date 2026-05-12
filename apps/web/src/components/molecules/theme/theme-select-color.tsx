@@ -1,4 +1,5 @@
-import { ColorPicker } from '@usertour-packages/shared-components';
+import { ColorPicker } from '@usertour-packages/ui';
+import { useCurrentUserId } from '@usertour-packages/shared-hooks';
 
 type ThemeSelectColorProps = {
   text: string;
@@ -15,6 +16,7 @@ type ThemeSelectColorProps = {
 export const ThemeSelectColor = (props: ThemeSelectColorProps) => {
   const { text, name, defaultColor, onChange, autoColor, isAutoColor, showAutoButton, disabled } =
     props;
+  const userId = useCurrentUserId();
 
   return (
     <div className="flex flex-row">
@@ -31,6 +33,7 @@ export const ThemeSelectColor = (props: ThemeSelectColorProps) => {
           isAutoColor={isAutoColor}
           showAutoButton={showAutoButton}
           disabled={disabled}
+          userId={userId}
         />
       </div>
     </div>
