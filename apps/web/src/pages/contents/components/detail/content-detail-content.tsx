@@ -27,7 +27,7 @@ import {
 } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
-import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
+import { ScaledPreviewContainer } from '@usertour-packages/ui';
 import { ContentEditForm } from '../shared/content-edit-form';
 import {
   BannerPreviewContent,

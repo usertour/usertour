@@ -6,7 +6,7 @@ import { ReactEditor, useSlateStatic } from 'slate-react';
 
 import type { Attribute } from '@usertour/types';
 import { Button } from '@usertour-packages/button';
-import { SelectPopover } from '@usertour-packages/shared-components';
+import { SelectPopover } from '@usertour-packages/ui';
 import { DeleteIcon, UserIcon } from '@usertour-packages/icons';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';

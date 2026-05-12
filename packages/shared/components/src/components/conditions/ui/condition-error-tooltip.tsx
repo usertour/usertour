@@ -1,7 +1,7 @@
 import { cn } from '@usertour-packages/tailwind';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { forwardRef } from 'react';
-import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '../../error-tooltip';
+import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '@usertour-packages/ui';
 import { useConditionsZIndex } from '../conditions-context';
 
 // Re-export the open-state shell and the anchor — they don't need wrapping.

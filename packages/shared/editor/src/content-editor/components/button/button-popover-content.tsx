@@ -1,10 +1,7 @@
 // Button popover content component
 
-import {
-  Conditions,
-  SelectPopover,
-  SelectPopoverOption,
-} from '@usertour-packages/shared-components';
+import { Conditions } from '@usertour-packages/shared-components';
+import { SelectPopover, type SelectPopoverOption } from '@usertour-packages/ui';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';

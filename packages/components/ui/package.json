@@ -13,18 +13,26 @@
   },
   "dependencies": {
     "@base-ui/react": "1.0.0-rc.2",
+    "@radix-ui/react-icons": "^1.3.0",
     "@tabler/icons-react": "^3.31.0",
     "@usertour-packages/alert": "workspace:*",
     "@usertour-packages/button": "workspace:*",
+    "@usertour-packages/calendar": "workspace:*",
+    "@usertour-packages/command": "workspace:*",
+    "@usertour-packages/constants": "workspace:*",
     "@usertour-packages/dropdown-menu": "workspace:*",
     "@usertour-packages/icons": "workspace:*",
     "@usertour-packages/input": "workspace:*",
+    "@usertour-packages/popover": "workspace:*",
+    "@usertour-packages/scroll-area": "workspace:*",
     "@usertour-packages/select": "workspace:*",
     "@usertour-packages/switch": "workspace:*",
     "@usertour-packages/tabs": "workspace:*",
     "@usertour-packages/tailwind": "workspace:*",
     "@usertour-packages/textarea": "workspace:*",
-    "class-variance-authority": "^0.4.0"
+    "class-variance-authority": "^0.4.0",
+    "date-fns": "^2.30.0",
+    "react-use": "^17.4.0"
   },
   "peerDependencies": {
     "react": "^18.2.0"

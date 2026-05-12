@@ -22,7 +22,7 @@ import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AutoScaledPreviewContainer } from '@usertour-packages/shared-components';
+import { AutoScaledPreviewContainer } from '@usertour-packages/ui';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
   BannerPreviewContent,

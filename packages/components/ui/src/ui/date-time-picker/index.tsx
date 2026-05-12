@@ -2,7 +2,7 @@ import { CalendarIcon } from '@radix-ui/react-icons';
 import { Calendar } from '@usertour-packages/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
 import { cn } from '@usertour-packages/tailwind';
-import { CompactPopoverTrigger } from '@usertour-packages/ui';
+import { CompactPopoverTrigger } from '../../compact';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { TimeColumn } from './time-column';

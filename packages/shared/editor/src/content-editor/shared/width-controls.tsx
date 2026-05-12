@@ -1,7 +1,6 @@
 // Shared WidthControls component for content editor elements
 
-import type { SelectPopoverOption } from '@usertour-packages/shared-components';
-import { SelectPopover } from '@usertour-packages/shared-components';
+import { SelectPopover, type SelectPopoverOption } from '@usertour-packages/ui';
 import { EDITOR_SELECT } from '@usertour-packages/constants';
 import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';

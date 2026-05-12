@@ -1,7 +1,7 @@
 import { TimeIcon } from '@usertour-packages/icons';
 import type { RulesCondition, TimeConditionData } from '@usertour/types';
 import { format } from 'date-fns';
-import { DateTimePicker } from '../../../date-time-picker';
+import { DateTimePicker } from '@usertour-packages/ui';
 import { useConditionsT, useConditionsZIndex, useSummaryTextClass } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTime } from '../../validators';

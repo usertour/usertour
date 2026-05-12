@@ -72,6 +72,7 @@
     "@usertour-packages/tailwind": "workspace:^",
     "@usertour-packages/textarea": "workspace:^",
     "@usertour-packages/tooltip": "workspace:^",
+    "@usertour-packages/ui": "workspace:^",
     "@usertour/types": "workspace:^",
     "@usertour-packages/use-toast": "workspace:^",
     "animejs": "^3.2.1",

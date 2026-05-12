@@ -1,6 +1,6 @@
 // Column-specific constants
 
-import type { SelectPopoverOption } from '@usertour-packages/shared-components';
+import type { SelectPopoverOption } from '@usertour-packages/ui';
 
 import { ALIGN_ITEMS_OPTIONS, JUSTIFY_CONTENT_OPTIONS } from './styles';
 

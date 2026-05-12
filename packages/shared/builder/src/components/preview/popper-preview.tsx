@@ -7,7 +7,7 @@ import {
   PopperClose,
   useSettingsStyles,
 } from '@usertour-packages/widget';
-import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
+import { ScaledPreviewContainer } from '@usertour-packages/ui';
 import { AvatarType, defaultSettings, StepContentType } from '@usertour/types';
 import { PREVIEW_BASIC } from '@usertour-packages/constants';
 import { memo, useCallback, useMemo, useRef } from 'react';

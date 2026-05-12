@@ -1,6 +1,6 @@
 // Width-related constants shared across content editor components
 
-import type { SelectPopoverOption } from '@usertour-packages/shared-components';
+import type { SelectPopoverOption } from '@usertour-packages/ui';
 
 export const WIDTH_TYPES = {
   PERCENT: 'percent',

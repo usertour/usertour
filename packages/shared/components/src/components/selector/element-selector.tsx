@@ -3,7 +3,7 @@ import { Input } from '@usertour-packages/input';
 import { Label } from '@usertour-packages/label';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
 import { Content, ElementSelectorPropsData } from '@usertour/types';
-import { SelectPopover } from '../common/select-popover';
+import { SelectPopover } from '@usertour-packages/ui';
 import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 

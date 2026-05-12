@@ -1,5 +1,4 @@
 export { Conditions } from './components/conditions';
-export { DateTimePicker } from './components/date-time-picker';
 export { DEFAULT_CONDITION_TYPES } from './components/conditions/registry';
 export {
   ConditionFrequency,
@@ -34,28 +33,13 @@ export type {
 export type { ConditionsTranslator } from './components/conditions/conditions-context';
 export { GoogleFontCss } from './components/theme/google-font';
 export { SelectorDialog } from './components/selector/selector-dialog';
-export { LoadingContainer } from './components/common/loading';
-export { LocateSelect } from './components/common/locate-select';
-export type { LocateItem } from './components/common/locate-select';
-export { SelectPopover } from './components/common/select-popover';
-export type { SelectPopoverOption, SelectPopoverProps } from './components/common/select-popover';
+// Generic composition UI primitives live in @usertour-packages/ui —
+// import them from there directly. Examples: SelectPopover, DateTimePicker,
+// ErrorTooltip, ScaledPreviewContainer, LoadingContainer, LocateSelect.
+// ColorPicker still lives here — `ColorPickerPanel` pulls in
+// `useCurrentUserId` from `@usertour-packages/shared-hooks` to scope
+// "recent colors" storage per user, which would force `@usertour-packages/ui`
+// to depend on shared-hooks (Apollo). Pending a follow-up refactor that
+// promotes userId to a prop so the panel becomes truly generic UI.
 export { ColorPicker, ColorPickerPanel } from './components/color-picker';
 export type { ColorPickerProps, ColorPickerPanelProps } from './components/color-picker';
-export {
-  ErrorTooltip,
-  ErrorTooltipContent,
-  ErrorTooltipTrigger,
-  ErrorTooltipAnchor,
-} from './components/error-tooltip';
-export {
-  ScaledPreviewContainer,
-  AutoScaledPreviewContainer,
-  useScaledPreview,
-  calculateScale,
-} from './components/preview/scaled-preview-container';
-export type {
-  ScaledPreviewContainerProps,
-  AutoScaledPreviewContainerProps,
-  UseScaledPreviewOptions,
-  UseScaledPreviewResult,
-} from './components/preview/scaled-preview-container';
