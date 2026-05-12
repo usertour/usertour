@@ -23,7 +23,7 @@ import {
   QuestionMarkCircledIcon,
   ZoomInIcon,
 } from '@usertour-packages/icons';
-import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour-packages/shared-hooks';
+import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour-packages/hooks';
 import { BizSession } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { Fragment, ReactNode, useState } from 'react';

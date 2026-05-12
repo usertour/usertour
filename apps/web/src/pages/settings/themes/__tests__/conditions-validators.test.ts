@@ -16,12 +16,12 @@ import {
   validateTextInput,
   validateTime,
   validateUserAttr,
-} from '../../../../../../../packages/shared/components/src/components/conditions/validators';
-import { validateConditions } from '../../../../../../../packages/shared/components/src/components/conditions/validate';
+} from '../../../../../../../packages/business-components/src/components/conditions/validators';
+import { validateConditions } from '../../../../../../../packages/business-components/src/components/conditions/validate';
 import {
   partsToISO,
   parseISOToParts,
-} from '../../../../../../../packages/shared/components/src/components/conditions/types/time/utils';
+} from '../../../../../../../packages/business-components/src/components/conditions/types/time/utils';
 import type { Attribute, Content, RulesCondition, Segment } from '@usertour/types';
 
 // Pure-data tests — these mirror what the editors emit so a bad commit can't

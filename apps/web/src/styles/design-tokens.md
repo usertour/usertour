@@ -270,7 +270,7 @@ not just styled primitives):
 | `InlineAlert`            | Single-line alert for dense form rows                                      |
 | Layout tokens            | `panelClass` / `headerClass` / `bodyClass` / `pillClass` / etc.            |
 
-**Conditions surface** — lives in `@usertour-packages/shared-components/conditions/ui/`.
+**Conditions surface** — lives in `@usertour-packages/business-components/conditions/ui/`.
 Only the runtime-context-needing wrappers stay here; plain styled
 primitives went away in favor of atomic variants:
 

@@ -34,7 +34,7 @@ import {
   ResourceCenterTabBar,
   ResourceCenterFooter,
 } from '@usertour-packages/widget';
-import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
+import { ScaledPreviewContainer } from '@usertour-packages/ui';
 import {
   AvatarType,
   BannerData,

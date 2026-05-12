@@ -6,7 +6,7 @@ import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Badge } from '@usertour-packages/badge';
 import { stepIsReachable } from '@usertour-packages/builder/src/utils/content-validate';
 import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour-packages/icons';
-import { GoogleFontCss } from '@usertour-packages/shared-components';
+import { GoogleFontCss } from '@usertour-packages/business-components';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
 import { TooltipProvider } from '@usertour-packages/tooltip';
 import {
@@ -27,7 +27,7 @@ import {
 } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
-import { ScaledPreviewContainer } from '@usertour-packages/shared-components';
+import { ScaledPreviewContainer } from '@usertour-packages/ui';
 import { ContentEditForm } from '../shared/content-edit-form';
 import {
   BannerPreviewContent,

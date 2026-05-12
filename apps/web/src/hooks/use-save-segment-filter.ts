@@ -1,5 +1,5 @@
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { useUpdateSegmentMutation } from '@usertour-packages/shared-hooks';
+import { useUpdateSegmentMutation } from '@usertour-packages/hooks';
 import { conditionsIsSame, getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
 import { useCallback, useEffect, useState } from 'react';

@@ -10,8 +10,8 @@ import {
   ConditionWait,
   Conditions,
   validateConditions,
-} from '@usertour-packages/shared-components';
-import { useContentListQuery } from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/business-components';
+import { useContentListQuery } from '@usertour-packages/hooks';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
 import { Switch } from '@usertour-packages/switch';

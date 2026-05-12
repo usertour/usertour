@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { StorageKeys } from '@usertour-packages/constants';
-import { validateConditions } from '@usertour-packages/shared-components';
+import { validateConditions } from '@usertour-packages/business-components';
 import {
   type Theme,
   ThemeDetailPreviewType,
@@ -9,7 +9,7 @@ import {
   type ThemeVariation,
   defaultSettings,
 } from '@usertour/types';
-import { useCurrentUserId } from '@usertour-packages/shared-hooks';
+import { useCurrentUserId } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';

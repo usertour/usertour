@@ -19,9 +19,7 @@ module.exports = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
-    '../../packages/components/**/src/*.{js,ts,jsx,tsx}',
-    '../../packages/shared/**/src/**/*.{js,ts,jsx,tsx}',
-    '../../packages/shared/**/src/**/**/*.{js,ts,jsx,tsx}',
+    '../../packages/**/src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     container: {

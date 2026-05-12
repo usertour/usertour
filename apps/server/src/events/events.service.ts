@@ -107,7 +107,7 @@ export class EventsService {
   async list(projectId: string) {
     return await this.prisma.event.findMany({
       where: { projectId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
   }
 

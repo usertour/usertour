@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
 } from '@usertour-packages/alert-dialog';
 import { getErrorMessage } from '@usertour/helpers';
-import { useDeleteEnvironmentsMutation } from '@usertour-packages/shared-hooks';
+import { useDeleteEnvironmentsMutation } from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
 

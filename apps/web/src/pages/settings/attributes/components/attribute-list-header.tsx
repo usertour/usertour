@@ -3,7 +3,7 @@ import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour-packages/button';
 import { useState } from 'react';
 import { useAppContext } from '@/contexts/app-context';
-import { AttributeCreateForm } from '@usertour-packages/shared-editor';
+import { AttributeCreateForm } from '@usertour-packages/editor';
 import { RiAddLine } from '@usertour-packages/icons';
 
 export const AttributeListHeader = () => {

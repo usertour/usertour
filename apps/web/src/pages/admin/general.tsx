@@ -1,7 +1,7 @@
 import {
   useAdminInstanceSettingsQuery,
   useUpdateInstanceGeneralSettingsMutation,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { SettingsContent } from '@/pages/settings/components/content';
 import { Separator } from '@usertour-packages/separator';

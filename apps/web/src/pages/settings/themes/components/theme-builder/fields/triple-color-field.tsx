@@ -1,5 +1,6 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { ColorPickerPanel } from '@usertour-packages/shared-components';
+import { ColorPickerPanel } from '@usertour-packages/ui';
+import { useCurrentUserId } from '@usertour-packages/hooks';
 import { cn } from '@usertour-packages/tailwind';
 import { useId, useState } from 'react';
 import { useBuilderContext } from '../builder-context';
@@ -17,6 +18,7 @@ function Cell({ path, label, allowAuto, position }: CellProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const { finalSettings, getField, setField, isReadOnly } = useBuilderContext();
+  const userId = useCurrentUserId();
   const value = getField<string>(path) ?? '';
   const isAuto = value === 'Auto';
   const fallback = getPath(finalSettings, path);
@@ -54,6 +56,7 @@ function Cell({ path, label, allowAuto, position }: CellProps) {
             color={isAuto ? '#FFFFFF' : value}
             isAuto={isAuto}
             showAutoButton={allowAuto}
+            userId={userId}
             onChange={(autoFlag, color) => {
               setOpen(false);
               setField(path, autoFlag ? 'Auto' : color || '');

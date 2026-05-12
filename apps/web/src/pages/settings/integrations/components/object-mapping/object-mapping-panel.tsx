@@ -2,7 +2,7 @@ import { Button } from '@usertour-packages/button';
 import { InfoIcon, XIcon } from 'lucide-react';
 import { ArrowRightIcon, EqualIcon, UsertourIcon2 } from '@usertour-packages/icons';
 import { ObjectMappingFieldSelect } from './object-mapping-select';
-import { AttributeCreateForm } from '@usertour-packages/shared-editor';
+import { AttributeCreateForm } from '@usertour-packages/editor';
 import {
   Attribute,
   BizAttributeTypes,
@@ -10,7 +10,7 @@ import {
   IntegrationObjectMappingItem,
 } from '@usertour/types';
 import { useState } from 'react';
-import { useListAttributesQuery } from '@usertour-packages/shared-hooks';
+import { useListAttributesQuery } from '@usertour-packages/hooks';
 import { cn } from '@usertour-packages/tailwind';
 
 const UsertourMappingIcon = ({ className }: { className?: string }) => (

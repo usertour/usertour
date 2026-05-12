@@ -1,5 +1,5 @@
-import { useQueryInviteListQuery } from '@usertour-packages/shared-hooks';
-import { useQueryTeamMemberListQuery } from '@usertour-packages/shared-hooks';
+import { useQueryInviteListQuery } from '@usertour-packages/hooks';
+import { useQueryTeamMemberListQuery } from '@usertour-packages/hooks';
 import { TeamMember } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 

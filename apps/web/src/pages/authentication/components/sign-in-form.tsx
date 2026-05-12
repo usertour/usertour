@@ -16,7 +16,7 @@ import {
   LoginMutationVariables,
   useGlobalConfigQuery,
   useLoginMutation,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 
 // Form validation schema
 const signinFormSchema = z.object({

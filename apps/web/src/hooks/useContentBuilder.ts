@@ -3,7 +3,7 @@ import { isVersionPublished } from '@/utils/content';
 import { Content } from '@usertour/types';
 import { useToast } from '@usertour-packages/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { useCreateContentVersionMutation } from '@usertour-packages/shared-hooks';
+import { useCreateContentVersionMutation } from '@usertour-packages/hooks';
 
 export const useContentBuilder = () => {
   const navigate = useNavigate();

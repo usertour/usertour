@@ -9,7 +9,7 @@ import {
   useAdminChangeProjectMemberRoleMutation,
   useAdminTransferProjectOwnershipMutation,
   useAdminRemoveProjectMemberMutation,
-} from '@usertour-packages/shared-hooks';
+} from '@usertour-packages/hooks';
 import { useToast } from '@usertour-packages/use-toast';
 import { useState, useCallback } from 'react';
 import { SettingsContent } from '@/pages/settings/components/content';
