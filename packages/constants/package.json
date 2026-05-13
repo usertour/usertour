@@ -2,14 +2,25 @@
   "name": "@usertour-packages/constants",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
-  "main": "src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
-    "build": "tsup src --dts",
-    "dev": "pnpm build:fast -- --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "clean": "rimraf dist .turbo",
     "typecheck": "tsc --noEmit",
-    "build:fast": "tsup src"
+    "build:fast": "tsup --no-dts"
+  },
+  "dependencies": {
+    "@usertour/types": "workspace:^"
   },
   "devDependencies": {
     "typescript": "^5.0.2"
@@ -17,6 +28,9 @@
   "tsup": {
     "clean": true,
     "target": "es2019",
-    "format": ["cjs", "esm"]
+    "format": ["cjs", "esm"],
+    "entry": ["src/index.ts"],
+    "outDir": "dist",
+    "dts": true
   }
 }

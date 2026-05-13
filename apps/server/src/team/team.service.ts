@@ -1,10 +1,16 @@
-import { ParamsError, TeamMemberLimitError } from '@/common/errors';
+import {
+  InvitationDeliveryFailedError,
+  ParamsError,
+  TeamMemberAlreadyInProjectError,
+  TeamMemberAlreadyInvitedError,
+} from '@/common/errors';
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { createTransport } from 'nodemailer';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { ConfigService } from '@nestjs/config';
+import { ProjectsService } from '@/projects/projects.service';
 
 @Injectable()
 export class TeamService {
@@ -12,6 +18,7 @@ export class TeamService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private readonly projectsService: ProjectsService,
   ) {}
 
   async getTeamMembers(projectId: string) {
@@ -102,44 +109,6 @@ export class TeamService {
     });
   }
 
-  private async validateTeamMemberLimit(projectId: string, subscriptionId: string | undefined) {
-    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
-    if (isSelfHostedMode) {
-      return;
-    }
-    if (!subscriptionId) {
-      throw new TeamMemberLimitError();
-    }
-    const subscription = await this.prisma.subscription.findFirst({
-      where: { subscriptionId, projectId },
-    });
-    if (!subscription) {
-      throw new TeamMemberLimitError();
-    }
-    const membersCount = await this.prisma.userOnProject.count({
-      where: { projectId },
-    });
-    const inviteCount = await this.prisma.invite.count({
-      where: { projectId, expired: false, canceled: false, deleted: false },
-    });
-    const totalCount = membersCount + inviteCount;
-
-    // hobby plan only has 1 member
-    if (subscription?.planType === 'hobby') {
-      throw new TeamMemberLimitError();
-    }
-
-    // starter plan has 3 members limit
-    if (subscription.planType === 'starter' && totalCount >= 3) {
-      throw new TeamMemberLimitError();
-    }
-
-    // growth plan has 10 members limit
-    if (subscription.planType === 'growth' && totalCount >= 10) {
-      throw new TeamMemberLimitError();
-    }
-  }
-
   async inviteTeamMember(
     senderUserId: string,
     email: string,
@@ -161,8 +130,27 @@ export class TeamService {
       throw new ParamsError();
     }
 
-    // validate team member limit
-    await this.validateTeamMemberLimit(projectId, project.subscriptionId);
+    // Block duplicate invites and re-inviting an existing member —
+    // otherwise the same email shows up multiple times under "Invite
+    // pending" and each row counts against teamMemberLimit on its own,
+    // letting a project artificially fill its seat quota.
+    const pendingInvite = await this.prisma.invite.findFirst({
+      where: { projectId, email, expired: false, canceled: false, deleted: false },
+    });
+    if (pendingInvite) {
+      throw new TeamMemberAlreadyInvitedError();
+    }
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      const existingMembership = await this.prisma.userOnProject.findFirst({
+        where: { userId: existingUser.id, projectId },
+      });
+      if (existingMembership) {
+        throw new TeamMemberAlreadyInProjectError();
+      }
+    }
+
+    await this.projectsService.checkTeamMemberLimit(projectId);
 
     const result = await this.prisma.invite.create({
       data: {
@@ -173,7 +161,27 @@ export class TeamService {
         userId: sender.id,
       },
     });
-    await this.sendInviteEmail(result.code, email, sender.name, project.name, name);
+
+    // Roll the invite back if the SMTP layer rejects the recipient
+    // (550 / EENVELOPE) or fails for any other reason — otherwise an
+    // orphan "Invite pending" row sticks around, the recipient never
+    // gets the email, and our own dedup check blocks the user from
+    // retrying with a corrected address. We soft-delete (deleted=true)
+    // for consistency with the accept / cancel paths.
+    try {
+      await this.sendInviteEmail(result.code, email, sender.name, project.name, name);
+    } catch (error) {
+      await this.prisma.invite.update({
+        where: { id: result.id },
+        data: { deleted: true },
+      });
+      this.logger.error(
+        `Failed to send invite email to ${email} for project ${projectId}: ${
+          (error as Error).message
+        }`,
+      );
+      throw new InvitationDeliveryFailedError();
+    }
   }
 
   async sendEmail(data: unknown) {

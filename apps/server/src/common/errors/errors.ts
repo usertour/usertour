@@ -241,6 +241,38 @@ export class InstanceLicenseProjectLimitReachedError extends BaseError {
   };
 }
 
+export class EnvironmentLimitError extends BaseError {
+  code = 'E0030';
+  messageDict = {
+    en: 'You have reached your environment limit. Please upgrade your Usertour account under Settings → Billing.',
+    'zh-CN': '您已经达到了 Environment 数量的限制，请在设置 → 账单中升级您的 Usertour 账户。',
+  };
+}
+
+export class TeamMemberAlreadyInvitedError extends BaseError {
+  code = 'E0031';
+  messageDict = {
+    en: 'This email already has a pending invitation for this project.',
+    'zh-CN': '该邮箱在当前项目已存在待接受的邀请。',
+  };
+}
+
+export class TeamMemberAlreadyInProjectError extends BaseError {
+  code = 'E0032';
+  messageDict = {
+    en: 'This email is already a member of this project.',
+    'zh-CN': '该邮箱已经是当前项目的成员。',
+  };
+}
+
+export class InvitationDeliveryFailedError extends BaseError {
+  code = 'E0033';
+  messageDict = {
+    en: 'Failed to send the invitation email. Please double-check the address and try again.',
+    'zh-CN': '邀请邮件发送失败,请确认邮箱地址后重试。',
+  };
+}
+
 export class CompanyNotFoundError extends OpenAPIError {
   code = 'E1002';
   statusCode = HttpStatus.NOT_FOUND;
@@ -462,6 +494,10 @@ const errorMap = {
   E0027: SystemAdminSetupUnavailableError,
   E0028: SystemAdminSetupRequiredError,
   E0029: InstanceLicenseProjectLimitReachedError,
+  E0030: EnvironmentLimitError,
+  E0031: TeamMemberAlreadyInvitedError,
+  E0032: TeamMemberAlreadyInProjectError,
+  E0033: InvitationDeliveryFailedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

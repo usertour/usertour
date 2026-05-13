@@ -2,11 +2,10 @@ import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import { createConditionsFilter, createFilterItem } from '@/common/attribute/filter';
-import { EventAttributes, UserAttributes, CompanyAttributes } from '@usertour/types';
+import { EventAttributes, UserAttributes, CompanyAttributes, PlanType } from '@usertour/types';
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   BizUser,
   Content,
@@ -21,7 +20,7 @@ import {
 import { PrismaService } from 'nestjs-prisma';
 import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
-import { LicenseService } from '@/license/license.service';
+import { ProjectsService } from '@/projects/projects.service';
 import {
   ConfigRequest,
   ConfigResponse,
@@ -68,24 +67,17 @@ export class WebSocketService {
     private prisma: PrismaService,
     private bizService: BizService,
     private integrationService: IntegrationService,
-    private configService: ConfigService,
-    private licenseService: LicenseService,
+    private projectsService: ProjectsService,
   ) {}
 
   /**
-   * Get configuration settings based on environment token
-   * @param body - Request body containing environment token
-   * @returns Configuration object with plan type and branding settings
+   * Get configuration settings based on environment token. Delegates to
+   * ProjectsService.getProjectConfig so cloud / self-hosted resolution
+   * and per-subscription overridePlan handling live in one place.
    */
   async getConfig(body: ConfigRequest, environment: Environment): Promise<ConfigResponse> {
     try {
-      const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
-
-      if (isSelfHostedMode) {
-        return await this.getSelfHostedConfig(environment);
-      }
-
-      return await this.getCloudConfig(environment);
+      return await this.projectsService.getProjectConfig(environment.projectId);
     } catch (error) {
       this.logger.error({
         message: `Error getting config: ${error.message}`,
@@ -94,103 +86,9 @@ export class WebSocketService {
       });
       return {
         removeBranding: false,
-        planType: 'hobby',
+        planType: PlanType.HOBBY,
       };
     }
-  }
-
-  /**
-   * Get configuration for self-hosted mode using license validation.
-   * Priority: project license > instance license > default free/hobby.
-   */
-  private async getSelfHostedConfig(environment: Environment): Promise<ConfigResponse> {
-    const defaultConfig: ConfigResponse = {
-      removeBranding: false,
-      planType: 'hobby',
-    };
-    const project = await this.prisma.project.findUnique({
-      where: { id: environment.projectId },
-    });
-
-    // Try project-level license first
-    if (project?.license) {
-      const validationResult = await this.licenseService.validateLicense(project.license);
-      if (validationResult.isValid) {
-        const licensePayload = await this.licenseService.getLicensePayload(project.license);
-        const scope = licensePayload?.scope || (licensePayload?.projectId ? 'project' : null);
-        if (scope === 'project' && licensePayload?.projectId === environment.projectId) {
-          const isBusinessPlan =
-            licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
-          return {
-            removeBranding: isBusinessPlan,
-            planType: licensePayload?.plan || 'hobby',
-          };
-        }
-      }
-    }
-
-    // Fallback to instance-level license for explicitly assigned projects,
-    // or all projects when the instance license is unlimited.
-    if (project) {
-      const instanceSetting = await this.prisma.instanceSetting.findUnique({
-        where: { key: 'instance' },
-      });
-      if (instanceSetting?.license) {
-        const validationResult = await this.licenseService.validateLicense(instanceSetting.license);
-        if (validationResult.isValid) {
-          const payload = await this.licenseService.getLicensePayload(instanceSetting.license);
-          const scope = payload?.scope || (payload?.projectId ? 'project' : 'instance');
-          const isUnlimited = payload?.projectLimit === null || payload?.projectLimit === undefined;
-          if (
-            scope === 'instance' &&
-            payload?.instanceId === instanceSetting.instanceId &&
-            (isUnlimited || project.usesInstanceLicense)
-          ) {
-            const isBusinessPlan = payload?.plan === 'business' || payload?.plan === 'enterprise';
-            return {
-              removeBranding: isBusinessPlan,
-              planType: payload?.plan || 'hobby',
-            };
-          }
-        }
-      }
-    }
-
-    return defaultConfig;
-  }
-
-  /**
-   * Get configuration for cloud mode using subscription-based logic
-   * @param environment - Environment context
-   * @returns Configuration object with plan type and branding settings
-   */
-  private async getCloudConfig(environment: Environment): Promise<ConfigResponse> {
-    const defaultConfig: ConfigResponse = {
-      removeBranding: false,
-      planType: 'hobby',
-    };
-
-    // Cloud mode: use subscription-based logic
-    const project = await this.prisma.project.findUnique({
-      where: { id: environment.projectId },
-    });
-
-    if (!project?.subscriptionId) {
-      return defaultConfig;
-    }
-
-    const subscription = await this.prisma.subscription.findFirst({
-      where: { subscriptionId: project.subscriptionId },
-    });
-
-    if (!subscription) {
-      return defaultConfig;
-    }
-
-    return {
-      removeBranding: subscription.planType !== 'hobby',
-      planType: subscription.planType,
-    };
   }
 
   /**
@@ -1680,7 +1578,7 @@ export class WebSocketService {
       return {
         config: {
           removeBranding: false,
-          planType: 'hobby',
+          planType: PlanType.HOBBY,
         },
         themes: [],
       };

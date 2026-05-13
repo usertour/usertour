@@ -2,16 +2,22 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { ConfigService } from '@nestjs/config';
 import {
-  ParamsError,
+  EnvironmentLimitError,
   InvalidLicenseError,
+  LicenseDecodeError,
   LicenseExpiredError,
   LicenseProjectMismatchError,
-  LicenseDecodeError,
+  ParamsError,
+  TeamMemberLimitError,
 } from '@/common/errors';
 import { LicenseService } from '@/license/license.service';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { Environment } from '@/common/types/schema';
-import { ProjectConfig } from '@usertour/types';
+import { Prisma } from '@prisma/client';
+import { type PlanFeatures, PlanType, ProjectConfig } from '@usertour/types';
+import { isWithinLimit, resolvePlanFeatures } from '@usertour/helpers';
+
+type DbClient = Prisma.TransactionClient | PrismaService;
 
 @Injectable()
 export class ProjectsService {
@@ -153,7 +159,7 @@ export class ProjectsService {
   private async getSelfHostedConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
-      planType: 'hobby',
+      planType: PlanType.HOBBY,
     };
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -206,12 +212,12 @@ export class ProjectsService {
       return null;
     }
 
-    const isBusinessPlan =
-      licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
+    const planType = licensePayload?.plan || PlanType.HOBBY;
+    const features = resolvePlanFeatures(planType);
 
     return {
-      removeBranding: isBusinessPlan,
-      planType: licensePayload?.plan || 'hobby',
+      removeBranding: features.removeBranding,
+      planType,
     };
   }
 
@@ -246,11 +252,12 @@ export class ProjectsService {
       return null;
     }
 
-    const isBusinessPlan = payload?.plan === 'business' || payload?.plan === 'enterprise';
+    const planType = payload?.plan || PlanType.HOBBY;
+    const features = resolvePlanFeatures(planType);
 
     return {
-      removeBranding: isBusinessPlan,
-      planType: payload?.plan || 'hobby',
+      removeBranding: features.removeBranding,
+      planType,
     };
   }
 
@@ -262,7 +269,7 @@ export class ProjectsService {
   private async getCloudConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
-      planType: 'hobby',
+      planType: PlanType.HOBBY,
     };
 
     // Cloud mode: use subscription-based logic
@@ -282,9 +289,65 @@ export class ProjectsService {
       return defaultConfig;
     }
 
+    const features = resolvePlanFeatures(subscription.planType, subscription.overridePlan);
+
     return {
-      removeBranding: subscription.planType !== 'hobby',
+      removeBranding: features.removeBranding,
       planType: subscription.planType,
     };
+  }
+
+  // ============================================================================
+  // Plan quota helpers
+  // ============================================================================
+  //
+  // Server-side counterpart to apps/web/src/hooks/use-plan-limits.ts —
+  // every mutation gate that needs to enforce a plan limit calls one of
+  // these, so the self-hosted bypass / subscription lookup / override
+  // merge / count check / error throw all live in one place. Each
+  // method accepts an optional Prisma TransactionClient so callers
+  // inside a $transaction can stay in the same tx.
+
+  async resolveProjectFeatures(
+    projectId: string,
+    db: DbClient = this.prisma,
+  ): Promise<PlanFeatures> {
+    const project = await db.project.findUnique({ where: { id: projectId } });
+    const subscription = project?.subscriptionId
+      ? await db.subscription.findFirst({
+          where: { subscriptionId: project.subscriptionId, projectId },
+        })
+      : null;
+    return resolvePlanFeatures(
+      subscription?.planType ?? PlanType.HOBBY,
+      subscription?.overridePlan,
+    );
+  }
+
+  private isCloudMode(): boolean {
+    return !this.configService.get('globalConfig.isSelfHostedMode');
+  }
+
+  async checkEnvironmentLimit(projectId: string, db: DbClient = this.prisma): Promise<void> {
+    if (!this.isCloudMode()) return;
+    const { environmentLimit } = await this.resolveProjectFeatures(projectId, db);
+    const current = await db.environment.count({
+      where: { projectId, deleted: false },
+    });
+    if (!isWithinLimit(environmentLimit, current)) {
+      throw new EnvironmentLimitError();
+    }
+  }
+
+  async checkTeamMemberLimit(projectId: string, db: DbClient = this.prisma): Promise<void> {
+    if (!this.isCloudMode()) return;
+    const { teamMemberLimit } = await this.resolveProjectFeatures(projectId, db);
+    const membersCount = await db.userOnProject.count({ where: { projectId } });
+    const inviteCount = await db.invite.count({
+      where: { projectId, expired: false, canceled: false, deleted: false },
+    });
+    if (!isWithinLimit(teamMemberLimit, membersCount + inviteCount)) {
+      throw new TeamMemberLimitError();
+    }
   }
 }

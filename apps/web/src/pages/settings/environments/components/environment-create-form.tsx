@@ -2,8 +2,7 @@
 
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { useSubscriptionContext } from '@/contexts/subscription-context';
+import { useEnvironmentLimit } from '@/hooks/use-plan-limits';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour-packages/button';
@@ -26,7 +25,6 @@ import { createEnvironments } from '@usertour-packages/gql';
 import { Input } from '@usertour-packages/input';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour-packages/use-toast';
-import { PlanType } from '@usertour/types';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -58,21 +56,11 @@ const defaultValues: Partial<FormValues> = {
 export const EnvironmentCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   const [createMutation] = useMutation(createEnvironments);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { project, globalConfig } = useAppContext();
+  const { project } = useAppContext();
   const { toast } = useToast();
-  const { planType } = useSubscriptionContext();
-  const { environmentList } = useEnvironmentListContext();
   const navigate = useNavigate();
-
-  const PLAN_LIMITS: Record<PlanType, number> = {
-    [PlanType.HOBBY]: 1,
-    [PlanType.STARTER]: 2,
-    [PlanType.GROWTH]: 3,
-    [PlanType.BUSINESS]: Number.POSITIVE_INFINITY,
-  };
-
-  const isLimit =
-    !globalConfig?.isSelfHostedMode && (environmentList?.length ?? 0) >= PLAN_LIMITS[planType];
+  const { canUseMore } = useEnvironmentLimit();
+  const isLimit = !canUseMore;
 
   const showError = (title: string) => {
     toast({
