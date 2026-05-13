@@ -32,6 +32,7 @@ const HOBBY: PlanFeatures = {
 
 const STARTER: PlanFeatures = {
   ...HOBBY,
+  removeBranding: true,
   sessionsLimit: ProSessionLimit,
   teamMemberLimit: 3,
   environmentLimit: 2,
