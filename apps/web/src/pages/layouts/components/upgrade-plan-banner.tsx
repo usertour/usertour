@@ -12,7 +12,7 @@ export const UpgradePlanBanner = ({ projectId }: { projectId: string }) => {
     return null;
   }
 
-  if (currentUsage < totalLimit || loading) {
+  if (loading || totalLimit === 'unlimited' || currentUsage < totalLimit) {
     return null;
   }
 

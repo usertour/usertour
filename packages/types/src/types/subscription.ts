@@ -16,4 +16,6 @@ export enum PlanType {
   STARTER = 'starter',
   GROWTH = 'growth',
   BUSINESS = 'business',
+  // Self-hosted license only — cloud subscriptions never carry this.
+  ENTERPRISE = 'enterprise',
 }
