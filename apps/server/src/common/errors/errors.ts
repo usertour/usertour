@@ -249,6 +249,22 @@ export class EnvironmentLimitError extends BaseError {
   };
 }
 
+export class TeamMemberAlreadyInvitedError extends BaseError {
+  code = 'E0031';
+  messageDict = {
+    en: 'This email already has a pending invitation for this project.',
+    'zh-CN': '该邮箱在当前项目已存在待接受的邀请。',
+  };
+}
+
+export class TeamMemberAlreadyInProjectError extends BaseError {
+  code = 'E0032';
+  messageDict = {
+    en: 'This email is already a member of this project.',
+    'zh-CN': '该邮箱已经是当前项目的成员。',
+  };
+}
+
 export class CompanyNotFoundError extends OpenAPIError {
   code = 'E1002';
   statusCode = HttpStatus.NOT_FOUND;
@@ -471,6 +487,8 @@ const errorMap = {
   E0028: SystemAdminSetupRequiredError,
   E0029: InstanceLicenseProjectLimitReachedError,
   E0030: EnvironmentLimitError,
+  E0031: TeamMemberAlreadyInvitedError,
+  E0032: TeamMemberAlreadyInProjectError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

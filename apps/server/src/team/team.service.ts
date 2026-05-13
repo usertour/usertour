@@ -1,4 +1,8 @@
-import { ParamsError } from '@/common/errors';
+import {
+  ParamsError,
+  TeamMemberAlreadyInProjectError,
+  TeamMemberAlreadyInvitedError,
+} from '@/common/errors';
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
@@ -123,6 +127,26 @@ export class TeamService {
 
     if (!project || !sender) {
       throw new ParamsError();
+    }
+
+    // Block duplicate invites and re-inviting an existing member —
+    // otherwise the same email shows up multiple times under "Invite
+    // pending" and each row counts against teamMemberLimit on its own,
+    // letting a project artificially fill its seat quota.
+    const pendingInvite = await this.prisma.invite.findFirst({
+      where: { projectId, email, expired: false, canceled: false, deleted: false },
+    });
+    if (pendingInvite) {
+      throw new TeamMemberAlreadyInvitedError();
+    }
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      const existingMembership = await this.prisma.userOnProject.findFirst({
+        where: { userId: existingUser.id, projectId },
+      });
+      if (existingMembership) {
+        throw new TeamMemberAlreadyInProjectError();
+      }
     }
 
     await this.projectsService.checkTeamMemberLimit(projectId);
