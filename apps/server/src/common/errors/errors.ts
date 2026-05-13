@@ -265,6 +265,14 @@ export class TeamMemberAlreadyInProjectError extends BaseError {
   };
 }
 
+export class InvitationDeliveryFailedError extends BaseError {
+  code = 'E0033';
+  messageDict = {
+    en: 'Failed to send the invitation email. Please double-check the address and try again.',
+    'zh-CN': '邀请邮件发送失败,请确认邮箱地址后重试。',
+  };
+}
+
 export class CompanyNotFoundError extends OpenAPIError {
   code = 'E1002';
   statusCode = HttpStatus.NOT_FOUND;
@@ -489,6 +497,7 @@ const errorMap = {
   E0030: EnvironmentLimitError,
   E0031: TeamMemberAlreadyInvitedError,
   E0032: TeamMemberAlreadyInProjectError,
+  E0033: InvitationDeliveryFailedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

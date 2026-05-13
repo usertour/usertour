@@ -1,4 +1,5 @@
 import {
+  InvitationDeliveryFailedError,
   ParamsError,
   TeamMemberAlreadyInProjectError,
   TeamMemberAlreadyInvitedError,
@@ -160,7 +161,27 @@ export class TeamService {
         userId: sender.id,
       },
     });
-    await this.sendInviteEmail(result.code, email, sender.name, project.name, name);
+
+    // Roll the invite back if the SMTP layer rejects the recipient
+    // (550 / EENVELOPE) or fails for any other reason — otherwise an
+    // orphan "Invite pending" row sticks around, the recipient never
+    // gets the email, and our own dedup check blocks the user from
+    // retrying with a corrected address. We soft-delete (deleted=true)
+    // for consistency with the accept / cancel paths.
+    try {
+      await this.sendInviteEmail(result.code, email, sender.name, project.name, name);
+    } catch (error) {
+      await this.prisma.invite.update({
+        where: { id: result.id },
+        data: { deleted: true },
+      });
+      this.logger.error(
+        `Failed to send invite email to ${email} for project ${projectId}: ${
+          (error as Error).message
+        }`,
+      );
+      throw new InvitationDeliveryFailedError();
+    }
   }
 
   async sendEmail(data: unknown) {
