@@ -371,14 +371,28 @@ const formatYears = (value: PlanFeatures['dataRetentionYears']): string => {
 };
 
 // Pull a feature value across the 4 visible plans, in column order.
-// The comparison table is pure marketing context — every column shows
-// the standard offer so users can compare apples-to-apples. Per-customer
-// overrides surface only on the current-plan card.
-const matrixRow = <K extends keyof PlanFeatures>(key: K): PlanFeatures[K][] =>
-  COMPARISON_PLANS.map((plan) => PLAN_FEATURES[plan][key]);
+// Mirrors cardFeaturesFor: the current plan's column gets effective
+// (base + override) so the user sees their actual benefits, every other
+// column stays base for honest side-by-side comparison.
+const matrixRow = <K extends keyof PlanFeatures>(
+  key: K,
+  currentPlanType: PlanType,
+  overridePlan: unknown,
+): PlanFeatures[K][] =>
+  COMPARISON_PLANS.map((plan) => cardFeaturesFor(plan, currentPlanType, overridePlan)[key]);
 
 // Comparison Table Component
-const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[] }) => {
+const ComparisonTable = ({
+  isYearly,
+  plans,
+  currentPlanType,
+  overridePlan,
+}: {
+  isYearly: boolean;
+  plans: Plan[];
+  currentPlanType: PlanType;
+  overridePlan: unknown;
+}) => {
   // Define comparison data
   const sections: ComparisonSection[] = [
     {
@@ -395,22 +409,22 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
         },
         {
           name: 'Sessions (Monthly)',
-          values: matrixRow('sessionsLimit').map((value) => ({
+          values: matrixRow('sessionsLimit', currentPlanType, overridePlan).map((value) => ({
             count: formatLimit(value),
             price: null,
           })),
         },
         {
           name: 'Data Retention',
-          values: matrixRow('dataRetentionYears').map(formatYears),
+          values: matrixRow('dataRetentionYears', currentPlanType, overridePlan).map(formatYears),
         },
         {
           name: 'Environments',
-          values: matrixRow('environmentLimit').map(formatLimit),
+          values: matrixRow('environmentLimit', currentPlanType, overridePlan).map(formatLimit),
         },
         {
           name: 'API rate limit (requests/min)',
-          values: matrixRow('apiRateLimit').map(String),
+          values: matrixRow('apiRateLimit', currentPlanType, overridePlan).map(String),
         },
         {
           name: 'All usage limits can be upgraded',
@@ -452,7 +466,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
         },
         {
           name: 'No Usertour-branding',
-          values: matrixRow('removeBranding'),
+          values: matrixRow('removeBranding', currentPlanType, overridePlan),
         },
       ],
     },
@@ -462,7 +476,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
       features: [
         {
           name: 'Team members',
-          values: matrixRow('teamMemberLimit').map(formatLimit),
+          values: matrixRow('teamMemberLimit', currentPlanType, overridePlan).map(formatLimit),
         },
       ],
     },
@@ -808,7 +822,12 @@ const Pricing = ({ projectId }: { projectId: string }) => {
               />
             ))}
           </div>
-          <ComparisonTable isYearly={isYearly} plans={plans} />
+          <ComparisonTable
+            isYearly={isYearly}
+            plans={plans}
+            currentPlanType={planType}
+            overridePlan={subscription?.overridePlan}
+          />
         </div>
       </div>
     </>
