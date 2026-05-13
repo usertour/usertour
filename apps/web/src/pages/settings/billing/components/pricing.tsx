@@ -23,16 +23,12 @@ import {
   useCreatePortalSessionMutation,
 } from '@usertour-packages/hooks';
 import { Separator } from '@usertour-packages/separator';
-import { PlanType } from '@usertour/types';
 import { Progress } from '@usertour-packages/progress';
 import { Skeleton } from '@usertour-packages/skeleton';
 import { QuestionTooltip } from '@usertour-packages/tooltip';
-import {
-  HobbySessionLimit,
-  ProSessionLimit,
-  GrowthSessionLimit,
-  BusinessSessionLimit,
-} from '@usertour-packages/constants';
+import { PLAN_FEATURES } from '@usertour-packages/constants';
+import { resolvePlanFeatures } from '@usertour/helpers';
+import { PlanType, type PlanFeatures } from '@usertour/types';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 // Define plan type
@@ -74,9 +70,31 @@ interface SessionValue {
 const secondaryButtonClassName =
   'border border-zinc-950/10 bg-white text-zinc-950/70 hover:bg-zinc-950/5 dark:border-white/10 dark:bg-transparent dark:text-white/70 dark:hover:bg-white/5';
 
-const plans: Plan[] = [
+// Static metadata for each plan card — pricing copy, button styling, and
+// support tier label. The numeric features (sessions, team, retention,
+// envs, API rate) and the No-branding row are derived from the
+// PLAN_FEATURES matrix at render time so the card reflects the user's
+// effective benefits (base + any per-subscription override).
+interface PlanMeta {
+  name: string;
+  planType: PlanType;
+  price: string;
+  yearlyPrice: string;
+  description: string;
+  buttonText: string;
+  buttonVariant: 'default' | 'secondary';
+  buttonClassName: string;
+  showSpacing: boolean;
+  disabled: boolean;
+  prevPlanName?: string;
+  supportText: string;
+  supportIcon: React.ElementType;
+}
+
+const PLAN_META: PlanMeta[] = [
   {
     name: 'Hobby',
+    planType: PlanType.HOBBY,
     price: '$0',
     yearlyPrice: '$0',
     description: 'For individual hobbyists',
@@ -84,20 +102,13 @@ const plans: Plan[] = [
     buttonVariant: 'secondary',
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
-    isCurrentPlan: true,
     disabled: false,
-    features: [
-      { icon: RiNewspaperLine, text: 'Unlimited content' },
-      { icon: RiBarChartLine, text: `${HobbySessionLimit} sessions/month` },
-      { icon: RiTeamLine, text: '1 team members' },
-      { icon: RiCalendarLine, text: '1 years data retention' },
-      { icon: RiStackLine, text: '1 environments' },
-      { icon: RiRouteLine, text: '100 API requests/min' },
-      { icon: RiMessageLine, text: 'Community support' },
-    ],
+    supportText: 'Community support',
+    supportIcon: RiMessageLine,
   },
   {
     name: 'Starter',
+    planType: PlanType.STARTER,
     price: '$59',
     yearlyPrice: '$49',
     description: 'For small teams and startups',
@@ -106,18 +117,13 @@ const plans: Plan[] = [
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
     disabled: false,
-    features: [
-      { icon: RiCheckLine, text: 'Everything in Hobby, plus' },
-      { icon: RiBarChartLine, text: `${ProSessionLimit} sessions/month` },
-      { icon: RiTeamLine, text: '3 team members' },
-      { icon: RiCalendarLine, text: '3 years data retention' },
-      { icon: RiStackLine, text: '2 environments' },
-      { icon: RiRouteLine, text: '500 API requests/min' },
-      { icon: RiMailLine, text: 'Email support' },
-    ],
+    prevPlanName: 'Hobby',
+    supportText: 'Email support',
+    supportIcon: RiMailLine,
   },
   {
     name: 'Growth',
+    planType: PlanType.GROWTH,
     price: '$119',
     yearlyPrice: '$99',
     description: 'For growing companies',
@@ -126,18 +132,13 @@ const plans: Plan[] = [
     buttonClassName: '',
     showSpacing: false,
     disabled: false,
-    features: [
-      { icon: RiCheckLine, text: 'Everything in Starter, plus' },
-      { icon: RiBarChartLine, text: `${GrowthSessionLimit} sessions/month` },
-      { icon: RiTeamLine, text: '10 team members' },
-      { icon: RiCalendarLine, text: '5 years data retention' },
-      { icon: RiStackLine, text: '3 environments' },
-      { icon: RiRouteLine, text: '1000 API requests/min' },
-      { icon: RiMailLine, text: 'Email support' },
-    ],
+    prevPlanName: 'Starter',
+    supportText: 'Email support',
+    supportIcon: RiMailLine,
   },
   {
     name: 'Business',
+    planType: PlanType.BUSINESS,
     price: '$249',
     yearlyPrice: '$207',
     description: 'For large companies',
@@ -146,17 +147,64 @@ const plans: Plan[] = [
     buttonClassName: secondaryButtonClassName,
     showSpacing: false,
     disabled: false,
-    features: [
-      { icon: RiCheckLine, text: 'Everything in Growth, plus' },
-      { icon: RiBarChartLine, text: `${BusinessSessionLimit} sessions/month` },
-      { icon: RiTeamLine, text: 'Unlimited team members' },
-      { icon: RiCalendarLine, text: '7 years data retention' },
-      { icon: RiStackLine, text: 'Unlimited environments' },
-      { icon: RiRouteLine, text: '3000 API requests/min' },
-      { icon: RiHeadphoneLine, text: 'Priority support' },
-    ],
+    prevPlanName: 'Growth',
+    supportText: 'Priority support',
+    supportIcon: RiHeadphoneLine,
   },
 ];
+
+// Hobby is the canceled-subscription state: override doesn't apply (the
+// resolve path returns base config when project.subscriptionId is null).
+// Other plans render base + override merged so the user sees their
+// effective benefits on each tier.
+function effectiveFor(planType: PlanType, overridePlan: unknown): PlanFeatures {
+  if (planType === PlanType.HOBBY) return PLAN_FEATURES[planType];
+  return resolvePlanFeatures(planType, overridePlan);
+}
+
+function buildCardFeatures(meta: PlanMeta, features: PlanFeatures): Plan['features'] {
+  const items: Plan['features'] = [];
+  if (meta.prevPlanName) {
+    items.push({ icon: RiCheckLine, text: `Everything in ${meta.prevPlanName}, plus` });
+  } else {
+    items.push({ icon: RiNewspaperLine, text: 'Unlimited content' });
+  }
+  items.push({
+    icon: RiBarChartLine,
+    text: `${formatLimit(features.sessionsLimit)} sessions/month`,
+  });
+  items.push({
+    icon: RiTeamLine,
+    text:
+      features.teamMemberLimit === 'unlimited'
+        ? 'Unlimited team members'
+        : `${features.teamMemberLimit} team members`,
+  });
+  items.push({
+    icon: RiCalendarLine,
+    text:
+      features.dataRetentionYears === 'unlimited'
+        ? 'Unlimited data retention'
+        : `${features.dataRetentionYears} years data retention`,
+  });
+  items.push({
+    icon: RiStackLine,
+    text:
+      features.environmentLimit === 'unlimited'
+        ? 'Unlimited environments'
+        : `${features.environmentLimit} environments`,
+  });
+  items.push({
+    icon: RiRouteLine,
+    text: `${features.apiRateLimit} API requests/min`,
+  });
+  items.push({ icon: meta.supportIcon, text: meta.supportText });
+  // No Usertour-branding (and future per-tier gates like SSO / audit
+  // logs) lives only in the comparison table below — keeping each card
+  // to a fixed row count avoids the bottom-left blank gutter that
+  // appears when some cards have one extra feature.
+  return items;
+}
 
 interface PlanCardProps {
   plan: Plan;
@@ -297,8 +345,41 @@ const PlanCard = (props: PlanCardProps) => {
   );
 };
 
+// Plan column order in the comparison table (matches the 4 visible plans
+// — enterprise lives in the matrix but isn't a cloud pricing tier).
+const COMPARISON_PLANS: PlanType[] = [
+  PlanType.HOBBY,
+  PlanType.STARTER,
+  PlanType.GROWTH,
+  PlanType.BUSINESS,
+];
+
+const formatLimit = (
+  value: PlanFeatures['sessionsLimit'] | PlanFeatures['teamMemberLimit'],
+): string => (value === 'unlimited' ? 'Unlimited' : String(value));
+
+const formatYears = (value: PlanFeatures['dataRetentionYears']): string => {
+  if (value === 'unlimited') return 'Unlimited';
+  return value === 1 ? '1 Year' : `${value} Years`;
+};
+
+// Pull a feature value across the 4 visible plans, in column order,
+// applying the user's per-subscription override on top of each base.
+const matrixRow = <K extends keyof PlanFeatures>(
+  key: K,
+  overridePlan: unknown,
+): PlanFeatures[K][] => COMPARISON_PLANS.map((plan) => effectiveFor(plan, overridePlan)[key]);
+
 // Comparison Table Component
-const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[] }) => {
+const ComparisonTable = ({
+  isYearly,
+  plans,
+  overridePlan,
+}: {
+  isYearly: boolean;
+  plans: Plan[];
+  overridePlan: unknown;
+}) => {
   // Define comparison data
   const sections: ComparisonSection[] = [
     {
@@ -315,24 +396,22 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
         },
         {
           name: 'Sessions (Monthly)',
-          values: [
-            { count: `${HobbySessionLimit}`, price: null },
-            { count: `${ProSessionLimit}`, price: null },
-            { count: `${GrowthSessionLimit}`, price: null },
-            { count: `${BusinessSessionLimit}`, price: null },
-          ],
+          values: matrixRow('sessionsLimit', overridePlan).map((value) => ({
+            count: formatLimit(value),
+            price: null,
+          })),
         },
         {
           name: 'Data Retention',
-          values: ['1 Year', '3 Years', '5 Years', '7 Years'],
+          values: matrixRow('dataRetentionYears', overridePlan).map(formatYears),
         },
         {
           name: 'Environments',
-          values: ['1', '2', '3', 'Unlimited'],
+          values: matrixRow('environmentLimit', overridePlan).map(formatLimit),
         },
         {
           name: 'API rate limit (requests/min)',
-          values: ['100', '500', '1000', '3000'],
+          values: matrixRow('apiRateLimit', overridePlan).map(String),
         },
         {
           name: 'All usage limits can be upgraded',
@@ -374,7 +453,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
         },
         {
           name: 'No Usertour-branding',
-          values: [false, true, true, true],
+          values: matrixRow('removeBranding', overridePlan),
         },
       ],
     },
@@ -384,7 +463,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
       features: [
         {
           name: 'Team members',
-          values: ['1', '3', '10', 'Unlimited'],
+          values: matrixRow('teamMemberLimit', overridePlan).map(formatLimit),
         },
       ],
     },
@@ -523,6 +602,24 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
 
   const percent = (currentUsage / totalLimit) * 100;
+
+  // Derive each plan's display features at render time from PLAN_META +
+  // effective features (base + override). Override drops to undefined
+  // for the Hobby card so the cancel state mirrors what the resolve
+  // path returns server-side.
+  const overridePlan = subscription?.overridePlan;
+  const plans: Plan[] = PLAN_META.map((meta) => ({
+    name: meta.name,
+    price: meta.price,
+    yearlyPrice: meta.yearlyPrice,
+    description: meta.description,
+    buttonText: meta.buttonText,
+    buttonVariant: meta.buttonVariant,
+    buttonClassName: meta.buttonClassName,
+    showSpacing: meta.showSpacing,
+    disabled: meta.disabled,
+    features: buildCardFeatures(meta, effectiveFor(meta.planType, overridePlan)),
+  }));
 
   // Update isYearly when subscription data is loaded
   useEffect(() => {
@@ -709,7 +806,11 @@ const Pricing = ({ projectId }: { projectId: string }) => {
               />
             ))}
           </div>
-          <ComparisonTable isYearly={isYearly} plans={plans} />
+          <ComparisonTable
+            isYearly={isYearly}
+            plans={plans}
+            overridePlan={subscription?.overridePlan}
+          />
         </div>
       </div>
     </>

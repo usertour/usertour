@@ -1,10 +1,5 @@
-import { PlanType, type Subscription } from '@usertour/types';
-import {
-  HobbySessionLimit,
-  ProSessionLimit,
-  GrowthSessionLimit,
-  BusinessSessionLimit,
-} from '@usertour-packages/constants';
+import { PlanType, type PlanFeatures, type Subscription } from '@usertour/types';
+import { resolvePlanFeatures } from '@usertour/helpers';
 import {
   useGetSubscriptionByProjectIdQuery,
   useGetProjectConfigQuery,
@@ -23,20 +18,15 @@ export interface SubscriptionContextValue {
   currentUsage: number;
   totalLimit: number;
   planType: PlanType;
+  // Effective per-plan features (base + override). All quota / gate
+  // consumers should read from here rather than re-resolving.
+  features: PlanFeatures;
   loading: boolean;
   refetch: () => void;
   shouldShowMadeWith: boolean;
 }
 
 export const SubscriptionContext = createContext<SubscriptionContextValue | undefined>(undefined);
-
-// Move constants outside component to avoid recreation
-const PLAN_LIMITS: Record<PlanType, number> = {
-  [PlanType.HOBBY]: HobbySessionLimit,
-  [PlanType.STARTER]: ProSessionLimit,
-  [PlanType.GROWTH]: GrowthSessionLimit,
-  [PlanType.BUSINESS]: BusinessSessionLimit,
-};
 
 export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Element {
   const { children, projectId, subscriptionId } = props;
@@ -64,7 +54,12 @@ export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Elem
 
   // Calculate derived values
   const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
-  const totalLimit = PLAN_LIMITS[planType] ?? HobbySessionLimit;
+  const features = useMemo(
+    () => resolvePlanFeatures(planType, subscription?.overridePlan),
+    [planType, subscription?.overridePlan],
+  );
+  const totalLimit =
+    features.sessionsLimit === 'unlimited' ? Number.POSITIVE_INFINITY : features.sessionsLimit;
   const shouldShowMadeWith = projectConfigLoading
     ? false
     : !(projectConfig?.removeBranding ?? false);
@@ -83,11 +78,21 @@ export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Elem
       currentUsage,
       totalLimit,
       planType,
+      features,
       loading,
       refetch,
       shouldShowMadeWith,
     }),
-    [subscription, currentUsage, totalLimit, planType, loading, refetch, shouldShowMadeWith],
+    [
+      subscription,
+      currentUsage,
+      totalLimit,
+      planType,
+      features,
+      loading,
+      refetch,
+      shouldShowMadeWith,
+    ],
   );
 
   return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;

@@ -68,7 +68,8 @@ Foundation packages with no React, no JSX, no DOM access.
 
 - `@usertour/types` — TypeScript types and enums
 - `@usertour/helpers` — pure JS utilities
-- `@usertour-packages/constants` — z-index, storage keys, etc.
+- `@usertour-packages/constants` — z-index, storage keys, plan-feature
+  matrices, and other shared runtime values
 - `@usertour-packages/tailwind` — `cn()` helper and Tailwind config
 - `@usertour-packages/dom` — DOM-only utilities (no React)
 - `@usertour-packages/icons` — icon components (re-exports remixicon + custom SVG)
@@ -76,6 +77,93 @@ Foundation packages with no React, no JSX, no DOM access.
 
 **Rule of thumb**: if the implementation contains `useState` or JSX, it
 is not L0.
+
+### Namespace
+
+The monorepo currently uses two npm scopes — `@usertour/*` and
+`@usertour-packages/*` — for historical reasons; the split does not
+encode any meaningful property. Unifying everything under `@usertour/*`
+is a planned cleanup; for now, treat the existing names as fixed and
+**don't change a package's namespace as part of any other refactor**.
+
+### `@usertour/types` vs `@usertour-packages/constants`
+
+These two are easy to confuse and have drifted in the past, so the
+split is spelled out:
+
+| Goes in `@usertour/types` | Goes in `@usertour-packages/constants` |
+|---|---|
+| `type` / `interface` aliases | `export const NAME = …` runtime values |
+| `enum` declarations | Lookup tables / matrices instantiating a type (`PLAN_FEATURES: Record<PlanType, PlanFeatures>`) |
+| Discriminated unions, generics, type-level utilities | Magic numbers, storage keys, z-index ranges |
+| Pure type-level contracts shared across packages | Default-value constants, configuration data |
+
+**Decision heuristic** — "is this a value or a contract?"
+
+- Delete the line, compile the project: if the type system breaks, it
+  belongs in `@usertour/types`. If only runtime behaviour changes,
+  it belongs in `@usertour-packages/constants`.
+- An `enum` is both a type and a value, but its primary role is the
+  type contract — it lives in `@usertour/types`. A `Record<EnumKey,
+  Value>` instantiation is a value — it lives in `@usertour-packages/constants`,
+  even if its type lives in `@usertour/types`.
+
+### Package shape: P1 vs P2
+
+Workspace packages fall into one of two shapes, driven by who consumes
+them at production runtime. **Choose the shape based on the consumer
+set, not aesthetics.**
+
+| Shape | `main` field | Build step | Used by |
+|---|---|---|---|
+| **P1** (source-direct) | `"src/index.ts"` | None — consumers compile TS themselves | 18+ packages consumed only by bundlers (Vite, tsup, Webpack) |
+| **P2** (pre-built dist) | `"./dist/index.js"` + `module` / `types` / `exports` | `tsup` produces cjs + esm + dts, pre-built before consumers | `@usertour/types`, `@usertour/helpers`, `@usertour-packages/constants`, `@usertour/license` — the packages a NestJS Node server actually `require`s at runtime |
+
+**Why two shapes**: NestJS's production runtime (`node dist/main`) does
+ordinary CommonJS resolution against the `main` field. If that points at
+a `.ts` file, Node can't load it. Bundler consumers (Vite / tsup) can
+read TS source directly, so for the rest of the graph the build step
+adds no value and slows dev HMR. The shapes minimize cost for each
+audience.
+
+**The sharing rule** (Layer 1):
+
+- **Type contracts** (`type` / `interface` / `enum`) can live in
+  `@usertour/types` even before they have multiple consumers — they
+  cost nothing at runtime.
+- **Runtime values** (constants, lookup tables, matrices) **should be
+  shared as soon as a second real consumer exists**. The "second
+  consumer" includes any code that hardcodes the same business contract
+  values — a pricing comparison table that copies what each plan grants
+  is a real consumer even if it doesn't `import` the matrix. Don't
+  let drift between visible offer and enforced behaviour become a user
+  trust issue; share the canonical source.
+- Conversely, don't pre-emptively share when no real second consumer
+  exists today and none is concretely planned. Sharing a value
+  forces P1/P2 selection and pipeline plumbing — pay the cost when it
+  buys reuse, not on speculation.
+
+**P1 → P2 migration** (when a P1 package gains a Node consumer):
+
+1. Package `package.json`: `main` → `./dist/index.js`; add `module` /
+   `types` / `exports`; `dev` script → `tsup --watch`; tsup config has
+   `format: ['cjs', 'esm']`, `dts: true`, explicit `entry` and `outDir`.
+2. Mirror `@usertour/types` or `@usertour/helpers` as templates.
+3. Add the package to root `package.json`'s `build:deps`.
+4. Add the package to root `package.json`'s `dev` / `dev:web` /
+   `dev:sdk` / `dev:server` filter lists so its watcher runs alongside.
+5. Add `"<pkg>#build"` to `turbo.json`'s `dev.dependsOn`.
+6. Add the new dep entry in every consuming `package.json`.
+7. Ensure `dist/` is gitignored; don't commit the first build.
+
+The package name does **not** change as part of P1 → P2 — the namespace
+unification is a separate cleanup (see "Namespace" above).
+
+**Counter-pattern**: needing a single magic number from a P1 package
+in the server is not a reason to promote the whole package. Inline the
+literal value in the server (with a `// keep in sync with packages/X`
+comment if drift is plausible), or wait for the second use case that
+justifies the package shape change.
 
 ## L1 — UI components
 

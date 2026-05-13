@@ -11,7 +11,8 @@ import {
 import { LicenseService } from '@/license/license.service';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { Environment } from '@/common/types/schema';
-import { ProjectConfig } from '@usertour/types';
+import { PlanType, ProjectConfig } from '@usertour/types';
+import { resolvePlanFeatures } from '@usertour/helpers';
 
 @Injectable()
 export class ProjectsService {
@@ -153,7 +154,7 @@ export class ProjectsService {
   private async getSelfHostedConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
-      planType: 'hobby',
+      planType: PlanType.HOBBY,
     };
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -206,12 +207,12 @@ export class ProjectsService {
       return null;
     }
 
-    const isBusinessPlan =
-      licensePayload?.plan === 'business' || licensePayload?.plan === 'enterprise';
+    const planType = licensePayload?.plan || PlanType.HOBBY;
+    const features = resolvePlanFeatures(planType);
 
     return {
-      removeBranding: isBusinessPlan,
-      planType: licensePayload?.plan || 'hobby',
+      removeBranding: features.removeBranding,
+      planType,
     };
   }
 
@@ -246,11 +247,12 @@ export class ProjectsService {
       return null;
     }
 
-    const isBusinessPlan = payload?.plan === 'business' || payload?.plan === 'enterprise';
+    const planType = payload?.plan || PlanType.HOBBY;
+    const features = resolvePlanFeatures(planType);
 
     return {
-      removeBranding: isBusinessPlan,
-      planType: payload?.plan || 'hobby',
+      removeBranding: features.removeBranding,
+      planType,
     };
   }
 
@@ -262,7 +264,7 @@ export class ProjectsService {
   private async getCloudConfig(projectId: string): Promise<ProjectConfig> {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
-      planType: 'hobby',
+      planType: PlanType.HOBBY,
     };
 
     // Cloud mode: use subscription-based logic
@@ -282,8 +284,10 @@ export class ProjectsService {
       return defaultConfig;
     }
 
+    const features = resolvePlanFeatures(subscription.planType, subscription.overridePlan);
+
     return {
-      removeBranding: subscription.planType !== 'hobby',
+      removeBranding: features.removeBranding,
       planType: subscription.planType,
     };
   }

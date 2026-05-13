@@ -2,7 +2,6 @@
 
 import { SpinnerIcon } from '@usertour-packages/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { useMemberContext } from '@/contexts/member-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, AlertDescription, AlertTitle } from '@usertour-packages/alert';
 import { Button } from '@usertour-packages/button';
@@ -29,16 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour-packages/select';
-import {
-  useGetSubscriptionByProjectIdQuery,
-  useInviteTeamMemberMutation,
-} from '@usertour-packages/hooks';
+import { useInviteTeamMemberMutation } from '@usertour-packages/hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { PlanType, TeamMemberRole } from '@usertour/types';
+import { TeamMemberRole } from '@usertour/types';
+import { useTeamMemberLimit } from '@/hooks/use-plan-limits';
 import { useToast } from '@usertour-packages/use-toast';
 import { AlertCircle } from 'lucide-react';
 import * as React from 'react';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -78,26 +75,8 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { project } = useAppContext();
   const { toast } = useToast();
-  const { members = [] } = useMemberContext();
-  const { globalConfig } = useAppContext();
   const navigate = useNavigate();
-
-  const { subscription } = useGetSubscriptionByProjectIdQuery(project?.id, {
-    skip: !project?.id || !project?.subscriptionId,
-  });
-
-  const planType: PlanType = subscription?.planType ?? PlanType.HOBBY;
-
-  const canInviteMembers = useMemo(() => {
-    if (globalConfig?.isSelfHostedMode) {
-      return true;
-    }
-    return (
-      (planType === PlanType.STARTER && members.length < 3) ||
-      (planType === PlanType.GROWTH && members.length < 10) ||
-      planType === PlanType.BUSINESS
-    );
-  }, [planType, members.length, globalConfig?.isSelfHostedMode]);
+  const { canUseMore: canInviteMembers } = useTeamMemberLimit();
 
   const showError = (title: string) => {
     toast({

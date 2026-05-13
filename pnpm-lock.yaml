@@ -340,6 +340,9 @@ importers:
       '@types/mjml':
         specifier: ^4.7.1
         version: 4.7.4
+      '@usertour-packages/constants':
+        specifier: workspace:^
+        version: link:../../packages/constants
       '@usertour/helpers':
         specifier: workspace:^
         version: link:../../packages/helpers
@@ -3419,6 +3422,10 @@ importers:
         version: 4.5.5(@types/node@20.17.5)(less@4.2.0)(lightningcss@1.27.0)(sass@1.80.5)(terser@5.36.0)
 
   packages/constants:
+    dependencies:
+      '@usertour/types':
+        specifier: workspace:^
+        version: link:../types
     devDependencies:
       typescript:
         specifier: ^5.0.2
@@ -3806,6 +3813,9 @@ importers:
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
+      '@usertour-packages/constants':
+        specifier: workspace:^
+        version: link:../constants
       '@usertour/types':
         specifier: workspace:^
         version: link:../types
