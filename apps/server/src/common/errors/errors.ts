@@ -241,6 +241,14 @@ export class InstanceLicenseProjectLimitReachedError extends BaseError {
   };
 }
 
+export class EnvironmentLimitError extends BaseError {
+  code = 'E0030';
+  messageDict = {
+    en: 'You have reached your environment limit. Please upgrade your Usertour account under Settings → Billing.',
+    'zh-CN': '您已经达到了 Environment 数量的限制，请在设置 → 账单中升级您的 Usertour 账户。',
+  };
+}
+
 export class CompanyNotFoundError extends OpenAPIError {
   code = 'E1002';
   statusCode = HttpStatus.NOT_FOUND;
@@ -462,6 +470,7 @@ const errorMap = {
   E0027: SystemAdminSetupUnavailableError,
   E0028: SystemAdminSetupRequiredError,
   E0029: InstanceLicenseProjectLimitReachedError,
+  E0030: EnvironmentLimitError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

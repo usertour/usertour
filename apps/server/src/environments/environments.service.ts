@@ -8,16 +8,20 @@ import {
 } from '@/common/errors';
 import { CreateAccessTokenInput } from './dto/access-token.dto';
 import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ProjectsService } from '@/projects/projects.service';
 
 @Injectable()
 export class EnvironmentsService {
   constructor(
     private prisma: PrismaService,
     private readonly cache: ProjectCacheService,
+    private readonly projectsService: ProjectsService,
   ) {}
 
   async create(newData: CreateEnvironmentInput) {
     return await this.prisma.$transaction(async (tx) => {
+      await this.projectsService.checkEnvironmentLimit(newData.projectId, tx);
+
       // Check if there's already a primary environment in the project
       const primaryEnvCount = await tx.environment.count({
         where: {

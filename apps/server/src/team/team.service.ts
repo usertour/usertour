@@ -1,11 +1,11 @@
-import { ParamsError, TeamMemberLimitError } from '@/common/errors';
+import { ParamsError } from '@/common/errors';
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { createTransport } from 'nodemailer';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { ConfigService } from '@nestjs/config';
-import { isWithinLimit, resolvePlanFeatures } from '@usertour/helpers';
+import { ProjectsService } from '@/projects/projects.service';
 
 @Injectable()
 export class TeamService {
@@ -13,6 +13,7 @@ export class TeamService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private readonly projectsService: ProjectsService,
   ) {}
 
   async getTeamMembers(projectId: string) {
@@ -103,41 +104,6 @@ export class TeamService {
     });
   }
 
-  private async validateTeamMemberLimit(projectId: string, subscriptionId: string | undefined) {
-    const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
-    if (isSelfHostedMode) {
-      return;
-    }
-    if (!subscriptionId) {
-      throw new TeamMemberLimitError();
-    }
-    const subscription = await this.prisma.subscription.findFirst({
-      where: { subscriptionId, projectId },
-    });
-    if (!subscription) {
-      throw new TeamMemberLimitError();
-    }
-    const membersCount = await this.prisma.userOnProject.count({
-      where: { projectId },
-    });
-    const inviteCount = await this.prisma.invite.count({
-      where: { projectId, expired: false, canceled: false, deleted: false },
-    });
-    const totalCount = membersCount + inviteCount;
-
-    // Resolve effective limit so per-customer overridePlan (e.g. CS
-    // bumps a Starter project's seats from 3 to 5) reaches the same
-    // gate that fronts use-plan-limits.ts on the client. Mirrors the
-    // projects.service / web-socket.service resolution path.
-    const { teamMemberLimit } = resolvePlanFeatures(
-      subscription.planType,
-      subscription.overridePlan,
-    );
-    if (!isWithinLimit(teamMemberLimit, totalCount)) {
-      throw new TeamMemberLimitError();
-    }
-  }
-
   async inviteTeamMember(
     senderUserId: string,
     email: string,
@@ -159,8 +125,7 @@ export class TeamService {
       throw new ParamsError();
     }
 
-    // validate team member limit
-    await this.validateTeamMemberLimit(projectId, project.subscriptionId);
+    await this.projectsService.checkTeamMemberLimit(projectId);
 
     const result = await this.prisma.invite.create({
       data: {
