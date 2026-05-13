@@ -3,8 +3,8 @@ import {
   MESSAGE_START_FLOW_WITH_TOKEN,
   StorageKeys,
   WidgetZIndex,
-} from '@usertour-packages/constants';
-import { AssetAttributes } from '@usertour-packages/frame';
+} from '@usertour/constants';
+import { AssetAttributes } from '@usertour/frame';
 import { isConditionsActived, isEmptyString, isNullish, storage, uuidV4 } from '@usertour/helpers';
 import {
   contentStartReason,

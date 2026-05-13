@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { RiArrowLeftSLine, RiArrowRightSLine } from '@usertour-packages/icons';
+import { RiArrowLeftSLine, RiArrowRightSLine } from '@usertour/icons';
 
 interface BrowserPreviewProps {
   children: ReactNode;

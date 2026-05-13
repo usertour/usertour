@@ -1,10 +1,10 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   Dialog,
   DialogClose,
@@ -13,20 +13,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-packages/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { duplicateContent } from '@usertour-packages/gql';
-import { Input } from '@usertour-packages/input';
+} from '@usertour/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { duplicateContent } from '@usertour/gql';
+import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
 import { Content, ContentDataType } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

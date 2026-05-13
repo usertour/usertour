@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
-import { queryBizSession } from '@usertour-packages/gql';
+import { queryBizSession } from '@usertour/gql';
 import { BizSession, PageInfo, Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useAnalyticsContext } from './analytics-context';

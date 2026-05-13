@@ -1,5 +1,5 @@
-import { RiArrowDownSLine } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { RiArrowDownSLine } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { cuid } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
 import { Fragment, useEffect, useMemo, useState } from 'react';

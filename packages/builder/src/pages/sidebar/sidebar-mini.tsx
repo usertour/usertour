@@ -3,8 +3,8 @@ import {
   DoubleArrowRightIcon,
   SlideLeftIcon,
   SlideRightIcon,
-} from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import anime from 'animejs/lib/anime.es.js';
 import { useEffect, useState } from 'react';
 

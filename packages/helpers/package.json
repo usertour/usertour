@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
-    "@usertour-packages/constants": "workspace:^",
+    "@usertour/constants": "workspace:^",
     "@usertour/types": "workspace:^",
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.4.0",

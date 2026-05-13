@@ -1,6 +1,6 @@
 // Embed component for SDK widget
 
-import { VideoIcon } from '@usertour-packages/icons';
+import { VideoIcon } from '@usertour/icons';
 import { forwardRef, useMemo } from 'react';
 
 import {

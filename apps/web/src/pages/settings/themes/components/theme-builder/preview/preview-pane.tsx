@@ -1,5 +1,5 @@
 import { convertSettings, convertToCssVars } from '@/utils/convert-settings';
-import { useRect } from '@usertour-packages/react-use-rect';
+import { useRect } from '@usertour/react-use-rect';
 import { LauncherDataType, ThemeDetailPreviewType, type ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';

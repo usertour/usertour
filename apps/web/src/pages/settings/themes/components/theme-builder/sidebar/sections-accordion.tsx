@@ -1,5 +1,5 @@
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
-import { PlusIcon, RiSubtractLine } from '@usertour-packages/icons';
+import { PlusIcon, RiSubtractLine } from '@usertour/icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FieldRenderer } from '../fields/field-renderer';

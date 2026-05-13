@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 // Base button styles for all toolbar buttons
 // Button size: icon 16px + padding 4px*2 = 24px (square)

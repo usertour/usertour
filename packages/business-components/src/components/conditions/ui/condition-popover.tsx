@@ -1,5 +1,5 @@
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/tailwind';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { cn } from '@usertour/tailwind';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { forwardRef } from 'react';
 import { useConditionsZIndex } from '../conditions-context';

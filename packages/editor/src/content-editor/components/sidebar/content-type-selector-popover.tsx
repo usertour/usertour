@@ -1,7 +1,7 @@
 // Shared popover content component for content type selection
 
-import { EDITOR_SIDEBAR } from '@usertour-packages/constants';
-import { PopoverContent } from '@usertour-packages/popover';
+import { EDITOR_SIDEBAR } from '@usertour/constants';
+import { PopoverContent } from '@usertour/popover';
 import { memo, useMemo } from 'react';
 
 import { useContentEditorContext } from '../../../contexts/content-editor-context';

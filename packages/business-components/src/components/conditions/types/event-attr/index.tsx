@@ -1,5 +1,5 @@
-import { EventTrackerIcon } from '@usertour-packages/icons';
-import { useListAttributeOnEventsQuery } from '@usertour-packages/hooks';
+import { EventTrackerIcon } from '@usertour/icons';
+import { useListAttributeOnEventsQuery } from '@usertour/hooks';
 import {
   type Attribute,
   AttributeBizTypes,
@@ -18,9 +18,9 @@ import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateEventAttr } from '../../validators';
 import { format } from 'date-fns';
-import { DateTimePicker } from '@usertour-packages/ui';
+import { DateTimePicker } from '@usertour/ui';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 import { useEventScope } from '../event/event-scope-context';
 import {
   DATE_PICKER_OPERATORS,

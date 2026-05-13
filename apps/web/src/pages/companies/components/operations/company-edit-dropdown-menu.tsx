@@ -3,8 +3,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { Delete2Icon } from '@usertour-packages/icons';
+} from '@usertour/dropdown-menu';
+import { Delete2Icon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { ReactNode, useState } from 'react';

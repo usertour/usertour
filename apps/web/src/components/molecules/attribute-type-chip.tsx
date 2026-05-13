@@ -1,5 +1,5 @@
 import { AttributeDataType } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 const TYPE_LABELS: Partial<Record<AttributeDataType, string>> = {
   [AttributeDataType.Number]: 'NUMBER',

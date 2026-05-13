@@ -1,4 +1,4 @@
-import { PagesIcon } from '@usertour-packages/icons';
+import { PagesIcon } from '@usertour/icons';
 import type { RulesCondition } from '@usertour/types';
 import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
 import { ListInput } from '../../primitives/list-input';

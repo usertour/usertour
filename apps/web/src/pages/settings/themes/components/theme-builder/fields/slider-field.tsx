@@ -1,5 +1,5 @@
-import { Slider } from '@usertour-packages/slider';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Slider } from '@usertour/slider';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
 

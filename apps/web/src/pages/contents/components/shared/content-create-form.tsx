@@ -1,30 +1,17 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { createContent } from '@usertour-packages/gql';
-import { Input } from '@usertour-packages/input';
+import { Button } from '@usertour/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { createContent } from '@usertour/gql';
+import { Input } from '@usertour/input';
 import { createDefaultResourceCenterData, getErrorMessage } from '@usertour/helpers';
 import { Content, ContentDataType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';

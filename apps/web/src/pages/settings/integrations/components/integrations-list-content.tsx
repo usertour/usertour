@@ -1,4 +1,4 @@
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   Dialog,
   DialogTitle,
@@ -7,17 +7,17 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from '@usertour-packages/dialog';
+} from '@usertour/dialog';
 import { useCallback, useState, useMemo } from 'react';
 import {
   useListIntegrationsQuery,
   useUpdateIntegrationMutation,
   useGetSalesforceAuthUrlQuery,
-} from '@usertour-packages/hooks';
-import { useToast } from '@usertour-packages/use-toast';
+} from '@usertour/hooks';
+import { useToast } from '@usertour/use-toast';
 import { IntegrationModel } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';
-import { CircleIcon, SpinnerIcon } from '@usertour-packages/icons';
+import { CircleIcon, SpinnerIcon } from '@usertour/icons';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Integration, integrations } from '@/utils/integration';
 import { useLocation, useNavigate } from 'react-router-dom';

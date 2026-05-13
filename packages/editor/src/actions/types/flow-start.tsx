@@ -1,21 +1,15 @@
-import { Button } from '@usertour-packages/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@usertour-packages/command';
+import { Button } from '@usertour/button';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/command';
 import {
   EyeNoneIcon,
   ModelIcon,
   RiExternalLinkLine,
   RiCheckLine,
   TooltipIcon,
-} from '@usertour-packages/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { ScrollArea } from '@usertour/scroll-area';
+import { cn } from '@usertour/tailwind';
 import {
   ContentActionsItemType,
   ContentDataType,

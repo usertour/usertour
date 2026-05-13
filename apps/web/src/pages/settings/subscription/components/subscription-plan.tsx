@@ -1,16 +1,13 @@
-import { Button } from '@usertour-packages/button';
-import { Input } from '@usertour-packages/input';
-import { Textarea } from '@usertour-packages/textarea';
+import { Button } from '@usertour/button';
+import { Input } from '@usertour/input';
+import { Textarea } from '@usertour/textarea';
 import { useState } from 'react';
-import {
-  useGetProjectLicenseInfoQuery,
-  useUpdateProjectLicenseMutation,
-} from '@usertour-packages/hooks';
-import { Separator } from '@usertour-packages/separator';
-import { Skeleton } from '@usertour-packages/skeleton';
+import { useGetProjectLicenseInfoQuery, useUpdateProjectLicenseMutation } from '@usertour/hooks';
+import { Separator } from '@usertour/separator';
+import { Skeleton } from '@usertour/skeleton';
 import { CopyIcon } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 
 const SubscriptionPlan = ({ projectId }: { projectId: string }) => {

@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 const ITEM_HEIGHT = 32;

@@ -1,4 +1,4 @@
-import { UID_COOKIE } from '@usertour-packages/constants';
+import { UID_COOKIE } from '@usertour/constants';
 import { useCookie } from 'react-use';
 
 /**

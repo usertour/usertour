@@ -1,10 +1,10 @@
-import { Button } from '@usertour-packages/button';
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Button } from '@usertour/button';
+import { Input } from '@usertour/input';
+import { Label } from '@usertour/label';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { Content, ElementSelectorPropsData } from '@usertour/types';
-import { SelectPopover } from '@usertour-packages/ui';
-import { EXTENSION_CONTENT_RULES } from '@usertour-packages/constants';
+import { SelectPopover } from '@usertour/ui';
+import { EXTENSION_CONTENT_RULES } from '@usertour/constants';
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 
 export interface ElementSelectorProps {

@@ -1,5 +1,5 @@
-import { RiCloseLine } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { RiCloseLine } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import type { RulesCondition } from '@usertour/types';
 import isEqual from 'fast-deep-equal';
 import { useEffect, useState } from 'react';
@@ -8,7 +8,7 @@ import { ConditionEditor } from './condition-editor';
 import { ConditionList } from './condition-list';
 import { getConditionSchema } from './registry';
 import type { ValidateContext } from './schema-types';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   ConditionErrorTooltip,
   ConditionErrorTooltipAnchor,

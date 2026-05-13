@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/contexts",
+  "name": "@usertour/contexts",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,7 +14,7 @@
   "dependencies": {
     "@apollo/client": "^3.7.17",
     "@tanstack/react-table": "^8.9.3",
-    "@usertour-packages/gql": "workspace:^",
+    "@usertour/gql": "workspace:^",
     "@usertour/types": "workspace:^",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

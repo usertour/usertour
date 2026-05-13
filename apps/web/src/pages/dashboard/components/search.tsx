@@ -1,4 +1,4 @@
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 
 export function Search() {
   return (

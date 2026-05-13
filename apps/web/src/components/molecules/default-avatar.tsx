@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import {
   RiAliensFill,
   RiBearSmileFill,
@@ -15,7 +15,7 @@ import {
   RiSparkling2Fill,
   RiSpyFill,
   RiStarSmileFill,
-} from '@usertour-packages/icons';
+} from '@usertour/icons';
 
 interface DefaultAvatarProps {
   /** Stable identifier (id / email / externalId) used to deterministically pick the icon + color */

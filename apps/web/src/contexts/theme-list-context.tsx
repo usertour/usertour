@@ -1,4 +1,4 @@
-import { useListThemesQuery } from '@usertour-packages/hooks';
+import { useListThemesQuery } from '@usertour/hooks';
 import { Theme } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 

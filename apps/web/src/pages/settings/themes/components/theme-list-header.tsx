@@ -1,9 +1,9 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { useState } from 'react';
 import { ThemeCreateForm } from './theme-create-form';
-import { RiAddLine } from '@usertour-packages/icons';
+import { RiAddLine } from '@usertour/icons';
 
 import { useTranslation } from 'react-i18next';
 

@@ -1,22 +1,15 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour-packages/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { SpinnerIcon } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
-import { Skeleton } from '@usertour-packages/skeleton';
-import { useToast } from '@usertour-packages/use-toast';
+import { Button } from '@usertour/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { SpinnerIcon } from '@usertour/icons';
+import { Input } from '@usertour/input';
+import { Skeleton } from '@usertour/skeleton';
+import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
-import { useGlobalConfigQuery, useSetupSystemAdminMutation } from '@usertour-packages/hooks';
+import { useGlobalConfigQuery, useSetupSystemAdminMutation } from '@usertour/hooks';
 import { useForm } from 'react-hook-form';
 import { Navigate } from 'react-router-dom';
 import * as z from 'zod';

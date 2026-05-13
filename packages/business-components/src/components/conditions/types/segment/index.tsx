@@ -1,4 +1,4 @@
-import { SegmentIcon } from '@usertour-packages/icons';
+import { SegmentIcon } from '@usertour/icons';
 import type { RulesCondition, Segment } from '@usertour/types';
 import { useMemo } from 'react';
 import {

@@ -5,16 +5,16 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { PlusIcon } from '@usertour-packages/icons';
-import { Button } from '@usertour-packages/button';
+} from '@usertour/dropdown-menu';
+import { PlusIcon } from '@usertour/icons';
+import { Button } from '@usertour/button';
 import { Table } from '@tanstack/react-table';
 import { Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { useManualSegments } from '@/hooks/use-manual-segments';
 import { useAddCompaniesToManualSegment } from '@/hooks/use-add-companies-to-manual-segment';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 
 interface AddCompanyManualSegmentProps {
   table: Table<any>;

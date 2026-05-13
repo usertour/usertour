@@ -1,4 +1,4 @@
-import { Slider } from '@usertour-packages/slider';
+import { Slider } from '@usertour/slider';
 import { useState } from 'react';
 
 type ThemeSettingSliderProps = {

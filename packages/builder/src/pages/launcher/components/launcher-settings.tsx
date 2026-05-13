@@ -1,5 +1,5 @@
-import { Label } from '@usertour-packages/label';
-import { Switch } from '@usertour-packages/switch';
+import { Label } from '@usertour/label';
+import { Switch } from '@usertour/switch';
 import { LauncherTooltipSettings } from '@usertour/types';
 import { useCallback, useState } from 'react';
 

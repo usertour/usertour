@@ -2,7 +2,7 @@ import { Slot } from '@radix-ui/react-slot';
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 // Hero icon-button "depth" surface — bg-background lifted by a layered
 // triple shadow (1px halo + 1px bottom edge + 2px blur). Used in compact
@@ -58,7 +58,7 @@ const buttonVariants = cva(
         'compact-sm': 'h-6 px-2 text-sm shadow-sm',
         // Compact icon-only buttons. Three sizes line up with the
         // CompactIconButton family that previously lived in
-        // @usertour-packages/ui:
+        // @usertour/ui:
         //   compact-icon-sm  → 24px (chip remove, three-dot menu trigger)
         //   compact-icon     → 28px (general icon button)
         //   compact-icon-lg  → 30px (hero back-button, paired with depth)

@@ -2,14 +2,9 @@ import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Upload from 'rc-upload';
-import { Button } from '@usertour-packages/button';
-import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour-packages/icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { Button } from '@usertour/button';
+import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 
 import { ACCEPT_FILE_TYPES } from './constants';
 import { useAvatarUpload } from './hooks/use-avatar-upload';

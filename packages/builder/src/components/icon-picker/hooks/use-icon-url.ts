@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect } from 'react';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { LauncherIconSource } from '@usertour/types';
 import { validateUrl } from '../utils';
 

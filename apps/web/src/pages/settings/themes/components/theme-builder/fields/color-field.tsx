@@ -1,11 +1,11 @@
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { ColorPickerPanel } from '@usertour-packages/ui';
-import { useCurrentUserId } from '@usertour-packages/hooks';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { ColorPickerPanel } from '@usertour/ui';
+import { useCurrentUserId } from '@usertour/hooks';
 import { useId, useState } from 'react';
 import { useBuilderContext } from '../builder-context';
 import { getPath } from '../draft-util';
 import type { ColorResolver } from '../schema/types';
-import { CompactColorButton } from '@usertour-packages/ui';
+import { CompactColorButton } from '@usertour/ui';
 import { FieldRow } from './field-row';
 
 interface Props {

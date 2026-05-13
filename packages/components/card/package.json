@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/card",
+  "name": "@usertour/card",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,7 +12,7 @@
     "build:fast": "tsup src"
   },
   "dependencies": {
-    "@usertour-packages/tailwind": "workspace:*"
+    "@usertour/tailwind": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"

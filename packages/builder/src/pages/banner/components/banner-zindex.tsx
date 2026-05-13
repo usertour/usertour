@@ -1,4 +1,4 @@
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 
 import { useBannerContext } from '../../../contexts';
 

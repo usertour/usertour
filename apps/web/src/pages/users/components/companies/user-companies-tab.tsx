@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { BizUser } from '@usertour/types';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour-packages/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour/table';
 import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { MembershipRow } from '@/components/molecules/membership-row';
 

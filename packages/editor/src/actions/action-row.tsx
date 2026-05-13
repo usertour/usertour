@@ -1,5 +1,5 @@
-import { RiCloseLine } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { RiCloseLine } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { isEqual } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
 import { useEffect, useRef, useState } from 'react';

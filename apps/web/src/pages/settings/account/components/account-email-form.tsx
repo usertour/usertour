@@ -1,23 +1,16 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { updateEmail } from '@usertour-packages/gql';
-import { Input } from '@usertour-packages/input';
-import { Separator } from '@usertour-packages/separator';
+import { Button } from '@usertour/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { updateEmail } from '@usertour/gql';
+import { Input } from '@usertour/input';
+import { Separator } from '@usertour/separator';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

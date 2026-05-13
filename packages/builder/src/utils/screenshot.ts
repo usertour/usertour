@@ -1,5 +1,5 @@
 import { sendToBackground } from '@plasmohq/messaging';
-import { TargetResult, parserV2 } from '@usertour-packages/finder';
+import { TargetResult, parserV2 } from '@usertour/finder';
 
 export interface SelectorOutput {
   screenshot: {

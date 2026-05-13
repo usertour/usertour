@@ -4,7 +4,7 @@ import { timerManager } from '@/utils/timer-manager';
 import { uuidV4 } from '@usertour/helpers';
 import { window } from '@/utils/globals';
 import { on, off } from '@/utils/listener';
-import { SDKClientEvents } from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour/constants';
 
 // === Interfaces ===
 /**

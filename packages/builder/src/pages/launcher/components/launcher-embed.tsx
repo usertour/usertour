@@ -1,13 +1,13 @@
-import { useThemeListContext } from '@usertour-packages/contexts';
-import { ContentEditorRoot } from '@usertour-packages/editor';
+import { useThemeListContext } from '@usertour/contexts';
+import { ContentEditorRoot } from '@usertour/editor';
 import { Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBuilderContext, useLauncherContext } from '../../../contexts';
 import { useAws } from '../../../hooks/use-aws';
 import { LauncherContentMain } from './launcher-content';
-import { PlusIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { PlusIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 
 const centerClasses =
   'w-auto h-6 left-[50%] top-[50%] z-50 grid translate-x-[-50%] translate-y-[-50%]';

@@ -1,14 +1,14 @@
-import { useAdminSettingsQuery, useUpdateInstanceLicenseMutation } from '@usertour-packages/hooks';
-import { useToast } from '@usertour-packages/use-toast';
+import { useAdminSettingsQuery, useUpdateInstanceLicenseMutation } from '@usertour/hooks';
+import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { SettingsContent } from '@/pages/settings/components/content';
-import { Separator } from '@usertour-packages/separator';
-import { Button } from '@usertour-packages/button';
-import { Badge } from '@usertour-packages/badge';
-import { Input } from '@usertour-packages/input';
-import { Textarea } from '@usertour-packages/textarea';
-import { Skeleton } from '@usertour-packages/skeleton';
+import { Separator } from '@usertour/separator';
+import { Button } from '@usertour/button';
+import { Badge } from '@usertour/badge';
+import { Input } from '@usertour/input';
+import { Textarea } from '@usertour/textarea';
+import { Skeleton } from '@usertour/skeleton';
 import { CopyIcon } from 'lucide-react';
 import { getErrorMessage } from '@usertour/helpers';
 

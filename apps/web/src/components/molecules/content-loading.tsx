@@ -1,4 +1,4 @@
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 
 interface ContentLoadingProps {
   message?: string;

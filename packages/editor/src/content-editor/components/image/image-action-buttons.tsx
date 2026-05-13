@@ -1,13 +1,8 @@
 // Image-specific action buttons with replace functionality
 
-import { Button } from '@usertour-packages/button';
-import { ImageEditIcon } from '@usertour-packages/icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { Button } from '@usertour/button';
+import { ImageEditIcon } from '@usertour/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import Upload from 'rc-upload';
 import { memo, useCallback } from 'react';
 

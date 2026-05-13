@@ -1,4 +1,4 @@
-import { PLAN_FEATURES } from '@usertour-packages/constants';
+import { PLAN_FEATURES } from '@usertour/constants';
 import { PlanType, type PlanFeatures } from '@usertour/types';
 
 // Parse the untyped Subscription.overridePlan JSON column into a typed

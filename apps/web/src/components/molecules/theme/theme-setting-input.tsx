@@ -1,8 +1,8 @@
 import { ChangeEvent } from 'react';
 
-import { Input } from '@usertour-packages/input';
-import { cn } from '@usertour-packages/tailwind';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Input } from '@usertour/input';
+import { cn } from '@usertour/tailwind';
+import { QuestionTooltip } from '@usertour/tooltip';
 
 import { ThemeSettingErrorPopover } from './theme-setting-error-popover';
 

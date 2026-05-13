@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-packages/react-slot
+$ yarn add @usertour/react-slot
 # or
-$ npm install @usertour-packages/react-slot
+$ npm install @usertour/react-slot
 ```
 
 ## Usage

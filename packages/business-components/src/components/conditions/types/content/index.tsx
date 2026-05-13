@@ -6,7 +6,7 @@ import {
   ForbidFillIcon,
   PlayCircleFillIcon,
   StopCircleFillIcon,
-} from '@usertour-packages/icons';
+} from '@usertour/icons';
 import { ContentDataType, type Content, type RulesCondition } from '@usertour/types';
 import { useMemo, type ComponentType } from 'react';
 import {

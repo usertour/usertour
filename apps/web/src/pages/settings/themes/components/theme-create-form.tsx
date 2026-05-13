@@ -1,12 +1,12 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { defaultSettings } from '@usertour/types';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import { Checkbox } from '@usertour-packages/checkbox';
+import { Button } from '@usertour/button';
+import { Checkbox } from '@usertour/checkbox';
 import {
   Dialog,
   DialogClose,
@@ -14,19 +14,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-packages/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { createTheme } from '@usertour-packages/gql';
-import { Input } from '@usertour-packages/input';
+} from '@usertour/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { createTheme } from '@usertour/gql';
+import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';

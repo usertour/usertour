@@ -1,7 +1,7 @@
 import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { EXTENSION_SIDEBAR_POPPER } from '@usertour-packages/constants';
+import { Button } from '@usertour/button';
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { EXTENSION_SIDEBAR_POPPER } from '@usertour/constants';
 import { StepContentType, ContentEditorRoot } from '@usertour/types';
 import { PopperPreview } from '../../components/preview';
 import { getDefaultDataForType, getEmptyDataForType } from '../../utils/default-data';

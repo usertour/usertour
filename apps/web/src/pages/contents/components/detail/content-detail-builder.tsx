@@ -3,7 +3,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
-import { WebBuilder } from '@usertour-packages/builder';
+import { WebBuilder } from '@usertour/builder';
 import { useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 

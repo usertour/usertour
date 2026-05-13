@@ -1,16 +1,9 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { Event } from '@usertour/types';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
-import { Badge } from '@usertour-packages/badge';
-import { RiShieldCheckFill } from '@usertour-packages/icons';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Badge } from '@usertour/badge';
+import { RiShieldCheckFill } from '@usertour/icons';
 import { EventListAction } from './event-list-action';
 
 export const EventListContent = () => {

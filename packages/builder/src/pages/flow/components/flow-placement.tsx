@@ -1,6 +1,6 @@
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
+import { Button } from '@usertour/button';
+import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
 import { getAuthToken } from '@usertour/helpers';
 import { window } from '@usertour/helpers';
 import { ElementSelectorPropsData, StepScreenshot } from '@usertour/types';

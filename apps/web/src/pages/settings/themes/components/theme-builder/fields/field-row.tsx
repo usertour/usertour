@@ -1,5 +1,5 @@
-import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { cn } from '@usertour-packages/tailwind';
+import { QuestionTooltip } from '@usertour/tooltip';
+import { cn } from '@usertour/tailwind';
 import type { ReactNode } from 'react';
 
 // Labels longer than this collapse into a vertical row (label on top, control

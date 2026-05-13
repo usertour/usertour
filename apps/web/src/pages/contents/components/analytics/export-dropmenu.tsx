@@ -3,15 +3,15 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
+} from '@usertour/dropdown-menu';
 import { User, UserCog } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useQuery } from '@apollo/client';
-import { getContentVersion, listSessionsDetail } from '@usertour-packages/gql';
+import { getContentVersion, listSessionsDetail } from '@usertour/gql';
 import type { BizSession, ContentVersion } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useAppContext } from '@/contexts/app-context';

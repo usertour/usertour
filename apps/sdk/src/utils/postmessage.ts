@@ -1,7 +1,4 @@
-import {
-  MESSAGE_CONTENT_PREVIEW_SUCCESS,
-  MESSAGE_CRX_SEND_PROXY,
-} from '@usertour-packages/constants';
+import { MESSAGE_CONTENT_PREVIEW_SUCCESS, MESSAGE_CRX_SEND_PROXY } from '@usertour/constants';
 import { window } from './globals';
 import { logger } from './logger';
 

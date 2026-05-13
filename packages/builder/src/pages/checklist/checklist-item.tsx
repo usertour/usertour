@@ -1,18 +1,18 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
-import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
-import { SpinnerIcon } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { ScrollArea } from '@usertour-packages/scroll-area';
-import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour-packages/business-components';
-import { Actions } from '@usertour-packages/editor';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/hooks';
-import { Switch } from '@usertour-packages/switch';
+import { Button } from '@usertour/button';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
+import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { SpinnerIcon } from '@usertour/icons';
+import { Input } from '@usertour/input';
+import { Label } from '@usertour/label';
+import { ScrollArea } from '@usertour/scroll-area';
+import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour/business-components';
+import { Actions } from '@usertour/editor';
+import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { Switch } from '@usertour/switch';
 import {
   ChecklistItemType,
   ContentActionsItemType,

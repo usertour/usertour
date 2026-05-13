@@ -12,8 +12,8 @@ import {
   KeyIcon,
   ProjectIcon,
   RiSettings2Line,
-} from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { Link } from 'react-router-dom';
 
 interface NavItem {

@@ -4,12 +4,12 @@ import {
   RiDeleteBinLine,
   RiMoreFill,
   RiPushpinLine,
-} from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import type { CSSProperties, MouseEvent, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour-packages/button';
-import { Input } from '@usertour-packages/input';
+import { Button } from '@usertour/button';
+import { Input } from '@usertour/input';
 import {
   CompactDropdownMenu,
   CompactDropdownMenuContent,
@@ -17,7 +17,7 @@ import {
   CompactDropdownMenuTrigger,
   listRowClass,
   listRowSelectedClass,
-} from '@usertour-packages/ui';
+} from '@usertour/ui';
 
 // Props passed by `useSortable` and forwarded to the drag handle. Marked as
 // optional so the Base row (non-draggable) can reuse the component without

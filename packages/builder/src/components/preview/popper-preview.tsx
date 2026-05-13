@@ -1,4 +1,4 @@
-import { EyeNoneIcon } from '@usertour-packages/icons';
+import { EyeNoneIcon } from '@usertour/icons';
 import {
   ContentEditorSerialize,
   Popper,
@@ -6,10 +6,10 @@ import {
   PopperStaticBubble,
   PopperClose,
   useSettingsStyles,
-} from '@usertour-packages/widget';
-import { ScaledPreviewContainer } from '@usertour-packages/ui';
+} from '@usertour/widget';
+import { ScaledPreviewContainer } from '@usertour/ui';
 import { AvatarType, defaultSettings, StepContentType } from '@usertour/types';
-import { PREVIEW_BASIC } from '@usertour-packages/constants';
+import { PREVIEW_BASIC } from '@usertour/constants';
 import { memo, useCallback, useMemo, useRef } from 'react';
 
 type PopperPreviewProps = {

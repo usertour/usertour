@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { listThemes } from '@usertour-packages/gql';
+import { listThemes } from '@usertour/gql';
 import { Theme } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 

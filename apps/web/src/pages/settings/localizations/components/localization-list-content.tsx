@@ -1,14 +1,7 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
-import { Badge } from '@usertour-packages/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
+import { Badge } from '@usertour/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import { Localization } from '@usertour/types';
 import { format } from 'date-fns';
 import { LocalizationListAction } from './localization-list-action';

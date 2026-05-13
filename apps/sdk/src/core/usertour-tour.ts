@@ -1,4 +1,4 @@
-import { smoothScroll } from '@usertour-packages/dom';
+import { smoothScroll } from '@usertour/dom';
 import {
   AttributeBizTypes,
   ContentEditorRoot,
@@ -22,7 +22,7 @@ import {
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { logger } from '@/utils';
 import { createQuestionAnswerEventData } from '@/core/usertour-helper';
-import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
+import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
 

@@ -4,7 +4,7 @@ import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
 import { ConditionWaitTimer } from '@usertour/types';
-import { SDKClientEvents } from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour/constants';
 
 // === Interfaces ===
 /**

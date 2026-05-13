@@ -3,8 +3,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/dropdown-menu';
+import { cn } from '@usertour/tailwind';
 import { forwardRef } from 'react';
 
 // Compact-family wrappers that snap Content / Item to the inspector's

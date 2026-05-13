@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-packages/react-context
+$ yarn add @usertour/react-context
 # or
-$ npm install @usertour-packages/react-context
+$ npm install @usertour/react-context
 ```
 
 ## Usage

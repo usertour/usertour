@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
 import {
   SignInSocialProviders,
   SignInDivider,

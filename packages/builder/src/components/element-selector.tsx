@@ -8,7 +8,7 @@ import {
   PinBottomIcon,
   PinTopIcon,
 } from '@radix-ui/react-icons';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { useEffect, useRef, useState } from 'react';
 
 interface ElementSelectorProps {

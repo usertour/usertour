@@ -1,5 +1,5 @@
 // Shape of the per-plan feature flags. The actual matrix
-// (`PLAN_FEATURES`) lives in `@usertour-packages/constants` so both the server
+// (`PLAN_FEATURES`) lives in `@usertour/constants` so both the server
 // (gate enforcement) and the pricing page (comparison table) read from
 // the same source. This file holds the type contract only — see the
 // types-vs-constants boundary in docs/architecture/packages.md.

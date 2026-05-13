@@ -1,5 +1,5 @@
 import { isRestrictedType, uuidV4 } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import type {

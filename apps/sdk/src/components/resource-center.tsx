@@ -8,7 +8,7 @@ import {
   ResourceCenterBlocks,
   ResourceCenterTabBar,
   ResourceCenterFooter,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import { useSyncExternalStore } from 'react';
 import { UsertourResourceCenter } from '@/core/usertour-resource-center';
 

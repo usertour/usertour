@@ -1,20 +1,14 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { ListSkeletonCount } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { Event } from '@usertour/types';
 import { Attribute } from '@usertour/types';
 import { useMutation, useQuery } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
+import { Button } from '@usertour/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
 import {
   Form,
   FormControl,
@@ -23,20 +17,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour-packages/form';
-import { listAttributeOnEvents, updateEvent } from '@usertour-packages/gql';
-import { PlusIcon } from '@usertour-packages/icons';
-import { CloseIcon } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@usertour-packages/select';
+} from '@usertour/form';
+import { listAttributeOnEvents, updateEvent } from '@usertour/gql';
+import { PlusIcon } from '@usertour/icons';
+import { CloseIcon } from '@usertour/icons';
+import { Input } from '@usertour/input';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@usertour/select';
 import { getErrorMessage } from '@usertour/helpers';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { useToast } from '@usertour-packages/use-toast';
+import { QuestionTooltip } from '@usertour/tooltip';
+import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { ScrollArea } from '@usertour-packages/scroll-area';
+import { ScrollArea } from '@usertour/scroll-area';
 
 interface EditFormProps {
   isOpen: boolean;

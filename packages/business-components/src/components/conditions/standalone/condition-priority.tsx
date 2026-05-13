@@ -1,4 +1,4 @@
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { ContentPriority } from '@usertour/types';
 import { useMemo } from 'react';
 import type { ConditionsTranslator } from '../conditions-context';

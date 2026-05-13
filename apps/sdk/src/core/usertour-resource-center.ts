@@ -17,7 +17,7 @@ import { ResourceCenterStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { CommonActionHandler } from '@/core/action-handlers';
-import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
+import { StorageKeys, WidgetZIndex } from '@usertour/constants';
 import { isDisplayOnlyBlockType, storage } from '@usertour/helpers';
 import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
 

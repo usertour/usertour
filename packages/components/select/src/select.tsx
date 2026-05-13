@@ -5,7 +5,7 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 const Select = SelectPrimitive.Root;
 

@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/select",
+  "name": "@usertour/select",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,7 +15,7 @@
     "@radix-ui/react-select": "^1.2.2",
     "@radix-ui/react-icons": "^1.3.0",
     "class-variance-authority": "^0.4.0",
-    "@usertour-packages/tailwind": "workspace:*"
+    "@usertour/tailwind": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"

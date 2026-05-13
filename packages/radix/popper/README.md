@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-packages/react-popper
+$ yarn add @usertour/react-popper
 # or
-$ npm install @usertour-packages/react-popper
+$ npm install @usertour/react-popper
 ```
 
 ## Usage

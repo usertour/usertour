@@ -1,5 +1,5 @@
 import { useApolloClient } from '@apollo/client';
-import { createPresignedUrl } from '@usertour-packages/gql';
+import { createPresignedUrl } from '@usertour/gql';
 import axios from 'axios';
 
 export const useAws = () => {

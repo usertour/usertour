@@ -1,6 +1,6 @@
 'use client';
 
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 import { DataTableToolbarProps } from './types';
 import { DataTableViewOptions } from './data-table-view-options';
 

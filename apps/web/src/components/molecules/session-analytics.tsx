@@ -1,4 +1,4 @@
-import { Badge } from '@usertour-packages/badge';
+import { Badge } from '@usertour/badge';
 import {
   BizEvents,
   BizSession,
@@ -8,7 +8,7 @@ import {
   Event,
 } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 type StatusVariant = 'active' | 'completed' | 'dismissed' | 'seen' | 'activated';
 

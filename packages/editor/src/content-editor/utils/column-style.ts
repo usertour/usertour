@@ -1,8 +1,8 @@
 // Column style transformation utilities
 
 import { toNumericValue } from '@usertour/helpers';
-import type { PaddingStyleProps } from '@usertour-packages/widget';
-import { transformPaddingStyle } from '@usertour-packages/widget';
+import type { PaddingStyleProps } from '@usertour/widget';
+import { transformPaddingStyle } from '@usertour/widget';
 
 import type { ContentEditorColumnElement } from '../../types/editor';
 import { WIDTH_TYPES } from '../constants';

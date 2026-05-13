@@ -1,10 +1,10 @@
-import { isVisibleNode } from '@usertour-packages/dom';
-import { finderV2 } from '@usertour-packages/finder';
+import { isVisibleNode } from '@usertour/dom';
+import { finderV2 } from '@usertour/finder';
 import { ElementSelectorPropsData } from '@usertour/types';
 import { document, Evented } from '@/utils';
 import { isVisible } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
-import { SDKClientEvents } from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour/constants';
 import { uuidV4 } from '@usertour/helpers';
 
 // === Types ===

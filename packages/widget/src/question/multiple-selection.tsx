@@ -1,6 +1,6 @@
 // Multiple selection (checkbox) component for SDK widget
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useCallback, useState } from 'react';
 
 import { Button, Checkbox, Label } from '../primitives';

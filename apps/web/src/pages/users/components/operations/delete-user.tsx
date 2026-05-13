@@ -1,5 +1,5 @@
-import { Delete2Icon } from '@usertour-packages/icons';
-import { Button } from '@usertour-packages/button';
+import { Delete2Icon } from '@usertour/icons';
+import { Button } from '@usertour/button';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { BizUserDeleteDialog } from '../dialogs';

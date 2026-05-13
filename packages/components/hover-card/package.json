@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/hover-card",
+  "name": "@usertour/hover-card",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-hover-card": "^1.0.6",
-    "@usertour-packages/tailwind": "workspace:*"
+    "@usertour/tailwind": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"

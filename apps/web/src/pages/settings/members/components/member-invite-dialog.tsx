@@ -1,38 +1,19 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, AlertDescription, AlertTitle } from '@usertour-packages/alert';
-import { Button } from '@usertour-packages/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { Input } from '@usertour-packages/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
-import { useInviteTeamMemberMutation } from '@usertour-packages/hooks';
+import { Alert, AlertDescription, AlertTitle } from '@usertour/alert';
+import { Button } from '@usertour/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { Input } from '@usertour/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { useInviteTeamMemberMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { TeamMemberRole } from '@usertour/types';
 import { useTeamMemberLimit } from '@/hooks/use-plan-limits';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { AlertCircle } from 'lucide-react';
 import * as React from 'react';
 import { useEffect } from 'react';

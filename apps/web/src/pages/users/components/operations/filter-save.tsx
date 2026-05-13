@@ -7,8 +7,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-packages/alert-dialog';
-import { Button } from '@usertour-packages/button';
+} from '@usertour/alert-dialog';
+import { Button } from '@usertour/button';
 import { Segment } from '@usertour/types';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useSaveSegmentFilter } from '@/hooks/use-save-segment-filter';

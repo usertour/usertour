@@ -3,7 +3,7 @@ import {
   BannerPreview as BannerWidget,
   BannerRoot,
   ContentEditorSerialize,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import {
   BannerEmbedPlacement,
   type ContentEditorRoot,

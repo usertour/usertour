@@ -1,5 +1,5 @@
-import { Button, type ButtonProps } from '@usertour-packages/button';
-import { cn } from '@usertour-packages/tailwind';
+import { Button, type ButtonProps } from '@usertour/button';
+import { cn } from '@usertour/tailwind';
 import { Link } from 'react-router-dom';
 
 export const AdminSidebarContainerTemplate = (props: {

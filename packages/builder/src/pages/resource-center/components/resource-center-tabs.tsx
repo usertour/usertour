@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { RiDraggable, RiSettings3Line } from '@usertour-packages/icons';
+import { RiDraggable, RiSettings3Line } from '@usertour/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,15 +29,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@usertour-packages/alert-dialog';
-import { Button } from '@usertour-packages/button';
-import { Delete2Icon } from '@usertour-packages/icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+} from '@usertour/alert-dialog';
+import { Button } from '@usertour/button';
+import { Delete2Icon } from '@usertour/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { LauncherIconSource, ResourceCenterTab } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';

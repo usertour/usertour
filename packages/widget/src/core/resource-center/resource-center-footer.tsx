@@ -1,6 +1,6 @@
 import { memo } from 'react';
-import { UsertourIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { UsertourIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { useResourceCenterContext } from './context';
 
 export const ResourceCenterFooter = memo(() => {

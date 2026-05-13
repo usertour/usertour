@@ -8,7 +8,7 @@ import {
 import { LauncherStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
 import { logger } from '@/utils';
-import { SDKClientEvents, WidgetZIndex } from '@usertour-packages/constants';
+import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
 

@@ -1,4 +1,4 @@
-import { TAILWINDCSS_COLORS } from '@usertour-packages/constants';
+import { TAILWINDCSS_COLORS } from '@usertour/constants';
 import { firstLetterToUpperCase, storage } from '@usertour/helpers';
 import type { TailwindColorData } from './types';
 

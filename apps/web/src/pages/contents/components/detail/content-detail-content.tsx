@@ -3,12 +3,12 @@ import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
 import { useContentBuilder } from '@/hooks/useContentBuilder';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
-import { Badge } from '@usertour-packages/badge';
-import { stepIsReachable } from '@usertour-packages/builder/src/utils/content-validate';
-import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour-packages/icons';
-import { GoogleFontCss } from '@usertour-packages/business-components';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
-import { TooltipProvider } from '@usertour-packages/tooltip';
+import { Badge } from '@usertour/badge';
+import { stepIsReachable } from '@usertour/builder/src/utils/content-validate';
+import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour/icons';
+import { GoogleFontCss } from '@usertour/business-components';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour/tooltip';
+import { TooltipProvider } from '@usertour/tooltip';
 import {
   BannerData,
   BannerEmbedPlacement,
@@ -27,7 +27,7 @@ import {
 } from '@usertour/types';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
-import { ScaledPreviewContainer } from '@usertour-packages/ui';
+import { ScaledPreviewContainer } from '@usertour/ui';
 import { ContentEditForm } from '../shared/content-edit-form';
 import {
   BannerPreviewContent,
@@ -37,9 +37,9 @@ import {
   ResourceCenterPreview,
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour-packages/button';
-import { Card } from '@usertour-packages/card';
-import { cn } from '@usertour-packages/tailwind';
+import { Button } from '@usertour/button';
+import { Card } from '@usertour/card';
+import { cn } from '@usertour/tailwind';
 
 interface ContentDetailContentStepProps {
   currentStep: Step;

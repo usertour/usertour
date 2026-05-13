@@ -1,4 +1,4 @@
-import { useChecklistPreviewAnimation } from '@usertour-packages/hooks';
+import { useChecklistPreviewAnimation } from '@usertour/hooks';
 import {
   ChecklistContainer,
   ChecklistDismiss,
@@ -10,7 +10,7 @@ import {
   ChecklistRoot,
   ContentEditorSerialize,
   PopperMadeWith,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import { ChecklistData, ChecklistInitialDisplay, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useMemo, useState } from 'react';
 import { defaultChecklistData } from '@/utils/theme';

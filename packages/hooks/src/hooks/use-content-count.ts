@@ -1,5 +1,5 @@
 import { useQuery, type QueryHookOptions } from '@apollo/client';
-import { queryContent } from '@usertour-packages/gql';
+import { queryContent } from '@usertour/gql';
 import type { ContentDataType } from '@usertour/types';
 
 interface UseContentCountOptions {

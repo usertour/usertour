@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { StorageKeys } from '@usertour-packages/constants';
-import { validateConditions } from '@usertour-packages/business-components';
+import { StorageKeys } from '@usertour/constants';
+import { validateConditions } from '@usertour/business-components';
 import {
   type Theme,
   ThemeDetailPreviewType,
@@ -9,14 +9,14 @@ import {
   type ThemeVariation,
   defaultSettings,
 } from '@usertour/types';
-import { useCurrentUserId } from '@usertour-packages/hooks';
-import { useToast } from '@usertour-packages/use-toast';
+import { useCurrentUserId } from '@usertour/hooks';
+import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEvent } from 'react-use';
-import { CompactPanel } from '@usertour-packages/ui';
+import { CompactPanel } from '@usertour/ui';
 import { BuilderProvider } from './builder-context';
 import { PreviewPane } from './preview/preview-pane';
 import { builderSections } from './schema/sections';

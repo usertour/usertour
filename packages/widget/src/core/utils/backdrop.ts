@@ -1,5 +1,5 @@
 import { toNumericValue } from '@usertour/helpers';
-import { getComputedStyle } from '@usertour-packages/dom';
+import { getComputedStyle } from '@usertour/dom';
 
 import type { Rect, SideObject } from '@floating-ui/dom';
 

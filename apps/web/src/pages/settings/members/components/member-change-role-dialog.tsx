@@ -1,35 +1,16 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
-import { useChangeTeamMemberRoleMutation } from '@usertour-packages/hooks';
+import { Button } from '@usertour/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { useChangeTeamMemberRoleMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import type { TeamMember } from '@usertour/types';
 import { TeamMemberRole } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

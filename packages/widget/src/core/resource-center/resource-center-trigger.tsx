@@ -1,7 +1,7 @@
 import { forwardRef, memo, useEffect, useState } from 'react';
-import { QuestionMarkCircledIcon } from '@usertour-packages/icons';
-import { useSize } from '@usertour-packages/react-use-size';
-import { cn } from '@usertour-packages/tailwind';
+import { QuestionMarkCircledIcon } from '@usertour/icons';
+import { useSize } from '@usertour/react-use-size';
+import { cn } from '@usertour/tailwind';
 import { Button } from '../../primitives';
 import { useResourceCenterContext } from './context';
 import { RESOURCE_CENTER_DEFAULTS } from './constants';

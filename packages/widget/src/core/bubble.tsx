@@ -7,10 +7,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useComposedRefs } from '@usertour-packages/react-compose-refs';
-import { cn } from '@usertour-packages/tailwind';
-import { Frame, useFrame } from '@usertour-packages/frame';
-import { type AvatarComponent } from '@usertour-packages/icons';
+import { useComposedRefs } from '@usertour/react-compose-refs';
+import { cn } from '@usertour/tailwind';
+import { Frame, useFrame } from '@usertour/frame';
+import { type AvatarComponent } from '@usertour/icons';
 import { computePositionStyle } from './utils/position';
 import { usePopperContext } from './popper-context';
 import { useBubbleExpandAnimation } from './hooks';

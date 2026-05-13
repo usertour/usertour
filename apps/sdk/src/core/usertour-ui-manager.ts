@@ -10,7 +10,7 @@ import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
 import { UsertourBanner } from './usertour-banner';
 import { UsertourResourceCenter } from './usertour-resource-center';
-import { SDKClientEvents } from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour/constants';
 
 // === Interfaces ===
 export interface UIManagerConfig {

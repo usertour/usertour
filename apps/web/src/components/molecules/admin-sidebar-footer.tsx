@@ -4,7 +4,7 @@ import {
 } from '../templates/admin-sidebar-template';
 
 import { AdminSidebarFooterTemplate } from '../templates/admin-sidebar-template';
-import { QuestionMarkCircledIcon } from '@usertour-packages/icons';
+import { QuestionMarkCircledIcon } from '@usertour/icons';
 
 const AdminSidebarFooter = () => {
   return (

@@ -1,4 +1,4 @@
-import { CloseCircleIcon } from '@usertour-packages/icons';
+import { CloseCircleIcon } from '@usertour/icons';
 import type { RulesCondition } from '@usertour/types';
 import { useActionsT, useSummaryTextClass } from '../actions-context';
 import type { ActionTypeSchema } from '../schema-types';

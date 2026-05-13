@@ -1,4 +1,4 @@
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 import { useLauncherContext } from '../../../contexts';
 
 export const LauncherZIndex = () => {

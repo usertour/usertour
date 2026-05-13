@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useFrame } from '@usertour-packages/frame';
+import { useFrame } from '@usertour/frame';
 
 export function useFrameGlobalStyle(globalStyle?: string) {
   const { document } = useFrame();

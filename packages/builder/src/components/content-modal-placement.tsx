@@ -1,9 +1,9 @@
-import { Button } from '@usertour-packages/button';
-import { Label } from '@usertour-packages/label';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Button } from '@usertour/button';
+import { Label } from '@usertour/label';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { ModalPosition } from '@usertour/types';
 import { ContentModalPlacementData } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { useState } from 'react';
 import { InputNumber } from './shared/input';
 

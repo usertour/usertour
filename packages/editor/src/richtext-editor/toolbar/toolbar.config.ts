@@ -14,7 +14,7 @@ import {
   RiText,
   RiUnderline,
   RiUserFill,
-} from '@usertour-packages/icons';
+} from '@usertour/icons';
 
 import type { ComponentType } from 'react';
 

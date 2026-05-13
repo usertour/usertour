@@ -1,8 +1,8 @@
 // Group drag handle component for dragging groups
 
 import { DragHandleDots2Icon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { cn } from '@usertour-packages/tailwind';
+import { Button } from '@usertour/button';
+import { cn } from '@usertour/tailwind';
 import { memo } from 'react';
 import type { HTMLAttributes } from 'react';
 

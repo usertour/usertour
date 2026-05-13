@@ -1,10 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
 
 export interface CompactSelectOption {
   value: string;

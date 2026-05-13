@@ -1,6 +1,6 @@
 import { useLazyQuery } from '@apollo/client';
-import { EXTENSION_CONTENT_MODAL } from '@usertour-packages/constants';
-import { queryOembedInfo } from '@usertour-packages/gql';
+import { EXTENSION_CONTENT_MODAL } from '@usertour/constants';
+import { queryOembedInfo } from '@usertour/gql';
 import {
   Popper,
   PopperBubblePortal,
@@ -10,12 +10,8 @@ import {
   PopperProgress,
   useSettingsStyles,
   useStepWidth,
-} from '@usertour-packages/widget';
-import {
-  ContentEditor,
-  ContentEditorElementType,
-  ContentEditorRoot,
-} from '@usertour-packages/editor';
+} from '@usertour/widget';
+import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@usertour/editor';
 import {
   Attribute,
   AvatarType,

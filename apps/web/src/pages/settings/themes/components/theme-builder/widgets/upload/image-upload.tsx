@@ -1,6 +1,6 @@
-import { Button } from '@usertour-packages/button';
-import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour-packages/icons';
-import { useToast } from '@usertour-packages/use-toast';
+import { Button } from '@usertour/button';
+import { RiDeleteBinFill, RiUpload2Fill, SpinnerIcon } from '@usertour/icons';
+import { useToast } from '@usertour/use-toast';
 import Upload from 'rc-upload';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

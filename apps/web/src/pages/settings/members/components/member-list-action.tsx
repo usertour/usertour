@@ -1,13 +1,13 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { Delete2Icon, EditIcon } from '@usertour-packages/icons';
+} from '@usertour/dropdown-menu';
+import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { useState } from 'react';
 import type { TeamMember } from '@usertour/types';
 import { TeamMemberRole } from '@usertour/types';

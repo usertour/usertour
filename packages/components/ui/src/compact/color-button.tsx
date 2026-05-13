@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { forwardRef } from 'react';
 
 const isHexColor = (s: string): boolean => /^#?[0-9a-fA-F]{6}$|^#?[0-9a-fA-F]{8}$/.test(s);

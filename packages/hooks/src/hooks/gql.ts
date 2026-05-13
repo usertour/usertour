@@ -93,7 +93,7 @@ import {
   adminChangeProjectMemberRole,
   adminTransferProjectOwnership,
   adminRemoveProjectMember,
-} from '@usertour-packages/gql';
+} from '@usertour/gql';
 
 import type {
   Content,

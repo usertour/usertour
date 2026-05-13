@@ -1,13 +1,13 @@
 // Main sidebar component for adding content elements
 
-import { Popover, PopoverAnchor } from '@usertour-packages/popover';
-import { PlusIcon3 } from '@usertour-packages/icons';
+import { Popover, PopoverAnchor } from '@usertour/popover';
+import { PlusIcon3 } from '@usertour/icons';
 import { memo, useCallback, useMemo, useState } from 'react';
 
 import type { ContentEditorElement } from '../../../types/editor';
 import { ContentEditorSideBarType } from '../../../types/editor';
 import { getSidebarStyles } from '../../constants/sidebar';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { ContentTypeSelectorPopover } from './content-type-selector-popover';
 
 export interface ContentEditorSideBarProps {

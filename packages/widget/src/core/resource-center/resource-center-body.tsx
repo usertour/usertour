@@ -12,8 +12,8 @@ import type {
   UserTourTypes,
 } from '@usertour/types';
 import { LauncherIconSource, ResourceCenterBlockType } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
-import { RiArrowRightSLine } from '@usertour-packages/icons';
+import { cn } from '@usertour/tailwind';
+import { RiArrowRightSLine } from '@usertour/icons';
 import { ContentEditorSerialize } from '../../serialize/content-editor-serialize';
 import { useResourceCenterContext, type ContentListDisplayItem } from './context';
 import { serializeBlockName } from '@usertour/helpers';

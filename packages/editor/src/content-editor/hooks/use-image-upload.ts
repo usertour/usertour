@@ -1,6 +1,6 @@
 // Custom hook for handling image upload logic
 
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback, useState } from 'react';
 

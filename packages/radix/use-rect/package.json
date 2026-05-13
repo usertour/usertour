@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/react-use-rect",
+  "name": "@usertour/react-use-rect",
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.13.10",
-    "@usertour-packages/rect": "workspace:*"
+    "@usertour/rect": "workspace:*"
   },
   "peerDependencies": {
     "@types/react": "*",

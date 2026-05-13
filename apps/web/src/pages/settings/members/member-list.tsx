@@ -1,4 +1,4 @@
-import { Separator } from '@usertour-packages/separator';
+import { Separator } from '@usertour/separator';
 import { SettingsContent } from '../components/content';
 import { MemberListContent } from './components/member-list-content';
 import { MemberListHeader } from './components/member-list-header';

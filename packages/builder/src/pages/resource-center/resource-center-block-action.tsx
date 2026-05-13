@@ -1,18 +1,18 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
-import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
-import { Actions, PopperEditorMini } from '@usertour-packages/editor';
-import type { Descendant } from '@usertour-packages/editor';
-import { SpinnerIcon } from '@usertour-packages/icons';
-import { Label } from '@usertour-packages/label';
-import { ScrollArea } from '@usertour-packages/scroll-area';
-import { Conditions } from '@usertour-packages/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/hooks';
-import { Switch } from '@usertour-packages/switch';
+import { Button } from '@usertour/button';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
+import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { Actions, PopperEditorMini } from '@usertour/editor';
+import type { Descendant } from '@usertour/editor';
+import { SpinnerIcon } from '@usertour/icons';
+import { Label } from '@usertour/label';
+import { ScrollArea } from '@usertour/scroll-area';
+import { Conditions } from '@usertour/business-components';
+import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { Switch } from '@usertour/switch';
 import {
   ContentActionsItemType,
   LauncherIconSource,

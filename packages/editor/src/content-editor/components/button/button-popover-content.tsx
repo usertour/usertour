@@ -1,11 +1,11 @@
 // Button popover content component
 
-import { Conditions } from '@usertour-packages/business-components';
-import { SelectPopover, type SelectPopoverOption } from '@usertour-packages/ui';
-import { EDITOR_SELECT } from '@usertour-packages/constants';
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { Switch } from '@usertour-packages/switch';
+import { Conditions } from '@usertour/business-components';
+import { SelectPopover, type SelectPopoverOption } from '@usertour/ui';
+import { EDITOR_SELECT } from '@usertour/constants';
+import { Input } from '@usertour/input';
+import { Label } from '@usertour/label';
+import { Switch } from '@usertour/switch';
 import type { Attribute, Content, ContentVersion, Segment, Step } from '@usertour/types';
 import { RulesCondition, ButtonSemanticType } from '@usertour/types';
 import { memo } from 'react';

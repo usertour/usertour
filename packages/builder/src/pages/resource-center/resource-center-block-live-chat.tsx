@@ -1,26 +1,20 @@
 'use client';
 
 import { ChevronLeftIcon, InfoCircledIcon, ExclamationTriangleIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
-import { useAttributeListContext } from '@usertour-packages/contexts';
-import { SpinnerIcon } from '@usertour-packages/icons';
-import { PopperEditorMini, CodeEditor } from '@usertour-packages/editor';
-import type { Descendant } from '@usertour-packages/editor';
-import { Label } from '@usertour-packages/label';
-import { ScrollArea } from '@usertour-packages/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
-import { Conditions } from '@usertour-packages/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour-packages/hooks';
+import { Button } from '@usertour/button';
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
+import { useAttributeListContext } from '@usertour/contexts';
+import { SpinnerIcon } from '@usertour/icons';
+import { PopperEditorMini, CodeEditor } from '@usertour/editor';
+import type { Descendant } from '@usertour/editor';
+import { Label } from '@usertour/label';
+import { ScrollArea } from '@usertour/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { Conditions } from '@usertour/business-components';
+import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
 import { useTranslation } from 'react-i18next';
-import { Switch } from '@usertour-packages/switch';
+import { Switch } from '@usertour/switch';
 import {
   LauncherIconSource,
   LiveChatProvider,

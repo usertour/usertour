@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
-import { Button } from '@usertour-packages/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { Button } from '@usertour/button';
 import { Link } from 'react-router-dom';
 
 export const SignUpDisabledCard = () => {

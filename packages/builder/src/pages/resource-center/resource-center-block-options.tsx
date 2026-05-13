@@ -6,7 +6,7 @@ import {
   RiMessage3Fill,
   RiPagesFill,
   RiSeparator,
-} from '@usertour-packages/icons';
+} from '@usertour/icons';
 import { ResourceCenterBlockType } from '@usertour/types';
 
 type IconComponent = ElementType<{ className?: string; width?: number; height?: number }>;

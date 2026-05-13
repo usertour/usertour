@@ -7,8 +7,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-packages/alert-dialog';
-import { useToast } from '@usertour-packages/use-toast';
+} from '@usertour/alert-dialog';
+import { useToast } from '@usertour/use-toast';
 import { useCallback } from 'react';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import { useDeleteCompany } from '@/hooks/use-delete-company';

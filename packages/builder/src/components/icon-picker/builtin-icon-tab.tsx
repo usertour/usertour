@@ -1,8 +1,8 @@
 import React from 'react';
-import { IconsList } from '@usertour-packages/widget';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
-import { Button } from '@usertour-packages/button';
-import { cn } from '@usertour-packages/tailwind';
+import { IconsList } from '@usertour/widget';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour/tooltip';
+import { Button } from '@usertour/button';
+import { cn } from '@usertour/tailwind';
 import type { BuiltinIconTabProps, IconButtonProps } from './types';
 
 const IconButton = React.memo<IconButtonProps>(({ icon: Icon, text, isSelected, onClick }) => (

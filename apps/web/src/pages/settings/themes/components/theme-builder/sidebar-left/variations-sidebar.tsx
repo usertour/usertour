@@ -14,7 +14,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { PlusIcon } from '@usertour-packages/icons';
+import { PlusIcon } from '@usertour/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,19 +24,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-packages/alert-dialog';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+} from '@usertour/alert-dialog';
+import { QuestionTooltip } from '@usertour/tooltip';
 import type { RulesCondition, ThemeVariation } from '@usertour/types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour-packages/button';
-import {
-  ResizeHandle,
-  bodyClass,
-  headerClass,
-  panelClass,
-  sectionLabelClass,
-} from '@usertour-packages/ui';
+import { Button } from '@usertour/button';
+import { ResizeHandle, bodyClass, headerClass, panelClass, sectionLabelClass } from '@usertour/ui';
 import { ConditionsSection } from '../sidebar/conditions-section';
 import { VariationRow } from './variation-row';
 

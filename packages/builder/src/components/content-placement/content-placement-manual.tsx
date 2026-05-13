@@ -1,7 +1,7 @@
-import { EXTENSION_SELECT } from '@usertour-packages/constants';
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { EXTENSION_SELECT } from '@usertour/constants';
+import { Input } from '@usertour/input';
+import { Label } from '@usertour/label';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { ChangeEvent, useCallback } from 'react';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from '../content-error';
 import { useContentPlacement } from './content-placement-context';

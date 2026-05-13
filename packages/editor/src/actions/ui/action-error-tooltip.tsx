@@ -1,5 +1,5 @@
-import { cn } from '@usertour-packages/tailwind';
-import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '@usertour-packages/ui';
+import { cn } from '@usertour/tailwind';
+import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '@usertour/ui';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { forwardRef } from 'react';
 import { useActionsZIndex } from '../actions-context';
