@@ -13,7 +13,7 @@ import {
   BarChart4,
   Waypoints,
 } from 'lucide-react';
-import { ChatIcon, BoxIcon } from '@usertour-packages/icons';
+import { BoxIcon } from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Switch } from '@usertour-packages/switch';
 import { Fragment, useState, useEffect } from 'react';
@@ -133,7 +133,7 @@ const plans: Plan[] = [
       { icon: Calendar, text: '5 years data retention' },
       { icon: BoxIcon, text: '3 environments' },
       { icon: Waypoints, text: '1000 API requests/min' },
-      { icon: ChatIcon, text: 'Live chat support' },
+      { icon: Mails, text: 'Email support' },
     ],
   },
   {
@@ -431,15 +431,15 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
       title: 'Support & service',
       features: [
         {
-          name: 'Live-chat and email support',
+          name: 'Community support',
+          values: [true, true, true, true],
+        },
+        {
+          name: 'Email support',
           values: [false, true, true, true],
         },
         {
           name: 'Priority support',
-          values: [false, false, true, true],
-        },
-        {
-          name: 'Concierge support',
           values: [false, false, false, true],
         },
       ],
