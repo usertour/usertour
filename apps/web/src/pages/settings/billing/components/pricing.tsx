@@ -153,13 +153,20 @@ const PLAN_META: PlanMeta[] = [
   },
 ];
 
-// Hobby is the canceled-subscription state: override doesn't apply (the
-// resolve path returns base config when project.subscriptionId is null).
-// Other plans render base + override merged so the user sees their
-// effective benefits on each tier.
-function effectiveFor(planType: PlanType, overridePlan: unknown): PlanFeatures {
-  if (planType === PlanType.HOBBY) return PLAN_FEATURES[planType];
-  return resolvePlanFeatures(planType, overridePlan);
+// Features used to render a plan card. The user's overridePlan only
+// makes sense for the *current* plan — a CS-granted session bump
+// belongs to that specific subscription, not to a "what would Starter
+// give me if I switched" comparison. Other plans render their base
+// offering so the card reads like the standard marketing tier.
+function cardFeaturesFor(
+  planType: PlanType,
+  currentPlanType: PlanType,
+  overridePlan: unknown,
+): PlanFeatures {
+  if (planType === currentPlanType && planType !== PlanType.HOBBY) {
+    return resolvePlanFeatures(planType, overridePlan);
+  }
+  return PLAN_FEATURES[planType];
 }
 
 function buildCardFeatures(meta: PlanMeta, features: PlanFeatures): Plan['features'] {
@@ -363,23 +370,15 @@ const formatYears = (value: PlanFeatures['dataRetentionYears']): string => {
   return value === 1 ? '1 Year' : `${value} Years`;
 };
 
-// Pull a feature value across the 4 visible plans, in column order,
-// applying the user's per-subscription override on top of each base.
-const matrixRow = <K extends keyof PlanFeatures>(
-  key: K,
-  overridePlan: unknown,
-): PlanFeatures[K][] => COMPARISON_PLANS.map((plan) => effectiveFor(plan, overridePlan)[key]);
+// Pull a feature value across the 4 visible plans, in column order.
+// The comparison table is pure marketing context — every column shows
+// the standard offer so users can compare apples-to-apples. Per-customer
+// overrides surface only on the current-plan card.
+const matrixRow = <K extends keyof PlanFeatures>(key: K): PlanFeatures[K][] =>
+  COMPARISON_PLANS.map((plan) => PLAN_FEATURES[plan][key]);
 
 // Comparison Table Component
-const ComparisonTable = ({
-  isYearly,
-  plans,
-  overridePlan,
-}: {
-  isYearly: boolean;
-  plans: Plan[];
-  overridePlan: unknown;
-}) => {
+const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[] }) => {
   // Define comparison data
   const sections: ComparisonSection[] = [
     {
@@ -396,22 +395,22 @@ const ComparisonTable = ({
         },
         {
           name: 'Sessions (Monthly)',
-          values: matrixRow('sessionsLimit', overridePlan).map((value) => ({
+          values: matrixRow('sessionsLimit').map((value) => ({
             count: formatLimit(value),
             price: null,
           })),
         },
         {
           name: 'Data Retention',
-          values: matrixRow('dataRetentionYears', overridePlan).map(formatYears),
+          values: matrixRow('dataRetentionYears').map(formatYears),
         },
         {
           name: 'Environments',
-          values: matrixRow('environmentLimit', overridePlan).map(formatLimit),
+          values: matrixRow('environmentLimit').map(formatLimit),
         },
         {
           name: 'API rate limit (requests/min)',
-          values: matrixRow('apiRateLimit', overridePlan).map(String),
+          values: matrixRow('apiRateLimit').map(String),
         },
         {
           name: 'All usage limits can be upgraded',
@@ -453,7 +452,7 @@ const ComparisonTable = ({
         },
         {
           name: 'No Usertour-branding',
-          values: matrixRow('removeBranding', overridePlan),
+          values: matrixRow('removeBranding'),
         },
       ],
     },
@@ -463,7 +462,7 @@ const ComparisonTable = ({
       features: [
         {
           name: 'Team members',
-          values: matrixRow('teamMemberLimit', overridePlan).map(formatLimit),
+          values: matrixRow('teamMemberLimit').map(formatLimit),
         },
       ],
     },
@@ -603,11 +602,11 @@ const Pricing = ({ projectId }: { projectId: string }) => {
 
   const percent = (currentUsage / totalLimit) * 100;
 
-  // Derive each plan's display features at render time from PLAN_META +
-  // effective features (base + override). Override drops to undefined
-  // for the Hobby card so the cancel state mirrors what the resolve
-  // path returns server-side.
-  const overridePlan = subscription?.overridePlan;
+  // Derive each plan's display features at render time. Only the
+  // current plan card shows effective features (base + override); other
+  // cards stay base so they read as standard offerings — a CS-granted
+  // session boost on Growth shouldn't make the Starter / Business
+  // cards claim the same number.
   const plans: Plan[] = PLAN_META.map((meta) => ({
     name: meta.name,
     price: meta.price,
@@ -618,7 +617,10 @@ const Pricing = ({ projectId }: { projectId: string }) => {
     buttonClassName: meta.buttonClassName,
     showSpacing: meta.showSpacing,
     disabled: meta.disabled,
-    features: buildCardFeatures(meta, effectiveFor(meta.planType, overridePlan)),
+    features: buildCardFeatures(
+      meta,
+      cardFeaturesFor(meta.planType, planType, subscription?.overridePlan),
+    ),
   }));
 
   // Update isYearly when subscription data is loaded
@@ -806,11 +808,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
               />
             ))}
           </div>
-          <ComparisonTable
-            isYearly={isYearly}
-            plans={plans}
-            overridePlan={subscription?.overridePlan}
-          />
+          <ComparisonTable isYearly={isYearly} plans={plans} />
         </div>
       </div>
     </>
