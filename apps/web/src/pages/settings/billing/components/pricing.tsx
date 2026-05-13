@@ -1,19 +1,19 @@
 import {
-  MessageSquare,
-  Paintbrush,
-  Headphones,
-  Package,
-  Send,
-  Lock,
-  Check,
-  Mails,
-  Newspaper,
-  Users2,
-  Calendar,
-  BarChart4,
-  Waypoints,
-} from 'lucide-react';
-import { BoxIcon } from '@usertour-packages/icons';
+  RiBarChartLine,
+  RiCalendarLine,
+  RiCheckLine,
+  RiHeadphoneLine,
+  RiInboxLine,
+  RiLockLine,
+  RiMailLine,
+  RiMessageLine,
+  RiNewspaperLine,
+  RiPaintBrushLine,
+  RiRouteLine,
+  RiSendPlaneLine,
+  RiStackLine,
+  RiTeamLine,
+} from '@usertour-packages/icons';
 import { Button } from '@usertour-packages/button';
 import { Switch } from '@usertour-packages/switch';
 import { Fragment, useState, useEffect } from 'react';
@@ -87,13 +87,13 @@ const plans: Plan[] = [
     isCurrentPlan: true,
     disabled: false,
     features: [
-      { icon: Newspaper, text: 'Unlimited content' },
-      { icon: BarChart4, text: `${HobbySessionLimit} sessions/month` },
-      { icon: Users2, text: '1 team members' },
-      { icon: Calendar, text: '1 years data retention' },
-      { icon: BoxIcon, text: '1 environments' },
-      { icon: Waypoints, text: '100 API requests/min' },
-      { icon: MessageSquare, text: 'Community support' },
+      { icon: RiNewspaperLine, text: 'Unlimited content' },
+      { icon: RiBarChartLine, text: `${HobbySessionLimit} sessions/month` },
+      { icon: RiTeamLine, text: '1 team members' },
+      { icon: RiCalendarLine, text: '1 years data retention' },
+      { icon: RiStackLine, text: '1 environments' },
+      { icon: RiRouteLine, text: '100 API requests/min' },
+      { icon: RiMessageLine, text: 'Community support' },
     ],
   },
   {
@@ -107,13 +107,13 @@ const plans: Plan[] = [
     showSpacing: false,
     disabled: false,
     features: [
-      { icon: Check, text: 'Everything in Hobby, plus' },
-      { icon: BarChart4, text: `${ProSessionLimit} sessions/month` },
-      { icon: Users2, text: '3 team members' },
-      { icon: Calendar, text: '3 years data retention' },
-      { icon: BoxIcon, text: '2 environments' },
-      { icon: Waypoints, text: '500 API requests/min' },
-      { icon: Mails, text: 'Email support' },
+      { icon: RiCheckLine, text: 'Everything in Hobby, plus' },
+      { icon: RiBarChartLine, text: `${ProSessionLimit} sessions/month` },
+      { icon: RiTeamLine, text: '3 team members' },
+      { icon: RiCalendarLine, text: '3 years data retention' },
+      { icon: RiStackLine, text: '2 environments' },
+      { icon: RiRouteLine, text: '500 API requests/min' },
+      { icon: RiMailLine, text: 'Email support' },
     ],
   },
   {
@@ -127,13 +127,13 @@ const plans: Plan[] = [
     showSpacing: false,
     disabled: false,
     features: [
-      { icon: Check, text: 'Everything in Starter, plus' },
-      { icon: BarChart4, text: `${GrowthSessionLimit} sessions/month` },
-      { icon: Users2, text: '10 team members' },
-      { icon: Calendar, text: '5 years data retention' },
-      { icon: BoxIcon, text: '3 environments' },
-      { icon: Waypoints, text: '1000 API requests/min' },
-      { icon: Mails, text: 'Email support' },
+      { icon: RiCheckLine, text: 'Everything in Starter, plus' },
+      { icon: RiBarChartLine, text: `${GrowthSessionLimit} sessions/month` },
+      { icon: RiTeamLine, text: '10 team members' },
+      { icon: RiCalendarLine, text: '5 years data retention' },
+      { icon: RiStackLine, text: '3 environments' },
+      { icon: RiRouteLine, text: '1000 API requests/min' },
+      { icon: RiMailLine, text: 'Email support' },
     ],
   },
   {
@@ -147,13 +147,13 @@ const plans: Plan[] = [
     showSpacing: false,
     disabled: false,
     features: [
-      { icon: Check, text: 'Everything in Growth, plus' },
-      { icon: BarChart4, text: `${BusinessSessionLimit} sessions/month` },
-      { icon: Users2, text: 'Unlimited team members' },
-      { icon: Calendar, text: '7 years data retention' },
-      { icon: BoxIcon, text: 'Unlimited environments' },
-      { icon: Waypoints, text: '3000 API requests/min' },
-      { icon: Headphones, text: 'Priority support' },
+      { icon: RiCheckLine, text: 'Everything in Growth, plus' },
+      { icon: RiBarChartLine, text: `${BusinessSessionLimit} sessions/month` },
+      { icon: RiTeamLine, text: 'Unlimited team members' },
+      { icon: RiCalendarLine, text: '7 years data retention' },
+      { icon: RiStackLine, text: 'Unlimited environments' },
+      { icon: RiRouteLine, text: '3000 API requests/min' },
+      { icon: RiHeadphoneLine, text: 'Priority support' },
     ],
   },
 ];
@@ -302,7 +302,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
   // Define comparison data
   const sections: ComparisonSection[] = [
     {
-      icon: Paintbrush,
+      icon: RiPaintBrushLine,
       title: 'Usage',
       features: [
         {
@@ -341,7 +341,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
       ],
     },
     {
-      icon: Package,
+      icon: RiInboxLine,
       title: 'Content',
       features: [
         {
@@ -379,7 +379,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
       ],
     },
     {
-      icon: Users2,
+      icon: RiTeamLine,
       title: 'Team',
       features: [
         {
@@ -389,7 +389,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
       ],
     },
     {
-      icon: Send,
+      icon: RiSendPlaneLine,
       title: 'Features',
       features: [
         {
@@ -427,7 +427,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
       ],
     },
     {
-      icon: Lock,
+      icon: RiLockLine,
       title: 'Support & service',
       features: [
         {
@@ -481,7 +481,7 @@ const ComparisonTable = ({ isYearly, plans }: { isYearly: boolean; plans: Plan[]
                   {typeof value === 'boolean' ? (
                     value ? (
                       <div className="pt-1">
-                        <Check className="size-4" />
+                        <RiCheckLine className="size-4" />
                       </div>
                     ) : null
                   ) : (
