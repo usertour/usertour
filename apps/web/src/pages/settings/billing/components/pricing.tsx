@@ -614,7 +614,8 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
 
-  const percent = (currentUsage / totalLimit) * 100;
+  const isUnlimitedSessions = totalLimit === 'unlimited';
+  const percent = isUnlimitedSessions ? 0 : (currentUsage / totalLimit) * 100;
 
   // Derive each plan's display features at render time. Only the
   // current plan card shows effective features (base + override); other
@@ -719,21 +720,28 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                   ) : (
                     <div className="flex flex-col gap-1 text-xs mt-2">
                       <div className="flex items-center gap-4 w-full">
-                        <Progress value={Math.min(percent, 100)} className="h-1 grow max-w-60" />
+                        <Progress
+                          value={isUnlimitedSessions ? 0 : Math.min(percent, 100)}
+                          className="h-1 grow max-w-60"
+                        />
                         <span className="text-zinc-950/60 dark:text-white/50 flex-none">
-                          {currentUsage} / {totalLimit}
+                          {currentUsage} / {isUnlimitedSessions ? 'Unlimited' : totalLimit}
                         </span>
                       </div>
                       <div className="flex items-center gap-1 text-zinc-950/40 dark:text-white/40">
                         <span>Monthly sessions</span>
-                        <span>•</span>
-                        <span>{percent.toFixed(2)}% used</span>
-                        <span>•</span>
-                        <span>
-                          {currentUsage < totalLimit * 0.8
-                            ? 'Efficient usage'
-                            : 'Consider upgrading'}
-                        </span>
+                        {!isUnlimitedSessions && (
+                          <>
+                            <span>•</span>
+                            <span>{percent.toFixed(2)}% used</span>
+                            <span>•</span>
+                            <span>
+                              {currentUsage < totalLimit * 0.8
+                                ? 'Efficient usage'
+                                : 'Consider upgrading'}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}

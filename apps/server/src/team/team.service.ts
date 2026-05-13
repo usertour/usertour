@@ -5,6 +5,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { createTransport } from 'nodemailer';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { ConfigService } from '@nestjs/config';
+import { isWithinLimit, resolvePlanFeatures } from '@usertour/helpers';
 
 @Injectable()
 export class TeamService {
@@ -124,18 +125,15 @@ export class TeamService {
     });
     const totalCount = membersCount + inviteCount;
 
-    // hobby plan only has 1 member
-    if (subscription?.planType === 'hobby') {
-      throw new TeamMemberLimitError();
-    }
-
-    // starter plan has 3 members limit
-    if (subscription.planType === 'starter' && totalCount >= 3) {
-      throw new TeamMemberLimitError();
-    }
-
-    // growth plan has 10 members limit
-    if (subscription.planType === 'growth' && totalCount >= 10) {
+    // Resolve effective limit so per-customer overridePlan (e.g. CS
+    // bumps a Starter project's seats from 3 to 5) reaches the same
+    // gate that fronts use-plan-limits.ts on the client. Mirrors the
+    // projects.service / web-socket.service resolution path.
+    const { teamMemberLimit } = resolvePlanFeatures(
+      subscription.planType,
+      subscription.overridePlan,
+    );
+    if (!isWithinLimit(teamMemberLimit, totalCount)) {
       throw new TeamMemberLimitError();
     }
   }

@@ -16,7 +16,10 @@ export interface SubscriptionProviderProps {
 export interface SubscriptionContextValue {
   subscription: Subscription | null;
   currentUsage: number;
-  totalLimit: number;
+  // Effective sessions cap. 'unlimited' is preserved (rather than
+  // converted to Infinity) so callers handle the unbounded case
+  // explicitly — otherwise quota displays render as "Infinity".
+  totalLimit: number | 'unlimited';
   planType: PlanType;
   // Effective per-plan features (base + override). All quota / gate
   // consumers should read from here rather than re-resolving.
@@ -58,8 +61,7 @@ export function SubscriptionProvider(props: SubscriptionProviderProps): JSX.Elem
     () => resolvePlanFeatures(planType, subscription?.overridePlan),
     [planType, subscription?.overridePlan],
   );
-  const totalLimit =
-    features.sessionsLimit === 'unlimited' ? Number.POSITIVE_INFINITY : features.sessionsLimit;
+  const totalLimit = features.sessionsLimit;
   const shouldShowMadeWith = projectConfigLoading
     ? false
     : !(projectConfig?.removeBranding ?? false);
