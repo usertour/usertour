@@ -1,9 +1,9 @@
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useAppContext } from '@/contexts/app-context';
 import { EventCreateDialog } from '@/components/events/event-create-dialog';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { useState } from 'react';
-import { RiAddLine } from '@usertour-packages/icons';
+import { RiAddLine } from '@usertour/icons';
 
 export const EventListHeader = () => {
   const [open, setOpen] = useState(false);

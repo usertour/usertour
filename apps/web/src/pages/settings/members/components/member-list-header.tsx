@@ -1,8 +1,8 @@
 import { useMemberContext } from '@/contexts/member-context';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { useState, useCallback } from 'react';
 import { MemberInviteDialog } from './member-invite-dialog';
-import { RiAddLine } from '@usertour-packages/icons';
+import { RiAddLine } from '@usertour/icons';
 
 export const MemberListHeader = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);

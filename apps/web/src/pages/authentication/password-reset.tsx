@@ -1,20 +1,13 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import {
   Card,
   CardContent,
@@ -22,13 +15,13 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@usertour-packages/card';
-import { Input } from '@usertour-packages/input';
+} from '@usertour/card';
+import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useResetUserPasswordByCodeMutation } from '@usertour-packages/hooks';
+import { useResetUserPasswordByCodeMutation } from '@usertour/hooks';
 
 const formSchema = z.object({
   password: z

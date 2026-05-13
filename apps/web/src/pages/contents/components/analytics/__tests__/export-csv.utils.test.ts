@@ -15,7 +15,7 @@ jest.mock('@usertour/helpers', () => ({
   extractQuestionData: () => mockExtractQuestionData(),
 }));
 
-jest.mock('@usertour-packages/editor', () => ({
+jest.mock('@usertour/editor', () => ({
   ContentEditorElementType: {
     STAR_RATING: 'star-rating',
     SCALE: 'scale',

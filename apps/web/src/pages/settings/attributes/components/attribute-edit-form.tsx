@@ -1,39 +1,20 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { Attribute } from '@usertour/types';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { updateAttribute } from '@usertour-packages/gql';
-import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { Button } from '@usertour/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { updateAttribute } from '@usertour/gql';
+import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
+import { Input } from '@usertour/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
 import { getErrorMessage } from '@usertour/helpers';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

@@ -12,7 +12,7 @@ import { logger } from '@/utils';
 import { ActionSource } from '@/core/action-handlers';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, BannerActionHandler } from '@/core/action-handlers';
-import { SDKClientEvents } from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour/constants';
 
 export class UsertourBanner extends UsertourComponent<BannerStore> {
   private watcher: UsertourElementWatcher | null = null;

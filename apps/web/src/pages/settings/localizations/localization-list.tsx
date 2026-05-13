@@ -1,6 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
 import { LocalizationListProvider } from '@/contexts/localization-list-context';
-import { Separator } from '@usertour-packages/separator';
+import { Separator } from '@usertour/separator';
 import { SettingsContent } from '../components/content';
 import { LocalizationListContent } from './components/localization-list-content';
 import { LocalizationListHeader } from './components/localization-list-header';

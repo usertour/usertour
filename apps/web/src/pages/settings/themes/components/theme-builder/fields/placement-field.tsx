@@ -1,4 +1,4 @@
-import { sectionLabelClass } from '@usertour-packages/ui';
+import { sectionLabelClass } from '@usertour/ui';
 import { ModalPosition } from '@usertour/types';
 import { NumberField } from './number-field';
 import { SelectField } from './select-field';

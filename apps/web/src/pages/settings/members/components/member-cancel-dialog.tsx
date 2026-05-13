@@ -1,7 +1,7 @@
 'use client';
 
 import type { TeamMember } from '@usertour/types';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-packages/dialog';
-import { SpinnerIcon } from '@usertour-packages/icons';
-import { useCancelInviteMutation } from '@usertour-packages/hooks';
+} from '@usertour/dialog';
+import { SpinnerIcon } from '@usertour/icons';
+import { useCancelInviteMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 
 interface EditFormProps {

@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { useSize } from '@usertour-packages/react-use-size';
+import { useSize } from '@usertour/react-use-size';
 import { detectOverflow, platform, ReferenceElement, autoUpdate } from '@floating-ui/dom';
 import {
   useFloating,
@@ -17,7 +17,7 @@ import { getSideAndAlignFromPlacement, transformOrigin } from '../utils/position
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
 import { Align, Side } from '@usertour/types';
-import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { useComposedRefs } from '@usertour/react-compose-refs';
 
 type Boundary = Element | null;
 

@@ -16,13 +16,13 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { getContentVersion } from '@usertour-packages/gql';
-import { CircleIcon } from '@usertour-packages/icons';
+import { getContentVersion } from '@usertour/gql';
+import { CircleIcon } from '@usertour/icons';
 import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AutoScaledPreviewContainer } from '@usertour-packages/ui';
+import { AutoScaledPreviewContainer } from '@usertour/ui';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
   BannerPreviewContent,
@@ -36,8 +36,8 @@ import {
 import { columns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { useAppContext } from '@/contexts/app-context';
-import { Button } from '@usertour-packages/button';
-import { Skeleton } from '@usertour-packages/skeleton';
+import { Button } from '@usertour/button';
+import { Skeleton } from '@usertour/skeleton';
 
 const ContentPreviewFooter = ({ content }: { content: Content }) => {
   const { refetch } = useContentListContext();

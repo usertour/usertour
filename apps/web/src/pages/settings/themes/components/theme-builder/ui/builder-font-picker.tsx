@@ -1,15 +1,9 @@
-import { RiCheckLine, RiExpandUpDownLine } from '@usertour-packages/icons';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@usertour-packages/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { ScrollArea } from '@usertour-packages/scroll-area';
-import { Separator } from '@usertour-packages/separator';
-import { cn } from '@usertour-packages/tailwind';
+import { RiCheckLine, RiExpandUpDownLine } from '@usertour/icons';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@usertour/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { ScrollArea } from '@usertour/scroll-area';
+import { Separator } from '@usertour/separator';
+import { cn } from '@usertour/tailwind';
 import { fontItems } from '@/utils/webfonts';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

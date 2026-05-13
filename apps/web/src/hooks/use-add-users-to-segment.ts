@@ -1,8 +1,8 @@
 import { useMutation } from '@apollo/client';
-import { createBizUserOnSegment } from '@usertour-packages/gql';
+import { createBizUserOnSegment } from '@usertour/gql';
 import { useUserListContext } from '@/contexts/user-list-context';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';

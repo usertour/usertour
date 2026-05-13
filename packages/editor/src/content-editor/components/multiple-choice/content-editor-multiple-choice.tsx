@@ -1,6 +1,6 @@
 // Main editable multiple choice component
 
-import { MultipleSelection, SingleSelection } from '@usertour-packages/widget';
+import { MultipleSelection, SingleSelection } from '@usertour/widget';
 import { memo, useCallback, useState } from 'react';
 
 import type { ContentEditorMultipleChoiceElement } from '../../../types/editor';

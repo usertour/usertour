@@ -1,7 +1,7 @@
 // Main editable scale component
 
 import { isEmptyString } from '@usertour/helpers';
-import { Scale, validateScaleRange } from '@usertour-packages/widget';
+import { Scale, validateScaleRange } from '@usertour/widget';
 import { memo, useCallback, useMemo } from 'react';
 
 import type { ContentEditorScaleElement } from '../../../types/editor';

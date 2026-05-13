@@ -4,8 +4,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { CopyIcon, Delete2Icon, UnPublishIcon } from '@usertour-packages/icons';
+} from '@usertour/dropdown-menu';
+import { CopyIcon, Delete2Icon, UnPublishIcon } from '@usertour/icons';
 import { Content } from '@usertour/types';
 import { ReactNode, useState } from 'react';
 import { ContentDeleteForm } from './content-delete-form';

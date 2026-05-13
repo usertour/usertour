@@ -1,6 +1,6 @@
 // Star rating component for SDK widget
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useCallback, useMemo } from 'react';
 
 import { QUESTION_LABELS_CONTAINER_CLASS, STAR_SVG_PATH } from './constants';

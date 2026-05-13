@@ -9,29 +9,17 @@ import {
   useAdminChangeProjectMemberRoleMutation,
   useAdminTransferProjectOwnershipMutation,
   useAdminRemoveProjectMemberMutation,
-} from '@usertour-packages/hooks';
-import { useToast } from '@usertour-packages/use-toast';
+} from '@usertour/hooks';
+import { useToast } from '@usertour/use-toast';
 import { useState, useCallback } from 'react';
 import { SettingsContent } from '@/pages/settings/components/content';
-import { Separator } from '@usertour-packages/separator';
-import { Button } from '@usertour-packages/button';
-import { Badge } from '@usertour-packages/badge';
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { Separator } from '@usertour/separator';
+import { Button } from '@usertour/button';
+import { Badge } from '@usertour/badge';
+import { Input } from '@usertour/input';
+import { Label } from '@usertour/label';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
 import {
   Command,
   CommandEmpty,
@@ -40,24 +28,17 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@usertour-packages/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/tailwind';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
+} from '@usertour/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { cn } from '@usertour/tailwind';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
+} from '@usertour/dropdown-menu';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   PlusIcon,
@@ -74,7 +55,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { UserAvatar } from '@/components/molecules/user-avatar';
-import { Delete2Icon, EditIcon } from '@usertour-packages/icons';
+import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 
 const PAGE_SIZE = 20;

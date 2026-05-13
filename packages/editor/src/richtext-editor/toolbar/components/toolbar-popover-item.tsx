@@ -1,9 +1,9 @@
 'use client';
 
-import { EDITOR_RICH_TOOLBAR_MORE } from '@usertour-packages/constants';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/tailwind';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
+import { EDITOR_RICH_TOOLBAR_MORE } from '@usertour/constants';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { cn } from '@usertour/tailwind';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour/tooltip';
 import { memo } from 'react';
 
 import { usePopperEditorContext } from '../../editor';

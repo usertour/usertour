@@ -5,7 +5,7 @@ import {
   ResourceCenterTab,
   LiveChatProvider,
 } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { isEqual } from 'lodash';
 import { isRichTextEmpty } from '@usertour/helpers';
 import {
@@ -21,7 +21,7 @@ import {
 import { useDebouncedCallback } from 'use-debounce';
 import { useEvent } from 'react-use';
 import { BuilderMode, useBuilderContext } from './builder-context';
-import { useUpdateContentVersionMutation } from '@usertour-packages/hooks';
+import { useUpdateContentVersionMutation } from '@usertour/hooks';
 import { deepClone } from '@usertour/helpers';
 
 export interface ResourceCenterProviderProps {

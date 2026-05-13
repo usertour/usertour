@@ -1,9 +1,9 @@
 'use client';
 
 import { CubeIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { EXTENSION_SELECT, MESSAGE_CRX_OPEN_NEW_TARGET } from '@usertour-packages/constants';
-import { useThemeListContext } from '@usertour-packages/contexts';
+import { Button } from '@usertour/button';
+import { EXTENSION_SELECT, MESSAGE_CRX_OPEN_NEW_TARGET } from '@usertour/constants';
+import { useThemeListContext } from '@usertour/contexts';
 import {
   Select,
   SelectContent,
@@ -11,15 +11,15 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-packages/select';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+} from '@usertour/select';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { Theme } from '@usertour/types';
 import { useCallback, useEffect } from 'react';
 
 import { useMutation } from '@apollo/client';
-import { updateContentVersion } from '@usertour-packages/gql';
+import { updateContentVersion } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useBuilderContext } from '../../contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';
 

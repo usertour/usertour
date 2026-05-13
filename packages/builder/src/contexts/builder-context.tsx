@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useEvent } from 'react-use';
 
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { debug } from '../utils/logger';
 import { SelectorOutput } from '../utils/screenshot';
 import { getEmptyDataForType } from '../utils/default-data';
@@ -21,7 +21,7 @@ import {
   useGetContentVersionLazyQuery,
   useAddContentStepsMutation,
   useAddContentStepMutation,
-} from '@usertour-packages/hooks';
+} from '@usertour/hooks';
 
 export enum BuilderMode {
   ELEMENT_SELECTOR = 'element-selector',

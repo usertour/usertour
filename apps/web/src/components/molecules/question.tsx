@@ -1,5 +1,5 @@
-import { cn } from '@usertour-packages/tailwind';
-import { StarButton } from '@usertour-packages/widget';
+import { cn } from '@usertour/tailwind';
+import { StarButton } from '@usertour/widget';
 
 interface QuestionStarRatingProps {
   maxLength: number;

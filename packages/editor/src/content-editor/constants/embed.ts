@@ -1,6 +1,6 @@
 // Embed-related constants shared across content editor components
 
-import type { SelectPopoverOption } from '@usertour-packages/ui';
+import type { SelectPopoverOption } from '@usertour/ui';
 
 import { WIDTH_TYPES } from './width';
 

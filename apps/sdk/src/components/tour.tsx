@@ -12,7 +12,7 @@ import {
   PopperProgress,
   useSettingsStyles,
   useStepWidth,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import {
   Align,
   AvatarType,

@@ -13,20 +13,17 @@ import {
   RiSendPlaneLine,
   RiStackLine,
   RiTeamLine,
-} from '@usertour-packages/icons';
-import { Button } from '@usertour-packages/button';
-import { Switch } from '@usertour-packages/switch';
+} from '@usertour/icons';
+import { Button } from '@usertour/button';
+import { Switch } from '@usertour/switch';
 import { Fragment, useState, useEffect } from 'react';
-import { cn } from '@usertour-packages/tailwind';
-import {
-  useCreateCheckoutSessionMutation,
-  useCreatePortalSessionMutation,
-} from '@usertour-packages/hooks';
-import { Separator } from '@usertour-packages/separator';
-import { Progress } from '@usertour-packages/progress';
-import { Skeleton } from '@usertour-packages/skeleton';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { PLAN_FEATURES } from '@usertour-packages/constants';
+import { cn } from '@usertour/tailwind';
+import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from '@usertour/hooks';
+import { Separator } from '@usertour/separator';
+import { Progress } from '@usertour/progress';
+import { Skeleton } from '@usertour/skeleton';
+import { QuestionTooltip } from '@usertour/tooltip';
+import { PLAN_FEATURES } from '@usertour/constants';
 import { resolvePlanFeatures } from '@usertour/helpers';
 import { PlanType, type PlanFeatures } from '@usertour/types';
 import { useSubscriptionContext } from '@/contexts/subscription-context';

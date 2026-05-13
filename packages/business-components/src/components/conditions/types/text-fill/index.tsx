@@ -1,4 +1,4 @@
-import { TextFillIcon } from '@usertour-packages/icons';
+import { TextFillIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
 import { ConditionElementSelector } from '../../primitives/condition-element-selector';

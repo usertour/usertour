@@ -1,13 +1,6 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import { useApiContext } from '@/contexts/api-context';
-import { AccessToken } from '@usertour-packages/hooks';
+import { AccessToken } from '@usertour/hooks';
 import { ApiListAction } from './api-list-action';
 import { useAppContext } from '@/contexts/app-context';
 import { ListSkeleton } from '@/components/molecules/skeleton';

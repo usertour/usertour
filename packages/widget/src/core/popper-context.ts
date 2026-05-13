@@ -1,6 +1,6 @@
 import type { SideObject, Rect } from '@floating-ui/dom';
-import { AssetAttributes } from '@usertour-packages/frame';
-import { createContext } from '@usertour-packages/react-context';
+import { AssetAttributes } from '@usertour/frame';
+import { createContext } from '@usertour/react-context';
 
 /**
  * Internal Popper context - shared between popper and bubble components

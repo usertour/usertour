@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import isHotkey from 'is-hotkey';
 import React, { useCallback } from 'react';
 import { Editor, Element as SlateElement, Path, Transforms } from 'slate';

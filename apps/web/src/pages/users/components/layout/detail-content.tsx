@@ -3,7 +3,7 @@ import { useUserListContext } from '@/contexts/user-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, CopyIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';
-import { CompanyIcon, Delete2Icon } from '@usertour-packages/icons';
+import { CompanyIcon, Delete2Icon } from '@usertour/icons';
 import {
   MoreButton,
   SectionBreadcrumbHeader,
@@ -23,21 +23,16 @@ import { UserCompaniesTab } from '../companies';
 import { ActivityFeed } from '@/components/molecules/activity-feed';
 import { UserActivityFeedProvider } from '@/contexts/activity-feed-context';
 import { formatAttributeValue } from '@/utils/common';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
-import { Button } from '@usertour-packages/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
+import { Button } from '@usertour/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { ToggleGroup, ToggleGroupItem } from '@usertour-packages/toggle';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+} from '@usertour/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@usertour/toggle';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { BizUserDeleteDialog } from '../dialogs';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';

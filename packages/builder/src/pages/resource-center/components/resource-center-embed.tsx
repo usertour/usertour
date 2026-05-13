@@ -1,5 +1,5 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
-import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
+import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
+import { useAttributeListContext, useThemeListContext } from '@usertour/contexts';
 import {
   ResourceCenterRoot,
   ResourceCenterStyleProvider,
@@ -10,9 +10,9 @@ import {
   ResourceCenterTabBar,
   ResourceCenterFooter,
   useResourceCenterContext as useWidgetResourceCenterContext,
-} from '@usertour-packages/widget';
-import { ContentEditor, ContentEditorRoot } from '@usertour-packages/editor';
-import { useContentListQuery } from '@usertour-packages/hooks';
+} from '@usertour/widget';
+import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
+import { useContentListQuery } from '@usertour/hooks';
 import {
   ContentDataType,
   ContentEditorElementType,

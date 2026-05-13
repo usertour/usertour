@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import type { RenderElementProps } from 'slate-react';
 
-import { ListItem } from '@usertour-packages/widget';
+import { ListItem } from '@usertour/widget';
 
 // Component props types
 interface ListItemElementProps extends RenderElementProps {

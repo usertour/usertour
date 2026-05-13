@@ -1,12 +1,12 @@
 import { forwardRef, useRef, createContext, useContext, useEffect } from 'react';
-import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { useComposedRefs } from '@usertour/react-compose-refs';
 import { autoUpdate, ReferenceElement } from '@floating-ui/dom';
 import { useFloating, offset, shift, limitShift, flip, size } from '@floating-ui/react-dom';
 import type { Placement } from '@floating-ui/dom';
 import { createCustomHideMiddleware } from './utils/floating-ui-middleware';
 import { createPlatformWithDetachedReferenceFallback } from './utils/floating-ui-platform';
 import type { Rect } from '@floating-ui/dom';
-import { getRegisteredIconNames, getIcon } from '@usertour-packages/icons';
+import { getRegisteredIconNames, getIcon } from '@usertour/icons';
 import {
   Align,
   LauncherData,
@@ -15,7 +15,7 @@ import {
   Side,
   ThemeTypesSetting,
 } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import {
   Popper,
   PopperContent,

@@ -13,7 +13,7 @@ import {
   contentStartReason,
   flowReasonTitleMap,
 } from '@usertour/types';
-import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/editor';
+import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
 
 type DateRange = {
   from?: Date;

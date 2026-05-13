@@ -1,10 +1,10 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { useState } from 'react';
 import { useAppContext } from '@/contexts/app-context';
-import { AttributeCreateForm } from '@usertour-packages/editor';
-import { RiAddLine } from '@usertour-packages/icons';
+import { AttributeCreateForm } from '@usertour/editor';
+import { RiAddLine } from '@usertour/icons';
 
 export const AttributeListHeader = () => {
   const [open, setOpen] = useState(false);

@@ -4,8 +4,8 @@ import {
   PopoverArrow,
   PopoverContent,
   PopoverTrigger,
-} from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/popover';
+import { cn } from '@usertour/tailwind';
 import React from 'react';
 
 const ContentError = Popover;

@@ -1,12 +1,7 @@
 import { memo, useCallback } from 'react';
 
 import { AvatarType } from '@usertour/types';
-import {
-  CompactTabs,
-  CompactTabsContent,
-  CompactTabsList,
-  CompactTabsTrigger,
-} from '@usertour-packages/ui';
+import { CompactTabs, CompactTabsContent, CompactTabsList, CompactTabsTrigger } from '@usertour/ui';
 
 import { useAvatarTab } from './hooks/use-avatar-tab';
 import { CartoonAvatarTab } from './cartoon-avatar-tab';

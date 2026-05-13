@@ -1,16 +1,5 @@
-import {
-  LauncherIcon,
-  RiEyeOffFill,
-  RiInformationFill,
-  RiSquareFill,
-} from '@usertour-packages/icons';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+import { LauncherIcon, RiEyeOffFill, RiInformationFill, RiSquareFill } from '@usertour/icons';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
 import { LauncherDataType } from '@usertour/types';
 
 interface LauncherTypeProps {

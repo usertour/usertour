@@ -1,17 +1,10 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { Attribute } from '@usertour/types';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import { useEffect, useState } from 'react';
-import { Badge } from '@usertour-packages/badge';
-import { RiShieldCheckFill } from '@usertour-packages/icons';
+import { Badge } from '@usertour/badge';
+import { RiShieldCheckFill } from '@usertour/icons';
 import { AttributeListAction } from './attribute-list-action';
 
 interface AttributeListContentProps {

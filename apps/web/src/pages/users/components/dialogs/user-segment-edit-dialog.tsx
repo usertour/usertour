@@ -1,26 +1,13 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@usertour-packages/button';
-import { useToast } from '@usertour-packages/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { Input } from '@usertour-packages/input';
+import { Button } from '@usertour/button';
+import { useToast } from '@usertour/use-toast';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { Input } from '@usertour/input';
 import { Segment } from '@usertour/types';
 import { useUpdateSegment } from '@/hooks/use-update-segment';
 import { editSegmentFormSchema, EditSegmentFormValues } from '../../types/segment-form-schema';

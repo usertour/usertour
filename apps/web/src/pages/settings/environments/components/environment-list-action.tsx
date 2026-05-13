@@ -1,22 +1,22 @@
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { Environment } from '@usertour/types';
 import { DotsHorizontalIcon, StarIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { Delete2Icon, EditIcon } from '@usertour-packages/icons';
+} from '@usertour/dropdown-menu';
+import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { useState } from 'react';
 import { EnvironmentDeleteForm } from './environment-delete-form';
 import { EnvironmentEditForm } from './environment-edit-form';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
-import { updateEnvironments } from '@usertour-packages/gql';
-import { useToast } from '@usertour-packages/use-toast';
+import { updateEnvironments } from '@usertour/gql';
+import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 type EnvironmentListActionProps = {
   environment: Environment;

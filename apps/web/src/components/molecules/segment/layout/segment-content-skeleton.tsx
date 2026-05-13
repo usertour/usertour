@@ -1,5 +1,5 @@
-import { Skeleton } from '@usertour-packages/skeleton';
-import { Separator } from '@usertour-packages/separator';
+import { Skeleton } from '@usertour/skeleton';
+import { Separator } from '@usertour/separator';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 
 // Skeleton for the header section

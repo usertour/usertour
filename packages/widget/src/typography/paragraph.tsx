@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { forwardRef, memo } from 'react';
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 // Shared paragraph styles using SDK Tailwind classes
 const PARAGRAPH_STYLES = [

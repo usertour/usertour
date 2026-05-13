@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/tabs",
+  "name": "@usertour/tabs",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-tabs": "^1.0.4",
-    "@usertour-packages/tailwind": "workspace:*",
+    "@usertour/tailwind": "workspace:*",
     "class-variance-authority": "^0.4.0",
     "framer-motion": "^12.38.0"
   },

@@ -4,9 +4,9 @@ import {
   useAttributeListContext,
   useContentListContext,
   useThemeListContext,
-} from '@usertour-packages/contexts';
-import { ContentListProvider } from '@usertour-packages/contexts';
-import { ThemeListProvider } from '@usertour-packages/contexts';
+} from '@usertour/contexts';
+import { ContentListProvider } from '@usertour/contexts';
+import { ThemeListProvider } from '@usertour/contexts';
 import { BannerProvider } from './banner-context';
 import { BuilderProvider } from './builder-context';
 import { ChecklistProvider } from './checklist-context';

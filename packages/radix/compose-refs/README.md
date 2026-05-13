@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-packages/react-compose-refs
+$ yarn add @usertour/react-compose-refs
 # or
-$ npm install @usertour-packages/react-compose-refs
+$ npm install @usertour/react-compose-refs
 ```
 
 ## Usage

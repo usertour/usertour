@@ -1,4 +1,4 @@
-import { Badge } from '@usertour-packages/badge';
+import { Badge } from '@usertour/badge';
 import {
   ArrowRightIcon,
   EyeNoneIcon,
@@ -6,9 +6,9 @@ import {
   RiMessageFill,
   SpinnerIcon,
   TooltipIcon,
-} from '@usertour-packages/icons';
-import { ScrollArea } from '@usertour-packages/scroll-area';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/icons';
+import { ScrollArea } from '@usertour/scroll-area';
+import { cn } from '@usertour/tailwind';
 import {
   ContentActionsItemType,
   type ContentVersion,
@@ -32,7 +32,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuSelectItem,
-} from '@usertour-packages/dropdown-menu';
+} from '@usertour/dropdown-menu';
 
 interface StepGotoData {
   stepCvid?: string;

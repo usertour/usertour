@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import type { RenderElementProps } from 'slate-react';
 
-import { List, getListClassName } from '@usertour-packages/widget';
+import { List, getListClassName } from '@usertour/widget';
 
 // Component props types
 interface NumberedListElementProps extends RenderElementProps {

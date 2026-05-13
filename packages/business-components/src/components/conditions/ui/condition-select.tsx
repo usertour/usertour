@@ -1,6 +1,6 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { cn } from '@usertour-packages/tailwind';
-import { CompactPopoverTrigger } from '@usertour-packages/ui';
+import { cn } from '@usertour/tailwind';
+import { CompactPopoverTrigger } from '@usertour/ui';
 import {
   ConditionDropdownMenu,
   ConditionDropdownMenuContent,

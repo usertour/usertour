@@ -10,10 +10,10 @@ import {
   type DatePresetKey,
   type DatePresetOption,
 } from '@/utils/date-presets';
-import { Button } from '@usertour-packages/button';
-import { Calendar } from '@usertour-packages/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/tailwind';
+import { Button } from '@usertour/button';
+import { Calendar } from '@usertour/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { cn } from '@usertour/tailwind';
 
 /**
  * Controlled DateRangePicker component (stateless)

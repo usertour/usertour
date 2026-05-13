@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useContext } from 'react';
 import { useAppContext } from './app-context';
-import { useListAccessTokensQuery, AccessToken } from '@usertour-packages/hooks';
+import { useListAccessTokensQuery, AccessToken } from '@usertour/hooks';
 
 export interface ApiProviderProps {
   children?: ReactNode;

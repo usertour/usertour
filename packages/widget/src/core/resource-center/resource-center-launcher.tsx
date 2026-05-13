@@ -1,6 +1,6 @@
 import { forwardRef, useState } from 'react';
-import type { AssetAttributes } from '@usertour-packages/frame';
-import { Frame } from '@usertour-packages/frame';
+import type { AssetAttributes } from '@usertour/frame';
+import { Frame } from '@usertour/frame';
 import { useResourceCenterContext } from './context';
 import { RESOURCE_CENTER_DEFAULTS, resourceCenterPlacementToPosition } from './constants';
 import { computePositionStyle } from '../utils/position';

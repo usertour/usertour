@@ -1,6 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
-import { deleteBizCompany } from '@usertour-packages/gql';
+import { deleteBizCompany } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 

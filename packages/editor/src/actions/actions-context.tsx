@@ -1,4 +1,4 @@
-import { RulesZIndexOffset, WebZIndex } from '@usertour-packages/constants';
+import { RulesZIndexOffset, WebZIndex } from '@usertour/constants';
 import type { Attribute, Content, ContentVersion, Segment, Step } from '@usertour/types';
 import { createContext, useContext } from 'react';
 

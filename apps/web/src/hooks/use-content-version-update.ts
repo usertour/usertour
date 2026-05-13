@@ -1,10 +1,10 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useMutation } from '@apollo/client';
-import { createContentVersion, updateContentVersion } from '@usertour-packages/gql';
+import { createContentVersion, updateContentVersion } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { isVersionPublished } from '@/utils/content';

@@ -6,8 +6,8 @@ import type { RenderElementProps } from 'slate-react';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 
 import type { Attribute } from '@usertour/types';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { Link, getLinkClassName } from '@usertour-packages/widget';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Link, getLinkClassName } from '@usertour/widget';
 
 import { INITIAL_LINK_URL_VALUE, LINK_OPEN_TYPE } from '../../content-editor/constants';
 import { LinkEditorPanel } from '../../content-editor/shared';

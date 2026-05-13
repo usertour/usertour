@@ -10,17 +10,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
-import { Skeleton } from '@usertour-packages/skeleton';
-import { cn } from '@usertour-packages/tailwind';
-import { TooltipProvider } from '@usertour-packages/tooltip';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Skeleton } from '@usertour/skeleton';
+import { cn } from '@usertour/tailwind';
+import { TooltipProvider } from '@usertour/tooltip';
 import { DataTableProps, TableStyles } from './types';
 import { EmptyPlaceholder } from '../ui';
 import * as React from 'react';

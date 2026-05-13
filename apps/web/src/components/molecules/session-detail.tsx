@@ -1,16 +1,9 @@
 import { Fragment } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
-import { Badge } from '@usertour-packages/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { Badge } from '@usertour/badge';
 import { BizEvent } from '@usertour/types';
-import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/editor';
-import { cn } from '@usertour-packages/tailwind';
+import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
+import { cn } from '@usertour/tailwind';
 import { QuestionStarRating } from './question';
 import type { QuestionWithAnswer } from '@/utils/session';
 

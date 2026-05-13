@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { storage } from '@usertour/helpers';
-import { StorageKeys } from '@usertour-packages/constants';
+import { StorageKeys } from '@usertour/constants';
 import { Environment } from '@usertour/types';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';

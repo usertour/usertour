@@ -1,6 +1,6 @@
 import { forwardRef, memo, useCallback, useMemo, type HTMLAttributes } from 'react';
-import { ArrowLeftIcon, DropDownIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { ArrowLeftIcon, DropDownIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { ResourceCenterBlockType } from '@usertour/types';
 import type { ResourceCenterContentListBlock } from '@usertour/types';
 import { Button } from '../../primitives';

@@ -1,6 +1,6 @@
 // Main editable multi-line text component
 
-import * as Widget from '@usertour-packages/widget';
+import * as Widget from '@usertour/widget';
 import { BizAttributeTypes } from '@usertour/types';
 import { memo, useCallback } from 'react';
 

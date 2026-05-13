@@ -7,7 +7,7 @@ import {
   EventAttributes,
   flowReasonTitleMap,
 } from '@usertour/types';
-import { ContentEditorElementType, contentTypesConfig } from '@usertour-packages/editor';
+import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
 import { formatDistanceStrict } from 'date-fns';
 import { extractQuestionData } from '@usertour/helpers';
 

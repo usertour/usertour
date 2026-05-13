@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef } from 'react';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { useResourceCenterContext } from './context';
 import { ResourceCenterTrigger } from './resource-center-trigger';
 

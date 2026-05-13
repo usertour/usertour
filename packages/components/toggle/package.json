@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/toggle",
+  "name": "@usertour/toggle",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,7 +15,7 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.1",
     "class-variance-authority": "^0.4.0",
-    "@usertour-packages/tailwind": "workspace:*"
+    "@usertour/tailwind": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"

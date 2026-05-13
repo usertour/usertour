@@ -1,11 +1,11 @@
-import { AssetAttributes } from '@usertour-packages/frame';
+import { AssetAttributes } from '@usertour/frame';
 import {
   BannerRoot,
   ContentEditorSerialize,
   BannerFrame,
   getBannerWrapperStyle,
   LinkDecoratorContext,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import {
   BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT,
   BannerData,

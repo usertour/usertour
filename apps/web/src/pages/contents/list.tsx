@@ -2,7 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { ContentListProvider } from '@/contexts/content-list-context';
 import { EventListProvider } from '@/contexts/event-list-context';
 import { ThemeListProvider } from '@/contexts/theme-list-context';
-import { ScrollArea } from '@usertour-packages/scroll-area';
+import { ScrollArea } from '@usertour/scroll-area';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { ReactNode } from 'react';
 import { useParams } from 'react-router-dom';

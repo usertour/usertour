@@ -27,7 +27,7 @@ import {
 } from '@usertour/types';
 import { Socket, logger, timerManager } from '@/utils';
 import { getWsUri } from '@/core/usertour-env';
-import { WEBSOCKET_NAMESPACES_V2 } from '@usertour-packages/constants';
+import { WEBSOCKET_NAMESPACES_V2 } from '@usertour/constants';
 import { getClientContext } from '@/core/usertour-helper';
 import { uuidV4 } from '@usertour/helpers';
 

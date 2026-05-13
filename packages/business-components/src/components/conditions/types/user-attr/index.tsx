@@ -1,4 +1,4 @@
-import { UserIcon } from '@usertour-packages/icons';
+import { UserIcon } from '@usertour/icons';
 import {
   type Attribute,
   AttributeBizTypes,
@@ -17,9 +17,9 @@ import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateUserAttr } from '../../validators';
 import { format } from 'date-fns';
-import { DateTimePicker } from '@usertour-packages/ui';
+import { DateTimePicker } from '@usertour/ui';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 import {
   DATE_PICKER_OPERATORS,
   VALUELESS_OPERATORS,

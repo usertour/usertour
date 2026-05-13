@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Children, memo } from 'react';
 import type { RenderElementProps } from 'slate-react';
 
-import { Paragraph, getParagraphClassName } from '@usertour-packages/widget';
+import { Paragraph, getParagraphClassName } from '@usertour/widget';
 
 // Non-breaking space for empty paragraphs
 const NBSP = '\u00A0';

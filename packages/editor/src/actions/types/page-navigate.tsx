@@ -1,7 +1,7 @@
-import { PagesIcon } from '@usertour-packages/icons';
-import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
-import { serializeMini as serializeMiniWidget } from '@usertour-packages/widget/src/serialize/utils';
-import type { DescendantNode } from '@usertour-packages/widget/src/serialize/types';
+import { PagesIcon } from '@usertour/icons';
+import { Tabs, TabsList, TabsTrigger } from '@usertour/tabs';
+import { serializeMini as serializeMiniWidget } from '@usertour/widget/src/serialize/utils';
+import type { DescendantNode } from '@usertour/widget/src/serialize/types';
 import { ContentActionsItemType, type RulesCondition } from '@usertour/types';
 import type { Descendant } from 'slate';
 import { useActionsContext, useActionsT, useSummaryTextClass } from '../actions-context';

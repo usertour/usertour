@@ -1,4 +1,4 @@
-import { ScrollArea } from '@usertour-packages/scroll-area';
+import { ScrollArea } from '@usertour/scroll-area';
 import { AdminLayoutNewContent, AdminNewLayout } from '@/pages/layouts/components/admin-layout';
 import { AdminMainNewNav } from '@/pages/layouts/components/admin-main-nav';
 import { AdminPanelSidebarNav } from './components/admin-sidebar-nav';

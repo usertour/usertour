@@ -5,8 +5,8 @@ import {
   Separator as ToolbarSeparator,
   ToggleGroup as ToolbarToggleGroup,
 } from '@radix-ui/react-toolbar';
-import { EDITOR_RICH_TOOLBAR } from '@usertour-packages/constants';
-import { TooltipProvider } from '@usertour-packages/tooltip';
+import { EDITOR_RICH_TOOLBAR } from '@usertour/constants';
+import { TooltipProvider } from '@usertour/tooltip';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Transforms } from 'slate';

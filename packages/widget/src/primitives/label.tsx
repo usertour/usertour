@@ -3,7 +3,7 @@
 import * as LabelPrimitive from '@radix-ui/react-label';
 import * as React from 'react';
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 export type LabelProps = React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>;
 

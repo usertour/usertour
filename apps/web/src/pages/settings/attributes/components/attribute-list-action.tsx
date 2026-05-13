@@ -1,21 +1,16 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { Attribute } from '@usertour/types';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { Delete2Icon, EditIcon } from '@usertour-packages/icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+} from '@usertour/dropdown-menu';
+import { Delete2Icon, EditIcon } from '@usertour/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { useState } from 'react';
 import { AttributeDeleteForm } from './attribute-delete-form';
 import { AttributeEditForm } from './attribute-edit-form';

@@ -1,4 +1,4 @@
-import { TaskClickedIcon } from '@usertour-packages/icons';
+import { TaskClickedIcon } from '@usertour/icons';
 import { useConditionsT } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
 

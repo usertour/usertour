@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { queryContentAnalytics } from '@usertour-packages/gql';
+import { queryContentAnalytics } from '@usertour/gql';
 import { AnalyticsData, AnalyticsQuery } from '@usertour/types';
 import { endOfDay, startOfDay } from 'date-fns';
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';

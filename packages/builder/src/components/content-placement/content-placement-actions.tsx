@@ -1,6 +1,6 @@
-import { EXTENSION_SELECT } from '@usertour-packages/constants';
-import { Label } from '@usertour-packages/label';
-import { Actions } from '@usertour-packages/editor';
+import { EXTENSION_SELECT } from '@usertour/constants';
+import { Label } from '@usertour/label';
+import { Actions } from '@usertour/editor';
 import { Attribute, Content, ContentVersion, Step } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useContentPlacement } from './content-placement-context';

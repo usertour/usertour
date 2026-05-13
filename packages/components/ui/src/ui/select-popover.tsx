@@ -1,5 +1,5 @@
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   Command,
   CommandEmpty,
@@ -7,9 +7,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@usertour-packages/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { cn } from '@usertour/tailwind';
 import type { CSSProperties } from 'react';
 import { useCallback, useState } from 'react';
 

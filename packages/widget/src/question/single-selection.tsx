@@ -1,6 +1,6 @@
 // Single selection (radio) component for SDK widget
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useCallback, useState } from 'react';
 
 import { Label, RadioGroup, RadioGroupItem } from '../primitives';

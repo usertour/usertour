@@ -4,7 +4,7 @@ import {
   useGlobalConfigQuery,
   useGetUserInfoQuery,
   useLogoutMutation,
-} from '@usertour-packages/hooks';
+} from '@usertour/hooks';
 import { removeAuthToken } from '@usertour/helpers';
 import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';

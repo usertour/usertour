@@ -6,12 +6,12 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { setDefaultTheme } from '@usertour-packages/gql';
-import { CopyIcon, Delete2Icon } from '@usertour-packages/icons';
+} from '@usertour/dropdown-menu';
+import { setDefaultTheme } from '@usertour/gql';
+import { CopyIcon, Delete2Icon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { Theme } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { ReactNode, useState } from 'react';
 import { ThemeDeleteForm } from './theme-delete-form';
 import { ThemeDuplicateForm } from './theme-duplicate-form';

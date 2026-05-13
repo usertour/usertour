@@ -1,4 +1,4 @@
-import { TextInputIcon } from '@usertour-packages/icons';
+import { TextInputIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
 import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
@@ -6,7 +6,7 @@ import { ConditionElementSelector } from '../../primitives/condition-element-sel
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextInput } from '../../validators';
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 
 export interface TextInputData {
   elementData?: ElementSelectorPropsData;

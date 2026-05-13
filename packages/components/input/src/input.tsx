@@ -1,7 +1,7 @@
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 // `variant` collapses both the size and surface decisions into one knob — we
 // avoid splitting it into separate `size`/`surface` props because `<input>`

@@ -1,4 +1,4 @@
-import { RiCheckLine } from '@usertour-packages/icons';
+import { RiCheckLine } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 
 interface Props {

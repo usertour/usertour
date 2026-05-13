@@ -3,7 +3,7 @@ import {
   BannerPreview,
   BannerRoot,
   ContentEditorSerialize,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import {
   DEFAULT_BANNER_DATA,
   BannerEmbedPlacement,

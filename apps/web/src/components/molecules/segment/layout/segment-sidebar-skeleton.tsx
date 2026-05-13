@@ -1,4 +1,4 @@
-import { Skeleton } from '@usertour-packages/skeleton';
+import { Skeleton } from '@usertour/skeleton';
 import {
   AdminSidebarBodyItemTemplate,
   AdminSidebarBodyTemplate,

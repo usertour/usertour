@@ -17,7 +17,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { EDITOR_OVERLAY } from '@usertour-packages/constants';
+import { EDITOR_OVERLAY } from '@usertour/constants';
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -30,7 +30,7 @@ import { ContentEditorGroup } from './group';
 import { GroupDropZone } from './group-drop-zone';
 import { ContentEditorRenderColumn } from './render-column';
 import { ContentEditorSideBar } from './sidebar';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 // DndContext measuring config - constant outside component to avoid recreation
 const MEASURING_CONFIG = {

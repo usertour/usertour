@@ -1,6 +1,6 @@
-import { Button, type ButtonProps } from '@usertour-packages/button';
-import { RiArrowRightSLine, RiMoreFill } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { Button, type ButtonProps } from '@usertour/button';
+import { RiArrowRightSLine, RiMoreFill } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { Fragment, forwardRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 

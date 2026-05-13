@@ -8,7 +8,7 @@ import {
   LauncherTriggerElement,
   LauncherTriggerEvent,
 } from '@usertour/types';
-import { EmptyGroup, EmptyColumn, EmptyText } from '@usertour-packages/editor';
+import { EmptyGroup, EmptyColumn, EmptyText } from '@usertour/editor';
 
 export const defaultLauncherData: LauncherData = {
   type: LauncherDataType.ICON,

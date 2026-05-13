@@ -1,7 +1,7 @@
 // Column serialize component for SDK rendering
 
 import type { ContentEditorColumnElement } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { memo, useMemo } from 'react';
 import type { ReactNode } from 'react';
 

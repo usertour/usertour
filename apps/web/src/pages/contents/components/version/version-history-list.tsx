@@ -1,10 +1,10 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionListContext } from '@/contexts/content-version-list-context';
 import { ListSkeleton } from '@/components/molecules/skeleton';
-import { Card } from '@usertour-packages/card';
-import { SpinnerIcon } from '@usertour-packages/icons';
-import { Separator } from '@usertour-packages/separator';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Card } from '@usertour/card';
+import { SpinnerIcon } from '@usertour/icons';
+import { Separator } from '@usertour/separator';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { ContentVersion } from '@usertour/types';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useEffect, useMemo } from 'react';

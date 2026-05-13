@@ -5,7 +5,7 @@ import { Editor, Element as SlateElement, Transforms, type Path } from 'slate';
 import type { RenderElementProps } from 'slate-react';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 
-import { EDITOR_RICH_TOOLBAR_MORE } from '@usertour-packages/constants';
+import { EDITOR_RICH_TOOLBAR_MORE } from '@usertour/constants';
 import {
   Combobox,
   ComboboxContent,
@@ -14,9 +14,9 @@ import {
   ComboboxItem,
   ComboboxList,
   useComboboxAnchor,
-} from '@usertour-packages/ui';
+} from '@usertour/ui';
 
-import { RiSearchLine } from '@usertour-packages/icons';
+import { RiSearchLine } from '@usertour/icons';
 
 import { insertUserAttributeBlock } from '../../lib/editorHelper';
 import { toggleBlock } from '../toolbar/hooks/use-block-format';

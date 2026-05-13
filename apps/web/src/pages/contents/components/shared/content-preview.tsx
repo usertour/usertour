@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useEventListContext } from '@/contexts/event-list-context';
-import { EyeNoneIcon, EventTrackerIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { EyeNoneIcon, EventTrackerIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import {
   BannerContainer,
   BannerPreview,
@@ -33,8 +33,8 @@ import {
   ResourceCenterBlocks,
   ResourceCenterTabBar,
   ResourceCenterFooter,
-} from '@usertour-packages/widget';
-import { ScaledPreviewContainer } from '@usertour-packages/ui';
+} from '@usertour/widget';
+import { ScaledPreviewContainer } from '@usertour/ui';
 import {
   AvatarType,
   BannerData,
@@ -50,7 +50,7 @@ import {
   Theme,
 } from '@usertour/types';
 
-import { PREVIEW_BASIC } from '@usertour-packages/constants';
+import { PREVIEW_BASIC } from '@usertour/constants';
 import { useSubscriptionContext } from '@/contexts/subscription-context';
 
 interface EmptyContentPreviewProps {

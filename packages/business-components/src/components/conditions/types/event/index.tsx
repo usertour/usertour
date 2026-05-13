@@ -1,4 +1,4 @@
-import { EventTrackerIcon } from '@usertour-packages/icons';
+import { EventTrackerIcon } from '@usertour/icons';
 import {
   type Event,
   EventCountLogic,
@@ -19,7 +19,7 @@ import { validateConditions } from '../../validate';
 import { validateEvent } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { ConditionInlineSelect } from '../../ui/condition-inline-select';
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 import { EventScopeContext } from './event-scope-context';
 
 export interface EventData {

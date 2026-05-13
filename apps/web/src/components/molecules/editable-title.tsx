@@ -1,5 +1,5 @@
-import { EditIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { EditIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props {

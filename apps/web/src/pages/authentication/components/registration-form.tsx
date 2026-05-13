@@ -2,25 +2,18 @@
 
 import React, { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { Checkbox } from '@usertour-packages/checkbox';
-import { Input } from '@usertour-packages/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { Checkbox } from '@usertour/checkbox';
+import { Input } from '@usertour/input';
 import { Link, useParams } from 'react-router-dom';
-import { SpinnerIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
-import { useSignupMutation } from '@usertour-packages/hooks';
+import { SpinnerIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
+import { useSignupMutation } from '@usertour/hooks';
 
 // Form validation schema
 const registFormSchema = z.object({

@@ -1,4 +1,4 @@
-import { ElementIcon } from '@usertour-packages/icons';
+import { ElementIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
 import { useConditionsT, useSummaryTextClass } from '../../conditions-context';

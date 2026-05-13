@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import type { RenderElementProps } from 'slate-react';
 
-import { CodeBlock, getBlockCodeClassName, getPreClassName } from '@usertour-packages/widget';
+import { CodeBlock, getBlockCodeClassName, getPreClassName } from '@usertour/widget';
 
 // Component props types
 interface CodeElementProps extends RenderElementProps {

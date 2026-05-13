@@ -13,10 +13,10 @@ import { useDebouncedCallback } from 'use-debounce';
 import { useEvent } from 'react-use';
 
 import { deepClone } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 
 import { BuilderMode, useBuilderContext } from './builder-context';
-import { useUpdateContentVersionMutation } from '@usertour-packages/hooks';
+import { useUpdateContentVersionMutation } from '@usertour/hooks';
 import { getEmptyDataForType } from '../utils/default-data';
 
 export interface BannerProviderProps {

@@ -1,4 +1,4 @@
-import { useThemeListContext } from '@usertour-packages/contexts';
+import { useThemeListContext } from '@usertour/contexts';
 import { Theme } from '@usertour/types';
 import { mergeThemeDefaultSettings } from '@usertour/helpers';
 import { useMemo } from 'react';

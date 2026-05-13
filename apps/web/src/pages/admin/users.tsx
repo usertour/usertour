@@ -3,14 +3,14 @@ import {
   useUpdateUserSystemAdminMutation,
   useUpdateUserDisabledMutation,
   useAdminCreateUserMutation,
-} from '@usertour-packages/hooks';
-import { useToast } from '@usertour-packages/use-toast';
+} from '@usertour/hooks';
+import { useToast } from '@usertour/use-toast';
 import { SettingsContent } from '@/pages/settings/components/content';
-import { Separator } from '@usertour-packages/separator';
-import { Button } from '@usertour-packages/button';
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { Badge } from '@usertour-packages/badge';
+import { Separator } from '@usertour/separator';
+import { Button } from '@usertour/button';
+import { Input } from '@usertour/input';
+import { Label } from '@usertour/label';
+import { Badge } from '@usertour/badge';
 import {
   Command,
   CommandEmpty,
@@ -18,30 +18,17 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@usertour-packages/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
+} from '@usertour/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
+} from '@usertour/dropdown-menu';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
 import { CheckIcon, DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
   PlusIcon,
@@ -56,7 +43,7 @@ import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { UserAvatar } from '@/components/molecules/user-avatar';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 const PAGE_SIZE = 20;
 

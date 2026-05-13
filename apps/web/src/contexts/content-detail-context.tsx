@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { getContent } from '@usertour-packages/gql';
+import { getContent } from '@usertour/gql';
 import { Content } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 

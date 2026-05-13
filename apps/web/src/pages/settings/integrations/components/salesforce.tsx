@@ -1,26 +1,26 @@
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { useCallback, useState } from 'react';
 import {
   useGetIntegrationQuery,
   useGetSalesforceAuthUrlQuery,
   useDisconnectIntegrationMutation,
   useGetIntegrationObjectMappingsQuery,
-} from '@usertour-packages/hooks';
-import { useToast } from '@usertour-packages/use-toast';
+} from '@usertour/hooks';
+import { useToast } from '@usertour/use-toast';
 import { useAppContext } from '@/contexts/app-context';
 import { integrations } from '@/utils/integration';
-import { Card } from '@usertour-packages/card';
-import { CardHeader, CardTitle } from '@usertour-packages/card';
-import { CardContent } from '@usertour-packages/card';
+import { Card } from '@usertour/card';
+import { CardHeader, CardTitle } from '@usertour/card';
+import { CardContent } from '@usertour/card';
 import { DotsVerticalIcon } from '@radix-ui/react-icons';
-import { Skeleton } from '@usertour-packages/skeleton';
-import { ConnectIcon, DisconnectIcon, SpinnerIcon, PlusIcon } from '@usertour-packages/icons';
+import { Skeleton } from '@usertour/skeleton';
+import { ConnectIcon, DisconnectIcon, SpinnerIcon, PlusIcon } from '@usertour/icons';
 import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { DropdownMenu } from '@usertour-packages/dropdown-menu';
+} from '@usertour/dropdown-menu';
+import { DropdownMenu } from '@usertour/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { IntegrationObjectMappingModel } from '@usertour/types';
 import { ObjectMappingReadonly } from './object-mapping/object-mapping-readonly';

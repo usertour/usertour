@@ -1,8 +1,8 @@
 'use client';
 
-import { Badge } from '@usertour-packages/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour-packages/tooltip';
-import { cn } from '@usertour-packages/tailwind';
+import { Badge } from '@usertour/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@usertour/tooltip';
+import { cn } from '@usertour/tailwind';
 import { AttributeDataType } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 

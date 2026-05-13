@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/react-slot",
+  "name": "@usertour/react-slot",
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.13.10",
-    "@usertour-packages/react-compose-refs": "workspace:*"
+    "@usertour/react-compose-refs": "workspace:*"
   },
   "peerDependencies": {
     "@types/react": "*",

@@ -1,4 +1,4 @@
-# @usertour-packages/ui
+# @usertour/ui
 
 Unified UI components package for Usertour.
 
@@ -29,5 +29,5 @@ export * from './ui/my-component';
 Import components from the package:
 
 ```typescript
-import { MyComponent } from '@usertour-packages/ui';
+import { MyComponent } from '@usertour/ui';
 ```

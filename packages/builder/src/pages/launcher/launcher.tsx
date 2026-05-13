@@ -1,7 +1,7 @@
 'use client';
 
-import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
-import { validateActions } from '@usertour-packages/editor';
+import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { validateActions } from '@usertour/editor';
 import { LauncherActionType } from '@usertour/types';
 import { useEffect } from 'react';
 import { BuilderMode, useBuilderContext, useLauncherContext } from '../../contexts';

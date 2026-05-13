@@ -6,13 +6,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-packages/alert-dialog';
+} from '@usertour/alert-dialog';
 import { getErrorMessage } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
-import { useDeleteSegmentMutation } from '@usertour-packages/hooks';
+import { useDeleteSegmentMutation } from '@usertour/hooks';
 import { memo, useCallback } from 'react';
 
 interface CompanySegmentDeleteDialogProps {

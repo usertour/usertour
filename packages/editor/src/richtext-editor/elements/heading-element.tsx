@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import type { RenderElementProps } from 'slate-react';
 
-import { Heading, getHeadingClassName, type HeadingLevel } from '@usertour-packages/widget';
+import { Heading, getHeadingClassName, type HeadingLevel } from '@usertour/widget';
 
 // Component props types
 interface HeadingElementProps extends RenderElementProps {

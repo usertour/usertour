@@ -2,17 +2,10 @@ import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { Environment } from '@usertour/types';
 import { CopyIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { Badge } from '@usertour-packages/badge';
+import { Button } from '@usertour/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { QuestionTooltip } from '@usertour/tooltip';
+import { Badge } from '@usertour/badge';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { EnvironmentListAction } from './environment-list-action';
 

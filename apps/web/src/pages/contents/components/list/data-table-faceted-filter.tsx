@@ -2,8 +2,8 @@ import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import { Column } from '@tanstack/react-table';
 import * as React from 'react';
 
-import { Badge } from '@usertour-packages/badge';
-import { Button } from '@usertour-packages/button';
+import { Badge } from '@usertour/badge';
+import { Button } from '@usertour/button';
 import {
   Command,
   CommandEmpty,
@@ -12,10 +12,10 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@usertour-packages/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { Separator } from '@usertour-packages/separator';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Separator } from '@usertour/separator';
+import { cn } from '@usertour/tailwind';
 
 interface DataTableFacetedFilter<TData, TValue> {
   column?: Column<TData, TValue>;

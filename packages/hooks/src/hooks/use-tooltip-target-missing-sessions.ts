@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useLazyQuery } from '@apollo/client';
-import { queryTooltipTargetMissingSessions } from '@usertour-packages/gql';
+import { queryTooltipTargetMissingSessions } from '@usertour/gql';
 import type { Pagination, BizSession } from '@usertour/types';
 
 export interface TooltipTargetMissingQuery {

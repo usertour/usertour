@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Input } from '@usertour-packages/input';
-import { cn } from '@usertour-packages/tailwind';
+import { Input } from '@usertour/input';
+import { cn } from '@usertour/tailwind';
 
 import { ThemeSettingErrorPopover } from '@/components/molecules/theme/theme-setting-error-popover';
 

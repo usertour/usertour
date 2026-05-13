@@ -1,4 +1,4 @@
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
 import { BuilderFontPicker } from '../ui';

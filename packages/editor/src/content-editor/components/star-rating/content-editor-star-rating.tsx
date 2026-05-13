@@ -1,6 +1,6 @@
 // Main editable star rating component
 
-import { StarRating } from '@usertour-packages/widget';
+import { StarRating } from '@usertour/widget';
 import { memo, useCallback, useState } from 'react';
 
 import type { ContentEditorStarRatingElement } from '../../../types/editor';

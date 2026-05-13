@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { getContentVersion } from '@usertour-packages/gql';
+import { getContentVersion } from '@usertour/gql';
 import { ContentVersion } from '@usertour/types';
 import {
   Dispatch,

@@ -2,7 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { SettingsContent } from '../components/content';
 import SubscriptionPlan from './components/subscription-plan';
 import { SettingsSubscriptionHeader } from './components/subscription-header';
-import { Separator } from '@usertour-packages/separator';
+import { Separator } from '@usertour/separator';
 
 export const SettingsSubscription = () => {
   const { project } = useAppContext();

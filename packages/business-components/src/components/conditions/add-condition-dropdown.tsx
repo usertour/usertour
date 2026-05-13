@@ -1,5 +1,5 @@
-import { PlusIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { PlusIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { cuid } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback, useRef } from 'react';

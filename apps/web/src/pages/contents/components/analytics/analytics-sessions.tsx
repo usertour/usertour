@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
-import { Button } from '@usertour-packages/button';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
+import { Button } from '@usertour/button';
+import { QuestionTooltip } from '@usertour/tooltip';
 
 import { BizSessionsDataTable } from './data-table';
 import { ExportDropdownMenu } from './export-dropmenu';

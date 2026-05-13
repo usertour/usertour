@@ -1,6 +1,6 @@
 // Image upload area component with placeholder
 
-import { ImageIcon } from '@usertour-packages/icons';
+import { ImageIcon } from '@usertour/icons';
 import Upload from 'rc-upload';
 import { memo, useCallback } from 'react';
 
