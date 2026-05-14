@@ -7,7 +7,7 @@ import {
   LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import {
   ContentEditorClickableElement,
   LauncherActionType,

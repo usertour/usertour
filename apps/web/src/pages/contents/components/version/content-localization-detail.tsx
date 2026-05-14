@@ -5,15 +5,15 @@ import {
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
-import { RiArrowLeftLine } from '@usertour-packages/icons';
-import { Badge } from '@usertour-packages/badge';
-import { useAws } from '@usertour-packages/builder/src/hooks/use-aws';
-import { Button } from '@usertour-packages/button';
-import { Card } from '@usertour-packages/card';
-import { ImageEditIcon, SpinnerIcon } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { Separator } from '@usertour-packages/separator';
+import { RiArrowLeftLine } from '@usertour/icons';
+import { Badge } from '@usertour/badge';
+import { useAws } from '@usertour/builder/src/hooks/use-aws';
+import { Button } from '@usertour/button';
+import { Card } from '@usertour/card';
+import { ImageEditIcon, SpinnerIcon } from '@usertour/icons';
+import { Input } from '@usertour/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Separator } from '@usertour/separator';
 import type {
   ContentEditorButtonElement,
   ContentEditorEmebedElement,
@@ -22,10 +22,10 @@ import type {
   ContentEditorRootElement,
   ContentEditorTextElement,
   CustomElement,
-} from '@usertour-packages/editor';
-import { ContentEditorElementType } from '@usertour-packages/editor';
+} from '@usertour/editor';
+import { ContentEditorElementType } from '@usertour/editor';
 import type { ContentVersion, Localization, Step } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import Upload from 'rc-upload';
 import { UploadRequestOption } from 'rc-upload/lib/interface';
 import { ChangeEvent, ReactNode, useState } from 'react';

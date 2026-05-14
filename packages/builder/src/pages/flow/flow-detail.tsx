@@ -1,16 +1,16 @@
 'use client';
 
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
+import { Button } from '@usertour/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
 import {
   EXTENSION_CONTENT_POPPER,
   EXTENSION_CONTENT_SIDEBAR,
   MESSAGE_CRX_OPEN_NEW_TARGET,
-} from '@usertour-packages/constants';
-import { OutlineInput } from '@usertour-packages/input';
-import { ScrollArea } from '@usertour-packages/scroll-area';
-import { Separator } from '@usertour-packages/separator';
+} from '@usertour/constants';
+import { OutlineInput } from '@usertour/input';
+import { ScrollArea } from '@usertour/scroll-area';
+import { Separator } from '@usertour/separator';
 import {
   Align,
   ContentAlignmentData,
@@ -18,9 +18,9 @@ import {
   Side,
   StepContentType,
 } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { ChangeEvent, Ref, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getThemeWidthByStepType } from '@usertour-packages/widget';
+import { getThemeWidthByStepType } from '@usertour/widget';
 import { BuilderMode, useBuilderContext } from '../../contexts';
 import { useActionsSaveGate } from '../../hooks/use-actions-save-gate';
 import { useCurrentTheme } from '../../hooks/use-current-theme';
@@ -38,15 +38,15 @@ import {
   useAttributeListContext,
   useContentListContext,
   useThemeListContext,
-} from '@usertour-packages/contexts';
+} from '@usertour/contexts';
 import { postProxyMessageToWindow } from '../../utils/post-message';
-import { ContentEditorRoot } from '@usertour-packages/editor';
+import { ContentEditorRoot } from '@usertour/editor';
 import { getErrorMessage, hasMissingRequiredData } from '@usertour/helpers';
-import { PlusIcon, SpinnerIcon } from '@usertour-packages/icons';
-import { useToast } from '@usertour-packages/use-toast';
+import { PlusIcon, SpinnerIcon } from '@usertour/icons';
+import { useToast } from '@usertour/use-toast';
 import { ContentType } from '../../components/content-type';
 import { FlowPlacement } from './components/flow-placement';
-import { useAddContentStepMutation, useUpdateContentStepMutation } from '@usertour-packages/hooks';
+import { useAddContentStepMutation, useUpdateContentStepMutation } from '@usertour/hooks';
 import { ContentBubble } from '../../components/content-bubble';
 
 const FlowBuilderDetailHeader = () => {

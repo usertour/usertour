@@ -1,6 +1,6 @@
 import { convertSettings, mergeThemeDefaultSettings } from '@usertour/helpers';
 import { convertToCssVars } from '@usertour/helpers';
-import { getAvatar, type AvatarComponent } from '@usertour-packages/icons';
+import { getAvatar, type AvatarComponent } from '@usertour/icons';
 import { AvatarType, ThemeTypesSetting } from '@usertour/types';
 import { useMemo } from 'react';
 

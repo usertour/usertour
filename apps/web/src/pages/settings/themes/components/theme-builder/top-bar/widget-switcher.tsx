@@ -4,14 +4,8 @@ import {
   FlowIcon,
   LauncherIcon,
   ResourceCenterIcon,
-} from '@usertour-packages/icons';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
+} from '@usertour/icons';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
 import { ThemeDetailPreviewType } from '@usertour/types';
 import type { ComponentType } from 'react';
 import { useMemo } from 'react';
@@ -34,7 +28,7 @@ interface WidgetOption {
   // second mental hop.
   //
   // Typed by the only prop we actually pass (`className`) so it accepts both
-  // icon families: @usertour-packages/icons (IconProps) and remixicon
+  // icon families: @usertour/icons (IconProps) and remixicon
   // (RemixiconProps). SVGProps<SVGSVGElement> would be too loose — both
   // families forbid `children`, which SVGProps allows.
   Icon: ComponentType<{ className?: string }>;

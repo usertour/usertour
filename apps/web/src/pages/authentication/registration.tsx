@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour-packages/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/card';
 import {
   RegistrationFormFields,
   RegistrationRoot,

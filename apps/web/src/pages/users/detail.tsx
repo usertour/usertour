@@ -3,7 +3,7 @@ import { UserListProvider } from '@/contexts/user-list-context';
 import { useParams } from 'react-router-dom';
 import { UserDetailContent } from './components/layout';
 import { EventListProvider } from '@/contexts/event-list-context';
-import { ScrollArea } from '@usertour-packages/scroll-area';
+import { ScrollArea } from '@usertour/scroll-area';
 
 export const UserDetail = () => {
   const { userId } = useParams();

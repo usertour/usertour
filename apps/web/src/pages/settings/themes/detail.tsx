@@ -1,7 +1,7 @@
 import { ThemeDetailProvider, useThemeDetailContext } from '@/contexts/theme-detail-context';
 import { useMutation } from '@apollo/client';
-import { updateTheme } from '@usertour-packages/gql';
-import { useToast } from '@usertour-packages/use-toast';
+import { updateTheme } from '@usertour/gql';
+import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';
 import { useCallback } from 'react';

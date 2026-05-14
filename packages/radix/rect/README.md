@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-packages/rect
+$ yarn add @usertour/rect
 # or
-$ npm install @usertour-packages/rect
+$ npm install @usertour/rect
 ```
 
 ## Usage

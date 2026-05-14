@@ -23,12 +23,12 @@ import {
   PopperContentFrame,
   PopperContentProps,
 } from './popper';
-import { TaskArrowIcon, CheckmarkIcon, DropDownIcon } from '@usertour-packages/icons';
-import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { TaskArrowIcon, CheckmarkIcon, DropDownIcon } from '@usertour/icons';
+import { useComposedRefs } from '@usertour/react-compose-refs';
 import { computePositionStyle } from './utils/position';
-import { AssetAttributes, Frame, useFrame } from '@usertour-packages/frame';
+import { AssetAttributes, Frame, useFrame } from '@usertour/frame';
 import { Button } from '../primitives';
-import { useSize } from '@usertour-packages/react-use-size';
+import { useSize } from '@usertour/react-use-size';
 import {
   canCompleteChecklistItem,
   checklistIsCompleted,
@@ -36,7 +36,7 @@ import {
   checklistUnCompletedItemsCount,
 } from './utils/content';
 import { useSettingsStyles } from './hooks/use-settings-styles';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 interface ChecklistRootContextValue {
   globalStyle: string;

@@ -1,4 +1,4 @@
-import { useDeleteSegmentMutation } from '@usertour-packages/hooks';
+import { useDeleteSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   Form,
   FormControl,
@@ -13,18 +13,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour-packages/form';
-import { Input } from '@usertour-packages/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
-import { Textarea } from '@usertour-packages/textarea';
-import { cn } from '@usertour-packages/tailwind';
-import { useToast } from '@usertour-packages/use-toast';
+} from '@usertour/form';
+import { Input } from '@usertour/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { Textarea } from '@usertour/textarea';
+import { cn } from '@usertour/tailwind';
+import { useToast } from '@usertour/use-toast';
 
 const profileFormSchema = z.object({
   username: z

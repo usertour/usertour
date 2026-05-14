@@ -1,5 +1,5 @@
-import { EXTENSION_SIDEBAR_MAIN } from '@usertour-packages/constants';
-import { Input } from '@usertour-packages/input';
+import { EXTENSION_SIDEBAR_MAIN } from '@usertour/constants';
+import { Input } from '@usertour/input';
 import { LauncherDataType } from '@usertour/types';
 import { LauncherContentType, IconPicker } from '../../../components/';
 import { useLauncherContext } from '../../../contexts';

@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { forwardRef, memo } from 'react';
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 // Inline code styles (for <code> used inline in text)
 const INLINE_CODE_STYLES = [

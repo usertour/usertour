@@ -5,7 +5,7 @@ import {
   MoreButton,
   SectionBreadcrumbHeader,
 } from '@/components/molecules/section-breadcrumb-header';
-import { Delete2Icon, SpinnerIcon } from '@usertour-packages/icons';
+import { Delete2Icon, SpinnerIcon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import {
   AttributeBizTypes,
@@ -20,31 +20,26 @@ import { formatAttributeValue } from '@/utils/common';
 import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour-packages/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour/table';
 import { MembershipRow } from '@/components/molecules/membership-row';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
-import { Button } from '@usertour-packages/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
+import { Button } from '@usertour/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { ToggleGroup, ToggleGroupItem } from '@usertour-packages/toggle';
+} from '@usertour/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@usertour/toggle';
 import { ContentLoading } from '@/components/molecules/content-loading';
 import { BizCompanyDeleteDialog } from '../dialogs';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { useQuery } from '@apollo/client';
-import { queryBizUser } from '@usertour-packages/gql';
+import { queryBizUser } from '@usertour/gql';
 import { PaginationState } from '@tanstack/react-table';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useCallback } from 'react';

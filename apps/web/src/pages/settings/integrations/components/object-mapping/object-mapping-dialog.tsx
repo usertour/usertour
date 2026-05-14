@@ -1,17 +1,12 @@
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { useCallback, useState } from 'react';
 import {
   useGetSalesforceObjectFieldsQuery,
   useUpsertIntegrationObjectMappingMutation,
-} from '@usertour-packages/hooks';
-import { useToast } from '@usertour-packages/use-toast';
+} from '@usertour/hooks';
+import { useToast } from '@usertour/use-toast';
 import { useAppContext } from '@/contexts/app-context';
-import {
-  SpinnerIcon,
-  SalesforceIcon,
-  UsertourIcon2,
-  ArrowRightLeftIcon,
-} from '@usertour-packages/icons';
+import { SpinnerIcon, SalesforceIcon, UsertourIcon2, ArrowRightLeftIcon } from '@usertour/icons';
 import {
   Dialog,
   DialogContent,
@@ -19,8 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@usertour-packages/dialog';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/dialog';
+import { cn } from '@usertour/tailwind';
 import {
   AttributeBizTypes,
   IntegrationObjectMappingSettings,
@@ -28,8 +23,8 @@ import {
 } from '@usertour/types';
 import { ObjectMappingPanel } from './object-mapping-panel';
 import { ObjectMappingObjectSelect } from './object-mapping-select';
-import { Label } from '@usertour-packages/label';
-import { Switch } from '@usertour-packages/switch';
+import { Label } from '@usertour/label';
+import { Switch } from '@usertour/switch';
 import { InfoIcon } from 'lucide-react';
 
 const SalesforceMappingIcon = ({ className }: { className?: string }) => (

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CaretSortIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { LauncherIconSource } from '@usertour/types';
 import { getActiveIcon } from './utils';
 import { IconPreview } from './icon-preview';

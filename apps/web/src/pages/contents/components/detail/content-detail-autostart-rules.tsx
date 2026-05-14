@@ -1,8 +1,8 @@
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { WebZIndex } from '@usertour-packages/constants';
-import { Label } from '@usertour-packages/label';
+import { WebZIndex } from '@usertour/constants';
+import { Label } from '@usertour/label';
 import {
   ConditionFrequency,
   ConditionIfCompleted,
@@ -10,12 +10,12 @@ import {
   ConditionWait,
   Conditions,
   validateConditions,
-} from '@usertour-packages/business-components';
-import { useContentListQuery } from '@usertour-packages/hooks';
+} from '@usertour/business-components';
+import { useContentListQuery } from '@usertour/hooks';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
-import { Switch } from '@usertour-packages/switch';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Switch } from '@usertour/switch';
+import { QuestionTooltip } from '@usertour/tooltip';
 import {
   Content,
   ContentPriority,

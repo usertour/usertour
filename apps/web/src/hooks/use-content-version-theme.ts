@@ -1,7 +1,7 @@
 import { useContentVersionContext } from '@/contexts/content-version-context';
 import { useThemeListContext } from '@/contexts/theme-list-context';
 import { useMutation } from '@apollo/client';
-import { updateContentVersion } from '@usertour-packages/gql';
+import { updateContentVersion } from '@usertour/gql';
 import { convertSettings, convertToCssVars, mergeThemeDefaultSettings } from '@usertour/helpers';
 import type { Theme, ThemeTypesSetting } from '@usertour/types';
 import { useEffect, useMemo } from 'react';

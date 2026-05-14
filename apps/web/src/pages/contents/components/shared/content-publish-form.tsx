@@ -1,8 +1,8 @@
 'use client';
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { useMutation, useQuery } from '@apollo/client';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   Dialog,
   DialogClose,
@@ -10,15 +10,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@usertour-packages/dialog';
-import { getContentVersion, publishedContentVersion } from '@usertour-packages/gql';
+} from '@usertour/dialog';
+import { getContentVersion, publishedContentVersion } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentVersion } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 import { useCallback } from 'react';
-import { Checkbox } from '@usertour-packages/checkbox';
-import { Label } from '@usertour-packages/label';
+import { Checkbox } from '@usertour/checkbox';
+import { Label } from '@usertour/label';
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { getContentTypeMeta } from './content-type-meta';
 

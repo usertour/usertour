@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 const circleHoveredClassName =

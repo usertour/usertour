@@ -1,6 +1,6 @@
-import { useAttributeListContext, useContentListContext } from '@usertour-packages/contexts';
-import { validateActions } from '@usertour-packages/editor';
-import { useToast } from '@usertour-packages/use-toast';
+import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
+import { validateActions } from '@usertour/editor';
+import { useToast } from '@usertour/use-toast';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

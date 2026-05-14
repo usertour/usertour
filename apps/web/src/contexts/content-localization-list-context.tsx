@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { findManyVersionLocations } from '@usertour-packages/gql';
+import { findManyVersionLocations } from '@usertour/gql';
 import { VersionOnLocalization } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 

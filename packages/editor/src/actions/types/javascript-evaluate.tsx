@@ -1,4 +1,4 @@
-import { RiCodeLine } from '@usertour-packages/icons';
+import { RiCodeLine } from '@usertour/icons';
 import { ContentActionsItemType, type RulesCondition } from '@usertour/types';
 import { CodeEditor } from '../../code-editor';
 import { useActionsT, useSummaryTextClass } from '../actions-context';

@@ -1,6 +1,6 @@
 // Shared ActionButtonsBase component for content editor elements
 
-import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour-packages/icons';
+import { DeleteIcon, InsertColumnLeftIcon, InsertColumnRightIcon } from '@usertour/icons';
 import { memo } from 'react';
 import type { ReactNode } from 'react';
 

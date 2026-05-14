@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { LauncherIconSource } from '@usertour/types';
-import { cn } from '@usertour-packages/tailwind';
-import { RiHomeFill } from '@usertour-packages/icons';
+import { cn } from '@usertour/tailwind';
+import { RiHomeFill } from '@usertour/icons';
 import { useResourceCenterContext } from './context';
 import type { ResourceCenterTab } from '@usertour/types';
 import { IconsList } from '../launcher';

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Button } from '@usertour-packages/button';
-import { Input } from '@usertour-packages/input';
-import { ArrowRightIcon } from '@usertour-packages/icons';
+import { Button } from '@usertour/button';
+import { Input } from '@usertour/input';
+import { ArrowRightIcon } from '@usertour/icons';
 import { useIconUrl } from './hooks/use-icon-url';
 import type { UrlIconTabProps } from './types';
 

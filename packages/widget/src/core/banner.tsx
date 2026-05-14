@@ -1,6 +1,6 @@
-import type { AssetAttributes } from '@usertour-packages/frame';
-import { Frame, useFrame } from '@usertour-packages/frame';
-import { RiCloseLargeFill } from '@usertour-packages/icons';
+import type { AssetAttributes } from '@usertour/frame';
+import { Frame, useFrame } from '@usertour/frame';
+import { RiCloseLargeFill } from '@usertour/icons';
 import type { BannerAnimationTiming, BannerData, ThemeTypesSetting } from '@usertour/types';
 import { BannerEmbedPlacement } from '@usertour/types';
 import type { CSSProperties } from 'react';
@@ -14,11 +14,11 @@ import {
   useMemo,
 } from 'react';
 
-import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { useComposedRefs } from '@usertour/react-compose-refs';
 
 import { Button } from '../primitives';
 import { useSettingsStyles } from './hooks/use-settings-styles';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { WidgetAnimation } from './class-names';
 
 const BANNER_DEFAULT_HEIGHT_PX = 56;

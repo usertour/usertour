@@ -2,33 +2,26 @@
 
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import { createMagicLink } from '@usertour-packages/gql';
+import { Button } from '@usertour/button';
+import { createMagicLink } from '@usertour/gql';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 
 import {
   SignUpSuccess,
   SignUpSuccessProps,
 } from '@/pages/authentication/components/sign-up-success';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
-import { SpinnerIcon } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { SpinnerIcon } from '@usertour/icons';
+import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useGlobalConfigQuery } from '@usertour-packages/hooks';
-import { Skeleton } from '@usertour-packages/skeleton';
+import { useGlobalConfigQuery } from '@usertour/hooks';
+import { Skeleton } from '@usertour/skeleton';
 import { SignUpDisabledCard } from './components/sign-up-disabled-card';
 
 const signupFormSchema = z.object({

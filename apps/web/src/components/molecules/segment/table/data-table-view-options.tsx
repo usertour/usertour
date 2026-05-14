@@ -2,11 +2,11 @@
 
 import * as React from 'react';
 import { Table } from '@tanstack/react-table';
-import { Button } from '@usertour-packages/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { Input } from '@usertour-packages/input';
-import { RiDraggable, RiEyeLine, RiEyeOffLine, RiLayoutColumnLine } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { Button } from '@usertour/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Input } from '@usertour/input';
+import { RiDraggable, RiEyeLine, RiEyeOffLine, RiLayoutColumnLine } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import {
   DndContext,
   DragEndEvent,

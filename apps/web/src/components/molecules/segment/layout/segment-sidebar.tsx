@@ -7,19 +7,9 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/templates/admin-sidebar-template';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
-import { Button } from '@usertour-packages/button';
-import {
-  Archive2LineIcon,
-  Filter2LineIcon,
-  GroupLineIcon,
-  PLUSIcon,
-} from '@usertour-packages/icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { Button } from '@usertour/button';
+import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, PLUSIcon } from '@usertour/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { Segment } from '@usertour/types';
 import { Fragment, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';

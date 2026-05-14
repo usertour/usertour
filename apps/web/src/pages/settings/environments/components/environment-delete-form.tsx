@@ -7,10 +7,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-packages/alert-dialog';
+} from '@usertour/alert-dialog';
 import { getErrorMessage } from '@usertour/helpers';
-import { useDeleteEnvironmentsMutation } from '@usertour-packages/hooks';
-import { useToast } from '@usertour-packages/use-toast';
+import { useDeleteEnvironmentsMutation } from '@usertour/hooks';
+import { useToast } from '@usertour/use-toast';
 import { LoadingButton } from '@/components/molecules/loading-button';
 
 export const EnvironmentDeleteForm = (props: {

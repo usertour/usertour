@@ -1,4 +1,4 @@
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 import { useState, useEffect, memo, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 

@@ -11,7 +11,7 @@ import { ChecklistStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
 import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
-import { StorageKeys, WidgetZIndex } from '@usertour-packages/constants';
+import { StorageKeys, WidgetZIndex } from '@usertour/constants';
 import { isEqual, storage } from '@usertour/helpers';
 import { hasConditionType } from './usertour-helper';
 

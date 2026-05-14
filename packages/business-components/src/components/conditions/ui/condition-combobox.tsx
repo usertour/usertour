@@ -5,11 +5,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@usertour-packages/command';
-import { RiCheckLine, RiExpandUpDownLine } from '@usertour-packages/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/tailwind';
-import { CompactPopoverTrigger } from '@usertour-packages/ui';
+} from '@usertour/command';
+import { RiCheckLine, RiExpandUpDownLine } from '@usertour/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { cn } from '@usertour/tailwind';
+import { CompactPopoverTrigger } from '@usertour/ui';
 import { type ReactNode, useState } from 'react';
 import { useConditionsZIndex } from '../conditions-context';
 

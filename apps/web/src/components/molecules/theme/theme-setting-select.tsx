@@ -5,9 +5,9 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-packages/select';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/select';
+import { QuestionTooltip } from '@usertour/tooltip';
+import { cn } from '@usertour/tailwind';
 
 export type ThemeSettingSelectItemsType = {
   value: string;

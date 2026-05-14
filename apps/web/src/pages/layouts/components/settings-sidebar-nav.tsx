@@ -20,7 +20,7 @@ import {
   ProjectIcon,
   // PlugIcon,
   KeyIcon,
-} from '@usertour-packages/icons';
+} from '@usertour/icons';
 import { GlobalConfig, TeamMemberRole } from '@usertour/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 

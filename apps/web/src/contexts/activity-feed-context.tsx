@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { queryBizUserEvents, queryBizCompanyEvents } from '@usertour-packages/gql';
+import { queryBizUserEvents, queryBizCompanyEvents } from '@usertour/gql';
 import { BizEvent } from '@usertour/types';
 import { PageInfo } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState, useCallback } from 'react';

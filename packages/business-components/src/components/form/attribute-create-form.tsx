@@ -1,14 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
+import { Button } from '@usertour/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
 import {
   Form,
   FormControl,
@@ -17,30 +11,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour-packages/form';
-import {
-  CompanyIcon,
-  EventIcon2,
-  SpinnerIcon,
-  UserIcon,
-  UserIcon2,
-} from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
-import {
-  CreateAttributeMutationVariables,
-  useCreateAttributeMutation,
-} from '@usertour-packages/hooks';
+} from '@usertour/form';
+import { CompanyIcon, EventIcon2, SpinnerIcon, UserIcon, UserIcon2 } from '@usertour/icons';
+import { Input } from '@usertour/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { CreateAttributeMutationVariables, useCreateAttributeMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

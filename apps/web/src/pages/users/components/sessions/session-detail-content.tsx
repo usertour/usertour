@@ -9,7 +9,7 @@ import {
   MoreButton,
   SectionBreadcrumbHeader,
 } from '@/components/molecules/section-breadcrumb-header';
-import { useQuerySessionDetailQuery } from '@usertour-packages/hooks';
+import { useQuerySessionDetailQuery } from '@usertour/hooks';
 import { BizEvent, BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
@@ -24,7 +24,7 @@ import {
 import { FlowProgressColumn } from '@/components/molecules/session';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
-import { Card, CardContent, CardHeader, CardTitle } from '@usertour-packages/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
 import { QuestionAnswer, SessionResponse } from '@/components/molecules/session-detail';
 import { ContentLoading } from '@/components/molecules/content-loading';

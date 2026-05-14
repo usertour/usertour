@@ -32,7 +32,7 @@ import {
   ActionSource,
 } from '@/core/action-handlers';
 import { BaseStore } from '@/types/store';
-import { SDKClientEvents } from '@usertour-packages/constants';
+import { SDKClientEvents } from '@usertour/constants';
 import {
   convertToAttributeEvaluationOptions,
   evaluateButtonConditionsInRoots,

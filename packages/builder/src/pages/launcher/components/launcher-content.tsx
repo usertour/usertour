@@ -1,4 +1,4 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
+import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
 import {
   PopperMadeWith,
   LauncherContainer,
@@ -7,8 +7,8 @@ import {
   LauncherPopperContent,
   LauncherPopperContentPotal,
   LauncherRoot,
-} from '@usertour-packages/widget';
-import { ContentEditor, ContentEditorRoot } from '@usertour-packages/editor';
+} from '@usertour/widget';
+import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
 import { getEmptyDataForType } from '../../../utils/default-data';
 import {
   ContentActionsItemType,
@@ -19,7 +19,7 @@ import {
 } from '@usertour/types';
 import { forwardRef, useMemo, useRef } from 'react';
 import { useBuilderContext } from '../../../contexts';
-import { useAttributeListContext } from '@usertour-packages/contexts';
+import { useAttributeListContext } from '@usertour/contexts';
 export interface LauncherContentProps {
   zIndex: number;
   triggerRef?: React.RefObject<any> | undefined;

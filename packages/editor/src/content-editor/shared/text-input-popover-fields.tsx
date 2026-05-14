@@ -1,8 +1,8 @@
 // Shared popover field components for text input editors (SingleLineText, MultiLineText)
 
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { Switch } from '@usertour-packages/switch';
+import { Input } from '@usertour/input';
+import { Label } from '@usertour/label';
+import { Switch } from '@usertour/switch';
 import { memo, useCallback } from 'react';
 
 // Placeholder Field Component

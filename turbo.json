@@ -13,11 +13,7 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "dependsOn": [
-        "@usertour/types#build",
-        "@usertour/helpers#build",
-        "@usertour-packages/constants#build"
-      ]
+      "dependsOn": ["@usertour/types#build", "@usertour/helpers#build", "@usertour/constants#build"]
     },
     "clean": {
       "cache": false

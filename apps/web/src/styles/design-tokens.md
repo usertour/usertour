@@ -240,7 +240,7 @@ shadow does the visual lift; a hairline border on top reads as clutter.
 ## 7. Control inventory
 
 Compact-context primitives are **cva variants on the atomic shadcn
-packages** in `@usertour-packages/<input|select|switch|tabs|button|dropdown-menu>`.
+packages** in `@usertour/<input|select|switch|tabs|button|dropdown-menu>`.
 There is no separate styled-primitive layer — the variants pick the
 density and surface treatment directly:
 
@@ -255,7 +255,7 @@ density and surface treatment directly:
 | `DropdownMenuItem` | `variant="default" \| "compact"`                  | tighter padding (`text-sm` in both)                     |
 | `Button`          | `variant="...compact-ghost \| compact-outline \| compact-secondary \| depth"` + `size="compact \| compact-icon{,-sm,-lg}"` | compact text/icon buttons (replaces former CompactIconButton family) |
 
-**Composition wrappers** in `@usertour-packages/ui/compact/` (these
+**Composition wrappers** in `@usertour/ui/compact/` (these
 package multiple atomic primitives or are self-contained components,
 not just styled primitives):
 
@@ -270,7 +270,7 @@ not just styled primitives):
 | `InlineAlert`            | Single-line alert for dense form rows                                      |
 | Layout tokens            | `panelClass` / `headerClass` / `bodyClass` / `pillClass` / etc.            |
 
-**Conditions surface** — lives in `@usertour-packages/business-components/conditions/ui/`.
+**Conditions surface** — lives in `@usertour/business-components/conditions/ui/`.
 Only the runtime-context-needing wrappers stay here; plain styled
 primitives went away in favor of atomic variants:
 

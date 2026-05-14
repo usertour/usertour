@@ -1,6 +1,6 @@
 // Unified "Other" option input component for both single and multiple selection modes
 
-import { RiCheckFill } from '@usertour-packages/icons';
+import { RiCheckFill } from '@usertour/icons';
 import { memo, useCallback, useEffect, useRef } from 'react';
 
 import { Button } from '../primitives';

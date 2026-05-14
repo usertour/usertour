@@ -89,16 +89,16 @@ const createBuildPlugins = (env: 'development' | 'production') => [
 ];
 
 // Helper function for code splitting
-// Separates @usertour-packages into its own chunk and keeps core initialization code with main bundle
+// Separates @usertour/* workspace packages into their own chunk and keeps core initialization code with main bundle
 const createManualChunks = (moduleName: string): string | undefined => {
   // Icons package - separate chunk (typically large due to icon assets)
   // Match both package name and actual file path in monorepo
-  if (moduleName.includes('@usertour-packages/icons') || moduleName.includes('packages/icons')) {
+  if (moduleName.includes('@usertour/icons') || moduleName.includes('packages/icons')) {
     return 'vendor-icons';
   }
 
   // Internal Usertour packages - separate chunk
-  if (moduleName.includes('@usertour-packages') || moduleName.includes('@usertour/')) {
+  if (moduleName.includes('@usertour/')) {
     return 'vendor-usertour';
   }
 
@@ -135,7 +135,7 @@ const createManualChunks = (moduleName: string): string | undefined => {
 
     // Keep React and all React-dependent libraries together to avoid React instance conflicts
     // This includes @radix-ui, @floating-ui, react-use, etc.
-    // @usertour-packages may also use React, so keeping them together is safer
+    // @usertour/* workspace packages may also use React, so keeping them together is safer
     return 'vendor';
   }
 

@@ -1,4 +1,4 @@
-import { queryBizCompany } from '@usertour-packages/gql';
+import { queryBizCompany } from '@usertour/gql';
 import { BizCompany, Pagination } from '@usertour/types';
 import { PaginationState } from '@tanstack/react-table';
 import { createBizListContext } from './biz-list-context';

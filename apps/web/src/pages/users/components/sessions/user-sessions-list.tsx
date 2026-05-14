@@ -13,15 +13,8 @@ import {
 } from '@/components/molecules/session-analytics';
 import { useEventListContext } from '@/contexts/event-list-context';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
-import { cn } from '@usertour-packages/tailwind';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
+import { cn } from '@usertour/tailwind';
 import {
   BannerIcon,
   ChecklistIcon,
@@ -30,15 +23,10 @@ import {
   LauncherIcon,
   ResourceCenterIcon,
   SpinnerIcon,
-} from '@usertour-packages/icons';
-import { Button } from '@usertour-packages/button';
+} from '@usertour/icons';
+import { Button } from '@usertour/button';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { useAppContext } from '@/contexts/app-context';
 
 const EmptyCell = () => <span className="text-sm text-muted-foreground">—</span>;

@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { DataTableColumnHeaderProps } from './types';
 
 export function DataTableColumnHeader({ title, className }: DataTableColumnHeaderProps) {

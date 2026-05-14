@@ -1,4 +1,4 @@
-import { finderV2 } from '@usertour-packages/finder';
+import { finderV2 } from '@usertour/finder';
 import {
   RulesCondition,
   ElementConditionLogic,

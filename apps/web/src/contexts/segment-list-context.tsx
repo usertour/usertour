@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { listSegment } from '@usertour-packages/gql';
+import { listSegment } from '@usertour/gql';
 import { RulesCondition, Segment } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';

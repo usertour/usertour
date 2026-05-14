@@ -1,6 +1,6 @@
 // Shared option item component for both radio and checkbox modes
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { memo } from 'react';
 
 import { OPTION_ITEM_BASE_CLASS } from './constants';

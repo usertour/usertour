@@ -3,8 +3,8 @@
 import { CaretSortIcon, CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import * as React from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@usertour-packages/avatar';
-import { Button } from '@usertour-packages/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@usertour/avatar';
+import { Button } from '@usertour/button';
 import {
   Command,
   CommandEmpty,
@@ -13,7 +13,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@usertour-packages/command';
+} from '@usertour/command';
 import {
   Dialog,
   DialogContent,
@@ -22,18 +22,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@usertour-packages/dialog';
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/dialog';
+import { Input } from '@usertour/input';
+import { Label } from '@usertour/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { cn } from '@usertour/tailwind';
 
 const groups = [
   {

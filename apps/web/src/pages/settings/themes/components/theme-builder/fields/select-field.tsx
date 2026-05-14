@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
-import { CompactSelect, type CompactSelectOption } from '@usertour-packages/ui';
+import { CompactSelect, type CompactSelectOption } from '@usertour/ui';
 import { FieldRow } from './field-row';
 
 interface Props {

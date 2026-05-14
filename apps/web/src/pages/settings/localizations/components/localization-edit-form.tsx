@@ -1,31 +1,18 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { useMutation } from '@apollo/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@usertour-packages/form';
-import { updateLocalization } from '@usertour-packages/gql';
-import { Input } from '@usertour-packages/input';
-import { LocateItem, LocateSelect } from '@usertour-packages/ui';
+import { Button } from '@usertour/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { updateLocalization } from '@usertour/gql';
+import { Input } from '@usertour/input';
+import { LocateItem, LocateSelect } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { Localization } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

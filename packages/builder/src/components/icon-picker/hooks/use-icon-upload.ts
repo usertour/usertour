@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useAws } from '../../../hooks/use-aws';
 import type { RcUploadOption } from '../types';
 

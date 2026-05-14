@@ -1,16 +1,9 @@
 import { ListSkeleton } from '@/components/molecules/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import { MemberListAction } from './member-list-action';
 import type { TeamMember } from '@usertour/types';
 import { useMemberContext } from '@/contexts/member-context';
-import { Badge } from '@usertour-packages/badge';
+import { Badge } from '@usertour/badge';
 import { UserAvatar } from '@/components/molecules/user-avatar';
 
 interface MemberListContentTableRowProps {

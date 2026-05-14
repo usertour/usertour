@@ -1,8 +1,8 @@
 'use client';
 
-import { Label } from '@usertour-packages/label';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { Switch } from '@usertour-packages/switch';
+import { Label } from '@usertour/label';
+import { QuestionTooltip } from '@usertour/tooltip';
+import { Switch } from '@usertour/switch';
 
 import { useBannerContext } from '../../../contexts';
 

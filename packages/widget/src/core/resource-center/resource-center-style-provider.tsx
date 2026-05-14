@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { useComposedRefs } from '@usertour-packages/react-compose-refs';
+import { useComposedRefs } from '@usertour/react-compose-refs';
 import { useResourceCenterContext } from './context';
 import { WidgetClass } from '../class-names';
 

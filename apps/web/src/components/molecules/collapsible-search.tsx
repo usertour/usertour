@@ -1,7 +1,7 @@
 'use client';
 
 import { Cross2Icon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { KeyboardEvent, MouseEvent, useCallback, useRef, useState } from 'react';
 
 interface CollapsibleSearchProps {

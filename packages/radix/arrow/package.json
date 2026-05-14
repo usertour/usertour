@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/react-arrow",
+  "name": "@usertour/react-arrow",
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.13.10",
-    "@usertour-packages/react-primitive": "workspace:*"
+    "@usertour/react-primitive": "workspace:*"
   },
   "peerDependencies": {
     "@types/react": "*",

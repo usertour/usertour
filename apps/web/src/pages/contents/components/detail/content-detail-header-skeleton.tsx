@@ -1,4 +1,4 @@
-import { Skeleton } from '@usertour-packages/skeleton';
+import { Skeleton } from '@usertour/skeleton';
 
 // Loading skeleton for ContentDetailHeader. Matches the same h-14 + breadcrumb
 // (left) + tabs + status + actions (right) shape so the loading state

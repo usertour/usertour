@@ -1,5 +1,5 @@
-import { ColorPicker } from '@usertour-packages/ui';
-import { useCurrentUserId } from '@usertour-packages/hooks';
+import { ColorPicker } from '@usertour/ui';
+import { useCurrentUserId } from '@usertour/hooks';
 
 type ThemeSelectColorProps = {
   text: string;

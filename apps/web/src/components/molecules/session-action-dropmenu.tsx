@@ -7,7 +7,7 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogFooter,
-} from '@usertour-packages/alert-dialog';
+} from '@usertour/alert-dialog';
 import { LoadingButton } from '@/components/molecules/loading-button';
 import {
   DropdownMenu,
@@ -15,20 +15,20 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
+} from '@usertour/dropdown-menu';
 import {
   CloseCircleIcon,
   Delete2Icon,
   EmptyPlaceholderIcon,
   QuestionMarkCircledIcon,
   ZoomInIcon,
-} from '@usertour-packages/icons';
-import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour-packages/hooks';
+} from '@usertour/icons';
+import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour/hooks';
 import { BizSession } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { Fragment, ReactNode, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour-packages/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/dialog';
 import { SessionResponse } from '@/components/molecules/session-detail';
 import { getOrderedQuestionAnswers, QuestionWithAnswer } from '@/utils/session';
 

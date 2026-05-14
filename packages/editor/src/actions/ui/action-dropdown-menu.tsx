@@ -3,7 +3,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
+} from '@usertour/dropdown-menu';
 import { forwardRef } from 'react';
 import { useActionsZIndex } from '../actions-context';
 

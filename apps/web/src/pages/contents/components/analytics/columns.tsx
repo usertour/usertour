@@ -18,12 +18,7 @@ import {
 } from '@/components/molecules/session-analytics';
 import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { Link } from 'react-router-dom';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 
 const ProgressCell = (props: Row<BizSession>) => {
   const { content } = useContentDetailContext();

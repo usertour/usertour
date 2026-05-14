@@ -2,14 +2,14 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SelectPopover } from '@usertour-packages/ui';
-import { EDITOR_SELECT } from '@usertour-packages/constants';
-import { Input } from '@usertour-packages/input';
-import { Label } from '@usertour-packages/label';
-import { Popover, PopoverArrow, PopoverContent } from '@usertour-packages/popover';
-import { useComposedRefs } from '@usertour-packages/react-compose-refs';
-import { cn } from '@usertour-packages/tailwind';
-import { PADDING_KEY_MAPPING } from '@usertour-packages/widget';
+import { SelectPopover } from '@usertour/ui';
+import { EDITOR_SELECT } from '@usertour/constants';
+import { Input } from '@usertour/input';
+import { Label } from '@usertour/label';
+import { Popover, PopoverArrow, PopoverContent } from '@usertour/popover';
+import { useComposedRefs } from '@usertour/react-compose-refs';
+import { cn } from '@usertour/tailwind';
+import { PADDING_KEY_MAPPING } from '@usertour/widget';
 import type React from 'react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';

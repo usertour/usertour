@@ -1,14 +1,14 @@
-import { Button } from '@usertour-packages/button';
-import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour-packages/constants';
-import { Delete2Icon } from '@usertour-packages/icons';
-import { Label } from '@usertour-packages/label';
+import { Button } from '@usertour/button';
+import { EXTENSION_CONTENT_RULES, EXTENSION_SELECT } from '@usertour/constants';
+import { Delete2Icon } from '@usertour/icons';
+import { Label } from '@usertour/label';
 import {
   ConditionWait,
   Conditions,
   DEFAULT_CONDITION_TYPES,
   validateConditions,
-} from '@usertour-packages/business-components';
-import { Actions, validateActions } from '@usertour-packages/editor';
+} from '@usertour/business-components';
+import { Actions, validateActions } from '@usertour/editor';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

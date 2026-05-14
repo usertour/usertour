@@ -1,6 +1,6 @@
 // Shared LoadingSpinner component for content editor
 
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { memo } from 'react';
 
 import { DEFAULT_SPINNER_SIZE } from '../constants/styles';

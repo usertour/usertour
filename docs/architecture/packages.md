@@ -68,11 +68,11 @@ Foundation packages with no React, no JSX, no DOM access.
 
 - `@usertour/types` — TypeScript types and enums
 - `@usertour/helpers` — pure JS utilities
-- `@usertour-packages/constants` — z-index, storage keys, plan-feature
+- `@usertour/constants` — z-index, storage keys, plan-feature
   matrices, and other shared runtime values
-- `@usertour-packages/tailwind` — `cn()` helper and Tailwind config
-- `@usertour-packages/dom` — DOM-only utilities (no React)
-- `@usertour-packages/icons` — icon components (re-exports remixicon + custom SVG)
+- `@usertour/tailwind` — `cn()` helper and Tailwind config
+- `@usertour/dom` — DOM-only utilities (no React)
+- `@usertour/icons` — icon components (re-exports remixicon + custom SVG)
 - `@usertour/license` — license utilities
 
 **Rule of thumb**: if the implementation contains `useState` or JSX, it
@@ -80,18 +80,16 @@ is not L0.
 
 ### Namespace
 
-The monorepo currently uses two npm scopes — `@usertour/*` and
-`@usertour-packages/*` — for historical reasons; the split does not
-encode any meaningful property. Unifying everything under `@usertour/*`
-is a planned cleanup; for now, treat the existing names as fixed and
-**don't change a package's namespace as part of any other refactor**.
+Every workspace package lives under `@usertour/*`. New packages
+inherit the same scope — there's no audience / shape signal in the
+name, so the choice never needs revisiting.
 
-### `@usertour/types` vs `@usertour-packages/constants`
+### `@usertour/types` vs `@usertour/constants`
 
 These two are easy to confuse and have drifted in the past, so the
 split is spelled out:
 
-| Goes in `@usertour/types` | Goes in `@usertour-packages/constants` |
+| Goes in `@usertour/types` | Goes in `@usertour/constants` |
 |---|---|
 | `type` / `interface` aliases | `export const NAME = …` runtime values |
 | `enum` declarations | Lookup tables / matrices instantiating a type (`PLAN_FEATURES: Record<PlanType, PlanFeatures>`) |
@@ -102,10 +100,10 @@ split is spelled out:
 
 - Delete the line, compile the project: if the type system breaks, it
   belongs in `@usertour/types`. If only runtime behaviour changes,
-  it belongs in `@usertour-packages/constants`.
+  it belongs in `@usertour/constants`.
 - An `enum` is both a type and a value, but its primary role is the
   type contract — it lives in `@usertour/types`. A `Record<EnumKey,
-  Value>` instantiation is a value — it lives in `@usertour-packages/constants`,
+  Value>` instantiation is a value — it lives in `@usertour/constants`,
   even if its type lives in `@usertour/types`.
 
 ### Package shape: P1 vs P2
@@ -117,7 +115,7 @@ set, not aesthetics.**
 | Shape | `main` field | Build step | Used by |
 |---|---|---|---|
 | **P1** (source-direct) | `"src/index.ts"` | None — consumers compile TS themselves | 18+ packages consumed only by bundlers (Vite, tsup, Webpack) |
-| **P2** (pre-built dist) | `"./dist/index.js"` + `module` / `types` / `exports` | `tsup` produces cjs + esm + dts, pre-built before consumers | `@usertour/types`, `@usertour/helpers`, `@usertour-packages/constants`, `@usertour/license` — the packages a NestJS Node server actually `require`s at runtime |
+| **P2** (pre-built dist) | `"./dist/index.js"` + `module` / `types` / `exports` | `tsup` produces cjs + esm + dts, pre-built before consumers | `@usertour/types`, `@usertour/helpers`, `@usertour/constants`, `@usertour/license` — the packages a NestJS Node server actually `require`s at runtime |
 
 **Why two shapes**: NestJS's production runtime (`node dist/main`) does
 ordinary CommonJS resolution against the `main` field. If that points at
@@ -156,9 +154,6 @@ audience.
 6. Add the new dep entry in every consuming `package.json`.
 7. Ensure `dist/` is gitignored; don't commit the first build.
 
-The package name does **not** change as part of P1 → P2 — the namespace
-unification is a separate cleanup (see "Namespace" above).
-
 **Counter-pattern**: needing a single magic number from a P1 package
 in the server is not a reason to promote the whole package. Inline the
 literal value in the server (with a `// keep in sync with packages/X`
@@ -177,7 +172,7 @@ React components with no business knowledge. Two tiers in this layer:
 
 **Composition UI** (compose atomic UI into reusable secondary primitives):
 
-- `@usertour-packages/ui` — `SelectPopover`, `ColorPicker`, `ErrorTooltip`,
+- `@usertour/ui` — `SelectPopover`, `ColorPicker`, `ErrorTooltip`,
   `DateTimePicker`, `ScaledPreviewContainer`, `LoadingContainer`,
   `LocateSelect`, `Combobox`, `InputGroup`, plus `compact-*` size variants.
 
@@ -192,13 +187,13 @@ element selector handshake — it belongs in L3, not L1.
 
 Data access, shared contexts, internationalization, runtime engines.
 
-- `@usertour-packages/hooks` — Apollo / React hooks
-- `@usertour-packages/contexts` — React context providers
-- `@usertour-packages/gql` — GraphQL operations and generated types
-- `@usertour-packages/i18n` — translation bundles
-- `@usertour-packages/finder` — element finder utility
-- `@usertour-packages/assets` — static asset references
-- `@usertour-packages/widget` — SDK runtime widget engine
+- `@usertour/hooks` — Apollo / React hooks
+- `@usertour/contexts` — React context providers
+- `@usertour/gql` — GraphQL operations and generated types
+- `@usertour/i18n` — translation bundles
+- `@usertour/finder` — element finder utility
+- `@usertour/assets` — static asset references
+- `@usertour/widget` — SDK runtime widget engine
 
 **Rule of thumb**: it solves "how do we get the data / how do we localize /
 how do we manage state across pages" — not "how do we present a specific
@@ -209,12 +204,12 @@ business workflow".
 Reusable modules carrying business knowledge but not bound to a specific
 page or flow.
 
-- `@usertour-packages/editor` — ContentEditor framework + rich-text
+- `@usertour/editor` — ContentEditor framework + rich-text
   editor (PopperEditor, PopperEditorMini, CodeEditor) + Actions chip
   editor + business element popovers (button / multi-choice / NPS / scale /
   star-rating). **ContentEditor and rich editor are an integral unit; they
   do not split into smaller packages.**
-- `@usertour-packages/business-components` — hosts the Conditions chip
+- `@usertour/business-components` — hosts the Conditions chip
   editor (L3) plus a handful of business components (SelectorDialog,
   ElementSelector, GoogleFontCss, AttributeCreateForm — closer to L4).
   See "Known drift" below.
@@ -226,7 +221,7 @@ attributes — but does not know which page is rendering it.
 
 Pages and high-level business compositions bound to specific UI flows.
 
-- `@usertour-packages/builder` — flow / launcher / checklist /
+- `@usertour/builder` — flow / launcher / checklist /
   resource-center / banner builder pages
 
 **Rule of thumb**: deleting this package would break a specific UI
@@ -246,9 +241,9 @@ The layering above is the target. Current state has a few honest gaps:
 
 | Package | Drift | Resolution path |
 |---|---|---|
-| `@usertour-packages/business-components` | Internally mixes L3 (Conditions chip editor) and L4 (SelectorDialog, ElementSelector, GoogleFontCss, AttributeCreateForm). Accepted as a deliberate "business components" grouping — splitting Conditions into a separate package would scatter the business-UI surface area without a real consumer that wants one but not the other. | None planned. Internal subdirectories (`conditions/` / `selector/` / `theme/` / `form/`) already segment by concern. |
-| `@usertour-packages/editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
-| L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling `@usertour-packages/hooks` (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
+| `@usertour/business-components` | Internally mixes L3 (Conditions chip editor) and L4 (SelectorDialog, ElementSelector, GoogleFontCss, AttributeCreateForm). Accepted as a deliberate "business components" grouping — splitting Conditions into a separate package would scatter the business-UI surface area without a real consumer that wants one but not the other. | None planned. Internal subdirectories (`conditions/` / `selector/` / `theme/` / `form/`) already segment by concern. |
+| `@usertour/editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
+| L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling `@usertour/hooks` (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
 
 ## Decision tree
 
@@ -259,7 +254,7 @@ Does it use React?
 ├── No → L0 (types / helpers / constants / pure utilities)
 └── Yes
     ├── Single atomic shadcn-style component? → L1 atomic (packages/components/*)
-    ├── Composes atomic UI, no business concept? → L1 composition (@usertour-packages/ui)
+    ├── Composes atomic UI, no business concept? → L1 composition (@usertour/ui)
     ├── Cross-cutting (data / context / i18n / runtime)? → L2
     ├── Business knowledge, reusable across pages? → L3
     ├── Bound to a specific page or flow? → L4

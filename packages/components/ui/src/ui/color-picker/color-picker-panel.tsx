@@ -1,22 +1,17 @@
 'use client';
 
-import { Button } from '@usertour-packages/button';
-import { StorageKeys } from '@usertour-packages/constants';
-import { CheckboxIcon, Delete2Icon, EditIcon, RemoveColorIcon } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
+import { Button } from '@usertour/button';
+import { StorageKeys } from '@usertour/constants';
+import { CheckboxIcon, Delete2Icon, EditIcon, RemoveColorIcon } from '@usertour/icons';
+import { Input } from '@usertour/input';
 import {
   Tabs,
   UnderlineTabsContent,
   UnderlineTabsList,
   UnderlineTabsTrigger,
-} from '@usertour-packages/tabs';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
-import { cn } from '@usertour-packages/tailwind';
+} from '@usertour/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
+import { cn } from '@usertour/tailwind';
 import { firstLetterToUpperCase } from '@usertour/helpers';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';

@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, AlertTitle } from '@usertour-packages/alert';
+import { Alert, AlertDescription, AlertTitle } from '@usertour/alert';
 
 interface CalloutProps {
   icon?: string;

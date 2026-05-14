@@ -1,4 +1,4 @@
-import { AssetAttributes } from '@usertour-packages/frame';
+import { AssetAttributes } from '@usertour/frame';
 import {
   BannerData,
   ChecklistData,

@@ -1,6 +1,6 @@
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { RiAddLine } from '@usertour-packages/icons';
+import { RiAddLine } from '@usertour/icons';
 import { useState } from 'react';
 import { ApiCreateForm } from './api-create-form';
 import { useAppContext } from '@/contexts/app-context';

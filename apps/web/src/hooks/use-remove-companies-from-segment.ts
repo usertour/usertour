@@ -1,5 +1,5 @@
 import { useMutation } from '@apollo/client';
-import { deleteBizCompanyOnSegment } from '@usertour-packages/gql';
+import { deleteBizCompanyOnSegment } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 

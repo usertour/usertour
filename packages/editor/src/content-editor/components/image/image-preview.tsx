@@ -1,6 +1,6 @@
 // Image preview component with CSS background loading effect
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { forwardRef, memo } from 'react';
 import type { CSSProperties, ImgHTMLAttributes } from 'react';
 

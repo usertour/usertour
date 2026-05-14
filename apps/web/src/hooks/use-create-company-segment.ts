@@ -1,5 +1,5 @@
 import { useMutation } from '@apollo/client';
-import { createSegment } from '@usertour-packages/gql';
+import { createSegment } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { CreateSegmentFormValues } from '@/pages/companies/types/segment-form-schema';

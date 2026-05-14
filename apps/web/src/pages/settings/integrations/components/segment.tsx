@@ -1,27 +1,21 @@
-import { Button } from '@usertour-packages/button';
-import { Input } from '@usertour-packages/input';
+import { Button } from '@usertour/button';
+import { Input } from '@usertour/input';
 import { useState, useCallback, useEffect } from 'react';
-import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour-packages/hooks';
-import { useToast } from '@usertour-packages/use-toast';
+import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour/hooks';
+import { useToast } from '@usertour/use-toast';
 import { useAppContext } from '@/contexts/app-context';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-  SelectTrigger,
-} from '@usertour-packages/select';
-import { Switch } from '@usertour-packages/switch';
-import { Label } from '@usertour-packages/label';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from '@usertour/select';
+import { Switch } from '@usertour/switch';
+import { Label } from '@usertour/label';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { integrations } from '@/utils/integration';
 import { IntegrationModel } from '@usertour/types';
-import { Card, CardDescription } from '@usertour-packages/card';
-import { CardHeader, CardTitle } from '@usertour-packages/card';
-import { CardContent } from '@usertour-packages/card';
+import { Card, CardDescription } from '@usertour/card';
+import { CardHeader, CardTitle } from '@usertour/card';
+import { CardContent } from '@usertour/card';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Skeleton } from '@usertour-packages/skeleton';
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { Skeleton } from '@usertour/skeleton';
+import { SpinnerIcon } from '@usertour/icons';
 
 interface SegmentIntegrationConfig {
   region?: string;

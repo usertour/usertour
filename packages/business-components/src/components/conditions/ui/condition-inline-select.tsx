@@ -1,5 +1,5 @@
 import { ChevronDownIcon } from '@radix-ui/react-icons';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import {
   ConditionDropdownMenu,
   ConditionDropdownMenuContent,

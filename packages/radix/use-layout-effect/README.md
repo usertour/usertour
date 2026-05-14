@@ -3,9 +3,9 @@
 ## Installation
 
 ```sh
-$ yarn add @usertour-packages/react-use-layout-effect
+$ yarn add @usertour/react-use-layout-effect
 # or
-$ npm install @usertour-packages/react-use-layout-effect
+$ npm install @usertour/react-use-layout-effect
 ```
 
 ## Usage

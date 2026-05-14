@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { forwardRef } from 'react';
 
 // Trigger button shared by every compact popover-style control —

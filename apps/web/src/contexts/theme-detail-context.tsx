@@ -1,6 +1,6 @@
 import { ThemeTypesSetting, ThemeVariation, defaultSettings } from '@usertour/types';
 import { useQuery } from '@apollo/client';
-import { getTheme } from '@usertour-packages/gql';
+import { getTheme } from '@usertour/gql';
 import { Theme, ThemeDetailSelectorType } from '@usertour/types';
 import {
   Dispatch,

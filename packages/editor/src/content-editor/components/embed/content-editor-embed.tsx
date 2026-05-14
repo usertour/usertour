@@ -1,8 +1,8 @@
 // Main editable embed component
 
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import type { EmbedData } from '@usertour-packages/widget';
-import { Embed } from '@usertour-packages/widget';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import type { EmbedData } from '@usertour/widget';
+import { Embed } from '@usertour/widget';
 import type { ContentOmbedInfo } from '@usertour/types';
 import { memo, useCallback, useMemo, useState } from 'react';
 

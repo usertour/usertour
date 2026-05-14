@@ -1,10 +1,10 @@
 import { Crosshair2Icon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { EXTENSION_SELECT } from '@usertour-packages/constants';
-import { Label } from '@usertour-packages/label';
-import { SelectorDialog } from '@usertour-packages/business-components';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
-import { Switch } from '@usertour-packages/switch';
+import { Button } from '@usertour/button';
+import { EXTENSION_SELECT } from '@usertour/constants';
+import { Label } from '@usertour/label';
+import { SelectorDialog } from '@usertour/business-components';
+import { QuestionTooltip } from '@usertour/tooltip';
+import { Switch } from '@usertour/switch';
 import { ContentError, ContentErrorAnchor, ContentErrorContent } from '../content-error';
 import { useContentPlacement } from './content-placement-context';
 import { PrecisionSelect } from './precision-select';

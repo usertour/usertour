@@ -3,9 +3,9 @@ import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { CalendarDateRangePicker } from '@/pages/dashboard/components/date-range-picker';
 import { Overview } from '@/pages/dashboard/components/overview';
 import { RecentSales } from '@/pages/dashboard/components/recent-sales';
-import { Button } from '@usertour-packages/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour-packages/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
+import { Button } from '@usertour/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/tabs';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 

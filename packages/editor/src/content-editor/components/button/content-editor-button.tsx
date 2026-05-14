@@ -1,11 +1,7 @@
 // Main editable button component
 
-import { Popover, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import {
-  Button as WidgetButton,
-  useButtonContext,
-  resolveButtonVariant,
-} from '@usertour-packages/widget';
+import { Popover, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { Button as WidgetButton, useButtonContext, resolveButtonVariant } from '@usertour/widget';
 import { RulesCondition, ButtonSemanticType, DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/types';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

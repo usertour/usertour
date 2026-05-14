@@ -1,5 +1,5 @@
-import { Alert, AlertDescription } from '@usertour-packages/alert';
-import { WarningIcon } from '@usertour-packages/icons';
+import { Alert, AlertDescription } from '@usertour/alert';
+import { WarningIcon } from '@usertour/icons';
 
 interface Props {
   message: string;

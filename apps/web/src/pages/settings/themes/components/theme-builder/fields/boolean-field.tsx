@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { useBuilderContext } from '../builder-context';
-import { Switch } from '@usertour-packages/switch';
+import { Switch } from '@usertour/switch';
 import { FieldRow } from './field-row';
 
 interface Props {

@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/scroll-area",
+  "name": "@usertour/scroll-area",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-scroll-area": "^1.0.4",
-    "@usertour-packages/tailwind": "workspace:*"
+    "@usertour/tailwind": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"

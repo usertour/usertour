@@ -1,12 +1,12 @@
 'use client';
 
-import { MESSAGE_MEASURE_INSTALL, MESSAGE_MEASURE_LISTENER } from '@usertour-packages/constants';
+import { MESSAGE_MEASURE_INSTALL, MESSAGE_MEASURE_LISTENER } from '@usertour/constants';
 import { ElementSelectorPropsData, TargetData } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { forwardRef, useEffect, useState } from 'react';
 
-import { PlusIcon } from '@usertour-packages/icons';
+import { PlusIcon } from '@usertour/icons';
 import { useEvent } from 'react-use';
 import { postMessageToWindow } from '../utils/post-message';
 

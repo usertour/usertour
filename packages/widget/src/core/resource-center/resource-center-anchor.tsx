@@ -1,4 +1,4 @@
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { forwardRef, type HTMLAttributes } from 'react';
 
 export const ResourceCenterAnchor = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(

@@ -1,18 +1,18 @@
 import { ChevronDownIcon, GearIcon } from '@radix-ui/react-icons';
-import { EXTENSION_SELECT } from '@usertour-packages/constants';
-import { useAttributeListContext } from '@usertour-packages/contexts';
-import { useContentListContext } from '@usertour-packages/contexts';
+import { EXTENSION_SELECT } from '@usertour/constants';
+import { useAttributeListContext } from '@usertour/contexts';
+import { useContentListContext } from '@usertour/contexts';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@usertour-packages/dropdown-menu';
-import { TooltipIcon } from '@usertour-packages/icons';
-import { Actions } from '@usertour-packages/editor';
+} from '@usertour/dropdown-menu';
+import { TooltipIcon } from '@usertour/icons';
+import { Actions } from '@usertour/editor';
 import { useTranslation } from 'react-i18next';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour-packages/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@usertour/tabs';
 import {
   ContentActionsItemType,
   LauncherActionType,

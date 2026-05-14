@@ -1,16 +1,11 @@
 // Reusable link editor panel component
 
 import type { Attribute } from '@usertour/types';
-import { Button } from '@usertour-packages/button';
-import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
-import { DeleteIcon } from '@usertour-packages/icons';
-import { Tabs, TabsList, TabsTrigger } from '@usertour-packages/tabs';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { Button } from '@usertour/button';
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour/constants';
+import { DeleteIcon } from '@usertour/icons';
+import { Tabs, TabsList, TabsTrigger } from '@usertour/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { memo } from 'react';
 import type { Descendant } from 'slate';
 

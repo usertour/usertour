@@ -1,4 +1,4 @@
-import { useRect } from '@usertour-packages/react-use-rect';
+import { useRect } from '@usertour/react-use-rect';
 import {
   ResourceCenterRoot,
   ResourceCenterStyleProvider,
@@ -8,7 +8,7 @@ import {
   ResourceCenterBlocks,
   ResourceCenterTabBar,
   ResourceCenterFooter,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import {
   LauncherIconSource,
   LiveChatProvider,

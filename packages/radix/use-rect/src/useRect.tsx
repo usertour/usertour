@@ -1,7 +1,7 @@
-import { observeElementRect } from '@usertour-packages/rect';
+import { observeElementRect } from '@usertour/rect';
 import * as React from 'react';
 
-import type { Measurable } from '@usertour-packages/rect';
+import type { Measurable } from '@usertour/rect';
 
 /**
  * Use this custom hook to get access to an element's rect (getBoundingClientRect)

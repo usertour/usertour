@@ -1,6 +1,6 @@
 // Overlay component for column during drag operations
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useMemo } from 'react';
 import type { ReactNode } from 'react';
 

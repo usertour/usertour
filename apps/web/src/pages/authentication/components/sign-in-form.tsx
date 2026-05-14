@@ -2,21 +2,17 @@
 
 import React, { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { getErrorMessage } from '@usertour/helpers';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@usertour-packages/form';
-import { GithubIcon, GoogleIcon, SpinnerIcon } from '@usertour-packages/icons';
-import { Input } from '@usertour-packages/input';
-import { useToast } from '@usertour-packages/use-toast';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@usertour/form';
+import { GithubIcon, GoogleIcon, SpinnerIcon } from '@usertour/icons';
+import { Input } from '@usertour/input';
+import { useToast } from '@usertour/use-toast';
 import { Link } from 'react-router-dom';
 import { apiUrl } from '@/utils/env';
-import {
-  LoginMutationVariables,
-  useGlobalConfigQuery,
-  useLoginMutation,
-} from '@usertour-packages/hooks';
+import { LoginMutationVariables, useGlobalConfigQuery, useLoginMutation } from '@usertour/hooks';
 
 // Form validation schema
 const signinFormSchema = z.object({

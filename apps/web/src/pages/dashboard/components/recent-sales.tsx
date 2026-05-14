@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@usertour-packages/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@usertour/avatar';
 
 export function RecentSales() {
   return (

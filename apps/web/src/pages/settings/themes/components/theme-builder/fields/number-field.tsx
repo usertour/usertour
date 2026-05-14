@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { useBuilderContext } from '../builder-context';
-import { Input } from '@usertour-packages/input';
+import { Input } from '@usertour/input';
 import { FieldRow } from './field-row';
 
 interface Props {

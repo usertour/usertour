@@ -1,4 +1,4 @@
-import { AssetAttributes } from '@usertour-packages/frame';
+import { AssetAttributes } from '@usertour/frame';
 import {
   ContentEditorSerialize,
   LinkDecoratorContext,
@@ -10,7 +10,7 @@ import {
   ChecklistPopperContentBody,
   ChecklistPopperUseIframe,
   ChecklistRoot,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import {
   ChecklistData,
   ChecklistItemType,

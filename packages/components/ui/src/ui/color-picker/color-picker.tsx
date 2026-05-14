@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@usertour-packages/button';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/tailwind';
+import { Button } from '@usertour/button';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { cn } from '@usertour/tailwind';
 import { isNearWhite, needsDarkText } from '@usertour/helpers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ColorPickerPanel } from './color-picker-panel';

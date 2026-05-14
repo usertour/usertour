@@ -1,4 +1,4 @@
-import { RiArrowLeftSLine, RiArrowRightSLine } from '@usertour-packages/icons';
+import { RiArrowLeftSLine, RiArrowRightSLine } from '@usertour/icons';
 import { forwardRef, type ReactNode } from 'react';
 
 interface Props {

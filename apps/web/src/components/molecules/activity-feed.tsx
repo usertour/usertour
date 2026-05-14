@@ -1,7 +1,7 @@
 import { BizEvent, BizEvents, EventAttributes } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   BannerIcon,
   ChecklistIcon,
@@ -10,7 +10,7 @@ import {
   LauncherIcon,
   ResourceCenterIcon,
   SpinnerIcon,
-} from '@usertour-packages/icons';
+} from '@usertour/icons';
 import {
   ActivityLogIcon,
   ChevronDownIcon,
@@ -19,13 +19,8 @@ import {
   GlobeIcon,
   ReloadIcon,
 } from '@radix-ui/react-icons';
-import { cn } from '@usertour-packages/tailwind';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { cn } from '@usertour/tailwind';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { ListSkeleton } from '@/components/molecules/skeleton';
 import { ReactNode, Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';

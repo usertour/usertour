@@ -1,16 +1,10 @@
 import { useMutation } from '@apollo/client';
-import { Button } from '@usertour-packages/button';
-import { Input } from '@usertour-packages/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@usertour-packages/dialog';
+import { Button } from '@usertour/button';
+import { Input } from '@usertour/input';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
 import { useState } from 'react';
-import { useToast } from '@usertour-packages/use-toast';
-import { CreateAccessToken } from '@usertour-packages/gql';
+import { useToast } from '@usertour/use-toast';
+import { CreateAccessToken } from '@usertour/gql';
 import { useAppContext } from '@/contexts/app-context';
 import { useApiContext } from '@/contexts/api-context';
 import { ApiKeyDialog } from './api-key-dialog';
@@ -25,8 +19,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@usertour-packages/form';
-import { SpinnerIcon } from '@usertour-packages/icons';
+} from '@usertour/form';
+import { SpinnerIcon } from '@usertour/icons';
 
 interface ApiCreateFormProps {
   visible: boolean;

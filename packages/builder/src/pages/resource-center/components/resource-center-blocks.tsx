@@ -15,7 +15,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { RiDraggable, RiSettings3Line } from '@usertour-packages/icons';
+import { RiDraggable, RiSettings3Line } from '@usertour/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,15 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@usertour-packages/alert-dialog';
-import { Button } from '@usertour-packages/button';
-import { Delete2Icon } from '@usertour-packages/icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+} from '@usertour/alert-dialog';
+import { Button } from '@usertour/button';
+import { Delete2Icon } from '@usertour/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { ResourceCenterBlock, ResourceCenterBlockType } from '@usertour/types';
 import { serializeBlockName } from '@usertour/helpers';
 import { forwardRef, useState } from 'react';

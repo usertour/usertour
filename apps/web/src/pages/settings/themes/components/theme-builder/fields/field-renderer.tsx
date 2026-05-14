@@ -1,4 +1,4 @@
-import { InlineAlert } from '@usertour-packages/ui';
+import { InlineAlert } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { useBuilderContext } from '../builder-context';
 import type { FieldDef } from '../schema/types';

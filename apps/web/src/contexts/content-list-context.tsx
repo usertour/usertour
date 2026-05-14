@@ -1,5 +1,5 @@
 import { PaginationState } from '@tanstack/react-table';
-import { useContentListQuery } from '@usertour-packages/hooks';
+import { useContentListQuery } from '@usertour/hooks';
 import { Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';

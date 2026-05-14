@@ -1,20 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour-packages/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@usertour-packages/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import {
   useQueryTooltipTargetMissingSessionsLazyQuery,
   type StepAnalytics,
   type TooltipTargetMissingResponse,
-} from '@usertour-packages/hooks';
+} from '@usertour/hooks';
 import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types';
 import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
@@ -23,19 +16,14 @@ import type { DateRange } from 'react-day-picker';
 import { DefaultAvatar } from '@/components/molecules/default-avatar';
 import { formatDistanceToNow, endOfDay, startOfDay } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
-import { SpinnerIcon } from '@usertour-packages/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { BizEvents, EventAttributes } from '@usertour/types';
 import { useInView } from 'react-intersection-observer';
 import { calculateUniqueFailureRate, calculateTotalFailureRate } from '@/utils/analytics';
 import { DateRangePicker } from '@/components/molecules/date-range-picker';
 import { formatCompactNumber, shouldShowFullNumberTooltip } from '@/utils/common';
-import { cn } from '@usertour-packages/tailwind';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { cn } from '@usertour/tailwind';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 
 interface TooltipTargetMissingDialogProps {
   stepData: AnalyticsViewsByStep;

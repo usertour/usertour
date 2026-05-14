@@ -1,7 +1,7 @@
 import { ContentEditorRoot } from '@usertour/types';
 import { getDefaultDataForType } from '../utils/default-data';
 import { ChecklistData, ChecklistItemType, DEFAULT_CHECKLIST_DATA } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { deepmerge } from 'deepmerge-ts';
 import { isEqual, isUndefined } from 'lodash';
 import {
@@ -17,7 +17,7 @@ import {
 import { useDebouncedCallback } from 'use-debounce';
 import { useEvent } from 'react-use';
 import { BuilderMode, useBuilderContext } from './builder-context';
-import { useUpdateContentVersionMutation } from '@usertour-packages/hooks';
+import { useUpdateContentVersionMutation } from '@usertour/hooks';
 import { deepClone } from '@usertour/helpers';
 
 export interface ChecklistProviderProps {

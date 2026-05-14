@@ -8,7 +8,7 @@ import {
   TextIcon,
   VideoIcon,
 } from '@radix-ui/react-icons';
-import { MultiCheckIcon, NpsIcon } from '@usertour-packages/icons';
+import { MultiCheckIcon, NpsIcon } from '@usertour/icons';
 import { ContentEditorElement, ContentEditorElementType } from '../types/editor';
 
 type ContentTypeConfig = {

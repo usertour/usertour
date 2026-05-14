@@ -1,14 +1,14 @@
 // Tooltip-based error components (no extra wrapper div)
 // Use these components when you need error tooltip without extra DOM elements
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 import {
   Tooltip,
   TooltipArrow,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@usertour-packages/tooltip';
+} from '@usertour/tooltip';
 import React from 'react';
 
 interface EditorErrorTooltipProps {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@usertour-packages/card';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@usertour/card';
 import { Link } from 'react-router-dom';
 import { SignUpPrompt } from './sign-up-link';
 

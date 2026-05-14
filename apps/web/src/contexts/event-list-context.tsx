@@ -1,4 +1,4 @@
-import { useListEventsQuery } from '@usertour-packages/hooks';
+import { useListEventsQuery } from '@usertour/hooks';
 import { Event } from '@usertour/types';
 import { ReactNode, createContext, useContext } from 'react';
 

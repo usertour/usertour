@@ -1,11 +1,6 @@
-import { Badge } from '@usertour-packages/badge';
-import { cn } from '@usertour-packages/tailwind';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@usertour-packages/tooltip';
+import { Badge } from '@usertour/badge';
+import { cn } from '@usertour/tailwind';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { ContentVersion } from '@usertour/types';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ContentVersionAction } from './content-version-action';

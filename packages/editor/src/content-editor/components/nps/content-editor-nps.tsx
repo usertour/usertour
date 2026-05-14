@@ -1,6 +1,6 @@
 // Main editable NPS component
 
-import { NPSLabels, NPSScale } from '@usertour-packages/widget';
+import { NPSLabels, NPSScale } from '@usertour/widget';
 import { memo, useCallback } from 'react';
 
 import type { ContentEditorNPSElement } from '../../../types/editor';

@@ -1,14 +1,8 @@
 import { CubeIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour-packages/button';
-import { EXTENSION_SELECT } from '@usertour-packages/constants';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@usertour-packages/select';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { Button } from '@usertour/button';
+import { EXTENSION_SELECT } from '@usertour/constants';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
+import { QuestionTooltip } from '@usertour/tooltip';
 import { Theme } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
 

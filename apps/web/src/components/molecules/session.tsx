@@ -1,8 +1,8 @@
-import { CancelIcon, CheckmarkIcon, ClickIcon, EyeNoneIcon } from '@usertour-packages/icons';
-import { TooltipContent } from '@usertour-packages/tooltip';
-import { PlayIcon } from '@usertour-packages/icons';
-import { Tooltip, TooltipTrigger } from '@usertour-packages/tooltip';
-import { TooltipProvider } from '@usertour-packages/tooltip';
+import { CancelIcon, CheckmarkIcon, ClickIcon, EyeNoneIcon } from '@usertour/icons';
+import { TooltipContent } from '@usertour/tooltip';
+import { PlayIcon } from '@usertour/icons';
+import { Tooltip, TooltipTrigger } from '@usertour/tooltip';
+import { TooltipProvider } from '@usertour/tooltip';
 import {
   BizEvents,
   BizSession,
@@ -13,7 +13,7 @@ import {
 import { Event } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
 import { isUndefined } from '@usertour/helpers';
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 /**
  * Format flow step display text from event data

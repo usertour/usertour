@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { PaginationState } from '@tanstack/react-table';
-import { querySessionsByExternalId } from '@usertour-packages/gql';
+import { querySessionsByExternalId } from '@usertour/gql';
 import { BizSession, PageInfo, Pagination } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState, useCallback } from 'react';
 

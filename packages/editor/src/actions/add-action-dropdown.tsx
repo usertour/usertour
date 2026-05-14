@@ -1,4 +1,4 @@
-import { PlusIcon } from '@usertour-packages/icons';
+import { PlusIcon } from '@usertour/icons';
 import { cuid } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback, useRef } from 'react';

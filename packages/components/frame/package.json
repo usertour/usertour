@@ -1,5 +1,5 @@
 {
-  "name": "@usertour-packages/frame",
+  "name": "@usertour/frame",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "clsx": "^1.2.1",
-    "@usertour-packages/react-compose-refs": "workspace:^"
+    "@usertour/react-compose-refs": "workspace:^"
   },
   "peerDependencies": {
     "react": "^18.2.0"

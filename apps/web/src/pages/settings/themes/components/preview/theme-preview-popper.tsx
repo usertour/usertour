@@ -1,4 +1,4 @@
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import {
   ContentEditorSerialize,
   Popper,
@@ -8,10 +8,10 @@ import {
   PopperProgress,
   PopperClose,
   PopperOverlay,
-} from '@usertour-packages/widget';
+} from '@usertour/widget';
 import type { ContentEditorRoot } from '@usertour/types';
 import { ProgressBarPosition, ProgressBarType, ThemeTypesSetting } from '@usertour/types';
-import { PREVIEW_BASIC } from '@usertour-packages/constants';
+import { PREVIEW_BASIC } from '@usertour/constants';
 import { useRef } from 'react';
 import { Rect } from './types';
 import { useSubscriptionContext } from '@/contexts/subscription-context';

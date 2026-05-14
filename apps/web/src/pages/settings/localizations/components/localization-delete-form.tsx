@@ -8,11 +8,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-packages/alert-dialog';
-import { deleteLocalization } from '@usertour-packages/gql';
+} from '@usertour/alert-dialog';
+import { deleteLocalization } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { Localization } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 
 export const LocalizationDeleteForm = (props: {
   data: Localization;

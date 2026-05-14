@@ -1,4 +1,4 @@
-import { Group2LineIcon } from '@usertour-packages/icons';
+import { Group2LineIcon } from '@usertour/icons';
 import { SegmentSidebar } from '@/components/molecules/segment/layout';
 import { CompanySegmentCreateDialog } from '../dialogs';
 import { useTranslation } from 'react-i18next';

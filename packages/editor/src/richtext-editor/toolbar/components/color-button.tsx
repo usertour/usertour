@@ -1,9 +1,9 @@
 'use client';
 
-import { EDITOR_RICH_ACTION_CONTENT } from '@usertour-packages/constants';
-import { PopoverArrow } from '@usertour-packages/popover';
-import { ColorPickerPanel } from '@usertour-packages/ui';
-import { useCurrentUserId } from '@usertour-packages/hooks';
+import { EDITOR_RICH_ACTION_CONTENT } from '@usertour/constants';
+import { PopoverArrow } from '@usertour/popover';
+import { ColorPickerPanel } from '@usertour/ui';
+import { useCurrentUserId } from '@usertour/hooks';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useSlate } from 'slate-react';
 

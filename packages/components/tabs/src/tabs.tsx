@@ -5,7 +5,7 @@ import { type VariantProps, cva } from 'class-variance-authority';
 import { motion } from 'framer-motion';
 import * as React from 'react';
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 // ============================================================================
 // Active-tab indicator: shared element transition

@@ -1,6 +1,6 @@
-import { EXTENSION_CONTENT_POPPER } from '@usertour-packages/constants';
-import { useAttributeListContext, useThemeListContext } from '@usertour-packages/contexts';
-import { useChecklistPreviewAnimation } from '@usertour-packages/hooks';
+import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
+import { useAttributeListContext, useThemeListContext } from '@usertour/contexts';
+import { useChecklistPreviewAnimation } from '@usertour/hooks';
 import {
   ChecklistContainer,
   ChecklistDismiss,
@@ -12,8 +12,8 @@ import {
   ChecklistProgress,
   ChecklistRoot,
   PopperMadeWith,
-} from '@usertour-packages/widget';
-import { ContentEditor, ContentEditorRoot } from '@usertour-packages/editor';
+} from '@usertour/widget';
+import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
 import { ChecklistInitialDisplay, ContentEditorElementType, Theme } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';

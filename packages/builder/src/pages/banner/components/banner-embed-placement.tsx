@@ -4,8 +4,8 @@ import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT, BannerEmbedPlacement } from 
 import type { ElementSelectorPropsData } from '@usertour/types';
 import { useCallback } from 'react';
 
-import { EXTENSION_SELECT } from '@usertour-packages/constants';
-import { QuestionTooltip } from '@usertour-packages/tooltip';
+import { EXTENSION_SELECT } from '@usertour/constants';
+import { QuestionTooltip } from '@usertour/tooltip';
 import {
   Select,
   SelectContent,
@@ -14,7 +14,7 @@ import {
   SelectPortal,
   SelectTrigger,
   SelectValue,
-} from '@usertour-packages/select';
+} from '@usertour/select';
 
 import { ContentPlacementProvider } from '../../../components/content-placement';
 import { ContentPlacementManual } from '../../../components/content-placement/content-placement-manual';

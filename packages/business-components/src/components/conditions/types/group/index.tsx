@@ -1,4 +1,4 @@
-import { GroupIcon } from '@usertour-packages/icons';
+import { GroupIcon } from '@usertour/icons';
 import type { RulesCondition } from '@usertour/types';
 import { useConditionsT } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';

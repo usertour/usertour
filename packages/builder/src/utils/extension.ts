@@ -1,4 +1,4 @@
-import { MESSAGE_CRX_PING, MESSAGE_CRX_PONG } from '@usertour-packages/constants';
+import { MESSAGE_CRX_PING, MESSAGE_CRX_PONG } from '@usertour/constants';
 
 export const isInstalledExtension = async () => {
   let isInstalled = false;

@@ -2,8 +2,8 @@ import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-import enUSUi from '@usertour-packages/i18n/en-US/ui';
-import zhHansUi from '@usertour-packages/i18n/zh-Hans/ui';
+import enUSUi from '@usertour/i18n/en-US/ui';
+import zhHansUi from '@usertour/i18n/zh-Hans/ui';
 
 i18next
   .use(LanguageDetector)

@@ -1,7 +1,7 @@
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { forwardRef, memo } from 'react';
 
-import { cn } from '@usertour-packages/tailwind';
+import { cn } from '@usertour/tailwind';
 
 // Link styles using SDK Tailwind classes
 const LINK_STYLES = ['text-sdk-link', 'underline', 'hover:no-underline'] as const;

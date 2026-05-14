@@ -57,31 +57,31 @@ importers:
       '@floating-ui/react':
         specifier: ^0.24.3
         version: 0.24.8(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/button':
+      '@usertour/button':
         specifier: workspace:*
         version: link:../../packages/components/button
-      '@usertour-packages/constants':
+      '@usertour/constants':
         specifier: workspace:^
         version: link:../../packages/constants
-      '@usertour-packages/dom':
+      '@usertour/dom':
         specifier: workspace:^
         version: link:../../packages/dom
-      '@usertour-packages/finder':
+      '@usertour/finder':
         specifier: workspace:^
         version: link:../../packages/finder
-      '@usertour-packages/frame':
+      '@usertour/frame':
         specifier: workspace:*
         version: link:../../packages/components/frame
-      '@usertour-packages/icons':
+      '@usertour/icons':
         specifier: workspace:^
         version: link:../../packages/icons
-      '@usertour-packages/react-context':
+      '@usertour/react-context':
         specifier: workspace:^
         version: link:../../packages/radix/context
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:^
         version: link:../../packages/tailwind
-      '@usertour-packages/widget':
+      '@usertour/widget':
         specifier: workspace:^
         version: link:../../packages/widget
       '@usertour/helpers':
@@ -340,7 +340,7 @@ importers:
       '@types/mjml':
         specifier: ^4.7.1
         version: 4.7.4
-      '@usertour-packages/constants':
+      '@usertour/constants':
         specifier: workspace:^
         version: link:../../packages/constants
       '@usertour/helpers':
@@ -605,145 +605,145 @@ importers:
       '@uiw/react-codemirror':
         specifier: ^4.23.0
         version: 4.23.6(@babel/runtime@7.28.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.5.1))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.5.1))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/alert':
+      '@usertour/alert':
         specifier: workspace:^
         version: link:../../packages/components/alert
-      '@usertour-packages/alert-dialog':
+      '@usertour/alert-dialog':
         specifier: workspace:^
         version: link:../../packages/components/alert-dialog
-      '@usertour-packages/aspect-ratio':
+      '@usertour/aspect-ratio':
         specifier: workspace:^
         version: link:../../packages/components/aspect-ratio
-      '@usertour-packages/avatar':
+      '@usertour/avatar':
         specifier: workspace:^
         version: link:../../packages/components/avatar
-      '@usertour-packages/badge':
+      '@usertour/badge':
         specifier: workspace:^
         version: link:../../packages/components/badge
-      '@usertour-packages/builder':
+      '@usertour/builder':
         specifier: workspace:^
         version: link:../../packages/builder
-      '@usertour-packages/business-components':
+      '@usertour/business-components':
         specifier: workspace:^
         version: link:../../packages/business-components
-      '@usertour-packages/button':
+      '@usertour/button':
         specifier: workspace:^
         version: link:../../packages/components/button
-      '@usertour-packages/calendar':
+      '@usertour/calendar':
         specifier: workspace:^
         version: link:../../packages/components/calendar
-      '@usertour-packages/card':
+      '@usertour/card':
         specifier: workspace:^
         version: link:../../packages/components/card
-      '@usertour-packages/chart':
+      '@usertour/chart':
         specifier: workspace:^
         version: link:../../packages/components/chart
-      '@usertour-packages/checkbox':
+      '@usertour/checkbox':
         specifier: workspace:^
         version: link:../../packages/components/checkbox
-      '@usertour-packages/command':
+      '@usertour/command':
         specifier: workspace:^
         version: link:../../packages/components/command
-      '@usertour-packages/constants':
+      '@usertour/constants':
         specifier: workspace:^
         version: link:../../packages/constants
-      '@usertour-packages/context-menu':
+      '@usertour/context-menu':
         specifier: workspace:^
         version: link:../../packages/components/context-menu
-      '@usertour-packages/dialog':
+      '@usertour/dialog':
         specifier: workspace:^
         version: link:../../packages/components/dialog
-      '@usertour-packages/dropdown-menu':
+      '@usertour/dropdown-menu':
         specifier: workspace:^
         version: link:../../packages/components/dropdown-menu
-      '@usertour-packages/editor':
+      '@usertour/editor':
         specifier: workspace:^
         version: link:../../packages/editor
-      '@usertour-packages/form':
+      '@usertour/form':
         specifier: workspace:^
         version: link:../../packages/components/form
-      '@usertour-packages/gql':
+      '@usertour/gql':
         specifier: workspace:^
         version: link:../../packages/gql
-      '@usertour-packages/hooks':
+      '@usertour/hooks':
         specifier: workspace:^
         version: link:../../packages/hooks
-      '@usertour-packages/hover-card':
+      '@usertour/hover-card':
         specifier: workspace:^
         version: link:../../packages/components/hover-card
-      '@usertour-packages/i18n':
+      '@usertour/i18n':
         specifier: workspace:^
         version: link:../../packages/i18n
-      '@usertour-packages/icons':
+      '@usertour/icons':
         specifier: workspace:^
         version: link:../../packages/icons
-      '@usertour-packages/input':
+      '@usertour/input':
         specifier: workspace:^
         version: link:../../packages/components/input
-      '@usertour-packages/label':
+      '@usertour/label':
         specifier: workspace:^
         version: link:../../packages/components/label
-      '@usertour-packages/menubar':
+      '@usertour/menubar':
         specifier: workspace:^
         version: link:../../packages/components/menubar
-      '@usertour-packages/popover':
+      '@usertour/popover':
         specifier: workspace:^
         version: link:../../packages/components/popover
-      '@usertour-packages/progress':
+      '@usertour/progress':
         specifier: workspace:^
         version: link:../../packages/components/progress
-      '@usertour-packages/radio-group':
+      '@usertour/radio-group':
         specifier: workspace:^
         version: link:../../packages/components/radio-group
-      '@usertour-packages/react-use-rect':
+      '@usertour/react-use-rect':
         specifier: workspace:^
         version: link:../../packages/radix/use-rect
-      '@usertour-packages/react-use-size':
+      '@usertour/react-use-size':
         specifier: workspace:^
         version: link:../../packages/radix/use-size
-      '@usertour-packages/scroll-area':
+      '@usertour/scroll-area':
         specifier: workspace:^
         version: link:../../packages/components/scroll-area
-      '@usertour-packages/select':
+      '@usertour/select':
         specifier: workspace:^
         version: link:../../packages/components/select
-      '@usertour-packages/separator':
+      '@usertour/separator':
         specifier: workspace:^
         version: link:../../packages/components/separator
-      '@usertour-packages/skeleton':
+      '@usertour/skeleton':
         specifier: workspace:^
         version: link:../../packages/components/skeleton
-      '@usertour-packages/slider':
+      '@usertour/slider':
         specifier: workspace:^
         version: link:../../packages/components/slider
-      '@usertour-packages/switch':
+      '@usertour/switch':
         specifier: workspace:^
         version: link:../../packages/components/switch
-      '@usertour-packages/table':
+      '@usertour/table':
         specifier: workspace:^
         version: link:../../packages/components/table
-      '@usertour-packages/tabs':
+      '@usertour/tabs':
         specifier: workspace:^
         version: link:../../packages/components/tabs
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:^
         version: link:../../packages/tailwind
-      '@usertour-packages/textarea':
+      '@usertour/textarea':
         specifier: workspace:^
         version: link:../../packages/components/textarea
-      '@usertour-packages/toggle':
+      '@usertour/toggle':
         specifier: workspace:^
         version: link:../../packages/components/toggle
-      '@usertour-packages/tooltip':
+      '@usertour/tooltip':
         specifier: workspace:^
         version: link:../../packages/components/tooltip
-      '@usertour-packages/ui':
+      '@usertour/ui':
         specifier: workspace:^
         version: link:../../packages/components/ui
-      '@usertour-packages/use-toast':
+      '@usertour/use-toast':
         specifier: workspace:^
         version: link:../../packages/components/use-toast
-      '@usertour-packages/widget':
+      '@usertour/widget':
         specifier: workspace:^
         version: link:../../packages/widget
       '@usertour/helpers':
@@ -984,136 +984,136 @@ importers:
       '@types/animejs':
         specifier: ^3.1.12
         version: 3.1.12
-      '@usertour-packages/alert':
+      '@usertour/alert':
         specifier: workspace:^
         version: link:../components/alert
-      '@usertour-packages/alert-dialog':
+      '@usertour/alert-dialog':
         specifier: workspace:^
         version: link:../components/alert-dialog
-      '@usertour-packages/avatar':
+      '@usertour/avatar':
         specifier: workspace:^
         version: link:../components/avatar
-      '@usertour-packages/badge':
+      '@usertour/badge':
         specifier: workspace:^
         version: link:../components/badge
-      '@usertour-packages/business-components':
+      '@usertour/business-components':
         specifier: workspace:^
         version: link:../business-components
-      '@usertour-packages/button':
+      '@usertour/button':
         specifier: workspace:^
         version: link:../components/button
-      '@usertour-packages/calendar':
+      '@usertour/calendar':
         specifier: workspace:^
         version: link:../components/calendar
-      '@usertour-packages/card':
+      '@usertour/card':
         specifier: workspace:^
         version: link:../components/card
-      '@usertour-packages/checkbox':
+      '@usertour/checkbox':
         specifier: workspace:^
         version: link:../components/checkbox
-      '@usertour-packages/command':
+      '@usertour/command':
         specifier: workspace:^
         version: link:../components/command
-      '@usertour-packages/constants':
+      '@usertour/constants':
         specifier: workspace:^
         version: link:../constants
-      '@usertour-packages/context-menu':
+      '@usertour/context-menu':
         specifier: workspace:^
         version: link:../components/context-menu
-      '@usertour-packages/contexts':
+      '@usertour/contexts':
         specifier: workspace:^
         version: link:../contexts
-      '@usertour-packages/dialog':
+      '@usertour/dialog':
         specifier: workspace:^
         version: link:../components/dialog
-      '@usertour-packages/dropdown-menu':
+      '@usertour/dropdown-menu':
         specifier: workspace:^
         version: link:../components/dropdown-menu
-      '@usertour-packages/editor':
+      '@usertour/editor':
         specifier: workspace:^
         version: link:../editor
-      '@usertour-packages/finder':
+      '@usertour/finder':
         specifier: workspace:^
         version: link:../finder
-      '@usertour-packages/form':
+      '@usertour/form':
         specifier: workspace:^
         version: link:../components/form
-      '@usertour-packages/frame':
+      '@usertour/frame':
         specifier: workspace:^
         version: link:../components/frame
-      '@usertour-packages/gql':
+      '@usertour/gql':
         specifier: workspace:^
         version: link:../gql
-      '@usertour-packages/hooks':
+      '@usertour/hooks':
         specifier: workspace:^
         version: link:../hooks
-      '@usertour-packages/hover-card':
+      '@usertour/hover-card':
         specifier: workspace:^
         version: link:../components/hover-card
-      '@usertour-packages/icons':
+      '@usertour/icons':
         specifier: workspace:^
         version: link:../icons
-      '@usertour-packages/input':
+      '@usertour/input':
         specifier: workspace:^
         version: link:../components/input
-      '@usertour-packages/label':
+      '@usertour/label':
         specifier: workspace:^
         version: link:../components/label
-      '@usertour-packages/menubar':
+      '@usertour/menubar':
         specifier: workspace:^
         version: link:../components/menubar
-      '@usertour-packages/popover':
+      '@usertour/popover':
         specifier: workspace:^
         version: link:../components/popover
-      '@usertour-packages/radio-group':
+      '@usertour/radio-group':
         specifier: workspace:^
         version: link:../components/radio-group
-      '@usertour-packages/react-compose-refs':
+      '@usertour/react-compose-refs':
         specifier: workspace:^
         version: link:../radix/compose-refs
-      '@usertour-packages/react-use-size':
+      '@usertour/react-use-size':
         specifier: workspace:^
         version: link:../radix/use-size
-      '@usertour-packages/scroll-area':
+      '@usertour/scroll-area':
         specifier: workspace:^
         version: link:../components/scroll-area
-      '@usertour-packages/select':
+      '@usertour/select':
         specifier: workspace:^
         version: link:../components/select
-      '@usertour-packages/separator':
+      '@usertour/separator':
         specifier: workspace:^
         version: link:../components/separator
-      '@usertour-packages/skeleton':
+      '@usertour/skeleton':
         specifier: workspace:^
         version: link:../components/skeleton
-      '@usertour-packages/slider':
+      '@usertour/slider':
         specifier: workspace:^
         version: link:../components/slider
-      '@usertour-packages/switch':
+      '@usertour/switch':
         specifier: workspace:^
         version: link:../components/switch
-      '@usertour-packages/table':
+      '@usertour/table':
         specifier: workspace:^
         version: link:../components/table
-      '@usertour-packages/tabs':
+      '@usertour/tabs':
         specifier: workspace:^
         version: link:../components/tabs
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:^
         version: link:../tailwind
-      '@usertour-packages/textarea':
+      '@usertour/textarea':
         specifier: workspace:^
         version: link:../components/textarea
-      '@usertour-packages/tooltip':
+      '@usertour/tooltip':
         specifier: workspace:^
         version: link:../components/tooltip
-      '@usertour-packages/ui':
+      '@usertour/ui':
         specifier: workspace:^
         version: link:../components/ui
-      '@usertour-packages/use-toast':
+      '@usertour/use-toast':
         specifier: workspace:^
         version: link:../components/use-toast
-      '@usertour-packages/widget':
+      '@usertour/widget':
         specifier: workspace:^
         version: link:../widget
       '@usertour/helpers':
@@ -1246,118 +1246,118 @@ importers:
       '@uiw/react-codemirror':
         specifier: ^4.23.0
         version: 4.23.6(@babel/runtime@7.28.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.5.1))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.5.1))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/alert':
+      '@usertour/alert':
         specifier: workspace:^
         version: link:../components/alert
-      '@usertour-packages/alert-dialog':
+      '@usertour/alert-dialog':
         specifier: workspace:^
         version: link:../components/alert-dialog
-      '@usertour-packages/aspect-ratio':
+      '@usertour/aspect-ratio':
         specifier: workspace:^
         version: link:../components/aspect-ratio
-      '@usertour-packages/avatar':
+      '@usertour/avatar':
         specifier: workspace:^
         version: link:../components/avatar
-      '@usertour-packages/badge':
+      '@usertour/badge':
         specifier: workspace:^
         version: link:../components/badge
-      '@usertour-packages/button':
+      '@usertour/button':
         specifier: workspace:^
         version: link:../components/button
-      '@usertour-packages/calendar':
+      '@usertour/calendar':
         specifier: workspace:^
         version: link:../components/calendar
-      '@usertour-packages/card':
+      '@usertour/card':
         specifier: workspace:^
         version: link:../components/card
-      '@usertour-packages/checkbox':
+      '@usertour/checkbox':
         specifier: workspace:^
         version: link:../components/checkbox
-      '@usertour-packages/command':
+      '@usertour/command':
         specifier: workspace:^
         version: link:../components/command
-      '@usertour-packages/constants':
+      '@usertour/constants':
         specifier: workspace:^
         version: link:../constants
-      '@usertour-packages/context-menu':
+      '@usertour/context-menu':
         specifier: workspace:^
         version: link:../components/context-menu
-      '@usertour-packages/dialog':
+      '@usertour/dialog':
         specifier: workspace:^
         version: link:../components/dialog
-      '@usertour-packages/dropdown-menu':
+      '@usertour/dropdown-menu':
         specifier: workspace:^
         version: link:../components/dropdown-menu
-      '@usertour-packages/form':
+      '@usertour/form':
         specifier: workspace:^
         version: link:../components/form
-      '@usertour-packages/gql':
+      '@usertour/gql':
         specifier: workspace:^
         version: link:../gql
-      '@usertour-packages/hooks':
+      '@usertour/hooks':
         specifier: workspace:^
         version: link:../hooks
-      '@usertour-packages/hover-card':
+      '@usertour/hover-card':
         specifier: workspace:^
         version: link:../components/hover-card
-      '@usertour-packages/icons':
+      '@usertour/icons':
         specifier: workspace:^
         version: link:../icons
-      '@usertour-packages/input':
+      '@usertour/input':
         specifier: workspace:^
         version: link:../components/input
-      '@usertour-packages/label':
+      '@usertour/label':
         specifier: workspace:^
         version: link:../components/label
-      '@usertour-packages/menubar':
+      '@usertour/menubar':
         specifier: workspace:^
         version: link:../components/menubar
-      '@usertour-packages/popover':
+      '@usertour/popover':
         specifier: workspace:^
         version: link:../components/popover
-      '@usertour-packages/radio-group':
+      '@usertour/radio-group':
         specifier: workspace:^
         version: link:../components/radio-group
-      '@usertour-packages/react-use-size':
+      '@usertour/react-use-size':
         specifier: workspace:^
         version: link:../radix/use-size
-      '@usertour-packages/scroll-area':
+      '@usertour/scroll-area':
         specifier: workspace:^
         version: link:../components/scroll-area
-      '@usertour-packages/select':
+      '@usertour/select':
         specifier: workspace:^
         version: link:../components/select
-      '@usertour-packages/separator':
+      '@usertour/separator':
         specifier: workspace:^
         version: link:../components/separator
-      '@usertour-packages/slider':
+      '@usertour/slider':
         specifier: workspace:^
         version: link:../components/slider
-      '@usertour-packages/switch':
+      '@usertour/switch':
         specifier: workspace:^
         version: link:../components/switch
-      '@usertour-packages/table':
+      '@usertour/table':
         specifier: workspace:^
         version: link:../components/table
-      '@usertour-packages/tabs':
+      '@usertour/tabs':
         specifier: workspace:^
         version: link:../components/tabs
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:^
         version: link:../tailwind
-      '@usertour-packages/textarea':
+      '@usertour/textarea':
         specifier: workspace:^
         version: link:../components/textarea
-      '@usertour-packages/tooltip':
+      '@usertour/tooltip':
         specifier: workspace:^
         version: link:../components/tooltip
-      '@usertour-packages/ui':
+      '@usertour/ui':
         specifier: workspace:^
         version: link:../components/ui
-      '@usertour-packages/use-toast':
+      '@usertour/use-toast':
         specifier: workspace:^
         version: link:../components/use-toast
-      '@usertour-packages/widget':
+      '@usertour/widget':
         specifier: workspace:^
         version: link:../widget
       '@usertour/helpers':
@@ -1436,7 +1436,7 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -1479,7 +1479,7 @@ importers:
 
   packages/components/alert:
     dependencies:
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -1528,10 +1528,10 @@ importers:
       '@radix-ui/react-alert-dialog':
         specifier: ^1.0.4
         version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/button':
+      '@usertour/button':
         specifier: workspace:*
         version: link:../button
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -1623,7 +1623,7 @@ importers:
       '@radix-ui/react-avatar':
         specifier: ^1.0.3
         version: 1.1.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -1666,7 +1666,7 @@ importers:
 
   packages/components/badge:
     dependencies:
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -1715,7 +1715,7 @@ importers:
       '@radix-ui/react-slot':
         specifier: ^1.0.2
         version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -1764,10 +1764,10 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@usertour-packages/button':
+      '@usertour/button':
         specifier: workspace:*
         version: link:../button
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       react-day-picker:
@@ -1813,7 +1813,7 @@ importers:
 
   packages/components/card:
     dependencies:
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -1856,7 +1856,7 @@ importers:
 
   packages/components/chart:
     dependencies:
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       recharts:
@@ -1908,7 +1908,7 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -1954,7 +1954,7 @@ importers:
       '@radix-ui/react-collapsible':
         specifier: ^1.0.3
         version: 1.1.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2003,10 +2003,10 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@usertour-packages/dialog':
+      '@usertour/dialog':
         specifier: workspace:*
         version: link:../dialog
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       cmdk:
@@ -2058,7 +2058,7 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2107,7 +2107,7 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2156,7 +2156,7 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -2208,10 +2208,10 @@ importers:
       '@radix-ui/react-slot':
         specifier: ^1.0.2
         version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
-      '@usertour-packages/label':
+      '@usertour/label':
         specifier: workspace:*
         version: link:../label
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       react-hook-form:
@@ -2257,7 +2257,7 @@ importers:
 
   packages/components/frame:
     dependencies:
-      '@usertour-packages/react-compose-refs':
+      '@usertour/react-compose-refs':
         specifier: workspace:^
         version: link:../../radix/compose-refs
       clsx:
@@ -2306,7 +2306,7 @@ importers:
       '@radix-ui/react-hover-card':
         specifier: ^1.0.6
         version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2349,7 +2349,7 @@ importers:
 
   packages/components/input:
     dependencies:
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -2398,7 +2398,7 @@ importers:
       '@radix-ui/react-label':
         specifier: ^2.0.2
         version: 2.1.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -2450,7 +2450,7 @@ importers:
       '@radix-ui/react-menubar':
         specifier: ^1.0.3
         version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2499,7 +2499,7 @@ importers:
       '@radix-ui/react-navigation-menu':
         specifier: ^1.1.3
         version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -2548,7 +2548,7 @@ importers:
       '@radix-ui/react-popover':
         specifier: ^1.0.6
         version: 1.1.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2594,7 +2594,7 @@ importers:
       '@radix-ui/react-progress':
         specifier: ^1.0.3
         version: 1.1.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2643,7 +2643,7 @@ importers:
       '@radix-ui/react-radio-group':
         specifier: ^1.1.3
         version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2689,7 +2689,7 @@ importers:
       '@radix-ui/react-scroll-area':
         specifier: ^1.0.4
         version: 1.2.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2738,7 +2738,7 @@ importers:
       '@radix-ui/react-select':
         specifier: ^1.2.2
         version: 1.2.2(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -2787,7 +2787,7 @@ importers:
       '@radix-ui/react-separator':
         specifier: ^1.0.3
         version: 1.1.0(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2836,7 +2836,7 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -2882,7 +2882,7 @@ importers:
 
   packages/components/skeleton:
     dependencies:
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2931,7 +2931,7 @@ importers:
       '@radix-ui/react-slider':
         specifier: ^1.1.2
         version: 1.2.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -2977,7 +2977,7 @@ importers:
       '@radix-ui/react-switch':
         specifier: ^1.0.3
         version: 1.1.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -3023,7 +3023,7 @@ importers:
 
   packages/components/table:
     dependencies:
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -3069,7 +3069,7 @@ importers:
       '@radix-ui/react-tabs':
         specifier: ^1.0.4
         version: 1.1.1(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -3124,7 +3124,7 @@ importers:
       '@radix-ui/react-icons':
         specifier: ^1.3.0
         version: 1.3.1(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -3173,7 +3173,7 @@ importers:
       '@radix-ui/react-toggle-group':
         specifier: ^1.1.1
         version: 1.1.11(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
       class-variance-authority:
@@ -3225,7 +3225,7 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.0.6
         version: 1.1.3(@types/react-dom@18.2.7)(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
     devDependencies:
@@ -3277,52 +3277,52 @@ importers:
       '@tabler/icons-react':
         specifier: ^3.31.0
         version: 3.36.1(react@18.2.0)
-      '@usertour-packages/alert':
+      '@usertour/alert':
         specifier: workspace:*
         version: link:../alert
-      '@usertour-packages/button':
+      '@usertour/button':
         specifier: workspace:*
         version: link:../button
-      '@usertour-packages/calendar':
+      '@usertour/calendar':
         specifier: workspace:*
         version: link:../calendar
-      '@usertour-packages/command':
+      '@usertour/command':
         specifier: workspace:*
         version: link:../command
-      '@usertour-packages/constants':
+      '@usertour/constants':
         specifier: workspace:*
         version: link:../../constants
-      '@usertour-packages/dropdown-menu':
+      '@usertour/dropdown-menu':
         specifier: workspace:*
         version: link:../dropdown-menu
-      '@usertour-packages/icons':
+      '@usertour/icons':
         specifier: workspace:*
         version: link:../../icons
-      '@usertour-packages/input':
+      '@usertour/input':
         specifier: workspace:*
         version: link:../input
-      '@usertour-packages/popover':
+      '@usertour/popover':
         specifier: workspace:*
         version: link:../popover
-      '@usertour-packages/scroll-area':
+      '@usertour/scroll-area':
         specifier: workspace:*
         version: link:../scroll-area
-      '@usertour-packages/select':
+      '@usertour/select':
         specifier: workspace:*
         version: link:../select
-      '@usertour-packages/switch':
+      '@usertour/switch':
         specifier: workspace:*
         version: link:../switch
-      '@usertour-packages/tabs':
+      '@usertour/tabs':
         specifier: workspace:*
         version: link:../tabs
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../../tailwind
-      '@usertour-packages/textarea':
+      '@usertour/textarea':
         specifier: workspace:*
         version: link:../textarea
-      '@usertour-packages/tooltip':
+      '@usertour/tooltip':
         specifier: workspace:*
         version: link:../tooltip
       '@usertour/helpers':
@@ -3439,7 +3439,7 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.9.3
         version: 8.20.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/gql':
+      '@usertour/gql':
         specifier: workspace:^
         version: link:../gql
       '@usertour/types':
@@ -3494,7 +3494,7 @@ importers:
       '@types/react-dom':
         specifier: '*'
         version: 18.2.7
-      '@usertour-packages/react-slot':
+      '@usertour/react-slot':
         specifier: workspace:*
         version: link:../radix/slot
       react:
@@ -3549,85 +3549,85 @@ importers:
       '@uiw/react-codemirror':
         specifier: ^4.23.0
         version: 4.23.6(@babel/runtime@7.28.6)(@codemirror/autocomplete@6.18.2(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.1)(@lezer/common@1.5.1))(@codemirror/language@6.10.3)(@codemirror/lint@6.8.2)(@codemirror/search@6.5.7)(@codemirror/state@6.4.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.34.1)(codemirror@6.0.1(@lezer/common@1.5.1))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@usertour-packages/badge':
+      '@usertour/badge':
         specifier: workspace:^
         version: link:../components/badge
-      '@usertour-packages/business-components':
+      '@usertour/business-components':
         specifier: workspace:^
         version: link:../business-components
-      '@usertour-packages/button':
+      '@usertour/button':
         specifier: workspace:^
         version: link:../components/button
-      '@usertour-packages/checkbox':
+      '@usertour/checkbox':
         specifier: workspace:^
         version: link:../components/checkbox
-      '@usertour-packages/command':
+      '@usertour/command':
         specifier: workspace:^
         version: link:../components/command
-      '@usertour-packages/constants':
+      '@usertour/constants':
         specifier: workspace:^
         version: link:../constants
-      '@usertour-packages/dialog':
+      '@usertour/dialog':
         specifier: workspace:^
         version: link:../components/dialog
-      '@usertour-packages/dropdown-menu':
+      '@usertour/dropdown-menu':
         specifier: workspace:^
         version: link:../components/dropdown-menu
-      '@usertour-packages/form':
+      '@usertour/form':
         specifier: workspace:^
         version: link:../components/form
-      '@usertour-packages/hooks':
+      '@usertour/hooks':
         specifier: workspace:^
         version: link:../hooks
-      '@usertour-packages/icons':
+      '@usertour/icons':
         specifier: workspace:^
         version: link:../icons
-      '@usertour-packages/input':
+      '@usertour/input':
         specifier: workspace:^
         version: link:../components/input
-      '@usertour-packages/label':
+      '@usertour/label':
         specifier: workspace:^
         version: link:../components/label
-      '@usertour-packages/popover':
+      '@usertour/popover':
         specifier: workspace:^
         version: link:../components/popover
-      '@usertour-packages/radio-group':
+      '@usertour/radio-group':
         specifier: workspace:^
         version: link:../components/radio-group
-      '@usertour-packages/react-compose-refs':
+      '@usertour/react-compose-refs':
         specifier: workspace:^
         version: link:../radix/compose-refs
-      '@usertour-packages/scroll-area':
+      '@usertour/scroll-area':
         specifier: workspace:^
         version: link:../components/scroll-area
-      '@usertour-packages/select':
+      '@usertour/select':
         specifier: workspace:^
         version: link:../components/select
-      '@usertour-packages/skeleton':
+      '@usertour/skeleton':
         specifier: workspace:^
         version: link:../components/skeleton
-      '@usertour-packages/switch':
+      '@usertour/switch':
         specifier: workspace:^
         version: link:../components/switch
-      '@usertour-packages/tabs':
+      '@usertour/tabs':
         specifier: workspace:^
         version: link:../components/tabs
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../tailwind
-      '@usertour-packages/textarea':
+      '@usertour/textarea':
         specifier: workspace:^
         version: link:../components/textarea
-      '@usertour-packages/tooltip':
+      '@usertour/tooltip':
         specifier: workspace:^
         version: link:../components/tooltip
-      '@usertour-packages/ui':
+      '@usertour/ui':
         specifier: workspace:^
         version: link:../components/ui
-      '@usertour-packages/use-toast':
+      '@usertour/use-toast':
         specifier: workspace:^
         version: link:../components/use-toast
-      '@usertour-packages/widget':
+      '@usertour/widget':
         specifier: workspace:^
         version: link:../widget
       '@usertour/helpers':
@@ -3813,7 +3813,7 @@ importers:
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
-      '@usertour-packages/constants':
+      '@usertour/constants':
         specifier: workspace:^
         version: link:../constants
       '@usertour/types':
@@ -3874,10 +3874,10 @@ importers:
       '@apollo/client':
         specifier: ^3.7.17
         version: 3.11.8(@types/react@18.2.15)(graphql-ws@5.14.3(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(subscriptions-transport-ws@0.11.0(graphql@16.9.0))
-      '@usertour-packages/constants':
+      '@usertour/constants':
         specifier: workspace:^
         version: link:../constants
-      '@usertour-packages/gql':
+      '@usertour/gql':
         specifier: workspace:^
         version: link:../gql
       '@usertour/helpers':
@@ -4026,7 +4026,7 @@ importers:
       '@types/react-dom':
         specifier: '*'
         version: 18.2.7
-      '@usertour-packages/react-primitive':
+      '@usertour/react-primitive':
         specifier: workspace:*
         version: link:../primitive
       react:
@@ -4074,31 +4074,31 @@ importers:
       '@types/react-dom':
         specifier: '*'
         version: 18.2.7
-      '@usertour-packages/react-arrow':
+      '@usertour/react-arrow':
         specifier: workspace:*
         version: link:../arrow
-      '@usertour-packages/react-compose-refs':
+      '@usertour/react-compose-refs':
         specifier: workspace:*
         version: link:../compose-refs
-      '@usertour-packages/react-context':
+      '@usertour/react-context':
         specifier: workspace:*
         version: link:../context
-      '@usertour-packages/react-primitive':
+      '@usertour/react-primitive':
         specifier: workspace:*
         version: link:../primitive
-      '@usertour-packages/react-use-callback-ref':
+      '@usertour/react-use-callback-ref':
         specifier: workspace:*
         version: link:../use-callback-ref
-      '@usertour-packages/react-use-layout-effect':
+      '@usertour/react-use-layout-effect':
         specifier: workspace:*
         version: link:../use-layout-effect
-      '@usertour-packages/react-use-rect':
+      '@usertour/react-use-rect':
         specifier: workspace:*
         version: link:../use-rect
-      '@usertour-packages/react-use-size':
+      '@usertour/react-use-size':
         specifier: workspace:*
         version: link:../use-size
-      '@usertour-packages/rect':
+      '@usertour/rect':
         specifier: workspace:*
         version: link:../rect
       react:
@@ -4119,7 +4119,7 @@ importers:
       '@types/react-dom':
         specifier: '*'
         version: 18.2.7
-      '@usertour-packages/react-slot':
+      '@usertour/react-slot':
         specifier: workspace:*
         version: link:../slot
       react:
@@ -4147,7 +4147,7 @@ importers:
       '@types/react':
         specifier: '*'
         version: 18.2.15
-      '@usertour-packages/react-compose-refs':
+      '@usertour/react-compose-refs':
         specifier: workspace:*
         version: link:../compose-refs
       react:
@@ -4186,7 +4186,7 @@ importers:
       '@types/react':
         specifier: '*'
         version: 18.2.15
-      '@usertour-packages/rect':
+      '@usertour/rect':
         specifier: workspace:*
         version: link:../rect
       react:
@@ -4201,7 +4201,7 @@ importers:
       '@types/react':
         specifier: '*'
         version: 18.2.15
-      '@usertour-packages/react-use-layout-effect':
+      '@usertour/react-use-layout-effect':
         specifier: workspace:*
         version: link:../use-layout-effect
       react:
@@ -4299,28 +4299,28 @@ importers:
       '@radix-ui/react-slot':
         specifier: ^1.0.2
         version: 1.2.3(@types/react@18.2.15)(react@18.2.0)
-      '@usertour-packages/dom':
+      '@usertour/dom':
         specifier: workspace:^
         version: link:../dom
-      '@usertour-packages/frame':
+      '@usertour/frame':
         specifier: workspace:*
         version: link:../components/frame
-      '@usertour-packages/icons':
+      '@usertour/icons':
         specifier: workspace:*
         version: link:../icons
-      '@usertour-packages/react-arrow':
+      '@usertour/react-arrow':
         specifier: workspace:^
         version: link:../radix/arrow
-      '@usertour-packages/react-compose-refs':
+      '@usertour/react-compose-refs':
         specifier: workspace:^
         version: link:../radix/compose-refs
-      '@usertour-packages/react-context':
+      '@usertour/react-context':
         specifier: workspace:^
         version: link:../radix/context
-      '@usertour-packages/react-use-size':
+      '@usertour/react-use-size':
         specifier: workspace:^
         version: link:../radix/use-size
-      '@usertour-packages/tailwind':
+      '@usertour/tailwind':
         specifier: workspace:*
         version: link:../tailwind
       '@usertour/helpers':

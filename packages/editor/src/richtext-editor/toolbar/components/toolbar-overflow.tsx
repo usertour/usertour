@@ -5,10 +5,10 @@ import {
   Separator as ToolbarSeparator,
   ToggleGroup as ToolbarToggleGroup,
 } from '@radix-ui/react-toolbar';
-import { EDITOR_RICH_TOOLBAR, EDITOR_RICH_TOOLBAR_MORE } from '@usertour-packages/constants';
-import { MoreIcon } from '@usertour-packages/icons';
-import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour-packages/popover';
-import { cn } from '@usertour-packages/tailwind';
+import { EDITOR_RICH_TOOLBAR, EDITOR_RICH_TOOLBAR_MORE } from '@usertour/constants';
+import { MoreIcon } from '@usertour/icons';
+import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@usertour/popover';
+import { cn } from '@usertour/tailwind';
 import { forwardRef, memo, useState } from 'react';
 
 import {

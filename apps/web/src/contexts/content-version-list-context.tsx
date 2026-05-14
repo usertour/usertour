@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { listContentVersions } from '@usertour-packages/gql';
+import { listContentVersions } from '@usertour/gql';
 import { ContentVersion } from '@usertour/types';
 import { ReactNode, createContext, useCallback, useContext, useMemo, useRef } from 'react';
 

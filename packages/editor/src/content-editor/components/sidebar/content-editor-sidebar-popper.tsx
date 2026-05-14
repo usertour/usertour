@@ -1,7 +1,7 @@
 // Sidebar popper component for adding new content elements
 
-import { Popover, PopoverTrigger } from '@usertour-packages/popover';
-import type { PopoverProps } from '@usertour-packages/popover';
+import { Popover, PopoverTrigger } from '@usertour/popover';
+import type { PopoverProps } from '@usertour/popover';
 import { memo } from 'react';
 
 import type { ContentEditorElement } from '../../../types/editor';

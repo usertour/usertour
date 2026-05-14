@@ -4,7 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@usertour-packages/dialog';
+} from '@usertour/dialog';
 import { ApiCopyButton } from './api-copy-button';
 
 interface ApiKeyDialogProps {

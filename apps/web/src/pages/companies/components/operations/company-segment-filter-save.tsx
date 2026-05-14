@@ -8,12 +8,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@usertour-packages/alert-dialog';
-import { Button } from '@usertour-packages/button';
+} from '@usertour/alert-dialog';
+import { Button } from '@usertour/button';
 import { conditionsIsSame, getErrorMessage } from '@usertour/helpers';
-import { useUpdateSegmentMutation } from '@usertour-packages/hooks';
+import { useUpdateSegmentMutation } from '@usertour/hooks';
 import { Segment } from '@usertour/types';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LoadingButton } from '@/components/molecules/loading-button';

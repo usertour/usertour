@@ -1,6 +1,6 @@
-import { Button } from '@usertour-packages/button';
-import { UserIcon } from '@usertour-packages/icons';
-import { cn } from '@usertour-packages/tailwind';
+import { Button } from '@usertour/button';
+import { UserIcon } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { memo, useCallback } from 'react';
 import { useSlate } from 'slate-react';
 import { insertUserAttributeBlock } from '../../lib/editorHelper';

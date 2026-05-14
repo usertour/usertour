@@ -1,4 +1,4 @@
-import { extendBase, extendSdk } from '@usertour-packages/tailwind';
+import { extendBase, extendSdk } from '@usertour/tailwind';
 import { deepmerge } from 'deepmerge-ts';
 
 const extend = deepmerge(extendBase, extendSdk, {

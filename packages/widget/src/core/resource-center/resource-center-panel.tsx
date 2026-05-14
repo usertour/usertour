@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useLayoutEffect, useState, type HTMLAttributes } from 'react';
-import type { AssetAttributes } from '@usertour-packages/frame';
-import { Frame, useFrame } from '@usertour-packages/frame';
-import { cn } from '@usertour-packages/tailwind';
+import type { AssetAttributes } from '@usertour/frame';
+import { Frame, useFrame } from '@usertour/frame';
+import { cn } from '@usertour/tailwind';
 import { useResourceCenterContext } from './context';
 import { RESOURCE_CENTER_DEFAULTS } from './constants';
 import { useResourceCenterPositionStyle } from './hooks/use-resource-center-position-style';

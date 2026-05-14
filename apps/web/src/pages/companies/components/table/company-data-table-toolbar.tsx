@@ -5,8 +5,8 @@ import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { Table } from '@tanstack/react-table';
 import { useTranslation } from 'react-i18next';
-import { WebZIndex } from '@usertour-packages/constants';
-import { Conditions, validateConditions } from '@usertour-packages/business-components';
+import { WebZIndex } from '@usertour/constants';
+import { Conditions, validateConditions } from '@usertour/business-components';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -18,11 +18,11 @@ import { DeleteCompanyFromSegment } from '../operations';
 import { RemoveFromSegment } from '../operations';
 import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
-import { updateSegment } from '@usertour-packages/gql';
+import { updateSegment } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useTableSelection } from '@/hooks/use-table-selection';
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 
 interface CompanyDataTableToolbarProps {

@@ -1,6 +1,6 @@
-import { Button } from '@usertour-packages/button';
+import { Button } from '@usertour/button';
 import { CopyIcon } from '@radix-ui/react-icons';
-import { useToast } from '@usertour-packages/use-toast';
+import { useToast } from '@usertour/use-toast';
 import { useCopyToClipboard } from 'react-use';
 
 interface ApiCopyButtonProps {
