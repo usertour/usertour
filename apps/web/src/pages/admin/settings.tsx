@@ -91,7 +91,7 @@ export const AdminSettingsPage = () => {
     <SettingsContent>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-2xl font-semibold tracking-tight">Subscription</h3>
+          <h3 className="text-xl font-semibold tracking-tight">Subscription</h3>
         </div>
         <p className="text-sm text-muted-foreground">
           Manage the instance license and subscription details for this self-hosted deployment.

@@ -89,7 +89,7 @@ export const AdminAuthenticationPage = () => {
   return (
     <SettingsContent>
       <div className="space-y-2">
-        <h3 className="text-2xl font-semibold tracking-tight">Authentication</h3>
+        <h3 className="text-xl font-semibold tracking-tight">Authentication</h3>
         <p className="text-sm text-muted-foreground">
           Configure how users can register for this self-hosted instance.
         </p>
