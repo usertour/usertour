@@ -526,6 +526,14 @@ export class FeatureRequiresLicenseError extends BaseError {
   };
 }
 
+export class TwoFactorEnrollmentRequiredError extends BaseError {
+  code = 'E0044';
+  messageDict = {
+    en: 'This instance requires two-factor authentication. Please enable 2FA on your account before continuing.',
+    'zh-CN': '当前实例要求开启二步验证，请先在账号设置中启用 2FA。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -588,6 +596,7 @@ const errorMap = {
   E0041: SystemAdminMustEnable2FAFirstError,
   E0042: TwoFactorEnforcedDisableNotAllowedError,
   E0043: FeatureRequiresLicenseError,
+  E0044: TwoFactorEnrollmentRequiredError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

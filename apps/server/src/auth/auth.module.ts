@@ -1,4 +1,5 @@
 import { GqlAuthGuard } from '@/auth/guard/gql-auth.guard';
+import { TwoFactorEnrollmentGuard } from '@/auth/guard/two-factor-enrollment.guard';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -67,6 +68,10 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
     {
       provide: APP_GUARD,
       useClass: GqlAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: TwoFactorEnrollmentGuard,
     },
   ],
   controllers: [AuthController],

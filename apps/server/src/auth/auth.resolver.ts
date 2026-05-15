@@ -17,6 +17,7 @@ import { Logger, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { UserEntity } from '@/common/decorators/user.decorator';
+import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
 import { EmailConfigGuard } from '@/common/guards/email-config.guard';
 
 @Resolver(() => Auth)
@@ -89,6 +90,7 @@ export class AuthResolver {
   }
 
   @Mutation(() => Boolean)
+  @SkipTwoFactorEnrollment()
   async logout(@UserEntity() user: User, @Context() context: { res: Response }) {
     this.logger.log(`Logging out user: ${user.id}`);
     await this.auth.revokeAllRefreshTokens(user.id);

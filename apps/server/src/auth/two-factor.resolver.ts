@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { PrismaService } from 'nestjs-prisma';
 import { Public } from '@/common/decorators/public.decorator';
+import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { InvalidTwoFactorChallengeError } from '@/common/errors';
 import { User } from '@/users/models/user.model';
@@ -28,11 +29,13 @@ export class TwoFactorResolver {
   // -- Logged-in path: user enables 2FA from settings ------------------------
 
   @Mutation(() => TwoFactorSetupPayload)
+  @SkipTwoFactorEnrollment()
   async startTwoFactorSetup(@UserEntity() user: User): Promise<TwoFactorSetupPayload> {
     return this.twoFactorService.startSetup(user);
   }
 
   @Mutation(() => TwoFactorEnableResult)
+  @SkipTwoFactorEnrollment()
   async confirmTwoFactorSetup(
     @Args('data') data: ConfirmTwoFactorSetupInput,
     @UserEntity() user: User,

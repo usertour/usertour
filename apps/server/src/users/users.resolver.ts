@@ -1,4 +1,5 @@
 import { UserEntity } from '@/common/decorators/user.decorator';
+import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { PrismaService } from 'nestjs-prisma';
 import { ChangeEmailInput } from './dto/change-email.input';
@@ -18,6 +19,7 @@ export class UsersResolver {
   ) {}
 
   @Query(() => User)
+  @SkipTwoFactorEnrollment()
   async me(@UserEntity() user: User): Promise<User> {
     return user;
   }

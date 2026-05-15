@@ -256,15 +256,38 @@ export class AdminService implements OnModuleInit {
         throw new FeatureRequiresLicenseError();
       }
     }
-    return this.prisma.instanceSetting.upsert({
-      where: { key: AdminService.INSTANCE_SETTING_KEY },
-      create: {
-        key: AdminService.INSTANCE_SETTING_KEY,
-        require2FA: value,
-      },
-      update: {
-        require2FA: value,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const setting = await tx.instanceSetting.upsert({
+        where: { key: AdminService.INSTANCE_SETTING_KEY },
+        create: {
+          key: AdminService.INSTANCE_SETTING_KEY,
+          require2FA: value,
+        },
+        update: {
+          require2FA: value,
+        },
+      });
+      // When turning enforcement ON, push every non-enrolled user back through
+      // the login flow by killing their refresh tokens. Their access token
+      // keeps working for its TTL (~15min); the new server-side enrollment
+      // guard rejects any GraphQL call in that window. Together this closes
+      // the "user has valid session, ignores the policy" loophole.
+      if (value) {
+        const nonEnrolled = await tx.user.findMany({
+          where: { twoFactorEnabled: false },
+          select: { id: true },
+        });
+        if (nonEnrolled.length > 0) {
+          await tx.refreshToken.updateMany({
+            where: {
+              revoked: false,
+              userId: { in: nonEnrolled.map((u) => u.id) },
+            },
+            data: { revoked: true },
+          });
+        }
+      }
+      return setting;
     });
   }
 
