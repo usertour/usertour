@@ -325,7 +325,14 @@ export class TwoFactorService {
     }
     const { recoveryCodes } = await this.confirmSetup(user, secret, code);
     const reloaded = await this.prisma.user.findUnique({ where: { id: userId } });
-    return { user: reloaded as User, recoveryCodes };
+    if (!reloaded) {
+      // Race condition with account deletion between confirmSetup and this
+      // reload — vanishingly unlikely but not impossible. Same error class
+      // covers both "challenge invalid" and "user gone", which is fine: the
+      // user-facing remedy is identical (sign in again).
+      throw new InvalidTwoFactorChallengeError();
+    }
+    return { user: reloaded, recoveryCodes };
   }
 
   /**
@@ -342,7 +349,7 @@ export class TwoFactorService {
     if (!user) {
       throw new InvalidTwoFactorChallengeError();
     }
-    return this.startSetup(user as User);
+    return this.startSetup(user);
   }
 
   // ---------------------------------------------------------------------------

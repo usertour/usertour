@@ -53,16 +53,20 @@ export const TwoFactorSetup = () => {
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const fetcher = hasChallenge
       ? startWithChallenge.invoke(challengeToken)
       : startLoggedIn.invoke();
     fetcher
       .then((payload) => {
-        if (payload) {
+        if (!cancelled && payload) {
           setSetupPayload(payload);
         }
       })
       .catch((error) => {
+        if (cancelled) {
+          return;
+        }
         toast({ variant: 'destructive', title: getErrorMessage(error) });
         if (hasChallenge) {
           navigate('/auth/signin');
@@ -70,6 +74,9 @@ export const TwoFactorSetup = () => {
           navigate('/');
         }
       });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [challengeToken, hasChallenge]);
 

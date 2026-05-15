@@ -658,6 +658,12 @@ export class AuthService {
       });
 
       this.logger.log(`System admin ${user.id} initialized`);
+      // issueTokensOrChallenge has two branches (mfa-verify, mfa-setup-required)
+      // that cannot fire here: this user was just created (twoFactorEnabled
+      // starts false) and the require2FA instance toggle has no path to be on
+      // before the first admin exists — only an admin can flip it. Going
+      // through the dispatcher anyway keeps every "user successfully
+      // authenticated, now hand them tokens" entry point on one shape.
       return this.issueTokensOrChallenge(user.id);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
