@@ -9,28 +9,12 @@ import { useCopyToClipboard } from 'react-use';
 import { SettingsContent } from '@/pages/settings/components/content';
 import { Separator } from '@usertour/separator';
 import { Button } from '@usertour/button';
-import { Badge } from '@usertour/badge';
 import { Input } from '@usertour/input';
 import { Textarea } from '@usertour/textarea';
 import { Skeleton } from '@usertour/skeleton';
 import { CopyIcon } from 'lucide-react';
 import { getErrorMessage } from '@usertour/helpers';
-
-const LicenseStatusBadge = ({
-  isValid,
-  isExpired,
-}: {
-  isValid: boolean;
-  isExpired?: boolean | null;
-}) => {
-  if (!isValid) {
-    return <Badge variant="destructive">Invalid</Badge>;
-  }
-  if (isExpired) {
-    return <Badge variant="destructive">Expired</Badge>;
-  }
-  return <Badge variant="outline">Active</Badge>;
-};
+import { LicenseStatusBadge, licenseDateClass } from '@/components/license/license-status-badge';
 
 export const AdminSettingsPage = () => {
   const { data, loading, refetch } = useAdminSettingsQuery();
@@ -125,15 +109,16 @@ export const AdminSettingsPage = () => {
                         <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
                           {planType}
                         </span>
-                        {licenseInfo?.isValid && (
+                        {licenseInfo && (
                           <LicenseStatusBadge
                             isValid={licenseInfo.isValid}
                             isExpired={licenseInfo.isExpired}
                           />
                         )}
                         {payload?.exp && (
-                          <span className="text-red-500">
-                            Expires on {new Date(payload.exp * 1000).toLocaleDateString()}
+                          <span className={licenseDateClass(licenseInfo?.isExpired)}>
+                            {licenseInfo?.isExpired ? 'Expired on ' : 'Expires on '}
+                            {new Date(payload.exp * 1000).toLocaleDateString()}
                           </span>
                         )}
                       </>

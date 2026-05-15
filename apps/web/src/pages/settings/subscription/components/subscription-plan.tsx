@@ -13,6 +13,7 @@ import { CopyIcon } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
 import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
+import { LicenseStatusBadge, licenseDateClass } from '@/components/license/license-status-badge';
 
 const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
   // License hooks
@@ -93,26 +94,28 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
                         <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
                           {planType}
                         </span>
+                        {licenseInfo && (
+                          <LicenseStatusBadge
+                            isValid={licenseInfo.isValid}
+                            isExpired={licenseInfo.isExpired}
+                          />
+                        )}
                         {licenseInfo?.payload?.exp && (
-                          <span className="text-red-500">
-                            Expires on{' '}
+                          <span className={licenseDateClass(licenseInfo.isExpired)}>
+                            {licenseInfo.isExpired ? 'Expired on ' : 'Expires on '}
                             {new Date(licenseInfo.payload.exp * 1000).toLocaleDateString()}
                           </span>
                         )}
                       </>
                     )}
                   </div>
-
-                  {/* {licenseInfo?.payload && (
-                    <div className="text-xs text-zinc-950/60 dark:text-white/50 mt-2">
-                      <div>Project ID: {licenseInfo.payload.projectId}</div>
-                      <div>Issuer: {licenseInfo.payload.issuer}</div>
-                      <div>Features: {licenseInfo.payload.features.join(', ')}</div>
-                      {licenseInfo.daysRemaining !== null && (
-                        <div>Days remaining: {licenseInfo.daysRemaining}</div>
-                      )}
-                    </div>
-                  )} */}
+                  {!licenseLoading &&
+                    licenseInfo?.daysRemaining !== null &&
+                    licenseInfo?.daysRemaining !== undefined && (
+                      <div className="mt-2 text-xs text-zinc-950/60 dark:text-white/50">
+                        Days Remaining: {licenseInfo.daysRemaining}
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
