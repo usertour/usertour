@@ -72,6 +72,8 @@ const translations = {
       requiresAdminEnabled:
         'Enable 2FA on your own account first before requiring it for all users.',
       requiresAdminEnabledCta: 'Go to your account settings →',
+      dormantNoLicense:
+        'Inactive — instance license no longer covers 2FA, enforcement is not currently applied.',
       licenseRequired:
         'This is an enterprise feature. Upgrade your license to enforce 2FA for all users.',
       enabledToast: 'Two-factor authentication is now required for all users.',

@@ -158,7 +158,12 @@ export const AdminSettingsPage = () => {
                       {payload?.scope && <div>Scope: {payload.scope}</div>}
                     </div>
                   )}
-                  {!!licenseInfo?.error && (
+                  {/* When the license is expired, the red "Expires on …"
+                   * date right next to the plan name already conveys the
+                   * state; surfacing the error line below would just be a
+                   * duplicate. Keep the error visible for non-expiry
+                   * problems (bad signature, scope mismatch, etc.). */}
+                  {!!licenseInfo?.error && !licenseInfo.isExpired && (
                     <div className="mt-3 text-xs text-destructive">{licenseInfo.error}</div>
                   )}
                   {isOverProjectLimit && (

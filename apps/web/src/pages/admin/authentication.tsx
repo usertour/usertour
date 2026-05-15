@@ -11,7 +11,7 @@ import { Separator } from '@usertour/separator';
 import { Button } from '@usertour/button';
 import { Skeleton } from '@usertour/skeleton';
 import { Switch } from '@usertour/switch';
-import { RiSparklingFill } from '@usertour/icons';
+import { RiAlertLine, RiSparklingFill } from '@usertour/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { getErrorMessage } from '@usertour/helpers';
 import { useEffect, useState } from 'react';
@@ -24,7 +24,12 @@ export const AdminAuthenticationPage = () => {
   const { t } = useTranslation('ui');
   const { userInfo, project } = useAppContext();
   const { data, loading, refetch } = useAdminInstanceSettingsQuery();
-  const { data: adminSettings } = useAdminSettingsQuery();
+  const { data: adminSettings, loading: adminSettingsLoading } = useAdminSettingsQuery();
+  // Wait for both admin queries to resolve before rendering license-derived
+  // UI. Otherwise undefined data falls through `?.` chains to `false`, the
+  // page paints as if the license were missing, then re-paints once the
+  // queries return — the visible flash of the sparkle and amber warnings.
+  const isLicenseInfoReady = !loading && !adminSettingsLoading && !!adminSettings;
   const { invoke: updateAuthenticationSettings, loading: updating } =
     useUpdateInstanceAuthenticationSettingsMutation();
   const { invoke: updateRequire2FA, loading: updatingRequire2FA } =
@@ -129,7 +134,7 @@ export const AdminAuthenticationPage = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-sm font-medium">
               {t('twoFactor.adminEnforce.title')}
-              {!licensedForEnforce && (
+              {isLicenseInfoReady && !licensedForEnforce && (
                 <TooltipProvider delayDuration={150}>
                   <Tooltip>
                     <TooltipTrigger className="inline-flex cursor-default">
@@ -145,17 +150,26 @@ export const AdminAuthenticationPage = () => {
             <div className="text-sm text-muted-foreground">
               {t('twoFactor.adminEnforce.description')}
             </div>
-            {licensedForEnforce && !adminHasOwn2FA && (
-              <div className="text-sm text-amber-600">
-                {t('twoFactor.adminEnforce.requiresAdminEnabled')}{' '}
-                {project?.id && (
-                  <Link
-                    to={`/project/${project.id}/settings/account`}
-                    className="font-medium underline underline-offset-2 hover:text-amber-700"
-                  >
-                    {t('twoFactor.adminEnforce.requiresAdminEnabledCta')}
-                  </Link>
-                )}
+            {isLicenseInfoReady && licensedForEnforce && !adminHasOwn2FA && (
+              <div className="flex items-start gap-1.5 text-sm text-amber-600">
+                <RiAlertLine className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>
+                  {t('twoFactor.adminEnforce.requiresAdminEnabled')}{' '}
+                  {project?.id && (
+                    <Link
+                      to={`/project/${project.id}/settings/account`}
+                      className="font-medium underline underline-offset-2 hover:text-amber-700"
+                    >
+                      {t('twoFactor.adminEnforce.requiresAdminEnabledCta')}
+                    </Link>
+                  )}
+                </span>
+              </div>
+            )}
+            {isLicenseInfoReady && require2FA && !licensedForEnforce && (
+              <div className="flex items-start gap-1.5 text-sm text-amber-600">
+                <RiAlertLine className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>{t('twoFactor.adminEnforce.dormantNoLicense')}</span>
               </div>
             )}
           </div>
