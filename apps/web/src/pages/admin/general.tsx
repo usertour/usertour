@@ -67,7 +67,7 @@ export const AdminGeneralPage = () => {
   return (
     <SettingsContent>
       <div className="space-y-2">
-        <h3 className="text-2xl font-semibold tracking-tight">General</h3>
+        <h3 className="text-xl font-semibold tracking-tight">General</h3>
         <p className="text-sm text-muted-foreground">
           Manage basic instance information for this self-hosted deployment.
         </p>

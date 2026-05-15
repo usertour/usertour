@@ -81,7 +81,7 @@ export const AccountEmailForm = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-2xl font-semibold tracking-tight">Change email</h3>
+        <h3 className="text-xl font-semibold tracking-tight">Change email</h3>
         {/* <p className="text-sm text-muted-foreground">
           Update your login email.
         </p> */}

@@ -1,37 +1,26 @@
-import { useAdminSettingsQuery, useUpdateInstanceLicenseMutation } from '@usertour/hooks';
+import {
+  useAdminSettingsQuery,
+  useInvalidateLicenseScopedCache,
+  useUpdateInstanceLicenseMutation,
+} from '@usertour/hooks';
 import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { SettingsContent } from '@/pages/settings/components/content';
 import { Separator } from '@usertour/separator';
 import { Button } from '@usertour/button';
-import { Badge } from '@usertour/badge';
 import { Input } from '@usertour/input';
 import { Textarea } from '@usertour/textarea';
 import { Skeleton } from '@usertour/skeleton';
 import { CopyIcon } from 'lucide-react';
 import { getErrorMessage } from '@usertour/helpers';
-
-const LicenseStatusBadge = ({
-  isValid,
-  isExpired,
-}: {
-  isValid: boolean;
-  isExpired?: boolean | null;
-}) => {
-  if (!isValid) {
-    return <Badge variant="destructive">Invalid</Badge>;
-  }
-  if (isExpired) {
-    return <Badge variant="destructive">Expired</Badge>;
-  }
-  return <Badge variant="outline">Active</Badge>;
-};
+import { LicenseStatusBadge, licenseDateClass } from '@/components/license/license-status-badge';
 
 export const AdminSettingsPage = () => {
   const { data, loading, refetch } = useAdminSettingsQuery();
   const { invoke: updateLicense, loading: updating } = useUpdateInstanceLicenseMutation();
   const { toast } = useToast();
+  const invalidateLicenseScopedCache = useInvalidateLicenseScopedCache();
   const [, copyToClipboard] = useCopyToClipboard();
   const [licenseInput, setLicenseInput] = useState('');
 
@@ -69,7 +58,7 @@ export const AdminSettingsPage = () => {
     try {
       await updateLicense(trimmedContent);
       setLicenseInput('');
-      refetch();
+      await Promise.all([refetch(), invalidateLicenseScopedCache()]);
       toast({
         variant: 'success',
         title: 'License updated',
@@ -86,7 +75,7 @@ export const AdminSettingsPage = () => {
     <SettingsContent>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-2xl font-semibold tracking-tight">Subscription</h3>
+          <h3 className="text-xl font-semibold tracking-tight">Subscription</h3>
         </div>
         <p className="text-sm text-muted-foreground">
           Manage the instance license and subscription details for this self-hosted deployment.
@@ -120,15 +109,16 @@ export const AdminSettingsPage = () => {
                         <span className="font-normal text-zinc-950/60 dark:text-white/50 capitalize">
                           {planType}
                         </span>
-                        {licenseInfo?.isValid && (
+                        {licenseInfo && (
                           <LicenseStatusBadge
                             isValid={licenseInfo.isValid}
                             isExpired={licenseInfo.isExpired}
                           />
                         )}
                         {payload?.exp && (
-                          <span className="text-red-500">
-                            Expires on {new Date(payload.exp * 1000).toLocaleDateString()}
+                          <span className={licenseDateClass(licenseInfo?.isExpired)}>
+                            {licenseInfo?.isExpired ? 'Expired on ' : 'Expires on '}
+                            {new Date(payload.exp * 1000).toLocaleDateString()}
                           </span>
                         )}
                       </>
@@ -153,7 +143,12 @@ export const AdminSettingsPage = () => {
                       {payload?.scope && <div>Scope: {payload.scope}</div>}
                     </div>
                   )}
-                  {!!licenseInfo?.error && (
+                  {/* When the license is expired, the red "Expires on …"
+                   * date right next to the plan name already conveys the
+                   * state; surfacing the error line below would just be a
+                   * duplicate. Keep the error visible for non-expiry
+                   * problems (bad signature, scope mismatch, etc.). */}
+                  {!!licenseInfo?.error && !licenseInfo.isExpired && (
                     <div className="mt-3 text-xs text-destructive">{licenseInfo.error}</div>
                   )}
                   {isOverProjectLimit && (

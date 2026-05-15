@@ -68,7 +68,7 @@ export const AccountProfileForm = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-row justify-between items-center h-10">
-        <h3 className="text-2xl font-semibold tracking-tight">Profile</h3>
+        <h3 className="text-xl font-semibold tracking-tight">Profile</h3>
         {/* <p className="text-sm text-muted-foreground">
           Update your profile name.
         </p> */}

@@ -40,9 +40,7 @@ export class AuthController {
   async githubAuthCallback(@UserEntity() user: User, @Res() res: Response) {
     try {
       this.logger.log(`github oauth callback success, req.user = ${user?.email}`);
-
-      const tokens = await this.auth.login(user.id);
-      this.auth.setAuthCookie(res, tokens).redirect(this.configService.get('auth.redirectUrl'));
+      await this.finishOauth(user.id, res);
     } catch (error) {
       this.logger.error('GitHub OAuth callback failed:', error.stack);
       throw new OAuthError();
@@ -55,13 +53,30 @@ export class AuthController {
   async googleAuthCallback(@UserEntity() user: User, @Res() res: Response) {
     try {
       this.logger.log(`google oauth callback success, req.user = ${user?.email}`);
-
-      const tokens = await this.auth.login(user.id);
-      this.auth.setAuthCookie(res, tokens).redirect(this.configService.get('auth.redirectUrl'));
+      await this.finishOauth(user.id, res);
     } catch (error) {
       this.logger.error('Google OAuth callback failed:', error.stack);
       throw new OAuthError();
     }
+  }
+
+  /**
+   * After OAuth identity is verified, decide whether to issue cookies and land
+   * the user on the app, or redirect them to the 2FA second-step / setup page
+   * with a short-lived challenge token in the URL.
+   */
+  private async finishOauth(userId: string, res: Response) {
+    const result = await this.auth.issueTokensOrChallenge(userId);
+    if (result.kind === 'tokens') {
+      this.auth
+        .setAuthCookie(res, result.tokens)
+        .redirect(this.configService.get('auth.redirectUrl'));
+      return;
+    }
+    const homepage = this.configService.get<string>('app.homepageUrl') || '';
+    const path = result.purpose === 'mfa-verify' ? '/auth/2fa' : '/auth/2fa/setup';
+    const url = `${homepage}${path}?challenge=${encodeURIComponent(result.challengeToken)}`;
+    res.redirect(url);
   }
 
   @Post('refresh')

@@ -21,7 +21,7 @@ export const LocalizationListHeader = () => {
       <div className="relative ">
         <div className="flex flex-col space-y-2">
           <div className="flex flex-row justify-between ">
-            <h3 className="text-2xl font-semibold tracking-tight">Localization</h3>
+            <h3 className="text-xl font-semibold tracking-tight">Localization</h3>
             <Button onClick={handleCreate} className="flex-none">
               <RiAddLine className="mr-2 h-4 w-4" />
               New Localization

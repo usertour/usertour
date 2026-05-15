@@ -165,6 +165,26 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     await pipeline.exec();
   }
 
+  /**
+   * Atomically increment a counter and set its TTL only on first hit (fixed window).
+   * Used for rolling-window rate limits (e.g., failed login attempts).
+   * Returns the post-increment value.
+   */
+  async incrWithExpire(key: string, ttlSeconds: number): Promise<number> {
+    if (!this.client) {
+      throw new Error('Redis client not available');
+    }
+    const script = `
+      local count = redis.call("incr", KEYS[1])
+      if count == 1 then
+        redis.call("expire", KEYS[1], ARGV[1])
+      end
+      return count
+    `;
+    const result = await this.client.eval(script, 1, key, ttlSeconds.toString());
+    return Number(result);
+  }
+
   async acquireLock(key: string): Promise<LockReleaseFn | null> {
     if (!this.client) {
       throw new Error('Redis client not available');

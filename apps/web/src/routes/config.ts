@@ -6,6 +6,8 @@ import {
   SignIn,
   SignUp,
   Invite,
+  TwoFactor,
+  TwoFactorSetup,
 } from '@/pages/authentication';
 import { CompanyDetail, CompanyList } from '@/pages/companies';
 import { ContentBuilder, ContentDetail, ContentList, ContentLocalization } from '@/pages/contents';
@@ -112,6 +114,24 @@ const config: CustomRouteConfig[] = [
     loginRequired: false,
     redirectIfLogged: true,
     title: 'PasswordReset',
+  },
+  /* Two-factor verify (login second step) */
+  {
+    path: '/auth/2fa',
+    component: TwoFactor,
+    layout: AuthLayout,
+    loginRequired: false,
+    redirectIfLogged: false,
+    title: 'TwoFactor',
+  },
+  /* Two-factor setup (strict instance enforcement) */
+  {
+    path: '/auth/2fa/setup',
+    component: TwoFactorSetup,
+    layout: AuthLayout,
+    loginRequired: false,
+    redirectIfLogged: false,
+    title: 'TwoFactorSetup',
   },
   /* Dashboard */
   {

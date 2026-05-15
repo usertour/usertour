@@ -45,14 +45,16 @@ export class LicenseService {
   }
 
   /**
-   * Check if license has a specific feature
+   * Check if the license is currently valid AND lists `feature`.
+   * Returns false if the license signature is bad OR if it has expired —
+   * callers (2FA gating, instance enforcement, etc.) rely on this to
+   * degrade gracefully when a license lapses, so an expired token must
+   * not look the same as a valid one with the feature.
    */
   async hasFeature(licenseToken: string, feature: string): Promise<boolean> {
     try {
       const publicKey = this.getPublicKey();
-      const result = JWTLicenseValidator.validateLicense(licenseToken, publicKey, {
-        checkExpiration: false,
-      });
+      const result = JWTLicenseValidator.validateLicense(licenseToken, publicKey);
 
       if (!result.isValid || !result.hasFeature) {
         return false;

@@ -1,4 +1,5 @@
 import { UserEntity } from '@/common/decorators/user.decorator';
+import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { PrismaService } from 'nestjs-prisma';
 import { ChangeEmailInput } from './dto/change-email.input';
@@ -7,15 +8,18 @@ import { UpdateUserInput } from './dto/update-user.input';
 import { User } from './models/user.model';
 import { UsersService } from './users.service';
 import { AuthService } from '@/auth/auth.service';
+import { TwoFactorService } from '@/auth/two-factor.service';
 @Resolver(() => User)
 export class UsersResolver {
   constructor(
     private usersService: UsersService,
     private prisma: PrismaService,
     private authService: AuthService,
+    private twoFactorService: TwoFactorService,
   ) {}
 
   @Query(() => User)
+  @SkipTwoFactorEnrollment()
   async me(@UserEntity() user: User): Promise<User> {
     return user;
   }
@@ -53,5 +57,10 @@ export class UsersResolver {
   @ResolveField('isOAuthUser')
   async isOAuthUser(@Parent() author: User) {
     return await this.usersService.isOAuthUser(author.id);
+  }
+
+  @ResolveField('twoFactorAvailable')
+  async twoFactorAvailable(@Parent() author: User) {
+    return this.twoFactorService.isTwoFactorAvailableForUser(author.id);
   }
 }

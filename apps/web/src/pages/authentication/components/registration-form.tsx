@@ -10,7 +10,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { Checkbox } from '@usertour/checkbox';
 import { Input } from '@usertour/input';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { useSignupMutation } from '@usertour/hooks';
@@ -84,6 +84,7 @@ const RegistrationRoot = ({
   const { invoke } = useSignupMutation();
   const { toast } = useToast();
   const { registrationCode } = useParams();
+  const navigate = useNavigate();
 
   const formSchema = inviteCode ? registFormSchema.omit({ companyName: true }) : registFormSchema;
 
@@ -128,6 +129,14 @@ const RegistrationRoot = ({
             companyName: others.companyName,
           };
       const data = await invoke(variables);
+      if (data?.requiresTwoFactor && data.twoFactorChallenge) {
+        navigate(`/auth/2fa?challenge=${encodeURIComponent(data.twoFactorChallenge)}`);
+        return;
+      }
+      if (data?.requiresTwoFactorSetup && data.twoFactorChallenge) {
+        navigate(`/auth/2fa/setup?challenge=${encodeURIComponent(data.twoFactorChallenge)}`);
+        return;
+      }
       if (data?.redirectUrl) {
         window.location.href = data.redirectUrl;
       }

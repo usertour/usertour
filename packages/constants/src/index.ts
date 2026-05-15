@@ -6,3 +6,4 @@ export * from './constants/locate';
 export * from './constants/cookie';
 export * from './constants/billing';
 export * from './constants/sdk';
+export * from './constants/license';

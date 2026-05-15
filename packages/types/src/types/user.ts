@@ -10,5 +10,7 @@ export type UserProfile = {
   invitationToken?: string;
   isOAuthUser?: boolean;
   isSystemAdmin?: boolean;
+  twoFactorEnabled?: boolean;
+  twoFactorAvailable?: boolean;
   createdAt: string;
 };
