@@ -40,6 +40,16 @@ const MFA_MAX_FAILED_ATTEMPTS = 5;
 const RECOVERY_CODE_COUNT = 10;
 const RECOVERY_CODE_BYTES = 5; // 10 hex chars per code
 
+// otplib defaults to window=0, which only accepts a code submitted inside
+// the exact 30-second slice it was generated in. In practice, a user opens
+// their authenticator, switches windows, and submits the form somewhere
+// past the slice boundary far more often than not — and self-host servers
+// that aren't NTP-synced drift even further. Match what GitHub / Slack /
+// Auth0 do: accept ±1 step (±30s). Brute force is still bounded by the
+// per-user 5-failures-in-5-minutes lockout, which is what actually prevents
+// guessing — the window setting is purely a UX tolerance.
+authenticator.options = { ...authenticator.options, window: 1 };
+
 @Injectable()
 export class TwoFactorService {
   private readonly logger = new Logger(TwoFactorService.name);
