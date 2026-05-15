@@ -36,13 +36,30 @@ export class TwoFactorResolver {
   async confirmTwoFactorSetup(
     @Args('data') data: ConfirmTwoFactorSetupInput,
     @UserEntity() user: User,
+    @Context() context: { res: Response },
   ): Promise<TwoFactorEnableResult> {
     const { recoveryCodes } = await this.twoFactorService.confirmSetup(
       user,
       data.secret,
       data.code,
     );
-    return { recoveryCodes };
+    // confirmSetup revokes every refresh token on this user — including the
+    // one backing the caller's current session. Issue a fresh access/refresh
+    // pair and set cookies so the user stays logged in once the existing
+    // access token's 15-minute window expires. Without this, the user is
+    // silently logged out the next time the SPA tries to refresh.
+    const tokens = await this.authService.login(user.id);
+    this.authService.setAuthCookie(context.res, tokens);
+    return {
+      recoveryCodes,
+      auth: {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        redirectUrl: this.configService.get('auth.redirectUrl'),
+        requiresTwoFactor: false,
+        requiresTwoFactorSetup: false,
+      },
+    };
   }
 
   // -- Strict enforcement path: client holds an `mfa-setup-required` challenge
