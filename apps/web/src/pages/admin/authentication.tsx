@@ -15,13 +15,14 @@ import { RiSparklingFill } from '@usertour/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/tooltip';
 import { getErrorMessage } from '@usertour/helpers';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 
 export const AdminAuthenticationPage = () => {
   const { t } = useTranslation('ui');
-  const { userInfo } = useAppContext();
+  const { userInfo, project } = useAppContext();
   const { data, loading, refetch } = useAdminInstanceSettingsQuery();
   const { data: adminSettings } = useAdminSettingsQuery();
   const { invoke: updateAuthenticationSettings, loading: updating } =
@@ -138,7 +139,15 @@ export const AdminAuthenticationPage = () => {
             </div>
             {licensedForEnforce && !adminHasOwn2FA && (
               <div className="text-sm text-amber-600">
-                {t('twoFactor.adminEnforce.requiresAdminEnabled')}
+                {t('twoFactor.adminEnforce.requiresAdminEnabled')}{' '}
+                {project?.id && (
+                  <Link
+                    to={`/project/${project.id}/settings/account`}
+                    className="font-medium underline underline-offset-2 hover:text-amber-700"
+                  >
+                    {t('twoFactor.adminEnforce.requiresAdminEnabledCta')}
+                  </Link>
+                )}
               </div>
             )}
           </div>

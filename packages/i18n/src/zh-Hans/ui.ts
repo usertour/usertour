@@ -67,6 +67,7 @@ const translations = {
       title: '要求所有用户开启 2FA',
       description: '开启后，所有用户必须完成二步验证设置才能使用本系统。',
       requiresAdminEnabled: '请先为自己启用二步验证，再为所有用户开启强制要求。',
+      requiresAdminEnabledCta: '前往账号设置 →',
       licenseRequired: '此为企业版功能，请升级 License 以启用全员 2FA 强制要求。',
       enabledToast: '已要求所有用户开启二步验证。',
       disabledToast: '已取消对所有用户的强制要求。',

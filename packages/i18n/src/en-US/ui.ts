@@ -71,6 +71,7 @@ const translations = {
         'When enabled, all users must complete 2FA setup before they can use the application.',
       requiresAdminEnabled:
         'Enable 2FA on your own account first before requiring it for all users.',
+      requiresAdminEnabledCta: 'Go to your account settings →',
       licenseRequired:
         'This is an enterprise feature. Upgrade your license to enforce 2FA for all users.',
       enabledToast: 'Two-factor authentication is now required for all users.',
