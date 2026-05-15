@@ -8,6 +8,8 @@ import { ConfigService } from '@nestjs/config';
 import { v4 } from 'uuid';
 import { createPresignedUrlInput } from './dto/createPresignedUrl.input';
 import { PrismaService } from 'nestjs-prisma';
+import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
+import { LicenseService } from '@/license/license.service';
 
 @Injectable()
 export class UtilitiesService {
@@ -15,6 +17,7 @@ export class UtilitiesService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
+    private readonly licenseService: LicenseService,
   ) {}
 
   async createPresignedUrl(_: string, data: createPresignedUrlInput) {
@@ -101,6 +104,7 @@ export class UtilitiesService {
     let allowUserRegistration = true;
     let allowProjectLevelSubscriptionManagement = true;
     let needsSystemAdminSetup = false;
+    let require2FA = false;
 
     if (isSelfHostedMode) {
       const setting = await this.prisma.instanceSetting.findUnique({
@@ -108,11 +112,26 @@ export class UtilitiesService {
         select: {
           allowUserRegistration: true,
           allowProjectLevelSubscriptionManagement: true,
+          require2FA: true,
+          license: true,
         },
       });
       allowUserRegistration = setting?.allowUserRegistration ?? true;
       allowProjectLevelSubscriptionManagement =
         setting?.allowProjectLevelSubscriptionManagement ?? false;
+
+      // Effective enforcement = admin toggle AND instance license still carries
+      // the 2FA feature. Admin enforcement is an instance-level concern and so
+      // only honors the instance license — project licenses don't grant the
+      // ability to enforce across the whole instance. If the instance license
+      // lapses, enforcement degrades to off so users aren't permanently locked
+      // out of the app.
+      if (setting?.require2FA && setting.license) {
+        require2FA = await this.licenseService.hasFeature(
+          setting.license,
+          LICENSE_FEATURE_TWO_FACTOR,
+        );
+      }
 
       const user = await this.prisma.user.findFirst({
         select: { id: true },
@@ -126,6 +145,7 @@ export class UtilitiesService {
       allowUserRegistration,
       allowProjectLevelSubscriptionManagement,
       needsSystemAdminSetup,
+      require2FA,
       authProviders: this.getAuthProviders(),
     };
   }

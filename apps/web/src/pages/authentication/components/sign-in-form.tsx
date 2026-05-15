@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@usertour/f
 import { GithubIcon, GoogleIcon, SpinnerIcon } from '@usertour/icons';
 import { Input } from '@usertour/input';
 import { useToast } from '@usertour/use-toast';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { apiUrl } from '@/utils/env';
 import { LoginMutationVariables, useGlobalConfigQuery, useLoginMutation } from '@usertour/hooks';
 
@@ -74,6 +74,7 @@ const SignInRoot = (props: SignInRootProps) => {
   const [isGithubAuthLoading, setIsGithubAuthLoading] = useState<boolean>(false);
   const { invoke } = useLoginMutation();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { data: globalConfig } = useGlobalConfigQuery();
   const authProviders = globalConfig?.authProviders;
 
@@ -118,6 +119,14 @@ const SignInRoot = (props: SignInRootProps) => {
         variables.inviteCode = inviteCode;
       }
       const ret = await invoke(variables);
+      if (ret?.requiresTwoFactor && ret.twoFactorChallenge) {
+        navigate(`/auth/2fa?challenge=${encodeURIComponent(ret.twoFactorChallenge)}`);
+        return;
+      }
+      if (ret?.requiresTwoFactorSetup && ret.twoFactorChallenge) {
+        navigate(`/auth/2fa/setup?challenge=${encodeURIComponent(ret.twoFactorChallenge)}`);
+        return;
+      }
       if (ret?.redirectUrl) {
         window.location.href = ret.redirectUrl;
       }

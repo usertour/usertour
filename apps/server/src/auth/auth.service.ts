@@ -15,8 +15,9 @@ import { SignupInput } from './dto/signup.input';
 import { Common } from './models/common.model';
 import { Profile } from 'passport-google-oauth20';
 import { CookieOptions, Response } from 'express';
-import { TokenData } from './dto/auth.dto';
+import { AuthResult, TokenData } from './dto/auth.dto';
 import { PasswordService } from './password.service';
+import { TwoFactorService } from './two-factor.service';
 import { createTransport } from 'nodemailer';
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
 import { omit } from '@/utils/typesafe';
@@ -28,6 +29,7 @@ import {
   InvalidVerificationSession,
   OAuthError,
   PasswordIncorrect,
+  TooManyLoginAttemptsError,
   UnknownError,
   UserDisabledError,
   UserRegistrationDisabledError,
@@ -50,6 +52,9 @@ const EMAIL_COOLDOWN_MS = 60 * 1000; // 60 seconds - minimum interval between em
 const REGISTER_REUSE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours - reuse existing register record within this window
 const EMAIL_LOCK_KEY_PREFIX = 'magic-link-email:';
 const SETUP_SYSTEM_ADMIN_LOCK_KEY = 'setup-system-admin';
+const PASSWORD_LOCKOUT_WINDOW_SECONDS = 10 * 60; // 10 minutes
+const PASSWORD_MAX_FAILED_ATTEMPTS = 10;
+const PASSWORD_FAILURE_KEY_PREFIX = 'login-failure:password:';
 
 @Injectable()
 export class AuthService {
@@ -62,6 +67,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly teamService: TeamService,
     private readonly redisService: RedisService,
+    private readonly twoFactorService: TwoFactorService,
     @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
     @InjectQueue(QUEUE_SEND_RESET_PASSWORD_EMAIL) private resetPasswordQueue: Queue,
     @InjectQueue(QUEUE_INITIALIZE_PROJECT) private initializeProjectQueue: Queue,
@@ -356,6 +362,47 @@ export class AuthService {
     };
   }
 
+  /**
+   * Branches on the user's 2FA state and the instance enforcement flag:
+   *   - user has 2FA enabled       → issue an `mfa-verify` challenge
+   *   - instance enforces + not on → issue an `mfa-setup-required` challenge
+   *   - otherwise                  → issue real access/refresh tokens
+   * Callers (login/signup/oauth) must NOT setAuthCookie when kind === 'challenge'.
+   */
+  async issueTokensOrChallenge(userId: string): Promise<AuthResult> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, twoFactorEnabled: true },
+    });
+    if (!user) {
+      throw new AccountNotFoundError();
+    }
+
+    // If 2FA is unavailable (self-host + missing/invalid license, considering
+    // both instance license and any of the user's project licenses), drop the
+    // MFA gate entirely — even for users with twoFactorEnabled=true. Their
+    // stored secret stays untouched; if a covering license is restored, they're
+    // immediately challenged again. This matches the "all-or-nothing" product
+    // decision we made for license lapse behavior.
+    const twoFactorAvailable = await this.twoFactorService.isTwoFactorAvailableForUser(user.id);
+
+    if (twoFactorAvailable && user.twoFactorEnabled) {
+      const challengeToken = this.twoFactorService.signChallengeToken(user.id, 'mfa-verify');
+      return { kind: 'challenge', purpose: 'mfa-verify', challengeToken };
+    }
+
+    if (twoFactorAvailable && (await this.twoFactorService.isInstanceEnforcing())) {
+      const challengeToken = this.twoFactorService.signChallengeToken(
+        user.id,
+        'mfa-setup-required',
+      );
+      return { kind: 'challenge', purpose: 'mfa-setup-required', challengeToken };
+    }
+
+    const tokens = await this.login(userId);
+    return { kind: 'tokens', tokens };
+  }
+
   async revokeAllRefreshTokens(userId: string) {
     await this.prisma.refreshToken.updateMany({
       where: { userId },
@@ -528,7 +575,7 @@ export class AuthService {
     await this.initializeProjectQueue.add('initializeProject', { projectId });
   }
 
-  async signup(payload: SignupInput): Promise<TokenData> {
+  async signup(payload: SignupInput): Promise<AuthResult> {
     const { code, userName, companyName, password, isInvite } = payload;
 
     if (!isInvite) {
@@ -560,7 +607,7 @@ export class AuthService {
       });
 
       this.logger.log(`User ${user.id} created`);
-      return this.login(user.id);
+      return this.issueTokensOrChallenge(user.id);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new EmailAlreadyRegistered();
@@ -570,7 +617,7 @@ export class AuthService {
     }
   }
 
-  async setupSystemAdmin(name: string, email: string, password: string): Promise<TokenData> {
+  async setupSystemAdmin(name: string, email: string, password: string): Promise<AuthResult> {
     await this.ensureSystemAdminSetupAvailable();
 
     const hashedPassword = await this.passwordService.hashPassword(password);
@@ -611,7 +658,7 @@ export class AuthService {
       });
 
       this.logger.log(`System admin ${user.id} initialized`);
-      return this.login(user.id);
+      return this.issueTokensOrChallenge(user.id);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new EmailAlreadyRegistered();
@@ -660,13 +707,38 @@ export class AuthService {
     };
   }
 
-  async emailLogin(email: string, password: string, inviteCode?: string): Promise<TokenData> {
+  private passwordFailureKey(email: string) {
+    return `${PASSWORD_FAILURE_KEY_PREFIX}${email}`;
+  }
+
+  private async checkPasswordLockout(email: string) {
+    const raw = await this.redisService.get(this.passwordFailureKey(email));
+    if (raw && Number(raw) >= PASSWORD_MAX_FAILED_ATTEMPTS) {
+      throw new TooManyLoginAttemptsError();
+    }
+  }
+
+  private async recordPasswordFailure(email: string) {
+    await this.redisService.incrWithExpire(
+      this.passwordFailureKey(email),
+      PASSWORD_LOCKOUT_WINDOW_SECONDS,
+    );
+  }
+
+  private async clearPasswordFailures(email: string) {
+    await this.redisService.del(this.passwordFailureKey(email));
+  }
+
+  async emailLogin(email: string, password: string, inviteCode?: string): Promise<AuthResult> {
+    await this.checkPasswordLockout(email);
+
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: { projects: true, accounts: true },
     });
 
     if (!user) {
+      await this.recordPasswordFailure(email);
       throw new AccountNotFoundError();
     }
 
@@ -684,16 +756,19 @@ export class AuthService {
     }
 
     if (user.accounts.length === 0) {
+      await this.recordPasswordFailure(email);
       throw new AccountNotFoundError();
     }
 
     const passwordValid = await this.passwordService.validatePassword(password, user.password);
 
     if (!passwordValid) {
+      await this.recordPasswordFailure(email);
       throw new PasswordIncorrect();
     }
 
-    return this.login(user.id);
+    await this.clearPasswordFailures(email);
+    return this.issueTokensOrChallenge(user.id);
   }
 
   async resetUserPassword(email: string): Promise<Common> {
@@ -730,6 +805,7 @@ export class AuthService {
 
     try {
       await this.updatePasswordAndRevokeTokens(user.id, password);
+      await this.clearPasswordFailures(user.email);
       return { success: true };
     } catch (_) {
       throw new UnknownError();

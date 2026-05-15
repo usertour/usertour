@@ -39,6 +39,15 @@ const CustomRoute = ({
 
   if (loginRequired) {
     if (isLoggedIn) {
+      // Soft enforcement: if the instance requires 2FA and this user hasn't enrolled,
+      // push them to the forced-setup page until they finish.
+      const mustEnroll =
+        !!globalConfig?.require2FA &&
+        !userInfo.twoFactorEnabled &&
+        currentPath !== '/auth/2fa/setup';
+      if (mustEnroll) {
+        return <Navigate to="/auth/2fa/setup" replace />;
+      }
       return children;
     }
     const redirectUri = window.location.pathname + window.location.search;

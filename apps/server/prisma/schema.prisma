@@ -56,11 +56,30 @@ model User {
   isSystemAdmin   Boolean         @default(false)
   /// Whether the user is disabled (cannot login)
   disabled        Boolean         @default(false)
+  /// Whether the user has completed TOTP two-factor setup
+  twoFactorEnabled Boolean        @default(false)
+  /// AES-256-GCM encrypted TOTP secret. Never log or expose.
+  twoFactorSecret  String?
+  /// Timestamp when 2FA was last enabled
+  twoFactorEnabledAt DateTime?    @db.Timestamptz(6)
   projects        UserOnProject[]
   codes           Code[]
   accounts        Account[]
   refreshTokens   RefreshToken[]
   invites         Invite[]
+  twoFactorRecoveryCodes TwoFactorRecoveryCode[]
+}
+
+/// One-time backup codes for 2FA account recovery. Stored as bcrypt hash.
+model TwoFactorRecoveryCode {
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  user       User      @relation(fields: [userId], references: [id])
+  userId     String
+  hashedCode String
+  usedAt     DateTime? @db.Timestamptz(6)
+
+  @@index([userId])
 }
 
 /// Instance-level settings for self-hosted mode
@@ -77,6 +96,8 @@ model InstanceSetting {
   contactEmail String?
   /// Whether public user registration is allowed
   allowUserRegistration Boolean @default(true)
+  /// Whether all users must enable 2FA. Only meaningful in self-hosted mode.
+  require2FA  Boolean @default(false)
   /// Whether self-host projects can manage project-level subscriptions
   allowProjectLevelSubscriptionManagement Boolean?
   /// Instance-level license JWT token

@@ -11,6 +11,7 @@ import {
 } from './models/admin.model';
 import { Project } from '@/projects/models/project.model';
 import { User } from '@/users/models/user.model';
+import { UserEntity } from '@/common/decorators/user.decorator';
 
 @Resolver()
 export class AdminResolver {
@@ -72,6 +73,12 @@ export class AdminResolver {
     @Args('allowUserRegistration') allowUserRegistration: boolean,
   ) {
     return this.adminService.updateInstanceAuthenticationSettings(allowUserRegistration);
+  }
+
+  @Mutation(() => InstanceSetting)
+  @UseGuards(SystemAdminGuard)
+  async updateInstanceRequire2FA(@UserEntity() user: User, @Args('value') value: boolean) {
+    return this.adminService.updateInstanceRequire2FA(user.id, value);
   }
 
   // ============================================================================

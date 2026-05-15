@@ -446,6 +446,86 @@ export class UserDisabledError extends BaseError {
   };
 }
 
+export class TooManyLoginAttemptsError extends BaseError {
+  code = 'E0034';
+  messageDict = {
+    en: 'Too many failed sign-in attempts. Please try again in a few minutes.',
+    'zh-CN': '登录失败次数过多，请稍后重试。',
+  };
+}
+
+export class InvalidTwoFactorCodeError extends BaseError {
+  code = 'E0035';
+  messageDict = {
+    en: 'Invalid authentication code, please try again.',
+    'zh-CN': '验证码错误，请重试。',
+  };
+}
+
+export class InvalidRecoveryCodeError extends BaseError {
+  code = 'E0036';
+  messageDict = {
+    en: 'Invalid recovery code, please try again.',
+    'zh-CN': '恢复码错误，请重试。',
+  };
+}
+
+export class TwoFactorAlreadyEnabledError extends BaseError {
+  code = 'E0037';
+  messageDict = {
+    en: 'Two-factor authentication is already enabled on this account.',
+    'zh-CN': '该账号已开启二步验证。',
+  };
+}
+
+export class TwoFactorNotEnabledError extends BaseError {
+  code = 'E0038';
+  messageDict = {
+    en: 'Two-factor authentication is not enabled on this account.',
+    'zh-CN': '该账号未开启二步验证。',
+  };
+}
+
+export class TooManyTwoFactorAttemptsError extends BaseError {
+  code = 'E0039';
+  messageDict = {
+    en: 'Too many failed verification attempts. Please try again in a few minutes.',
+    'zh-CN': '验证失败次数过多，请稍后重试。',
+  };
+}
+
+export class InvalidTwoFactorChallengeError extends BaseError {
+  code = 'E0040';
+  messageDict = {
+    en: 'Verification session has expired or is invalid. Please sign in again.',
+    'zh-CN': '验证会话已失效，请重新登录。',
+  };
+}
+
+export class SystemAdminMustEnable2FAFirstError extends BaseError {
+  code = 'E0041';
+  messageDict = {
+    en: 'Enable 2FA on your own account before requiring it for all users.',
+    'zh-CN': '请先为自己启用二步验证，再为全员开启强制要求。',
+  };
+}
+
+export class TwoFactorEnforcedDisableNotAllowedError extends BaseError {
+  code = 'E0042';
+  messageDict = {
+    en: 'Your administrator requires 2FA for all users. You cannot disable it.',
+    'zh-CN': '管理员要求所有用户必须开启二步验证，无法关闭。',
+  };
+}
+
+export class FeatureRequiresLicenseError extends BaseError {
+  code = 'E0043';
+  messageDict = {
+    en: 'This feature requires an active license. Please upgrade or update your license.',
+    'zh-CN': '该功能需要有效的授权许可，请升级或更新 License。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -498,6 +578,16 @@ const errorMap = {
   E0031: TeamMemberAlreadyInvitedError,
   E0032: TeamMemberAlreadyInProjectError,
   E0033: InvitationDeliveryFailedError,
+  E0034: TooManyLoginAttemptsError,
+  E0035: InvalidTwoFactorCodeError,
+  E0036: InvalidRecoveryCodeError,
+  E0037: TwoFactorAlreadyEnabledError,
+  E0038: TwoFactorNotEnabledError,
+  E0039: TooManyTwoFactorAttemptsError,
+  E0040: InvalidTwoFactorChallengeError,
+  E0041: SystemAdminMustEnable2FAFirstError,
+  E0042: TwoFactorEnforcedDisableNotAllowedError,
+  E0043: FeatureRequiresLicenseError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

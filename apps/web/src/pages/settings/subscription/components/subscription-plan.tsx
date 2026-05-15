@@ -2,7 +2,11 @@ import { Button } from '@usertour/button';
 import { Input } from '@usertour/input';
 import { Textarea } from '@usertour/textarea';
 import { useState } from 'react';
-import { useGetProjectLicenseInfoQuery, useUpdateProjectLicenseMutation } from '@usertour/hooks';
+import {
+  useGetProjectLicenseInfoQuery,
+  useInvalidateLicenseScopedCache,
+  useUpdateProjectLicenseMutation,
+} from '@usertour/hooks';
 import { Separator } from '@usertour/separator';
 import { Skeleton } from '@usertour/skeleton';
 import { CopyIcon } from 'lucide-react';
@@ -19,6 +23,7 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
   } = useGetProjectLicenseInfoQuery(projectId);
   const { invoke: updateLicense, loading: updateLicenseLoading } =
     useUpdateProjectLicenseMutation();
+  const invalidateLicenseScopedCache = useInvalidateLicenseScopedCache();
   const [licenseInput, setLicenseInput] = useState('');
   const [_, copyToClipboard] = useCopyToClipboard();
   const { toast } = useToast();
@@ -47,7 +52,7 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
     try {
       await updateLicense(projectId, trimmedContent);
       setLicenseInput('');
-      refetchLicense();
+      await Promise.all([refetchLicense(), invalidateLicenseScopedCache()]);
       toast({
         variant: 'success',
         title: 'License updated',

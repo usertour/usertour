@@ -1,4 +1,8 @@
-import { useAdminSettingsQuery, useUpdateInstanceLicenseMutation } from '@usertour/hooks';
+import {
+  useAdminSettingsQuery,
+  useInvalidateLicenseScopedCache,
+  useUpdateInstanceLicenseMutation,
+} from '@usertour/hooks';
 import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
@@ -32,6 +36,7 @@ export const AdminSettingsPage = () => {
   const { data, loading, refetch } = useAdminSettingsQuery();
   const { invoke: updateLicense, loading: updating } = useUpdateInstanceLicenseMutation();
   const { toast } = useToast();
+  const invalidateLicenseScopedCache = useInvalidateLicenseScopedCache();
   const [, copyToClipboard] = useCopyToClipboard();
   const [licenseInput, setLicenseInput] = useState('');
 
@@ -69,7 +74,7 @@ export const AdminSettingsPage = () => {
     try {
       await updateLicense(trimmedContent);
       setLicenseInput('');
-      refetch();
+      await Promise.all([refetch(), invalidateLicenseScopedCache()]);
       toast({
         variant: 'success',
         title: 'License updated',

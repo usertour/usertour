@@ -4,11 +4,14 @@ import { PrismaService } from 'nestjs-prisma';
 import { LicenseService } from '@/license/license.service';
 import {
   EmailAlreadyRegistered,
+  FeatureRequiresLicenseError,
   InstanceLicenseProjectLimitReachedError,
   InvalidLicenseError,
   LicenseExpiredError,
   ParamsError,
+  SystemAdminMustEnable2FAFirstError,
 } from '@/common/errors';
+import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 import {
   getDefaultSegments,
   initialization,
@@ -226,6 +229,41 @@ export class AdminService implements OnModuleInit {
       },
       update: {
         allowUserRegistration,
+      },
+    });
+  }
+
+  async updateInstanceRequire2FA(actorUserId: string, value: boolean) {
+    // Only the "turn ON" path is gated; turning off is always allowed so an
+    // expiring/missing license can't permanently lock users out of the app.
+    if (value) {
+      const actor = await this.prisma.user.findUnique({
+        where: { id: actorUserId },
+        select: { twoFactorEnabled: true },
+      });
+      if (!actor?.twoFactorEnabled) {
+        throw new SystemAdminMustEnable2FAFirstError();
+      }
+
+      const setting = await this.prisma.instanceSetting.findUnique({
+        where: { key: AdminService.INSTANCE_SETTING_KEY },
+        select: { license: true },
+      });
+      const licensed =
+        !!setting?.license &&
+        (await this.licenseService.hasFeature(setting.license, LICENSE_FEATURE_TWO_FACTOR));
+      if (!licensed) {
+        throw new FeatureRequiresLicenseError();
+      }
+    }
+    return this.prisma.instanceSetting.upsert({
+      where: { key: AdminService.INSTANCE_SETTING_KEY },
+      create: {
+        key: AdminService.INSTANCE_SETTING_KEY,
+        require2FA: value,
+      },
+      update: {
+        require2FA: value,
       },
     });
   }

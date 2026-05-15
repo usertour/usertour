@@ -7,12 +7,14 @@ import { UpdateUserInput } from './dto/update-user.input';
 import { User } from './models/user.model';
 import { UsersService } from './users.service';
 import { AuthService } from '@/auth/auth.service';
+import { TwoFactorService } from '@/auth/two-factor.service';
 @Resolver(() => User)
 export class UsersResolver {
   constructor(
     private usersService: UsersService,
     private prisma: PrismaService,
     private authService: AuthService,
+    private twoFactorService: TwoFactorService,
   ) {}
 
   @Query(() => User)
@@ -53,5 +55,10 @@ export class UsersResolver {
   @ResolveField('isOAuthUser')
   async isOAuthUser(@Parent() author: User) {
     return await this.usersService.isOAuthUser(author.id);
+  }
+
+  @ResolveField('twoFactorAvailable')
+  async twoFactorAvailable(@Parent() author: User) {
+    return this.twoFactorService.isTwoFactorAvailableForUser(author.id);
   }
 }

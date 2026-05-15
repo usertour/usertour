@@ -1,10 +1,12 @@
 import {
   QueryHookOptions,
+  useApolloClient,
   useMutation,
   useQuery,
   useLazyQuery,
   NetworkStatus,
 } from '@apollo/client';
+import { useCallback } from 'react';
 import {
   activeUserProject,
   cancelInvite,
@@ -93,6 +95,14 @@ import {
   adminChangeProjectMemberRole,
   adminTransferProjectOwnership,
   adminRemoveProjectMember,
+  updateInstanceRequire2FA,
+  startTwoFactorSetup,
+  startTwoFactorSetupWithChallenge,
+  confirmTwoFactorSetup,
+  confirmTwoFactorSetupWithChallenge,
+  verifyTwoFactor,
+  disableTwoFactor,
+  regenerateRecoveryCodes,
 } from '@usertour/gql';
 
 import type {
@@ -1188,4 +1198,107 @@ export const useAdminRemoveProjectMemberMutation = () => {
     return response.data?.adminRemoveProjectMember;
   };
   return { invoke, loading, error };
+};
+
+// ---------------------------------------------------------------------------
+// Two-factor authentication
+// ---------------------------------------------------------------------------
+
+export const useUpdateInstanceRequire2FAMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateInstanceRequire2FA);
+  const invoke = async (value: boolean) => {
+    const response = await mutation({ variables: { value } });
+    return response.data?.updateInstanceRequire2FA;
+  };
+  return { invoke, loading, error };
+};
+
+export type TwoFactorSetupPayload = {
+  secret: string;
+  otpauthUri: string;
+  qrDataUri: string;
+};
+
+export const useStartTwoFactorSetupMutation = () => {
+  const [mutation, { loading, error }] = useMutation(startTwoFactorSetup);
+  const invoke = async (): Promise<TwoFactorSetupPayload | undefined> => {
+    const response = await mutation();
+    return response.data?.startTwoFactorSetup;
+  };
+  return { invoke, loading, error };
+};
+
+export const useStartTwoFactorSetupWithChallengeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(startTwoFactorSetupWithChallenge);
+  const invoke = async (challengeToken: string): Promise<TwoFactorSetupPayload | undefined> => {
+    const response = await mutation({ variables: { challengeToken } });
+    return response.data?.startTwoFactorSetupWithChallenge;
+  };
+  return { invoke, loading, error };
+};
+
+export const useConfirmTwoFactorSetupMutation = () => {
+  const [mutation, { loading, error }] = useMutation(confirmTwoFactorSetup);
+  const invoke = async (secret: string, code: string): Promise<string[] | undefined> => {
+    const response = await mutation({ variables: { secret, code } });
+    return response.data?.confirmTwoFactorSetup?.recoveryCodes;
+  };
+  return { invoke, loading, error };
+};
+
+export const useConfirmTwoFactorSetupWithChallengeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(confirmTwoFactorSetupWithChallenge);
+  const invoke = async (variables: { secret: string; code: string; challengeToken: string }) => {
+    const response = await mutation({ variables });
+    return response.data?.confirmTwoFactorSetupWithChallenge;
+  };
+  return { invoke, loading, error };
+};
+
+export const useVerifyTwoFactorMutation = () => {
+  const [mutation, { loading, error }] = useMutation(verifyTwoFactor);
+  const invoke = async (variables: {
+    challengeToken: string;
+    code: string;
+    isRecoveryCode?: boolean;
+  }) => {
+    const response = await mutation({ variables });
+    return response.data?.verifyTwoFactor;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDisableTwoFactorMutation = () => {
+  const [mutation, { loading, error }] = useMutation(disableTwoFactor);
+  const invoke = async (code: string, isRecoveryCode = false): Promise<boolean> => {
+    const response = await mutation({ variables: { code, isRecoveryCode } });
+    return !!response.data?.disableTwoFactor;
+  };
+  return { invoke, loading, error };
+};
+
+export const useRegenerateRecoveryCodesMutation = () => {
+  const [mutation, { loading, error }] = useMutation(regenerateRecoveryCodes);
+  const invoke = async (code: string, isRecoveryCode = false): Promise<string[] | undefined> => {
+    const response = await mutation({ variables: { code, isRecoveryCode } });
+    return response.data?.regenerateRecoveryCodes?.recoveryCodes;
+  };
+  return { invoke, loading, error };
+};
+
+/**
+ * Returns a function that invalidates every cached query whose result depends
+ * on the license state — currently `me` (per-user `twoFactorAvailable`) and
+ * `globalConfig` (instance-wide `require2FA`). Call after any mutation that
+ * mutates an instance or project license so already-mounted pages don't keep
+ * showing stale "feature disabled" state until a manual reload.
+ */
+export const useInvalidateLicenseScopedCache = () => {
+  const apollo = useApolloClient();
+  return useCallback(async () => {
+    apollo.cache.evict({ fieldName: 'me' });
+    apollo.cache.evict({ fieldName: 'globalConfig' });
+    apollo.cache.gc();
+    await apollo.refetchQueries({ include: [getUserInfo, globalConfig] }).catch(() => undefined);
+  }, [apollo]);
 };

@@ -134,13 +134,16 @@ type AttributeOnEvent {
 
 type Auth {
   """JWT access token"""
-  accessToken: JWT!
+  accessToken: JWT
   projectId: String
   redirectUrl: String
 
   """JWT refresh token"""
-  refreshToken: JWT!
-  user: User!
+  refreshToken: JWT
+  requiresTwoFactor: Boolean!
+  requiresTwoFactorSetup: Boolean!
+  twoFactorChallenge: String
+  user: User
 }
 
 input BizCompanyOnSegmentInput {
@@ -335,6 +338,12 @@ input ChangeTeamMemberRoleInput {
 type Common {
   count: Int!
   success: Boolean!
+}
+
+input ConfirmTwoFactorSetupInput {
+  challengeToken: String
+  code: String!
+  secret: String!
 }
 
 type Content {
@@ -619,6 +628,7 @@ type GlobalConfig {
   authProviders: [String!]!
   isSelfHostedMode: Boolean!
   needsSystemAdminSetup: Boolean!
+  require2FA: Boolean!
 }
 
 type InstanceLicenseInfo {
@@ -651,6 +661,7 @@ type InstanceSetting {
   instanceId: String!
   license: String
   name: String
+  require2FA: Boolean!
   updatedAt: DateTime!
 }
 
@@ -798,6 +809,8 @@ type Mutation {
   changeEmail(data: ChangeEmailInput!): User!
   changePassword(data: ChangePasswordInput!): User!
   changeTeamMemberRole(data: ChangeTeamMemberRoleInput!): Boolean!
+  confirmTwoFactorSetup(data: ConfirmTwoFactorSetupInput!): TwoFactorEnableResult!
+  confirmTwoFactorSetupWithChallenge(data: ConfirmTwoFactorSetupInput!): TwoFactorEnableResult!
   copyTheme(data: CopyThemeInput!): Theme!
   createAccessToken(environmentId: String!, input: CreateAccessTokenInput!): AccessToken!
   createAttribute(data: CreateAttributeInput!): Attribute!
@@ -828,6 +841,7 @@ type Mutation {
   deleteSegment(data: DeleteSegment!): Common!
   deleteSession(sessionId: String!): Boolean!
   deleteTheme(data: DeleteThemeInput!): Theme!
+  disableTwoFactor(data: TwoFactorStepUpInput!): Boolean!
   disconnectIntegration(environmentId: String!, provider: String!): Integration!
   duplicateContent(data: ContentDuplicateInput!): Content!
   endSession(sessionId: String!): Boolean!
@@ -835,6 +849,7 @@ type Mutation {
   login(data: LoginInput!): Auth!
   logout: Boolean!
   publishedContentVersion(data: VersionIdInput!): Version!
+  regenerateRecoveryCodes(data: TwoFactorStepUpInput!): TwoFactorEnableResult!
   removeTeamMember(data: RemoveTeamMemberInput!): Boolean!
   resendMagicLink(data: ResendLinkInput!): Register!
   resetUserPassword(data: ResetPasswordInput!): Common!
@@ -844,6 +859,8 @@ type Mutation {
   setDefaultTheme(themeId: String!): Theme!
   setupSystemAdmin(data: SetupSystemAdminInput!): Auth!
   signup(data: SignupInput!): Auth!
+  startTwoFactorSetup: TwoFactorSetupPayload!
+  startTwoFactorSetupWithChallenge(challengeToken: String!): TwoFactorSetupPayload!
   unpublishedContentVersion(data: ContentIdInput!): Common!
   updateAttribute(data: UpdateAttributeInput!): Attribute!
   updateContent(data: ContentUpdateInput!): Content!
@@ -854,6 +871,7 @@ type Mutation {
   updateInstanceAuthenticationSettings(allowUserRegistration: Boolean!): InstanceSetting!
   updateInstanceGeneralSettings(allowProjectLevelSubscriptionManagement: Boolean, contactEmail: String, name: String): InstanceSetting!
   updateInstanceLicense(license: String!): InstanceSetting!
+  updateInstanceRequire2FA(value: Boolean!): InstanceSetting!
   updateIntegration(environmentId: String!, input: UpdateIntegrationInput!, provider: String!): Integration!
   updateIntegrationObjectMapping(id: String!, input: UpdateIntegrationObjectMappingInput!): IntegrationObjectMapping!
   updateLocalization(data: UpdateLocalizationInput!): Localization!
@@ -867,6 +885,7 @@ type Mutation {
   updateUserSystemAdmin(isSystemAdmin: Boolean!, userId: String!): User!
   updateVersionLocationData(data: VersionUpdateLocalizationInput!): VersionOnLocalization!
   upsertIntegrationObjectMapping(input: CreateIntegrationObjectMappingInput!, integrationId: String!): IntegrationObjectMapping!
+  verifyTwoFactor(data: VerifyTwoFactorInput!): Auth!
 }
 
 type OEmbed {
@@ -1208,6 +1227,22 @@ type TrackerUserEdge {
   node: TrackerUser!
 }
 
+type TwoFactorEnableResult {
+  auth: Auth
+  recoveryCodes: [String!]!
+}
+
+type TwoFactorSetupPayload {
+  otpauthUri: String!
+  qrDataUri: String!
+  secret: String!
+}
+
+input TwoFactorStepUpInput {
+  code: String!
+  isRecoveryCode: Boolean! = false
+}
+
 input UpdateAttributeInput {
   bizType: Int
   codeName: String
@@ -1302,7 +1337,9 @@ type User {
   isOAuthUser: Boolean
   isSystemAdmin: Boolean!
   name: String
-  projects: [UserOnProject!]!
+  projects: [UserOnProject!]
+  twoFactorAvailable: Boolean
+  twoFactorEnabled: Boolean!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
@@ -1320,6 +1357,12 @@ type UserOnProject {
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   user: User
+}
+
+input VerifyTwoFactorInput {
+  challengeToken: String!
+  code: String!
+  isRecoveryCode: Boolean! = false
 }
 
 type Version {

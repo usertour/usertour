@@ -36,4 +36,16 @@ export class User extends BaseModel {
 
   @Field(() => Boolean)
   disabled: boolean;
+
+  @Field(() => Boolean)
+  twoFactorEnabled: boolean;
+
+  /**
+   * Whether this user is entitled to use 2FA on the current instance. SaaS:
+   * always true. Self-host: true iff the instance license OR any of the user's
+   * project licenses include the 2FA feature. Resolved via @ResolveField,
+   * therefore optional on the source object.
+   */
+  @Field(() => Boolean, { nullable: true })
+  twoFactorAvailable?: boolean;
 }

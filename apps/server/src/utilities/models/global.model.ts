@@ -17,6 +17,9 @@ export class GlobalConfig {
   @Field(() => Boolean)
   needsSystemAdminSetup: boolean;
 
+  @Field(() => Boolean)
+  require2FA: boolean;
+
   @Field(() => [String])
   authProviders: string[];
 }
