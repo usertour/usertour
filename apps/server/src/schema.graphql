@@ -1337,7 +1337,7 @@ type User {
   isOAuthUser: Boolean
   isSystemAdmin: Boolean!
   name: String
-  projects: [UserOnProject!]
+  projects: [UserOnProject!]!
   twoFactorAvailable: Boolean
   twoFactorEnabled: Boolean!
 
