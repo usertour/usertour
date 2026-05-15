@@ -47,6 +47,7 @@ describe('TwoFactorService', () => {
       twoFactorRecoveryCode: {
         findMany: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         deleteMany: jest.fn(),
         createMany: jest.fn(),
       },
@@ -140,8 +141,11 @@ describe('TwoFactorService', () => {
 
       const user = await service.verifyChallenge(challengeToken, 'abc123', true);
       expect(user.id).toBe('user-1');
-      expect(prisma.twoFactorRecoveryCode.update).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'rec-1' }, data: expect.any(Object) }),
+      expect(prisma.twoFactorRecoveryCode.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'rec-1', usedAt: null },
+          data: expect.any(Object),
+        }),
       );
     });
 
@@ -225,7 +229,7 @@ describe('TwoFactorService', () => {
       );
     });
 
-    it('marks a code as used on first consumption', async () => {
+    it('marks a code as used on first consumption via atomic CAS', async () => {
       prisma.twoFactorRecoveryCode.findMany.mockResolvedValue([
         { id: 'rec-1', hashedCode: 'hashed:code-a' },
         { id: 'rec-2', hashedCode: 'hashed:code-b' },
@@ -233,11 +237,27 @@ describe('TwoFactorService', () => {
 
       await service.verifyChallenge('t', 'code-a', true);
 
-      expect(prisma.twoFactorRecoveryCode.update).toHaveBeenCalledWith(
+      // Must use updateMany with `usedAt: null` in the WHERE clause so a
+      // parallel request can't double-consume the same code.
+      expect(prisma.twoFactorRecoveryCode.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'rec-1' },
+          where: { id: 'rec-1', usedAt: null },
           data: expect.objectContaining({ usedAt: expect.any(Date) }),
         }),
+      );
+    });
+
+    it('rejects when a parallel request just claimed the code (CAS loses the race)', async () => {
+      // Race: findMany sees the code as unused, but updateMany returns count=0
+      // because another concurrent request already flipped usedAt to non-null.
+      // Both winners must NOT both report success — the loser must fail.
+      prisma.twoFactorRecoveryCode.findMany.mockResolvedValue([
+        { id: 'rec-1', hashedCode: 'hashed:code-a' },
+      ]);
+      prisma.twoFactorRecoveryCode.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.verifyChallenge('t', 'code-a', true)).rejects.toBeInstanceOf(
+        InvalidRecoveryCodeError,
       );
     });
 

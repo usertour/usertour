@@ -462,13 +462,19 @@ export class TwoFactorService {
     });
     for (const candidate of candidates) {
       const matches = await this.passwordService.validatePassword(normalized, candidate.hashedCode);
-      if (matches) {
-        await this.prisma.twoFactorRecoveryCode.update({
-          where: { id: candidate.id },
-          data: { usedAt: new Date() },
-        });
-        return true;
+      if (!matches) {
+        continue;
       }
+      // Atomic compare-and-set on (id, usedAt=null) → usedAt=now. If a parallel
+      // request just consumed the same code, count comes back 0 and we report
+      // failure so the second caller can never reuse a code that's already been
+      // claimed. bcrypt's ~100ms-per-check cost makes the race window wide
+      // enough to actually matter under attack.
+      const claim = await this.prisma.twoFactorRecoveryCode.updateMany({
+        where: { id: candidate.id, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      return claim.count === 1;
     }
     return false;
   }
