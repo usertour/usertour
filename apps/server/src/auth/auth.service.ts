@@ -298,7 +298,7 @@ export class AuthService {
         tokenType: 'refresh',
       },
       {
-        secret: this.configService.get('auth.jwt.refreshSecret'), // 使用单独的 refresh token 密钥
+        secret: this.configService.get('auth.jwt.refreshSecret'),
         expiresIn: this.configService.get('auth.jwt.refreshExpiresIn'),
       },
     );

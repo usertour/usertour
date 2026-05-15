@@ -209,7 +209,7 @@ describe('AuthService', () => {
     });
 
     it('drops the MFA gate entirely when license is unavailable, even for enrolled users', async () => {
-      // "全部锁 Bytebase 风格" — license lapse → existing 2FA-enrolled users
+      // license lapse → existing 2FA-enrolled users
       // bypass the challenge so they aren't locked out of the app.
       prisma.user.findUnique.mockResolvedValue({ id: 'user-1', twoFactorEnabled: true });
       twoFactor.isTwoFactorAvailableForUser.mockResolvedValue(false);

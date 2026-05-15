@@ -34,9 +34,17 @@ export const AdminAuthenticationPage = () => {
   const [allowUserRegistration, setAllowUserRegistration] = useState(true);
   const require2FA = !!data?.require2FA;
   const adminHasOwn2FA = !!userInfo?.twoFactorEnabled;
-  const licenseFeatures = adminSettings?.licenseInfo?.payload?.features ?? [];
+  // `isValid` is the server's own combined check (signature + scope/instanceId
+  // + expiration) — keep this aligned with LicenseService.hasFeature, which
+  // we just fixed to reject expired tokens. Without this, an expired but
+  // signed license that listed `two_factor_auth` in `features` would still
+  // render the toggle as enableable, only to surface a server-side error
+  // when the user actually clicked it.
+  const licenseInfo = adminSettings?.licenseInfo;
+  const licenseFeatures = licenseInfo?.payload?.features ?? [];
   const licensedForEnforce =
-    licenseFeatures.includes(LICENSE_FEATURE_TWO_FACTOR) || licenseFeatures.includes('*');
+    !!licenseInfo?.isValid &&
+    (licenseFeatures.includes(LICENSE_FEATURE_TWO_FACTOR) || licenseFeatures.includes('*'));
 
   useEffect(() => {
     setAllowUserRegistration(data?.allowUserRegistration ?? true);

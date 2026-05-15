@@ -388,8 +388,21 @@ export class TwoFactorService {
    * unlock paid features without an instance license.
    *
    * SaaS mode: always true (no license model). Self-host with no covering
-   * license: false — existing 2FA-enrolled users bypass the MFA gate at
-   * login (matches the "全部锁 Bytebase 风格" decision for license lapse).
+   * license: false — existing 2FA-enrolled users silently bypass the MFA
+   * gate at login (their stored secret stays untouched; the gate comes
+   * back the moment a covering license is restored).
+   *
+   * Why this does NOT consult `Project.usesInstanceLicense`: 2FA is an
+   * account-level concern. `User.twoFactorSecret` is stored once per user,
+   * not per project. The decision point is `emailLogin` → checked before
+   * the user has selected any active project — there is no project context
+   * to gate against. Even after login, the active project can be switched
+   * client-side at any time, so making 2FA depend on which project is
+   * active would mean a user enrolled while viewing project A could find
+   * the policy lifted when they switch to project B, which inverts the
+   * "extra layer of security" model. The 2FA feature flag on a license is
+   * therefore treated as a license-wide entitlement that fans out to every
+   * user, not as a per-tenant gate like `projectLimit`.
    */
   async isTwoFactorAvailableForUser(userId: string): Promise<boolean> {
     if (!this.configService.get('globalConfig.isSelfHostedMode')) {
