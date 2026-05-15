@@ -1,6 +1,7 @@
 import {
   useAdminInstanceSettingsQuery,
   useAdminSettingsQuery,
+  useInvalidateLicenseScopedCache,
   useUpdateInstanceAuthenticationSettingsMutation,
   useUpdateInstanceRequire2FAMutation,
 } from '@usertour/hooks';
@@ -27,6 +28,7 @@ export const AdminAuthenticationPage = () => {
     useUpdateInstanceAuthenticationSettingsMutation();
   const { invoke: updateRequire2FA, loading: updatingRequire2FA } =
     useUpdateInstanceRequire2FAMutation();
+  const invalidateLicenseScopedCache = useInvalidateLicenseScopedCache();
   const { toast } = useToast();
   const [allowUserRegistration, setAllowUserRegistration] = useState(true);
   const require2FA = !!data?.require2FA;
@@ -72,7 +74,7 @@ export const AdminAuthenticationPage = () => {
     }
     try {
       await updateRequire2FA(next);
-      await refetch();
+      await Promise.all([refetch(), invalidateLicenseScopedCache()]);
       toast({
         variant: 'success',
         title: next

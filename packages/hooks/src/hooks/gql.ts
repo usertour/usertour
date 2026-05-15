@@ -1287,11 +1287,13 @@ export const useRegenerateRecoveryCodesMutation = () => {
 };
 
 /**
- * Returns a function that invalidates every cached query whose result depends
- * on the license state — currently `me` (per-user `twoFactorAvailable`) and
- * `globalConfig` (instance-wide `require2FA`). Call after any mutation that
- * mutates an instance or project license so already-mounted pages don't keep
- * showing stale "feature disabled" state until a manual reload.
+ * Returns a function that invalidates the two cached queries whose results
+ * depend on instance/project-level admin state — `me` (per-user
+ * `twoFactorAvailable`) and `globalConfig` (instance-wide `require2FA`).
+ * Call after any admin mutation that changes a license token or instance
+ * setting which surfaces back to end users, so already-mounted pages
+ * (route guard, /settings/account) don't keep stale gating state until a
+ * manual reload.
  */
 export const useInvalidateLicenseScopedCache = () => {
   const apollo = useApolloClient();
