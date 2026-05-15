@@ -121,10 +121,8 @@ export const AdminAuthenticationPage = () => {
               {!licensedForEnforce && (
                 <TooltipProvider delayDuration={150}>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex cursor-default">
-                        <RiSparklingFill className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                      </button>
+                    <TooltipTrigger className="inline-flex cursor-default">
+                      <RiSparklingFill className="h-4 w-4 text-indigo-500" aria-hidden="true" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       {t('twoFactor.adminEnforce.licenseRequired')}

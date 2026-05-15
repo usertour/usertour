@@ -83,14 +83,14 @@ export const AccountTwoFactorForm = () => {
       <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <button type="button" className="inline-flex cursor-not-allowed">
+            <span className="inline-flex cursor-not-allowed">
               <Switch
                 checked
                 disabled
                 onCheckedChange={() => undefined}
                 className="shrink-0 data-[state=unchecked]:bg-input pointer-events-none"
               />
-            </button>
+            </span>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">{t('twoFactor.enforcedTooltip')}</TooltipContent>
         </Tooltip>
@@ -119,10 +119,8 @@ export const AccountTwoFactorForm = () => {
             {!featureAvailable && (
               <TooltipProvider delayDuration={150}>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex cursor-default">
-                      <RiSparklingFill className="h-5 w-5 text-indigo-500" aria-hidden="true" />
-                    </button>
+                  <TooltipTrigger className="inline-flex cursor-default">
+                    <RiSparklingFill className="h-5 w-5 text-indigo-500" aria-hidden="true" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     {t('twoFactor.licenseRequired')}
