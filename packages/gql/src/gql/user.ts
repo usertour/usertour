@@ -11,6 +11,8 @@ export const getUserInfo = gql`
       updatedAt
       isOAuthUser
       isSystemAdmin
+      twoFactorEnabled
+      twoFactorAvailable
       projects {
         id
         role

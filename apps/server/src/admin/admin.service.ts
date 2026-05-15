@@ -4,11 +4,14 @@ import { PrismaService } from 'nestjs-prisma';
 import { LicenseService } from '@/license/license.service';
 import {
   EmailAlreadyRegistered,
+  FeatureRequiresLicenseError,
   InstanceLicenseProjectLimitReachedError,
   InvalidLicenseError,
   LicenseExpiredError,
   ParamsError,
+  SystemAdminMustEnable2FAFirstError,
 } from '@/common/errors';
+import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 import {
   getDefaultSegments,
   initialization,
@@ -227,6 +230,64 @@ export class AdminService implements OnModuleInit {
       update: {
         allowUserRegistration,
       },
+    });
+  }
+
+  async updateInstanceRequire2FA(actorUserId: string, value: boolean) {
+    // Only the "turn ON" path is gated; turning off is always allowed so an
+    // expiring/missing license can't permanently lock users out of the app.
+    if (value) {
+      const actor = await this.prisma.user.findUnique({
+        where: { id: actorUserId },
+        select: { twoFactorEnabled: true },
+      });
+      if (!actor?.twoFactorEnabled) {
+        throw new SystemAdminMustEnable2FAFirstError();
+      }
+
+      const setting = await this.prisma.instanceSetting.findUnique({
+        where: { key: AdminService.INSTANCE_SETTING_KEY },
+        select: { license: true },
+      });
+      const licensed =
+        !!setting?.license &&
+        (await this.licenseService.hasFeature(setting.license, LICENSE_FEATURE_TWO_FACTOR));
+      if (!licensed) {
+        throw new FeatureRequiresLicenseError();
+      }
+    }
+    return this.prisma.$transaction(async (tx) => {
+      const setting = await tx.instanceSetting.upsert({
+        where: { key: AdminService.INSTANCE_SETTING_KEY },
+        create: {
+          key: AdminService.INSTANCE_SETTING_KEY,
+          require2FA: value,
+        },
+        update: {
+          require2FA: value,
+        },
+      });
+      // When turning enforcement ON, push every non-enrolled user back through
+      // the login flow by killing their refresh tokens. Their access token
+      // keeps working for its TTL (~15min); the new server-side enrollment
+      // guard rejects any GraphQL call in that window. Together this closes
+      // the "user has valid session, ignores the policy" loophole.
+      if (value) {
+        const nonEnrolled = await tx.user.findMany({
+          where: { twoFactorEnabled: false },
+          select: { id: true },
+        });
+        if (nonEnrolled.length > 0) {
+          await tx.refreshToken.updateMany({
+            where: {
+              revoked: false,
+              userId: { in: nonEnrolled.map((u) => u.id) },
+            },
+            data: { revoked: true },
+          });
+        }
+      }
+      return setting;
     });
   }
 

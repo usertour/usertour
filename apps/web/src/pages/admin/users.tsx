@@ -338,7 +338,7 @@ export const AdminUsersPage = () => {
     <>
       <SettingsContent>
         <div className="space-y-2">
-          <h3 className="text-2xl font-semibold tracking-tight">Users</h3>
+          <h3 className="text-xl font-semibold tracking-tight">Users</h3>
           <p className="text-sm text-muted-foreground">
             View and manage all users in this self-hosted instance, including system admin access.
           </p>

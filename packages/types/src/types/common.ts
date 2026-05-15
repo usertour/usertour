@@ -56,5 +56,6 @@ export type GlobalConfig = {
   allowUserRegistration: boolean;
   allowProjectLevelSubscriptionManagement: boolean;
   needsSystemAdminSetup: boolean;
+  require2FA: boolean;
   authProviders: string[];
 };

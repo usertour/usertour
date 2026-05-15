@@ -37,6 +37,7 @@ export const adminInstanceSettings = gql`
       name
       contactEmail
       allowUserRegistration
+      require2FA
       allowProjectLevelSubscriptionManagement
       createdAt
       updatedAt
@@ -80,6 +81,16 @@ export const updateInstanceAuthenticationSettings = gql`
       id
       instanceId
       allowUserRegistration
+    }
+  }
+`;
+
+export const updateInstanceRequire2FA = gql`
+  mutation UpdateInstanceRequire2FA($value: Boolean!) {
+    updateInstanceRequire2FA(value: $value) {
+      id
+      instanceId
+      require2FA
     }
   }
 `;

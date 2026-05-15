@@ -95,7 +95,7 @@ export const AccountPasswordForm = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-2xl font-semibold tracking-tight">Change password</h3>
+        <h3 className="text-xl font-semibold tracking-tight">Change password</h3>
         {/* <p className="text-sm text-muted-foreground">Update your password.</p> */}
       </div>
       <Separator />

@@ -5,3 +5,5 @@ export { ResetPassword } from './reset-password';
 export { Registration } from './registration';
 export { PasswordReset } from './password-reset';
 export { Invite } from './invite';
+export { TwoFactor } from './two-factor';
+export { TwoFactorSetup } from './two-factor-setup';

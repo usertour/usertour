@@ -949,7 +949,7 @@ export const AdminProjectsPage = () => {
     <>
       <SettingsContent>
         <div className="space-y-2">
-          <h3 className="text-2xl font-semibold tracking-tight">Projects</h3>
+          <h3 className="text-xl font-semibold tracking-tight">Projects</h3>
           <p className="text-sm text-muted-foreground">
             View and manage all projects in this self-hosted instance, including owners and members.
           </p>

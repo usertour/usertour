@@ -2,6 +2,7 @@ import { Public } from '@/common/decorators/public.decorator';
 import { User } from '@/users/models/user.model';
 import { Args, Mutation, Parent, ResolveField, Resolver, Context } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
+import { AuthResult } from './dto/auth.dto';
 import { ResetPasswordByCodeInput } from './dto/change-password.input';
 import { LoginInput } from './dto/login.input';
 import { MagicLinkInput } from './dto/magic-link.input';
@@ -16,6 +17,7 @@ import { Logger, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { UserEntity } from '@/common/decorators/user.decorator';
+import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
 import { EmailConfigGuard } from '@/common/guards/email-config.guard';
 
 @Resolver(() => Auth)
@@ -61,29 +63,19 @@ export class AuthResolver {
     @Args('data') data: SetupSystemAdminInput,
     @Context() context: { res: Response },
   ) {
-    const tokens = await this.auth.setupSystemAdmin(
+    const result = await this.auth.setupSystemAdmin(
       data.name,
       data.email.toLowerCase(),
       data.password,
     );
-    this.auth.setAuthCookie(context.res, tokens);
-
-    return {
-      ...tokens,
-      redirectUrl: this.configService.get('auth.redirectUrl'),
-    };
+    return this.formatAuthResult(result, context.res);
   }
 
   @Mutation(() => Auth)
   @Public()
   async signup(@Args('data') data: SignupInput, @Context() context: { res: Response }) {
-    const tokens = await this.auth.signup(data);
-    this.auth.setAuthCookie(context.res, tokens);
-
-    return {
-      ...tokens,
-      redirectUrl: this.configService.get('auth.redirectUrl'),
-    };
+    const result = await this.auth.signup(data);
+    return this.formatAuthResult(result, context.res);
   }
 
   @Mutation(() => Auth)
@@ -92,18 +84,13 @@ export class AuthResolver {
     @Args('data') { email, password, inviteCode }: LoginInput,
     @Context() context: { res: Response },
   ) {
-    const tokens = await this.auth.emailLogin(email.toLowerCase(), password, inviteCode);
-    this.logger.log(`Login successful for email: ${email}`);
-
-    this.auth.setAuthCookie(context.res, tokens);
-
-    return {
-      ...tokens,
-      redirectUrl: this.configService.get('auth.redirectUrl'),
-    };
+    const result = await this.auth.emailLogin(email.toLowerCase(), password, inviteCode);
+    this.logger.log(`Login attempt resolved for email: ${email} (${result.kind})`);
+    return this.formatAuthResult(result, context.res);
   }
 
   @Mutation(() => Boolean)
+  @SkipTwoFactorEnrollment()
   async logout(@UserEntity() user: User, @Context() context: { res: Response }) {
     this.logger.log(`Logging out user: ${user.id}`);
     await this.auth.revokeAllRefreshTokens(user.id);
@@ -112,8 +99,29 @@ export class AuthResolver {
     return true;
   }
 
-  @ResolveField('user', () => User)
+  @ResolveField('user', () => User, { nullable: true })
   async user(@Parent() auth: Auth) {
+    if (!auth.accessToken) {
+      return null;
+    }
     return await this.auth.getUserFromToken(auth.accessToken);
+  }
+
+  private formatAuthResult(result: AuthResult, res: Response): Auth {
+    if (result.kind === 'tokens') {
+      this.auth.setAuthCookie(res, result.tokens);
+      return {
+        accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+        redirectUrl: this.configService.get('auth.redirectUrl'),
+        requiresTwoFactor: false,
+        requiresTwoFactorSetup: false,
+      };
+    }
+    return {
+      requiresTwoFactor: result.purpose === 'mfa-verify',
+      requiresTwoFactorSetup: result.purpose === 'mfa-setup-required',
+      twoFactorChallenge: result.challengeToken,
+    };
   }
 }
