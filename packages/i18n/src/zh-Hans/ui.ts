@@ -263,6 +263,10 @@ const translations = {
         content: '内容',
         versions: '版本',
       },
+      rules: {
+        emptyConditionsTitle: '还没有添加条件',
+        emptyConditionsHint: '至少添加一个条件,这条规则才会生效。',
+      },
     },
   },
   companies: {

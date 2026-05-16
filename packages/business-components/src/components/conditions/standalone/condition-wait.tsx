@@ -1,5 +1,5 @@
 import { QuestionTooltip } from '@usertour/tooltip';
-import { type ChangeEvent, useState } from 'react';
+import { type ChangeEvent, useEffect, useState } from 'react';
 import type { ConditionsTranslator } from '../conditions-context';
 import {
   ConditionErrorTooltip,
@@ -29,6 +29,17 @@ export function ConditionWait({
   const t = resolveTranslator(tProp);
   const [openError, setOpenError] = useState(false);
   const [inputValue, setInputValue] = useState<number>(defaultValue ?? 0);
+
+  // Keep the displayed value in sync with the prop after the initial
+  // mount — without this, content/version switches, restores, or any
+  // other parent-driven reset would leave the input showing the old
+  // content's wait while the parent already moved on. Also drop any
+  // stale "value > maxSeconds" tooltip so a reset doesn't carry over an
+  // error that belonged to the prior content's input.
+  useEffect(() => {
+    setInputValue(defaultValue ?? 0);
+    setOpenError(false);
+  }, [defaultValue]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseInt(e.target.value) || 0;

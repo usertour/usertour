@@ -184,9 +184,19 @@ export const ContentDetailTrackerEditor = () => {
     [versionData, saveVersionData],
   );
 
-  // Handle conditions change - update config
+  // Handle conditions change - update config. Mirrors the policy in
+  // content-detail-settings.tsx: empty conditions are a scratch state
+  // (don't autosave), and any queued save from a prior non-empty edit
+  // must be cancelled too — otherwise a rapid delete sequence (delete
+  // A, delete B, delete C) leaves the debounce queue holding the
+  // second-to-last value, which fires after the user emptied the list
+  // and resyncs server back to that stale value on refetch.
   const handleAutoStartRulesDataChange = useCallback(
     (enabled: boolean, conditions: RulesCondition[], setting: any) => {
+      if (conditions.length === 0) {
+        debouncedUpdateVersion.cancel();
+        return;
+      }
       const newConfig = {
         ...config,
         enabledAutoStartRules: enabled,

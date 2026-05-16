@@ -278,6 +278,10 @@ const translations = {
         content: 'Content',
         versions: 'Versions',
       },
+      rules: {
+        emptyConditionsTitle: 'No conditions yet',
+        emptyConditionsHint: "Rule won't activate until you add at least one condition.",
+      },
     },
   },
   companies: {
