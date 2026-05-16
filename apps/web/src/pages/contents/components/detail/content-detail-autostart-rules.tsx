@@ -196,10 +196,14 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     [defaultEnabled, setting, onDataChange],
   );
 
-  // Toggle is on but no conditions yet — surface an inline empty-state so
-  // the user sees "rule won't activate until you add one" right where they
-  // need to act, instead of silently saving enabled=false on the wire.
-  const showEmptyState = showEnabledSwitch && enabled && conditions.length === 0 && !disabled;
+  // Rule is conceptually "on" but no conditions yet — surface an inline
+  // empty-state so the user sees "won't activate until you add one"
+  // right where they need to act. Gated on `effectiveEnabled` (not
+  // `enabled`) so this also fires for consumers without a toggle
+  // (tracker editor passes showEnabledSwitch=false; the rule is then
+  // implicitly always-on and an empty conditions list is the same
+  // "incomplete setup" situation).
+  const showEmptyState = effectiveEnabled && conditions.length === 0 && !disabled;
 
   if (!environmentId) return null;
 
