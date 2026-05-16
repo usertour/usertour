@@ -72,6 +72,16 @@ export const ContentDetailSettings = () => {
 
   const handleAutoStartRulesDataChange = useCallback(
     (enabled: boolean, conditions: RulesCondition[], setting: any) => {
+      // Empty conditions = scratch state. Don't save, and also cancel any
+      // pending debounced save from a prior non-empty edit — otherwise a
+      // rapid-fire "delete X, delete Y, delete Z" sequence would leave
+      // the queue holding the second-to-last value (e.g. [Z]), which
+      // fires after the user emptied the list and resyncs server back to
+      // [Z], reviving a condition the user just deleted.
+      if (conditions.length === 0) {
+        debouncedUpdateVersion.cancel();
+        return;
+      }
       const newConfig = {
         ...config,
         enabledAutoStartRules: enabled,
@@ -85,6 +95,11 @@ export const ContentDetailSettings = () => {
 
   const handleHideRulesDataChange = useCallback(
     (enabled: boolean, conditions: RulesCondition[], setting: any) => {
+      // Same scratch-state policy as autoStartRules — see comment above.
+      if (conditions.length === 0) {
+        debouncedUpdateVersion.cancel();
+        return;
+      }
       const newConfig = {
         ...config,
         enabledHideRules: enabled,

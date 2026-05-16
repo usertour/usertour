@@ -1,5 +1,6 @@
 import { useContentDetailContext } from '@/contexts/content-detail-context';
 import { useContentVersionContext } from '@/contexts/content-version-context';
+import { useContentVersionListContext } from '@/contexts/content-version-list-context';
 import { useMutation } from '@apollo/client';
 import { createContentVersion, updateContentVersion } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
@@ -12,6 +13,7 @@ import { isVersionPublished } from '@/utils/content';
 export const useContentVersionUpdate = () => {
   const { version, refetch: refetchVersion, setIsSaving } = useContentVersionContext();
   const { content, refetch: refetchContent } = useContentDetailContext();
+  const { refetch: refetchVersionList } = useContentVersionListContext();
   const [mutation] = useMutation(updateContentVersion);
   const [createVersion] = useMutation(createContentVersion);
   const { toast } = useToast();
@@ -55,6 +57,7 @@ export const useContentVersionUpdate = () => {
         setIsSaving(true);
 
         const editableVersionId = await ensureEditableVersionId();
+        const forked = editableVersionId !== version.id;
         await mutation({
           variables: {
             versionId: editableVersionId,
@@ -66,7 +69,11 @@ export const useContentVersionUpdate = () => {
           },
         });
 
-        await Promise.all([refetchContent(), refetchVersion()]);
+        await Promise.all([
+          refetchContent(),
+          refetchVersion(),
+          ...(forked ? [refetchVersionList()] : []),
+        ]);
       } catch (error) {
         toast({ variant: 'destructive', title: getErrorMessage(error) });
       } finally {
@@ -80,6 +87,7 @@ export const useContentVersionUpdate = () => {
       ensureEditableVersionId,
       refetchContent,
       refetchVersion,
+      refetchVersionList,
       setIsSaving,
       toast,
     ],
@@ -97,10 +105,11 @@ export const useContentVersionUpdate = () => {
 
       try {
         const editableVersionId = await ensureEditableVersionId(cfg);
+        const forked = editableVersionId !== version.id;
 
         // If we forked, config was already set during fork — done.
         // If not forked, we need to update config explicitly.
-        if (editableVersionId === version.id) {
+        if (!forked) {
           const { data } = await mutation({
             variables: {
               versionId: version.id,
@@ -117,14 +126,31 @@ export const useContentVersionUpdate = () => {
           }
         }
 
-        await Promise.all([refetchContent(), refetchVersion()]);
+        // Fork creates a new version, which the version-history list
+        // doesn't auto-discover (Apollo's listContentVersions cache
+        // entry stays stale until refetched). Without this, the Version
+        // tab won't show the just-created draft after a publish-then-
+        // edit sequence forks the published version.
+        await Promise.all([
+          refetchContent(),
+          refetchVersion(),
+          ...(forked ? [refetchVersionList()] : []),
+        ]);
         return true;
       } catch (error) {
         console.error('Failed to process version:', error);
         throw error;
       }
     },
-    [version, content, ensureEditableVersionId, mutation, refetchContent, refetchVersion],
+    [
+      version,
+      content,
+      ensureEditableVersionId,
+      mutation,
+      refetchContent,
+      refetchVersion,
+      refetchVersionList,
+    ],
   );
 
   const updateVersion = useCallback(
@@ -164,6 +190,7 @@ export const useContentVersionUpdate = () => {
         setIsSaving(true);
 
         const editableVersionId = await ensureEditableVersionId();
+        const forked = editableVersionId !== version.id;
         await mutation({
           variables: {
             versionId: editableVersionId,
@@ -171,7 +198,11 @@ export const useContentVersionUpdate = () => {
           },
         });
 
-        await Promise.all([refetchContent(), refetchVersion()]);
+        await Promise.all([
+          refetchContent(),
+          refetchVersion(),
+          ...(forked ? [refetchVersionList()] : []),
+        ]);
       } catch (error) {
         toast({ variant: 'destructive', title: getErrorMessage(error) });
       } finally {
@@ -185,6 +216,7 @@ export const useContentVersionUpdate = () => {
       ensureEditableVersionId,
       refetchContent,
       refetchVersion,
+      refetchVersionList,
       setIsSaving,
       toast,
     ],
@@ -200,6 +232,7 @@ export const useContentVersionUpdate = () => {
         setIsSaving(true);
 
         const editableVersionId = await ensureEditableVersionId();
+        const forked = editableVersionId !== version.id;
         await mutation({
           variables: {
             versionId: editableVersionId,
@@ -207,7 +240,11 @@ export const useContentVersionUpdate = () => {
           },
         });
 
-        await Promise.all([refetchContent(), refetchVersion()]);
+        await Promise.all([
+          refetchContent(),
+          refetchVersion(),
+          ...(forked ? [refetchVersionList()] : []),
+        ]);
       } catch (error) {
         toast({ variant: 'destructive', title: getErrorMessage(error) });
       } finally {
@@ -221,6 +258,7 @@ export const useContentVersionUpdate = () => {
       ensureEditableVersionId,
       refetchContent,
       refetchVersion,
+      refetchVersionList,
       setIsSaving,
       toast,
     ],

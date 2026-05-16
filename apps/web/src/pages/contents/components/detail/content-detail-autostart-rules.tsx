@@ -3,6 +3,7 @@ import { useEventListContext } from '@/contexts/event-list-context';
 import { useSegmentListContext } from '@/contexts/segment-list-context';
 import { WebZIndex } from '@usertour/constants';
 import { Label } from '@usertour/label';
+import { cn } from '@usertour/tailwind';
 import {
   ConditionFrequency,
   ConditionIfCompleted,
@@ -14,6 +15,7 @@ import {
 import { useContentListQuery } from '@usertour/hooks';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
+import isEqual from 'fast-deep-equal';
 import { Switch } from '@usertour/switch';
 import { QuestionTooltip } from '@usertour/tooltip';
 import {
@@ -30,6 +32,14 @@ export enum ContentDetailAutoStartRulesType {
   START_RULES = 'start-rules',
   HIDE_RULES = 'hide-rules',
 }
+
+// Coerce the persisted enabled flag so the server never sees `enabled=true`
+// paired with an empty conditions list — the runtime can't act on a rule
+// with nothing to match. The local toggle still reflects user intent so the
+// Conditions panel and empty-state card stay visible until the user adds a
+// condition or flips the toggle off.
+const coerceEnabledForPersist = (flag: boolean, conds: RulesCondition[]) =>
+  flag && conds.length > 0;
 
 interface ContentDetailAutoStartRulesProps {
   defaultEnabled: boolean;
@@ -71,6 +81,23 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
 
   const [enabled, setEnabled] = useState(defaultEnabled);
   const [conditions, setConditions] = useState<RulesCondition[]>(deepClone(defaultConditions));
+  // Local mirror of the `setting` prop. Without this, visibility gates
+  // and sibling defaultValues lag the user's edit by debounce + mutation
+  // + refetch (~1s) — e.g. switching Frequency from Once to Multiple
+  // would leave "Only start if not complete" hidden until the new
+  // setting trickles back through Apollo.
+  const [localSetting, setLocalSetting] = useState(setting);
+  // The setting value we last observed from the parent. settings.tsx
+  // recomputes `config = buildConfig(version.config)` on every render
+  // and buildConfig's deepmerge produces a fresh `autoStartRulesSetting`
+  // reference each time — so the `setting` prop reference flips on
+  // every parent render (including the setIsSaving toggles emitted
+  // during our own debounced save, while version.config still holds
+  // the pre-edit value). A reference-only sync would then clobber the
+  // user's optimistic localSetting with the stale prop and visibly
+  // flash the picker back to its prior state. Compare by value: skip
+  // the sync when only the reference changed.
+  const lastObservedSettingRef = useRef(setting);
   // The latest validated conditions. Sibling settings (wait / frequency /
   // priority / enabled toggle) call onDataChange with this snapshot rather
   // than the displayed `conditions` so an in-flight invalid edit can't
@@ -90,6 +117,12 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
     committedConditionsRef.current = cloned;
   }, [defaultConditions]);
 
+  useEffect(() => {
+    if (isEqual(setting, lastObservedSettingRef.current)) return;
+    lastObservedSettingRef.current = setting;
+    setLocalSetting(setting);
+  }, [setting]);
+
   const environmentId = content.environmentId ?? '';
   const contentType = content.type;
 
@@ -105,7 +138,20 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
 
   const updateSettings = useCallback(
     (updates: Partial<autoStartRulesSetting>) => {
-      onDataChange(effectiveEnabled, committedConditionsRef.current, { ...setting, ...updates });
+      // Empty conditions = incomplete rule. Gate sibling writes so a stray
+      // dropdown click on a half-finished rule doesn't push that state
+      // onto the wire.
+      if (committedConditionsRef.current.length === 0) return;
+      const merged = { ...setting, ...updates };
+      // Reflect the change in local state immediately so visibility
+      // gates and sibling defaults respond to the user's edit without
+      // waiting for the parent's round-trip.
+      setLocalSetting(merged);
+      onDataChange(
+        coerceEnabledForPersist(effectiveEnabled, committedConditionsRef.current),
+        committedConditionsRef.current,
+        merged,
+      );
     },
     [effectiveEnabled, setting, onDataChange],
   );
@@ -126,7 +172,12 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
       if (conditionsIsSame(conds, committedConditionsRef.current)) return;
       const cloned = deepClone(conds);
       committedConditionsRef.current = cloned;
-      onDataChange(effectiveEnabled, cloned, setting);
+      // Always propagate validated changes — including transitions to
+      // empty. The parent decides whether to save or cancel any pending
+      // debounced save, because the "don't autosave empty conditions"
+      // policy needs to also clear a queued save from a prior non-empty
+      // edit, which autostart-rules can't reach from here.
+      onDataChange(coerceEnabledForPersist(effectiveEnabled, cloned), cloned, setting);
     },
     [attributeList, contents, effectiveEnabled, eventList, onDataChange, segmentList, setting],
   );
@@ -134,10 +185,21 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
   const handleEnabledChange = useCallback(
     (checked: boolean) => {
       setEnabled(checked);
-      onDataChange(checked, committedConditionsRef.current, setting);
+      const coerced = coerceEnabledForPersist(checked, committedConditionsRef.current);
+      // Skip when coercion matches the server's current state — turning
+      // the toggle on/off with no conditions would otherwise round-trip
+      // a no-op write (and fork the version if it happens to be
+      // published).
+      if (coerced === defaultEnabled) return;
+      onDataChange(coerced, committedConditionsRef.current, setting);
     },
-    [setting, onDataChange],
+    [defaultEnabled, setting, onDataChange],
   );
+
+  // Toggle is on but no conditions yet — surface an inline empty-state so
+  // the user sees "rule won't activate until you add one" right where they
+  // need to act, instead of silently saving enabled=false on the wire.
+  const showEmptyState = showEnabledSwitch && enabled && conditions.length === 0 && !disabled;
 
   if (!environmentId) return null;
 
@@ -160,57 +222,82 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
           </QuestionTooltip>
         </div>
       )}
-      {(showEnabledSwitch ? enabled : true) && (
-        <Conditions
-          conditions={conditions}
-          onChange={handleConditionsChange}
-          attributes={attributeList}
-          segments={segmentList}
-          contents={contents}
-          currentContent={content}
-          token={getAuthToken()}
-          disabled={disabled}
-          baseZIndex={WebZIndex.RULES}
-          events={eventList}
-          t={t}
-          {...(filterItems ? { filterItems } : {})}
-        />
+      {effectiveEnabled && (
+        <div
+          className={cn(
+            'flex flex-col gap-2',
+            showEmptyState && 'rounded-md bg-muted/30 px-4 py-3',
+          )}
+        >
+          {showEmptyState && (
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground/90">
+                {t('contents.detail.rules.emptyConditionsTitle')}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t('contents.detail.rules.emptyConditionsHint')}
+              </span>
+            </div>
+          )}
+          <Conditions
+            conditions={conditions}
+            onChange={handleConditionsChange}
+            attributes={attributeList}
+            segments={segmentList}
+            contents={contents}
+            currentContent={content}
+            token={getAuthToken()}
+            disabled={disabled}
+            baseZIndex={WebZIndex.RULES}
+            events={eventList}
+            t={t}
+            {...(filterItems ? { filterItems } : {})}
+          />
+        </div>
       )}
 
-      {showWait && (
-        <ConditionWait
-          defaultValue={setting.wait ?? 0}
-          onValueChange={(value) => updateSettings({ wait: value })}
-          disabled={disabled}
-          t={t}
-        />
-      )}
-      {showFrequency && (
-        <ConditionFrequency
-          onChange={(frequency) => updateSettings({ frequency })}
-          defaultValue={setting.frequency}
-          contentType={contentType}
-          showAtLeast={showAtLeast}
-          disabled={disabled}
-          t={t}
-        />
-      )}
-      {showIfCompleted && setting.frequency?.frequency !== Frequency.ONCE && (
-        <ConditionIfCompleted
-          defaultValue={setting.startIfNotComplete ?? false}
-          contentType={contentType}
-          onCheckedChange={(checked) => updateSettings({ startIfNotComplete: checked })}
-          disabled={disabled}
-          t={t}
-        />
-      )}
-      {showPriority && (
-        <ConditionPriority
-          onChange={(priority) => updateSettings({ priority: priority as ContentPriority })}
-          defaultValue={setting.priority ?? ContentPriority.MEDIUM}
-          disabled={disabled}
-          t={t}
-        />
+      {/* Sibling settings render only while the rule is on AND has at
+          least one condition. Off-state hides them along with the
+          conditions list; empty-state hides them because their writes
+          would never reach the wire (gated above in updateSettings). */}
+      {effectiveEnabled && !showEmptyState && (
+        <>
+          {showWait && (
+            <ConditionWait
+              defaultValue={localSetting.wait ?? 0}
+              onValueChange={(value) => updateSettings({ wait: value })}
+              disabled={disabled}
+              t={t}
+            />
+          )}
+          {showFrequency && (
+            <ConditionFrequency
+              onChange={(frequency) => updateSettings({ frequency })}
+              defaultValue={localSetting.frequency}
+              contentType={contentType}
+              showAtLeast={showAtLeast}
+              disabled={disabled}
+              t={t}
+            />
+          )}
+          {showIfCompleted && localSetting.frequency?.frequency !== Frequency.ONCE && (
+            <ConditionIfCompleted
+              defaultValue={localSetting.startIfNotComplete ?? false}
+              contentType={contentType}
+              onCheckedChange={(checked) => updateSettings({ startIfNotComplete: checked })}
+              disabled={disabled}
+              t={t}
+            />
+          )}
+          {showPriority && (
+            <ConditionPriority
+              onChange={(priority) => updateSettings({ priority: priority as ContentPriority })}
+              defaultValue={localSetting.priority ?? ContentPriority.MEDIUM}
+              disabled={disabled}
+              t={t}
+            />
+          )}
+        </>
       )}
     </div>
   );
