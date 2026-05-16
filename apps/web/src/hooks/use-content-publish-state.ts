@@ -21,6 +21,12 @@ export const useContentPublishState = () => {
       return true;
     }
 
+    // Flow needs at least one step to publish — an empty flow has
+    // nothing for the runtime to render.
+    if (content?.type === ContentDataType.FLOW) {
+      return !version?.steps?.length;
+    }
+
     if (content?.type !== ContentDataType.TRACKER) {
       return false;
     }

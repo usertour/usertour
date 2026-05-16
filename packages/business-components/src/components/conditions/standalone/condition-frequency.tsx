@@ -8,6 +8,7 @@ import {
   type RulesFrequencyValueEvery,
 } from '@usertour/types';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+import isEqual from 'fast-deep-equal';
 import type { ConditionsTranslator } from '../conditions-context';
 import {
   ConditionErrorTooltip,
@@ -69,6 +70,31 @@ export function ConditionFrequency({
     if (!defaultValue) onChange(initial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Keep the displayed frequency in sync with the prop after the initial
+  // mount — without this, content/version switches, restores, or any
+  // other parent-driven reset would leave the picker showing the old
+  // content's frequency state (and a subsequent edit would write that
+  // stale state back into the new content's payload).
+  // Normalize `undefined` to INITIAL_VALUE (matches the useState init
+  // above) so switching from a content with frequency to one without
+  // resets the picker to defaults instead of carrying the previous
+  // value over.
+  // Value-equality bailout: when the user picks a new frequency, our
+  // own `update()` already sets `data` synchronously, then onChange
+  // propagates the value up — the parent rerenders with a new
+  // `defaultValue` reference whose contents already match `data`. A
+  // plain setData here would trigger a redundant re-render that
+  // briefly re-mounts the value-bound children below the dropdown
+  // (FrequencyEvery / FrequencyAtLeast), producing a visible flash.
+  useEffect(() => {
+    const source = defaultValue ?? INITIAL_VALUE;
+    const next: RulesFrequencyValue = {
+      ...source,
+      atLeast: showAtLeast ? source.atLeast : undefined,
+    };
+    setData((prev) => (isEqual(prev, next) ? prev : next));
+  }, [defaultValue, showAtLeast]);
 
   const update = (patch: Partial<RulesFrequencyValue>) => {
     setData((prev) => {
