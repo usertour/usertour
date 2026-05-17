@@ -122,6 +122,11 @@ const config: RouteObject[] = [
                 path: '/env/:envId/:contentType',
                 lazy: lazyComponent(() => import('@/pages/contents'), 'ContentList'),
               },
+              // Catch-all lives inside the user-mode auth tree so unknown URLs
+              // inherit AuthGuard's redirects (setup-admin, signin?next=,
+              // 2FA enrolment). Logged-in users see a 404 wrapped in the
+              // admin shell instead of a bare fullscreen page.
+              { path: '*', element: <NotFound /> },
             ],
           },
 
@@ -214,8 +219,6 @@ const config: RouteObject[] = [
       },
     ],
   },
-
-  { path: '*', element: <NotFound /> },
 ];
 
 export default config;
