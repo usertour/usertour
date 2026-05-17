@@ -1,149 +1,117 @@
-'use client';
-
+import { useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour/button';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
-
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-
 import { SpinnerIcon } from '@usertour/icons';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@usertour/card';
 import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useResetUserPasswordByCodeMutation } from '@usertour/hooks';
-
-const formSchema = z.object({
-  password: z
-    .string({
-      required_error: 'Please input your password.',
-    })
-    .max(20)
-    .min(8),
-  repassword: z
-    .string({
-      required_error: 'Please input your password again.',
-    })
-    .max(20)
-    .min(8),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-const defaultValues: Partial<FormValues> = {
-  password: '',
-  repassword: '',
-};
+import { AuthCard } from './components/auth-card';
 
 export const PasswordReset = () => {
+  const { t } = useTranslation('ui');
   const { invoke: resetPassword } = useResetUserPasswordByCodeMutation();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const { code } = useParams();
 
+  const schema = useMemo(
+    () =>
+      z
+        .object({
+          password: z
+            .string({ required_error: t('auth.errors.passwordRequired') })
+            .max(20)
+            .min(8),
+          repassword: z
+            .string({ required_error: t('auth.errors.repeatPasswordRequired') })
+            .max(20)
+            .min(8),
+        })
+        .refine((values) => values.password === values.repassword, {
+          message: t('auth.errors.passwordMismatch'),
+          path: ['repassword'],
+        }),
+    [t],
+  );
+  type FormValues = z.infer<typeof schema>;
+
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
+    resolver: zodResolver(schema),
+    defaultValues: { password: '', repassword: '' },
     mode: 'onChange',
   });
 
-  async function onSubmit(formData: FormValues) {
-    const { password, repassword } = formData;
-    if (password !== repassword) {
-      return toast({
-        variant: 'destructive',
-        title: 'The passwords entered twice are inconsistent.',
-      });
-    }
+  const onSubmit = async (formData: FormValues) => {
     if (!code) {
-      return toast({
-        variant: 'destructive',
-        title: 'Reset code is missing.',
-      });
+      return toast({ variant: 'destructive', title: t('auth.errors.resetCodeMissing') });
     }
     try {
-      setIsLoading(true);
-      const result = await resetPassword(code, password);
-      setIsLoading(false);
+      const result = await resetPassword(code, formData.password);
       if (result?.success) {
         return navigate('/auth/signin');
       }
-      toast({
-        variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
-      });
+      toast({ variant: 'destructive', title: t('auth.errors.genericFailure') });
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-      setIsLoading(false);
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
     }
-  }
+  };
+
+  const isSubmitting = form.formState.isSubmitting;
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Card>
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl  font-semibold tracking-tight">
-              Reset your password
-            </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
-              So, you forgot your password? No biggie, it happens to all of us Just pick a new one
-              below.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-2">
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New password</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Pick a strong password" type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid gap-2">
-              <FormField
-                control={form.control}
-                name="repassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Repeat New password</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Try the same password again" type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col">
-            <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-              Change password
+        <AuthCard
+          title={t('auth.passwordReset.title')}
+          description={t('auth.passwordReset.description')}
+          footer={
+            <Button className="w-full" type="submit" disabled={isSubmitting}>
+              {isSubmitting && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              {t('auth.passwordReset.submitButton')}
             </Button>
-          </CardFooter>
-        </Card>
+          }
+        >
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('auth.passwordReset.newPasswordLabel')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('auth.passwordReset.newPasswordPlaceholder')}
+                    type="password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="repassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('auth.passwordReset.repeatPasswordLabel')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('auth.passwordReset.repeatPasswordPlaceholder')}
+                    type="password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </AuthCard>
       </form>
     </Form>
   );

@@ -29,7 +29,6 @@ export const login = gql`
     login(data: { email: $email, password: $password, inviteCode: $inviteCode }) {
       accessToken
       refreshToken
-      redirectUrl
       requiresTwoFactor
       requiresTwoFactorSetup
       twoFactorChallenge
@@ -60,7 +59,6 @@ export const signUp = gql`
     ) {
       accessToken
       refreshToken
-      redirectUrl
       requiresTwoFactor
       requiresTwoFactorSetup
       twoFactorChallenge
@@ -77,7 +75,6 @@ export const setupSystemAdmin = gql`
     setupSystemAdmin(data: { name: $name, email: $email, password: $password }) {
       accessToken
       refreshToken
-      redirectUrl
       user {
         id
         email
@@ -155,7 +152,6 @@ export const confirmTwoFactorSetupWithChallenge = gql`
       auth {
         accessToken
         refreshToken
-        redirectUrl
         requiresTwoFactor
         requiresTwoFactorSetup
       }
@@ -170,7 +166,6 @@ export const verifyTwoFactor = gql`
     ) {
       accessToken
       refreshToken
-      redirectUrl
     }
   }
 `;

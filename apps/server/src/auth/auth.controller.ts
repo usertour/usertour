@@ -67,13 +67,12 @@ export class AuthController {
    */
   private async finishOauth(userId: string, res: Response) {
     const result = await this.auth.issueTokensOrChallenge(userId);
+    const homepage = this.configService.get<string>('app.homepageUrl') || '';
     if (result.kind === 'tokens') {
-      this.auth
-        .setAuthCookie(res, result.tokens)
-        .redirect(this.configService.get('auth.redirectUrl'));
+      // Land at SPA root and let LandingRedirect pick the user's env.
+      this.auth.setAuthCookie(res, result.tokens).redirect(homepage || '/');
       return;
     }
-    const homepage = this.configService.get<string>('app.homepageUrl') || '';
     const path = result.purpose === 'mfa-verify' ? '/auth/2fa' : '/auth/2fa/setup';
     const url = `${homepage}${path}?challenge=${encodeURIComponent(result.challengeToken)}`;
     res.redirect(url);

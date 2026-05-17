@@ -1,42 +1,19 @@
-'use client';
-
 import { useGlobalConfigQuery } from '@usertour/hooks';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-export const SignUpLink = ({
-  prefix,
-  label = 'Sign up for a free trial',
-}: {
-  prefix: string;
+interface SignUpPromptProps {
+  prefix?: string;
   label?: string;
-}) => {
-  const { data, loading } = useGlobalConfigQuery();
-
-  if (loading || data?.allowUserRegistration === false || data?.needsSystemAdminSetup === true) {
-    return null;
-  }
-
-  return (
-    <>
-      {prefix}{' '}
-      <Link to="/auth/signup" className="underline underline-offset-4 hover:text-primary">
-        {label}
-      </Link>
-    </>
-  );
-};
-
-SignUpLink.displayName = 'SignUpLink';
+  className?: string;
+}
 
 export const SignUpPrompt = ({
   prefix,
-  className,
-  label = 'Sign up for a free trial',
-}: {
-  prefix: string;
-  className?: string;
-  label?: string;
-}) => {
+  label,
+  className = 'text-center text-sm text-muted-foreground',
+}: SignUpPromptProps) => {
+  const { t } = useTranslation('ui');
   const { data, loading } = useGlobalConfigQuery();
 
   if (loading || data?.allowUserRegistration === false || data?.needsSystemAdminSetup === true) {
@@ -45,7 +22,10 @@ export const SignUpPrompt = ({
 
   return (
     <div className={className}>
-      <SignUpLink prefix={prefix} label={label} />
+      {prefix ?? t('auth.signIn.noAccountPrompt')}{' '}
+      <Link to="/auth/signup" className="underline underline-offset-4 hover:text-primary">
+        {label ?? t('auth.signIn.signUpCta')}
+      </Link>
     </div>
   );
 };

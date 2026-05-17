@@ -80,7 +80,7 @@ function MainNav({ className }: MainNavProps) {
 }
 
 // Content detail header. Mirrors the user / company / session detail
-// framework — sticky breadcrumb-style top bar inside AdminSubpageLayout's
+// framework — sticky breadcrumb-style top bar inside AdminShellMuted's
 // sidebar-visible shell — but keeps the rich right-side cluster (route
 // tabs, autosaved status, Edit-In-Builder, Publish, More) that this entity
 // type needs. Height runs taller than the simple SectionBreadcrumbHeader to

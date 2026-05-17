@@ -136,7 +136,6 @@ type Auth {
   """JWT access token"""
   accessToken: JWT
   projectId: String
-  redirectUrl: String
 
   """JWT refresh token"""
   refreshToken: JWT

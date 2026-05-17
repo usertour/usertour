@@ -1,269 +1,189 @@
-'use client';
-
-import React, { useState } from 'react';
+import { useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour/button';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { Checkbox } from '@usertour/checkbox';
 import { Input } from '@usertour/input';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { useSignupMutation } from '@usertour/hooks';
+import { useAuthAfterLogin } from './use-auth-after-login';
 
-// Form validation schema
-const registFormSchema = z.object({
-  userName: z
-    .string({
-      required_error: 'Please input your full name.',
-    })
-    .max(30)
-    .min(4),
-  companyName: z
-    .string({
-      required_error: 'Please input your project name.',
-    })
-    .max(30)
-    .min(4)
-    .optional(),
-  password: z
-    .string({
-      required_error: 'Please input your password.',
-    })
-    .max(20)
-    .min(8),
-  isAccept: z.boolean(),
-});
-
-type RegistFormValues = z.infer<typeof registFormSchema>;
-
-const defaultValues: Partial<RegistFormValues> = {
-  userName: '',
-  isAccept: false,
-  companyName: '',
-  password: '',
-};
-
-// Context type definition
-type RegistrationContextType = {
-  isLoading: boolean;
-  setIsLoading: (value: boolean) => void;
-  form: ReturnType<typeof useForm<RegistFormValues>>;
-  onSubmit: (data: RegistFormValues) => Promise<void>;
-  showError: (title: string) => void;
-  registrationCode: string | undefined;
-  inviteCode: string | undefined;
-};
-
-// Create context
-const RegistrationContext = React.createContext<RegistrationContextType | undefined>(undefined);
-
-// Custom hook for using Registration context
-const useRegistrationContext = () => {
-  const context = React.useContext(RegistrationContext);
-  if (!context) {
-    throw new Error('useRegistrationContext must be used within a RegistrationProvider');
-  }
-  return context;
-};
-
-// Root component with context provider
-const RegistrationRoot = ({
-  children,
-  inviteCode,
-}: {
-  children: React.ReactNode;
+interface SignUpFormProps {
   inviteCode?: string;
-}) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  // const [signUpMutation] = useMutation(signUp);
+  buttonText?: string;
+  className?: string;
+}
+
+export const SignUpForm = ({ inviteCode, buttonText, className }: SignUpFormProps) => {
+  const { t } = useTranslation('ui');
   const { invoke } = useSignupMutation();
+  const handleAuthResult = useAuthAfterLogin();
   const { toast } = useToast();
   const { registrationCode } = useParams();
-  const navigate = useNavigate();
 
-  const formSchema = inviteCode ? registFormSchema.omit({ companyName: true }) : registFormSchema;
+  const isInvite = !!inviteCode;
 
-  const form = useForm<RegistFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      ...defaultValues,
-      ...(inviteCode && { companyName: undefined }),
-    },
+  const schema = useMemo(() => {
+    const base = z.object({
+      userName: z
+        .string({ required_error: t('auth.errors.fullNameRequired') })
+        .max(30)
+        .min(4),
+      companyName: z.string().max(30).optional(),
+      password: z
+        .string({ required_error: t('auth.errors.passwordRequired') })
+        .max(20)
+        .min(8),
+      isAccept: z.boolean(),
+    });
+    if (isInvite) {
+      return base;
+    }
+    return base.superRefine((values, ctx) => {
+      const projectName = values.companyName?.trim() ?? '';
+      if (projectName.length < 4) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['companyName'],
+          message: t('auth.errors.projectNameRequired'),
+        });
+      }
+    });
+  }, [isInvite, t]);
+
+  type SignUpFormValues = z.infer<typeof schema>;
+
+  const form = useForm<SignUpFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { userName: '', companyName: '', password: '', isAccept: false },
     mode: 'onChange',
   });
 
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
+  const showError = (title: string) => toast({ variant: 'destructive', title });
 
-  const onSubmit = async (formData: RegistFormValues) => {
-    const { isAccept, ...others } = formData;
-    const code = inviteCode ? inviteCode : registrationCode;
-    const isInvite = !!inviteCode;
-
-    if (!isAccept || !code) {
-      showError('You must accept our terms of service and privacy policy.');
+  const onSubmit = async (formData: SignUpFormValues) => {
+    const code = inviteCode ?? registrationCode;
+    if (!formData.isAccept || !code) {
+      showError(t('auth.errors.acceptTerms'));
       return;
     }
     try {
-      setIsLoading(true);
-      const baseVariables = {
-        userName: others.userName,
-        password: others.password,
-        code,
-        isInvite,
-      };
-
       const variables = isInvite
-        ? baseVariables
+        ? {
+            userName: formData.userName,
+            password: formData.password,
+            code,
+            isInvite,
+          }
         : {
-            ...baseVariables,
-            companyName: others.companyName,
+            userName: formData.userName,
+            password: formData.password,
+            code,
+            isInvite,
+            companyName: formData.companyName,
           };
-      const data = await invoke(variables);
-      if (data?.requiresTwoFactor && data.twoFactorChallenge) {
-        navigate(`/auth/2fa?challenge=${encodeURIComponent(data.twoFactorChallenge)}`);
-        return;
-      }
-      if (data?.requiresTwoFactorSetup && data.twoFactorChallenge) {
-        navigate(`/auth/2fa/setup?challenge=${encodeURIComponent(data.twoFactorChallenge)}`);
-        return;
-      }
-      if (data?.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      }
+      const result = await invoke(variables);
+      handleAuthResult(result);
     } catch (error) {
       showError(getErrorMessage(error));
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  return (
-    <RegistrationContext.Provider
-      value={{
-        isLoading,
-        setIsLoading,
-        form,
-        onSubmit,
-        showError,
-        registrationCode,
-        inviteCode,
-      }}
-    >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>{children}</form>
-      </Form>
-    </RegistrationContext.Provider>
-  );
-};
-
-RegistrationRoot.displayName = 'RegistrationRoot';
-
-// Form Fields component
-const RegistrationFormFields = () => {
-  const { form, inviteCode } = useRegistrationContext();
+  const isSubmitting = form.formState.isSubmitting;
+  const submitLabel = buttonText ?? t('auth.signUp.submitButton');
 
   return (
-    <>
-      <div className="grid gap-4">
-        <FormField
-          control={form.control}
-          name="userName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Your name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter your full name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {!inviteCode && (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+        <div className="grid gap-4">
           <FormField
             control={form.control}
-            name="companyName"
+            name="userName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Project name</FormLabel>
+                <FormLabel>{t('auth.signUp.nameLabel')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter your project name" {...field} />
+                  <Input placeholder={t('auth.signUp.namePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input placeholder="Pick a strong password" type="password" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          {!isInvite && (
+            <FormField
+              control={form.control}
+              name="companyName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('auth.signUp.projectNameLabel')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t('auth.signUp.projectNamePlaceholder')}
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
-        />
-      </div>
-      <div className="flex flex-row items-start space-x-3">
-        <FormField
-          control={form.control}
-          name="isAccept"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <span className="text-sm text-muted-foreground">
-          I accept Usertour's{' '}
-          <Link to="/terms" className="underline underline-offset-4 hover:text-primary">
-            Terms of Service
-          </Link>{' '}
-          and{' '}
-          <Link to="/privacy" className="underline underline-offset-4 hover:text-primary">
-            Privacy Policy
-          </Link>
-        </span>
-      </div>
-    </>
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('auth.signUp.passwordLabel')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('auth.signUp.passwordPlaceholder')}
+                    type="password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="flex flex-row items-start space-x-3">
+          <FormField
+            control={form.control}
+            name="isAccept"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <span className="text-sm text-muted-foreground">
+            {t('auth.signUp.acceptTermsPrefix')}{' '}
+            <Link to="/terms" className="underline underline-offset-4 hover:text-primary">
+              {t('auth.signUp.termsOfService')}
+            </Link>{' '}
+            {t('auth.signUp.and')}{' '}
+            <Link to="/privacy" className="underline underline-offset-4 hover:text-primary">
+              {t('auth.signUp.privacyPolicy')}
+            </Link>
+          </span>
+        </div>
+        <Button className={cn('w-full', className)} type="submit" disabled={isSubmitting}>
+          {isSubmitting && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+          {submitLabel}
+        </Button>
+      </form>
+    </Form>
   );
 };
 
-RegistrationFormFields.displayName = 'RegistrationFormFields';
-
-interface RegistrationSubmitButtonProps {
-  buttonText?: string;
-  className?: string;
-}
-
-const RegistrationSubmitButton = (props: RegistrationSubmitButtonProps) => {
-  const { buttonText = "Let's get started", className } = props;
-  const { isLoading } = useRegistrationContext();
-
-  return (
-    <Button className={cn('w-full', className)} type="submit" disabled={isLoading}>
-      {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-      {buttonText}
-    </Button>
-  );
-};
-
-RegistrationSubmitButton.displayName = 'RegistrationSubmitButton';
-
-export { RegistrationFormFields, RegistrationSubmitButton, RegistrationRoot };
+SignUpForm.displayName = 'SignUpForm';

@@ -16,7 +16,7 @@ import { TooltipTrigger } from '@usertour/tooltip';
 import { TooltipProvider } from '@usertour/tooltip';
 import { Tooltip } from '@usertour/tooltip';
 import { cn } from '@usertour/tailwind';
-import { Link, useMatches, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AdminEnvSwitcher } from './admin-env-switcher';
 import { AdminUserNav } from './admin-user-nav';
 
@@ -27,77 +27,68 @@ const commonButtonStyles =
 // Extract common icon styles
 const commonIconStyles = '!h-[18px] !w-[18px] text-primary-modified dark:text-foreground/[60%]';
 
+// Active state matches against the current pathname. Each entry's regex
+// covers the list page plus any per-resource detail / builder / localisation
+// page that conceptually belongs to the same top-level nav.
 const navigations = [
   {
     name: 'Flows',
     href: '/flows',
-    contentType: 'flows',
-    routeIds: ['content'],
+    match: /^\/env\/[^/]+\/flows(\/|$)/,
     icon: FlowIcon,
   },
   {
     name: 'Launchers',
     href: '/launchers',
-    contentType: 'launchers',
-    routeIds: ['launchers'],
+    match: /^\/env\/[^/]+\/launchers(\/|$)/,
     icon: LauncherIcon,
   },
   {
     name: 'Checklists',
     href: '/checklists',
-    contentType: 'checklists',
-    routeIds: ['checklists'],
+    match: /^\/env\/[^/]+\/checklists(\/|$)/,
     icon: ChecklistIcon,
   },
   {
     name: 'Banners',
     href: '/banners',
-    contentType: 'banners',
-    routeIds: ['banners'],
+    match: /^\/env\/[^/]+\/banners(\/|$)/,
     icon: BannerIcon,
   },
   {
     name: 'Event trackers',
     href: '/trackers',
-    contentType: 'trackers',
-    routeIds: ['trackers'],
+    match: /^\/env\/[^/]+\/trackers(\/|$)/,
     icon: EventTrackerIcon,
   },
   {
     name: 'Resource Centers',
     href: '/resource-centers',
-    contentType: 'resource-centers',
-    routeIds: ['resource-centers'],
+    match: /^\/env\/[^/]+\/resource-centers(\/|$)/,
     icon: ResourceCenterIcon,
   },
   {
     name: 'Users',
     href: '/users',
-    routeIds: ['users'],
+    // Covers /users list, /user/:id detail, and /session/:id (user activity).
+    match: /^\/env\/[^/]+\/(users?|session)(\/|$)/,
     icon: GroupIcon2,
   },
   {
     name: 'Companies',
     href: '/companies',
-    routeIds: ['companies'],
+    match: /^\/env\/[^/]+\/(companies|company)(\/|$)/,
     icon: CompanyIcon,
   },
   {
     name: 'Settings',
     href: '/settings/themes',
-    routeIds: [
-      'settings',
-      'settings-account',
-      'settings-themes',
-      'settings-environments',
-      'settings-attributes',
-      'settings-localizations',
-      'settings-events',
-      'settings-detail',
-    ],
+    match: /^\/project\/[^/]+\/settings(\/|$)/,
     icon: SettingsIcon,
   },
 ];
+
+type NavItem = (typeof navigations)[number];
 
 // Create a reusable NavButton component
 const NavButton = ({
@@ -126,16 +117,12 @@ const NavButton = ({
 );
 
 export const AdminMainNewNav = ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => {
-  const matches = useMatches();
+  const { pathname } = useLocation();
   const { environment, project } = useAppContext();
-  const { contentType } = useParams();
 
-  const isNavActive = (nav: (typeof navigations)[0]) =>
-    nav.contentType
-      ? nav.contentType === contentType
-      : matches && nav.routeIds.includes(matches[0].id);
+  const isNavActive = (nav: NavItem) => nav.match.test(pathname);
 
-  const getNavPath = (nav: (typeof navigations)[0]) =>
+  const getNavPath = (nav: NavItem) =>
     nav.name === 'Settings'
       ? `/project/${project?.id}${nav.href}`
       : `/env/${environment?.id}${nav.href}`;
@@ -169,34 +156,4 @@ export const AdminMainNewNav = ({ className, ...props }: React.HTMLAttributes<HT
   );
 };
 
-export const AdminMainNav = ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => {
-  const matches = useMatches();
-  const { environment, project } = useAppContext();
-  const { contentType } = useParams();
-
-  return (
-    <nav className={cn('flex items-center space-x-4 lg:space-x-6', className)} {...props}>
-      {navigations.map((nav, index) => (
-        <Link
-          to={
-            nav.name !== 'Settings'
-              ? `/project/${project?.id}${nav.href}`
-              : `/env/${environment?.id}${nav.href}`
-          }
-          key={index}
-          className={cn(
-            'text-sm font-medium transition-colors hover:text-primary',
-            (contentType === 'trackers' && nav.routeIds.includes(contentType)) ||
-              (contentType !== 'trackers' && matches && nav.routeIds.includes(matches[0].id))
-              ? ''
-              : 'text-muted-foreground',
-          )}
-        >
-          {nav.name}
-        </Link>
-      ))}
-    </nav>
-  );
-};
-
-AdminMainNav.displayName = 'AdminMainNav';
+AdminMainNewNav.displayName = 'AdminMainNewNav';

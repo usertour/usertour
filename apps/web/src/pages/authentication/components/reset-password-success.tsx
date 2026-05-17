@@ -1,30 +1,25 @@
-'use client';
-
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { AuthCard } from './auth-card';
 import { SignUpPrompt } from './sign-up-link';
 
 export const ResetPasswordSuccess = () => {
+  const { t } = useTranslation('ui');
   return (
-    <Card>
-      <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl  font-semibold tracking-tight">Welcome back!</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
-          Check your inbox, and click the link we just send to you.
-        </CardDescription>
-      </CardHeader>
-      <CardFooter className="flex flex-col">
-        <div className="pt-4 text-center text-sm text-muted-foreground">
-          <Link to="/auth/signin" className="underline underline-offset-4 hover:text-primary">
-            Back to sign in
-          </Link>{' '}
-        </div>
-        <SignUpPrompt
-          prefix="No account yet?"
-          className="pt-4 text-center text-sm text-muted-foreground"
-        />
-      </CardFooter>
-    </Card>
+    <AuthCard
+      title={t('auth.resetPassword.success.title')}
+      description={t('auth.resetPassword.success.description')}
+      footer={
+        <>
+          <div className="pt-4 text-center text-sm text-muted-foreground">
+            <Link to="/auth/signin" className="underline underline-offset-4 hover:text-primary">
+              {t('auth.resetPassword.backToSignIn')}
+            </Link>
+          </div>
+          <SignUpPrompt className="pt-4 text-center text-sm text-muted-foreground" />
+        </>
+      }
+    />
   );
 };
 

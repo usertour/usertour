@@ -1,296 +1,138 @@
-'use client';
-
-import React, { useState } from 'react';
+import { useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour/button';
 import { getErrorMessage } from '@usertour/helpers';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@usertour/form';
-import { GithubIcon, GoogleIcon, SpinnerIcon } from '@usertour/icons';
+import { SpinnerIcon } from '@usertour/icons';
 import { Input } from '@usertour/input';
 import { useToast } from '@usertour/use-toast';
-import { Link, useNavigate } from 'react-router-dom';
-import { apiUrl } from '@/utils/env';
-import { LoginMutationVariables, useGlobalConfigQuery, useLoginMutation } from '@usertour/hooks';
+import { Link } from 'react-router-dom';
+import { LoginMutationVariables, useLoginMutation } from '@usertour/hooks';
+import { GlobalConfig } from '@usertour/types';
+import { SocialProviders } from './social-providers';
+import { useAuthAfterLogin } from './use-auth-after-login';
 
-// Form validation schema
-const signinFormSchema = z.object({
-  email: z
-    .string({
-      required_error: 'Please select an email to display.',
-    })
-    .email(),
-  password: z.string().max(160).min(4),
-});
-
-type SigninFormValues = z.infer<typeof signinFormSchema>;
-
-const defaultValues: Partial<SigninFormValues> = {
-  email: '',
-  password: '',
-};
-
-// Context type definition
-type SignInContextType = {
-  isLoading: boolean;
-  isGoogleAuthLoading: boolean;
-  isGithubAuthLoading: boolean;
-  setIsLoading: (value: boolean) => void;
-  setIsGoogleAuthLoading: (value: boolean) => void;
-  setIsGithubAuthLoading: (value: boolean) => void;
-  isGoogleAuthEnabled: boolean;
-  isGithubAuthEnabled: boolean;
-  isEmailAuthEnabled: boolean;
-  handleLogin: (provider: 'github' | 'google') => void;
-  toast: ReturnType<typeof useToast>['toast'];
-  showError: (title: string) => void;
-  form: ReturnType<typeof useForm<SigninFormValues>>;
-  onSubmit: (data: SigninFormValues) => Promise<void>;
-};
-
-// Create context
-const SignInContext = React.createContext<SignInContextType | undefined>(undefined);
-
-// Custom hook for using SignIn context
-const useSignInContext = () => {
-  const context = React.useContext(SignInContext);
-  if (!context) {
-    throw new Error('useSignInContext must be used within a SignInProvider');
-  }
-  return context;
-};
-
-// Root component with context provider
-interface SignInRootProps {
-  children: React.ReactNode;
+interface SignInFormProps {
+  globalConfig?: GlobalConfig;
   inviteCode?: string;
+  buttonText?: string;
 }
 
-const SignInRoot = (props: SignInRootProps) => {
-  const { children, inviteCode } = props;
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isGoogleAuthLoading, setIsGoogleAuthLoading] = useState<boolean>(false);
-  const [isGithubAuthLoading, setIsGithubAuthLoading] = useState<boolean>(false);
-  const { invoke } = useLoginMutation();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const { data: globalConfig } = useGlobalConfigQuery();
-  const authProviders = globalConfig?.authProviders;
+const resolveAuthFlags = (globalConfig?: GlobalConfig) => {
+  const providers = globalConfig?.authProviders;
+  return {
+    emailEnabled: !providers || providers.includes('email'),
+    githubEnabled: !providers || providers.includes('github'),
+    googleEnabled: !providers || providers.includes('google'),
+  };
+};
 
-  // Show all auth options by default when config is loading
-  // Only disable if explicitly set to false in config
-  const isEmailAuthEnabled = !authProviders || authProviders.includes('email');
-  const isGithubAuthEnabled = !authProviders || authProviders.includes('github');
-  const isGoogleAuthEnabled = !authProviders || authProviders.includes('google');
+export const SignInForm = ({ globalConfig, inviteCode, buttonText }: SignInFormProps) => {
+  const { t } = useTranslation('ui');
+  const { toast } = useToast();
+  const { invoke } = useLoginMutation();
+  const handleAuthResult = useAuthAfterLogin();
+  const flags = resolveAuthFlags(globalConfig);
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z
+          .string({ required_error: t('auth.errors.invalidEmail') })
+          .email(t('auth.errors.invalidEmail')),
+        password: z
+          .string({ required_error: t('auth.errors.passwordRequired') })
+          .max(160)
+          .min(4),
+      }),
+    [t],
+  );
+  type SigninFormValues = z.infer<typeof schema>;
 
   const form = useForm<SigninFormValues>({
-    resolver: zodResolver(signinFormSchema),
-    defaultValues,
+    resolver: zodResolver(schema),
+    defaultValues: { email: '', password: '' },
     mode: 'onChange',
   });
 
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
-
-  const handleLogin = (provider: 'github' | 'google') => {
-    if (provider === 'google') {
-      setIsGoogleAuthLoading(true);
-    } else if (provider === 'github') {
-      setIsGithubAuthLoading(true);
-    }
-    if (inviteCode) {
-      console.log('sign in inviteCode', inviteCode);
-      window.location.href = `${apiUrl}/api/auth/${provider}?inviteCode=${inviteCode}`;
-    } else {
-      window.location.href = `${apiUrl}/api/auth/${provider}`;
-    }
-  };
-
   const onSubmit = async (data: SigninFormValues) => {
     try {
-      setIsLoading(true);
       const variables: LoginMutationVariables = { ...data };
       if (inviteCode) {
         variables.inviteCode = inviteCode;
       }
-      const ret = await invoke(variables);
-      if (ret?.requiresTwoFactor && ret.twoFactorChallenge) {
-        navigate(`/auth/2fa?challenge=${encodeURIComponent(ret.twoFactorChallenge)}`);
-        return;
-      }
-      if (ret?.requiresTwoFactorSetup && ret.twoFactorChallenge) {
-        navigate(`/auth/2fa/setup?challenge=${encodeURIComponent(ret.twoFactorChallenge)}`);
-        return;
-      }
-      if (ret?.redirectUrl) {
-        window.location.href = ret.redirectUrl;
-      }
-      setIsLoading(false);
+      const result = await invoke(variables);
+      handleAuthResult(result);
     } catch (error) {
-      showError(getErrorMessage(error));
-      setIsLoading(false);
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
     }
   };
 
-  return (
-    <SignInContext.Provider
-      value={{
-        isLoading,
-        isGoogleAuthLoading,
-        isGithubAuthLoading,
-        setIsLoading,
-        setIsGoogleAuthLoading,
-        setIsGithubAuthLoading,
-        handleLogin,
-        toast,
-        showError,
-        form,
-        onSubmit,
-        isGoogleAuthEnabled,
-        isGithubAuthEnabled,
-        isEmailAuthEnabled,
-      }}
-    >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>{children}</form>
-      </Form>
-    </SignInContext.Provider>
-  );
-};
-
-SignInRoot.displayName = 'SignInRoot';
-
-// Social providers component
-const SignInSocialProviders = () => {
-  const {
-    handleLogin,
-    isGoogleAuthLoading,
-    isGithubAuthLoading,
-    isGoogleAuthEnabled,
-    isGithubAuthEnabled,
-  } = useSignInContext();
-
-  if (!isGoogleAuthEnabled && !isGithubAuthEnabled) return null;
+  const isSubmitting = form.formState.isSubmitting;
+  const submitLabel = buttonText ?? t('auth.signIn.submitButton');
 
   return (
-    <div className="flex flex-row gap-2 w-full">
-      {isGoogleAuthEnabled && (
-        <Button
-          variant="outline"
-          className="flex-1"
-          type="button"
-          onClick={() => handleLogin('google')}
-          disabled={isGoogleAuthLoading}
-        >
-          {isGoogleAuthLoading && <SpinnerIcon className="w-4 h-4 animate-spin mr-1" />}
-          <GoogleIcon className="w-4 h-4 mr-2" />
-          {isGoogleAuthLoading ? 'Signing in...' : 'Continue with Google'}
-        </Button>
-      )}
-      {isGithubAuthEnabled && (
-        <Button
-          variant="outline"
-          className="flex-1"
-          type="button"
-          onClick={() => handleLogin('github')}
-          disabled={isGithubAuthLoading}
-        >
-          {isGithubAuthLoading && <SpinnerIcon className="w-4 h-4 animate-spin mr-1" />}
-          <GithubIcon className="w-4 h-4 mr-2" />
-          {isGithubAuthLoading ? 'Signing in...' : 'Continue with Github'}
-        </Button>
-      )}
-    </div>
-  );
-};
-
-SignInSocialProviders.displayName = 'SignInSocialProviders';
-
-// Divider component
-const SignInDivider = () => {
-  const { isGoogleAuthEnabled, isGithubAuthEnabled, isEmailAuthEnabled } = useSignInContext();
-
-  // Only show divider if we have both social providers and email auth enabled
-  if (!(isGoogleAuthEnabled || isGithubAuthEnabled) || !isEmailAuthEnabled) return null;
-
-  return (
-    <div className="relative w-full">
-      <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t border-gray-100 text-gray-50 dark:border-border" />
-      </div>
-      <div className="relative flex justify-center text-sm leading-5">
-        <span className="px-2 font-medium bg-white text-background-accent dark:text-foreground/60 dark:bg-background">
-          Or login with email
-        </span>
-      </div>
-    </div>
-  );
-};
-
-SignInDivider.displayName = 'SignInDivider';
-
-// Form component
-interface SignInFormProps {
-  buttonText?: string;
-}
-
-const SignInForm = (props: SignInFormProps) => {
-  const { buttonText = 'Login' } = props;
-  const { form, isLoading, isEmailAuthEnabled } = useSignInContext();
-
-  // Don't render form if email auth is disabled
-  if (!isEmailAuthEnabled) return null;
-
-  return (
-    <>
-      <div className="grid gap-2">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input placeholder="Enter your email" type="email" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+        <SocialProviders
+          googleEnabled={flags.googleEnabled}
+          githubEnabled={flags.githubEnabled}
+          emailEnabled={flags.emailEnabled}
+          inviteCode={inviteCode}
         />
-      </div>
-      <div className="grid gap-2">
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input placeholder="Enter your password" type="password" {...field} />
-              </FormControl>
-              <FormMessage />
-              <div className="flex flex-row justify-end">
-                <span className="text-sm font-medium text-muted-foreground leading-none">
-                  <Link to="/auth/reset-password" className="hover:text-primary">
-                    Forgot your password?
-                  </Link>
-                </span>
-              </div>
-            </FormItem>
-          )}
-        />
-      </div>
-      <Button className="w-full" type="submit" disabled={isLoading}>
-        {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-        {buttonText}
-      </Button>
-    </>
+        {flags.emailEnabled && (
+          <>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder={t('auth.signIn.emailPlaceholder')}
+                      type="email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder={t('auth.signIn.passwordPlaceholder')}
+                      type="password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <div className="flex flex-row justify-end">
+                    <span className="text-sm font-medium text-muted-foreground leading-none">
+                      <Link to="/auth/reset-password" className="hover:text-primary">
+                        {t('auth.signIn.forgotPassword')}
+                      </Link>
+                    </span>
+                  </div>
+                </FormItem>
+              )}
+            />
+            <Button className="w-full" type="submit" disabled={isSubmitting}>
+              {isSubmitting && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              {submitLabel}
+            </Button>
+          </>
+        )}
+      </form>
+    </Form>
   );
 };
 
 SignInForm.displayName = 'SignInForm';
-
-export { SignInSocialProviders, SignInDivider, SignInForm, SignInRoot };

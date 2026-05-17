@@ -1,27 +1,27 @@
 import { ScrollArea } from '@usertour/scroll-area';
-import { useParams } from 'react-router-dom';
-import { AdminLayoutNewContent, AdminNewLayout } from './components/admin-layout';
+import { Outlet, useParams } from 'react-router-dom';
+import { AdminLayoutNewContent, ShellHelmet } from './components/admin-layout';
 import { AdminMainNewNav } from './components/admin-main-nav';
 import { SettingsSidebarNav } from './components/settings-sidebar-nav';
 
-interface SettingsLayoutProps {
-  children: React.ReactNode;
-}
-
-export const AdminSettingsLayout = ({ children }: SettingsLayoutProps) => {
+export const AdminSettingsLayout = () => {
   const { settingType, settingSubType } = useParams();
   const isMutedSurface = settingType === 'account' || settingType === 'general' || !!settingSubType;
+  const surface = isMutedSurface ? 'muted' : 'default';
   return (
     <>
-      <AdminNewLayout>
+      <ShellHelmet surface={surface} />
+      <div className="flex h-[100dvh] w-full">
         <AdminMainNewNav />
-        <AdminLayoutNewContent surface={isMutedSurface ? 'muted' : 'default'}>
+        <AdminLayoutNewContent surface={surface}>
           <SettingsSidebarNav />
           <ScrollArea className="h-full w-full ">
-            <div className="mx-auto max-w-6xl">{children}</div>
+            <div className="mx-auto max-w-6xl">
+              <Outlet />
+            </div>
           </ScrollArea>
         </AdminLayoutNewContent>
-      </AdminNewLayout>
+      </div>
     </>
   );
 };
