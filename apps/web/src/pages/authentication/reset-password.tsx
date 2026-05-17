@@ -1,129 +1,101 @@
-'use client';
-
-import { useMutation } from '@apollo/client';
+import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { resetUserPassword } from '@usertour/gql';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
-
-import { ResetPasswordSuccess } from '@/pages/authentication/components/reset-password-success';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@usertour/card';
 import { SpinnerIcon } from '@usertour/icons';
 import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
+import { useResetUserPasswordMutation } from '@usertour/hooks';
 import { Link } from 'react-router-dom';
+import { AuthCard } from './components/auth-card';
+import { ResetPasswordSuccess } from '@/pages/authentication/components/reset-password-success';
 import { SignUpPrompt } from './components/sign-up-link';
 
-const formSchema = z.object({
-  email: z
-    .string({
-      required_error: 'Please input an valid email.',
-    })
-    .email(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-const defaultValues: Partial<FormValues> = {
-  email: '',
-};
-
 export const ResetPassword = () => {
-  const [mutation] = useMutation(resetUserPassword);
+  const { t } = useTranslation('ui');
+  const { invoke } = useResetUserPasswordMutation();
   const { toast } = useToast();
   const [success, setSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z
+          .string({ required_error: t('auth.errors.invalidEmail') })
+          .email(t('auth.errors.invalidEmail')),
+      }),
+    [t],
+  );
+  type FormValues = z.infer<typeof schema>;
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
+    resolver: zodResolver(schema),
+    defaultValues: { email: '' },
     mode: 'onChange',
   });
 
-  async function onSubmit(formData: FormValues) {
+  const onSubmit = async (formData: FormValues) => {
     try {
-      setIsLoading(true);
-      const { data } = await mutation({ variables: formData });
-      setIsLoading(false);
-      if (data.resetUserPassword.success) {
+      const result = await invoke(formData.email);
+      if (result?.success) {
         setSuccess(true);
       }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-      setIsLoading(false);
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
     }
+  };
+
+  if (success) {
+    return <ResetPasswordSuccess />;
   }
 
+  const isSubmitting = form.formState.isSubmitting;
+
   return (
-    <>
-      {success && <ResetPasswordSuccess />}
-      {!success && (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <Card>
-              <CardHeader className="space-y-1 text-center">
-                <CardTitle className="text-2xl  font-semibold tracking-tight">
-                  Welcome back!
-                </CardTitle>
-                <CardDescription className="text-sm text-muted-foreground">
-                  Enter your email address, and we'll send you an email with a link to reset your
-                  password.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="grid gap-2">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter your email" type="email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <AuthCard
+          title={t('auth.resetPassword.title')}
+          description={t('auth.resetPassword.description')}
+          footer={
+            <>
+              <Button className="w-full" type="submit" disabled={isSubmitting}>
+                {isSubmitting && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+                {t('auth.resetPassword.submitButton')}
+              </Button>
+              <div className="pt-4 text-center text-sm text-muted-foreground">
+                <Link to="/auth/signin" className="underline underline-offset-4 hover:text-primary">
+                  {t('auth.resetPassword.backToSignIn')}
+                </Link>
+              </div>
+              <SignUpPrompt className="pt-4 text-center text-sm text-muted-foreground" />
+            </>
+          }
+        >
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('auth.resetPassword.emailLabel')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('auth.resetPassword.emailPlaceholder')}
+                    type="email"
+                    {...field}
                   />
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col">
-                <Button className="w-full" type="submit" disabled={isLoading}>
-                  {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                  Reset password
-                </Button>
-                <div className="pt-4 text-center text-sm text-muted-foreground">
-                  <Link
-                    to="/auth/signin"
-                    className="underline underline-offset-4 hover:text-primary"
-                  >
-                    Back to sign in
-                  </Link>{' '}
-                </div>
-                <SignUpPrompt
-                  prefix="No account yet?"
-                  className="pt-4 text-center text-sm text-muted-foreground"
-                />
-              </CardFooter>
-            </Card>
-          </form>
-        </Form>
-      )}
-    </>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </AuthCard>
+      </form>
+    </Form>
   );
 };
 

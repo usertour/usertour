@@ -1,17 +1,7 @@
-'use client';
-
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@usertour/card';
 import { Input } from '@usertour/input';
 import { Checkbox } from '@usertour/checkbox';
 import { SpinnerIcon } from '@usertour/icons';
@@ -26,6 +16,7 @@ import {
 } from '@usertour/hooks';
 import { getUserInfo } from '@usertour/gql';
 import { useApolloClient } from '@apollo/client';
+import { AuthCard } from './components/auth-card';
 
 type Stage = 'scan' | 'codes';
 
@@ -141,60 +132,13 @@ export const TwoFactorSetup = () => {
     }
   };
 
-  return (
-    <Card>
-      <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-semibold tracking-tight">
-          {t('twoFactor.setup.title')}
-        </CardTitle>
-        {stage === 'scan' && (
-          <CardDescription className="text-sm text-muted-foreground">
-            {t('twoFactor.setup.step1Description')}
-          </CardDescription>
-        )}
-      </CardHeader>
-
-      {stage === 'scan' && (
-        <form onSubmit={onVerify}>
-          <CardContent className="grid gap-4">
-            {!setupPayload && (
-              <div className="flex items-center justify-center py-12">
-                <SpinnerIcon className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            {setupPayload && (
-              <>
-                <div className="flex justify-center">
-                  <img
-                    src={setupPayload.qrDataUri}
-                    alt="QR code"
-                    className="h-44 w-44 rounded border border-border bg-white p-2"
-                  />
-                </div>
-                <details className="text-sm text-muted-foreground">
-                  <summary className="cursor-pointer">{t('twoFactor.setup.manualEntry')}</summary>
-                  <code className="mt-2 block break-all rounded bg-muted px-2 py-1 font-mono text-xs">
-                    {setupPayload.secret}
-                  </code>
-                </details>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{t('twoFactor.setup.step2Title')}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {t('twoFactor.setup.step2Description')}
-                  </p>
-                  <Input
-                    autoFocus
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    placeholder={t('twoFactor.setup.codePlaceholder')}
-                    value={code}
-                    onChange={(event) => setCode(event.target.value)}
-                  />
-                </div>
-              </>
-            )}
-          </CardContent>
-          <CardFooter>
+  if (stage === 'scan') {
+    return (
+      <form onSubmit={onVerify}>
+        <AuthCard
+          title={t('twoFactor.setup.title')}
+          description={t('twoFactor.setup.step1Description')}
+          footer={
             <Button
               className="w-full"
               type="submit"
@@ -203,46 +147,82 @@ export const TwoFactorSetup = () => {
               {verifyLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
               {t('twoFactor.setup.verifyButton')}
             </Button>
-          </CardFooter>
-        </form>
-      )}
+          }
+        >
+          {!setupPayload && (
+            <div className="flex items-center justify-center py-12">
+              <SpinnerIcon className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {setupPayload && (
+            <>
+              <div className="flex justify-center">
+                <img
+                  src={setupPayload.qrDataUri}
+                  alt="QR code"
+                  className="h-44 w-44 rounded border border-border bg-white p-2"
+                />
+              </div>
+              <details className="text-sm text-muted-foreground">
+                <summary className="cursor-pointer">{t('twoFactor.setup.manualEntry')}</summary>
+                <code className="mt-2 block break-all rounded bg-muted px-2 py-1 font-mono text-xs">
+                  {setupPayload.secret}
+                </code>
+              </details>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t('twoFactor.setup.step2Title')}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t('twoFactor.setup.step2Description')}
+                </p>
+                <Input
+                  autoFocus
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder={t('twoFactor.setup.codePlaceholder')}
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                />
+              </div>
+            </>
+          )}
+        </AuthCard>
+      </form>
+    );
+  }
 
-      {stage === 'codes' && (
-        <>
-          <CardContent className="space-y-4">
-            <CardDescription className="text-sm text-muted-foreground">
-              {t('twoFactor.setup.step3Description')}
-            </CardDescription>
-            <div className="grid grid-cols-2 gap-2 rounded border border-border bg-muted p-3 font-mono text-sm">
-              {recoveryCodes.map((recoveryCode) => (
-                <span key={recoveryCode}>{recoveryCode}</span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={onDownload}>
-                {t('twoFactor.setup.downloadButton')}
-              </Button>
-              <Button type="button" variant="outline" className="flex-1" onClick={onCopy}>
-                {t('twoFactor.setup.copyButton')}
-              </Button>
-            </div>
-            <label htmlFor={confirmSavedId} className="flex items-center gap-2 text-sm">
-              <Checkbox
-                id={confirmSavedId}
-                checked={savedConfirmed}
-                onCheckedChange={(checked) => setSavedConfirmed(checked === true)}
-              />
-              <span>{t('twoFactor.setup.confirmSaved')}</span>
-            </label>
-          </CardContent>
-          <CardFooter>
-            <Button className="w-full" type="button" disabled={!savedConfirmed} onClick={onFinish}>
-              {t('twoFactor.setup.finishButton')}
-            </Button>
-          </CardFooter>
-        </>
-      )}
-    </Card>
+  return (
+    <AuthCard
+      title={t('twoFactor.setup.title')}
+      description={t('twoFactor.setup.step3Description')}
+      contentClassName="space-y-4"
+      footer={
+        <Button className="w-full" type="button" disabled={!savedConfirmed} onClick={onFinish}>
+          {t('twoFactor.setup.finishButton')}
+        </Button>
+      }
+    >
+      <div className="grid grid-cols-2 gap-2 rounded border border-border bg-muted p-3 font-mono text-sm">
+        {recoveryCodes.map((recoveryCode) => (
+          <span key={recoveryCode}>{recoveryCode}</span>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" variant="outline" className="flex-1" onClick={onDownload}>
+          {t('twoFactor.setup.downloadButton')}
+        </Button>
+        <Button type="button" variant="outline" className="flex-1" onClick={onCopy}>
+          {t('twoFactor.setup.copyButton')}
+        </Button>
+      </div>
+      <label htmlFor={confirmSavedId} className="flex items-center gap-2 text-sm">
+        <Checkbox
+          id={confirmSavedId}
+          checked={savedConfirmed}
+          onCheckedChange={(checked) => setSavedConfirmed(checked === true)}
+        />
+        <span>{t('twoFactor.setup.confirmSaved')}</span>
+      </label>
+    </AuthCard>
   );
 };
 

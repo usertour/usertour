@@ -60,7 +60,7 @@ a builder, not a different top-bar register.
 **Structural placement (sidebar shell vs takeover)** — this is a
 separate decision from chrome register, made by asking "is there a
 separate detail page upstream?":
-- **No upstream detail / this page *is* the detail** → `AdminSubpageLayout`
+- **No upstream detail / this page *is* the detail** → `AdminShellMuted`
   (sidebar shell). Covers user / company / session / content detail
   + theme builder (theme has no separate read-only detail page; the
   builder doubles as detail).

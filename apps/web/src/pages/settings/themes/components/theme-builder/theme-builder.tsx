@@ -157,7 +157,7 @@ export function ThemeBuilder({ theme, onSave, onRename, onActionComplete }: Prop
 
   return (
     <BuilderProvider value={builderContextValue}>
-      {/* AdminSubpageLayout's content card is `flex h-full w-full` (flex-row);
+      {/* AdminShellMuted's content card is `flex h-full w-full` (flex-row);
           we stack TopBar + 3-column body vertically and let the inner panes
           own their own scroll. */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">

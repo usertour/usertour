@@ -1,22 +1,13 @@
-'use client';
-
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@usertour/card';
 import { Input } from '@usertour/input';
 import { SpinnerIcon } from '@usertour/icons';
 import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import { useVerifyTwoFactorMutation } from '@usertour/hooks';
+import { AuthCard } from './components/auth-card';
 
 export const TwoFactor = () => {
   const { t } = useTranslation('ui');
@@ -54,56 +45,53 @@ export const TwoFactor = () => {
 
   return (
     <form onSubmit={onSubmit}>
-      <Card>
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-semibold tracking-tight">
-            {t('twoFactor.verify.title')}
-          </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
-            {useRecoveryCode
-              ? t('twoFactor.verify.recoveryDescription')
-              : t('twoFactor.verify.description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <Input
-            autoFocus
-            inputMode={useRecoveryCode ? 'text' : 'numeric'}
-            autoComplete="one-time-code"
-            placeholder={
-              useRecoveryCode
-                ? t('twoFactor.verify.recoveryCodePlaceholder')
-                : t('twoFactor.setup.codePlaceholder')
-            }
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-          />
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3">
-          <Button className="w-full" type="submit" disabled={loading || !code.trim()}>
-            {loading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            {t('twoFactor.verify.submitButton')}
-          </Button>
-          <button
-            type="button"
-            onClick={() => {
-              setUseRecoveryCode((current) => !current);
-              setCode('');
-            }}
-            className="text-sm text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
-          >
-            {useRecoveryCode
-              ? t('twoFactor.verify.useAuthenticatorLink')
-              : t('twoFactor.verify.useRecoveryCodeLink')}
-          </button>
-          <Link
-            to="/auth/signin"
-            className="text-sm text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
-          >
-            {t('twoFactor.setup.cancelButton')}
-          </Link>
-        </CardFooter>
-      </Card>
+      <AuthCard
+        title={t('twoFactor.verify.title')}
+        description={
+          useRecoveryCode
+            ? t('twoFactor.verify.recoveryDescription')
+            : t('twoFactor.verify.description')
+        }
+        footer={
+          <div className="flex flex-col gap-3 w-full">
+            <Button className="w-full" type="submit" disabled={loading || !code.trim()}>
+              {loading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              {t('twoFactor.verify.submitButton')}
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setUseRecoveryCode((current) => !current);
+                setCode('');
+              }}
+              className="text-sm text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+            >
+              {useRecoveryCode
+                ? t('twoFactor.verify.useAuthenticatorLink')
+                : t('twoFactor.verify.useRecoveryCodeLink')}
+            </button>
+            <Link
+              to="/auth/signin"
+              className="text-sm text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+            >
+              {t('twoFactor.setup.cancelButton')}
+            </Link>
+          </div>
+        }
+      >
+        <Input
+          autoFocus
+          inputMode={useRecoveryCode ? 'text' : 'numeric'}
+          autoComplete="one-time-code"
+          placeholder={
+            useRecoveryCode
+              ? t('twoFactor.verify.recoveryCodePlaceholder')
+              : t('twoFactor.setup.codePlaceholder')
+          }
+          value={code}
+          onChange={(event) => setCode(event.target.value)}
+        />
+      </AuthCard>
     </form>
   );
 };
