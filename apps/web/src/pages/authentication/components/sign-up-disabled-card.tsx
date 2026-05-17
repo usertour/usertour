@@ -1,27 +1,23 @@
-'use client';
-
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@usertour/card';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour/button';
 import { Link } from 'react-router-dom';
+import { AuthCard } from './auth-card';
 
 export const SignUpDisabledCard = () => {
+  const { t } = useTranslation('ui');
   return (
-    <Card>
-      <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-semibold tracking-tight">
-          Sign up is currently unavailable
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="text-center text-sm text-muted-foreground">
-        New account registration has been disabled for this self-hosted instance. Contact your
-        system administrator if you need access.
-      </CardContent>
-      <CardFooter className="flex justify-center">
+    <AuthCard
+      title={t('auth.magicLink.disabled.title')}
+      footer={
         <Button asChild variant="outline">
-          <Link to="/auth/signin">Back to sign in</Link>
+          <Link to="/auth/signin">{t('auth.magicLink.disabled.backToSignIn')}</Link>
         </Button>
-      </CardFooter>
-    </Card>
+      }
+    >
+      <div className="text-center text-sm text-muted-foreground">
+        {t('auth.magicLink.disabled.description')}
+      </div>
+    </AuthCard>
   );
 };
 

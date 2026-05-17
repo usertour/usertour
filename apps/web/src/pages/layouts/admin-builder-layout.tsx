@@ -1,15 +1,13 @@
-import { AdminLayout, AdminLayoutContent } from './components/admin-layout';
+import { Outlet } from 'react-router-dom';
+import { ShellHelmet } from './components/admin-layout';
 
-interface AdminBuilderLayoutProps {
-  children: React.ReactNode;
-}
-
-export const AdminBuilderLayout = ({ children }: AdminBuilderLayoutProps) => {
-  return (
-    <AdminLayout surface="canvas">
-      <AdminLayoutContent>{children}</AdminLayoutContent>
-    </AdminLayout>
-  );
-};
+export const AdminBuilderLayout = () => (
+  <>
+    <ShellHelmet surface="canvas" />
+    <div className="flex-col md:flex">
+      <Outlet />
+    </div>
+  </>
+);
 
 AdminBuilderLayout.displayName = 'AdminBuilderLayout';

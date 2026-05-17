@@ -1,25 +1,25 @@
 import { ScrollArea } from '@usertour/scroll-area';
-import { AdminLayoutNewContent, AdminNewLayout } from '@/pages/layouts/components/admin-layout';
+import { Outlet } from 'react-router-dom';
+import { AdminLayoutNewContent, ShellHelmet } from '@/pages/layouts/components/admin-layout';
 import { AdminMainNewNav } from '@/pages/layouts/components/admin-main-nav';
 import { AdminPanelSidebarNav } from './components/admin-sidebar-nav';
 import { SystemAdminGuard } from './components/system-admin-guard';
 
-interface SystemAdminLayoutProps {
-  children: React.ReactNode;
-}
-
-export const SystemAdminLayout = ({ children }: SystemAdminLayoutProps) => {
+export const SystemAdminLayout = () => {
   return (
     <SystemAdminGuard>
-      <AdminNewLayout>
+      <ShellHelmet surface="default" />
+      <div className="flex h-[100dvh] w-full">
         <AdminMainNewNav />
         <AdminLayoutNewContent>
           <AdminPanelSidebarNav />
           <ScrollArea className="h-full w-full">
-            <div className="mx-auto max-w-6xl">{children}</div>
+            <div className="mx-auto max-w-6xl">
+              <Outlet />
+            </div>
           </ScrollArea>
         </AdminLayoutNewContent>
-      </AdminNewLayout>
+      </div>
     </SystemAdminGuard>
   );
 };

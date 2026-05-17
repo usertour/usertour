@@ -4,57 +4,15 @@ import { EnvironmentListProvider } from '@/contexts/environment-list-context';
 import { SubscriptionProvider } from '@/contexts/subscription-context';
 import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { userTourToken } from '@/utils/env';
-import { Button } from '@usertour/button';
 import { cn } from '@usertour/tailwind';
 import { UserProfile } from '@usertour/types';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
+import { Outlet, useParams } from 'react-router-dom';
 import usertour from 'usertour.js';
-import { AdminEnvSwitcher } from './admin-env-switcher';
-import { AdminMainNav } from './admin-main-nav';
-import { AdminUserNav } from './admin-user-nav';
+import { AdminLayoutSurface, SURFACE_BODY_CLASSNAMES } from './admin-surface';
 import { UpgradePlanBanner } from './upgrade-plan-banner';
-
-export const AdminLayoutHeader = () => {
-  return (
-    <div className="border-b bg-white">
-      <div className="flex h-16 items-center px-4">
-        <div className="pl-2 pr-10 flex-none">
-          <img
-            src="/images/logo.svg"
-            alt="Usertour logo"
-            width={120}
-            // height={32}
-            loading="eager"
-          />
-        </div>
-        <AdminMainNav className="mx-6" />
-        <div className="ml-auto flex items-center space-x-4">
-          <a
-            href="https://docs.usertour.io/developers/usertourjs-installation/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <Button className="bg-gradient-to-r from-sky-100 to-sky-200 space-x-2 text-foreground">
-              <img
-                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAwNJREFUOE+NlUlrFFEUhc+5r7szdLUTthp147QJCv4CF85GxQHRhdiicZmFGxFcuHBjBFEUJxyCAyJEDaImEIfkNzhtREVEkmhESVe16cSkrrx+Vg9pJRY0RVfd993zzr33FRtfa+LL29wxQDMQbaAA5T9QQSHsXYx7Fz0rxhn2k+HN+tqpRzn9btCqGh62L8W4hZWL3H8LpShAG2ehpcRRMiNygtPu+H0QNESgiQqrFTnFDl6ZjMJ+TrntawSBKEgXXHxW2GpJefX2yy1SMHXLAqOsAIk8jbaIkSmK8JSzAjlD2T5uwtUEDonRgwQDCM5DtKZivXfD15InzJs4tn7f4XWnH+WXjP8afWsVicH9wc2pHbO6grVg2F0biy/6tKbuw/zeYH2o4QMarSl66l0PIoV5EFuzu73u2R3+rNEx9NKg0fpkjGke3JJsSz8OWim2gHwDYuWXdamvFqoIH1ilBWj9NeehiDT7e5NtFjYyil6FNkbembiZ921Lsi/90H+pDJdZ1cbwjf6Bzn2e3QfRNge8aoGExHjAzySvzWnX9PBY0ANiaaEwxIsfO1PL5z/6OW94fOxzWRe8Eo+rBlakBuc+yzYrcbXgZd1lBwQxEotzezaT7HLQXA+oSyE8PrTLOzLjfvYAiCuujfgqHseqgabU4JwnQ01Q6YCEbsu1l4I/RbGVlhETQwE69fbwQsXY+1ica7/v9J5Oa/c7xGCb9TRRF18wsKHu48zHQxuF0kGjieL01F4MtHK8ZEQMWkj1lHpahCfFsAei9xRhfcHvGFtENK/gBYqDFXu15rwFVs5vqa/cqE2c7VKjl4agGJc4m+uj0YbSjFbPa9Sn5UoiaLSukNQeEomzP1tBPfzvWa5WWT6W0cHhkskJNrZr4t3A8DFSM0ptcGrKZ7nyFKqG2R5mvwhvphcnjxL/cSXbXOFy+1KTxk8aYPNFzZ/b700a/9eAmnO5TlCbKrdnK+rssAUh0ZXd422cuMG/AhNncp0QBywd91H1o88BO/2Mt2ki8DehYzQb4yma+QAAAABJRU5ErkJggg=="
-                alt=""
-              />
-              <span className="min-w-28	">Install to publish</span>
-            </Button>
-          </a>
-          {/* <Search /> */}
-          <AdminEnvSwitcher />
-          <AdminUserNav />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-AdminLayoutHeader.displayName = 'AdminLayoutHeader';
 
 interface AdminLayoutBodyProps {
   children: React.ReactNode;
@@ -115,20 +73,6 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
 
 AdminLayoutNewContent.displayName = 'AdminLayoutNewContent';
 
-export type AdminLayoutSurface = 'canvas' | 'muted' | 'default';
-
-interface AdminLayoutProps {
-  children: React.ReactNode;
-  surface?: AdminLayoutSurface;
-}
-
-const SURFACE_BODY_CLASSNAMES: Record<AdminLayoutSurface, string> = {
-  canvas: 'bg-[url(/images/grid--light.svg)] dark:bg-[url(/images/grid--dark.svg)]',
-  muted: 'bg-slate-100 dark:bg-background',
-  default: 'bg-slate-50',
-};
-
-// Add new custom hook
 const useUserTracking = (userInfo: UserProfile | null | undefined) => {
   const posthog = usePostHog();
   const usertourInitialized = useRef(false);
@@ -155,47 +99,40 @@ const useUserTracking = (userInfo: UserProfile | null | undefined) => {
   }, [userInfo, posthog]);
 };
 
-export const AdminLayout = (props: AdminLayoutProps) => {
-  const { children, surface = 'default' } = props;
+// Single mount point for all user-area providers. Stays mounted across
+// nav changes between Admin/Builder/Settings/SystemAdmin shells so the
+// environment-list / attribute-list / subscription queries don't re-fire
+// every time the user changes pages.
+export const AdminProvidersOutlet = () => {
   const { project, userInfo } = useAppContext();
+  useUserTracking(userInfo);
   const projectId = project?.id;
   const subscriptionId = project?.subscriptionId;
-  useUserTracking(userInfo);
 
   if (!projectId) {
     return null;
   }
 
   return (
-    <>
-      <EnvironmentListProvider projectId={projectId}>
-        <AttributeListProvider projectId={projectId}>
-          <SubscriptionProvider projectId={projectId} subscriptionId={subscriptionId}>
-            <Helmet>
-              <title>Usertour App</title>
-              <body className={SURFACE_BODY_CLASSNAMES[surface]} />
-            </Helmet>
-            <UpgradePlanBanner projectId={projectId} />
-            {children}
-          </SubscriptionProvider>
-        </AttributeListProvider>
-      </EnvironmentListProvider>
-    </>
+    <EnvironmentListProvider projectId={projectId}>
+      <AttributeListProvider projectId={projectId}>
+        <SubscriptionProvider projectId={projectId} subscriptionId={subscriptionId}>
+          <UpgradePlanBanner projectId={projectId} />
+          <Outlet />
+        </SubscriptionProvider>
+      </AttributeListProvider>
+    </EnvironmentListProvider>
   );
 };
 
-AdminLayout.displayName = 'AdminLayout';
+AdminProvidersOutlet.displayName = 'AdminProvidersOutlet';
 
-export const AdminNewLayout = (props: AdminLayoutProps) => {
-  const { children } = props;
+// Sets the document body surface class for a leaf route's shell.
+export const ShellHelmet = ({ surface }: { surface: AdminLayoutSurface }) => (
+  <Helmet>
+    <title>Usertour App</title>
+    <body className={SURFACE_BODY_CLASSNAMES[surface]} />
+  </Helmet>
+);
 
-  return (
-    <>
-      <AdminLayout>
-        <div className="flex h-[100dvh] w-full">{children}</div>
-      </AdminLayout>
-    </>
-  );
-};
-
-AdminNewLayout.displayName = 'AdminNewLayout';
+ShellHelmet.displayName = 'ShellHelmet';

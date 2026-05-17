@@ -1,6 +1,4 @@
 export { AuthLayout } from './auth';
-export { AdminDetailLayout } from './admin-detail-layout';
 export { AdminBuilderLayout } from './admin-builder-layout';
-export { AdminSubpageLayout } from './admin-subpage-layout';
-export { AdminListLayout } from './admin-list-layout';
+export { AdminShell, AdminShellMuted } from './admin-shell';
 export { AdminSettingsLayout } from './admin-settings-layout';

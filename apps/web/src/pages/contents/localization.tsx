@@ -20,7 +20,7 @@ export const ContentLocalization = () => {
       <ContentDetailProvider contentId={contentId} contentType={contentType}>
         <ContentVersionProvider>
           <LocalizationListProvider projectId={project?.id}>
-            {/* AdminSubpageLayout's content card uses `flex h-full w-full`
+            {/* AdminShellMuted's content card uses `flex h-full w-full`
                 (default flex-row) for its inner sidebar-wrapper, so the header
                 + body need an explicit flex-col container or they end up
                 side-by-side. Same fix as ContentDetailViewInner. */}

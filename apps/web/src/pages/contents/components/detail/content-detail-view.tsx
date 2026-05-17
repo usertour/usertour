@@ -41,7 +41,7 @@ function ContentDetailViewInner(props: ContentDetailViewProps) {
   }
 
   return (
-    // AdminSubpageLayout's content card uses `flex h-full w-full` (default
+    // AdminShellMuted's content card uses `flex h-full w-full` (default
     // flex-row) for its inner sidebar-wrapper. Without an explicit flex-col
     // here, header + route content would sit side-by-side instead of stacked.
     <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">

@@ -56,7 +56,6 @@ export interface Config {
     };
   };
   auth: {
-    redirectUrl: string;
     cookie: {
       secure: boolean;
       domain: string;

@@ -1,14 +1,10 @@
-'use client';
-
-import { useMutation } from '@apollo/client';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@usertour/button';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@usertour/card';
-import { resendMagicLink } from '@usertour/gql';
+import { useResendMagicLinkMutation } from '@usertour/hooks';
 import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
-
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
+import { AuthCard } from './auth-card';
 
 export type SignUpSuccessProps = {
   registerId: string;
@@ -16,46 +12,37 @@ export type SignUpSuccessProps = {
 };
 
 export const SignUpSuccess = ({ registerId, email }: SignUpSuccessProps) => {
-  const [resendMutation] = useMutation(resendMagicLink);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { t } = useTranslation('ui');
+  const { invoke: resend, loading } = useResendMagicLinkMutation();
   const { toast } = useToast();
 
-  async function onSubmit() {
+  const onResend = async () => {
     try {
-      setIsLoading(true);
-      const { data } = await resendMutation({ variables: { id: registerId } });
-      setIsLoading(false);
-      if (!data?.resendMagicLink?.id) {
-        toast({
-          variant: 'destructive',
-          title: 'Uh oh! Something went wrong.',
-        });
+      const result = await resend(registerId);
+      if (!result?.id) {
+        toast({ variant: 'destructive', title: t('auth.errors.genericFailure') });
       }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-      setIsLoading(false);
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
     }
-  }
+  };
 
   return (
-    <Card>
-      <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl  font-semibold tracking-tight">Check your inbox</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
-          Click the email verification link we just send to <br />
+    <AuthCard
+      title={t('auth.magicLink.success.title')}
+      description={
+        <>
+          {t('auth.magicLink.success.descriptionPrefix')} <br />
           {email}
-        </CardDescription>
-      </CardHeader>
-      <CardFooter className="flex flex-col">
-        <Button className="w-full" onClick={onSubmit} disabled={isLoading}>
-          {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-          Resend verification link
+        </>
+      }
+      footer={
+        <Button className="w-full" onClick={onResend} disabled={loading}>
+          {loading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+          {t('auth.magicLink.success.resendButton')}
         </Button>
-      </CardFooter>
-    </Card>
+      }
+    />
   );
 };
 

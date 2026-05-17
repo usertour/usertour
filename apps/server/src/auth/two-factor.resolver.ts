@@ -1,5 +1,4 @@
 import { Args, Context, Mutation, Resolver } from '@nestjs/graphql';
-import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { PrismaService } from 'nestjs-prisma';
 import { Public } from '@/common/decorators/public.decorator';
@@ -22,7 +21,6 @@ export class TwoFactorResolver {
   constructor(
     private readonly twoFactorService: TwoFactorService,
     private readonly authService: AuthService,
-    private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -58,7 +56,6 @@ export class TwoFactorResolver {
       auth: {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        redirectUrl: this.configService.get('auth.redirectUrl'),
         requiresTwoFactor: false,
         requiresTwoFactorSetup: false,
       },
@@ -97,7 +94,6 @@ export class TwoFactorResolver {
       auth: {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        redirectUrl: this.configService.get('auth.redirectUrl'),
         requiresTwoFactor: false,
         requiresTwoFactorSetup: false,
       },
@@ -122,7 +118,6 @@ export class TwoFactorResolver {
     return {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      redirectUrl: this.configService.get('auth.redirectUrl'),
       requiresTwoFactor: false,
       requiresTwoFactorSetup: false,
     };
