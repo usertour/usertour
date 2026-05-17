@@ -6,6 +6,7 @@ import {
   Logger,
   HttpException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { genBaseRespDataFromError } from '@/common/exceptions/exception';
 import { OAuthError, UnknownError } from '@/common/errors/errors';
@@ -13,6 +14,8 @@ import { OAuthError, UnknownError } from '@/common/errors/errors';
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
+
+  constructor(private readonly configService: ConfigService) {}
 
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -34,9 +37,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const baseRespData = genBaseRespDataFromError(exception);
 
-    // Handle OAuth errors — land on the sign-in page with a failure marker.
+    // Handle OAuth errors — land on the SPA sign-in page with a failure
+    // marker. Prefix with homepageUrl so split-origin deploys (API on a
+    // different host than the SPA) don't redirect into the API host.
     if (baseRespData.errCode === new OAuthError().code) {
-      response?.redirect('/auth/signin?loginFailed=1');
+      const homepage = this.configService.get<string>('app.homepageUrl') || '';
+      response?.redirect(`${homepage}/auth/signin?loginFailed=1`);
       return;
     }
 
