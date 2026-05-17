@@ -8,6 +8,7 @@ import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
 import { useVerifyTwoFactorMutation } from '@usertour/hooks';
 import { AuthCard } from './components/auth-card';
+import { resolveNextPath } from './components/use-auth-after-login';
 
 export const TwoFactor = () => {
   const { t } = useTranslation('ui');
@@ -28,16 +29,13 @@ export const TwoFactor = () => {
       return;
     }
     try {
-      const result = await invoke({
+      await invoke({
         challengeToken,
         code: code.trim(),
         isRecoveryCode: useRecoveryCode,
       });
-      if (result?.redirectUrl) {
-        window.location.href = result.redirectUrl;
-      } else {
-        navigate('/');
-      }
+      // Hard-load so useCurrentUserId picks up the fresh session cookie.
+      window.location.assign(resolveNextPath(searchParams.get('next')));
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
     }

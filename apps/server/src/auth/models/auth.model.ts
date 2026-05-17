@@ -11,9 +11,6 @@ export class Auth {
   refreshToken?: string;
 
   @Field(() => String, { nullable: true })
-  redirectUrl?: string;
-
-  @Field(() => String, { nullable: true })
   projectId?: string;
 
   @Field(() => User, { nullable: true })

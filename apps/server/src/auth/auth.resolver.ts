@@ -14,7 +14,6 @@ import { Auth } from './models/auth.model';
 import { Common } from './models/common.model';
 import { Register } from './models/register.model';
 import { Logger, UseGuards } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
@@ -23,10 +22,7 @@ import { EmailConfigGuard } from '@/common/guards/email-config.guard';
 @Resolver(() => Auth)
 export class AuthResolver {
   private readonly logger = new Logger(AuthResolver.name);
-  constructor(
-    private readonly auth: AuthService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly auth: AuthService) {}
 
   @Mutation(() => Register)
   @Public()
@@ -113,7 +109,6 @@ export class AuthResolver {
       return {
         accessToken: result.tokens.accessToken,
         refreshToken: result.tokens.refreshToken,
-        redirectUrl: this.configService.get('auth.redirectUrl'),
         requiresTwoFactor: false,
         requiresTwoFactorSetup: false,
       };

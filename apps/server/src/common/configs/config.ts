@@ -69,7 +69,6 @@ const config: Config = {
   },
 
   auth: {
-    redirectUrl: process.env.LOGIN_REDIRECT_URL || '/env/1/flows',
     cookie: {
       secure: process.env.USERTOUR_COOKIE_SECURE === 'true',
       domain: process.env.USERTOUR_COOKIE_DOMAIN,

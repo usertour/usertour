@@ -44,14 +44,14 @@ const SetupAdmin = () => {
 
   const onSubmit = async (values: SetupAdminFormValues) => {
     try {
-      const data = await invoke({
+      await invoke({
         name: values.name.trim(),
         email: values.email.trim().toLowerCase(),
         password: values.password,
       });
-      if (data?.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      }
+      // Hard-load so globalConfig.needsSystemAdminSetup re-evaluates and the
+      // freshly-set session cookie boots AppContext + LandingRedirect.
+      window.location.assign('/');
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
     }

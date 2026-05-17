@@ -17,6 +17,7 @@ import {
 import { getUserInfo } from '@usertour/gql';
 import { useApolloClient } from '@apollo/client';
 import { AuthCard } from './components/auth-card';
+import { resolveNextPath } from './components/use-auth-after-login';
 
 type Stage = 'scan' | 'codes';
 
@@ -41,7 +42,6 @@ export const TwoFactorSetup = () => {
   const [stage, setStage] = useState<Stage>('scan');
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [savedConfirmed, setSavedConfirmed] = useState(false);
-  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,7 +90,6 @@ export const TwoFactorSetup = () => {
           return;
         }
         setRecoveryCodes(result.recoveryCodes);
-        setRedirectUrl(result.auth?.redirectUrl ?? null);
       } else {
         const codes = await confirmLoggedIn.invoke(setupPayload.secret, code.trim());
         if (!codes) {
@@ -125,9 +124,12 @@ export const TwoFactorSetup = () => {
   };
 
   const onFinish = () => {
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
+    if (hasChallenge) {
+      // Mid-login enrolment: cookies were just set, hard-load so the SPA
+      // boots with the new session and LandingRedirect resolves the env.
+      window.location.assign(resolveNextPath(searchParams.get('next')));
     } else {
+      // Already logged in (settings flow), keep SPA state.
       navigate('/');
     }
   };
