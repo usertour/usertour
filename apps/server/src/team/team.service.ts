@@ -56,7 +56,6 @@ export class TeamService {
       where: { code: inviteId, ...activeInviteWhere() },
       select: {
         id: true,
-        expired: true,
         role: true,
         email: true,
         user: { select: { name: true } },
@@ -72,7 +71,6 @@ export class TeamService {
     });
     return {
       id: invite.id,
-      expired: invite.expired,
       role: invite.role,
       email: invite.email,
       recipientExists: !!recipient,

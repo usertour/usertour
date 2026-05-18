@@ -738,7 +738,7 @@ export class AuthService {
           where: {
             code,
             createdAt: {
-              gte: new Date(Date.now() - REGISTER_REUSE_WINDOW_MS), // Magic link expires after 24 hours
+              gte: new Date(Date.now() - REGISTER_REUSE_WINDOW_MS),
             },
           },
         })
@@ -1076,15 +1076,20 @@ export class AuthService {
     if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
       throw new WrongInviteAccountError();
     }
-    const userOnProject = await this.teamService.getUserOnProject(userId, invite.projectId);
-    if (userOnProject) {
-      // Already a member — consume the invite anyway so it doesn't stay
-      // pending in the admin's invite list and the link can't be reused.
-      await this.teamService.deleteInvite(this.prisma, invite.code);
-      return;
-    }
-
     await this.prisma.$transaction(async (tx) => {
+      // Re-check membership inside the tx so the "already a member" branch
+      // and the "assign new member" branch see a consistent snapshot of
+      // UserOnProject and Invite.
+      const userOnProject = await tx.userOnProject.findFirst({
+        where: { userId, projectId: invite.projectId },
+      });
+      if (userOnProject) {
+        // Already a member — consume the invite anyway so it doesn't stay
+        // pending in the admin's invite list and the link can't be reused.
+        await this.teamService.deleteInvite(tx, invite.code);
+        return;
+      }
+
       if (user.projects.length > 0) {
         await this.teamService.cancelActiveProject(tx, userId);
       }

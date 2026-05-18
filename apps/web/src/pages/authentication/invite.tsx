@@ -25,7 +25,7 @@ export const Invite = () => {
     return <AuthCard title={t('auth.invite.expiredTitle')} loading />;
   }
 
-  if (!invite || invite.expired) {
+  if (!invite) {
     return (
       <AuthCard
         title={t('auth.invite.expiredTitle')}
