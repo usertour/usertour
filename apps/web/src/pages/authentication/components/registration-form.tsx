@@ -12,7 +12,7 @@ import { Input } from '@usertour/input';
 import { Link, useParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { useSignupMutation } from '@usertour/hooks';
+import { useAcceptInviteMutation, useSignupMutation } from '@usertour/hooks';
 import { useAuthAfterLogin } from './use-auth-after-login';
 
 interface SignUpFormProps {
@@ -29,41 +29,37 @@ interface SignUpFormProps {
 
 export const SignUpForm = ({ inviteCode, buttonText, className, fixedEmail }: SignUpFormProps) => {
   const { t } = useTranslation('ui');
-  const { invoke } = useSignupMutation();
+  const { invoke: signup } = useSignupMutation();
+  const { invoke: acceptInvite } = useAcceptInviteMutation();
   const handleAuthResult = useAuthAfterLogin();
   const { toast } = useToast();
   const { registrationCode } = useParams();
 
   const isInvite = !!inviteCode;
 
-  const schema = useMemo(() => {
-    const base = z.object({
-      userName: z
-        .string({ required_error: t('auth.errors.fullNameRequired') })
-        .trim()
-        .min(1, { message: t('auth.errors.fullNameRequired') })
-        .max(80),
-      companyName: z.string().trim().max(80).optional(),
-      password: z
-        .string({ required_error: t('auth.errors.passwordRequired') })
-        .min(8)
-        .max(160),
-      isAccept: z.boolean(),
-    });
-    if (isInvite) {
-      return base;
-    }
-    return base.superRefine((values, ctx) => {
-      const projectName = values.companyName?.trim() ?? '';
-      if (projectName.length < 1) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['companyName'],
-          message: t('auth.errors.projectNameRequired'),
-        });
-      }
-    });
-  }, [isInvite, t]);
+  const schema = useMemo(
+    () =>
+      z.object({
+        userName: z
+          .string({ required_error: t('auth.errors.fullNameRequired') })
+          .trim()
+          .min(1, { message: t('auth.errors.fullNameRequired') })
+          .max(80),
+        companyName: isInvite
+          ? z.string().trim().max(80).optional()
+          : z
+              .string({ required_error: t('auth.errors.projectNameRequired') })
+              .trim()
+              .min(1, { message: t('auth.errors.projectNameRequired') })
+              .max(80),
+        password: z
+          .string({ required_error: t('auth.errors.passwordRequired') })
+          .min(8)
+          .max(160),
+        isAccept: z.boolean(),
+      }),
+    [isInvite, t],
+  );
 
   type SignUpFormValues = z.infer<typeof schema>;
 
@@ -82,21 +78,18 @@ export const SignUpForm = ({ inviteCode, buttonText, className, fixedEmail }: Si
       return;
     }
     try {
-      const variables = isInvite
-        ? {
+      const result = isInvite
+        ? await acceptInvite({
+            code,
             userName: formData.userName,
             password: formData.password,
+          })
+        : await signup({
             code,
-            isInvite,
-          }
-        : {
             userName: formData.userName,
             password: formData.password,
-            code,
-            isInvite,
-            companyName: formData.companyName,
-          };
-      const result = await invoke(variables);
+            companyName: formData.companyName ?? '',
+          });
       handleAuthResult(result);
     } catch (error) {
       showError(getErrorMessage(error));

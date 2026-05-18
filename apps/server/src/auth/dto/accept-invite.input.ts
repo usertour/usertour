@@ -2,7 +2,7 @@ import { Field, InputType } from '@nestjs/graphql';
 import { IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 
 @InputType()
-export class SignupInput {
+export class AcceptInviteInput {
   @Field(() => String, { nullable: false })
   @IsNotEmpty()
   code: string;
@@ -17,9 +17,4 @@ export class SignupInput {
   @IsNotEmpty()
   @MaxLength(80)
   userName: string;
-
-  @Field(() => String, { nullable: false })
-  @IsNotEmpty()
-  @MaxLength(80)
-  companyName: string;
 }

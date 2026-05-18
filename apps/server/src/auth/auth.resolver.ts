@@ -3,6 +3,7 @@ import { User } from '@/users/models/user.model';
 import { Args, Mutation, Parent, ResolveField, Resolver, Context } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
 import { AuthResult } from './dto/auth.dto';
+import { AcceptInviteInput } from './dto/accept-invite.input';
 import { ResetPasswordByCodeInput } from './dto/change-password.input';
 import { LoginInput } from './dto/login.input';
 import { MagicLinkInput } from './dto/magic-link.input';
@@ -71,6 +72,13 @@ export class AuthResolver {
   @Public()
   async signup(@Args('data') data: SignupInput, @Context() context: { res: Response }) {
     const result = await this.auth.signup(data);
+    return this.formatAuthResult(result, context.res);
+  }
+
+  @Mutation(() => Auth)
+  @Public()
+  async acceptInvite(@Args('data') data: AcceptInviteInput, @Context() context: { res: Response }) {
+    const result = await this.auth.acceptInvite(data);
     return this.formatAuthResult(result, context.res);
   }
 

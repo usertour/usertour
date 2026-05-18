@@ -2,6 +2,12 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input AcceptInviteInput {
+  code: String!
+  password: String!
+  userName: String!
+}
+
 type AccessToken {
   accessToken: String!
   createdAt: DateTime!
@@ -796,6 +802,7 @@ input MagicLinkInput {
 }
 
 type Mutation {
+  acceptInvite(data: AcceptInviteInput!): Auth!
   activeUserProject(data: ActiveUserProjectInput!): Boolean!
   addContentStep(data: CreateStepInput!): Step!
   addContentSteps(data: ContentStepsInput!): Common!
@@ -1090,8 +1097,7 @@ input SetupSystemAdminInput {
 
 input SignupInput {
   code: String!
-  companyName: String
-  isInvite: Boolean!
+  companyName: String!
   password: String!
   userName: String!
 }

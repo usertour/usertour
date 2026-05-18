@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
+import { AcceptInviteInput } from './dto/accept-invite.input';
 import { SignupInput } from './dto/signup.input';
 import { Common } from './models/common.model';
 import { Profile } from 'passport-google-oauth20';
@@ -609,51 +610,72 @@ export class AuthService {
   }
 
   async signup(payload: SignupInput): Promise<AuthResult> {
-    const { code, userName, companyName, password, isInvite } = payload;
+    await this.ensureUserRegistrationAllowed();
 
-    if (!isInvite) {
-      await this.ensureUserRegistrationAllowed();
+    const register = await this.prisma.register.findFirst({
+      where: {
+        code: payload.code,
+        createdAt: { gte: new Date(Date.now() - REGISTER_REUSE_WINDOW_MS) },
+      },
+    });
+    if (!register) {
+      throw new InvalidVerificationSession();
     }
 
-    // Validate verification code
-    const { email, projectId, role } = await this.validateSignupCode(code, isInvite);
+    return this.runSignupFlow(
+      payload.userName,
+      register.email,
+      payload.password,
+      async (tx, user) => {
+        const project = await this.createProject(tx, payload.companyName, user.id);
+        await initialization(tx, project.id);
+        // Consume the magic-link Register row so the same code can't be
+        // re-used for a second signup attempt before its TTL window closes.
+        await tx.register.deleteMany({ where: { code: payload.code } });
+      },
+    );
+  }
 
-    // Hash password
+  async acceptInvite(payload: AcceptInviteInput): Promise<AuthResult> {
+    const invite = await this.teamService.getValidInviteByCode(payload.code);
+    if (!invite) {
+      throw new InvalidVerificationSession();
+    }
+
+    return this.runSignupFlow(
+      payload.userName,
+      invite.email,
+      payload.password,
+      async (tx, user) => {
+        // Delete invite before assignUserToProject so the seat-limit recheck
+        // inside that call does not double-count this very invite as still
+        // "pending" — otherwise the last seat is unreachable.
+        await this.teamService.deleteInvite(tx, payload.code);
+        await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+      },
+    );
+  }
+
+  private async runSignupFlow(
+    userName: string,
+    email: string,
+    password: string,
+    postCreate: (tx: Prisma.TransactionClient, user: User) => Promise<void>,
+  ): Promise<AuthResult> {
     const hashedPassword = await this.passwordService.hashPassword(password);
-
     try {
       const user = await this.prisma.$transaction(async (tx) => {
-        // Create user and account
         const user = await this.createUser(tx, userName, email, hashedPassword);
         await this.createAccount(tx, 'email', user.id, 'email', email);
-
-        // Handle project assignment. Delete the invite before
-        // assignUserToProject so the seat-limit recheck inside that call
-        // does not double-count this very invite as still "pending".
-        if (isInvite) {
-          await this.teamService.deleteInvite(tx, code);
-          await this.teamService.assignUserToProject(tx, user.id, projectId, role);
-        } else {
-          const project = await this.createProject(tx, companyName, user.id);
-          await initialization(tx, project.id);
-          // Consume the magic-link Register row so the same code can't be
-          // re-used for a second signup attempt before its TTL window closes.
-          await tx.register.deleteMany({ where: { code } });
-        }
-
+        await postCreate(tx, user);
         return user;
       });
-
       this.logger.log(`User ${user.id} created`);
       return this.issueTokensOrChallenge(user.id);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new EmailAlreadyRegistered();
       }
-      // Domain errors thrown inside the tx (e.g. InviteSeatExhaustedError,
-      // WrongInviteAccountError) carry meaningful client-facing messages;
-      // collapsing them to UnknownError would strip the explanation the
-      // user needs to recover.
       if (e instanceof BaseError) {
         throw e;
       }
@@ -730,32 +752,6 @@ export class AuthService {
         await releaseLock();
       }
     }
-  }
-
-  // Add new helper methods
-  private async validateSignupCode(code: string, isInvite: boolean) {
-    const register = !isInvite
-      ? await this.prisma.register.findFirst({
-          where: {
-            code,
-            createdAt: {
-              gte: new Date(Date.now() - REGISTER_REUSE_WINDOW_MS),
-            },
-          },
-        })
-      : null;
-
-    const invite = isInvite ? await this.teamService.getValidInviteByCode(code) : null;
-
-    if (!register && !invite) {
-      throw new InvalidVerificationSession();
-    }
-
-    return {
-      email: register?.email || invite?.email,
-      projectId: invite?.projectId,
-      role: invite?.role,
-    };
   }
 
   private passwordFailureKey(email: string) {

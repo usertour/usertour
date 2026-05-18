@@ -45,8 +45,7 @@ export const signUp = gql`
     $code: String!
     $password: String!
     $userName: String!
-    $isInvite: Boolean!
-    $companyName: String
+    $companyName: String!
   ) {
     signup(
       data: {
@@ -54,9 +53,24 @@ export const signUp = gql`
         password: $password
         userName: $userName
         companyName: $companyName
-        isInvite: $isInvite
       }
     ) {
+      accessToken
+      refreshToken
+      requiresTwoFactor
+      requiresTwoFactorSetup
+      twoFactorChallenge
+      user {
+        id
+        email
+      }
+    }
+  }
+`;
+
+export const acceptInvite = gql`
+  mutation acceptInvite($code: String!, $password: String!, $userName: String!) {
+    acceptInvite(data: { code: $code, password: $password, userName: $userName }) {
       accessToken
       refreshToken
       requiresTwoFactor
