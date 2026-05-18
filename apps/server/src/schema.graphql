@@ -716,23 +716,23 @@ type IntegrationObjectMapping {
 }
 
 type Invite {
-  code: String!
+  code: String
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
-  email: String!
+  email: String
   expired: Boolean!
   id: ID!
-  name: String!
+  name: String
   project: Project
-  projectId: String!
+  projectId: String
   recipientExists: Boolean!
   role: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   user: User
-  userId: String!
+  userId: String
 }
 
 input InviteTeamMemberInput {

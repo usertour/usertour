@@ -61,8 +61,8 @@ export const SignInForm = ({
           .email(t('auth.errors.invalidEmail')),
         password: z
           .string({ required_error: t('auth.errors.passwordRequired') })
-          .max(160)
-          .min(4),
+          .min(8)
+          .max(160),
       }),
     [t],
   );

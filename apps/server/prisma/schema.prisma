@@ -118,19 +118,25 @@ model Register {
 }
 
 model Invite {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
-  code      String   @unique @default(cuid())
-  expired   Boolean  @default(false)
-  canceled  Boolean  @default(false)
-  deleted   Boolean  @default(false)
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  code      String    @unique @default(cuid())
+  expired   Boolean   @default(false)
+  canceled  Boolean   @default(false)
+  deleted   Boolean   @default(false)
   email     String
   name      String
   role      Role
-  user      User     @relation(fields: [userId], references: [id])
+  /// When the invite link stops being accepted. Nullable so the column can
+  /// roll out without a backfill; rows written by the application always set
+  /// it (typically createdAt + 14 days). getValidInviteByCode treats a null
+  /// value as "no recorded TTL" — legacy invites stay accepting until an
+  /// admin cancels them, but every new invite is bounded.
+  expiresAt DateTime? @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id])
   userId    String
-  project   Project  @relation(fields: [projectId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
   projectId String
 }
 

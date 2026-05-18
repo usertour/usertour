@@ -59,8 +59,8 @@ export const Invite = () => {
 
   // Server-side recipientExists collapses the page to a single branch — no
   // toggle, no session-state special case. Submitting either form passes the
-  // inviteCode through login/signup, and the server's joinProject runs after
-  // auth succeeds.
+  // inviteCode through login/signup; the server matches the actor's email
+  // against the invite email before consuming it.
   const title = (
     <>
       <p className="text-lg font-normal">

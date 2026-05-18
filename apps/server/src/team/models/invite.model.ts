@@ -5,26 +5,28 @@ import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class Invite extends BaseModel {
-  @Field(() => String, { nullable: false })
-  email: string;
+  // Nullable because the public `getInvite` query strips identifying fields
+  // (email, code, ids) before returning — only admin queries get the full row.
+  @Field(() => String, { nullable: true })
+  email?: string;
 
-  @Field(() => String, { nullable: false })
-  code: string;
+  @Field(() => String, { nullable: true })
+  code?: string;
 
   @Field(() => Boolean, { nullable: false })
   expired: boolean;
 
-  @Field(() => String, { nullable: false })
-  name: string;
+  @Field(() => String, { nullable: true })
+  name?: string;
 
   @Field(() => String, { nullable: false })
   role: string;
 
-  @Field(() => String, { nullable: false })
-  userId: string;
+  @Field(() => String, { nullable: true })
+  userId?: string;
 
-  @Field(() => String, { nullable: false })
-  projectId: string;
+  @Field(() => String, { nullable: true })
+  projectId?: string;
 
   /**
    * True when a Usertour account already exists for `email`. Lets the invite

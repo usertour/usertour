@@ -40,13 +40,14 @@ export const SignUpForm = ({ inviteCode, buttonText, className, fixedEmail }: Si
     const base = z.object({
       userName: z
         .string({ required_error: t('auth.errors.fullNameRequired') })
-        .max(30)
-        .min(4),
-      companyName: z.string().max(30).optional(),
+        .trim()
+        .min(1, { message: t('auth.errors.fullNameRequired') })
+        .max(80),
+      companyName: z.string().trim().max(80).optional(),
       password: z
         .string({ required_error: t('auth.errors.passwordRequired') })
-        .max(20)
-        .min(8),
+        .min(8)
+        .max(160),
       isAccept: z.boolean(),
     });
     if (isInvite) {
@@ -54,7 +55,7 @@ export const SignUpForm = ({ inviteCode, buttonText, className, fixedEmail }: Si
     }
     return base.superRefine((values, ctx) => {
       const projectName = values.companyName?.trim() ?? '';
-      if (projectName.length < 4) {
+      if (projectName.length < 1) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['companyName'],

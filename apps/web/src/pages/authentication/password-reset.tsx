@@ -28,12 +28,12 @@ export const PasswordReset = () => {
         .object({
           password: z
             .string({ required_error: t('auth.errors.passwordRequired') })
-            .max(20)
-            .min(8),
+            .min(8)
+            .max(160),
           repassword: z
             .string({ required_error: t('auth.errors.repeatPasswordRequired') })
-            .max(20)
-            .min(8),
+            .min(8)
+            .max(160),
         })
         .refine((values) => values.password === values.repassword, {
           message: t('auth.errors.passwordMismatch'),

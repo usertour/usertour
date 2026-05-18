@@ -1,8 +1,10 @@
 import {
   InvitationDeliveryFailedError,
+  InviteSeatExhaustedError,
   ParamsError,
   TeamMemberAlreadyInProjectError,
   TeamMemberAlreadyInvitedError,
+  TeamMemberLimitError,
 } from '@/common/errors';
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
@@ -11,6 +13,8 @@ import { createTransport } from 'nodemailer';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { ConfigService } from '@nestjs/config';
 import { ProjectsService } from '@/projects/projects.service';
+
+const INVITE_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
 @Injectable()
 export class TeamService {
@@ -37,9 +41,32 @@ export class TeamService {
   }
 
   async getInvite(inviteId: string) {
+    // Public query. Hide canceled / deleted / expired invites so the frontend
+    // does not render a "Join project" form against a dead link (which would
+    // fail at submit anyway), and so attackers can't tell whether a stale
+    // code was ever valid.
+    //
+    // The invitee email IS returned — the signup form needs it to show the
+    // user which mailbox the account will be created under, and the actual
+    // takeover risk is closed by H1 (joinProject enforces actor email ===
+    // invite email). Anyone with the link already received the email and
+    // therefore already knows the recipient.
     const invite = await this.prisma.invite.findFirst({
-      where: { code: inviteId },
-      include: { user: true, project: true },
+      where: {
+        code: inviteId,
+        expired: false,
+        canceled: false,
+        deleted: false,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      select: {
+        id: true,
+        expired: true,
+        role: true,
+        email: true,
+        user: { select: { name: true } },
+        project: { select: { name: true } },
+      },
     });
     if (!invite) {
       return null;
@@ -48,14 +75,27 @@ export class TeamService {
       where: { email: invite.email },
       select: { id: true },
     });
-    return { ...invite, recipientExists: !!recipient };
+    return {
+      id: invite.id,
+      expired: invite.expired,
+      role: invite.role,
+      email: invite.email,
+      recipientExists: !!recipient,
+      user: invite.user,
+      project: invite.project,
+    };
   }
 
-  async cancelInvite(inviteId: string) {
-    return await this.prisma.invite.update({
-      where: { id: inviteId },
+  async cancelInvite(projectId: string, inviteId: string) {
+    const result = await this.prisma.invite.updateMany({
+      where: { id: inviteId, projectId },
       data: { canceled: true },
     });
+    // Without this guard, an OWNER of project A could cancel an invite
+    // belonging to project B by passing B's inviteId in the input.
+    if (result.count === 0) {
+      throw new ParamsError();
+    }
   }
 
   async changeTeamMemberRole(userId: string, projectId: string, role: Role) {
@@ -138,36 +178,43 @@ export class TeamService {
       throw new ParamsError();
     }
 
-    // Block duplicate invites and re-inviting an existing member —
-    // otherwise the same email shows up multiple times under "Invite
-    // pending" and each row counts against teamMemberLimit on its own,
-    // letting a project artificially fill its seat quota.
-    const pendingInvite = await this.prisma.invite.findFirst({
-      where: { projectId, email, expired: false, canceled: false, deleted: false },
-    });
-    if (pendingInvite) {
-      throw new TeamMemberAlreadyInvitedError();
-    }
-    const existingUser = await this.prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      const existingMembership = await this.prisma.userOnProject.findFirst({
-        where: { userId: existingUser.id, projectId },
+    // Wrap dedup + seat-limit + create in one transaction. Without it, two
+    // concurrent invites for the same project/email both pass the duplicate
+    // check, both pass the seat check, and both create — duplicate "Invite
+    // pending" rows and seat-cap overrun.
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Block duplicate invites and re-inviting an existing member —
+      // otherwise the same email shows up multiple times under "Invite
+      // pending" and each row counts against teamMemberLimit on its own,
+      // letting a project artificially fill its seat quota.
+      const pendingInvite = await tx.invite.findFirst({
+        where: { projectId, email, expired: false, canceled: false, deleted: false },
       });
-      if (existingMembership) {
-        throw new TeamMemberAlreadyInProjectError();
+      if (pendingInvite) {
+        throw new TeamMemberAlreadyInvitedError();
       }
-    }
+      const existingUser = await tx.user.findUnique({ where: { email } });
+      if (existingUser) {
+        const existingMembership = await tx.userOnProject.findFirst({
+          where: { userId: existingUser.id, projectId },
+        });
+        if (existingMembership) {
+          throw new TeamMemberAlreadyInProjectError();
+        }
+      }
 
-    await this.projectsService.checkTeamMemberLimit(projectId);
+      await this.projectsService.checkTeamMemberLimit(projectId, tx);
 
-    const result = await this.prisma.invite.create({
-      data: {
-        email,
-        name,
-        role,
-        projectId,
-        userId: sender.id,
-      },
+      return await tx.invite.create({
+        data: {
+          email,
+          name,
+          role,
+          projectId,
+          userId: sender.id,
+          expiresAt: new Date(Date.now() + INVITE_EXPIRY_MS),
+        },
+      });
     });
 
     // Roll the invite back if the SMTP layer rejects the recipient
@@ -251,6 +298,21 @@ export class TeamService {
     projectId: string,
     role: string,
   ) {
+    // Re-check seat limit at accept time — the project may have downgraded
+    // since the invite was created, or other invites may have consumed the
+    // quota in between. Runs against the transaction client so the count
+    // reflects state inside this commit. Reframe the admin-facing
+    // TeamMemberLimitError ("upgrade your plan") into a recipient-facing
+    // InviteSeatExhaustedError ("contact the inviter") — the invitee
+    // shouldn't be told to upgrade someone else's plan.
+    try {
+      await this.projectsService.checkTeamMemberLimit(projectId, tx);
+    } catch (error) {
+      if (error instanceof TeamMemberLimitError) {
+        throw new InviteSeatExhaustedError();
+      }
+      throw error;
+    }
     return await tx.userOnProject.create({
       data: {
         userId,
@@ -277,7 +339,13 @@ export class TeamService {
 
   async getValidInviteByCode(code: string) {
     return await this.prisma.invite.findFirst({
-      where: { code, expired: false, canceled: false, deleted: false },
+      where: {
+        code,
+        expired: false,
+        canceled: false,
+        deleted: false,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
     });
   }
 

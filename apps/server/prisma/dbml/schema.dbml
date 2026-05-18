@@ -90,6 +90,11 @@ Table Invite {
   email String [not null]
   name String [not null]
   role Role [not null]
+  expiresAt DateTime [note: 'When the invite link stops being accepted. Nullable so the column can
+roll out without a backfill; rows written by the application always set
+it (typically createdAt + 14 days). getValidInviteByCode treats a null
+value as "no recorded TTL" — legacy invites stay accepting until an
+admin cancels them, but every new invite is bounded.']
   user User [not null]
   userId String [not null]
   project Project [not null]

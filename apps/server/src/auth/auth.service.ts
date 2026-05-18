@@ -28,6 +28,7 @@ import {
   EmailAlreadyRegistered,
   InvalidVerificationSession,
   OAuthError,
+  OAuthOnlyAccountError,
   PasswordIncorrect,
   TooManyLoginAttemptsError,
   UnknownError,
@@ -36,6 +37,7 @@ import {
   SystemAdminAlreadyInitializedError,
   SystemAdminSetupRequiredError,
   SystemAdminSetupUnavailableError,
+  WrongInviteAccountError,
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
@@ -49,17 +51,27 @@ import { Queue } from 'bullmq';
 import { RedisService, LockReleaseFn } from '@/shared/redis.service';
 
 const EMAIL_COOLDOWN_MS = 60 * 1000; // 60 seconds - minimum interval between email sends
-const REGISTER_REUSE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours - reuse existing register record within this window
+const EMAIL_COOLDOWN_SECONDS = EMAIL_COOLDOWN_MS / 1000;
+const REGISTER_REUSE_WINDOW_MS = 60 * 60 * 1000; // 1 hour — caps the window a leaked magic link can be reused
 const EMAIL_LOCK_KEY_PREFIX = 'magic-link-email:';
+const RESET_EMAIL_COOLDOWN_KEY_PREFIX = 'reset-email-cooldown:';
 const SETUP_SYSTEM_ADMIN_LOCK_KEY = 'setup-system-admin';
 const PASSWORD_LOCKOUT_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const PASSWORD_MAX_FAILED_ATTEMPTS = 10;
 const PASSWORD_FAILURE_KEY_PREFIX = 'login-failure:password:';
 const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — matches Google / Stripe / GitHub conventions
+const RESET_CODE_FAILURE_KEY_PREFIX = 'login-failure:reset-code:';
+const RESET_CODE_LOCKOUT_WINDOW_SECONDS = 60 * 60; // 1 hour
+const RESET_CODE_MAX_FAILED_ATTEMPTS = 20;
 
 @Injectable()
 export class AuthService {
   private logger = new Logger(AuthService.name);
+  // Lazily computed argon2 hash used by `emailLogin` to burn equivalent CPU
+  // on a username-miss as on a real password verify. Without it, the
+  // response time of "no such user" is meaningfully faster than "wrong
+  // password" and an attacker can enumerate registered emails.
+  private dummyPasswordHash: Promise<string> | null = null;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -179,12 +191,8 @@ export class AuthService {
     profile: Profile,
     inviteCode?: string,
   ) {
-    this.logger.log(
-      `oauth accessToken: ${accessToken}, refreshToken: ${refreshToken}, profile: ${JSON.stringify(
-        profile,
-      )}, inviteCode: ${inviteCode}`,
-    );
     const { provider, id, emails, displayName, photos } = profile;
+    this.logger.log(`oauth validate provider=${provider}, providerId=${id}`);
 
     // Check if there is an authentication account record
     const account = await this.prisma.account.findUnique({
@@ -221,6 +229,16 @@ export class AuthService {
       throw new OAuthError();
     }
     const email = emails[0].value;
+    // Reject if the provider explicitly says the email is not verified.
+    // Some providers (Google OIDC) always set this; some (GitHub primary)
+    // imply it; some (custom OIDC) may surface unverified mailboxes. Without
+    // this gate, an attacker who can register an unverified email on a
+    // provider could OAuth-log-in as the matching local user.
+    const verifiedFlag = emails[0].verified as boolean | string | undefined;
+    if (verifiedFlag === false || verifiedFlag === 'false') {
+      this.logger.warn(`OAuth email not verified for ${provider} email=${email}`);
+      throw new OAuthError();
+    }
 
     // Return user if this email has been registered
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -235,6 +253,19 @@ export class AuthService {
 
     if (!inviteCode) {
       await this.ensureUserRegistrationAllowed();
+    }
+
+    // Email-bind the invite before creating anything. The OAuth profile email
+    // is the new user's identity, and an invite addressed to someone else
+    // must not be silently consumed by this OAuth signup.
+    if (inviteCode) {
+      const invite = await this.teamService.getValidInviteByCode(inviteCode);
+      if (!invite) {
+        throw new InvalidVerificationSession();
+      }
+      if (invite.email.toLowerCase() !== email.toLowerCase()) {
+        throw new WrongInviteAccountError();
+      }
     }
 
     // download avatar if profile photo exists
@@ -602,6 +633,9 @@ export class AuthService {
         } else {
           const project = await this.createProject(tx, companyName, user.id);
           await initialization(tx, project.id);
+          // Consume the magic-link Register row so the same code can't be
+          // re-used for a second signup attempt before its TTL window closes.
+          await tx.register.deleteMany({ where: { code } });
         }
 
         return user;
@@ -736,6 +770,33 @@ export class AuthService {
     await this.redisService.del(this.passwordFailureKey(email));
   }
 
+  private getDummyPasswordHash() {
+    if (!this.dummyPasswordHash) {
+      this.dummyPasswordHash = this.passwordService.hashPassword(
+        'dummy-password-for-timing-equalization',
+      );
+    }
+    return this.dummyPasswordHash;
+  }
+
+  private resetCodeFailureKey(clientIp: string) {
+    return `${RESET_CODE_FAILURE_KEY_PREFIX}${clientIp}`;
+  }
+
+  private async checkResetCodeLockout(clientIp: string) {
+    const raw = await this.redisService.get(this.resetCodeFailureKey(clientIp));
+    if (raw && Number(raw) >= RESET_CODE_MAX_FAILED_ATTEMPTS) {
+      throw new TooManyLoginAttemptsError();
+    }
+  }
+
+  private async recordResetCodeFailure(clientIp: string) {
+    await this.redisService.incrWithExpire(
+      this.resetCodeFailureKey(clientIp),
+      RESET_CODE_LOCKOUT_WINDOW_SECONDS,
+    );
+  }
+
   async emailLogin(email: string, password: string, inviteCode?: string): Promise<AuthResult> {
     await this.checkPasswordLockout(email);
 
@@ -745,6 +806,9 @@ export class AuthService {
     });
 
     if (!user) {
+      // Burn argon2 CPU equivalent to a real verify so this branch is
+      // indistinguishable from "wrong password" by response time.
+      await this.passwordService.validatePassword(password, await this.getDummyPasswordHash());
       await this.recordPasswordFailure(email);
       throw new AccountNotFoundError();
     }
@@ -753,18 +817,15 @@ export class AuthService {
       throw new UserDisabledError();
     }
 
-    if (user.projects.length === 0) {
-      const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
-      await initialization(this.prisma, project.id);
-    }
-
-    if (inviteCode) {
-      await this.joinProject(inviteCode, user.id);
-    }
-
     if (user.accounts.length === 0) {
       await this.recordPasswordFailure(email);
       throw new AccountNotFoundError();
+    }
+
+    // OAuth-only account (no local password). argon2.verify would throw on
+    // null and surface as a 500 + bypass the lockout counter.
+    if (!user.password) {
+      throw new OAuthOnlyAccountError();
     }
 
     const passwordValid = await this.passwordService.validatePassword(password, user.password);
@@ -775,13 +836,50 @@ export class AuthService {
     }
 
     await this.clearPasswordFailures(email);
+
+    // State-mutating side effects only run after the password is proven.
+    // Otherwise a wrong-password attempt could consume an invite, reshuffle
+    // active project, or create an orphan project for any known email.
+    if (user.projects.length === 0) {
+      const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
+      await initialization(this.prisma, project.id);
+    }
+
+    if (inviteCode) {
+      await this.joinProject(inviteCode, user.id);
+    }
+
     return this.issueTokensOrChallenge(user.id);
   }
 
   async resetUserPassword(email: string): Promise<Common> {
+    // Always return success regardless of account existence to avoid
+    // letting an unauthenticated caller probe which emails are registered.
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new AccountNotFoundError();
+      this.logger.log(`Reset password requested for unknown email: ${email}`);
+      return { success: true };
+    }
+
+    // OAuth-only accounts have no local password — issuing a reset code
+    // would turn this endpoint into a silent "claim a password" path against
+    // an account the requester may not actually own. Surface the friendly
+    // error so the user understands why no email arrives (the UX cost of
+    // staying silent is bigger than the marginal enumeration signal).
+    if (!user.password) {
+      throw new OAuthOnlyAccountError();
+    }
+
+    // 60s per-email cooldown. Atomic via incrWithExpire so a burst of
+    // concurrent requests can't all blast emails. Gated at this layer
+    // (not the queue processor) because `deleteMany` below would otherwise
+    // invalidate the prior code without a replacement reaching the user.
+    const emailHash = createHash('md5').update(email).digest('hex');
+    const cooldownKey = `${RESET_EMAIL_COOLDOWN_KEY_PREFIX}${emailHash}`;
+    const hits = await this.redisService.incrWithExpire(cooldownKey, EMAIL_COOLDOWN_SECONDS);
+    if (hits > 1) {
+      this.logger.warn(`Skipping reset email for ${email}: cooldown active`);
+      return { success: true };
     }
 
     try {
@@ -804,11 +902,14 @@ export class AuthService {
     }
   }
 
-  async resetUserPasswordByCode(code: string, password: string): Promise<Common> {
+  async resetUserPasswordByCode(code: string, password: string, clientIp: string): Promise<Common> {
+    await this.checkResetCodeLockout(clientIp);
+
     // Look up the row so we have userId for the password update. The actual
     // consume step below is a race-safe DELETE that re-checks expiresAt.
     const data = await this.prisma.code.findUnique({ where: { id: code } });
     if (!data) {
+      await this.recordResetCodeFailure(clientIp);
       throw new InvalidVerificationSession();
     }
 
@@ -822,6 +923,7 @@ export class AuthService {
     if (consumed.count === 0) {
       // Either expired or lost the race. Same error either way — avoids
       // leaking timing signal about which case the client hit.
+      await this.recordResetCodeFailure(clientIp);
       throw new InvalidVerificationSession();
     }
 
@@ -977,8 +1079,16 @@ export class AuthService {
     if (!user) {
       throw new AccountNotFoundError();
     }
+    // The invite is a bearer token until accepted. Without this check,
+    // anyone with the link can attach themselves to the target project.
+    if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
+      throw new WrongInviteAccountError();
+    }
     const userOnProject = await this.teamService.getUserOnProject(userId, invite.projectId);
     if (userOnProject) {
+      // Already a member — consume the invite anyway so it doesn't stay
+      // pending in the admin's invite list and the link can't be reused.
+      await this.teamService.deleteInvite(this.prisma, invite.code);
       return;
     }
 

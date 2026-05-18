@@ -14,7 +14,7 @@ import { Auth } from './models/auth.model';
 import { Common } from './models/common.model';
 import { Register } from './models/register.model';
 import { Logger, UseGuards } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
 import { EmailConfigGuard } from '@/common/guards/email-config.guard';
@@ -49,8 +49,11 @@ export class AuthResolver {
 
   @Mutation(() => Common)
   @Public()
-  resetUserPasswordByCode(@Args('data') data: ResetPasswordByCodeInput) {
-    return this.auth.resetUserPasswordByCode(data.code, data.password);
+  resetUserPasswordByCode(
+    @Args('data') data: ResetPasswordByCodeInput,
+    @Context() context: { req: Request; res: Response },
+  ) {
+    return this.auth.resetUserPasswordByCode(data.code, data.password, context.req.ip);
   }
 
   @Mutation(() => Auth)

@@ -534,6 +534,30 @@ export class TwoFactorEnrollmentRequiredError extends BaseError {
   };
 }
 
+export class WrongInviteAccountError extends BaseError {
+  code = 'E0045';
+  messageDict = {
+    en: 'This invitation was sent to a different email address. Please sign in with the account that received the invitation.',
+    'zh-CN': '此邀请是发送给另一个邮箱的，请使用收到邀请的账号登录。',
+  };
+}
+
+export class OAuthOnlyAccountError extends BaseError {
+  code = 'E0046';
+  messageDict = {
+    en: 'This account signs in with an identity provider. Please use the matching sign-in button.',
+    'zh-CN': '此账号通过第三方登录，请使用对应的登录方式。',
+  };
+}
+
+export class InviteSeatExhaustedError extends BaseError {
+  code = 'E0047';
+  messageDict = {
+    en: 'This team has reached its seat limit. Please ask the inviter to free up a seat or upgrade the plan.',
+    'zh-CN': '该团队的成员席位已满，请联系邀请人释放席位或升级套餐。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -597,6 +621,9 @@ const errorMap = {
   E0042: TwoFactorEnforcedDisableNotAllowedError,
   E0043: FeatureRequiresLicenseError,
   E0044: TwoFactorEnrollmentRequiredError,
+  E0045: WrongInviteAccountError,
+  E0046: OAuthOnlyAccountError,
+  E0047: InviteSeatExhaustedError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

@@ -63,20 +63,14 @@ export const getInvite = gql`
   query getInvite($inviteId: String!) {
     getInvite(inviteId: $inviteId) {
       id
-      name
       email
       role
       expired
       recipientExists
-      createdAt
       user {
-        id
         name
-        email
-        avatarUrl
       }
       project {
-        id
         name
       }
     }
