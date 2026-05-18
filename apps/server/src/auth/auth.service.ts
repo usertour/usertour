@@ -447,28 +447,25 @@ export class AuthService {
   }
 
   /**
-   * Update user password and revoke all refresh tokens in a single transaction
-   * @param userId - The user ID
-   * @param newPassword - The new plain text password
-   * @returns The updated user
+   * Update user password and revoke all refresh tokens.
+   * Caller owns the transaction boundary — wrap this call in
+   * `prisma.$transaction` to make it atomic with any surrounding work.
    */
-  async updatePasswordAndRevokeTokens(userId: string, newPassword: string) {
+  async updatePasswordAndRevokeTokens(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    newPassword: string,
+  ) {
     const hashedPassword = await this.passwordService.hashPassword(newPassword);
-
-    return this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.update({
-        data: { password: hashedPassword },
-        where: { id: userId },
-      });
-
-      // Revoke all existing refresh tokens after password change
-      await tx.refreshToken.updateMany({
-        where: { userId },
-        data: { revoked: true },
-      });
-
-      return user;
+    const user = await tx.user.update({
+      data: { password: hashedPassword },
+      where: { id: userId },
     });
+    await tx.refreshToken.updateMany({
+      where: { userId },
+      data: { revoked: true },
+    });
+    return user;
   }
 
   async createMagicLink(email: string) {
@@ -898,45 +895,38 @@ export class AuthService {
   }
 
   async resetUserPasswordByCode(code: string, password: string): Promise<Common> {
-    // Look up the row so we have userId for the password update. The actual
-    // consume step below is a race-safe DELETE that re-checks expiresAt.
     const data = await this.prisma.code.findUnique({ where: { id: code } });
     if (!data) {
       throw new InvalidVerificationSession();
     }
-
-    // Atomically consume: deleteMany with the expiresAt > now guard. Two
-    // concurrent requests with the same code can't both succeed — the
-    // second sees count === 0. Single-use is enforced by the row being
-    // gone after consume; expiry is enforced inline.
-    //
-    // No per-IP rate limit here — the code is a CUID (~144 bits of entropy)
-    // so brute-force is infeasible; req.ip in self-hosted deployments would
-    // be unreliable without precise trust-proxy configuration; resource DoS
-    // belongs at the edge, not at this endpoint.
-    const consumed = await this.prisma.code.deleteMany({
-      where: { id: code, expiresAt: { gt: new Date() } },
-    });
-    if (consumed.count === 0) {
-      // Either expired or lost the race. Same error either way — avoids
-      // leaking timing signal about which case the client hit.
-      throw new InvalidVerificationSession();
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id: data.userId } });
     if (!user) {
       throw new AccountNotFoundError();
     }
 
     try {
-      await this.updatePasswordAndRevokeTokens(user.id, password);
-      await this.clearPasswordFailures(user.email);
-      return { success: true };
-    } catch (_) {
+      await this.prisma.$transaction(async (tx) => {
+        const consumed = await tx.code.deleteMany({
+          where: { id: code, expiresAt: { gt: new Date() } },
+        });
+        if (consumed.count === 0) {
+          throw new InvalidVerificationSession();
+        }
+        await this.updatePasswordAndRevokeTokens(tx, user.id, password);
+      });
+    } catch (e) {
+      if (e instanceof BaseError) {
+        throw e;
+      }
       throw new UnknownError();
     }
+
+    // Best-effort: password is already committed, don't fail the request on a Redis hiccup.
+    await this.clearPasswordFailures(user.email).catch((e) =>
+      this.logger.warn(`Failed to clear password failures for ${user.email}: ${e}`),
+    );
+
+    return { success: true };
   }
 
   async validateUser(userId: string): Promise<User> {

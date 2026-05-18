@@ -47,7 +47,9 @@ export class UsersService {
       throw new PasswordIncorrect();
     }
 
-    return this.authService.updatePasswordAndRevokeTokens(userId, changePassword.newPassword);
+    return this.prisma.$transaction((tx) =>
+      this.authService.updatePasswordAndRevokeTokens(tx, userId, changePassword.newPassword),
+    );
   }
 
   async changeEmail(userId: string, userPassword: string, input: ChangeEmailInput) {
