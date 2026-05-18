@@ -25,6 +25,7 @@ import ms from 'ms';
 import {
   AccountNotFoundError,
   AuthenticationExpiredError,
+  BaseError,
   EmailAlreadyRegistered,
   InvalidVerificationSession,
   OAuthError,
@@ -303,12 +304,14 @@ export class AuthService {
       });
       this.logger.log(`new account created for ${newAccount.id}`);
 
-      // inviteCode is not empty, join project
+      // inviteCode is not empty, join project. Delete the invite row before
+      // assignUserToProject so the seat-limit recheck inside that call does
+      // not double-count this very invite as still "pending".
       if (inviteCode) {
         const invite = await this.teamService.getValidInviteByCode(inviteCode);
         if (invite) {
-          await this.teamService.assignUserToProject(tx, newUser.id, invite.projectId, invite.role);
           await this.teamService.deleteInvite(tx, inviteCode);
+          await this.teamService.assignUserToProject(tx, newUser.id, invite.projectId, invite.role);
         }
       } else {
         const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
@@ -626,10 +629,12 @@ export class AuthService {
         const user = await this.createUser(tx, userName, email, hashedPassword);
         await this.createAccount(tx, 'email', user.id, 'email', email);
 
-        // Handle project assignment
+        // Handle project assignment. Delete the invite before
+        // assignUserToProject so the seat-limit recheck inside that call
+        // does not double-count this very invite as still "pending".
         if (isInvite) {
-          await this.teamService.assignUserToProject(tx, user.id, projectId, role);
           await this.teamService.deleteInvite(tx, code);
+          await this.teamService.assignUserToProject(tx, user.id, projectId, role);
         } else {
           const project = await this.createProject(tx, companyName, user.id);
           await initialization(tx, project.id);
@@ -646,6 +651,13 @@ export class AuthService {
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new EmailAlreadyRegistered();
+      }
+      // Domain errors thrown inside the tx (e.g. InviteSeatExhaustedError,
+      // WrongInviteAccountError) carry meaningful client-facing messages;
+      // collapsing them to UnknownError would strip the explanation the
+      // user needs to recover.
+      if (e instanceof BaseError) {
+        throw e;
       }
       this.logger.error('Failed to signup user', e);
       throw new UnknownError();
@@ -1096,8 +1108,11 @@ export class AuthService {
       if (user.projects.length > 0) {
         await this.teamService.cancelActiveProject(tx, userId);
       }
-      await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+      // Delete the invite before assignUserToProject so the seat-limit
+      // recheck inside that call does not double-count this very invite as
+      // still "pending" — otherwise the last seat is unreachable.
       await this.teamService.deleteInvite(tx, invite.code);
+      await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
     });
   }
 }

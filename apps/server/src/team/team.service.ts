@@ -13,6 +13,7 @@ import { createTransport } from 'nodemailer';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { ConfigService } from '@nestjs/config';
 import { ProjectsService } from '@/projects/projects.service';
+import { activeInviteWhere } from './invite-filters';
 
 const INVITE_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
@@ -35,7 +36,7 @@ export class TeamService {
 
   async getInvites(projectId: string) {
     return await this.prisma.invite.findMany({
-      where: { projectId, expired: false, canceled: false, deleted: false },
+      where: { projectId, ...activeInviteWhere() },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -52,13 +53,7 @@ export class TeamService {
     // invite email). Anyone with the link already received the email and
     // therefore already knows the recipient.
     const invite = await this.prisma.invite.findFirst({
-      where: {
-        code: inviteId,
-        expired: false,
-        canceled: false,
-        deleted: false,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-      },
+      where: { code: inviteId, ...activeInviteWhere() },
       select: {
         id: true,
         expired: true,
@@ -178,17 +173,23 @@ export class TeamService {
       throw new ParamsError();
     }
 
-    // Wrap dedup + seat-limit + create in one transaction. Without it, two
-    // concurrent invites for the same project/email both pass the duplicate
-    // check, both pass the seat check, and both create — duplicate "Invite
-    // pending" rows and seat-cap overrun.
+    // Serialize invite creation per-project so dedup + seat-limit + create
+    // are race-free. Prisma's $transaction defaults to READ COMMITTED, which
+    // gives atomicity but NOT isolation against concurrent inserts — two
+    // parallel requests would both pass the dedup/seat checks and both
+    // commit, producing duplicate "pending" rows or overrunning the cap.
+    // pg_advisory_xact_lock serializes only same-project invite creation
+    // and auto-releases on commit/rollback. Cross-project invites still run
+    // in parallel since they hash to different keys.
     const result = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`invite-create:${projectId}`})::bigint)`;
+
       // Block duplicate invites and re-inviting an existing member —
       // otherwise the same email shows up multiple times under "Invite
       // pending" and each row counts against teamMemberLimit on its own,
       // letting a project artificially fill its seat quota.
       const pendingInvite = await tx.invite.findFirst({
-        where: { projectId, email, expired: false, canceled: false, deleted: false },
+        where: { projectId, email, ...activeInviteWhere() },
       });
       if (pendingInvite) {
         throw new TeamMemberAlreadyInvitedError();
@@ -339,13 +340,7 @@ export class TeamService {
 
   async getValidInviteByCode(code: string) {
     return await this.prisma.invite.findFirst({
-      where: {
-        code,
-        expired: false,
-        canceled: false,
-        deleted: false,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-      },
+      where: { code, ...activeInviteWhere() },
     });
   }
 
