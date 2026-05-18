@@ -226,7 +226,11 @@ export class AuthService {
       this.logger.warn('emails is empty, invalid oauth');
       throw new OAuthError();
     }
-    const email = emails[0].value;
+    // Canonicalise at the boundary. All other write paths (signup, invite,
+    // magic link, system admin) already lowercase via their resolvers; this
+    // is the one path that previously stored the OAuth provider's raw value
+    // and could produce mixed-case `User.email` rows.
+    const email = emails[0].value.toLowerCase().trim();
     // Reject if the provider explicitly says the email is not verified.
     // Some providers (Google OIDC) always set this; some (GitHub primary)
     // imply it; some (custom OIDC) may surface unverified mailboxes. Without
