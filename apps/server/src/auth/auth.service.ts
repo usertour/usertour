@@ -61,9 +61,6 @@ const PASSWORD_LOCKOUT_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const PASSWORD_MAX_FAILED_ATTEMPTS = 10;
 const PASSWORD_FAILURE_KEY_PREFIX = 'login-failure:password:';
 const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — matches Google / Stripe / GitHub conventions
-const RESET_CODE_FAILURE_KEY_PREFIX = 'login-failure:reset-code:';
-const RESET_CODE_LOCKOUT_WINDOW_SECONDS = 60 * 60; // 1 hour
-const RESET_CODE_MAX_FAILED_ATTEMPTS = 20;
 
 @Injectable()
 export class AuthService {
@@ -791,24 +788,6 @@ export class AuthService {
     return this.dummyPasswordHash;
   }
 
-  private resetCodeFailureKey(clientIp: string) {
-    return `${RESET_CODE_FAILURE_KEY_PREFIX}${clientIp}`;
-  }
-
-  private async checkResetCodeLockout(clientIp: string) {
-    const raw = await this.redisService.get(this.resetCodeFailureKey(clientIp));
-    if (raw && Number(raw) >= RESET_CODE_MAX_FAILED_ATTEMPTS) {
-      throw new TooManyLoginAttemptsError();
-    }
-  }
-
-  private async recordResetCodeFailure(clientIp: string) {
-    await this.redisService.incrWithExpire(
-      this.resetCodeFailureKey(clientIp),
-      RESET_CODE_LOCKOUT_WINDOW_SECONDS,
-    );
-  }
-
   async emailLogin(email: string, password: string, inviteCode?: string): Promise<AuthResult> {
     await this.checkPasswordLockout(email);
 
@@ -914,14 +893,11 @@ export class AuthService {
     }
   }
 
-  async resetUserPasswordByCode(code: string, password: string, clientIp: string): Promise<Common> {
-    await this.checkResetCodeLockout(clientIp);
-
+  async resetUserPasswordByCode(code: string, password: string): Promise<Common> {
     // Look up the row so we have userId for the password update. The actual
     // consume step below is a race-safe DELETE that re-checks expiresAt.
     const data = await this.prisma.code.findUnique({ where: { id: code } });
     if (!data) {
-      await this.recordResetCodeFailure(clientIp);
       throw new InvalidVerificationSession();
     }
 
@@ -929,13 +905,17 @@ export class AuthService {
     // concurrent requests with the same code can't both succeed — the
     // second sees count === 0. Single-use is enforced by the row being
     // gone after consume; expiry is enforced inline.
+    //
+    // No per-IP rate limit here — the code is a CUID (~144 bits of entropy)
+    // so brute-force is infeasible; req.ip in self-hosted deployments would
+    // be unreliable without precise trust-proxy configuration; resource DoS
+    // belongs at the edge, not at this endpoint.
     const consumed = await this.prisma.code.deleteMany({
       where: { id: code, expiresAt: { gt: new Date() } },
     });
     if (consumed.count === 0) {
       // Either expired or lost the race. Same error either way — avoids
       // leaking timing signal about which case the client hit.
-      await this.recordResetCodeFailure(clientIp);
       throw new InvalidVerificationSession();
     }
 
