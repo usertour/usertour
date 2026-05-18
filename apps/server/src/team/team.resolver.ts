@@ -38,7 +38,7 @@ export class TeamResolver {
     return this.teamService.getTeamMembers(projectId);
   }
 
-  @Query(() => Invite)
+  @Query(() => Invite, { nullable: true })
   @Public()
   async getInvite(@Args('inviteId') inviteId: string) {
     return this.teamService.getInvite(inviteId);

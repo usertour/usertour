@@ -942,7 +942,7 @@ type Query {
   getIntegration(environmentId: String!, provider: String!): Integration!
   getIntegrationObjectMapping(id: String!): IntegrationObjectMapping!
   getIntegrationObjectMappings(integrationId: String!): [IntegrationObjectMapping!]!
-  getInvite(inviteId: String!): Invite!
+  getInvite(inviteId: String!): Invite
   getInvites(projectId: String!): [Invite!]!
   getProjectConfig(projectId: String!): ProjectConfigModel!
   getProjectLicenseInfo(projectId: String!): LicenseInfo
