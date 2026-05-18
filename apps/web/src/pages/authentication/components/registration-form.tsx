@@ -19,9 +19,15 @@ interface SignUpFormProps {
   inviteCode?: string;
   buttonText?: string;
   className?: string;
+  /**
+   * When set, a read-only email field is rendered at the top of the form
+   * (display-only, not part of submission — the server derives the actual
+   * email from the inviteCode). Used by the invite page.
+   */
+  fixedEmail?: string;
 }
 
-export const SignUpForm = ({ inviteCode, buttonText, className }: SignUpFormProps) => {
+export const SignUpForm = ({ inviteCode, buttonText, className, fixedEmail }: SignUpFormProps) => {
   const { t } = useTranslation('ui');
   const { invoke } = useSignupMutation();
   const handleAuthResult = useAuthAfterLogin();
@@ -103,6 +109,14 @@ export const SignUpForm = ({ inviteCode, buttonText, className }: SignUpFormProp
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
         <div className="grid gap-4">
+          {fixedEmail && (
+            <FormItem>
+              <FormLabel>{t('auth.signUp.emailLabel')}</FormLabel>
+              <FormControl>
+                <Input value={fixedEmail} type="email" readOnly disabled />
+              </FormControl>
+            </FormItem>
+          )}
           <FormField
             control={form.control}
             name="userName"

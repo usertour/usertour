@@ -55,6 +55,7 @@ const SETUP_SYSTEM_ADMIN_LOCK_KEY = 'setup-system-admin';
 const PASSWORD_LOCKOUT_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const PASSWORD_MAX_FAILED_ATTEMPTS = 10;
 const PASSWORD_FAILURE_KEY_PREFIX = 'login-failure:password:';
+const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — matches Google / Stripe / GitHub conventions
 
 @Injectable()
 export class AuthService {
@@ -784,9 +785,16 @@ export class AuthService {
     }
 
     try {
+      // Invalidate any prior outstanding codes for this user. If they
+      // requested reset multiple times, only the latest link should work —
+      // a user who clicked Forgot password three times shouldn't leave
+      // three valid reset URLs in their inbox.
+      await this.prisma.code.deleteMany({ where: { userId: user.id } });
+
       const result = await this.prisma.code.create({
         data: {
           userId: user.id,
+          expiresAt: new Date(Date.now() + RESET_CODE_TTL_MS),
         },
       });
       await this.addSendResetPasswordEmailJob(result.id);
@@ -797,8 +805,23 @@ export class AuthService {
   }
 
   async resetUserPasswordByCode(code: string, password: string): Promise<Common> {
+    // Look up the row so we have userId for the password update. The actual
+    // consume step below is a race-safe DELETE that re-checks expiresAt.
     const data = await this.prisma.code.findUnique({ where: { id: code } });
     if (!data) {
+      throw new InvalidVerificationSession();
+    }
+
+    // Atomically consume: deleteMany with the expiresAt > now guard. Two
+    // concurrent requests with the same code can't both succeed — the
+    // second sees count === 0. Single-use is enforced by the row being
+    // gone after consume; expiry is enforced inline.
+    const consumed = await this.prisma.code.deleteMany({
+      where: { id: code, expiresAt: { gt: new Date() } },
+    });
+    if (consumed.count === 0) {
+      // Either expired or lost the race. Same error either way — avoids
+      // leaking timing signal about which case the client hit.
       throw new InvalidVerificationSession();
     }
 

@@ -102,6 +102,9 @@ Table Code {
   updatedAt DateTime [not null]
   user User [not null]
   userId String [not null]
+  expiresAt DateTime [not null, note: 'When this code stops being valid. Set at creation (typically createdAt + 1h).
+Codes are single-use (deleted on consumption); this protects against forwarded
+or leaked reset links that haven\'t been used yet.']
   ext Json
 }
 

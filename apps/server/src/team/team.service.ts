@@ -37,10 +37,18 @@ export class TeamService {
   }
 
   async getInvite(inviteId: string) {
-    return await this.prisma.invite.findFirst({
+    const invite = await this.prisma.invite.findFirst({
       where: { code: inviteId },
       include: { user: true, project: true },
     });
+    if (!invite) {
+      return null;
+    }
+    const recipient = await this.prisma.user.findUnique({
+      where: { email: invite.email },
+      select: { id: true },
+    });
+    return { ...invite, recipientExists: !!recipient };
   }
 
   async cancelInvite(inviteId: string) {

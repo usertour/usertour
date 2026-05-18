@@ -66,6 +66,8 @@ export const getInvite = gql`
       name
       email
       role
+      expired
+      recipientExists
       createdAt
       user {
         id

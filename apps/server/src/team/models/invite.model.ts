@@ -26,6 +26,14 @@ export class Invite extends BaseModel {
   @Field(() => String, { nullable: false })
   projectId: string;
 
+  /**
+   * True when a Usertour account already exists for `email`. Lets the invite
+   * page render the right surface (sign-in vs sign-up) without forcing the
+   * user to pick.
+   */
+  @Field(() => Boolean, { nullable: false })
+  recipientExists: boolean;
+
   @Field(() => User, { nullable: true })
   user?: User;
 

@@ -140,6 +140,10 @@ model Code {
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   user      User     @relation(fields: [userId], references: [id])
   userId    String
+  /// When this code stops being valid. Set at creation (typically createdAt + 1h).
+  /// Codes are single-use (deleted on consumption); this protects against forwarded
+  /// or leaked reset links that haven't been used yet.
+  expiresAt DateTime @db.Timestamptz(6)
   ext       Json?    @db.JsonB
 }
 

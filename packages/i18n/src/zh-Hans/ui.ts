@@ -100,7 +100,9 @@ const translations = {
     signIn: {
       title: '登录 UserTour',
       submitButton: '登录',
+      emailLabel: '邮箱',
       emailPlaceholder: '请输入邮箱',
+      passwordLabel: '密码',
       passwordPlaceholder: '请输入密码',
       forgotPassword: '忘记密码?',
       noAccountPrompt: '还没有账号?',
@@ -129,6 +131,7 @@ const translations = {
       description: '填写下列信息以创建账号',
       nameLabel: '姓名',
       namePlaceholder: '请输入您的姓名',
+      emailLabel: '邮箱',
       projectNameLabel: '项目名称',
       projectNamePlaceholder: '请输入项目名称',
       passwordLabel: '密码',
@@ -141,13 +144,11 @@ const translations = {
     },
     invite: {
       titleTemplate: '{{userName}} 邀请你加入 {{projectName}}',
-      subtitle: '使用你的账号登录以加入。',
-      signInButton: '登录并加入',
-      signUpButton: '注册账号并加入',
-      toSignUpPrompt: '还没有账号?',
-      toSignUpCta: '注册账号',
-      toSignInPrompt: '已经有账号?',
-      toSignInCta: '直接登录',
+      signInDescription: '使用你已有的 Usertour 账号登录,即可加入团队。',
+      signUpDescription: '创建 Usertour 账号即可加入团队。',
+      joinButton: '加入团队',
+      expiredTitle: '邀请已失效',
+      expiredDescription: '请让发起邀请的成员重新发送邀请,或联系团队管理员。',
     },
     resetPassword: {
       title: '欢迎回来!',
@@ -169,6 +170,11 @@ const translations = {
       repeatPasswordLabel: '重复新密码',
       repeatPasswordPlaceholder: '再次输入相同的密码',
       submitButton: '修改密码',
+      success: {
+        title: '密码已重置',
+        description: '请使用新密码重新登录。',
+        continueButton: '前往登录',
+      },
     },
     setupAdmin: {
       title: '初始化管理员账号',
