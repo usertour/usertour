@@ -184,6 +184,39 @@ export class AuthService {
       .clearCookie(REFRESH_TOKEN_COOKIE, clearOptions);
   }
 
+  // Users created via the System Admin "create user" UI (and any other path
+  // that bootstraps a User row without a default project) end up with zero
+  // UserOnProject rows. AppContext.project resolves to null and the admin
+  // shell renders blank. emailLogin already handles this post-auth; the
+  // OAuth flow needs the same bootstrap on both return-existing-user
+  // branches.
+  private async ensureUserHasProject(userId: string) {
+    const count = await this.prisma.userOnProject.count({ where: { userId } });
+    if (count === 0) {
+      const project = await this.createProject(this.prisma, 'Unnamed Project', userId);
+      await initialization(this.prisma, project.id);
+    }
+  }
+
+  // Record the OAuth identity on the User row so future logins find the
+  // account directly via (provider, providerAccountId) instead of falling
+  // back to the email lookup. Also keeps `isOAuthUser` (which scans Account
+  // for type='oauth') honest. Upsert is idempotent and refreshes the
+  // upstream tokens if the row already exists.
+  private async linkOAuthAccount(
+    userId: string,
+    provider: string,
+    providerAccountId: string,
+    accessToken: string,
+    refreshToken: string,
+  ) {
+    await this.prisma.account.upsert({
+      where: { provider_providerAccountId: { provider, providerAccountId } },
+      create: { type: 'oauth', userId, provider, providerAccountId, accessToken, refreshToken },
+      update: { accessToken, refreshToken },
+    });
+  }
+
   async oauthValidate(
     accessToken: string,
     refreshToken: string,
@@ -214,6 +247,7 @@ export class AuthService {
         if (inviteCode) {
           await this.joinProject(inviteCode, user.id);
         }
+        await this.ensureUserHasProject(user.id);
         return user;
       }
 
@@ -247,10 +281,12 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) {
       this.logger.log(`user ${user.id} already registered for email ${email}`);
+      await this.linkOAuthAccount(user.id, provider, id, accessToken, refreshToken);
       // inviteCode is not empty, join project
       if (inviteCode) {
         await this.joinProject(inviteCode, user.id);
       }
+      await this.ensureUserHasProject(user.id);
       return user;
     }
 
