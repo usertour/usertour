@@ -107,9 +107,13 @@ Table Code {
   updatedAt DateTime [not null]
   user User [not null]
   userId String [not null]
-  expiresAt DateTime [not null, note: 'When this code stops being valid. Set at creation (typically createdAt + 1h).
+  expiresAt DateTime [note: 'When this code stops being valid. Set at creation (typically createdAt + 1h).
 Codes are single-use (deleted on consumption); this protects against forwarded
-or leaked reset links that haven\'t been used yet.']
+or leaked reset links that haven\'t been used yet.
+Nullable so a rolling self-hosted upgrade can land the schema before the
+new app instances are live — old instances continue to INSERT without
+expiresAt, and the `expiresAt > now()` read filter naturally treats
+those rows as expired.']
   ext Json
 }
 

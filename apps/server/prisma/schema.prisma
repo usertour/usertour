@@ -149,7 +149,11 @@ model Code {
   /// When this code stops being valid. Set at creation (typically createdAt + 1h).
   /// Codes are single-use (deleted on consumption); this protects against forwarded
   /// or leaked reset links that haven't been used yet.
-  expiresAt DateTime @db.Timestamptz(6)
+  /// Nullable so a rolling self-hosted upgrade can land the schema before the
+  /// new app instances are live — old instances continue to INSERT without
+  /// expiresAt, and the `expiresAt > now()` read filter naturally treats
+  /// those rows as expired.
+  expiresAt DateTime? @db.Timestamptz(6)
   ext       Json?    @db.JsonB
 }
 
