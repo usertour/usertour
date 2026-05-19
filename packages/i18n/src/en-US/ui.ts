@@ -171,8 +171,7 @@ const translations = {
     },
     passwordReset: {
       title: 'Reset your password',
-      description:
-        'So, you forgot your password? No biggie, it happens to all of us. Just pick a new one below.',
+      description: 'Set a new password below.',
       newPasswordLabel: 'New password',
       newPasswordPlaceholder: 'Pick a strong password',
       repeatPasswordLabel: 'Repeat New password',

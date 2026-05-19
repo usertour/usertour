@@ -164,7 +164,7 @@ const translations = {
     },
     passwordReset: {
       title: '重置密码',
-      description: '忘记密码不要紧,在下面设置一个新密码即可。',
+      description: '在下方设置新密码。',
       newPasswordLabel: '新密码',
       newPasswordPlaceholder: '设置一个安全的密码',
       repeatPasswordLabel: '重复新密码',
