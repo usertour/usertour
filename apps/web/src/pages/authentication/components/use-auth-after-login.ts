@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { broadcastAuthSwitch } from '@/utils/auth-channel';
 
 export type AuthMutationResult =
   | {
@@ -54,6 +55,10 @@ export const useAuthAfterLogin = () => {
         );
         return true;
       }
+      // Final login success — tell other tabs to reload before we navigate,
+      // so any stale React state in those tabs doesn't keep writing to the
+      // previous session's user record.
+      broadcastAuthSwitch();
       window.location.assign(resolveNextPath(next));
       return true;
     },

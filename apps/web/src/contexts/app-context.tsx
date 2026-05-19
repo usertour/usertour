@@ -8,6 +8,7 @@ import {
 import { removeAuthToken } from '@usertour/helpers';
 import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { broadcastAuthSwitch } from '@/utils/auth-channel';
 
 interface AppContextProps {
   environment: Environment | null;
@@ -60,6 +61,7 @@ export const AppProvider = (props: AppProviderProps) => {
       await logout();
       removeAuthToken();
       setUserInfo(null);
+      broadcastAuthSwitch();
     } catch (error) {
       console.error('Logout failed', error);
     }
