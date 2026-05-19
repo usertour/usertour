@@ -65,6 +65,14 @@ const config: RouteObject[] = [
         path: '/auth/password-reset/:code',
         lazy: lazyComponent(() => import('@/pages/authentication/password-reset'), 'PasswordReset'),
       },
+      // Magic-link landing for signup confirmation. Carries a registration
+      // code that's bound to a specific email; whoever clicks the link
+      // needs to reach the form regardless of any pre-existing session.
+      // Submitting overwrites cookies with the newly created account.
+      {
+        path: '/auth/registration/:registrationCode',
+        lazy: lazyComponent(() => import('@/pages/authentication/registration'), 'Registration'),
+      },
     ],
   },
 
@@ -84,13 +92,6 @@ const config: RouteObject[] = [
           {
             path: '/auth/signup',
             lazy: lazyComponent(() => import('@/pages/authentication/sign-up'), 'SignUp'),
-          },
-          {
-            path: '/auth/registration/:registrationCode',
-            lazy: lazyComponent(
-              () => import('@/pages/authentication/registration'),
-              'Registration',
-            ),
           },
         ],
       },
