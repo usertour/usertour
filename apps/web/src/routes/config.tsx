@@ -35,6 +35,11 @@ const config: RouteObject[] = [
   // 2FA verify / setup is open to both the mid-login (no userInfo, has
   // challenge token) and the logged-in must-enrol case — so it sits
   // outside guest/user guards. AuthLayout still applies for the visuals.
+  //
+  // The invite page also sits outside the guards: submitting its form passes
+  // the inviteCode through login/signup, which re-authenticates as the
+  // invite email and runs joinProject server-side. Whatever session the
+  // visitor already has (or doesn't) is irrelevant — re-auth replaces it.
   {
     element: <AuthLayout />,
     children: [
@@ -49,10 +54,31 @@ const config: RouteObject[] = [
           'TwoFactorSetup',
         ),
       },
+      {
+        path: '/auth/invite/:inviteCode',
+        lazy: lazyComponent(() => import('@/pages/authentication/invite'), 'Invite'),
+      },
+      // Email-link landing for password reset. Whoever clicked the email
+      // link (logged-in or not) needs to reach the form that consumes the
+      // reset code — same session-agnostic reasoning as the invite link.
+      {
+        path: '/auth/password-reset/:code',
+        lazy: lazyComponent(() => import('@/pages/authentication/password-reset'), 'PasswordReset'),
+      },
+      // Magic-link landing for signup confirmation. Carries a registration
+      // code that's bound to a specific email; whoever clicks the link
+      // needs to reach the form regardless of any pre-existing session.
+      // Submitting overwrites cookies with the newly created account.
+      {
+        path: '/auth/registration/:registrationCode',
+        lazy: lazyComponent(() => import('@/pages/authentication/registration'), 'Registration'),
+      },
     ],
   },
 
-  // Public / guest surface.
+  // Public / guest surface. Reset-password is no longer a standalone route —
+  // it's an in-place subview of /auth/signin (and of /auth/invite) so the
+  // user never leaves the page they came in on.
   {
     element: <AuthGuard mode="guest" />,
     children: [
@@ -66,31 +92,6 @@ const config: RouteObject[] = [
           {
             path: '/auth/signup',
             lazy: lazyComponent(() => import('@/pages/authentication/sign-up'), 'SignUp'),
-          },
-          {
-            path: '/auth/reset-password',
-            lazy: lazyComponent(
-              () => import('@/pages/authentication/reset-password'),
-              'ResetPassword',
-            ),
-          },
-          {
-            path: '/auth/invite/:inviteCode',
-            lazy: lazyComponent(() => import('@/pages/authentication/invite'), 'Invite'),
-          },
-          {
-            path: '/auth/registration/:registrationCode',
-            lazy: lazyComponent(
-              () => import('@/pages/authentication/registration'),
-              'Registration',
-            ),
-          },
-          {
-            path: '/auth/password-reset/:code',
-            lazy: lazyComponent(
-              () => import('@/pages/authentication/password-reset'),
-              'PasswordReset',
-            ),
           },
         ],
       },

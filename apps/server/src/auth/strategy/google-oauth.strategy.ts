@@ -27,7 +27,6 @@ export class GoogleOauthStrategy extends PassportStrategy(Strategy, 'google') {
       try {
         const stateData = JSON.parse(Buffer.from(req.query.state, 'base64').toString());
         inviteCode = stateData.inviteCode;
-        console.log('google oauth validate inviteCode', inviteCode);
       } catch (_) {
         throw new OAuthError();
       }

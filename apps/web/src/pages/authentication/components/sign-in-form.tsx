@@ -5,11 +5,10 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@usertour/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { SpinnerIcon } from '@usertour/icons';
 import { Input } from '@usertour/input';
 import { useToast } from '@usertour/use-toast';
-import { Link } from 'react-router-dom';
 import { LoginMutationVariables, useLoginMutation } from '@usertour/hooks';
 import { GlobalConfig } from '@usertour/types';
 import { SocialProviders } from './social-providers';
@@ -19,6 +18,17 @@ interface SignInFormProps {
   globalConfig?: GlobalConfig;
   inviteCode?: string;
   buttonText?: string;
+  /**
+   * When set, the email field is pre-filled with this value and locked. Used
+   * by the invite page where the email is determined by the invite code.
+   */
+  fixedEmail?: string;
+  /**
+   * Called when the user clicks the "Forgot your password?" link. The owner
+   * page handles the transition (typically swapping to a reset-password
+   * subview). If omitted, the link is not rendered.
+   */
+  onForgotPassword?: () => void;
 }
 
 const resolveAuthFlags = (globalConfig?: GlobalConfig) => {
@@ -30,7 +40,13 @@ const resolveAuthFlags = (globalConfig?: GlobalConfig) => {
   };
 };
 
-export const SignInForm = ({ globalConfig, inviteCode, buttonText }: SignInFormProps) => {
+export const SignInForm = ({
+  globalConfig,
+  inviteCode,
+  buttonText,
+  fixedEmail,
+  onForgotPassword,
+}: SignInFormProps) => {
   const { t } = useTranslation('ui');
   const { toast } = useToast();
   const { invoke } = useLoginMutation();
@@ -45,8 +61,8 @@ export const SignInForm = ({ globalConfig, inviteCode, buttonText }: SignInFormP
           .email(t('auth.errors.invalidEmail')),
         password: z
           .string({ required_error: t('auth.errors.passwordRequired') })
-          .max(160)
-          .min(4),
+          .min(8)
+          .max(160),
       }),
     [t],
   );
@@ -54,7 +70,7 @@ export const SignInForm = ({ globalConfig, inviteCode, buttonText }: SignInFormP
 
   const form = useForm<SigninFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: fixedEmail ?? '', password: '' },
     mode: 'onChange',
   });
 
@@ -90,11 +106,14 @@ export const SignInForm = ({ globalConfig, inviteCode, buttonText }: SignInFormP
               name="email"
               render={({ field }) => (
                 <FormItem>
+                  {fixedEmail && <FormLabel>{t('auth.signIn.emailLabel')}</FormLabel>}
                   <FormControl>
                     <Input
                       placeholder={t('auth.signIn.emailPlaceholder')}
                       type="email"
                       {...field}
+                      readOnly={!!fixedEmail}
+                      disabled={!!fixedEmail}
                     />
                   </FormControl>
                   <FormMessage />
@@ -106,6 +125,7 @@ export const SignInForm = ({ globalConfig, inviteCode, buttonText }: SignInFormP
               name="password"
               render={({ field }) => (
                 <FormItem>
+                  {fixedEmail && <FormLabel>{t('auth.signIn.passwordLabel')}</FormLabel>}
                   <FormControl>
                     <Input
                       placeholder={t('auth.signIn.passwordPlaceholder')}
@@ -114,13 +134,17 @@ export const SignInForm = ({ globalConfig, inviteCode, buttonText }: SignInFormP
                     />
                   </FormControl>
                   <FormMessage />
-                  <div className="flex flex-row justify-end">
-                    <span className="text-sm font-medium text-muted-foreground leading-none">
-                      <Link to="/auth/reset-password" className="hover:text-primary">
+                  {onForgotPassword && (
+                    <div className="flex flex-row justify-end">
+                      <button
+                        type="button"
+                        onClick={onForgotPassword}
+                        className="text-sm font-medium text-muted-foreground leading-none hover:text-primary cursor-pointer"
+                      >
                         {t('auth.signIn.forgotPassword')}
-                      </Link>
-                    </span>
-                  </div>
+                      </button>
+                    </div>
+                  )}
                 </FormItem>
               )}
             />

@@ -75,6 +75,18 @@ export const errorLink = onError(({ graphQLErrors, networkError, operation, forw
         });
       });
     }
+
+    if (error.extensions?.code === 'E0013') {
+      // Triggered when this tab's React state still references a project the
+      // current session no longer has access to — typically because another
+      // tab signed in or registered as a different account (cookies are
+      // shared across tabs, per-tab React state isn't). Navigate to root so
+      // AppContext re-initialises from the current cookies and LandingRedirect
+      // picks an environment the user actually has access to.
+      if (window.location.pathname.startsWith('/auth')) return;
+      window.location.href = '/';
+      return;
+    }
   }
 
   if (networkError) {

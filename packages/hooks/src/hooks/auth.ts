@@ -1,5 +1,6 @@
 import { QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
+  acceptInvite,
   confirmTwoFactorSetup,
   confirmTwoFactorSetupWithChallenge,
   createMagicLink,
@@ -59,8 +60,7 @@ export type SignupMutationVariables = {
   code: string;
   password: string;
   userName: string;
-  companyName?: string;
-  isInvite: boolean;
+  companyName: string;
 };
 
 export const useSignupMutation = () => {
@@ -68,6 +68,21 @@ export const useSignupMutation = () => {
   const invoke = async (variables: SignupMutationVariables) => {
     const response = await mutation({ variables });
     return response.data?.signup;
+  };
+  return { invoke, loading, error };
+};
+
+export type AcceptInviteMutationVariables = {
+  code: string;
+  password: string;
+  userName: string;
+};
+
+export const useAcceptInviteMutation = () => {
+  const [mutation, { loading, error }] = useMutation(acceptInvite);
+  const invoke = async (variables: AcceptInviteMutationVariables) => {
+    const response = await mutation({ variables });
+    return response.data?.acceptInvite;
   };
   return { invoke, loading, error };
 };

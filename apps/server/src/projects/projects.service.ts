@@ -16,6 +16,7 @@ import { Environment } from '@/common/types/schema';
 import { Prisma } from '@prisma/client';
 import { type PlanFeatures, PlanType, ProjectConfig } from '@usertour/types';
 import { isWithinLimit, resolvePlanFeatures } from '@usertour/helpers';
+import { activeInviteWhere } from '@/team/invite-filters';
 
 type DbClient = Prisma.TransactionClient | PrismaService;
 
@@ -344,7 +345,7 @@ export class ProjectsService {
     const { teamMemberLimit } = await this.resolveProjectFeatures(projectId, db);
     const membersCount = await db.userOnProject.count({ where: { projectId } });
     const inviteCount = await db.invite.count({
-      where: { projectId, expired: false, canceled: false, deleted: false },
+      where: { projectId, ...activeInviteWhere() },
     });
     if (!isWithinLimit(teamMemberLimit, membersCount + inviteCount)) {
       throw new TeamMemberLimitError();
