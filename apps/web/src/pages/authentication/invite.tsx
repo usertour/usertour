@@ -13,7 +13,7 @@ type View = 'main' | 'forgot' | 'forgotSuccess';
 export const Invite = () => {
   const { t } = useTranslation('ui');
   const { inviteCode } = useParams();
-  const { data: globalConfig } = useGlobalConfigQuery();
+  const { data: globalConfig, loading: globalConfigLoading } = useGlobalConfigQuery();
   const { data: invite, loading } = useGetInviteQuery(inviteCode ?? '');
   const [view, setView] = useState<View>('main');
 
@@ -21,7 +21,10 @@ export const Invite = () => {
     return null;
   }
 
-  if (loading) {
+  // Wait for both the invite lookup and globalConfig before rendering — the
+  // latter governs which OAuth buttons SocialProviders shows, so rendering
+  // early would flash "all enabled" before self-host config narrows it.
+  if (loading || globalConfigLoading) {
     return <AuthCard title={t('auth.invite.expiredTitle')} loading />;
   }
 

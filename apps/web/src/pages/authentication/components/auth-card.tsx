@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@usertour/card';
-import { Skeleton } from '@usertour/skeleton';
+import { SpinnerIcon } from '@usertour/icons';
 
 interface AuthCardProps {
   title: ReactNode;
@@ -35,8 +35,12 @@ export const AuthCard = ({
         )}
       </CardHeader>
       {(loading || children !== undefined) && (
-        <CardContent className={contentClassName}>
-          {loading ? <AuthCardSkeleton /> : children}
+        <CardContent className={loading ? 'flex justify-center py-8' : contentClassName}>
+          {loading ? (
+            <SpinnerIcon className="h-6 w-6 animate-spin text-muted-foreground" />
+          ) : (
+            children
+          )}
         </CardContent>
       )}
       {footer && <CardFooter className="flex flex-col">{footer}</CardFooter>}
@@ -45,15 +49,3 @@ export const AuthCard = ({
 };
 
 AuthCard.displayName = 'AuthCard';
-
-export const AuthCardSkeleton = () => (
-  <>
-    <Skeleton className="h-4 w-24" />
-    <Skeleton className="h-10 w-full" />
-    <Skeleton className="h-4 w-24" />
-    <Skeleton className="h-10 w-full" />
-    <Skeleton className="h-10 w-full" />
-  </>
-);
-
-AuthCardSkeleton.displayName = 'AuthCardSkeleton';
