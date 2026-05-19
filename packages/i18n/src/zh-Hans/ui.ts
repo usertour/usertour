@@ -152,7 +152,7 @@ const translations = {
     },
     resetPassword: {
       title: '欢迎回来!',
-      description: '请输入邮箱地址,我们会发送重置密码的链接到该邮箱。',
+      description: '输入你的邮箱，我们会发送重置链接。',
       emailLabel: '邮箱',
       emailPlaceholder: '请输入邮箱',
       submitButton: '重置密码',

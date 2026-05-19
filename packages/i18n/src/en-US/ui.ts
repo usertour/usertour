@@ -159,8 +159,7 @@ const translations = {
     },
     resetPassword: {
       title: 'Welcome back!',
-      description:
-        "Enter your email address, and we'll send you an email with a link to reset your password.",
+      description: "Enter your email and we'll send you a reset link.",
       emailLabel: 'Email',
       emailPlaceholder: 'Enter your email',
       submitButton: 'Reset password',
