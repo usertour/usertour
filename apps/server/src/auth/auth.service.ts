@@ -194,7 +194,9 @@ export class AuthService {
     const count = await this.prisma.userOnProject.count({ where: { userId } });
     if (count === 0) {
       const project = await this.createProject(this.prisma, 'Unnamed Project', userId);
-      await initialization(this.prisma, project.id);
+      // Defer attribute/event default seeding to the worker — it runs ~186
+      // DB round trips and bloats the synchronous auth response otherwise.
+      await this.addInitializeProjectJob(project.id);
     }
   }
 
@@ -317,7 +319,8 @@ export class AuthService {
       this.logger.warn(`failed to download avatar: ${e}`);
     }
 
-    return await this.prisma.$transaction(async (tx) => {
+    let bootstrapProjectId: string | undefined;
+    const newUser = await this.prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           name: displayName || email,
@@ -353,11 +356,17 @@ export class AuthService {
         }
       } else {
         const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
-        await initialization(tx, project.id);
+        bootstrapProjectId = project.id;
       }
 
       return newUser;
     });
+
+    if (bootstrapProjectId) {
+      await this.addInitializeProjectJob(bootstrapProjectId);
+    }
+
+    return newUser;
   }
 
   private async generateRefreshToken(userId: string): Promise<string> {
@@ -658,18 +667,25 @@ export class AuthService {
       throw new InvalidVerificationSession();
     }
 
-    return this.runSignupFlow(
+    let bootstrapProjectId: string | undefined;
+    const result = await this.runSignupFlow(
       payload.userName,
       register.email,
       payload.password,
       async (tx, user) => {
         const project = await this.createProject(tx, payload.companyName, user.id);
-        await initialization(tx, project.id);
+        bootstrapProjectId = project.id;
         // Consume the magic-link Register row so the same code can't be
         // re-used for a second signup attempt before its TTL window closes.
         await tx.register.deleteMany({ where: { code: payload.code } });
       },
     );
+
+    if (bootstrapProjectId) {
+      await this.addInitializeProjectJob(bootstrapProjectId);
+    }
+
+    return result;
   }
 
   async acceptInvite(payload: AcceptInviteInput): Promise<AuthResult> {
@@ -734,6 +750,7 @@ export class AuthService {
 
       await this.ensureSystemAdminSetupAvailable();
 
+      let bootstrapProjectId: string | undefined;
       const user = await this.prisma.$transaction(async (tx) => {
         const existingUser = await tx.user.findFirst({
           where: { isSystemAdmin: true },
@@ -755,10 +772,14 @@ export class AuthService {
 
         await this.createAccount(tx, 'email', user.id, 'email', email);
         const project = await this.createProject(tx, 'Unnamed Project', user.id);
-        await initialization(tx, project.id);
+        bootstrapProjectId = project.id;
 
         return user;
       });
+
+      if (bootstrapProjectId) {
+        await this.addInitializeProjectJob(bootstrapProjectId);
+      }
 
       this.logger.log(`System admin ${user.id} initialized`);
       // issueTokensOrChallenge has two branches (mfa-verify, mfa-setup-required)
@@ -866,7 +887,7 @@ export class AuthService {
     // active project, or create an orphan project for any known email.
     if (user.projects.length === 0) {
       const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
-      await initialization(this.prisma, project.id);
+      await this.addInitializeProjectJob(project.id);
     }
 
     if (inviteCode) {
