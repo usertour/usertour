@@ -1017,7 +1017,7 @@ const initializationAttributeOnEvent = async (tx: Prisma.TransactionClient, proj
   }
 
   if (inserts.length > 0) {
-    await tx.attributeOnEvent.createMany({ data: inserts });
+    await tx.attributeOnEvent.createMany({ data: inserts, skipDuplicates: true });
   }
 };
 
