@@ -106,7 +106,9 @@ const translations = {
     signIn: {
       title: 'Sign in to UserTour',
       submitButton: 'Login',
+      emailLabel: 'Email',
       emailPlaceholder: 'Enter your email',
+      passwordLabel: 'Password',
       passwordPlaceholder: 'Enter your password',
       forgotPassword: 'Forgot your password?',
       noAccountPrompt: 'No account yet?',
@@ -136,6 +138,7 @@ const translations = {
       description: 'Enter your email and password below to login your account',
       nameLabel: 'Your name',
       namePlaceholder: 'Enter your full name',
+      emailLabel: 'Email',
       projectNameLabel: 'Project name',
       projectNamePlaceholder: 'Enter your project name',
       passwordLabel: 'Password',
@@ -148,18 +151,15 @@ const translations = {
     },
     invite: {
       titleTemplate: '{{userName}} invites you to join {{projectName}}',
-      subtitle: 'Sign in with your account to join them.',
-      signInButton: 'Login and join',
-      signUpButton: 'Create account and join',
-      toSignUpPrompt: 'No account yet?',
-      toSignUpCta: 'Create account',
-      toSignInPrompt: 'Already have an account?',
-      toSignInCta: 'Sign in instead',
+      signInDescription: 'Sign in with your existing Usertour account to join the team.',
+      signUpDescription: 'Create your Usertour account to join them.',
+      joinButton: 'Join the team',
+      expiredTitle: 'This invitation is no longer valid',
+      expiredDescription: 'Ask the inviter to send a new invitation, or contact your team admin.',
     },
     resetPassword: {
       title: 'Welcome back!',
-      description:
-        "Enter your email address, and we'll send you an email with a link to reset your password.",
+      description: "Enter your email and we'll send you a reset link.",
       emailLabel: 'Email',
       emailPlaceholder: 'Enter your email',
       submitButton: 'Reset password',
@@ -171,13 +171,17 @@ const translations = {
     },
     passwordReset: {
       title: 'Reset your password',
-      description:
-        'So, you forgot your password? No biggie, it happens to all of us. Just pick a new one below.',
+      description: 'Set a new password below.',
       newPasswordLabel: 'New password',
       newPasswordPlaceholder: 'Pick a strong password',
       repeatPasswordLabel: 'Repeat New password',
       repeatPasswordPlaceholder: 'Try the same password again',
       submitButton: 'Change password',
+      success: {
+        title: 'Password reset',
+        description: "You'll need to sign in again with your new password.",
+        continueButton: 'Continue to sign in',
+      },
     },
     setupAdmin: {
       title: 'Set up admin account',

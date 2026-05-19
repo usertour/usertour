@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
+import { AcceptInviteInput } from './dto/accept-invite.input';
 import { SignupInput } from './dto/signup.input';
 import { Common } from './models/common.model';
 import { Profile } from 'passport-google-oauth20';
@@ -25,9 +26,11 @@ import ms from 'ms';
 import {
   AccountNotFoundError,
   AuthenticationExpiredError,
+  BaseError,
   EmailAlreadyRegistered,
   InvalidVerificationSession,
   OAuthError,
+  OAuthOnlyAccountError,
   PasswordIncorrect,
   TooManyLoginAttemptsError,
   UnknownError,
@@ -36,6 +39,7 @@ import {
   SystemAdminAlreadyInitializedError,
   SystemAdminSetupRequiredError,
   SystemAdminSetupUnavailableError,
+  WrongInviteAccountError,
 } from '@/common/errors';
 import { TeamService } from '@/team/team.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
@@ -49,16 +53,24 @@ import { Queue } from 'bullmq';
 import { RedisService, LockReleaseFn } from '@/shared/redis.service';
 
 const EMAIL_COOLDOWN_MS = 60 * 1000; // 60 seconds - minimum interval between email sends
-const REGISTER_REUSE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours - reuse existing register record within this window
+const EMAIL_COOLDOWN_SECONDS = EMAIL_COOLDOWN_MS / 1000;
+const REGISTER_REUSE_WINDOW_MS = 60 * 60 * 1000; // 1 hour — caps the window a leaked magic link can be reused
 const EMAIL_LOCK_KEY_PREFIX = 'magic-link-email:';
+const RESET_EMAIL_COOLDOWN_KEY_PREFIX = 'reset-email-cooldown:';
 const SETUP_SYSTEM_ADMIN_LOCK_KEY = 'setup-system-admin';
 const PASSWORD_LOCKOUT_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const PASSWORD_MAX_FAILED_ATTEMPTS = 10;
 const PASSWORD_FAILURE_KEY_PREFIX = 'login-failure:password:';
+const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — matches Google / Stripe / GitHub conventions
 
 @Injectable()
 export class AuthService {
   private logger = new Logger(AuthService.name);
+  // Lazily computed argon2 hash used by `emailLogin` to burn equivalent CPU
+  // on a username-miss as on a real password verify. Without it, the
+  // response time of "no such user" is meaningfully faster than "wrong
+  // password" and an attacker can enumerate registered emails.
+  private dummyPasswordHash: Promise<string> | null = null;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -178,12 +190,8 @@ export class AuthService {
     profile: Profile,
     inviteCode?: string,
   ) {
-    this.logger.log(
-      `oauth accessToken: ${accessToken}, refreshToken: ${refreshToken}, profile: ${JSON.stringify(
-        profile,
-      )}, inviteCode: ${inviteCode}`,
-    );
     const { provider, id, emails, displayName, photos } = profile;
+    this.logger.log(`oauth validate provider=${provider}, providerId=${id}`);
 
     // Check if there is an authentication account record
     const account = await this.prisma.account.findUnique({
@@ -219,7 +227,21 @@ export class AuthService {
       this.logger.warn('emails is empty, invalid oauth');
       throw new OAuthError();
     }
-    const email = emails[0].value;
+    // Canonicalise at the boundary. All other write paths (signup, invite,
+    // magic link, system admin) already lowercase via their resolvers; this
+    // is the one path that previously stored the OAuth provider's raw value
+    // and could produce mixed-case `User.email` rows.
+    const email = emails[0].value.toLowerCase().trim();
+    // Reject if the provider explicitly says the email is not verified.
+    // Some providers (Google OIDC) always set this; some (GitHub primary)
+    // imply it; some (custom OIDC) may surface unverified mailboxes. Without
+    // this gate, an attacker who can register an unverified email on a
+    // provider could OAuth-log-in as the matching local user.
+    const verifiedFlag = emails[0].verified as boolean | string | undefined;
+    if (verifiedFlag === false || verifiedFlag === 'false') {
+      this.logger.warn(`OAuth email not verified for ${provider} email=${email}`);
+      throw new OAuthError();
+    }
 
     // Return user if this email has been registered
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -234,6 +256,19 @@ export class AuthService {
 
     if (!inviteCode) {
       await this.ensureUserRegistrationAllowed();
+    }
+
+    // Email-bind the invite before creating anything. The OAuth profile email
+    // is the new user's identity, and an invite addressed to someone else
+    // must not be silently consumed by this OAuth signup.
+    if (inviteCode) {
+      const invite = await this.teamService.getValidInviteByCode(inviteCode);
+      if (!invite) {
+        throw new InvalidVerificationSession();
+      }
+      if (invite.email.toLowerCase() !== email.toLowerCase()) {
+        throw new WrongInviteAccountError();
+      }
     }
 
     // download avatar if profile photo exists
@@ -271,12 +306,14 @@ export class AuthService {
       });
       this.logger.log(`new account created for ${newAccount.id}`);
 
-      // inviteCode is not empty, join project
+      // inviteCode is not empty, join project. Delete the invite row before
+      // assignUserToProject so the seat-limit recheck inside that call does
+      // not double-count this very invite as still "pending".
       if (inviteCode) {
         const invite = await this.teamService.getValidInviteByCode(inviteCode);
         if (invite) {
-          await this.teamService.assignUserToProject(tx, newUser.id, invite.projectId, invite.role);
           await this.teamService.deleteInvite(tx, inviteCode);
+          await this.teamService.assignUserToProject(tx, newUser.id, invite.projectId, invite.role);
         }
       } else {
         const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
@@ -411,28 +448,25 @@ export class AuthService {
   }
 
   /**
-   * Update user password and revoke all refresh tokens in a single transaction
-   * @param userId - The user ID
-   * @param newPassword - The new plain text password
-   * @returns The updated user
+   * Update user password and revoke all refresh tokens.
+   * Caller owns the transaction boundary — wrap this call in
+   * `prisma.$transaction` to make it atomic with any surrounding work.
    */
-  async updatePasswordAndRevokeTokens(userId: string, newPassword: string) {
+  async updatePasswordAndRevokeTokens(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    newPassword: string,
+  ) {
     const hashedPassword = await this.passwordService.hashPassword(newPassword);
-
-    return this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.update({
-        data: { password: hashedPassword },
-        where: { id: userId },
-      });
-
-      // Revoke all existing refresh tokens after password change
-      await tx.refreshToken.updateMany({
-        where: { userId },
-        data: { revoked: true },
-      });
-
-      return user;
+    const user = await tx.user.update({
+      data: { password: hashedPassword },
+      where: { id: userId },
     });
+    await tx.refreshToken.updateMany({
+      where: { userId },
+      data: { revoked: true },
+    });
+    return user;
   }
 
   async createMagicLink(email: string) {
@@ -576,41 +610,74 @@ export class AuthService {
   }
 
   async signup(payload: SignupInput): Promise<AuthResult> {
-    const { code, userName, companyName, password, isInvite } = payload;
+    await this.ensureUserRegistrationAllowed();
 
-    if (!isInvite) {
-      await this.ensureUserRegistrationAllowed();
+    const register = await this.prisma.register.findFirst({
+      where: {
+        code: payload.code,
+        createdAt: { gte: new Date(Date.now() - REGISTER_REUSE_WINDOW_MS) },
+      },
+    });
+    if (!register) {
+      throw new InvalidVerificationSession();
     }
 
-    // Validate verification code
-    const { email, projectId, role } = await this.validateSignupCode(code, isInvite);
+    return this.runSignupFlow(
+      payload.userName,
+      register.email,
+      payload.password,
+      async (tx, user) => {
+        const project = await this.createProject(tx, payload.companyName, user.id);
+        await initialization(tx, project.id);
+        // Consume the magic-link Register row so the same code can't be
+        // re-used for a second signup attempt before its TTL window closes.
+        await tx.register.deleteMany({ where: { code: payload.code } });
+      },
+    );
+  }
 
-    // Hash password
+  async acceptInvite(payload: AcceptInviteInput): Promise<AuthResult> {
+    const invite = await this.teamService.getValidInviteByCode(payload.code);
+    if (!invite) {
+      throw new InvalidVerificationSession();
+    }
+
+    return this.runSignupFlow(
+      payload.userName,
+      invite.email,
+      payload.password,
+      async (tx, user) => {
+        // Delete invite before assignUserToProject so the seat-limit recheck
+        // inside that call does not double-count this very invite as still
+        // "pending" — otherwise the last seat is unreachable.
+        await this.teamService.deleteInvite(tx, payload.code);
+        await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+      },
+    );
+  }
+
+  private async runSignupFlow(
+    userName: string,
+    email: string,
+    password: string,
+    postCreate: (tx: Prisma.TransactionClient, user: User) => Promise<void>,
+  ): Promise<AuthResult> {
     const hashedPassword = await this.passwordService.hashPassword(password);
-
     try {
       const user = await this.prisma.$transaction(async (tx) => {
-        // Create user and account
         const user = await this.createUser(tx, userName, email, hashedPassword);
         await this.createAccount(tx, 'email', user.id, 'email', email);
-
-        // Handle project assignment
-        if (isInvite) {
-          await this.teamService.assignUserToProject(tx, user.id, projectId, role);
-          await this.teamService.deleteInvite(tx, code);
-        } else {
-          const project = await this.createProject(tx, companyName, user.id);
-          await initialization(tx, project.id);
-        }
-
+        await postCreate(tx, user);
         return user;
       });
-
       this.logger.log(`User ${user.id} created`);
       return this.issueTokensOrChallenge(user.id);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new EmailAlreadyRegistered();
+      }
+      if (e instanceof BaseError) {
+        throw e;
       }
       this.logger.error('Failed to signup user', e);
       throw new UnknownError();
@@ -687,32 +754,6 @@ export class AuthService {
     }
   }
 
-  // Add new helper methods
-  private async validateSignupCode(code: string, isInvite: boolean) {
-    const register = !isInvite
-      ? await this.prisma.register.findFirst({
-          where: {
-            code,
-            createdAt: {
-              gte: new Date(Date.now() - REGISTER_REUSE_WINDOW_MS), // Magic link expires after 24 hours
-            },
-          },
-        })
-      : null;
-
-    const invite = isInvite ? await this.teamService.getValidInviteByCode(code) : null;
-
-    if (!register && !invite) {
-      throw new InvalidVerificationSession();
-    }
-
-    return {
-      email: register?.email || invite?.email,
-      projectId: invite?.projectId,
-      role: invite?.role,
-    };
-  }
-
   private passwordFailureKey(email: string) {
     return `${PASSWORD_FAILURE_KEY_PREFIX}${email}`;
   }
@@ -735,6 +776,15 @@ export class AuthService {
     await this.redisService.del(this.passwordFailureKey(email));
   }
 
+  private getDummyPasswordHash() {
+    if (!this.dummyPasswordHash) {
+      this.dummyPasswordHash = this.passwordService.hashPassword(
+        'dummy-password-for-timing-equalization',
+      );
+    }
+    return this.dummyPasswordHash;
+  }
+
   async emailLogin(email: string, password: string, inviteCode?: string): Promise<AuthResult> {
     await this.checkPasswordLockout(email);
 
@@ -744,6 +794,9 @@ export class AuthService {
     });
 
     if (!user) {
+      // Burn argon2 CPU equivalent to a real verify so this branch is
+      // indistinguishable from "wrong password" by response time.
+      await this.passwordService.validatePassword(password, await this.getDummyPasswordHash());
       await this.recordPasswordFailure(email);
       throw new AccountNotFoundError();
     }
@@ -752,18 +805,15 @@ export class AuthService {
       throw new UserDisabledError();
     }
 
-    if (user.projects.length === 0) {
-      const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
-      await initialization(this.prisma, project.id);
-    }
-
-    if (inviteCode) {
-      await this.joinProject(inviteCode, user.id);
-    }
-
     if (user.accounts.length === 0) {
       await this.recordPasswordFailure(email);
       throw new AccountNotFoundError();
+    }
+
+    // OAuth-only account (no local password). argon2.verify would throw on
+    // null and surface as a 500 + bypass the lockout counter.
+    if (!user.password) {
+      throw new OAuthOnlyAccountError();
     }
 
     const passwordValid = await this.passwordService.validatePassword(password, user.password);
@@ -774,19 +824,63 @@ export class AuthService {
     }
 
     await this.clearPasswordFailures(email);
+
+    // State-mutating side effects only run after the password is proven.
+    // Otherwise a wrong-password attempt could consume an invite, reshuffle
+    // active project, or create an orphan project for any known email.
+    if (user.projects.length === 0) {
+      const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
+      await initialization(this.prisma, project.id);
+    }
+
+    if (inviteCode) {
+      await this.joinProject(inviteCode, user.id);
+    }
+
     return this.issueTokensOrChallenge(user.id);
   }
 
   async resetUserPassword(email: string): Promise<Common> {
+    // Always return success regardless of account existence to avoid
+    // letting an unauthenticated caller probe which emails are registered.
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new AccountNotFoundError();
+      this.logger.log(`Reset password requested for unknown email: ${email}`);
+      return { success: true };
+    }
+
+    // OAuth-only accounts have no local password — issuing a reset code
+    // would turn this endpoint into a silent "claim a password" path against
+    // an account the requester may not actually own. Surface the friendly
+    // error so the user understands why no email arrives (the UX cost of
+    // staying silent is bigger than the marginal enumeration signal).
+    if (!user.password) {
+      throw new OAuthOnlyAccountError();
+    }
+
+    // 60s per-email cooldown. Atomic via incrWithExpire so a burst of
+    // concurrent requests can't all blast emails. Gated at this layer
+    // (not the queue processor) because `deleteMany` below would otherwise
+    // invalidate the prior code without a replacement reaching the user.
+    const emailHash = createHash('md5').update(email).digest('hex');
+    const cooldownKey = `${RESET_EMAIL_COOLDOWN_KEY_PREFIX}${emailHash}`;
+    const hits = await this.redisService.incrWithExpire(cooldownKey, EMAIL_COOLDOWN_SECONDS);
+    if (hits > 1) {
+      this.logger.warn(`Skipping reset email for ${email}: cooldown active`);
+      return { success: true };
     }
 
     try {
+      // Invalidate any prior outstanding codes for this user. If they
+      // requested reset multiple times, only the latest link should work —
+      // a user who clicked Forgot password three times shouldn't leave
+      // three valid reset URLs in their inbox.
+      await this.prisma.code.deleteMany({ where: { userId: user.id } });
+
       const result = await this.prisma.code.create({
         data: {
           userId: user.id,
+          expiresAt: new Date(Date.now() + RESET_CODE_TTL_MS),
         },
       });
       await this.addSendResetPasswordEmailJob(result.id);
@@ -801,21 +895,34 @@ export class AuthService {
     if (!data) {
       throw new InvalidVerificationSession();
     }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id: data.userId } });
     if (!user) {
       throw new AccountNotFoundError();
     }
 
     try {
-      await this.updatePasswordAndRevokeTokens(user.id, password);
-      await this.clearPasswordFailures(user.email);
-      return { success: true };
-    } catch (_) {
+      await this.prisma.$transaction(async (tx) => {
+        const consumed = await tx.code.deleteMany({
+          where: { id: code, expiresAt: { gt: new Date() } },
+        });
+        if (consumed.count === 0) {
+          throw new InvalidVerificationSession();
+        }
+        await this.updatePasswordAndRevokeTokens(tx, user.id, password);
+      });
+    } catch (e) {
+      if (e instanceof BaseError) {
+        throw e;
+      }
       throw new UnknownError();
     }
+
+    // Best-effort: password is already committed, don't fail the request on a Redis hiccup.
+    await this.clearPasswordFailures(user.email).catch((e) =>
+      this.logger.warn(`Failed to clear password failures for ${user.email}: ${e}`),
+    );
+
+    return { success: true };
   }
 
   async validateUser(userId: string): Promise<User> {
@@ -954,17 +1061,33 @@ export class AuthService {
     if (!user) {
       throw new AccountNotFoundError();
     }
-    const userOnProject = await this.teamService.getUserOnProject(userId, invite.projectId);
-    if (userOnProject) {
-      return;
+    // The invite is a bearer token until accepted. Without this check,
+    // anyone with the link can attach themselves to the target project.
+    if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
+      throw new WrongInviteAccountError();
     }
-
     await this.prisma.$transaction(async (tx) => {
+      // Re-check membership inside the tx so the "already a member" branch
+      // and the "assign new member" branch see a consistent snapshot of
+      // UserOnProject and Invite.
+      const userOnProject = await tx.userOnProject.findFirst({
+        where: { userId, projectId: invite.projectId },
+      });
+      if (userOnProject) {
+        // Already a member — consume the invite anyway so it doesn't stay
+        // pending in the admin's invite list and the link can't be reused.
+        await this.teamService.deleteInvite(tx, invite.code);
+        return;
+      }
+
       if (user.projects.length > 0) {
         await this.teamService.cancelActiveProject(tx, userId);
       }
-      await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+      // Delete the invite before assignUserToProject so the seat-limit
+      // recheck inside that call does not double-count this very invite as
+      // still "pending" — otherwise the last seat is unreachable.
       await this.teamService.deleteInvite(tx, invite.code);
+      await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
     });
   }
 }

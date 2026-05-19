@@ -650,6 +650,21 @@ export class AdminService implements OnModuleInit {
     return payload;
   }
 
+  // The frontend treats `userOnProject.actived === true` as "the project
+  // I'm currently working in"; AppContext picks `projects.find(p => p.actived)`
+  // and the rest of the admin shell renders blank when no row matches.
+  // Each user must have exactly one active project — when adding the first
+  // project for a user we have to set actived=true, but if they already
+  // have an active project elsewhere we leave the new row inactive so we
+  // don't yank them out of the project they were working in.
+  private async resolveInitialActiveState(userId: string): Promise<boolean> {
+    const hasActive = await this.prisma.userOnProject.findFirst({
+      where: { userId, actived: true },
+      select: { id: true },
+    });
+    return !hasActive;
+  }
+
   async createProject(name: string, ownerUserId: string) {
     const owner = await this.prisma.user.findUnique({
       where: { id: ownerUserId },
@@ -658,11 +673,13 @@ export class AdminService implements OnModuleInit {
       throw new ParamsError('Owner user not found');
     }
 
+    const actived = await this.resolveInitialActiveState(ownerUserId);
+
     const project = await this.prisma.project.create({
       data: {
         name,
         users: {
-          create: [{ userId: ownerUserId, role: RolesScopeEnum.OWNER, actived: false }],
+          create: [{ userId: ownerUserId, role: RolesScopeEnum.OWNER, actived }],
         },
         segments: {
           create: getDefaultSegments(),
@@ -761,12 +778,14 @@ export class AdminService implements OnModuleInit {
       throw new ParamsError('User is already a member of this project');
     }
 
+    const actived = await this.resolveInitialActiveState(userId);
+
     return this.prisma.userOnProject.create({
       data: {
         userId,
         projectId,
         role: role as Role,
-        actived: false,
+        actived,
       },
     });
   }

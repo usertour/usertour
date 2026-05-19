@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour/button';
 import { useForm } from 'react-hook-form';
@@ -9,16 +9,18 @@ import { SpinnerIcon } from '@usertour/icons';
 import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useResetUserPasswordByCodeMutation } from '@usertour/hooks';
+import { useAppContext } from '@/contexts/app-context';
 import { AuthCard } from './components/auth-card';
 
 export const PasswordReset = () => {
   const { t } = useTranslation('ui');
   const { invoke: resetPassword } = useResetUserPasswordByCodeMutation();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const { code } = useParams();
+  const { userInfo, handleLogout } = useAppContext();
+  const [success, setSuccess] = useState(false);
 
   const schema = useMemo(
     () =>
@@ -26,12 +28,12 @@ export const PasswordReset = () => {
         .object({
           password: z
             .string({ required_error: t('auth.errors.passwordRequired') })
-            .max(20)
-            .min(8),
+            .min(8)
+            .max(160),
           repassword: z
             .string({ required_error: t('auth.errors.repeatPasswordRequired') })
-            .max(20)
-            .min(8),
+            .min(8)
+            .max(160),
         })
         .refine((values) => values.password === values.repassword, {
           message: t('auth.errors.passwordMismatch'),
@@ -54,7 +56,25 @@ export const PasswordReset = () => {
     try {
       const result = await resetPassword(code, formData.password);
       if (result?.success) {
-        return navigate('/auth/signin');
+        // Force-logout immediately on success — not deferred to the
+        // Continue button. Otherwise a user who sees the success page and
+        // closes the tab / switches back to another window keeps a live
+        // session for up to the access-token TTL (15 min), which defeats
+        // the "password reset = sign in again" expectation. Covers two
+        // shapes the route serves now that it's reachable in any auth
+        // state:
+        //   - Currently signed in as the same account whose password was
+        //     just reset (access token still valid, refresh token revoked
+        //     server-side — without explicit logout, current session keeps
+        //     working until the JWT expires).
+        //   - Currently signed in as a different account (opened the reset
+        //     email in a browser already signed in elsewhere) — their
+        //     session must not silently linger.
+        if (userInfo) {
+          await handleLogout();
+        }
+        setSuccess(true);
+        return;
       }
       toast({ variant: 'destructive', title: t('auth.errors.genericFailure') });
     } catch (error) {
@@ -62,7 +82,28 @@ export const PasswordReset = () => {
     }
   };
 
+  // Cookies were already cleared in onSubmit; this just navigates. The hard
+  // reload guarantees the SPA boots fresh on /auth/signin with no cached
+  // userInfo or Apollo state.
+  const continueToSignIn = () => {
+    window.location.assign('/auth/signin');
+  };
+
   const isSubmitting = form.formState.isSubmitting;
+
+  if (success) {
+    return (
+      <AuthCard
+        title={t('auth.passwordReset.success.title')}
+        description={t('auth.passwordReset.success.description')}
+        footer={
+          <Button className="w-full" type="button" onClick={continueToSignIn}>
+            {t('auth.passwordReset.success.continueButton')}
+          </Button>
+        }
+      />
+    );
+  }
 
   return (
     <Form {...form}>

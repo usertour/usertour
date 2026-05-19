@@ -2,6 +2,12 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input AcceptInviteInput {
+  code: String!
+  password: String!
+  userName: String!
+}
+
 type AccessToken {
   accessToken: String!
   createdAt: DateTime!
@@ -716,22 +722,23 @@ type IntegrationObjectMapping {
 }
 
 type Invite {
-  code: String!
+  code: String
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
-  email: String!
+  email: String
   expired: Boolean!
   id: ID!
-  name: String!
+  name: String
   project: Project
-  projectId: String!
+  projectId: String
+  recipientExists: Boolean!
   role: String!
 
   """Identifies the date and time when the object was last updated."""
   updatedAt: DateTime!
   user: User
-  userId: String!
+  userId: String
 }
 
 input InviteTeamMemberInput {
@@ -795,6 +802,7 @@ input MagicLinkInput {
 }
 
 type Mutation {
+  acceptInvite(data: AcceptInviteInput!): Auth!
   activeUserProject(data: ActiveUserProjectInput!): Boolean!
   addContentStep(data: CreateStepInput!): Step!
   addContentSteps(data: ContentStepsInput!): Common!
@@ -941,7 +949,7 @@ type Query {
   getIntegration(environmentId: String!, provider: String!): Integration!
   getIntegrationObjectMapping(id: String!): IntegrationObjectMapping!
   getIntegrationObjectMappings(integrationId: String!): [IntegrationObjectMapping!]!
-  getInvite(inviteId: String!): Invite!
+  getInvite(inviteId: String!): Invite
   getInvites(projectId: String!): [Invite!]!
   getProjectConfig(projectId: String!): ProjectConfigModel!
   getProjectLicenseInfo(projectId: String!): LicenseInfo
@@ -1089,8 +1097,7 @@ input SetupSystemAdminInput {
 
 input SignupInput {
   code: String!
-  companyName: String
-  isInvite: Boolean!
+  companyName: String!
   password: String!
   userName: String!
 }

@@ -27,7 +27,6 @@ export class GithubOauthStrategy extends PassportStrategy(Strategy, 'github') {
       try {
         const stateData = JSON.parse(Buffer.from(req.query.state, 'base64').toString());
         inviteCode = stateData.inviteCode;
-        console.log('github oauth validate inviteCode', inviteCode);
       } catch (_) {
         throw new OAuthError();
       }

@@ -38,7 +38,7 @@ export class TeamResolver {
     return this.teamService.getTeamMembers(projectId);
   }
 
-  @Query(() => Invite)
+  @Query(() => Invite, { nullable: true })
   @Public()
   async getInvite(@Args('inviteId') inviteId: string) {
     return this.teamService.getInvite(inviteId);
@@ -51,7 +51,7 @@ export class TeamResolver {
     this.logger.log(`Inviting team member: ${user.id}`);
     await this.teamService.inviteTeamMember(
       user.id,
-      data.email,
+      data.email.toLowerCase(),
       data.projectId,
       data.name,
       data.role as Role,
@@ -76,7 +76,7 @@ export class TeamResolver {
   @Mutation(() => Boolean)
   @Roles([RolesScopeEnum.OWNER])
   async cancelInvite(@Args('data') data: CancelInviteInput) {
-    await this.teamService.cancelInvite(data.inviteId);
+    await this.teamService.cancelInvite(data.projectId, data.inviteId);
     return true;
   }
 
