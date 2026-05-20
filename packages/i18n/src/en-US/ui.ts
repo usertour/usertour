@@ -85,8 +85,6 @@ const translations = {
       invalidEmail: 'Please enter a valid email.',
       passwordRequired: 'Please input your password.',
       passwordTooShort: 'Password must be at least 8 characters.',
-      passwordTooLong: 'Password must be at most 20 characters.',
-      passwordMismatch: 'The passwords entered twice are inconsistent.',
       confirmPasswordRequired: 'Please confirm your password.',
       repeatPasswordRequired: 'Please input your password again.',
       passwordsDoNotMatch: 'Passwords do not match.',
@@ -101,11 +99,11 @@ const translations = {
       continueWithGoogle: 'Continue with Google',
       continueWithGithub: 'Continue with Github',
       signingIn: 'Signing in...',
-      divider: 'Or login with email',
+      divider: 'Or sign in with email',
     },
     signIn: {
-      title: 'Sign in to UserTour',
-      submitButton: 'Login',
+      title: 'Sign in to Usertour',
+      submitButton: 'Sign in',
       emailLabel: 'Email',
       emailPlaceholder: 'Enter your email',
       passwordLabel: 'Password',
@@ -123,7 +121,7 @@ const translations = {
       signInInstead: 'Sign in instead',
       success: {
         title: 'Check your inbox',
-        descriptionPrefix: 'Click the email verification link we just send to',
+        descriptionPrefix: 'Click the email verification link we just sent to',
         resendButton: 'Resend verification link',
       },
       disabled: {
@@ -135,7 +133,6 @@ const translations = {
     },
     signUp: {
       title: 'Set up your Usertour account!',
-      description: 'Enter your email and password below to login your account',
       nameLabel: 'Your name',
       namePlaceholder: 'Enter your full name',
       emailLabel: 'Email',
@@ -166,7 +163,7 @@ const translations = {
       backToSignIn: 'Back to sign in',
       success: {
         title: 'Welcome back!',
-        description: 'Check your inbox, and click the link we just send to you.',
+        description: 'Check your inbox, and click the link we just sent to you.',
       },
     },
     passwordReset: {
@@ -174,7 +171,7 @@ const translations = {
       description: 'Set a new password below.',
       newPasswordLabel: 'New password',
       newPasswordPlaceholder: 'Pick a strong password',
-      repeatPasswordLabel: 'Repeat New password',
+      repeatPasswordLabel: 'Repeat new password',
       repeatPasswordPlaceholder: 'Try the same password again',
       submitButton: 'Change password',
       success: {

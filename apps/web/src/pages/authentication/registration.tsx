@@ -5,7 +5,7 @@ import { SignUpForm } from './components/registration-form';
 const Registration = () => {
   const { t } = useTranslation('ui');
   return (
-    <AuthCard title={t('auth.signUp.title')} description={t('auth.signUp.description')}>
+    <AuthCard title={t('auth.signUp.title')}>
       <SignUpForm />
     </AuthCard>
   );

@@ -79,8 +79,6 @@ const translations = {
       invalidEmail: '请输入有效的邮箱地址。',
       passwordRequired: '请输入密码。',
       passwordTooShort: '密码至少需要 8 个字符。',
-      passwordTooLong: '密码最多 20 个字符。',
-      passwordMismatch: '两次输入的密码不一致。',
       confirmPasswordRequired: '请再次输入密码以确认。',
       repeatPasswordRequired: '请再次输入密码。',
       passwordsDoNotMatch: '两次输入的密码不一致。',
@@ -98,7 +96,7 @@ const translations = {
       divider: '或使用邮箱登录',
     },
     signIn: {
-      title: '登录 UserTour',
+      title: '登录 Usertour',
       submitButton: '登录',
       emailLabel: '邮箱',
       emailPlaceholder: '请输入邮箱',
@@ -128,7 +126,6 @@ const translations = {
     },
     signUp: {
       title: '创建 Usertour 账号!',
-      description: '填写下列信息以创建账号',
       nameLabel: '姓名',
       namePlaceholder: '请输入您的姓名',
       emailLabel: '邮箱',
