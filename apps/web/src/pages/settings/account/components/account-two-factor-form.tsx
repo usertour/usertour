@@ -23,7 +23,6 @@ import {
   TwoFactorSetupPayload,
   useConfirmTwoFactorSetupMutation,
   useDisableTwoFactorMutation,
-  useGlobalConfigQuery,
   useRegenerateRecoveryCodesMutation,
   useStartTwoFactorSetupMutation,
 } from '@usertour/hooks';
@@ -46,8 +45,7 @@ const downloadCodes = (codes: string[]) => {
 
 export const AccountTwoFactorForm = () => {
   const { t } = useTranslation('ui');
-  const { userInfo } = useAppContext();
-  const { data: globalConfig } = useGlobalConfigQuery();
+  const { userInfo, globalConfig } = useAppContext();
   const apollo = useApolloClient();
   const { toast } = useToast();
   const disable = useDisableTwoFactorMutation();

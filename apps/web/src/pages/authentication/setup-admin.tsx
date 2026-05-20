@@ -6,16 +6,19 @@ import { SpinnerIcon } from '@usertour/icons';
 import { Input } from '@usertour/input';
 import { useToast } from '@usertour/use-toast';
 import { getErrorMessage } from '@usertour/helpers';
-import { useGlobalConfigQuery, useSetupSystemAdminMutation } from '@usertour/hooks';
+import { useSetupSystemAdminMutation } from '@usertour/hooks';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router-dom';
 import * as z from 'zod';
+import { useAppContext } from '@/contexts/app-context';
 import { AuthCard } from './components/auth-card';
 
 const SetupAdmin = () => {
   const { t } = useTranslation('ui');
-  const { data: globalConfig, loading: globalConfigLoading } = useGlobalConfigQuery();
+  // globalConfig from AppContext (single source); AuthGuard (mode=setup) already
+  // waited for it before this route renders, so no local loading gate is needed.
+  const { globalConfig } = useAppContext();
   const { invoke, loading } = useSetupSystemAdminMutation();
   const { toast } = useToast();
 
@@ -57,18 +60,8 @@ const SetupAdmin = () => {
     }
   };
 
-  if (!globalConfigLoading && globalConfig?.needsSystemAdminSetup === false) {
+  if (globalConfig?.needsSystemAdminSetup === false) {
     return <Navigate to="/auth/signin" replace />;
-  }
-
-  if (globalConfigLoading) {
-    return (
-      <AuthCard
-        title={t('auth.setupAdmin.title')}
-        description={t('auth.setupAdmin.description')}
-        loading
-      />
-    );
   }
 
   return (

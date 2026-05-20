@@ -10,7 +10,8 @@ import { Input } from '@usertour/input';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
 import { Link } from 'react-router-dom';
-import { useCreateMagicLinkMutation, useGlobalConfigQuery } from '@usertour/hooks';
+import { useCreateMagicLinkMutation } from '@usertour/hooks';
+import { useAppContext } from '@/contexts/app-context';
 import { AuthCard } from './components/auth-card';
 import {
   SignUpSuccess,
@@ -20,7 +21,9 @@ import { SignUpDisabledCard } from './components/sign-up-disabled-card';
 
 export const SignUp = () => {
   const { t } = useTranslation('ui');
-  const { data: globalConfig, loading: globalConfigLoading } = useGlobalConfigQuery();
+  // globalConfig from AppContext (single source); AuthGuard already waited for
+  // it before this guest route renders, so no local loading gate is needed.
+  const { globalConfig } = useAppContext();
   const { invoke: createMagicLink } = useCreateMagicLinkMutation();
   const { toast } = useToast();
   const [registerData, setRegisterData] = useState<SignUpSuccessProps | null>(null);
@@ -55,10 +58,6 @@ export const SignUp = () => {
 
   if (registerData) {
     return <SignUpSuccess {...registerData} />;
-  }
-
-  if (globalConfigLoading) {
-    return <AuthCard title={t('auth.magicLink.title')} loading />;
   }
 
   if (globalConfig?.allowUserRegistration === false) {
