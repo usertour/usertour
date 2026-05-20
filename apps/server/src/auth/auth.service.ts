@@ -433,8 +433,15 @@ export class AuthService implements OnModuleInit {
       // (unknown jti, already-consumed, or expired) is treated as expired.
       // Deleting in a single statement also closes the race where two
       // concurrent refreshes both pass a separate read-then-update.
+      //
+      // `revoked: false` is transitional: rows the old code marked revoked
+      // (logout / password change / 2FA / admin force, or a stolen rotated
+      // token) were kept rather than deleted, so they could still match jti +
+      // expiry and be re-honored once. Excluding them preserves the old
+      // rejection. Drop this filter together with the `revoked` column once
+      // every legacy revoked row has aged past its expiry.
       const { count } = await this.prisma.refreshToken.deleteMany({
-        where: { jti: payload.jti, expiresAt: { gt: new Date() } },
+        where: { jti: payload.jti, expiresAt: { gt: new Date() }, revoked: false },
       });
       if (count !== 1) {
         throw new AuthenticationExpiredError();
