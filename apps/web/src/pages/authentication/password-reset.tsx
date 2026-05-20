@@ -60,15 +60,15 @@ export const PasswordReset = () => {
         // Continue button. Otherwise a user who sees the success page and
         // closes the tab / switches back to another window keeps a live
         // session for up to the access-token TTL (15 min), which defeats
-        // the "password reset = sign in again" expectation. Covers two
+        // the "password reset = log in again" expectation. Covers two
         // shapes the route serves now that it's reachable in any auth
         // state:
-        //   - Currently signed in as the same account whose password was
+        //   - Currently logged in as the same account whose password was
         //     just reset (access token still valid, refresh token revoked
         //     server-side — without explicit logout, current session keeps
         //     working until the JWT expires).
-        //   - Currently signed in as a different account (opened the reset
-        //     email in a browser already signed in elsewhere) — their
+        //   - Currently logged in as a different account (opened the reset
+        //     email in a browser already logged in elsewhere) — their
         //     session must not silently linger.
         if (userInfo) {
           await handleLogout();

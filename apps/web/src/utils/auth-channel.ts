@@ -1,4 +1,4 @@
-// Cross-tab auth sync. When one tab signs in / out / registers / accepts an
+// Cross-tab auth sync. When one tab logs in / out / registers / accepts an
 // invite / completes 2FA, all other tabs of the same browser session need
 // to reload so they read the now-shared cookies instead of operating on
 // stale React state. Without this, a stale tab can silently write to the

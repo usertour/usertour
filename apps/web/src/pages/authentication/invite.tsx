@@ -37,10 +37,10 @@ export const Invite = () => {
     );
   }
 
-  // Forgot-password subview — only reachable from the sign-in branch (the
+  // Forgot-password subview — only reachable from the log-in branch (the
   // sign-up branch has no existing password). Stays at /auth/invite/<code>;
   // submitting the form sends a reset email and swaps to the success view,
-  // Back returns to the sign-in form.
+  // Back returns to the log-in form.
   if (view === 'forgot') {
     return (
       <AuthCard

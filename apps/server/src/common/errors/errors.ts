@@ -68,7 +68,7 @@ export class PasswordIncorrect extends BaseError {
 export class EmailAlreadyRegistered extends BaseError {
   code = 'E0007';
   messageDict = {
-    en: 'Email already registered, please sign in or try another one',
+    en: 'Email already registered, please log in or try another one',
     'zh-CN': '邮箱已被注册，请登录或尝试其他邮箱',
   };
 }
@@ -100,7 +100,7 @@ export class OperationTooFrequent extends BaseError {
 export class AuthenticationExpiredError extends BaseError {
   code = 'E0011';
   messageDict = {
-    en: 'Authentication expired, please sign in again',
+    en: 'Authentication expired, please log in again',
     'zh-CN': '身份验证已过期，请重新登录',
   };
 }
@@ -449,7 +449,7 @@ export class UserDisabledError extends BaseError {
 export class TooManyLoginAttemptsError extends BaseError {
   code = 'E0034';
   messageDict = {
-    en: 'Too many failed sign-in attempts. Please try again in a few minutes.',
+    en: 'Too many failed log-in attempts. Please try again in a few minutes.',
     'zh-CN': '登录失败次数过多，请稍后重试。',
   };
 }
@@ -497,7 +497,7 @@ export class TooManyTwoFactorAttemptsError extends BaseError {
 export class InvalidTwoFactorChallengeError extends BaseError {
   code = 'E0040';
   messageDict = {
-    en: 'Verification session has expired or is invalid. Please sign in again.',
+    en: 'Verification session has expired or is invalid. Please log in again.',
     'zh-CN': '验证会话已失效，请重新登录。',
   };
 }
@@ -537,7 +537,7 @@ export class TwoFactorEnrollmentRequiredError extends BaseError {
 export class WrongInviteAccountError extends BaseError {
   code = 'E0045';
   messageDict = {
-    en: 'This invitation was sent to a different email address. Please sign in with the account that received the invitation.',
+    en: 'This invitation was sent to a different email address. Please log in with the account that received the invitation.',
     'zh-CN': '此邀请是发送给另一个邮箱的，请使用收到邀请的账号登录。',
   };
 }
@@ -545,7 +545,7 @@ export class WrongInviteAccountError extends BaseError {
 export class OAuthOnlyAccountError extends BaseError {
   code = 'E0046';
   messageDict = {
-    en: 'This account signs in with an identity provider. Please use the matching sign-in button.',
+    en: 'This account logs in with an identity provider. Please use the matching log-in button.',
     'zh-CN': '此账号通过第三方登录，请使用对应的登录方式。',
   };
 }

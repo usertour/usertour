@@ -38,7 +38,7 @@ SelectProject.displayName = 'SelectProject';
 
 // Switching accounts is an explicit action — it must not resume the current
 // /select-project URL. signOutAndRedirect tears down the session and hard-loads
-// a clean sign-in (no ?next) so the next account lands on its own default
+// a clean log-in (no ?next) so the next account lands on its own default
 // instead of being stranded on the picker. Done via the shared sign-out helper
 // rather than the generic next/redirect logic, which stays untouched.
 const SwitchAccountButton = () => {

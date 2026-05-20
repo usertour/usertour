@@ -328,7 +328,7 @@ export class TwoFactorService {
       // Race condition with account deletion between confirmSetup and this
       // reload — vanishingly unlikely but not impossible. Same error class
       // covers both "challenge invalid" and "user gone", which is fine: the
-      // user-facing remedy is identical (sign in again).
+      // user-facing remedy is identical (log in again).
       throw new InvalidTwoFactorChallengeError();
     }
     return { user: reloaded, recoveryCodes };

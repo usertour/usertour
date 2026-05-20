@@ -37,7 +37,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const baseRespData = genBaseRespDataFromError(exception);
 
-    // Handle OAuth errors — land on the SPA sign-in page with a failure
+    // Handle OAuth errors — land on the SPA log-in page with a failure
     // marker. Prefix with homepageUrl so split-origin deploys (API on a
     // different host than the SPA) don't redirect into the API host.
     if (baseRespData.errCode === new OAuthError().code) {

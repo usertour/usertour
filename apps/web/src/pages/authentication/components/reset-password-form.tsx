@@ -13,9 +13,9 @@ import { useResetUserPasswordMutation } from '@usertour/hooks';
 
 interface ResetPasswordFormProps {
   /**
-   * Called when the user clicks the "Back to sign in" link below the form.
+   * Called when the user clicks the "Back to log in" link below the form.
    * The owner page is responsible for switching its own view state back to
-   * the sign-in surface — this component does not navigate.
+   * the log-in surface — this component does not navigate.
    */
   onBack: () => void;
   /**
