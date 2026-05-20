@@ -6,11 +6,9 @@ import mjml2html from 'mjml';
 type Props = {
   fileName: string;
   data: {
-    date?: string;
     name?: string;
     url?: string;
-    teamName?: string;
-    link?: string;
+    projectName?: string;
     inviterName?: string;
   };
 };

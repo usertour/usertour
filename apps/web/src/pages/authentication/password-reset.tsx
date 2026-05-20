@@ -36,7 +36,7 @@ export const PasswordReset = () => {
             .max(160),
         })
         .refine((values) => values.password === values.repassword, {
-          message: t('auth.errors.passwordMismatch'),
+          message: t('auth.errors.passwordsDoNotMatch'),
           path: ['repassword'],
         }),
     [t],
