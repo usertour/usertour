@@ -60,3 +60,12 @@ export const logout = gql`
     logout
   }
 `;
+
+export const createOwnedProject = gql`
+  mutation createOwnedProject($name: String!) {
+    createOwnedProject(data: { name: $name }) {
+      id
+      name
+    }
+  }
+`;

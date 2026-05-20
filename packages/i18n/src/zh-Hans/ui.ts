@@ -176,6 +176,21 @@ const translations = {
         continueButton: '前往登录',
       },
     },
+    selectProject: {
+      empty: {
+        title: '创建你的项目',
+        description: '你还不属于任何项目。先创建一个开始使用,稍后可以在设置里邀请团队成员加入。',
+        nameLabel: '项目名称',
+        namePlaceholder: '请输入项目名称',
+        nameRequired: '请输入项目名称。',
+        createButton: '创建项目',
+      },
+      list: {
+        title: '选择一个项目',
+        description: '选择要打开的项目。',
+      },
+      signOut: '换一个账号登录',
+    },
     setupAdmin: {
       title: '初始化管理员账号',
       description: '此账号将作为该自托管实例的首个系统管理员。',

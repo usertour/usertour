@@ -183,6 +183,22 @@ const translations = {
         continueButton: 'Continue to sign in',
       },
     },
+    selectProject: {
+      empty: {
+        title: 'Create your project',
+        description:
+          "You don't belong to a project yet. Create one to get started — you can invite teammates from settings later.",
+        nameLabel: 'Project name',
+        namePlaceholder: 'Enter your project name',
+        nameRequired: 'Please enter your project name.',
+        createButton: 'Create project',
+      },
+      list: {
+        title: 'Pick a project',
+        description: 'Choose which project to open.',
+      },
+      signOut: 'Sign in as a different account',
+    },
     setupAdmin: {
       title: 'Set up admin account',
       description: 'This will be the first System Admin account for your self-hosted instance.',

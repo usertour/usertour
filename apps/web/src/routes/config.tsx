@@ -100,9 +100,21 @@ const config: RouteObject[] = [
 
   // Logged-in surface. AdminProvidersOutlet holds Environment/Attribute/Subscription
   // providers across all child shells so they don't remount on nav.
+  // /select-project lives ABOVE AdminProvidersOutlet because it serves
+  // users who don't yet have an active project — entering the providers
+  // outlet would just redirect right back here.
   {
     element: <AuthGuard mode="user" />,
     children: [
+      {
+        element: <AuthLayout />,
+        children: [
+          {
+            path: '/select-project',
+            lazy: lazyComponent(() => import('@/pages/select-project'), 'SelectProject'),
+          },
+        ],
+      },
       {
         element: <AdminProvidersOutlet />,
         children: [

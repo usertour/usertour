@@ -534,6 +534,10 @@ input CreateLocalizationInput {
   projectId: String!
 }
 
+input CreateOwnedProjectInput {
+  name: String!
+}
+
 input CreateStepInput {
   contentId: String
   data: JSON
@@ -830,6 +834,7 @@ type Mutation {
   createEvent(data: CreateEventInput!): Events!
   createLocalization(data: CreateLocalizationInput!): Localization!
   createMagicLink(data: MagicLinkInput!): Register!
+  createOwnedProject(data: CreateOwnedProjectInput!): Project!
   createPortalSession(projectId: String!): String!
   createPresignedUrl(data: createPresignedUrlInput!): Storage!
   createSegment(data: CreatSegment!): Segment!
