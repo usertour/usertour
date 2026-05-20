@@ -461,11 +461,27 @@ export class AuthService {
     return { kind: 'tokens', tokens };
   }
 
-  async revokeAllRefreshTokens(userId: string) {
-    await this.prisma.refreshToken.updateMany({
-      where: { userId },
-      data: { revoked: true },
-    });
+  // Revoke a single session's refresh token (per-device logout). The jti is
+  // carried in the refresh JWT itself; verify to extract it, then revoke that
+  // one row. Revoking every token for a user belongs to an explicit
+  // "log out all devices" action, not ordinary logout.
+  async revokeRefreshToken(refreshToken: string) {
+    let jti: string | undefined;
+    try {
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: this.configService.get('auth.jwt.refreshSecret'),
+      });
+      jti = payload?.jti;
+    } catch {
+      // Invalid or expired refresh token — already useless, nothing to revoke.
+      return;
+    }
+    if (jti) {
+      await this.prisma.refreshToken.updateMany({
+        where: { jti },
+        data: { revoked: true },
+      });
+    }
   }
 
   /**
