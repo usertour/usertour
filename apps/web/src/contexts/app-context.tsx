@@ -18,6 +18,7 @@ interface AppContextProps {
   setUserInfo: React.Dispatch<React.SetStateAction<UserProfile | null | undefined>>;
   refetch: any;
   handleLogout: () => Promise<void>;
+  signOutAndRedirect: (to?: string) => Promise<void>;
   projects: Project[];
   isViewOnly: boolean;
   globalConfig: GlobalConfig | undefined;
@@ -67,6 +68,24 @@ export const AppProvider = (props: AppProviderProps) => {
     }
   };
 
+  // "Log out and leave" — tears down the session, then hard-loads `to`.
+  // Deliberately does NOT setUserInfo(null): on a protected route that would
+  // re-render AuthGuard, which fires a client-side <Navigate to=signin?next=>
+  // that flashes before the reload lands. The full reload re-bootstraps
+  // AppContext from the now-cleared cookies, so the in-place state reset is
+  // both unnecessary and the cause of the flash. Use handleLogout instead when
+  // staying in the SPA without a reload (e.g. the password-reset success card).
+  const signOutAndRedirect = async (to = '/auth/signin') => {
+    try {
+      await logout();
+      removeAuthToken();
+      broadcastAuthSwitch();
+    } catch (error) {
+      console.error('Logout failed', error);
+    }
+    window.location.assign(to);
+  };
+
   const projects: Project[] =
     data?.projects?.map((p: any) => ({
       role: p.role,
@@ -85,6 +104,7 @@ export const AppProvider = (props: AppProviderProps) => {
     setUserInfo,
     refetch,
     handleLogout,
+    signOutAndRedirect,
     projects,
     isViewOnly,
     globalConfig,
