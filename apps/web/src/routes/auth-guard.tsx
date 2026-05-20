@@ -10,7 +10,7 @@ interface AuthGuardProps {
 
 // Single state machine for the three auth surface modes.
 //   - 'setup':  only reachable when the instance needs a system admin (and no one is logged in)
-//   - 'guest':  the public sign-in / sign-up / 2FA / invite surface
+//   - 'guest':  the public log-in / sign-up / 2FA / invite surface
 //   - 'user':   all logged-in pages (admin shells)
 //
 // Setup-admin enforcement takes precedence — if the instance still needs

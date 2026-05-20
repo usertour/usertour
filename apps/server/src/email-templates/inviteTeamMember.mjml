@@ -16,7 +16,7 @@
           Hi {{name}},
         </mj-text>
         <mj-text align="left" color="#555" line-height="30px">
-          {{inviterName}} with {{teamName}} has invited you to join their Usertour account to collaborate on flows, checklists and other onboarding content. Use the button below to set up your account and get started:
+          {{inviterName}} has invited you to join {{projectName}} on Usertour, where you can collaborate on flows, checklists and other onboarding content. Use the button below to set up your account and get started:
         </mj-text>
         <mj-button background-color="#5534ff" border-radius="50px" color="white" font-size="15px" href="{{url}}">
           Set up account
