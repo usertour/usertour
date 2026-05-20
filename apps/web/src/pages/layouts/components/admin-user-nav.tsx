@@ -24,7 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEvent } from 'react-use';
 
 export const AdminUserNav = () => {
-  const { userInfo: user, handleLogout, globalConfig } = useAppContext();
+  const { userInfo: user, signOutAndRedirect, globalConfig } = useAppContext();
   const { project, projects } = useAppContext();
   const posthog = usePostHog();
   const { invoke } = useActiveUserProjectMutation();
@@ -32,10 +32,9 @@ export const AdminUserNav = () => {
 
   const navigate = useNavigate();
 
-  const logoutHandler = async () => {
-    await handleLogout();
+  const logoutHandler = () => {
     posthog?.capture('clicked_log_in');
-    return navigate('/auth/signin');
+    signOutAndRedirect();
   };
 
   const hotkeys = {

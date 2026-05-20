@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGlobalConfigQuery } from '@usertour/hooks';
+import { useAppContext } from '@/contexts/app-context';
 import { AuthCard } from './components/auth-card';
 import { SignInForm } from './components/sign-in-form';
 import { SignUpPrompt } from './components/sign-up-link';
@@ -11,7 +11,10 @@ type View = 'signin' | 'forgot' | 'forgotSuccess';
 
 const SignIn = () => {
   const { t } = useTranslation('ui');
-  const { data: globalConfig, loading: globalConfigLoading } = useGlobalConfigQuery();
+  // globalConfig is read from AppContext, not a second query: AuthGuard already
+  // blocks this route until globalConfig has loaded, so it is guaranteed present
+  // here. That makes a local loading gate redundant.
+  const { globalConfig } = useAppContext();
   const [view, setView] = useState<View>('signin');
 
   if (view === 'forgot') {
@@ -31,13 +34,6 @@ const SignIn = () => {
 
   if (view === 'forgotSuccess') {
     return <ResetPasswordSuccess onBack={() => setView('signin')} />;
-  }
-
-  // Defer rendering the real form until globalConfig is known — otherwise
-  // SocialProviders renders OAuth buttons under the "no providers list = all
-  // enabled" default and they disappear once self-host config arrives.
-  if (globalConfigLoading) {
-    return <AuthCard title={t('auth.signIn.title')} loading footer={<SignUpPrompt />} />;
   }
 
   return (

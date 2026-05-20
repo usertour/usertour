@@ -189,9 +189,8 @@ export class TwoFactorService {
       await tx.twoFactorRecoveryCode.createMany({
         data: hashedCodes.map((hashedCode) => ({ userId: user.id, hashedCode })),
       });
-      await tx.refreshToken.updateMany({
-        where: { userId: user.id, revoked: false },
-        data: { revoked: true },
+      await tx.refreshToken.deleteMany({
+        where: { userId: user.id },
       });
     });
 

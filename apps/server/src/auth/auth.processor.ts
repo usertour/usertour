@@ -7,6 +7,7 @@ import {
   SendResetPasswordEmailJobData,
 } from './dto/auth.dto';
 import {
+  QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
   QUEUE_INITIALIZE_PROJECT,
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
@@ -65,6 +66,23 @@ export class InitializeProjectProcessor extends WorkerHost {
       await this.authService.initializeProject(projectId);
     } catch (error) {
       this.logger.error(error);
+    }
+  }
+}
+
+@Processor(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS)
+export class CleanExpiredRefreshTokensProcessor extends WorkerHost {
+  private readonly logger = new Logger(CleanExpiredRefreshTokensProcessor.name);
+
+  constructor(private authService: AuthService) {
+    super();
+  }
+
+  async process(_job: Job) {
+    try {
+      await this.authService.cleanExpiredRefreshTokens();
+    } catch (error) {
+      this.logger.error(`[${QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS}] error: ${error?.stack}`);
     }
   }
 }

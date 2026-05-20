@@ -51,7 +51,7 @@ describe('TwoFactorService', () => {
         deleteMany: jest.fn(),
         createMany: jest.fn(),
       },
-      refreshToken: { updateMany: jest.fn() },
+      refreshToken: { deleteMany: jest.fn() },
       instanceSetting: { findUnique: jest.fn() },
       userOnProject: { findMany: jest.fn() },
       $transaction: jest.fn((cb: any) => cb(prisma)),
@@ -454,10 +454,9 @@ describe('TwoFactorService', () => {
       // 10 codes generated
       const createManyCall = prisma.twoFactorRecoveryCode.createMany.mock.calls[0][0];
       expect(createManyCall.data).toHaveLength(10);
-      // Revoke other refresh tokens
-      expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
-        where: { userId: 'user-1', revoked: false },
-        data: { revoked: true },
+      // Delete the user's refresh tokens (ends every session)
+      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
       });
     });
   });
