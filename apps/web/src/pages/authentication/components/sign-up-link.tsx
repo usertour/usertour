@@ -1,6 +1,6 @@
-import { useGlobalConfigQuery } from '@usertour/hooks';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { useAppContext } from '@/contexts/app-context';
 
 interface SignUpPromptProps {
   prefix?: string;
@@ -14,9 +14,17 @@ export const SignUpPrompt = ({
   className = 'text-center text-sm text-muted-foreground',
 }: SignUpPromptProps) => {
   const { t } = useTranslation('ui');
-  const { data, loading } = useGlobalConfigQuery();
+  // Read globalConfig from AppContext (single source) instead of a second
+  // query, so this renders in lockstep with the card. The `!globalConfig`
+  // guard keeps the old "don't show until config is known" safety for any
+  // surface not already gated by AuthGuard.
+  const { globalConfig } = useAppContext();
 
-  if (loading || data?.allowUserRegistration === false || data?.needsSystemAdminSetup === true) {
+  if (
+    !globalConfig ||
+    globalConfig.allowUserRegistration === false ||
+    globalConfig.needsSystemAdminSetup === true
+  ) {
     return null;
   }
 
