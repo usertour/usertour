@@ -4,12 +4,12 @@ import { SignUpPrompt } from './sign-up-link';
 
 interface ResetPasswordSuccessProps {
   /**
-   * Called when the user clicks "Back to sign in". The owner page resets
+   * Called when the user clicks "Back to log in". The owner page resets
    * its own view state — this component does not navigate.
    */
   onBack: () => void;
   /**
-   * Defaults to true on the standalone sign-in surface; pass false on the
+   * Defaults to true on the standalone log-in surface; pass false on the
    * invite surface where promoting sign-up doesn't fit the flow.
    */
   showSignUpPrompt?: boolean;

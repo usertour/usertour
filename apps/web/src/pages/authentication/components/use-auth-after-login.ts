@@ -13,7 +13,7 @@ export type AuthMutationResult =
 
 // Validate ?next= as a same-origin path before treating it as a navigation
 // target — rejects absolute URLs (//foo or http://...) so an attacker can't
-// craft a sign-in link that bounces to an external site.
+// craft a log-in link that bounces to an external site.
 export const resolveNextPath = (next: string | null | undefined, fallback = '/'): string => {
   if (!next || !next.startsWith('/') || next.startsWith('//')) {
     return fallback;
