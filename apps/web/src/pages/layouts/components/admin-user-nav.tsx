@@ -24,7 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEvent } from 'react-use';
 
 export const AdminUserNav = () => {
-  const { userInfo: user, handleLogout, globalConfig } = useAppContext();
+  const { userInfo: user, signOutAndRedirect, globalConfig } = useAppContext();
   const { project, projects } = useAppContext();
   const posthog = usePostHog();
   const { invoke } = useActiveUserProjectMutation();
@@ -32,15 +32,9 @@ export const AdminUserNav = () => {
 
   const navigate = useNavigate();
 
-  const logoutHandler = async () => {
-    await handleLogout();
+  const logoutHandler = () => {
     posthog?.capture('clicked_log_in');
-    // Hard-load (not SPA navigate): clearing userInfo makes AuthGuard render a
-    // declarative <Navigate to="/auth/signin?next=<current page>"> that wins
-    // the in-render race against an imperative navigate, leaking the page we
-    // just left into ?next. A full reload to a clean URL can't be overridden,
-    // and re-reads the now-cleared auth cookies from a fresh mount.
-    window.location.assign('/auth/signin');
+    signOutAndRedirect();
   };
 
   const hotkeys = {

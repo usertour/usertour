@@ -37,25 +37,18 @@ export const SelectProject = () => {
 SelectProject.displayName = 'SelectProject';
 
 // Switching accounts is an explicit action — it must not resume the current
-// /select-project URL. Log out, then hard-load a clean sign-in (no ?next) so
-// the next account lands on its own default instead of being stranded on the
-// picker. A full reload (not SPA navigate) is required because auth cookies
-// are read only at mount — same reason useAuthAfterLogin uses location.assign.
-// Done here rather than in the shared next/redirect logic so the generic
-// deep-link behaviour stays untouched.
+// /select-project URL. signOutAndRedirect tears down the session and hard-loads
+// a clean sign-in (no ?next) so the next account lands on its own default
+// instead of being stranded on the picker. Done via the shared sign-out helper
+// rather than the generic next/redirect logic, which stays untouched.
 const SwitchAccountButton = () => {
   const { t } = useTranslation('ui');
-  const { handleLogout } = useAppContext();
-
-  const onClick = async () => {
-    await handleLogout();
-    window.location.assign('/auth/signin');
-  };
+  const { signOutAndRedirect } = useAppContext();
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => signOutAndRedirect()}
       className="pt-4 text-center text-sm text-muted-foreground underline underline-offset-4 hover:text-primary cursor-pointer"
     >
       {t('auth.selectProject.signOut')}

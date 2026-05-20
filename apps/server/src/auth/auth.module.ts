@@ -19,11 +19,13 @@ import { SharedModule } from '@/shared/shared.module';
 import { LicenseModule } from '@/license/license.module';
 import { BullModule } from '@nestjs/bullmq';
 import {
+  QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
   QUEUE_INITIALIZE_PROJECT,
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
 } from '@/common/consts/queen';
 import {
+  CleanExpiredRefreshTokensProcessor,
   InitializeProjectProcessor,
   SendMagicLinkEmailProcessor,
   SendResetPasswordEmailProcessor,
@@ -47,6 +49,7 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
     BullModule.registerQueue({ name: QUEUE_SEND_MAGIC_LINK_EMAIL }),
     BullModule.registerQueue({ name: QUEUE_SEND_RESET_PASSWORD_EMAIL }),
     BullModule.registerQueue({ name: QUEUE_INITIALIZE_PROJECT }),
+    BullModule.registerQueue({ name: QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS, prefix: 'auth_cron' }),
     TeamModule,
     SharedModule,
     LicenseModule,
@@ -65,6 +68,7 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
     SendMagicLinkEmailProcessor,
     SendResetPasswordEmailProcessor,
     InitializeProjectProcessor,
+    CleanExpiredRefreshTokensProcessor,
     {
       provide: APP_GUARD,
       useClass: GqlAuthGuard,

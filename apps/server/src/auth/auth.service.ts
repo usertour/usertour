@@ -4,7 +4,7 @@ import {
   initialization,
   initializationThemes,
 } from '@/common/initialization/initialization';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { randomBytes, createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -48,6 +48,7 @@ import {
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
   QUEUE_INITIALIZE_PROJECT,
+  QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
 } from '@/common/consts/queen';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -65,7 +66,7 @@ const PASSWORD_FAILURE_KEY_PREFIX = 'login-failure:password:';
 const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — matches Google / Stripe / GitHub conventions
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   private logger = new Logger(AuthService.name);
   // Lazily computed argon2 hash used by `emailLogin` to burn equivalent CPU
   // on a username-miss as on a real password verify. Without it, the
@@ -84,7 +85,53 @@ export class AuthService {
     @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
     @InjectQueue(QUEUE_SEND_RESET_PASSWORD_EMAIL) private resetPasswordQueue: Queue,
     @InjectQueue(QUEUE_INITIALIZE_PROJECT) private initializeProjectQueue: Queue,
+    @InjectQueue(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS)
+    private cleanExpiredRefreshTokensQueue: Queue,
   ) {}
+
+  // Schedule the recurring refresh-token cleanup. Mirrors the subscription
+  // cron pattern (BullMQ repeatable + fixed jobId so it fires once per cluster).
+  // Scheduling failure must not block app boot — the sweep is non-critical
+  // hygiene, not a correctness requirement.
+  async onModuleInit() {
+    try {
+      await this.setupCleanExpiredRefreshTokensJob();
+    } catch (error) {
+      this.logger.error(`Failed to schedule refresh-token cleanup job: ${error}`);
+    }
+  }
+
+  private async setupCleanExpiredRefreshTokensJob() {
+    const existingJobs = await this.cleanExpiredRefreshTokensQueue.getJobSchedulers();
+    await Promise.all(
+      existingJobs.map((job) => this.cleanExpiredRefreshTokensQueue.removeJobScheduler(job.id)),
+    );
+
+    await this.cleanExpiredRefreshTokensQueue.add(
+      'clean-expired-refresh-tokens',
+      {},
+      {
+        repeat: { pattern: '0 3 * * *' }, // daily at 03:00
+        jobId: 'clean-expired-refresh-tokens', // fixed id dedupes across instances
+        removeOnComplete: true,
+        removeOnFail: false,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+      },
+    );
+  }
+
+  // Delete refresh-token rows whose natural expiry has passed. They can never
+  // be exchanged again (refreshAccessToken's `expiresAt > now` filter rejects
+  // them), so removing them is safe and keeps the table bounded.
+  async cleanExpiredRefreshTokens() {
+    const { count } = await this.prisma.refreshToken.deleteMany({
+      where: { expiresAt: { lt: new Date() } },
+    });
+    if (count > 0) {
+      this.logger.log(`Cleaned ${count} expired refresh tokens`);
+    }
+  }
 
   async isUserRegistrationAllowed() {
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
@@ -381,20 +428,24 @@ export class AuthService {
         secret: this.configService.get('auth.jwt.refreshSecret'),
       });
 
-      // Check if token has been revoked
-      const storedToken = await this.prisma.refreshToken.findUnique({
-        where: { jti: payload.jti },
+      // One-time use: atomically consume the stored token by deleting it.
+      // `count === 1` means the row existed and hadn't expired; anything else
+      // (unknown jti, already-consumed, or expired) is treated as expired.
+      // Deleting in a single statement also closes the race where two
+      // concurrent refreshes both pass a separate read-then-update.
+      //
+      // `revoked: false` is transitional: rows the old code marked revoked
+      // (logout / password change / 2FA / admin force, or a stolen rotated
+      // token) were kept rather than deleted, so they could still match jti +
+      // expiry and be re-honored once. Excluding them preserves the old
+      // rejection. Drop this filter together with the `revoked` column once
+      // every legacy revoked row has aged past its expiry.
+      const { count } = await this.prisma.refreshToken.deleteMany({
+        where: { jti: payload.jti, expiresAt: { gt: new Date() }, revoked: false },
       });
-
-      if (!storedToken || storedToken.revoked || storedToken.expiresAt < new Date()) {
+      if (count !== 1) {
         throw new AuthenticationExpiredError();
       }
-
-      // Revoke the current refresh token (one-time use)
-      await this.prisma.refreshToken.update({
-        where: { jti: payload.jti },
-        data: { revoked: true },
-      });
 
       // Generate new tokens
       return this.login(payload.userId);
@@ -461,15 +512,31 @@ export class AuthService {
     return { kind: 'tokens', tokens };
   }
 
-  async revokeAllRefreshTokens(userId: string) {
-    await this.prisma.refreshToken.updateMany({
-      where: { userId },
-      data: { revoked: true },
-    });
+  // Revoke a single session's refresh token (per-device logout). The jti is
+  // carried in the refresh JWT itself; verify to extract it, then delete that
+  // one row. Deleting every token for a user belongs to an explicit
+  // "log out all devices" action, not ordinary logout.
+  async revokeRefreshToken(refreshToken: string) {
+    let jti: string | undefined;
+    try {
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: this.configService.get('auth.jwt.refreshSecret'),
+      });
+      jti = payload?.jti;
+    } catch {
+      // Invalid or expired refresh token — already useless, nothing to delete.
+      return;
+    }
+    if (jti) {
+      await this.prisma.refreshToken.deleteMany({
+        where: { jti },
+      });
+    }
   }
 
   /**
-   * Update user password and revoke all refresh tokens.
+   * Update user password and delete all of the user's refresh tokens
+   * (changing the password ends every session — "log out all devices").
    * Caller owns the transaction boundary — wrap this call in
    * `prisma.$transaction` to make it atomic with any surrounding work.
    */
@@ -483,9 +550,8 @@ export class AuthService {
       data: { password: hashedPassword },
       where: { id: userId },
     });
-    await tx.refreshToken.updateMany({
+    await tx.refreshToken.deleteMany({
       where: { userId },
-      data: { revoked: true },
     });
     return user;
   }

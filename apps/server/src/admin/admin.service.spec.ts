@@ -21,7 +21,7 @@ describe('AdminService.updateInstanceRequire2FA', () => {
     prisma = {
       user: { findUnique: jest.fn(), findMany: jest.fn() },
       instanceSetting: { upsert: jest.fn(), findUnique: jest.fn() },
-      refreshToken: { updateMany: jest.fn() },
+      refreshToken: { deleteMany: jest.fn() },
       $transaction: jest.fn((cb: any) => cb(prisma)),
     };
     license = {
@@ -75,12 +75,10 @@ describe('AdminService.updateInstanceRequire2FA', () => {
       where: { twoFactorEnabled: false },
       select: { id: true },
     });
-    expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
+    expect(prisma.refreshToken.deleteMany).toHaveBeenCalledWith({
       where: {
-        revoked: false,
         userId: { in: ['user-A', 'user-B', 'user-C'] },
       },
-      data: { revoked: true },
     });
   });
 
@@ -91,7 +89,7 @@ describe('AdminService.updateInstanceRequire2FA', () => {
 
     await service.updateInstanceRequire2FA('admin-1', true);
 
-    expect(prisma.refreshToken.updateMany).not.toHaveBeenCalled();
+    expect(prisma.refreshToken.deleteMany).not.toHaveBeenCalled();
   });
 
   it('on turn-OFF: does NOT touch refresh tokens (turning off must not log anyone out)', async () => {
@@ -99,7 +97,7 @@ describe('AdminService.updateInstanceRequire2FA', () => {
     await service.updateInstanceRequire2FA('admin-1', false);
 
     expect(prisma.user.findMany).not.toHaveBeenCalled();
-    expect(prisma.refreshToken.updateMany).not.toHaveBeenCalled();
+    expect(prisma.refreshToken.deleteMany).not.toHaveBeenCalled();
     expect(prisma.instanceSetting.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         update: { require2FA: false },

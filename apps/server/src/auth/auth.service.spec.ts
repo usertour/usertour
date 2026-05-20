@@ -9,6 +9,7 @@ import {
   TooManyLoginAttemptsError,
 } from '@/common/errors';
 import {
+  QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
   QUEUE_INITIALIZE_PROJECT,
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
@@ -102,6 +103,7 @@ describe('AuthService', () => {
         { provide: getQueueToken(QUEUE_SEND_MAGIC_LINK_EMAIL), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_SEND_RESET_PASSWORD_EMAIL), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_INITIALIZE_PROJECT), useValue: noopQueue },
+        { provide: getQueueToken(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS), useValue: noopQueue },
       ],
     }).compile();
 

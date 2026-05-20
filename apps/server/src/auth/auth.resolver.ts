@@ -15,7 +15,8 @@ import { Auth } from './models/auth.model';
 import { Common } from './models/common.model';
 import { Register } from './models/register.model';
 import { Logger, UseGuards } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { REFRESH_TOKEN_COOKIE } from '@/utils/cookie';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
 import { EmailConfigGuard } from '@/common/guards/email-config.guard';
@@ -95,10 +96,21 @@ export class AuthResolver {
 
   @Mutation(() => Boolean)
   @SkipTwoFactorEnrollment()
-  async logout(@UserEntity() user: User, @Context() context: { res: Response }) {
+  async logout(@UserEntity() user: User, @Context() context: { req: Request; res: Response }) {
     this.logger.log(`Logging out user: ${user.id}`);
-    await this.auth.revokeAllRefreshTokens(user.id);
+    // Clear cookies first — it only writes response headers and can't fail, so
+    // logout stays effective even if the revoke below hits a DB error.
     this.auth.clearAuthCookie(context.res);
+    // Revoke only THIS session's refresh token (per-device logout), not every
+    // session the user has. Best-effort: a failure here must not fail logout.
+    const refreshToken = context.req.cookies?.[REFRESH_TOKEN_COOKIE];
+    if (refreshToken) {
+      try {
+        await this.auth.revokeRefreshToken(refreshToken);
+      } catch (error) {
+        this.logger.error(`Failed to revoke refresh token on logout for ${user.id}`, error);
+      }
+    }
     this.logger.log(`Successfully logged out user: ${user.id}`);
     return true;
   }

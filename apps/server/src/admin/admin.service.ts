@@ -278,12 +278,10 @@ export class AdminService implements OnModuleInit {
           select: { id: true },
         });
         if (nonEnrolled.length > 0) {
-          await tx.refreshToken.updateMany({
+          await tx.refreshToken.deleteMany({
             where: {
-              revoked: false,
               userId: { in: nonEnrolled.map((u) => u.id) },
             },
-            data: { revoked: true },
           });
         }
       }
