@@ -255,7 +255,7 @@ export class TeamService {
     code: string,
     email: string,
     fromUserName: string,
-    teamName: string,
+    projectName: string,
     toUserName: string,
   ) {
     const url = `${this.configService.get('app.homepageUrl')}/auth/invite/${code}`;
@@ -264,7 +264,7 @@ export class TeamService {
       data: {
         inviterName: fromUserName,
         name: toUserName,
-        teamName,
+        projectName,
         url,
       },
     });
