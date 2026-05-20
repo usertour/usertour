@@ -35,7 +35,12 @@ export const AdminUserNav = () => {
   const logoutHandler = async () => {
     await handleLogout();
     posthog?.capture('clicked_log_in');
-    return navigate('/auth/signin');
+    // Hard-load (not SPA navigate): clearing userInfo makes AuthGuard render a
+    // declarative <Navigate to="/auth/signin?next=<current page>"> that wins
+    // the in-render race against an imperative navigate, leaking the page we
+    // just left into ?next. A full reload to a clean URL can't be overridden,
+    // and re-reads the now-cleared auth cookies from a fresh mount.
+    window.location.assign('/auth/signin');
   };
 
   const hotkeys = {

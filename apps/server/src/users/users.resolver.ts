@@ -4,11 +4,13 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { PrismaService } from 'nestjs-prisma';
 import { ChangeEmailInput } from './dto/change-email.input';
 import { ChangePasswordInput } from './dto/change-password.input';
+import { CreateOwnedProjectInput } from './dto/create-owned-project.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { User } from './models/user.model';
 import { UsersService } from './users.service';
 import { AuthService } from '@/auth/auth.service';
 import { TwoFactorService } from '@/auth/two-factor.service';
+import { Project } from '@/projects/models/project.model';
 @Resolver(() => User)
 export class UsersResolver {
   constructor(
@@ -40,6 +42,14 @@ export class UsersResolver {
   @Mutation(() => User)
   async changeEmail(@UserEntity() user: User, @Args('data') input: ChangeEmailInput) {
     return this.usersService.changeEmail(user.id, user.password, input);
+  }
+
+  // Self-serve project creation for stranded users (zero project memberships).
+  // The service-level guard enforces the "only when 0 projects" rule; the
+  // frontend only surfaces the entry from /select-project's empty state.
+  @Mutation(() => Project)
+  async createOwnedProject(@UserEntity() user: User, @Args('data') input: CreateOwnedProjectInput) {
+    return this.authService.createOwnedProject(user.id, input.name);
   }
 
   @ResolveField('projects')

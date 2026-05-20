@@ -31,6 +31,7 @@ import {
   InvalidVerificationSession,
   OAuthError,
   OAuthOnlyAccountError,
+  ParamsError,
   PasswordIncorrect,
   TooManyLoginAttemptsError,
   UnknownError,
@@ -184,22 +185,6 @@ export class AuthService {
       .clearCookie(REFRESH_TOKEN_COOKIE, clearOptions);
   }
 
-  // Users created via the System Admin "create user" UI (and any other path
-  // that bootstraps a User row without a default project) end up with zero
-  // UserOnProject rows. AppContext.project resolves to null and the admin
-  // shell renders blank. emailLogin already handles this post-auth; the
-  // OAuth flow needs the same bootstrap on both return-existing-user
-  // branches.
-  private async ensureUserHasProject(userId: string) {
-    const count = await this.prisma.userOnProject.count({ where: { userId } });
-    if (count === 0) {
-      const project = await this.createProject(this.prisma, 'Unnamed Project', userId);
-      // Defer attribute/event default seeding to the worker — it runs ~186
-      // DB round trips and bloats the synchronous auth response otherwise.
-      await this.addInitializeProjectJob(project.id);
-    }
-  }
-
   // Record the OAuth identity on the User row so future logins find the
   // account directly via (provider, providerAccountId) instead of falling
   // back to the email lookup. Also keeps `isOAuthUser` (which scans Account
@@ -249,7 +234,6 @@ export class AuthService {
         if (inviteCode) {
           await this.joinProject(inviteCode, user.id);
         }
-        await this.ensureUserHasProject(user.id);
         return user;
       }
 
@@ -288,7 +272,6 @@ export class AuthService {
       if (inviteCode) {
         await this.joinProject(inviteCode, user.id);
       }
-      await this.ensureUserHasProject(user.id);
       return user;
     }
 
@@ -319,8 +302,7 @@ export class AuthService {
       this.logger.warn(`failed to download avatar: ${e}`);
     }
 
-    let bootstrapProjectId: string | undefined;
-    const newUser = await this.prisma.$transaction(async (tx) => {
+    return await this.prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           name: displayName || email,
@@ -356,17 +338,11 @@ export class AuthService {
         }
       } else {
         const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
-        bootstrapProjectId = project.id;
+        await initialization(tx, project.id);
       }
 
       return newUser;
     });
-
-    if (bootstrapProjectId) {
-      await this.addInitializeProjectJob(bootstrapProjectId);
-    }
-
-    return newUser;
   }
 
   private async generateRefreshToken(userId: string): Promise<string> {
@@ -667,25 +643,18 @@ export class AuthService {
       throw new InvalidVerificationSession();
     }
 
-    let bootstrapProjectId: string | undefined;
-    const result = await this.runSignupFlow(
+    return this.runSignupFlow(
       payload.userName,
       register.email,
       payload.password,
       async (tx, user) => {
         const project = await this.createProject(tx, payload.companyName, user.id);
-        bootstrapProjectId = project.id;
+        await initialization(tx, project.id);
         // Consume the magic-link Register row so the same code can't be
         // re-used for a second signup attempt before its TTL window closes.
         await tx.register.deleteMany({ where: { code: payload.code } });
       },
     );
-
-    if (bootstrapProjectId) {
-      await this.addInitializeProjectJob(bootstrapProjectId);
-    }
-
-    return result;
   }
 
   async acceptInvite(payload: AcceptInviteInput): Promise<AuthResult> {
@@ -750,7 +719,6 @@ export class AuthService {
 
       await this.ensureSystemAdminSetupAvailable();
 
-      let bootstrapProjectId: string | undefined;
       const user = await this.prisma.$transaction(async (tx) => {
         const existingUser = await tx.user.findFirst({
           where: { isSystemAdmin: true },
@@ -772,14 +740,10 @@ export class AuthService {
 
         await this.createAccount(tx, 'email', user.id, 'email', email);
         const project = await this.createProject(tx, 'Unnamed Project', user.id);
-        bootstrapProjectId = project.id;
+        await initialization(tx, project.id);
 
         return user;
       });
-
-      if (bootstrapProjectId) {
-        await this.addInitializeProjectJob(bootstrapProjectId);
-      }
 
       this.logger.log(`System admin ${user.id} initialized`);
       // issueTokensOrChallenge has two branches (mfa-verify, mfa-setup-required)
@@ -847,7 +811,7 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { projects: true, accounts: true },
+      include: { accounts: true },
     });
 
     if (!user) {
@@ -883,13 +847,10 @@ export class AuthService {
     await this.clearPasswordFailures(email);
 
     // State-mutating side effects only run after the password is proven.
-    // Otherwise a wrong-password attempt could consume an invite, reshuffle
-    // active project, or create an orphan project for any known email.
-    if (user.projects.length === 0) {
-      const project = await this.createProject(this.prisma, 'Unnamed Project', user.id);
-      await this.addInitializeProjectJob(project.id);
-    }
-
+    // Otherwise a wrong-password attempt could consume an invite or reshuffle
+    // active project for any known email. Users with zero projects are
+    // routed to /select-project by the frontend instead of getting a
+    // silently auto-bootstrapped one.
     if (inviteCode) {
       await this.joinProject(inviteCode, user.id);
     }
@@ -1103,6 +1064,24 @@ export class AuthService {
       include: {
         environments: true,
       },
+    });
+  }
+
+  // User-facing project creation. Reserved for stranded users (count === 0)
+  // — the UI surfaces it only on the empty-state of /select-project. We
+  // still guard server-side so a direct API caller can't bypass the rule.
+  // Users acquire additional projects through team invites or admin-driven
+  // ownership transfers, not through this path.
+  async createOwnedProject(userId: string, name: string) {
+    const existingCount = await this.prisma.userOnProject.count({ where: { userId } });
+    if (existingCount > 0) {
+      throw new ParamsError('You already belong to a project');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const project = await this.createProject(tx, name, userId);
+      await initialization(tx, project.id);
+      return project;
     });
   }
 

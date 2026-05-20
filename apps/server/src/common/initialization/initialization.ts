@@ -938,47 +938,46 @@ const defaultAttributes: Partial<Attribute>[] = [
   },
 ];
 
+// Two-step "diff then batch insert" replaces a loop of per-row upserts so
+// project initialization runs in a couple of round-trips instead of one
+// round-trip per default. We deliberately skip the original upsert's
+// "update displayName/description" branch — those values only drift when
+// the defaultAttributes constant itself changes, which is rare enough to
+// handle via a one-off migration if it ever matters.
 const initializationAttributes = async (tx: Prisma.TransactionClient, projectId: string) => {
-  for (const attr of defaultAttributes) {
-    await tx.attribute.upsert({
-      where: {
-        projectId_bizType_codeName: {
-          projectId,
-          bizType: attr.bizType,
-          codeName: attr.codeName,
-        },
-      },
-      create: { ...attr, projectId, predefined: true },
-      update: {
-        displayName: attr.displayName,
-        description: attr.description,
-      },
-    });
+  const existing = await tx.attribute.findMany({
+    where: { projectId },
+    select: { bizType: true, codeName: true },
+  });
+  const existingKeys = new Set(existing.map((a) => `${a.bizType}:${a.codeName}`));
+  const toCreate = defaultAttributes
+    .filter((attr) => !existingKeys.has(`${attr.bizType}:${attr.codeName}`))
+    .map((attr) => ({ ...attr, projectId, predefined: true }));
+  if (toCreate.length === 0) {
+    return;
   }
+  await tx.attribute.createMany({ data: toCreate as any, skipDuplicates: true });
 };
 
 const initializationEvents = async (tx: Prisma.TransactionClient, projectId: string) => {
-  for (const event of defaultEvents) {
-    await tx.event.upsert({
-      where: {
-        codeName_projectId: {
-          projectId,
-          codeName: event.codeName,
-        },
-      },
-      create: {
-        displayName: event.displayName,
-        codeName: event.codeName,
-        description: event.description,
-        projectId,
-        predefined: true,
-      },
-      update: {
-        displayName: event.displayName,
-        description: event.description,
-      },
-    });
+  const existing = await tx.event.findMany({
+    where: { projectId },
+    select: { codeName: true },
+  });
+  const existingKeys = new Set(existing.map((e) => e.codeName));
+  const toCreate = defaultEvents
+    .filter((event) => !existingKeys.has(event.codeName))
+    .map((event) => ({
+      displayName: event.displayName,
+      codeName: event.codeName,
+      description: event.description,
+      projectId,
+      predefined: true,
+    }));
+  if (toCreate.length === 0) {
+    return;
   }
+  await tx.event.createMany({ data: toCreate, skipDuplicates: true });
 };
 
 const initializationAttributeOnEvent = async (tx: Prisma.TransactionClient, projectId: string) => {
@@ -1018,7 +1017,7 @@ const initializationAttributeOnEvent = async (tx: Prisma.TransactionClient, proj
   }
 
   if (inserts.length > 0) {
-    await tx.attributeOnEvent.createMany({ data: inserts });
+    await tx.attributeOnEvent.createMany({ data: inserts, skipDuplicates: true });
   }
 };
 

@@ -4,6 +4,7 @@ import {
   confirmTwoFactorSetup,
   confirmTwoFactorSetupWithChallenge,
   createMagicLink,
+  createOwnedProject,
   disableTwoFactor,
   getInvite,
   getUserInfo,
@@ -35,6 +36,15 @@ export const useLogoutMutation = () => {
   const invoke = async () => {
     const response = await mutation();
     return response.data?.logout;
+  };
+  return { invoke, loading, error };
+};
+
+export const useCreateOwnedProjectMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createOwnedProject);
+  const invoke = async (name: string) => {
+    const response = await mutation({ variables: { name } });
+    return response.data?.createOwnedProject as { id: string; name: string } | undefined;
   };
   return { invoke, loading, error };
 };

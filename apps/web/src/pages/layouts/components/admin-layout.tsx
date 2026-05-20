@@ -9,7 +9,7 @@ import { UserProfile } from '@usertour/types';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Outlet, useParams } from 'react-router-dom';
+import { Navigate, Outlet, useParams } from 'react-router-dom';
 import usertour from 'usertour.js';
 import { AdminLayoutSurface, SURFACE_BODY_CLASSNAMES } from './admin-surface';
 import { UpgradePlanBanner } from './upgrade-plan-banner';
@@ -109,8 +109,11 @@ export const AdminProvidersOutlet = () => {
   const projectId = project?.id;
   const subscriptionId = project?.subscriptionId;
 
+  // No active project — either the user has zero memberships or none of
+  // their existing memberships is `actived`. Send them to /select-project
+  // so they can pick one (or create a new one if they have none).
   if (!projectId) {
-    return null;
+    return <Navigate to="/select-project" replace />;
   }
 
   return (
