@@ -7,6 +7,7 @@ import {
   type RulesFrequencyValueAtLeast,
   type RulesFrequencyValueEvery,
 } from '@usertour/types';
+import { DEFAULT_FREQUENCY } from '@usertour/helpers';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import isEqual from 'fast-deep-equal';
 import type { ConditionsTranslator } from '../conditions-context';
@@ -32,12 +33,6 @@ const UNIT_KEYS = [
   { value: FrequencyUnits.SECONDS, labelKey: 'conditions.standalone.frequency.unit.seconds' },
 ];
 
-const INITIAL_VALUE: RulesFrequencyValue = {
-  frequency: Frequency.ONCE,
-  every: { times: 2, duration: 1, unit: FrequencyUnits.DAYES },
-  atLeast: { duration: 0, unit: FrequencyUnits.MINUTES },
-};
-
 interface Props {
   defaultValue?: RulesFrequencyValue;
   onChange: (value: RulesFrequencyValue) => void;
@@ -60,23 +55,20 @@ export function ConditionFrequency({
   t: tProp,
 }: Props) {
   const t = resolveTranslator(tProp);
+  // DEFAULT_FREQUENCY is only a display fallback for a missing defaultValue;
+  // the persisted default is owned by buildConfig in @usertour/helpers.
   const initial: RulesFrequencyValue = {
-    ...(defaultValue ?? INITIAL_VALUE),
-    atLeast: showAtLeast ? (defaultValue ?? INITIAL_VALUE).atLeast : undefined,
+    ...(defaultValue ?? DEFAULT_FREQUENCY),
+    atLeast: showAtLeast ? (defaultValue ?? DEFAULT_FREQUENCY).atLeast : undefined,
   };
   const [data, setData] = useState<RulesFrequencyValue>(initial);
-
-  useEffect(() => {
-    if (!defaultValue) onChange(initial);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Keep the displayed frequency in sync with the prop after the initial
   // mount — without this, content/version switches, restores, or any
   // other parent-driven reset would leave the picker showing the old
   // content's frequency state (and a subsequent edit would write that
   // stale state back into the new content's payload).
-  // Normalize `undefined` to INITIAL_VALUE (matches the useState init
+  // Normalize `undefined` to DEFAULT_FREQUENCY (matches the useState init
   // above) so switching from a content with frequency to one without
   // resets the picker to defaults instead of carrying the previous
   // value over.
@@ -88,7 +80,7 @@ export function ConditionFrequency({
   // briefly re-mounts the value-bound children below the dropdown
   // (FrequencyEvery / FrequencyAtLeast), producing a visible flash.
   useEffect(() => {
-    const source = defaultValue ?? INITIAL_VALUE;
+    const source = defaultValue ?? DEFAULT_FREQUENCY;
     const next: RulesFrequencyValue = {
       ...source,
       atLeast: showAtLeast ? source.atLeast : undefined,

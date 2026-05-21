@@ -7,7 +7,6 @@ import {
   BizUser,
   Environment,
   Theme,
-  Version,
   VersionWithStepsAndContent,
   Attribute,
   BizSessionWithEvents,
@@ -874,10 +873,13 @@ export class ContentDataService {
    * @returns Processed configuration with activated rules
    */
   private async processConfig(
-    version: Version,
+    version: VersionWithStepsAndContent,
     context: ConditionEvaluationContext,
   ): Promise<ContentConfigObject> {
-    const config = buildConfig(version.config as ContentConfigObject | undefined);
+    const config = buildConfig(
+      version.config as ContentConfigObject | undefined,
+      version.content.type as ContentDataType,
+    );
 
     const [autoStartRules, hideRules] = await Promise.all([
       this.evaluateConfigRules(config.enabledAutoStartRules, config.autoStartRules, context),
