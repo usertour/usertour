@@ -27,6 +27,7 @@ import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour/hooks
 import { BizSession } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
 import { Fragment, ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/dialog';
 import { SessionResponse } from '@/components/molecules/session-detail';
@@ -38,6 +39,7 @@ const useSessionForm = (
   action: 'delete' | 'end',
   onSubmit: (success: boolean) => void,
 ) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { invoke: deleteSession, loading: deleteLoading } = useDeleteSessionMutation();
   const { invoke: endSession, loading: endLoading } = useEndSessionMutation();
@@ -50,7 +52,10 @@ const useSessionForm = (
       if (result) {
         toast({
           variant: 'success',
-          title: `The session has been successfully ${action}ed`,
+          title:
+            action === 'delete'
+              ? t('sessionActions.toast.deleteSuccess')
+              : t('sessionActions.toast.endSuccess'),
         });
         onSubmit(true);
         return;
@@ -59,7 +64,10 @@ const useSessionForm = (
       onSubmit(false);
       toast({
         variant: 'destructive',
-        title: `Failed to ${action} session`,
+        title:
+          action === 'delete'
+            ? t('sessionActions.toast.deleteFailed')
+            : t('sessionActions.toast.endFailed'),
       });
     }
   };
@@ -97,23 +105,27 @@ type SessionActionDropdownMenuProps = {
 };
 
 // Dialog component for displaying session responses
-const ResponseDialog = ({ open, onOpenChange, questions }: ResponseDialogProps) => (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="sm:max-w-[600px]">
-      <DialogHeader>
-        <DialogTitle>Question Response</DialogTitle>
-      </DialogHeader>
-      {questions?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-gray-500">
-          <EmptyPlaceholderIcon className="h-10 w-10 text-muted-foreground" />
-          <p>No questions found</p>
-        </div>
-      ) : (
-        <SessionResponse questions={questions} />
-      )}
-    </DialogContent>
-  </Dialog>
-);
+const ResponseDialog = ({ open, onOpenChange, questions }: ResponseDialogProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{t('sessionActions.responseDialog.title')}</DialogTitle>
+        </DialogHeader>
+        {questions?.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+            <EmptyPlaceholderIcon className="h-10 w-10 text-muted-foreground" />
+            <p>{t('sessionActions.responseDialog.empty')}</p>
+          </div>
+        ) : (
+          <SessionResponse questions={questions} />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 // Define menu items with their groups for separator logic
 type MenuItemConfig = {
@@ -148,6 +160,7 @@ const DropdownMenuItems = ({
   isViewOnly: boolean;
   sessionState: number;
 }) => {
+  const { t } = useTranslation();
   const menuItems: MenuItemConfig[] = [
     {
       id: 'viewDetails',
@@ -156,7 +169,7 @@ const DropdownMenuItems = ({
       render: () => (
         <DropdownMenuItem onClick={onViewDetailsClick} className="cursor-pointer">
           <ZoomInIcon className="w-4 h-4 mr-1" />
-          View details
+          {t('sessionActions.menu.viewDetails')}
         </DropdownMenuItem>
       ),
     },
@@ -167,7 +180,7 @@ const DropdownMenuItems = ({
       render: () => (
         <DropdownMenuItem onClick={onResponseClick} className="cursor-pointer">
           <QuestionMarkCircledIcon className="w-4 h-4 mr-1" />
-          View Response
+          {t('sessionActions.menu.viewResponse')}
         </DropdownMenuItem>
       ),
     },
@@ -182,7 +195,7 @@ const DropdownMenuItems = ({
           onClick={onEndClick}
         >
           <CloseCircleIcon className="w-4 h-4 mr-1" />
-          End session now
+          {t('sessionActions.menu.endSession')}
         </DropdownMenuItem>
       ),
     },
@@ -197,7 +210,7 @@ const DropdownMenuItems = ({
           onClick={onDeleteClick}
         >
           <Delete2Icon className="w-4 h-4 mr-1" />
-          Delete session
+          {t('sessionActions.menu.deleteSession')}
         </DropdownMenuItem>
       ),
     },
@@ -225,37 +238,27 @@ const DropdownMenuItems = ({
 
 // Form component for session actions (delete/end)
 const SessionForm = ({ session, open, onOpenChange, onSubmit, type }: SessionFormProps) => {
+  const { t } = useTranslation();
   const { handleSubmit, loading } = useSessionForm(session, type, onSubmit);
-
-  const descriptions = {
-    delete:
-      'This will delete all traces of this session from your account. Including in analytics.\nYou should probably only do this for testing reasons.',
-    end: 'This will close the content for the user.',
-  };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirm</AlertDialogTitle>
-          <AlertDialogDescription>
-            {descriptions[type].split('\n').map((line, i) => (
-              <Fragment key={i}>
-                {line}
-                <br />
-              </Fragment>
-            ))}
-            Confirm {type}ing the session?
+          <AlertDialogTitle>{t(`sessionActions.${type}.title`)}</AlertDialogTitle>
+          <AlertDialogDescription className="space-y-2">
+            <span className="block">{t(`sessionActions.${type}.description`)}</span>
+            <span className="block">{t(`sessionActions.${type}.descriptionConfirm`)}</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('sessionActions.cancel')}</AlertDialogCancel>
           <LoadingButton
             variant={type === 'delete' ? 'destructive' : undefined}
             onClick={handleSubmit}
             loading={loading}
           >
-            Yes, {type} session
+            {t(`sessionActions.${type}.confirmButton`)}
           </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,4 +1,3 @@
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { CopyIcon } from '@radix-ui/react-icons';
 import {
@@ -17,7 +16,7 @@ import {
   CompanyAttributes,
 } from '@usertour/types';
 import { formatAttributeValue } from '@/utils/common';
-import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
+import { useEffect, useMemo, useState, createContext, useContext, ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour/table';
@@ -45,6 +44,7 @@ import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useCallback } from 'react';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
+import { useListAttributesQuery } from '@usertour/hooks';
 import { ActivityFeed } from '@/components/molecules/activity-feed';
 import { CompanyActivityFeedProvider } from '@/contexts/activity-feed-context';
 
@@ -221,7 +221,14 @@ const LoadMoreButton = () => {
 const CompanyUserList = () => {
   const { t } = useTranslation();
   const { contents, loading, refetch, totalCount, companyId } = useCompanyUserListContext();
-  const { attributeList } = useAttributeListContext();
+  const { project } = useAppContext();
+  // Direct cache-and-network query (not the shared context) so SDK-created
+  // membership/company attributes show on a fresh visit without a reload.
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+  );
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
   const handleRefresh = () => {
@@ -326,12 +333,8 @@ const CompanyDetailContentWithLoading = ({
   companyId,
 }: CompanyDetailContentProps) => {
   const { loading: companyListLoading } = useCompanyListContext();
-  const { loading: attributeListLoading } = useAttributeListContext();
 
-  // Check if any provider is still loading
-  const isLoading = companyListLoading || attributeListLoading;
-
-  if (isLoading) {
+  if (companyListLoading) {
     return <ContentLoading />;
   }
 
@@ -343,23 +346,23 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const { t } = useTranslation();
   const navigator = useNavigate();
   const { contents } = useCompanyListContext();
-  const [bizCompany, setBizCompany] = useState<BizCompany>();
+  // Derive synchronously during render (contents is already loaded by the
+  // WithLoading gate) so we never paint a "not found" frame before an effect
+  // populates it.
+  const bizCompany = useMemo(
+    () => contents?.find((c: BizCompany) => c.id === companyId),
+    [contents, companyId],
+  );
   const [bizCompanyAttributes, setBizCompanyAttributes] = useState<any[]>([]);
-  const { attributeList } = useAttributeListContext();
+  const { isViewOnly, project } = useAppContext();
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activityView, setActivityView] = useState<CompanyActivityView>('events');
-  const { isViewOnly } = useAppContext();
   const copyWithToast = useCopyWithToast();
-
-  useEffect(() => {
-    if (!contents) {
-      return;
-    }
-    const company = contents.find((c: any) => c.id === companyId);
-    if (company) {
-      setBizCompany(company);
-    }
-  }, [contents, companyId]);
 
   useEffect(() => {
     if (attributeList && bizCompany) {
