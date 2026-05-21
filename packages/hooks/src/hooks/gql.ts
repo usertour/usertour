@@ -435,9 +435,14 @@ export const useCreateAttributeMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useListAttributesQuery = (projectId: string, bizType: AttributeBizTypes) => {
+export const useListAttributesQuery = (
+  projectId: string,
+  bizType: AttributeBizTypes,
+  options?: QueryHookOptions,
+) => {
   const { data, loading, error, refetch } = useQuery(listAttributes, {
     variables: { projectId, bizType },
+    ...options,
   });
   const attributes = data?.listAttributes as Attribute[];
   return { attributes, loading, error, refetch };
@@ -822,11 +827,12 @@ export const useDeleteEventMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useListEventsQuery = (projectId: string | undefined) => {
+export const useListEventsQuery = (projectId: string | undefined, options?: QueryHookOptions) => {
   const { data, refetch, loading, error, networkStatus } = useQuery(listEvents, {
     variables: { projectId, bizType: 0 },
     notifyOnNetworkStatusChange: true,
     skip: !projectId,
+    ...options,
   });
   const isRefetching = networkStatus === NetworkStatus.refetch;
   const eventList = data?.listEvents as Event[] | undefined;

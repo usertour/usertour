@@ -16,6 +16,7 @@ import {
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 
+import { useAnalyticsContext } from '@/contexts/analytics-context';
 import { useAppContext } from '@/contexts/app-context';
 import { useBizSessionContext } from '@/contexts/biz-session-context';
 import { useState } from 'react';
@@ -43,6 +44,7 @@ export const BizSessionsDataTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { setPagination, pagination, pageCount, bizSessions, refetch, loading } =
     useBizSessionContext();
+  const { refetch: refetchAnalytics } = useAnalyticsContext();
   const { environment } = useAppContext();
   const navigate = useNavigate();
 
@@ -129,9 +131,11 @@ export const BizSessionsDataTable = () => {
                       showViewResponse={row.original.content?.type === ContentDataType.FLOW}
                       onDeleteSuccess={() => {
                         refetch();
+                        refetchAnalytics();
                       }}
                       onEndSuccess={() => {
                         refetch();
+                        refetchAnalytics();
                       }}
                     >
                       <Button

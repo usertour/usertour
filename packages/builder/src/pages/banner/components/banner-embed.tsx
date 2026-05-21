@@ -1,5 +1,5 @@
 import { EXTENSION_CONTENT_POPPER } from '@usertour/constants';
-import { useAttributeListContext } from '@usertour/contexts';
+import { useAttributeListContext, useContentListContext } from '@usertour/contexts';
 import { useSize } from '@usertour/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour/widget';
 import { ContentEditor } from '@usertour/editor';
@@ -28,6 +28,7 @@ export const BannerEmbed = () => {
   const { upload } = useAws();
   const { projectId } = useBuilderContext();
   const { attributeList } = useAttributeListContext();
+  const { contents: contentList } = useContentListContext();
 
   const wrapperRect = useSize(wrapperEl);
 
@@ -104,6 +105,7 @@ export const BannerEmbed = () => {
         attributes={attributeList}
         enabledElementTypes={enabledElementTypes}
         actionItems={bannerActionItems}
+        contentList={contentList}
       />
     </BannerPreview>
   );

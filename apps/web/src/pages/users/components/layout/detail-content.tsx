@@ -1,6 +1,4 @@
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
-import { useEventListContext } from '@/contexts/event-list-context';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, CopyIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, Delete2Icon } from '@usertour/icons';
@@ -38,6 +36,7 @@ import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
+import { useListAttributesQuery } from '@usertour/hooks';
 
 const COMPANY_CHIP_VISIBLE_LIMIT = 3;
 
@@ -50,12 +49,8 @@ interface UserDetailContentProps {
 
 const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
   const { loading: userListLoading } = useUserListContext();
-  const { loading: eventListLoading } = useEventListContext();
-  const { loading: attributeListLoading } = useAttributeListContext();
 
-  const isLoading = userListLoading || eventListLoading || attributeListLoading;
-
-  if (isLoading) {
+  if (userListLoading) {
     return <ContentLoading />;
   }
 
@@ -101,24 +96,27 @@ const CompanyChips = ({
 const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProps) => {
   const navigator = useNavigate();
   const { contents } = useUserListContext();
-  const [bizUser, setBizUser] = useState<BizUser>();
+  // Derive synchronously during render (contents is already loaded by the
+  // WithLoading gate) so we never paint a "not found" frame before an effect
+  // populates it.
+  const bizUser = useMemo(
+    () => contents?.find((c: BizUser) => c.id === userId),
+    [contents, userId],
+  );
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
-  const { attributeList } = useAttributeListContext();
+  const { isViewOnly, project } = useAppContext();
+  // Query definitions directly (not from the shared context) with
+  // cache-and-network: a fresh visit re-fetches so attributes the SDK created
+  // via identify after the app loaded show up without a manual reload.
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activityView, setActivityView] = useState<ActivityView>('events');
-  const { isViewOnly } = useAppContext();
   const copyWithToast = useCopyWithToast();
   const { t } = useTranslation();
-
-  useEffect(() => {
-    if (!contents) {
-      return;
-    }
-    const user = contents.find((c: BizUser) => c.id === userId);
-    if (user) {
-      setBizUser(user);
-    }
-  }, [contents, userId]);
 
   useEffect(() => {
     if (attributeList && bizUser) {
