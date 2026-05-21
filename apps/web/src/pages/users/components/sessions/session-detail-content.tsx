@@ -25,7 +25,6 @@ import { useAppContext } from '@/contexts/app-context';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState, Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import {
   BannerProgressColumn,
   ChecklistItemsColumn,
@@ -33,7 +32,6 @@ import {
   ResourceCenterProgressColumn,
 } from '@/components/molecules/session';
 import { FlowProgressColumn } from '@/components/molecules/session';
-import { useEventListContext } from '@/contexts/event-list-context';
 import { ChecklistProgressColumn } from '@/components/molecules/session';
 import { Card, CardContent, CardHeader, CardTitle } from '@usertour/card';
 import { SessionActionDropdownMenu } from '@/components/molecules/session-action-dropmenu';
@@ -72,14 +70,9 @@ const SessionDetailContentWithLoading = ({
   environmentId,
   sessionId,
 }: SessionDetailContentProps) => {
-  const { loading: eventListLoading } = useEventListContext();
-  const { loading: attributeListLoading } = useAttributeListContext();
   const { session, loading: sessionLoading, refetch } = useQuerySessionDetailQuery(sessionId);
 
-  // Check if any provider is still loading
-  const isLoading = eventListLoading || attributeListLoading || sessionLoading;
-
-  if (isLoading) {
+  if (sessionLoading) {
     return <ContentLoading />;
   }
 
@@ -110,7 +103,7 @@ const SessionDetailContentInner = ({
     AttributeBizTypes.Nil,
     { fetchPolicy: 'cache-and-network', skip: !project?.id },
   );
-  const { eventList } = useListEventsQuery(project?.id, {
+  const { eventList, loading: eventLoading } = useListEventsQuery(project?.id, {
     fetchPolicy: 'cache-and-network',
   });
   const content = session?.content;
@@ -144,6 +137,10 @@ const SessionDetailContentInner = ({
       bizEvent.event?.codeName === BizEvents.BANNER_DISMISSED ||
       bizEvent.event?.codeName === BizEvents.RESOURCE_CENTER_DISMISSED,
   );
+
+  if (eventLoading && !eventList) {
+    return <ContentLoading />;
+  }
 
   if (!eventList || !content || !version) {
     return (

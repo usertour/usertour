@@ -1,6 +1,4 @@
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useUserListContext } from '@/contexts/user-list-context';
-import { useEventListContext } from '@/contexts/event-list-context';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, CopyIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';
 import { CompanyIcon, Delete2Icon } from '@usertour/icons';
@@ -51,12 +49,8 @@ interface UserDetailContentProps {
 
 const UserDetailContentWithLoading = ({ environmentId, userId }: UserDetailContentProps) => {
   const { loading: userListLoading } = useUserListContext();
-  const { loading: eventListLoading } = useEventListContext();
-  const { loading: attributeListLoading } = useAttributeListContext();
 
-  const isLoading = userListLoading || eventListLoading || attributeListLoading;
-
-  if (isLoading) {
+  if (userListLoading) {
     return <ContentLoading />;
   }
 
@@ -102,7 +96,13 @@ const CompanyChips = ({
 const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProps) => {
   const navigator = useNavigate();
   const { contents } = useUserListContext();
-  const [bizUser, setBizUser] = useState<BizUser>();
+  // Derive synchronously during render (contents is already loaded by the
+  // WithLoading gate) so we never paint a "not found" frame before an effect
+  // populates it.
+  const bizUser = useMemo(
+    () => contents?.find((c: BizUser) => c.id === userId),
+    [contents, userId],
+  );
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
   const { isViewOnly, project } = useAppContext();
   // Query definitions directly (not from the shared context) with
@@ -117,16 +117,6 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const [activityView, setActivityView] = useState<ActivityView>('events');
   const copyWithToast = useCopyWithToast();
   const { t } = useTranslation();
-
-  useEffect(() => {
-    if (!contents) {
-      return;
-    }
-    const user = contents.find((c: BizUser) => c.id === userId);
-    if (user) {
-      setBizUser(user);
-    }
-  }, [contents, userId]);
 
   useEffect(() => {
     if (attributeList && bizUser) {

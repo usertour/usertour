@@ -1,4 +1,3 @@
-import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { useCompanyListContext } from '@/contexts/company-list-context';
 import { CopyIcon } from '@radix-ui/react-icons';
 import {
@@ -17,7 +16,7 @@ import {
   CompanyAttributes,
 } from '@usertour/types';
 import { formatAttributeValue } from '@/utils/common';
-import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
+import { useEffect, useMemo, useState, createContext, useContext, ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { IdCardIcon, CalendarIcon } from '@radix-ui/react-icons';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@usertour/table';
@@ -334,12 +333,8 @@ const CompanyDetailContentWithLoading = ({
   companyId,
 }: CompanyDetailContentProps) => {
   const { loading: companyListLoading } = useCompanyListContext();
-  const { loading: attributeListLoading } = useAttributeListContext();
 
-  // Check if any provider is still loading
-  const isLoading = companyListLoading || attributeListLoading;
-
-  if (isLoading) {
+  if (companyListLoading) {
     return <ContentLoading />;
   }
 
@@ -351,7 +346,13 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const { t } = useTranslation();
   const navigator = useNavigate();
   const { contents } = useCompanyListContext();
-  const [bizCompany, setBizCompany] = useState<BizCompany>();
+  // Derive synchronously during render (contents is already loaded by the
+  // WithLoading gate) so we never paint a "not found" frame before an effect
+  // populates it.
+  const bizCompany = useMemo(
+    () => contents?.find((c: BizCompany) => c.id === companyId),
+    [contents, companyId],
+  );
   const [bizCompanyAttributes, setBizCompanyAttributes] = useState<any[]>([]);
   const { isViewOnly, project } = useAppContext();
   const { attributes: attributeList } = useListAttributesQuery(
@@ -362,16 +363,6 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activityView, setActivityView] = useState<CompanyActivityView>('events');
   const copyWithToast = useCopyWithToast();
-
-  useEffect(() => {
-    if (!contents) {
-      return;
-    }
-    const company = contents.find((c: any) => c.id === companyId);
-    if (company) {
-      setBizCompany(company);
-    }
-  }, [contents, companyId]);
 
   useEffect(() => {
     if (attributeList && bizCompany) {

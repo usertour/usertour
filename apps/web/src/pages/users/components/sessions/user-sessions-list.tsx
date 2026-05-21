@@ -11,7 +11,7 @@ import {
   ResourceCenterProgressCell,
   SessionStatusBadge,
 } from '@/components/molecules/session-analytics';
-import { useEventListContext } from '@/contexts/event-list-context';
+import { useListEventsQuery } from '@usertour/hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
 import { cn } from '@usertour/tailwind';
@@ -172,8 +172,10 @@ const LoadMoreButton = () => {
 
 export const UserSessionsList = () => {
   const { userSessions, loading, totalCount, refetch } = useUserSessionsContext();
-  const { eventList } = useEventListContext();
-  const { environment } = useAppContext();
+  const { environment, project } = useAppContext();
+  // Direct cache-and-network query (not the shared context) so SDK-created
+  // events show on a fresh visit without a reload.
+  const { eventList } = useListEventsQuery(project?.id, { fetchPolicy: 'cache-and-network' });
   const { t } = useTranslation();
   const navigate = useNavigate();
 
