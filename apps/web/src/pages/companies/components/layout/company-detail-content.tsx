@@ -45,6 +45,7 @@ import { ListSkeleton } from '@/components/molecules/skeleton';
 import { useCallback } from 'react';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
+import { useListAttributesQuery } from '@usertour/hooks';
 import { ActivityFeed } from '@/components/molecules/activity-feed';
 import { CompanyActivityFeedProvider } from '@/contexts/activity-feed-context';
 
@@ -221,7 +222,14 @@ const LoadMoreButton = () => {
 const CompanyUserList = () => {
   const { t } = useTranslation();
   const { contents, loading, refetch, totalCount, companyId } = useCompanyUserListContext();
-  const { attributeList } = useAttributeListContext();
+  const { project } = useAppContext();
+  // Direct cache-and-network query (not the shared context) so SDK-created
+  // membership/company attributes show on a fresh visit without a reload.
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+  );
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
   const handleRefresh = () => {
@@ -345,10 +353,14 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
   const { contents } = useCompanyListContext();
   const [bizCompany, setBizCompany] = useState<BizCompany>();
   const [bizCompanyAttributes, setBizCompanyAttributes] = useState<any[]>([]);
-  const { attributeList } = useAttributeListContext();
+  const { isViewOnly, project } = useAppContext();
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activityView, setActivityView] = useState<CompanyActivityView>('events');
-  const { isViewOnly } = useAppContext();
   const copyWithToast = useCopyWithToast();
 
   useEffect(() => {

@@ -38,6 +38,7 @@ import { ContentLoading } from '@/components/molecules/content-loading';
 import { TruncatedText } from '@/components/molecules/truncated-text';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
+import { useListAttributesQuery } from '@usertour/hooks';
 
 const COMPANY_CHIP_VISIBLE_LIMIT = 3;
 
@@ -103,10 +104,17 @@ const UserDetailContentInner = ({ environmentId, userId }: UserDetailContentProp
   const { contents } = useUserListContext();
   const [bizUser, setBizUser] = useState<BizUser>();
   const [bizUserAttributes, setBizUserAttributes] = useState<any[]>([]);
-  const { attributeList } = useAttributeListContext();
+  const { isViewOnly, project } = useAppContext();
+  // Query definitions directly (not from the shared context) with
+  // cache-and-network: a fresh visit re-fetches so attributes the SDK created
+  // via identify after the app loaded show up without a manual reload.
+  const { attributes: attributeList } = useListAttributesQuery(
+    project?.id ?? '',
+    AttributeBizTypes.Nil,
+    { fetchPolicy: 'cache-and-network', skip: !project?.id },
+  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activityView, setActivityView] = useState<ActivityView>('events');
-  const { isViewOnly } = useAppContext();
   const copyWithToast = useCopyWithToast();
   const { t } = useTranslation();
 
