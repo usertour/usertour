@@ -3,11 +3,13 @@ import {
   ContentConfigObject,
   ContentEditorElementType,
   ContentEditorRoot,
+  ContentDataType,
   ContentPriority,
   ContentVersion,
   Environment,
   Frequency,
   FrequencyUnits,
+  type RulesFrequencyValue,
   UserTourTypes,
   autoStartRulesSetting,
   type RichTextLeaf,
@@ -43,20 +45,30 @@ export const isPublishedAtLeastOneEnvironment = (content: Content | null) => {
 };
 
 const rulesSetting: autoStartRulesSetting = {
-  // Concrete default so every config carries a frequency from creation.
-  // Without it, an unset frequency reads as "no limit" at runtime
-  // (isAllowedByAutoStartRulesSetting returns true), which lets a flow
-  // re-start on every dismiss. Kept in sync with the picker's INITIAL_VALUE
-  // in condition-frequency.tsx.
-  frequency: {
-    frequency: Frequency.ONCE,
-    every: { times: 2, duration: 1, unit: FrequencyUnits.DAYES },
-    atLeast: { duration: 0, unit: FrequencyUnits.MINUTES },
-  },
   startIfNotComplete: false,
   priority: ContentPriority.MEDIUM,
   wait: 0,
 };
+
+// Content types that expose the frequency control in their settings. Only
+// these get a concrete frequency default (see buildConfig). For other types
+// an unset frequency means "no auto-start limit" and must stay unset —
+// baking Once in would cap launchers/banners at a single show.
+const FREQUENCY_DEFAULT_TYPES = [ContentDataType.FLOW, ContentDataType.CHECKLIST];
+
+// Default backfilled when a frequency-using type has no frequency persisted
+// yet. Without it an unset frequency reads as "no limit" at runtime
+// (isAllowedByAutoStartRulesSetting returns true), letting a flow re-start on
+// every dismiss. Mirrors what the picker (condition-frequency.tsx) would write:
+// Checklist hides the "at least" control (showAtLeast=false), so it omits that
+// field while Flow keeps it.
+const defaultFrequencyFor = (contentType: ContentDataType): RulesFrequencyValue => ({
+  frequency: Frequency.ONCE,
+  every: { times: 2, duration: 1, unit: FrequencyUnits.DAYES },
+  ...(contentType === ContentDataType.CHECKLIST
+    ? {}
+    : { atLeast: { duration: 0, unit: FrequencyUnits.MINUTES } }),
+});
 
 const hideRulesSetting = {};
 
@@ -69,17 +81,31 @@ const defaultContentConfig: ContentConfigObject = {
   hideRulesSetting,
 };
 
-export const buildConfig = (config: ContentConfigObject | undefined): ContentConfigObject => {
-  return {
-    ...defaultContentConfig,
-    ...config,
-    autoStartRulesSetting: deepmerge(
-      defaultContentConfig.autoStartRulesSetting,
-      config?.autoStartRulesSetting || {},
-    ),
-    hideRulesSetting: config?.hideRulesSetting || {},
-  };
-};
+// Flow/Checklist fall back to Once when no frequency is persisted; other types
+// keep it unset ("no auto-start limit"). Type-specific so launcher/banner/RC
+// stay unrestricted; also heals already-published empty-frequency configs since
+// the server's processConfig runs through buildConfig too. Only fills an absent
+// frequency — never merges into one the user already set.
+const withFrequencyDefault = (
+  setting: autoStartRulesSetting,
+  contentType: ContentDataType | undefined,
+): autoStartRulesSetting =>
+  setting.frequency || !contentType || !FREQUENCY_DEFAULT_TYPES.includes(contentType)
+    ? setting
+    : { ...setting, frequency: defaultFrequencyFor(contentType) };
+
+export const buildConfig = (
+  config: ContentConfigObject | undefined,
+  contentType: ContentDataType | undefined,
+): ContentConfigObject => ({
+  ...defaultContentConfig,
+  ...config,
+  autoStartRulesSetting: withFrequencyDefault(
+    deepmerge(rulesSetting, config?.autoStartRulesSetting || {}),
+    contentType,
+  ),
+  hideRulesSetting: config?.hideRulesSetting || {},
+});
 
 /**
  * Extract user attribute value with fallback support

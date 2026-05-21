@@ -171,7 +171,7 @@ export const ContentDetailTrackerEditor = () => {
   const { isViewOnly } = useAppContext();
   const { debouncedUpdateVersion, saveVersionData } = useContentVersionUpdate();
 
-  const config = buildConfig(version?.config);
+  const config = buildConfig(version?.config, content?.type);
   const versionData = (version?.data ?? {}) as Record<string, any>;
   const selectedEventId = versionData.eventId as string | undefined;
 

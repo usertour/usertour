@@ -68,7 +68,7 @@ export const ContentDetailSettings = () => {
   const { debouncedUpdateVersion } = useContentVersionUpdate();
 
   // Build config directly from version
-  const config = buildConfig(version?.config);
+  const config = buildConfig(version?.config, content?.type);
 
   const handleAutoStartRulesDataChange = useCallback(
     (enabled: boolean, conditions: RulesCondition[], setting: any) => {
