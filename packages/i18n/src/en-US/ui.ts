@@ -396,6 +396,38 @@ const translations = {
       },
     },
   },
+  sessionActions: {
+    menu: {
+      viewDetails: 'View details',
+      viewResponse: 'View response',
+      endSession: 'End session now',
+      deleteSession: 'Delete session',
+    },
+    responseDialog: {
+      title: 'Question response',
+      empty: 'No questions found',
+    },
+    delete: {
+      title: 'Confirm',
+      description:
+        'This will delete all traces of this session from your account, including in analytics. You should probably only do this for testing reasons.',
+      descriptionConfirm: 'Confirm deleting the session?',
+      confirmButton: 'Yes, delete session',
+    },
+    end: {
+      title: 'Confirm',
+      description: 'This will close the content for the user.',
+      descriptionConfirm: 'Confirm ending the session?',
+      confirmButton: 'Yes, end session',
+    },
+    cancel: 'Cancel',
+    toast: {
+      deleteSuccess: 'The session has been successfully deleted',
+      endSuccess: 'The session has been successfully ended',
+      deleteFailed: 'Failed to delete the session',
+      endFailed: 'Failed to end the session',
+    },
+  },
   contents: {
     detail: {
       actionsMenu: 'Content actions',

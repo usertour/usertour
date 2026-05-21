@@ -379,6 +379,37 @@ const translations = {
       },
     },
   },
+  sessionActions: {
+    menu: {
+      viewDetails: '查看详情',
+      viewResponse: '查看回答',
+      endSession: '立即结束会话',
+      deleteSession: '删除会话',
+    },
+    responseDialog: {
+      title: '问题回答',
+      empty: '未找到问题',
+    },
+    delete: {
+      title: '确认',
+      description: '这将从您的账户中删除此会话的所有痕迹，包括分析数据。建议仅在测试时执行此操作。',
+      descriptionConfirm: '确认删除此会话？',
+      confirmButton: '是的，删除会话',
+    },
+    end: {
+      title: '确认',
+      description: '这将为该用户关闭内容。',
+      descriptionConfirm: '确认结束此会话？',
+      confirmButton: '是的，结束会话',
+    },
+    cancel: '取消',
+    toast: {
+      deleteSuccess: '会话已成功删除',
+      endSuccess: '会话已成功结束',
+      deleteFailed: '删除会话失败',
+      endFailed: '结束会话失败',
+    },
+  },
   contents: {
     detail: {
       actionsMenu: '内容操作',
