@@ -6,6 +6,8 @@ import {
   ContentPriority,
   ContentVersion,
   Environment,
+  Frequency,
+  FrequencyUnits,
   UserTourTypes,
   autoStartRulesSetting,
   type RichTextLeaf,
@@ -41,11 +43,16 @@ export const isPublishedAtLeastOneEnvironment = (content: Content | null) => {
 };
 
 const rulesSetting: autoStartRulesSetting = {
-  // frequency: {
-  //   frequency: Frequency.ONCE,
-  //   every: { duration: 0, times: 1, unit: FrequencyUnits.MINUTES },
-  //   atLeast: { duration: 0, unit: FrequencyUnits.MINUTES },
-  // },
+  // Concrete default so every config carries a frequency from creation.
+  // Without it, an unset frequency reads as "no limit" at runtime
+  // (isAllowedByAutoStartRulesSetting returns true), which lets a flow
+  // re-start on every dismiss. Kept in sync with the picker's INITIAL_VALUE
+  // in condition-frequency.tsx.
+  frequency: {
+    frequency: Frequency.ONCE,
+    every: { times: 2, duration: 1, unit: FrequencyUnits.DAYES },
+    atLeast: { duration: 0, unit: FrequencyUnits.MINUTES },
+  },
   startIfNotComplete: false,
   priority: ContentPriority.MEDIUM,
   wait: 0,
@@ -53,7 +60,7 @@ const rulesSetting: autoStartRulesSetting = {
 
 const hideRulesSetting = {};
 
-export const defaultContentConfig: ContentConfigObject = {
+const defaultContentConfig: ContentConfigObject = {
   enabledAutoStartRules: false,
   enabledHideRules: false,
   autoStartRules: [],
