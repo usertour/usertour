@@ -56,19 +56,24 @@ const rulesSetting: autoStartRulesSetting = {
 // baking Once in would cap launchers/banners at a single show.
 const FREQUENCY_DEFAULT_TYPES = [ContentDataType.FLOW, ContentDataType.CHECKLIST];
 
-// Default backfilled when a frequency-using type has no frequency persisted
-// yet. Without it an unset frequency reads as "no limit" at runtime
-// (isAllowedByAutoStartRulesSetting returns true), letting a flow re-start on
-// every dismiss. Mirrors what the picker (condition-frequency.tsx) would write:
-// Checklist hides the "at least" control (showAtLeast=false), so it omits that
-// field while Flow keeps it.
-const defaultFrequencyFor = (contentType: ContentDataType): RulesFrequencyValue => ({
+// Canonical auto-start frequency default. Single source of truth: the frequency
+// picker (condition-frequency.tsx) renders this as its display fallback, and
+// buildConfig persists it for frequency-using types (see defaultFrequencyFor),
+// so the editor and the saved/evaluated config can't drift. Without a persisted
+// frequency the runtime reads "no limit" (isAllowedByAutoStartRulesSetting
+// returns true), which lets a flow re-start on every dismiss.
+export const DEFAULT_FREQUENCY: RulesFrequencyValue = {
   frequency: Frequency.ONCE,
   every: { times: 2, duration: 1, unit: FrequencyUnits.DAYES },
-  ...(contentType === ContentDataType.CHECKLIST
-    ? {}
-    : { atLeast: { duration: 0, unit: FrequencyUnits.MINUTES } }),
-});
+  atLeast: { duration: 0, unit: FrequencyUnits.MINUTES },
+};
+
+// Checklist hides the "at least" control (showAtLeast=false in settings), so it
+// omits that field while Flow keeps it.
+const defaultFrequencyFor = (contentType: ContentDataType): RulesFrequencyValue =>
+  contentType === ContentDataType.CHECKLIST
+    ? { frequency: DEFAULT_FREQUENCY.frequency, every: DEFAULT_FREQUENCY.every }
+    : DEFAULT_FREQUENCY;
 
 const hideRulesSetting = {};
 
