@@ -63,6 +63,34 @@ export class PermissionGuard implements CanActivate {
             select: { content: { select: { environmentId: true } } },
           })
         )?.content?.environmentId ?? null,
+      getStepEnvironmentId: async (stepId) =>
+        (
+          await this.prisma.step.findUnique({
+            where: { id: stepId },
+            select: { version: { select: { content: { select: { environmentId: true } } } } },
+          })
+        )?.version?.content?.environmentId ?? null,
+      getSessionEnvironmentId: async (sessionId) =>
+        (
+          await this.prisma.bizSession.findUnique({
+            where: { id: sessionId },
+            select: { content: { select: { environmentId: true } } },
+          })
+        )?.content?.environmentId ?? null,
+      getIntegrationEnvironmentId: async (integrationId) =>
+        (
+          await this.prisma.integration.findUnique({
+            where: { id: integrationId },
+            select: { environmentId: true },
+          })
+        )?.environmentId ?? null,
+      getMappingEnvironmentId: async (mappingId) =>
+        (
+          await this.prisma.integrationObjectMapping.findUnique({
+            where: { id: mappingId },
+            select: { integration: { select: { environmentId: true } } },
+          })
+        )?.integration?.environmentId ?? null,
     });
   }
 

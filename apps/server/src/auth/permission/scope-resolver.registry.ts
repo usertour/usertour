@@ -24,6 +24,12 @@ export enum ScopeKind {
   Theme = 'theme',
   Event = 'event',
   Localization = 'localization',
+  /** segment id (various arg shapes) → segment.projectId. */
+  Segment = 'segment',
+  /** session id → session.content.environmentId → project. */
+  Session = 'session',
+  /** integration id / object-mapping id → integration.environmentId → project. */
+  Integration = 'integration',
 }
 
 /** A resolver returns the owning projectId for the request, or null if unresolvable. */
@@ -42,6 +48,14 @@ export interface ScopeServices {
   getContentEnvironmentId: (contentId: string) => Promise<string | null>;
   /** environmentId a content version belongs to. */
   getVersionEnvironmentId: (versionId: string) => Promise<string | null>;
+  /** environmentId the content owning a step belongs to. */
+  getStepEnvironmentId: (stepId: string) => Promise<string | null>;
+  /** environmentId a session belongs to (via its content). */
+  getSessionEnvironmentId: (sessionId: string) => Promise<string | null>;
+  /** environmentId an integration belongs to. */
+  getIntegrationEnvironmentId: (integrationId: string) => Promise<string | null>;
+  /** environmentId an integration object mapping belongs to (via its integration). */
+  getMappingEnvironmentId: (mappingId: string) => Promise<string | null>;
 }
 
 const argProjectId = (args: Record<string, any>): string | undefined =>
@@ -88,17 +102,99 @@ const fromEnvironment =
     return projectId ? crossCheck(args, projectId) : null;
   };
 
+// Content uses an explicit environmentId arg (never data.id) and lets the
+// content/version/step entity it targets override that arg — mirroring the
+// old content guard's precedence.
+const contentArgEnvironmentId = (args: Record<string, any>): string | undefined =>
+  args.environmentId || args.data?.environmentId || args.query?.environmentId;
+
 const fromContent =
   (services: ScopeServices): ScopeResolver =>
   async (args) => {
     const contentId = args.contentId || args.query?.contentId || args.data?.contentId;
     const versionId = args.versionId || args.query?.versionId || args.data?.versionId;
-    let environmentId = argEnvironmentId(args);
-    if (!environmentId && contentId) {
-      environmentId = (await services.getContentEnvironmentId(contentId)) ?? undefined;
+    const stepId = args.stepId;
+    let environmentId = contentArgEnvironmentId(args);
+    if (contentId) {
+      environmentId = (await services.getContentEnvironmentId(contentId)) ?? environmentId;
     }
-    if (!environmentId && versionId) {
-      environmentId = (await services.getVersionEnvironmentId(versionId)) ?? undefined;
+    if (versionId) {
+      environmentId = (await services.getVersionEnvironmentId(versionId)) ?? environmentId;
+    }
+    if (stepId) {
+      environmentId = (await services.getStepEnvironmentId(stepId)) ?? environmentId;
+    }
+    if (!environmentId) {
+      return null;
+    }
+    const projectId = await services.getEnvironmentProjectId(environmentId);
+    if (!projectId) {
+      return null;
+    }
+    // Duplicate-to-another-environment: the target must be in the same project.
+    const targetEnvironmentId = args.data?.targetEnvironmentId;
+    if (targetEnvironmentId) {
+      const targetProjectId = await services.getEnvironmentProjectId(targetEnvironmentId);
+      if (!targetProjectId || targetProjectId !== projectId) {
+        throw new NoPermissionError();
+      }
+    }
+    // Localization referenced in the request must belong to the same project.
+    const localizationId =
+      args.localizationId || args.data?.localizationId || args.query?.localizationId;
+    if (localizationId) {
+      const localizationProjectId = await services.getEntityProjectId(
+        'localization',
+        localizationId,
+      );
+      if (localizationProjectId && localizationProjectId !== projectId) {
+        throw new NoPermissionError();
+      }
+    }
+    return crossCheck(args, projectId);
+  };
+
+const fromSession =
+  (services: ScopeServices): ScopeResolver =>
+  async (args) => {
+    const sessionId = args.sessionId || args.query?.sessionId || args.data?.sessionId;
+    if (!sessionId) {
+      return null;
+    }
+    const environmentId = await services.getSessionEnvironmentId(sessionId);
+    if (!environmentId) {
+      return null;
+    }
+    const projectId = await services.getEnvironmentProjectId(environmentId);
+    return projectId ? crossCheck(args, projectId) : null;
+  };
+
+const fromSegment =
+  (services: ScopeServices): ScopeResolver =>
+  async (args) => {
+    const segmentId =
+      args.data?.id ||
+      args.data?.segmentId ||
+      args.data?.userOnSegment?.[0]?.segmentId ||
+      args.data?.companyOnSegment?.[0]?.segmentId;
+    if (!segmentId) {
+      return null;
+    }
+    const projectId = await services.getEntityProjectId('segment', segmentId);
+    return projectId ? crossCheck(args, projectId) : null;
+  };
+
+const fromIntegration =
+  (services: ScopeServices): ScopeResolver =>
+  async (args) => {
+    // integrationId-keyed endpoints, else object-mapping id-keyed endpoints.
+    const integrationId = args.integrationId || args.data?.integrationId;
+    const mappingId = args.id || args.data?.id;
+    let environmentId: string | null = null;
+    if (integrationId) {
+      environmentId = await services.getIntegrationEnvironmentId(integrationId);
+    } else if (mappingId) {
+      environmentId = await services.getMappingEnvironmentId(mappingId);
     }
     if (!environmentId) {
       return null;
@@ -117,4 +213,7 @@ export const createScopeResolvers = (
   [ScopeKind.Theme]: projectLevelEntity('theme', services),
   [ScopeKind.Event]: projectLevelEntity('event', services),
   [ScopeKind.Localization]: projectLevelEntity('localization', services),
+  [ScopeKind.Segment]: fromSegment(services),
+  [ScopeKind.Session]: fromSession(services),
+  [ScopeKind.Integration]: fromIntegration(services),
 });

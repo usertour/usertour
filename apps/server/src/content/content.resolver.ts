@@ -1,13 +1,15 @@
 import { Common } from '@/auth/models/common.model';
-import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { RequirePermission } from '@/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { Capability } from '@usertour/types';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { PrismaService } from 'nestjs-prisma';
 import { ContentIdArgs } from './args/content-id.args';
 import { VersionIdArgs } from './args/version-id.args';
-import { ContentGuard } from './content.guard';
 import { ContentService } from './content.service';
 import { ContentOrder } from './dto/content-order.input';
 import { ContentQuery } from './dto/content-query.input';
@@ -29,7 +31,7 @@ import { VersionOnLocalization } from './models/version-on-localization.model';
 import { Version } from './models/version.model';
 
 @Resolver(() => Content)
-@UseGuards(ContentGuard)
+@UseGuards(PermissionGuard)
 export class ContentResolver {
   constructor(
     private contentService: ContentService,
@@ -37,19 +39,19 @@ export class ContentResolver {
   ) {}
 
   @Mutation(() => Content)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentCreate, scope: ScopeKind.Content })
   async createContent(@Args('data') data: ContentInput) {
     return await this.contentService.createContent(data);
   }
 
   @Mutation(() => Content)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async updateContent(@Args('data') data: ContentUpdateInput) {
     return await this.contentService.updateContent(data.contentId, data.content);
   }
 
   @Mutation(() => Content)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentCreate, scope: ScopeKind.Content })
   async duplicateContent(@Args('data') data: ContentDuplicateInput) {
     return await this.contentService.duplicateContent(
       data.contentId,
@@ -59,57 +61,57 @@ export class ContentResolver {
   }
 
   @Query(() => Content)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
   async getContent(@Args() { contentId }: ContentIdArgs) {
     return await this.contentService.getContentById(contentId);
   }
 
   @Mutation(() => Version)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async createContentVersion(@Args('data') data: ContentVersionInput) {
     return await this.contentService.createContentVersion(data);
   }
 
   @Query(() => Version)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
   async getContentVersion(@Args() { versionId }: VersionIdArgs) {
     return await this.contentService.getContentVersionById(versionId);
   }
 
   @Mutation(() => Version)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async updateContentVersion(@Args('data') input: VersionUpdateInput) {
     return await this.contentService.updateContentVersion(input);
   }
 
   @Mutation(() => Version)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async restoreContentVersion(@Args('data') { versionId }: VersionIdInput) {
     return await this.contentService.restoreContentVersion(versionId);
   }
 
   @Mutation(() => Version)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
   async publishedContentVersion(@Args('data') { versionId, environmentId }: VersionIdInput) {
     return await this.contentService.publishedContentVersion(versionId, environmentId);
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
   async unpublishedContentVersion(@Args('data') { contentId, environmentId }: ContentIdInput) {
     await this.contentService.unpublishedContentVersion(contentId, environmentId);
     return { success: true };
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentDelete, scope: ScopeKind.Content })
   async deleteContent(@Args('data') { contentId }: ContentIdInput) {
     await this.contentService.deleteContent(contentId);
     return { success: true };
   }
 
   @Query(() => VersionConnection)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
   async listContentVersions(
     @Args() { after, before, first, last }: PaginationArgs,
     @Args() { contentId }: ContentIdArgs,
@@ -123,33 +125,33 @@ export class ContentResolver {
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async addContentSteps(@Args('data') contentStepsInput: ContentStepsInput) {
     await this.contentService.addContentSteps(contentStepsInput);
     return { success: true };
   }
 
   @Mutation(() => Step)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async addContentStep(@Args('data') step: CreateStepInput) {
     return await this.contentService.addContentStep(step);
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async updateContentStep(@Args('stepId') stepId: string, @Args('data') step: UpdateStepInput) {
     await this.contentService.updateContentStep(stepId, step);
     return { success: true };
   }
 
   @Query(() => [VersionOnLocalization])
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
   async findManyVersionLocations(@Args() { versionId }: VersionIdArgs) {
     return await this.contentService.findManyVersionLocations(versionId);
   }
 
   @Mutation(() => VersionOnLocalization)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async updateVersionLocationData(@Args('data') input: VersionUpdateLocalizationInput) {
     return await this.contentService.upsertVersionLocationData(input);
   }
@@ -165,7 +167,7 @@ export class ContentResolver {
   // }
 
   @Query(() => ContentConnection)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
   async queryContent(
     @Args() { after, before, first, last }: PaginationArgs,
     @Args({ name: 'query', type: () => ContentQuery, nullable: true })

@@ -1,9 +1,11 @@
 import { Common } from '@/auth/models/common.model';
-import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { RequirePermission } from '@/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { BizGuard } from './biz.guard';
+import { Capability } from '@usertour/types';
 import { BizService } from './biz.service';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
@@ -24,12 +26,12 @@ import { BizEventConnection } from './models/biz-event-connection.model';
 import { Segment } from './models/segment.model';
 
 @Resolver()
-@UseGuards(BizGuard)
+@UseGuards(PermissionGuard)
 export class BizResolver {
   constructor(private service: BizService) {}
 
   @Query(() => BizUserConnection)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.BizdataRead, scope: ScopeKind.Environment })
   async queryBizUser(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizQuery,
@@ -39,7 +41,7 @@ export class BizResolver {
   }
 
   @Query(() => BizConnection)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.BizdataRead, scope: ScopeKind.Environment })
   async queryBizCompany(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizQuery,
@@ -49,7 +51,7 @@ export class BizResolver {
   }
 
   @Query(() => BizEventConnection)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.BizdataRead, scope: ScopeKind.Environment })
   async queryBizUserEvents(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizEventQuery,
@@ -63,7 +65,7 @@ export class BizResolver {
   }
 
   @Query(() => BizEventConnection)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.BizdataRead, scope: ScopeKind.Environment })
   async queryBizCompanyEvents(
     @Args() pagination: PaginationArgs,
     @Args('query') query: BizEventQuery,
@@ -77,46 +79,46 @@ export class BizResolver {
   }
 
   @Mutation(() => Segment)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.SegmentCreate, scope: ScopeKind.Environment })
   async createSegment(@Args('data') data: CreatSegment) {
     return await this.service.creatSegment(data);
   }
 
   @Mutation(() => Segment)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
   async updateSegment(@Args('data') data: UpdateSegment) {
     return await this.service.updateSegment(data);
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.SegmentDelete, scope: ScopeKind.Segment })
   async deleteSegment(@Args('data') data: DeleteSegment) {
     const [, , r3] = await this.service.deleteSegment(data);
     return { success: !!r3.id };
   }
 
   @Query(() => [Segment])
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.SegmentRead, scope: ScopeKind.Environment })
   async listSegment(@Args() { environmentId }: ListSegment) {
     return await this.service.listSegment(environmentId);
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
   async createBizUserOnSegment(@Args('data') data: CreateBizUserOnSegment) {
     const ret = await this.service.createBizUserOnSegment(data.userOnSegment);
     return { success: ret.count > 0, count: ret.count };
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
   async deleteBizUserOnSegment(@Args('data') data: DeleteBizUserOnSegment) {
     const ret = await this.service.deleteBizUserOnSegment(data);
     return { success: ret.count > 0, count: ret.count };
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.BizdataDelete, scope: ScopeKind.Environment })
   async deleteBizUser(@Args('data') data: BizUserOrCompanyIdsInput) {
     const result = await this.service.deleteBizUser(data.ids, data.environmentId);
     return {
@@ -126,21 +128,21 @@ export class BizResolver {
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.BizdataDelete, scope: ScopeKind.Environment })
   async deleteBizCompany(@Args('data') data: BizUserOrCompanyIdsInput) {
     const ret = await this.service.deleteBizCompany(data.ids, data.environmentId);
     return { success: ret.count > 0, count: ret.count };
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
   async createBizCompanyOnSegment(@Args('data') data: CreateBizCompanyOnSegment) {
     const ret = await this.service.createBizCompanyOnSegment(data.companyOnSegment);
     return { success: ret.count > 0, count: ret.count };
   }
 
   @Mutation(() => Common)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
   async deleteBizCompanyOnSegment(@Args('data') data: DeleteBizCompanyOnSegment) {
     const ret = await this.service.deleteBizCompanyOnSegment(data);
     return { success: ret.count > 0, count: ret.count };

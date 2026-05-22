@@ -1,4 +1,3 @@
-import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Integration, SalesforceObjectFields, IntegrationObjectMapping } from './integration.model';
 import {
@@ -8,10 +7,13 @@ import {
 } from './integration.dto';
 import { IntegrationService } from './integration.service';
 import { UseGuards } from '@nestjs/common';
-import { IntegrationGuard } from './integration.guard';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { RequirePermission } from '@/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { Capability } from '@usertour/types';
 
 @Resolver(() => Integration)
-@UseGuards(IntegrationGuard)
+@UseGuards(PermissionGuard)
 export class IntegrationResolver {
   constructor(private integrationService: IntegrationService) {}
 
@@ -21,7 +23,7 @@ export class IntegrationResolver {
    * @returns List of integration
    */
   @Query(() => [Integration])
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Environment })
   async listIntegrations(@Args('environmentId') environmentId: string) {
     return this.integrationService.findAllIntegrations(environmentId);
   }
@@ -33,7 +35,7 @@ export class IntegrationResolver {
    * @returns The integration
    */
   @Query(() => Integration)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Environment })
   async getIntegration(
     @Args('environmentId') environmentId: string,
     @Args('provider') provider: string,
@@ -49,7 +51,7 @@ export class IntegrationResolver {
    * @returns The updated integration
    */
   @Mutation(() => Integration)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Environment })
   async updateIntegration(
     @Args('environmentId') environmentId: string,
     @Args('provider') provider: string,
@@ -59,7 +61,7 @@ export class IntegrationResolver {
   }
 
   @Query(() => String)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Environment })
   async getSalesforceAuthUrl(
     @Args('environmentId') environmentId: string,
     @Args('provider') provider: string,
@@ -74,7 +76,7 @@ export class IntegrationResolver {
    * @returns List of Salesforce objects with their fields
    */
   @Query(() => SalesforceObjectFields)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
   async getSalesforceObjectFields(@Args('integrationId') integrationId: string) {
     return this.integrationService.getSalesforceObjectFields(integrationId);
   }
@@ -85,7 +87,7 @@ export class IntegrationResolver {
    * @returns List of object mappings
    */
   @Query(() => [IntegrationObjectMapping])
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
   async getIntegrationObjectMappings(@Args('integrationId') integrationId: string) {
     return this.integrationService.getIntegrationObjectMappings(integrationId);
   }
@@ -96,7 +98,7 @@ export class IntegrationResolver {
    * @returns The object mapping
    */
   @Query(() => IntegrationObjectMapping)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
   async getIntegrationObjectMapping(@Args('id') id: string) {
     return this.integrationService.getIntegrationObjectMapping(id);
   }
@@ -108,7 +110,7 @@ export class IntegrationResolver {
    * @returns The created/updated object mapping
    */
   @Mutation(() => IntegrationObjectMapping)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
   async upsertIntegrationObjectMapping(
     @Args('integrationId') integrationId: string,
     @Args('input') input: CreateIntegrationObjectMappingInput,
@@ -129,7 +131,7 @@ export class IntegrationResolver {
    * @returns The updated object mapping
    */
   @Mutation(() => IntegrationObjectMapping)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
   async updateIntegrationObjectMapping(
     @Args('id') id: string,
     @Args('input') input: UpdateIntegrationObjectMappingInput,
@@ -147,7 +149,7 @@ export class IntegrationResolver {
    * @returns Success status
    */
   @Mutation(() => Boolean)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
   async deleteIntegrationObjectMapping(@Args('id') id: string) {
     await this.integrationService.deleteIntegrationObjectMapping(id);
     return true;
@@ -160,7 +162,7 @@ export class IntegrationResolver {
    * @returns The disconnected integration
    */
   @Mutation(() => Integration)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Environment })
   async disconnectIntegration(
     @Args('environmentId') environmentId: string,
     @Args('provider') provider: string,
