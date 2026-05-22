@@ -3,10 +3,9 @@ import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { roleCan } from '@usertour/constants';
 import { Role } from '@usertour/types';
+import { PrismaService } from 'nestjs-prisma';
 
 import { NoPermissionError } from '@/common/errors';
-import { ContentService } from '@/content/content.service';
-import { EnvironmentsService } from '@/environments/environments.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { requestContext } from '@/shared/request-context';
 
@@ -21,9 +20,11 @@ import { type ScopeResolver, createScopeResolvers } from './scope-resolver.regis
  * the resource) → look up the user's membership/role on that project
  * (memoized once per request) → check `roleCan(role, capability)`.
  *
- * Replaces the eleven per-module guards. NOT yet mounted on any endpoint;
- * endpoints migrate from `@UseGuards(XxxGuard) @Roles([...])` to
- * `@UseGuards(PermissionGuard) @RequirePermission(...)` in P2.
+ * Replaces the per-module guards. Scope is resolved with generic Prisma
+ * lookups so the guard depends only on Prisma + ProjectsService (no
+ * per-module service injection, no circular deps). Endpoints migrate from
+ * `@UseGuards(XxxGuard) @Roles([...])` to `@UseGuards(PermissionGuard)
+ * @RequirePermission(...)` one module at a time in P2.
  */
 export class PermissionGuard implements CanActivate {
   private readonly reflector = new Reflector();
@@ -31,16 +32,37 @@ export class PermissionGuard implements CanActivate {
 
   constructor(
     @Inject(ProjectsService) private readonly projectsService: ProjectsService,
-    @Inject(EnvironmentsService) private readonly environmentsService: EnvironmentsService,
-    @Inject(ContentService) private readonly contentService: ContentService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {
     this.resolvers = createScopeResolvers({
+      getEntityProjectId: async (model, id) =>
+        (
+          (await (this.prisma as any)[model].findUnique({
+            where: { id },
+            select: { projectId: true },
+          })) as { projectId?: string } | null
+        )?.projectId ?? null,
       getEnvironmentProjectId: async (environmentId) =>
-        (await this.environmentsService.get(environmentId))?.projectId ?? null,
+        (
+          await this.prisma.environment.findUnique({
+            where: { id: environmentId },
+            select: { projectId: true },
+          })
+        )?.projectId ?? null,
       getContentEnvironmentId: async (contentId) =>
-        (await this.contentService.getContent(contentId))?.environmentId ?? null,
+        (
+          await this.prisma.content.findUnique({
+            where: { id: contentId },
+            select: { environmentId: true },
+          })
+        )?.environmentId ?? null,
       getVersionEnvironmentId: async (versionId) =>
-        (await this.contentService.getContentVersion(versionId))?.content?.environmentId ?? null,
+        (
+          await this.prisma.version.findUnique({
+            where: { id: versionId },
+            select: { content: { select: { environmentId: true } } },
+          })
+        )?.content?.environmentId ?? null,
     });
   }
 
