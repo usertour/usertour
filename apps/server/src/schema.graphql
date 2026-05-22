@@ -1358,6 +1358,7 @@ type User {
 
 type UserOnProject {
   actived: Boolean!
+  capabilities: [String!]!
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
