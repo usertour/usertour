@@ -7,7 +7,6 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { NoPermissionError } from '@/common/errors';
 import { ProjectsService } from '@/projects/projects.service';
-import { requestContext } from '@/shared/request-context';
 
 import { RequirePermission } from './require-permission.decorator';
 import { type ScopeResolver, createScopeResolvers } from './scope-resolver.registry';
@@ -17,8 +16,8 @@ import { type ScopeResolver, createScopeResolvers } from './scope-resolver.regis
  *
  * Flow: read `@RequirePermission({ capability, scope })` → resolve the
  * owning projectId from the request (scope resolver, project derived from
- * the resource) → look up the user's membership/role on that project
- * (memoized once per request) → check `roleCan(role, capability)`.
+ * the resource) → look up the user's membership/role on that project →
+ * check `roleCan(role, capability)`.
  *
  * Replaces the per-module guards. Scope is resolved with generic Prisma
  * lookups so the guard depends only on Prisma + ProjectsService (no
@@ -115,31 +114,11 @@ export class PermissionGuard implements CanActivate {
       throw new NoPermissionError();
     }
 
-    const userProject = await this.resolveUserProject(user.id, projectId);
+    const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roleCan(userProject.role as Role, required.capability)) {
       throw new NoPermissionError();
     }
 
     return true;
-  }
-
-  /**
-   * Memoize the membership lookup within the request's ALS scope so multiple
-   * guarded fields in one request share a single query. Best-effort: admin
-   * GraphQL requests aren't ALS-wrapped yet, so fall back to a direct query.
-   */
-  private resolveUserProject(userId: string, projectId: string) {
-    const store = requestContext.getStore();
-    if (!store) {
-      return this.projectsService.getUserProject(userId, projectId);
-    }
-    const key = `userProject:${userId}:${projectId}`;
-    const cached = store.memo.get(key);
-    if (cached) {
-      return cached as ReturnType<ProjectsService['getUserProject']>;
-    }
-    const promise = this.projectsService.getUserProject(userId, projectId);
-    store.memo.set(key, promise);
-    return promise;
   }
 }
