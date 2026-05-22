@@ -7,7 +7,7 @@ import {
 } from '@usertour/hooks';
 import { removeAuthToken } from '@usertour/helpers';
 import { Capability, GlobalConfig, UserProfile } from '@usertour/types';
-import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { broadcastAuthSwitch } from '@/utils/auth-channel';
 
 interface AppContextProps {
@@ -99,11 +99,9 @@ export const AppProvider = (props: AppProviderProps) => {
     })) ?? [];
 
   const project: Project | null = projects.find((p: Project) => p.actived) ?? null;
-  const capabilities: Capability[] = ((project as any)?.capabilities ?? []) as Capability[];
-  const can = useMemo(
-    () => (capability: Capability) => capabilities.includes(capability),
-    [capabilities],
-  );
+  const capabilities: Capability[] =
+    (project as (Project & { capabilities?: Capability[] }) | null)?.capabilities ?? [];
+  const can = (capability: Capability) => capabilities.includes(capability);
   // View-only mirrors the old role === VIEWER check: a VIEWER lacks every
   // write capability, so "can't update content" is the equivalent gate.
   const isViewOnly = !!project && !can(Capability.ContentUpdate);
@@ -135,9 +133,4 @@ export function useAppContext(): AppContextProps {
     throw new Error('useAppContext must be used within a AppProvider.');
   }
   return context;
-}
-
-/** Gate UI on a capability the current user holds on the active project. */
-export function useCan(capability: Capability): boolean {
-  return useAppContext().can(capability);
 }
