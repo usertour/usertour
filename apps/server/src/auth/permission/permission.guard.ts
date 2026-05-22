@@ -1,0 +1,95 @@
+import { CanActivate, ExecutionContext, Inject } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { GqlExecutionContext } from '@nestjs/graphql';
+import { roleCan } from '@usertour/constants';
+import { Role } from '@usertour/types';
+
+import { NoPermissionError } from '@/common/errors';
+import { ContentService } from '@/content/content.service';
+import { EnvironmentsService } from '@/environments/environments.service';
+import { ProjectsService } from '@/projects/projects.service';
+import { requestContext } from '@/shared/request-context';
+
+import { RequirePermission } from './require-permission.decorator';
+import { type ScopeResolver, createScopeResolvers } from './scope-resolver.registry';
+
+/**
+ * Single authorization guard, capability-driven.
+ *
+ * Flow: read `@RequirePermission({ capability, scope })` → resolve the
+ * owning projectId from the request (scope resolver, project derived from
+ * the resource) → look up the user's membership/role on that project
+ * (memoized once per request) → check `roleCan(role, capability)`.
+ *
+ * Replaces the eleven per-module guards. NOT yet mounted on any endpoint;
+ * endpoints migrate from `@UseGuards(XxxGuard) @Roles([...])` to
+ * `@UseGuards(PermissionGuard) @RequirePermission(...)` in P2.
+ */
+export class PermissionGuard implements CanActivate {
+  private readonly reflector = new Reflector();
+  private readonly resolvers: Record<string, ScopeResolver>;
+
+  constructor(
+    @Inject(ProjectsService) private readonly projectsService: ProjectsService,
+    @Inject(EnvironmentsService) private readonly environmentsService: EnvironmentsService,
+    @Inject(ContentService) private readonly contentService: ContentService,
+  ) {
+    this.resolvers = createScopeResolvers({
+      getEnvironmentProjectId: async (environmentId) =>
+        (await this.environmentsService.get(environmentId))?.projectId ?? null,
+      getContentEnvironmentId: async (contentId) =>
+        (await this.contentService.getContent(contentId))?.environmentId ?? null,
+      getVersionEnvironmentId: async (versionId) =>
+        (await this.contentService.getContentVersion(versionId))?.content?.environmentId ?? null,
+    });
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const required = this.reflector.get(RequirePermission, context.getHandler());
+    if (!required) {
+      // No capability declared — this guard does not apply.
+      return true;
+    }
+
+    const ctx = GqlExecutionContext.create(context);
+    const { req } = ctx.getContext();
+    const args = ctx.getArgs();
+    const user = req.user;
+    if (!user) {
+      throw new NoPermissionError();
+    }
+
+    const resolver = this.resolvers[required.scope];
+    const projectId = resolver ? await resolver(args) : null;
+    if (!projectId) {
+      throw new NoPermissionError();
+    }
+
+    const userProject = await this.resolveUserProject(user.id, projectId);
+    if (!userProject || !roleCan(userProject.role as Role, required.capability)) {
+      throw new NoPermissionError();
+    }
+
+    return true;
+  }
+
+  /**
+   * Memoize the membership lookup within the request's ALS scope so multiple
+   * guarded fields in one request share a single query. Best-effort: admin
+   * GraphQL requests aren't ALS-wrapped yet, so fall back to a direct query.
+   */
+  private resolveUserProject(userId: string, projectId: string) {
+    const store = requestContext.getStore();
+    if (!store) {
+      return this.projectsService.getUserProject(userId, projectId);
+    }
+    const key = `userProject:${userId}:${projectId}`;
+    const cached = store.memo.get(key);
+    if (cached) {
+      return cached as ReturnType<ProjectsService['getUserProject']>;
+    }
+    const promise = this.projectsService.getUserProject(userId, projectId);
+    store.memo.set(key, promise);
+    return promise;
+  }
+}

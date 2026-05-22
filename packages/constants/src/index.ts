@@ -7,3 +7,4 @@ export * from './constants/cookie';
 export * from './constants/billing';
 export * from './constants/sdk';
 export * from './constants/license';
+export * from './constants/permission';

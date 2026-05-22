@@ -24,3 +24,4 @@ export * from './types/integrations';
 export * from './types/web-socket';
 export * from './types/editor';
 export * from './types/button';
+export * from './types/permission';
