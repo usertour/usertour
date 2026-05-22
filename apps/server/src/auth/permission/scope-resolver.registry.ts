@@ -44,14 +44,14 @@ export interface ScopeServices {
   getEntityProjectId: (model: string, id: string) => Promise<string | null>;
   /** projectId of an environment by id. */
   getEnvironmentProjectId: (environmentId: string) => Promise<string | null>;
-  /** environmentId a content belongs to. */
-  getContentEnvironmentId: (contentId: string) => Promise<string | null>;
-  /** environmentId a content version belongs to. */
-  getVersionEnvironmentId: (versionId: string) => Promise<string | null>;
-  /** environmentId the content owning a step belongs to. */
-  getStepEnvironmentId: (stepId: string) => Promise<string | null>;
-  /** environmentId a session belongs to (via its content). */
-  getSessionEnvironmentId: (sessionId: string) => Promise<string | null>;
+  /** projectId a content belongs to (content is project-level; `environmentId` is legacy). */
+  getContentProjectId: (contentId: string) => Promise<string | null>;
+  /** projectId a content version belongs to (via its content). */
+  getVersionProjectId: (versionId: string) => Promise<string | null>;
+  /** projectId the content owning a step belongs to (via version → content). */
+  getStepProjectId: (stepId: string) => Promise<string | null>;
+  /** projectId a session belongs to (via its content). */
+  getSessionProjectId: (sessionId: string) => Promise<string | null>;
   /** environmentId an integration belongs to. */
   getIntegrationEnvironmentId: (integrationId: string) => Promise<string | null>;
   /** environmentId an integration object mapping belongs to (via its integration). */
@@ -102,9 +102,9 @@ const fromEnvironment =
     return projectId ? crossCheck(args, projectId) : null;
   };
 
-// Content uses an explicit environmentId arg (never data.id) and lets the
-// content/version/step entity it targets override that arg — mirroring the
-// old content guard's precedence.
+// Content is project-level. Operating on an existing content/version/step
+// resolves its project directly (content.projectId); create/list endpoints
+// instead carry an explicit environmentId whose project owns the new content.
 const contentArgEnvironmentId = (args: Record<string, any>): string | undefined =>
   args.environmentId || args.data?.environmentId || args.query?.environmentId;
 
@@ -114,23 +114,23 @@ const fromContent =
     const contentId = args.contentId || args.query?.contentId || args.data?.contentId;
     const versionId = args.versionId || args.query?.versionId || args.data?.versionId;
     const stepId = args.stepId;
-    let environmentId = contentArgEnvironmentId(args);
+
+    let projectId: string | null = null;
     if (contentId) {
-      environmentId = (await services.getContentEnvironmentId(contentId)) ?? environmentId;
+      projectId = await services.getContentProjectId(contentId);
+    } else if (versionId) {
+      projectId = await services.getVersionProjectId(versionId);
+    } else if (stepId) {
+      projectId = await services.getStepProjectId(stepId);
+    } else {
+      // create/list: project is whoever owns the target environment.
+      const environmentId = contentArgEnvironmentId(args);
+      projectId = environmentId ? await services.getEnvironmentProjectId(environmentId) : null;
     }
-    if (versionId) {
-      environmentId = (await services.getVersionEnvironmentId(versionId)) ?? environmentId;
-    }
-    if (stepId) {
-      environmentId = (await services.getStepEnvironmentId(stepId)) ?? environmentId;
-    }
-    if (!environmentId) {
-      return null;
-    }
-    const projectId = await services.getEnvironmentProjectId(environmentId);
     if (!projectId) {
       return null;
     }
+
     // Duplicate-to-another-environment: the target must be in the same project.
     const targetEnvironmentId = args.data?.targetEnvironmentId;
     if (targetEnvironmentId) {
@@ -161,11 +161,7 @@ const fromSession =
     if (!sessionId) {
       return null;
     }
-    const environmentId = await services.getSessionEnvironmentId(sessionId);
-    if (!environmentId) {
-      return null;
-    }
-    const projectId = await services.getEnvironmentProjectId(environmentId);
+    const projectId = await services.getSessionProjectId(sessionId);
     return projectId ? crossCheck(args, projectId) : null;
   };
 

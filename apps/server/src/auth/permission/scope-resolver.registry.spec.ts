@@ -14,10 +14,10 @@ describe('scope resolvers', () => {
     },
     getEnvironmentProjectId: async (environmentId) =>
       environmentId === 'env-1' ? 'proj-1' : environmentId === 'env-2' ? 'proj-2' : null,
-    getContentEnvironmentId: async (contentId) => (contentId === 'content-1' ? 'env-1' : null),
-    getVersionEnvironmentId: async (versionId) => (versionId === 'version-1' ? 'env-1' : null),
-    getStepEnvironmentId: async (stepId) => (stepId === 'step-1' ? 'env-1' : null),
-    getSessionEnvironmentId: async (sessionId) => (sessionId === 'session-1' ? 'env-1' : null),
+    getContentProjectId: async (contentId) => (contentId === 'content-1' ? 'proj-1' : null),
+    getVersionProjectId: async (versionId) => (versionId === 'version-1' ? 'proj-1' : null),
+    getStepProjectId: async (stepId) => (stepId === 'step-1' ? 'proj-1' : null),
+    getSessionProjectId: async (sessionId) => (sessionId === 'session-1' ? 'proj-1' : null),
     getIntegrationEnvironmentId: async (integrationId) =>
       integrationId === 'int-1' ? 'env-1' : null,
     getMappingEnvironmentId: async (mappingId) => (mappingId === 'map-1' ? 'env-1' : null),
@@ -99,7 +99,7 @@ describe('scope resolvers', () => {
   });
 
   describe('Session', () => {
-    it('derives project from sessionId → content → environment', async () => {
+    it('derives project from sessionId → content.projectId', async () => {
       expect(await resolvers[ScopeKind.Session]({ sessionId: 'session-1' })).toBe('proj-1');
     });
     it('returns null for unknown / absent session', async () => {

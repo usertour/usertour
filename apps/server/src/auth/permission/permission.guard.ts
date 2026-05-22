@@ -49,34 +49,34 @@ export class PermissionGuard implements CanActivate {
             select: { projectId: true },
           })
         )?.projectId ?? null,
-      getContentEnvironmentId: async (contentId) =>
+      getContentProjectId: async (contentId) =>
         (
           await this.prisma.content.findUnique({
             where: { id: contentId },
-            select: { environmentId: true },
+            select: { projectId: true },
           })
-        )?.environmentId ?? null,
-      getVersionEnvironmentId: async (versionId) =>
+        )?.projectId ?? null,
+      getVersionProjectId: async (versionId) =>
         (
           await this.prisma.version.findUnique({
             where: { id: versionId },
-            select: { content: { select: { environmentId: true } } },
+            select: { content: { select: { projectId: true } } },
           })
-        )?.content?.environmentId ?? null,
-      getStepEnvironmentId: async (stepId) =>
+        )?.content?.projectId ?? null,
+      getStepProjectId: async (stepId) =>
         (
           await this.prisma.step.findUnique({
             where: { id: stepId },
-            select: { version: { select: { content: { select: { environmentId: true } } } } },
+            select: { version: { select: { content: { select: { projectId: true } } } } },
           })
-        )?.version?.content?.environmentId ?? null,
-      getSessionEnvironmentId: async (sessionId) =>
+        )?.version?.content?.projectId ?? null,
+      getSessionProjectId: async (sessionId) =>
         (
           await this.prisma.bizSession.findUnique({
             where: { id: sessionId },
-            select: { content: { select: { environmentId: true } } },
+            select: { content: { select: { projectId: true } } },
           })
-        )?.content?.environmentId ?? null,
+        )?.content?.projectId ?? null,
       getIntegrationEnvironmentId: async (integrationId) =>
         (
           await this.prisma.integration.findUnique({
