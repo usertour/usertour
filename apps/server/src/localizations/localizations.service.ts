@@ -1,16 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
+import { Prisma } from '@prisma/client';
 import { CreateLocalizationInput, UpdateLocalizationInput } from './dto/localization.input';
-import { ParamsError } from '@/common/errors';
+import { ParamsError, ResourceAlreadyExistsError } from '@/common/errors';
 
 @Injectable()
 export class LocalizationsService {
   constructor(private prisma: PrismaService) {}
 
   async create(data: CreateLocalizationInput) {
-    return await this.prisma.localization.create({
-      data,
-    });
+    try {
+      return await this.prisma.localization.create({ data });
+    } catch (err) {
+      // Localization has unique constraints (projectId + locale, projectId +
+      // code). Surface dup as typed ResourceAlreadyExistsError instead of
+      // leaking the raw PrismaClientKnownRequestError as a generic 500 ISE.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new ResourceAlreadyExistsError();
+      }
+      throw err;
+    }
   }
 
   async setDefault(id: string) {

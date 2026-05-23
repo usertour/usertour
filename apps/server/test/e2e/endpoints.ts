@@ -149,14 +149,18 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:VersionIdInput!){publishedContentVersion(data:$d){__typename}}',
-    vars: (s) => ({ d: { versionId: s.versionId } }),
+    // environmentId is GraphQL-nullable but the resolver requires it for the
+    // ContentOnEnvironment upsert; passing undefined explodes Prisma → ISE.
+    vars: (s) => ({ d: { versionId: s.versionId, environmentId: s.environmentId } }),
   },
   {
     key: 'content.unpublishedContentVersion',
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:ContentIdInput!){unpublishedContentVersion(data:$d){__typename}}',
-    vars: (s) => ({ d: { contentId: s.contentId } }),
+    // environmentId nullable in schema but required by resolver — see
+    // publishedContentVersion above for the same reason.
+    vars: (s) => ({ d: { contentId: s.contentId, environmentId: s.environmentId } }),
   },
   {
     key: 'content.deleteContent',
@@ -623,7 +627,9 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:UpdateEventInput!){updateEvent(data:$d){__typename}}',
-    vars: (s) => ({ d: { id: s.eventId } }),
+    // attributeIds is GraphQL-nullable but service calls `.map` on it without
+    // a guard; passing undefined raises a TypeError → ISE.
+    vars: (s) => ({ d: { id: s.eventId, attributeIds: [] } }),
   },
   {
     key: 'events.deleteEvent',

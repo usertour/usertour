@@ -558,6 +558,14 @@ export class InviteSeatExhaustedError extends BaseError {
   };
 }
 
+export class ResourceAlreadyExistsError extends BaseError {
+  code = 'E0048';
+  messageDict = {
+    en: 'A resource with this identifier already exists.',
+    'zh-CN': '该资源已存在。',
+  };
+}
+
 // Create a mapping of error codes to error classes
 const errorMap = {
   E0000: UnknownError,
@@ -624,6 +632,7 @@ const errorMap = {
   E0045: WrongInviteAccountError,
   E0046: OAuthOnlyAccountError,
   E0047: InviteSeatExhaustedError,
+  E0048: ResourceAlreadyExistsError,
 };
 
 export function getErrorMessage(code: string, locale: string): string {

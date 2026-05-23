@@ -74,7 +74,7 @@ What each row's `→ <code>` means:
 | `OK` | Permission allowed, resolver succeeded |
 | `E0013` | Permission denied (`NoPermissionError`). Good for "should deny" cases. |
 | `E0xxx` (e.g. `E0003`, `E0015`…) | Permission allowed, resolver hit a typed `BaseError` (often "data not found"). Post-guard, **not a permission issue**. |
-| `Internal Server Error` | Permission allowed, resolver threw an untyped exception → wrapped as generic 500. **Product bug worth fixing** — see commit `745a7ea3` / `2b07ee06` for the pattern (return type → nullable, or throw typed `BaseError`). |
+| `Internal Server Error` | Permission allowed, resolver threw an untyped exception → wrapped as generic 500. **Product bug worth fixing** — see commit `745a7ea3` / `2b07ee06` for the pattern (return type → nullable, or throw typed `BaseError`). **Caveat for spot-check W mutations**: a mutation can also flip from a clean typed error to ISE because an earlier mutation in the same run changed shared state (e.g. publishing a version then operating on it). When triaging, re-fire the suspect call against a fresh fixture in isolation — if it returns a typed `E0xxx` there, it's a sequence artifact, not a real bug. |
 | `OTHER_ERROR` | Same as above, jq missing |
 
 ### Expected pattern

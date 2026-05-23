@@ -384,10 +384,10 @@ run_endpoint 'content.restoreContentVersion' \
   "{\"query\":\"mutation(\$d:VersionIdInput!){restoreContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
 
 run_endpoint 'content.publishedContentVersion' \
-  "{\"query\":\"mutation(\$d:VersionIdInput!){publishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
+  "{\"query\":\"mutation(\$d:VersionIdInput!){publishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
 
 run_endpoint 'content.unpublishedContentVersion' \
-  "{\"query\":\"mutation(\$d:ContentIdInput!){unpublishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
+  "{\"query\":\"mutation(\$d:ContentIdInput!){unpublishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
 
 run_endpoint 'content.deleteContent' \
   "{\"query\":\"mutation(\$d:ContentIdInput!){deleteContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
@@ -480,7 +480,7 @@ run_endpoint 'events.createEvent' \
   "{\"query\":\"mutation(\$d:CreateEventInput!){createEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"attributeIds\":[],\"codeName\":\"e2e_event\",\"displayName\":\"e2e\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}"
 
 run_endpoint 'events.updateEvent' \
-  "{\"query\":\"mutation(\$d:UpdateEventInput!){updateEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_EVENT_ID}\"}}}"
+  "{\"query\":\"mutation(\$d:UpdateEventInput!){updateEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_EVENT_ID}\",\"attributeIds\":[]}}}"
 
 run_endpoint 'events.deleteEvent' \
   "{\"query\":\"mutation(\$d:DeleteEventInput!){deleteEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_EVENT_ID}\"}}}"
@@ -563,12 +563,12 @@ mutual 'content.restoreContentVersion' \
   "{\"query\":\"mutation(\$d:VersionIdInput!){restoreContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
 
 mutual 'content.publishedContentVersion' \
-  "{\"query\":\"mutation(\$d:VersionIdInput!){publishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_B_VERSION_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:VersionIdInput!){publishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
+  "{\"query\":\"mutation(\$d:VersionIdInput!){publishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_B_VERSION_ID}\",\"environmentId\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:VersionIdInput!){publishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
 
 mutual 'content.unpublishedContentVersion' \
-  "{\"query\":\"mutation(\$d:ContentIdInput!){unpublishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:ContentIdInput!){unpublishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
+  "{\"query\":\"mutation(\$d:ContentIdInput!){unpublishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\",\"environmentId\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:ContentIdInput!){unpublishedContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
 
 mutual 'content.deleteContent' \
   "{\"query\":\"mutation(\$d:ContentIdInput!){deleteContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\"}}}" \
@@ -691,8 +691,8 @@ mutual 'events.createEvent' \
   "{\"query\":\"mutation(\$d:CreateEventInput!){createEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"attributeIds\":[],\"codeName\":\"e2e_event\",\"displayName\":\"e2e\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}"
 
 mutual 'events.updateEvent' \
-  "{\"query\":\"mutation(\$d:UpdateEventInput!){updateEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_EVENT_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:UpdateEventInput!){updateEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_EVENT_ID}\"}}}"
+  "{\"query\":\"mutation(\$d:UpdateEventInput!){updateEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_EVENT_ID}\",\"attributeIds\":[]}}}" \
+  "{\"query\":\"mutation(\$d:UpdateEventInput!){updateEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_EVENT_ID}\",\"attributeIds\":[]}}}"
 
 mutual 'events.deleteEvent' \
   "{\"query\":\"mutation(\$d:DeleteEventInput!){deleteEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_EVENT_ID}\"}}}" \
