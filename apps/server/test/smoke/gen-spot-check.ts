@@ -12,91 +12,177 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { ENDPOINTS, type Endpoint } from '../e2e/endpoints';
+import { ENDPOINTS, type Endpoint, type Role } from '../e2e/endpoints';
 
 // Placeholders that show up inside vars(seed)'s JSON output, mapped to the bash
-// variables the generated script will use.
+// variables the generated script will use. Per-role variants (the "for-owner"
+// / "for-admin" slots) exist for the destructive mutations where OWNER and
+// ADMIN would otherwise fight over the same row — see endpoints.ts.
 const A_SEED = {
   projectId: '__A_PROJECT__',
   environmentId: '__A_ENV__',
+  environmentForOwnerDelete: '__A_ENV_OWNER_DELETE__',
+  environmentForAdminDelete: '__A_ENV_ADMIN_DELETE__',
   contentId: '__A_CONTENT__',
   versionId: '__A_VERSION__',
   sessionId: '__A_SESSION__',
+  sessionForOwnerDelete: '__A_SESSION_OWNER_DELETE__',
+  sessionForAdminDelete: '__A_SESSION_ADMIN_DELETE__',
+  sessionForOwnerEnd: '__A_SESSION_OWNER_END__',
+  sessionForAdminEnd: '__A_SESSION_ADMIN_END__',
   themeId: '__A_THEME__',
+  themeForOwnerDelete: '__A_THEME_OWNER_DELETE__',
+  themeForAdminDelete: '__A_THEME_ADMIN_DELETE__',
   attributeId: '__A_ATTRIBUTE__',
+  attributeForOwnerDelete: '__A_ATTRIBUTE_OWNER_DELETE__',
+  attributeForAdminDelete: '__A_ATTRIBUTE_ADMIN_DELETE__',
   eventId: '__A_EVENT__',
+  eventForOwnerDelete: '__A_EVENT_OWNER_DELETE__',
+  eventForAdminDelete: '__A_EVENT_ADMIN_DELETE__',
   localizationId: '__A_LOCALIZATION__',
+  localizationForOwnerDelete: '__A_LOCALIZATION_OWNER_DELETE__',
+  localizationForAdminDelete: '__A_LOCALIZATION_ADMIN_DELETE__',
   segmentId: '__A_SEGMENT__',
+  segmentForOwnerDelete: '__A_SEGMENT_OWNER_DELETE__',
+  segmentForAdminDelete: '__A_SEGMENT_ADMIN_DELETE__',
   integrationId: '__A_INTEGRATION__',
   mappingId: '__A_MAPPING__',
   accessTokenId: '__A_ACCESS_TOKEN__',
   stepId: '__A_STEP__',
   bizUserId: '__A_BIZ_USER__',
+  bizUserForOwnerDelete: '__A_BIZ_USER_OWNER_DELETE__',
+  bizUserForAdminDelete: '__A_BIZ_USER_ADMIN_DELETE__',
   bizCompanyId: '__A_BIZ_COMPANY__',
+  bizCompanyForOwnerDelete: '__A_BIZ_COMPANY_OWNER_DELETE__',
+  bizCompanyForAdminDelete: '__A_BIZ_COMPANY_ADMIN_DELETE__',
   removableUserId: '__A_REMOVABLE_USER__',
+  removableUserForChangeRole: '__A_REMOVABLE_USER_CHANGE_ROLE__',
   inviteId: '__A_INVITE__',
 };
 const B_SEED = {
   projectId: '__B_PROJECT__',
   environmentId: '__B_ENV__',
+  environmentForOwnerDelete: '__B_ENV_OWNER_DELETE__',
+  environmentForAdminDelete: '__B_ENV_ADMIN_DELETE__',
   contentId: '__B_CONTENT__',
   versionId: '__B_VERSION__',
   sessionId: '__B_SESSION__',
+  sessionForOwnerDelete: '__B_SESSION_OWNER_DELETE__',
+  sessionForAdminDelete: '__B_SESSION_ADMIN_DELETE__',
+  sessionForOwnerEnd: '__B_SESSION_OWNER_END__',
+  sessionForAdminEnd: '__B_SESSION_ADMIN_END__',
   themeId: '__B_THEME__',
+  themeForOwnerDelete: '__B_THEME_OWNER_DELETE__',
+  themeForAdminDelete: '__B_THEME_ADMIN_DELETE__',
   attributeId: '__B_ATTRIBUTE__',
+  attributeForOwnerDelete: '__B_ATTRIBUTE_OWNER_DELETE__',
+  attributeForAdminDelete: '__B_ATTRIBUTE_ADMIN_DELETE__',
   eventId: '__B_EVENT__',
+  eventForOwnerDelete: '__B_EVENT_OWNER_DELETE__',
+  eventForAdminDelete: '__B_EVENT_ADMIN_DELETE__',
   localizationId: '__B_LOCALIZATION__',
+  localizationForOwnerDelete: '__B_LOCALIZATION_OWNER_DELETE__',
+  localizationForAdminDelete: '__B_LOCALIZATION_ADMIN_DELETE__',
   segmentId: '__B_SEGMENT__',
+  segmentForOwnerDelete: '__B_SEGMENT_OWNER_DELETE__',
+  segmentForAdminDelete: '__B_SEGMENT_ADMIN_DELETE__',
   integrationId: '__B_INTEGRATION__',
   mappingId: '__B_MAPPING__',
   accessTokenId: '__B_ACCESS_TOKEN__',
   stepId: '__B_STEP__',
   bizUserId: '__B_BIZ_USER__',
+  bizUserForOwnerDelete: '__B_BIZ_USER_OWNER_DELETE__',
+  bizUserForAdminDelete: '__B_BIZ_USER_ADMIN_DELETE__',
   bizCompanyId: '__B_BIZ_COMPANY__',
+  bizCompanyForOwnerDelete: '__B_BIZ_COMPANY_OWNER_DELETE__',
+  bizCompanyForAdminDelete: '__B_BIZ_COMPANY_ADMIN_DELETE__',
   removableUserId: '__B_REMOVABLE_USER__',
+  removableUserForChangeRole: '__B_REMOVABLE_USER_CHANGE_ROLE__',
   inviteId: '__B_INVITE__',
 };
 const SHELL_VARS: Record<string, string> = {
   __A_PROJECT__: 'SMOKE_PROJECT_ID',
   __A_ENV__: 'SMOKE_ENVIRONMENT_ID',
+  __A_ENV_OWNER_DELETE__: 'SMOKE_ENVIRONMENT_FOR_OWNER_DELETE_ID',
+  __A_ENV_ADMIN_DELETE__: 'SMOKE_ENVIRONMENT_FOR_ADMIN_DELETE_ID',
   __A_CONTENT__: 'SMOKE_CONTENT_ID',
   __A_VERSION__: 'SMOKE_VERSION_ID',
   __A_SESSION__: 'SMOKE_SESSION_ID',
+  __A_SESSION_OWNER_DELETE__: 'SMOKE_SESSION_FOR_OWNER_DELETE_ID',
+  __A_SESSION_ADMIN_DELETE__: 'SMOKE_SESSION_FOR_ADMIN_DELETE_ID',
+  __A_SESSION_OWNER_END__: 'SMOKE_SESSION_FOR_OWNER_END_ID',
+  __A_SESSION_ADMIN_END__: 'SMOKE_SESSION_FOR_ADMIN_END_ID',
   __A_THEME__: 'SMOKE_THEME_ID',
+  __A_THEME_OWNER_DELETE__: 'SMOKE_THEME_FOR_OWNER_DELETE_ID',
+  __A_THEME_ADMIN_DELETE__: 'SMOKE_THEME_FOR_ADMIN_DELETE_ID',
   __A_ATTRIBUTE__: 'SMOKE_ATTRIBUTE_ID',
+  __A_ATTRIBUTE_OWNER_DELETE__: 'SMOKE_ATTRIBUTE_FOR_OWNER_DELETE_ID',
+  __A_ATTRIBUTE_ADMIN_DELETE__: 'SMOKE_ATTRIBUTE_FOR_ADMIN_DELETE_ID',
   __A_EVENT__: 'SMOKE_EVENT_ID',
+  __A_EVENT_OWNER_DELETE__: 'SMOKE_EVENT_FOR_OWNER_DELETE_ID',
+  __A_EVENT_ADMIN_DELETE__: 'SMOKE_EVENT_FOR_ADMIN_DELETE_ID',
   __A_LOCALIZATION__: 'SMOKE_LOCALIZATION_ID',
+  __A_LOCALIZATION_OWNER_DELETE__: 'SMOKE_LOCALIZATION_FOR_OWNER_DELETE_ID',
+  __A_LOCALIZATION_ADMIN_DELETE__: 'SMOKE_LOCALIZATION_FOR_ADMIN_DELETE_ID',
   __A_SEGMENT__: 'SMOKE_SEGMENT_ID',
+  __A_SEGMENT_OWNER_DELETE__: 'SMOKE_SEGMENT_FOR_OWNER_DELETE_ID',
+  __A_SEGMENT_ADMIN_DELETE__: 'SMOKE_SEGMENT_FOR_ADMIN_DELETE_ID',
   __A_INTEGRATION__: 'SMOKE_INTEGRATION_ID',
   __A_MAPPING__: 'SMOKE_MAPPING_ID',
   __A_ACCESS_TOKEN__: 'SMOKE_ACCESS_TOKEN_ID',
   __A_STEP__: 'SMOKE_STEP_ID',
   __A_BIZ_USER__: 'SMOKE_BIZ_USER_ID',
+  __A_BIZ_USER_OWNER_DELETE__: 'SMOKE_BIZ_USER_FOR_OWNER_DELETE_ID',
+  __A_BIZ_USER_ADMIN_DELETE__: 'SMOKE_BIZ_USER_FOR_ADMIN_DELETE_ID',
   __A_BIZ_COMPANY__: 'SMOKE_BIZ_COMPANY_ID',
+  __A_BIZ_COMPANY_OWNER_DELETE__: 'SMOKE_BIZ_COMPANY_FOR_OWNER_DELETE_ID',
+  __A_BIZ_COMPANY_ADMIN_DELETE__: 'SMOKE_BIZ_COMPANY_FOR_ADMIN_DELETE_ID',
   __A_REMOVABLE_USER__: 'SMOKE_REMOVABLE_USER_ID',
+  __A_REMOVABLE_USER_CHANGE_ROLE__: 'SMOKE_REMOVABLE_USER_FOR_CHANGE_ROLE_ID',
   __A_INVITE__: 'SMOKE_INVITE_ID',
   __B_PROJECT__: 'SMOKE_B_PROJECT_ID',
   __B_ENV__: 'SMOKE_B_ENVIRONMENT_ID',
+  __B_ENV_OWNER_DELETE__: 'SMOKE_B_ENVIRONMENT_FOR_OWNER_DELETE_ID',
+  __B_ENV_ADMIN_DELETE__: 'SMOKE_B_ENVIRONMENT_FOR_ADMIN_DELETE_ID',
   __B_CONTENT__: 'SMOKE_B_CONTENT_ID',
   __B_VERSION__: 'SMOKE_B_VERSION_ID',
   __B_SESSION__: 'SMOKE_B_SESSION_ID',
+  __B_SESSION_OWNER_DELETE__: 'SMOKE_B_SESSION_FOR_OWNER_DELETE_ID',
+  __B_SESSION_ADMIN_DELETE__: 'SMOKE_B_SESSION_FOR_ADMIN_DELETE_ID',
+  __B_SESSION_OWNER_END__: 'SMOKE_B_SESSION_FOR_OWNER_END_ID',
+  __B_SESSION_ADMIN_END__: 'SMOKE_B_SESSION_FOR_ADMIN_END_ID',
   __B_THEME__: 'SMOKE_B_THEME_ID',
+  __B_THEME_OWNER_DELETE__: 'SMOKE_B_THEME_FOR_OWNER_DELETE_ID',
+  __B_THEME_ADMIN_DELETE__: 'SMOKE_B_THEME_FOR_ADMIN_DELETE_ID',
   __B_ATTRIBUTE__: 'SMOKE_B_ATTRIBUTE_ID',
+  __B_ATTRIBUTE_OWNER_DELETE__: 'SMOKE_B_ATTRIBUTE_FOR_OWNER_DELETE_ID',
+  __B_ATTRIBUTE_ADMIN_DELETE__: 'SMOKE_B_ATTRIBUTE_FOR_ADMIN_DELETE_ID',
   __B_EVENT__: 'SMOKE_B_EVENT_ID',
+  __B_EVENT_OWNER_DELETE__: 'SMOKE_B_EVENT_FOR_OWNER_DELETE_ID',
+  __B_EVENT_ADMIN_DELETE__: 'SMOKE_B_EVENT_FOR_ADMIN_DELETE_ID',
   __B_LOCALIZATION__: 'SMOKE_B_LOCALIZATION_ID',
+  __B_LOCALIZATION_OWNER_DELETE__: 'SMOKE_B_LOCALIZATION_FOR_OWNER_DELETE_ID',
+  __B_LOCALIZATION_ADMIN_DELETE__: 'SMOKE_B_LOCALIZATION_FOR_ADMIN_DELETE_ID',
   __B_SEGMENT__: 'SMOKE_B_SEGMENT_ID',
+  __B_SEGMENT_OWNER_DELETE__: 'SMOKE_B_SEGMENT_FOR_OWNER_DELETE_ID',
+  __B_SEGMENT_ADMIN_DELETE__: 'SMOKE_B_SEGMENT_FOR_ADMIN_DELETE_ID',
   __B_INTEGRATION__: 'SMOKE_B_INTEGRATION_ID',
   __B_MAPPING__: 'SMOKE_B_MAPPING_ID',
   __B_ACCESS_TOKEN__: 'SMOKE_B_ACCESS_TOKEN_ID',
   __B_STEP__: 'SMOKE_B_STEP_ID',
   __B_BIZ_USER__: 'SMOKE_B_BIZ_USER_ID',
+  __B_BIZ_USER_OWNER_DELETE__: 'SMOKE_B_BIZ_USER_FOR_OWNER_DELETE_ID',
+  __B_BIZ_USER_ADMIN_DELETE__: 'SMOKE_B_BIZ_USER_FOR_ADMIN_DELETE_ID',
   __B_BIZ_COMPANY__: 'SMOKE_B_BIZ_COMPANY_ID',
+  __B_BIZ_COMPANY_OWNER_DELETE__: 'SMOKE_B_BIZ_COMPANY_FOR_OWNER_DELETE_ID',
+  __B_BIZ_COMPANY_ADMIN_DELETE__: 'SMOKE_B_BIZ_COMPANY_FOR_ADMIN_DELETE_ID',
   __B_REMOVABLE_USER__: 'SMOKE_B_REMOVABLE_USER_ID',
+  __B_REMOVABLE_USER_CHANGE_ROLE__: 'SMOKE_B_REMOVABLE_USER_FOR_CHANGE_ROLE_ID',
   __B_INVITE__: 'SMOKE_B_INVITE_ID',
 };
 
-function bashBody(ep: Endpoint, seed: any): string {
-  const json = JSON.stringify({ query: ep.doc, variables: ep.vars(seed) });
+function bashBody(ep: Endpoint, seed: any, role?: Role): string {
+  const json = JSON.stringify({ query: ep.doc, variables: ep.vars(seed, role) });
   let s = json;
   for (const [ph, varName] of Object.entries(SHELL_VARS)) {
     s = s.split(ph).join(`\${${varName}}`);
@@ -107,6 +193,40 @@ function bashBody(ep: Endpoint, seed: any): string {
   // Escape double quotes for embedding in a bash double-quoted string.
   s = s.replace(/"/g, '\\"');
   return `"${s}"`;
+}
+
+/**
+ * Emit either a single-body `run_endpoint` (the common case — vars do not
+ * depend on role) or a 4-body `run_endpoint_per_role` (a handful of
+ * destructive mutations where OWNER and ADMIN must target different rows so
+ * neither call hits a scope-resolver null masquerading as E0013). The check
+ * is purely on the JSON shape: if all four role bodies match the no-role
+ * baseline, we use the cheaper form.
+ */
+function emitInProjectRow(ep: Endpoint, seed: any): string[] {
+  const baseline = bashBody(ep, seed);
+  const perRole: Record<Role, string> = {
+    OWNER: bashBody(ep, seed, 'OWNER'),
+    ADMIN: bashBody(ep, seed, 'ADMIN'),
+    VIEWER: bashBody(ep, seed, 'VIEWER'),
+    NONE: '',
+    ELSEWHERE: bashBody(ep, seed, 'ELSEWHERE'),
+  };
+  const allSame =
+    perRole.OWNER === baseline &&
+    perRole.ADMIN === baseline &&
+    perRole.VIEWER === baseline &&
+    perRole.ELSEWHERE === baseline;
+  if (allSame) {
+    return [`run_endpoint '${ep.key}' \\`, `  ${baseline}`];
+  }
+  return [
+    `run_endpoint_per_role '${ep.key}' \\`,
+    `  ${perRole.OWNER} \\`,
+    `  ${perRole.ADMIN} \\`,
+    `  ${perRole.VIEWER} \\`,
+    `  ${perRole.ELSEWHERE}`,
+  ];
 }
 
 const groups = {
@@ -219,6 +339,17 @@ p('  local label="$1" body="$2"');
 p('  for r in OWNER ADMIN VIEWER ELSEWHERE; do hit "$r" "$label" "$body"; done');
 p('}');
 p('');
+p('# Same-shape as run_endpoint but takes 4 separate bodies — used by');
+p('# destructive mutations whose vars pick a per-role target id (so OWNER and');
+p("# ADMIN don't fight over the same row). See gen-spot-check.ts emitInProjectRow.");
+p('run_endpoint_per_role() {');
+p('  local label="$1" o="$2" a="$3" v="$4" e="$5"');
+p('  hit OWNER     "$label" "$o"');
+p('  hit ADMIN     "$label" "$a"');
+p('  hit VIEWER    "$label" "$v"');
+p('  hit ELSEWHERE "$label" "$e"');
+p('}');
+p('');
 p('mutual() {');
 p('  local label="$1" body_b="$2" body_a="$3"');
 p('  hit OWNER     "$label  [A→B]" "$body_b"');
@@ -229,16 +360,14 @@ p('');
 // Section 1 — R queries in-project
 p(`section "R-tier QUERIES — in-project (${groups.R_query.length} endpoints, safe)"`);
 for (const ep of groups.R_query) {
-  p(`run_endpoint '${ep.key}' \\`);
-  p(`  ${bashBody(ep, A_SEED)}`);
+  for (const line of emitInProjectRow(ep, A_SEED)) p(line);
   p('');
 }
 
 // Section 2 — O queries in-project
 p(`section "O-tier QUERIES — in-project (${groups.O_query.length} endpoints, safe)"`);
 for (const ep of groups.O_query) {
-  p(`run_endpoint '${ep.key}' \\`);
-  p(`  ${bashBody(ep, A_SEED)}`);
+  for (const line of emitInProjectRow(ep, A_SEED)) p(line);
   p('');
 }
 
@@ -272,24 +401,21 @@ p('');
 // Section 4 — R mutation in-project
 p(`section "R-tier MUTATION — in-project (${groups.R_mut.length} endpoint)"`);
 for (const ep of groups.R_mut) {
-  p(`run_endpoint '${ep.key}' \\`);
-  p(`  ${bashBody(ep, A_SEED)}`);
+  for (const line of emitInProjectRow(ep, A_SEED)) p(line);
   p('');
 }
 
 // Section 5 — W mutations in-project
 p(`section "W-tier MUTATIONS — in-project (${groups.W_mut.length} endpoints, DESTRUCTIVE)"`);
 for (const ep of groups.W_mut) {
-  p(`run_endpoint '${ep.key}' \\`);
-  p(`  ${bashBody(ep, A_SEED)}`);
+  for (const line of emitInProjectRow(ep, A_SEED)) p(line);
   p('');
 }
 
 // Section 6 — O mutations in-project
 p(`section "O-tier MUTATIONS — in-project (${groups.O_mut.length} endpoints, DESTRUCTIVE)"`);
 for (const ep of groups.O_mut) {
-  p(`run_endpoint '${ep.key}' \\`);
-  p(`  ${bashBody(ep, A_SEED)}`);
+  for (const line of emitInProjectRow(ep, A_SEED)) p(line);
   p('');
 }
 

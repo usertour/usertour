@@ -127,6 +127,32 @@ describe('Permission authorization (HTTP e2e)', () => {
       bizCompanyId: bizCompany.id,
       removableUserId: removable.id,
       inviteId: invite.id,
+      // Per-role consumable ids used by the spot-check to keep OWNER and
+      // ADMIN from fighting over the same row. E2E uses one fresh fixture per
+      // run and only asserts the DENY direction for W/O mutations (the guard
+      // throws before the resolver, so no consumption happens), which means
+      // every per-role slot can safely alias the single existing fixture id.
+      segmentForOwnerDelete: segment.id,
+      segmentForAdminDelete: segment.id,
+      bizUserForOwnerDelete: bizUser.id,
+      bizUserForAdminDelete: bizUser.id,
+      bizCompanyForOwnerDelete: bizCompany.id,
+      bizCompanyForAdminDelete: bizCompany.id,
+      attributeForOwnerDelete: attribute.id,
+      attributeForAdminDelete: attribute.id,
+      eventForOwnerDelete: event.id,
+      eventForAdminDelete: event.id,
+      sessionForOwnerDelete: session.id,
+      sessionForAdminDelete: session.id,
+      sessionForOwnerEnd: session.id,
+      sessionForAdminEnd: session.id,
+      environmentForOwnerDelete: environment.id,
+      environmentForAdminDelete: environment.id,
+      themeForOwnerDelete: theme.id,
+      themeForAdminDelete: theme.id,
+      localizationForOwnerDelete: localization.id,
+      localizationForAdminDelete: localization.id,
+      removableUserForChangeRole: removable.id,
     });
   }, 60000);
 
@@ -176,6 +202,17 @@ describe('Permission authorization (HTTP e2e)', () => {
             ),
           },
         },
+      });
+      // Drop subscription rows for both projects if present (e2e doesn't
+      // create one today, but keep this defensive for symmetry with the
+      // smoke teardown — the column is also nulled on the project so the
+      // Project.delete below can't be blocked by a stale FK-shaped value).
+      await prisma.project.updateMany({
+        where: { id: { in: [seed.projectId, seed.projectBId].filter(Boolean) as string[] } },
+        data: { subscriptionId: null },
+      });
+      await prisma.subscription.deleteMany({
+        where: { projectId: { in: [seed.projectId, seed.projectBId].filter(Boolean) as string[] } },
       });
       await prisma.project.deleteMany({ where: { id: seed.projectId } });
       if (seed.projectBId) {

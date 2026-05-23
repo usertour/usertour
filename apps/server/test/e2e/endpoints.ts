@@ -48,13 +48,35 @@ export interface Endpoint {
   tier: Tier;
   op: 'query' | 'mutation';
   doc: string;
-  vars: (seed: Seed) => Record<string, any>;
+  /**
+   * Build variables for one (endpoint, role) pair. The optional `role`
+   * argument exists so destructive mutations can pick a per-role target id
+   * (so OWNER and ADMIN don't fight over the same row when the spot-check
+   * iterates all 4 roles in sequence). When called without a role, vars
+   * returns the OWNER-side ids — which is exactly what e2e wants since it
+   * uses fresh fixtures and only asserts the deny direction for W/O
+   * mutations.
+   */
+  vars: (seed: Seed, role?: Role) => Record<string, any>;
   /**
    * Skip the allow direction even for a query — for resolvers that would reach
    * an external service (Salesforce) when actually executed.
    */
   denyOnly?: boolean;
 }
+
+/**
+ * Per-role id picker for destructive mutations. The spot-check fires every
+ * mutation as OWNER then ADMIN against the SAME fixture, so both calls fight
+ * over one row if vars doesn't fork; the loser would see the row gone and the
+ * guard's scope-resolver would return null, surfacing as a misleading E0013
+ * (indistinguishable from a real permission denial). VIEWER and ELSEWHERE
+ * never reach the resolver — the guard denies them on role — so their id pick
+ * doesn't matter; default to OWNER's so e2e (which passes no role) still
+ * resolves to a real id.
+ */
+const pickByRole = (role: Role | undefined, ids: { owner: string; admin: string }): string =>
+  role === 'ADMIN' ? ids.admin : ids.owner;
 
 export const ENDPOINTS: Endpoint[] = [
   // --- projects (scope: project) ---
@@ -172,6 +194,18 @@ export const ENDPOINTS: Endpoint[] = [
       },
     }),
   },
+  // updateContentVersion runs BEFORE createContentVersion / restoreContentVersion:
+  // those two rewrite Content.editedVersionId, after which an update against
+  // the seeded versionId fails `contentVersionIsEditable` with ParamsError.
+  // Same invariant the step / version-localization ops above rely on — kept
+  // grouped here for clarity.
+  {
+    key: 'content.updateContentVersion',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:VersionUpdateInput!){updateContentVersion(data:$d){__typename}}',
+    vars: (s) => ({ d: { versionId: s.versionId, content: {} } }),
+  },
   {
     key: 'content.createContentVersion',
     tier: 'W',
@@ -185,13 +219,6 @@ export const ENDPOINTS: Endpoint[] = [
     op: 'query',
     doc: 'query($v:String!){getContentVersion(versionId:$v){__typename}}',
     vars: (s) => ({ v: s.versionId }),
-  },
-  {
-    key: 'content.updateContentVersion',
-    tier: 'W',
-    op: 'mutation',
-    doc: 'mutation($d:VersionUpdateInput!){updateContentVersion(data:$d){__typename}}',
-    vars: (s) => ({ d: { versionId: s.versionId, content: {} } }),
   },
   {
     key: 'content.restoreContentVersion',
@@ -257,7 +284,13 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:CreateEnvironmentInput!){createEnvironments(data:$d){__typename}}',
-    vars: (s) => ({ d: { name: 'e2e', projectId: s.projectId } }),
+    // Per-role name avoids potential (projectId, name) collisions; the
+    // project's plan is BUSINESS in spot-check fixtures so the env quota
+    // gate doesn't fire — production quotas are themselves the service
+    // layer's responsibility to spec separately.
+    vars: (s, role) => ({
+      d: { name: role === 'ADMIN' ? 'e2e-admin' : 'e2e-owner', projectId: s.projectId },
+    }),
   },
   {
     key: 'environments.updateEnvironments',
@@ -271,7 +304,17 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:DeleteEnvironmentInput!){deleteEnvironments(data:$d){__typename}}',
-    vars: (s) => ({ d: { id: s.environmentId } }),
+    // Per-role victim envs so OWNER and ADMIN both reach the resolver
+    // happy path. `s.environmentId` itself stays so the production
+    // "can't delete last env" rule still holds for the main env.
+    vars: (s, role) => ({
+      d: {
+        id: pickByRole(role, {
+          owner: s.environmentForOwnerDelete,
+          admin: s.environmentForAdminDelete,
+        }),
+      },
+    }),
   },
   {
     key: 'environments.userEnvironments',
@@ -369,7 +412,15 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:DeleteSegment!){deleteSegment(data:$d){__typename}}',
-    vars: (s) => ({ d: { id: s.segmentId } }),
+    // OWNER and ADMIN each get a dedicated victim segment so both calls hit
+    // the resolver. `segmentId` itself stays alive for the four OnSegment ops
+    // below — without that, their scope-resolver returns null after OWNER's
+    // delete and the rows surface as a misleading E0013 for everyone.
+    vars: (s, role) => ({
+      d: {
+        id: pickByRole(role, { owner: s.segmentForOwnerDelete, admin: s.segmentForAdminDelete }),
+      },
+    }),
   },
   {
     key: 'biz.listSegment',
@@ -397,14 +448,32 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:BizUserOrCompanyIdsInput!){deleteBizUser(data:$d){__typename}}',
-    vars: (s) => ({ d: { environmentId: s.environmentId, ids: [s.bizUserId] } }),
+    // Per-role victim; `bizUserId` itself stays alive as FK target for the
+    // protected sessions further down (analytics.deleteSession / endSession
+    // build on a session whose bizUser must not be cascade-deleted).
+    vars: (s, role) => ({
+      d: {
+        environmentId: s.environmentId,
+        ids: [pickByRole(role, { owner: s.bizUserForOwnerDelete, admin: s.bizUserForAdminDelete })],
+      },
+    }),
   },
   {
     key: 'biz.deleteBizCompany',
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:BizUserOrCompanyIdsInput!){deleteBizCompany(data:$d){__typename}}',
-    vars: (s) => ({ d: { environmentId: s.environmentId, ids: [s.bizCompanyId] } }),
+    vars: (s, role) => ({
+      d: {
+        environmentId: s.environmentId,
+        ids: [
+          pickByRole(role, {
+            owner: s.bizCompanyForOwnerDelete,
+            admin: s.bizCompanyForAdminDelete,
+          }),
+        ],
+      },
+    }),
   },
   {
     key: 'biz.createBizCompanyOnSegment',
@@ -513,7 +582,15 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:CreateLocalizationInput!){createLocalization(data:$d){__typename}}',
-    vars: (s) => ({ d: { code: 'fr', locale: 'fr', name: 'French', projectId: s.projectId } }),
+    // Per-role locale/code so OWNER and ADMIN don't both try to create
+    // the same row — without forking, ADMIN sees E0048 (post-guard dup),
+    // which is correct behavior but obscures the permission signal.
+    vars: (s, role) => {
+      const tag = role === 'ADMIN' ? 'admin' : 'owner';
+      return {
+        d: { code: `e2e-${tag}`, locale: `e2e-${tag}`, name: `e2e-${tag}`, projectId: s.projectId },
+      };
+    },
   },
   {
     key: 'localizations.updateLocalization',
@@ -534,7 +611,17 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:DeleteLocalizationInput!){deleteLocalization(data:$d){__typename}}',
-    vars: (s) => ({ d: { id: s.localizationId } }),
+    // Non-default per-role victims so the production "can't delete default
+    // localization" rule doesn't fire here — that rule belongs in a
+    // service-level spec, not in a permission smoke check.
+    vars: (s, role) => ({
+      d: {
+        id: pickByRole(role, {
+          owner: s.localizationForOwnerDelete,
+          admin: s.localizationForAdminDelete,
+        }),
+      },
+    }),
   },
   {
     key: 'localizations.listLocalizations',
@@ -550,10 +637,12 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:CreateAttributeInput!){createAttribute(data:$d){__typename}}',
-    vars: (s) => ({
+    vars: (s, role) => ({
       d: {
         bizType: 1,
-        codeName: 'e2e_attr',
+        // (projectId, bizType, codeName) is unique; per-role codeName
+        // keeps OWNER and ADMIN from colliding on E0048.
+        codeName: role === 'ADMIN' ? 'e2e_attr_admin' : 'e2e_attr_owner',
         dataType: 1,
         description: 'e2e',
         displayName: 'e2e',
@@ -573,7 +662,14 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:DeleteAttributeInput!){deleteAttribute(data:$d){__typename}}',
-    vars: (s) => ({ d: { id: s.attributeId } }),
+    vars: (s, role) => ({
+      d: {
+        id: pickByRole(role, {
+          owner: s.attributeForOwnerDelete,
+          admin: s.attributeForAdminDelete,
+        }),
+      },
+    }),
   },
   {
     key: 'attributes.listAttributes',
@@ -589,7 +685,13 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:CreateThemeInput!){createTheme(data:$d){__typename}}',
-    vars: (s) => ({ d: { isDefault: false, name: 'e2e', projectId: s.projectId } }),
+    vars: (s, role) => ({
+      d: {
+        isDefault: false,
+        name: role === 'ADMIN' ? 'e2e-theme-admin' : 'e2e-theme-owner',
+        projectId: s.projectId,
+      },
+    }),
   },
   {
     key: 'themes.updateTheme',
@@ -617,7 +719,13 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:DeleteThemeInput!){deleteTheme(data:$d){__typename}}',
-    vars: (s) => ({ d: { id: s.themeId } }),
+    // Non-default per-role victims so the "can't delete default theme"
+    // rule (the service layer's job to spec) doesn't fire here.
+    vars: (s, role) => ({
+      d: {
+        id: pickByRole(role, { owner: s.themeForOwnerDelete, admin: s.themeForAdminDelete }),
+      },
+    }),
   },
   {
     key: 'themes.getTheme',
@@ -640,8 +748,15 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:CreateEventInput!){createEvent(data:$d){__typename}}',
-    vars: (s) => ({
-      d: { attributeIds: [], codeName: 'e2e_event', displayName: 'e2e', projectId: s.projectId },
+    vars: (s, role) => ({
+      d: {
+        attributeIds: [],
+        // (projectId, codeName) is unique; per-role codeName avoids the
+        // collision that would otherwise surface as E0048 for ADMIN.
+        codeName: role === 'ADMIN' ? 'e2e_event_admin' : 'e2e_event_owner',
+        displayName: 'e2e',
+        projectId: s.projectId,
+      },
     }),
   },
   {
@@ -658,7 +773,11 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:DeleteEventInput!){deleteEvent(data:$d){__typename}}',
-    vars: (s) => ({ d: { id: s.eventId } }),
+    vars: (s, role) => ({
+      d: {
+        id: pickByRole(role, { owner: s.eventForOwnerDelete, admin: s.eventForAdminDelete }),
+      },
+    }),
   },
   {
     key: 'events.listEvents',
@@ -723,14 +842,23 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($s:String!){deleteSession(sessionId:$s)}',
-    vars: (s) => ({ s: s.sessionId }),
+    // OWNER and ADMIN each get their own session. `sessionId` itself is left
+    // alone for analytics.querySessionDetail (R) — that runs in the earlier
+    // R-query block so the cascade order is fine.
+    vars: (s, role) => ({
+      s: pickByRole(role, { owner: s.sessionForOwnerDelete, admin: s.sessionForAdminDelete }),
+    }),
   },
   {
     key: 'analytics.endSession',
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($s:String!){endSession(sessionId:$s)}',
-    vars: (s) => ({ s: s.sessionId }),
+    // Separate sessions again — endSession on a deleted session would surface
+    // as a scope-null E0013 just like the deleteSession case.
+    vars: (s, role) => ({
+      s: pickByRole(role, { owner: s.sessionForOwnerEnd, admin: s.sessionForAdminEnd }),
+    }),
   },
   {
     key: 'analytics.querySessionDetail',
@@ -819,8 +947,20 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'O',
     op: 'mutation',
     doc: 'mutation($d:InviteTeamMemberInput!){inviteTeamMember(data:$d)}',
-    vars: (s) => ({
-      d: { email: 'e2e@test.local', name: 'e2e', projectId: s.projectId, role: 'VIEWER' },
+    // O-tier; only OWNER reaches the resolver. The literal email used to
+    // collide with the prep-seeded invite (E0015 = TeamMemberLimit was a
+    // red herring caused by HOBBY's teamMemberLimit=1 + 4 seeded members;
+    // the BUSINESS subscription now keeps the count check out of the way).
+    // Per-role tag is for symmetry with the rest of the table.
+    // class-validator's @IsEmail rejects single-label TLDs like
+    // "test.local" → E1017. Use a real-looking TLD.
+    vars: (s, role) => ({
+      d: {
+        email: `e2e-${role === 'OWNER' ? 'owner' : 'other'}@test.example.com`,
+        name: 'e2e',
+        projectId: s.projectId,
+        role: 'VIEWER',
+      },
     }),
   },
   {
@@ -835,7 +975,12 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'O',
     op: 'mutation',
     doc: 'mutation($d:ChangeTeamMemberRoleInput!){changeTeamMemberRole(data:$d)}',
-    vars: (s) => ({ d: { projectId: s.projectId, role: 'ADMIN', userId: s.removableUserId } }),
+    // A dedicated target — `removableUserId` is what team.removeTeamMember
+    // consumes earlier in the O block, so reusing it here would always
+    // resolve to "user not found" (ParamsError).
+    vars: (s) => ({
+      d: { projectId: s.projectId, role: 'ADMIN', userId: s.removableUserForChangeRole },
+    }),
   },
   {
     key: 'team.cancelInvite',

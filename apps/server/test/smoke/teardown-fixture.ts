@@ -107,6 +107,11 @@ async function deleteProject(projectId: string, name: string) {
   await prisma.environment.deleteMany({ where: { projectId } });
   await prisma.userOnProject.deleteMany({ where: { projectId } });
   await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+  // Project.subscriptionId is the Stripe id, not a Subscription PK; clear
+  // the FK-shaped column on the project first, then drop the subscription
+  // row(s) by projectId so Project.delete is unblocked.
+  await prisma.project.update({ where: { id: projectId }, data: { subscriptionId: null } });
+  await prisma.subscription.deleteMany({ where: { projectId } });
   await prisma.project.delete({ where: { id: projectId } });
   log(`deleted ${name}`);
 }

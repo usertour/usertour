@@ -50,8 +50,14 @@ export class LocalizationsService {
     if (!item || item.isDefault) {
       throw new ParamsError();
     }
-    return await this.prisma.localization.delete({
-      where: { id },
+    // VersionOnLocalization has a non-cascade FK to Localization; raw
+    // localization.delete() throws P2003 and used to leak as a generic 500.
+    // The localized content rows belong to this Localization and should be
+    // dropped along with it — wrap both in one transaction so partial
+    // failure can't strand orphan VersionOnLocalization rows.
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.versionOnLocalization.deleteMany({ where: { localizationId: id } });
+      return tx.localization.delete({ where: { id } });
     });
   }
 

@@ -57,29 +57,38 @@ export const createVersion = async (
 };
 
 export const createBizUser = (prisma: PrismaClient, environmentId: string) =>
-  prisma.bizUser.create({ data: { environmentId } });
+  // BizUser is unique on (environmentId, externalId); without a per-call id,
+  // seeding two BizUsers in the same env hits a P2002 dup. Mirror
+  // createBizCompany's shape.
+  prisma.bizUser.create({ data: { environmentId, externalId: `bu-${unique()}` } });
 
 export const createSession = (
   prisma: PrismaClient,
   args: { bizUserId: string; contentId: string; versionId: string },
 ) => prisma.bizSession.create({ data: args });
 
+// Attribute / Event / Theme / Localization / Segment all carry per-project
+// unique constraints (codeName / name / locale). The factories give every
+// call a unique value so seeding multiple rows in one project doesn't hit
+// P2002.
 export const createAttribute = (prisma: PrismaClient, projectId: string) =>
-  prisma.attribute.create({ data: { projectId } });
+  prisma.attribute.create({ data: { projectId, codeName: `attr_${unique()}` } });
 
 export const createTheme = (prisma: PrismaClient, projectId: string) =>
-  prisma.theme.create({ data: { projectId } });
+  prisma.theme.create({ data: { projectId, name: `theme-${unique()}` } });
 
 export const createEvent = (prisma: PrismaClient, projectId: string) =>
-  prisma.event.create({ data: { projectId } });
+  prisma.event.create({ data: { projectId, codeName: `evt_${unique()}` } });
 
-export const createLocalization = (prisma: PrismaClient, projectId: string) =>
-  prisma.localization.create({
-    data: { projectId, locale: 'en', name: 'English', code: 'en' },
+export const createLocalization = (prisma: PrismaClient, projectId: string) => {
+  const slug = unique().replace(/-/g, '_');
+  return prisma.localization.create({
+    data: { projectId, locale: slug, name: slug, code: slug },
   });
+};
 
 export const createSegment = (prisma: PrismaClient, projectId: string, environmentId: string) =>
-  prisma.segment.create({ data: { projectId, environmentId } });
+  prisma.segment.create({ data: { projectId, environmentId, name: `seg-${unique()}` } });
 
 export const createIntegration = (prisma: PrismaClient, environmentId: string) =>
   prisma.integration.create({ data: { provider: 'salesforce', environmentId } });
@@ -108,3 +117,34 @@ export const createInvite = (prisma: PrismaClient, projectId: string, invitedByU
       role: 'VIEWER' as any,
     },
   });
+
+/**
+ * Seeds a BUSINESS-plan Subscription and links the project to it. BUSINESS
+ * has `environmentLimit: 'unlimited'` and `teamMemberLimit: 'unlimited'`, so
+ * every plan-gated mutation (createEnvironments / inviteTeamMember /…) gets a
+ * clear runway in the permission spot-check. The project's `subscriptionId`
+ * column is what `resolveProjectFeatures` keys on to find the subscription.
+ */
+export const createSubscription = async (
+  prisma: PrismaClient,
+  projectId: string,
+  // Lowercase to match the PlanType enum values in @usertour/types
+  // (the server stores them lowercase: 'hobby' / 'starter' / 'business' …).
+  // Anything else falls through `PLAN_FEATURES[planType] ?? HOBBY` and
+  // silently lands on HOBBY's 1-env / 1-member limit.
+  planType = 'business',
+) => {
+  const subscriptionId = `sub_e2e_${unique()}`;
+  const subscription = await prisma.subscription.create({
+    data: {
+      subscriptionId,
+      lookupKey: `lookup_e2e_${unique()}`,
+      planType,
+      interval: 'monthly',
+      projectId,
+      status: 'active',
+    },
+  });
+  await prisma.project.update({ where: { id: projectId }, data: { subscriptionId } });
+  return subscription;
+};
