@@ -38,11 +38,23 @@ export const createContent = (
   data: Record<string, any> = {},
 ) => prisma.content.create({ data: { projectId, environmentId, ...data } });
 
-export const createVersion = (
+export const createVersion = async (
   prisma: PrismaClient,
   contentId: string,
   data: Record<string, any> = {},
-) => prisma.version.create({ data: { contentId, ...data } });
+) => {
+  const version = await prisma.version.create({ data: { contentId, ...data } });
+  // Mirror the admin createContent flow: the freshly created version becomes
+  // the content's "currently being edited" version, so subsequent
+  // addContentSteps / updateContentStep / upsertVersionLocationData calls
+  // pass `contentVersionIsEditable` and exercise the real write path. Without
+  // this link, those mutations short-circuit on a ParamsError.
+  await prisma.content.update({
+    where: { id: contentId },
+    data: { editedVersionId: version.id },
+  });
+  return version;
+};
 
 export const createBizUser = (prisma: PrismaClient, environmentId: string) =>
   prisma.bizUser.create({ data: { environmentId } });

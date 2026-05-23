@@ -116,6 +116,62 @@ export const ENDPOINTS: Endpoint[] = [
     doc: 'query($c:String!){getContent(contentId:$c){__typename}}',
     vars: (s) => ({ c: s.contentId }),
   },
+  // Step / version-localization ops run BEFORE createContentVersion /
+  // restoreContentVersion / publishedContentVersion — those three rewrite
+  // content.editedVersionId (or publish the version), after which step ops on
+  // the seeded version cleanly hit ParamsError per production semantics
+  // ("version is no longer the edit version" / "version is published"). The
+  // order here lets the happy path of each step op actually execute.
+  //
+  // Inside this block, updateContentStep runs FIRST so it targets the
+  // prep-seeded step before addContentSteps' destructive `deleteMany`
+  // (steps not in the input list get removed) wipes it. addContentStep
+  // passes an explicit sequence to avoid Prisma's `gte: undefined` filter
+  // error.
+  {
+    key: 'content.updateContentStep',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:UpdateStepInput!,$s:String!){updateContentStep(data:$d,stepId:$s){__typename}}',
+    // `name` is a real Step column; the input's `contentId` is not on the
+    // Step model and would make prisma.step.update reject.
+    vars: (s) => ({ d: { name: 'spot-check-step' }, s: s.stepId }),
+  },
+  {
+    key: 'content.addContentSteps',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:ContentStepsInput!){addContentSteps(data:$d){__typename}}',
+    vars: (s) => ({
+      d: { contentId: s.contentId, steps: [], themeId: s.themeId, versionId: s.versionId },
+    }),
+  },
+  {
+    key: 'content.addContentStep',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:CreateStepInput!){addContentStep(data:$d){__typename}}',
+    // contentId is in CreateStepInput but Step has no such column — the
+    // service spreads `data` straight into prisma.step.create which would
+    // reject. scope resolver falls back to versionId, so dropping contentId
+    // is safe.
+    vars: (s) => ({ d: { type: 'tooltip', versionId: s.versionId, sequence: 0 } }),
+  },
+  {
+    key: 'content.updateVersionLocationData',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:$d){__typename}}',
+    vars: (s) => ({
+      d: {
+        backup: {},
+        enabled: true,
+        localizationId: s.localizationId,
+        localized: {},
+        versionId: s.versionId,
+      },
+    }),
+  },
   {
     key: 'content.createContentVersion',
     tier: 'W',
@@ -163,41 +219,11 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ d: { contentId: s.contentId, environmentId: s.environmentId } }),
   },
   {
-    key: 'content.deleteContent',
-    tier: 'W',
-    op: 'mutation',
-    doc: 'mutation($d:ContentIdInput!){deleteContent(data:$d){__typename}}',
-    vars: (s) => ({ d: { contentId: s.contentId } }),
-  },
-  {
     key: 'content.listContentVersions',
     tier: 'R',
     op: 'query',
     doc: 'query($c:String!){listContentVersions(contentId:$c){__typename}}',
     vars: (s) => ({ c: s.contentId }),
-  },
-  {
-    key: 'content.addContentSteps',
-    tier: 'W',
-    op: 'mutation',
-    doc: 'mutation($d:ContentStepsInput!){addContentSteps(data:$d){__typename}}',
-    vars: (s) => ({
-      d: { contentId: s.contentId, steps: [], themeId: s.themeId, versionId: s.versionId },
-    }),
-  },
-  {
-    key: 'content.addContentStep',
-    tier: 'W',
-    op: 'mutation',
-    doc: 'mutation($d:CreateStepInput!){addContentStep(data:$d){__typename}}',
-    vars: (s) => ({ d: { type: 'tooltip', versionId: s.versionId, contentId: s.contentId } }),
-  },
-  {
-    key: 'content.updateContentStep',
-    tier: 'W',
-    op: 'mutation',
-    doc: 'mutation($d:UpdateStepInput!,$s:String!){updateContentStep(data:$d,stepId:$s){__typename}}',
-    vars: (s) => ({ d: { contentId: s.contentId }, s: s.stepId }),
   },
   {
     key: 'content.findManyVersionLocations',
@@ -206,20 +232,16 @@ export const ENDPOINTS: Endpoint[] = [
     doc: 'query($v:String!){findManyVersionLocations(versionId:$v){__typename}}',
     vars: (s) => ({ v: s.versionId }),
   },
+  // deleteContent runs last among the content W-mutations so that the steps /
+  // version-localization endpoints above operate on a non-deleted content and
+  // exercise their real write paths (instead of bouncing on the post-delete
+  // ParamsError guard in contentVersionIsEditable).
   {
-    key: 'content.updateVersionLocationData',
+    key: 'content.deleteContent',
     tier: 'W',
     op: 'mutation',
-    doc: 'mutation($d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:$d){__typename}}',
-    vars: (s) => ({
-      d: {
-        backup: {},
-        enabled: true,
-        localizationId: s.localizationId,
-        localized: {},
-        versionId: s.versionId,
-      },
-    }),
+    doc: 'mutation($d:ContentIdInput!){deleteContent(data:$d){__typename}}',
+    vars: (s) => ({ d: { contentId: s.contentId } }),
   },
   {
     key: 'content.queryContent',

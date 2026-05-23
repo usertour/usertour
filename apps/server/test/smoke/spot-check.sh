@@ -374,6 +374,18 @@ run_endpoint 'content.updateContent' \
 run_endpoint 'content.duplicateContent' \
   "{\"query\":\"mutation(\$d:ContentDuplicateInput!){duplicateContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
 
+run_endpoint 'content.updateContentStep' \
+  "{\"query\":\"mutation(\$d:UpdateStepInput!,\$s:String!){updateContentStep(data:\$d,stepId:\$s){__typename}}\",\"variables\":{\"d\":{\"name\":\"spot-check-step\"},\"s\":\"${SMOKE_STEP_ID}\"}}"
+
+run_endpoint 'content.addContentSteps' \
+  "{\"query\":\"mutation(\$d:ContentStepsInput!){addContentSteps(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"steps\":[],\"themeId\":\"${SMOKE_THEME_ID}\",\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
+
+run_endpoint 'content.addContentStep' \
+  "{\"query\":\"mutation(\$d:CreateStepInput!){addContentStep(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"tooltip\",\"versionId\":\"${SMOKE_VERSION_ID}\",\"sequence\":0}}}"
+
+run_endpoint 'content.updateVersionLocationData' \
+  "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
+
 run_endpoint 'content.createContentVersion' \
   "{\"query\":\"mutation(\$d:ContentVersionInput!){createContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
 
@@ -391,18 +403,6 @@ run_endpoint 'content.unpublishedContentVersion' \
 
 run_endpoint 'content.deleteContent' \
   "{\"query\":\"mutation(\$d:ContentIdInput!){deleteContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
-
-run_endpoint 'content.addContentSteps' \
-  "{\"query\":\"mutation(\$d:ContentStepsInput!){addContentSteps(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"steps\":[],\"themeId\":\"${SMOKE_THEME_ID}\",\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
-
-run_endpoint 'content.addContentStep' \
-  "{\"query\":\"mutation(\$d:CreateStepInput!){addContentStep(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"tooltip\",\"versionId\":\"${SMOKE_VERSION_ID}\",\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
-
-run_endpoint 'content.updateContentStep' \
-  "{\"query\":\"mutation(\$d:UpdateStepInput!,\$s:String!){updateContentStep(data:\$d,stepId:\$s){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"},\"s\":\"${SMOKE_STEP_ID}\"}}"
-
-run_endpoint 'content.updateVersionLocationData' \
-  "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
 
 run_endpoint 'environments.createEnvironments' \
   "{\"query\":\"mutation(\$d:CreateEnvironmentInput!){createEnvironments(data:\$d){__typename}}\",\"variables\":{\"d\":{\"name\":\"e2e\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}"
@@ -550,6 +550,22 @@ mutual 'content.duplicateContent' \
   "{\"query\":\"mutation(\$d:ContentDuplicateInput!){duplicateContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:ContentDuplicateInput!){duplicateContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
 
+mutual 'content.updateContentStep' \
+  "{\"query\":\"mutation(\$d:UpdateStepInput!,\$s:String!){updateContentStep(data:\$d,stepId:\$s){__typename}}\",\"variables\":{\"d\":{\"name\":\"spot-check-step\"},\"s\":\"${SMOKE_B_STEP_ID}\"}}" \
+  "{\"query\":\"mutation(\$d:UpdateStepInput!,\$s:String!){updateContentStep(data:\$d,stepId:\$s){__typename}}\",\"variables\":{\"d\":{\"name\":\"spot-check-step\"},\"s\":\"${SMOKE_STEP_ID}\"}}"
+
+mutual 'content.addContentSteps' \
+  "{\"query\":\"mutation(\$d:ContentStepsInput!){addContentSteps(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\",\"steps\":[],\"themeId\":\"${SMOKE_B_THEME_ID}\",\"versionId\":\"${SMOKE_B_VERSION_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:ContentStepsInput!){addContentSteps(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"steps\":[],\"themeId\":\"${SMOKE_THEME_ID}\",\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
+
+mutual 'content.addContentStep' \
+  "{\"query\":\"mutation(\$d:CreateStepInput!){addContentStep(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"tooltip\",\"versionId\":\"${SMOKE_B_VERSION_ID}\",\"sequence\":0}}}" \
+  "{\"query\":\"mutation(\$d:CreateStepInput!){addContentStep(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"tooltip\",\"versionId\":\"${SMOKE_VERSION_ID}\",\"sequence\":0}}}"
+
+mutual 'content.updateVersionLocationData' \
+  "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_B_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_B_VERSION_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
+
 mutual 'content.createContentVersion' \
   "{\"query\":\"mutation(\$d:ContentVersionInput!){createContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_B_VERSION_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:ContentVersionInput!){createContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
@@ -573,22 +589,6 @@ mutual 'content.unpublishedContentVersion' \
 mutual 'content.deleteContent' \
   "{\"query\":\"mutation(\$d:ContentIdInput!){deleteContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:ContentIdInput!){deleteContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
-
-mutual 'content.addContentSteps' \
-  "{\"query\":\"mutation(\$d:ContentStepsInput!){addContentSteps(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\",\"steps\":[],\"themeId\":\"${SMOKE_B_THEME_ID}\",\"versionId\":\"${SMOKE_B_VERSION_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:ContentStepsInput!){addContentSteps(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"steps\":[],\"themeId\":\"${SMOKE_THEME_ID}\",\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
-
-mutual 'content.addContentStep' \
-  "{\"query\":\"mutation(\$d:CreateStepInput!){addContentStep(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"tooltip\",\"versionId\":\"${SMOKE_B_VERSION_ID}\",\"contentId\":\"${SMOKE_B_CONTENT_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:CreateStepInput!){addContentStep(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"tooltip\",\"versionId\":\"${SMOKE_VERSION_ID}\",\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
-
-mutual 'content.updateContentStep' \
-  "{\"query\":\"mutation(\$d:UpdateStepInput!,\$s:String!){updateContentStep(data:\$d,stepId:\$s){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\"},\"s\":\"${SMOKE_B_STEP_ID}\"}}" \
-  "{\"query\":\"mutation(\$d:UpdateStepInput!,\$s:String!){updateContentStep(data:\$d,stepId:\$s){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"},\"s\":\"${SMOKE_STEP_ID}\"}}"
-
-mutual 'content.updateVersionLocationData' \
-  "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_B_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_B_VERSION_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
 
 mutual 'environments.createEnvironments' \
   "{\"query\":\"mutation(\$d:CreateEnvironmentInput!){createEnvironments(data:\$d){__typename}}\",\"variables\":{\"d\":{\"name\":\"e2e\",\"projectId\":\"${SMOKE_B_PROJECT_ID}\"}}}" \
