@@ -171,6 +171,23 @@ function readState(): string[] {
       for (const [id, name] of targets) await deleteProject(id, name);
     }
 
+    // Sweep stranded smoke-fixture users — `deleteProject` only catches
+    // users with a live UserOnProject row at teardown time, so any user
+    // whose membership got consumed during the spot-check (most commonly
+    // by team.removeTeamMember on the removable VIEWERs) is left orphaned.
+    // Match on the `smoke-fixture-` email prefix that prep stamps, and
+    // require zero remaining memberships so we never delete users from
+    // real projects who happen to share the prefix.
+    const stranded = await prisma.user.deleteMany({
+      where: {
+        email: { startsWith: 'smoke-fixture-' },
+        projects: { none: {} },
+      },
+    });
+    if (stranded.count > 0) {
+      log(`swept ${stranded.count} stranded smoke-fixture user(s)`);
+    }
+
     // Clear state file unless caller specified a custom name-prefix scan
     if (!arg && existsSync(STATE_FILE)) unlinkSync(STATE_FILE);
 
