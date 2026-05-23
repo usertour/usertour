@@ -1,4 +1,4 @@
-import { PrismaService } from 'nestjs-prisma';
+import { PrismaClient } from '@prisma/client';
 
 /**
  * Minimal fixture factories for e2e specs — each creates one row with sane
@@ -9,14 +9,14 @@ import { PrismaService } from 'nestjs-prisma';
 let counter = 0;
 const unique = () => `e2e-${Date.now()}-${counter++}`;
 
-export const createProject = (prisma: PrismaService, data: Record<string, any> = {}) =>
+export const createProject = (prisma: PrismaClient, data: Record<string, any> = {}) =>
   prisma.project.create({ data: { name: `proj-${unique()}`, ...data } });
 
-export const createUser = (prisma: PrismaService, data: Record<string, any> = {}) =>
+export const createUser = (prisma: PrismaClient, data: Record<string, any> = {}) =>
   prisma.user.create({ data: { email: `${unique()}@test.local`, ...data } });
 
 export const createMembership = (
-  prisma: PrismaService,
+  prisma: PrismaClient,
   userId: string,
   projectId: string,
   role: string,
@@ -26,53 +26,73 @@ export const createMembership = (
   });
 
 export const createEnvironment = (
-  prisma: PrismaService,
+  prisma: PrismaClient,
   projectId: string,
   data: Record<string, any> = {},
 ) => prisma.environment.create({ data: { projectId, name: `env-${unique()}`, ...data } });
 
 export const createContent = (
-  prisma: PrismaService,
+  prisma: PrismaClient,
   projectId: string,
   environmentId: string,
   data: Record<string, any> = {},
 ) => prisma.content.create({ data: { projectId, environmentId, ...data } });
 
 export const createVersion = (
-  prisma: PrismaService,
+  prisma: PrismaClient,
   contentId: string,
   data: Record<string, any> = {},
 ) => prisma.version.create({ data: { contentId, ...data } });
 
-export const createBizUser = (prisma: PrismaService, environmentId: string) =>
+export const createBizUser = (prisma: PrismaClient, environmentId: string) =>
   prisma.bizUser.create({ data: { environmentId } });
 
 export const createSession = (
-  prisma: PrismaService,
+  prisma: PrismaClient,
   args: { bizUserId: string; contentId: string; versionId: string },
 ) => prisma.bizSession.create({ data: args });
 
-export const createAttribute = (prisma: PrismaService, projectId: string) =>
+export const createAttribute = (prisma: PrismaClient, projectId: string) =>
   prisma.attribute.create({ data: { projectId } });
 
-export const createTheme = (prisma: PrismaService, projectId: string) =>
+export const createTheme = (prisma: PrismaClient, projectId: string) =>
   prisma.theme.create({ data: { projectId } });
 
-export const createEvent = (prisma: PrismaService, projectId: string) =>
+export const createEvent = (prisma: PrismaClient, projectId: string) =>
   prisma.event.create({ data: { projectId } });
 
-export const createLocalization = (prisma: PrismaService, projectId: string) =>
+export const createLocalization = (prisma: PrismaClient, projectId: string) =>
   prisma.localization.create({
     data: { projectId, locale: 'en', name: 'English', code: 'en' },
   });
 
-export const createSegment = (prisma: PrismaService, projectId: string, environmentId: string) =>
+export const createSegment = (prisma: PrismaClient, projectId: string, environmentId: string) =>
   prisma.segment.create({ data: { projectId, environmentId } });
 
-export const createIntegration = (prisma: PrismaService, environmentId: string) =>
+export const createIntegration = (prisma: PrismaClient, environmentId: string) =>
   prisma.integration.create({ data: { provider: 'salesforce', environmentId } });
 
-export const createIntegrationObjectMapping = (prisma: PrismaService, integrationId: string) =>
+export const createIntegrationObjectMapping = (prisma: PrismaClient, integrationId: string) =>
   prisma.integrationObjectMapping.create({
     data: { integrationId, sourceObjectType: 'account', destinationObjectType: 'company' },
+  });
+
+export const createAccessToken = (prisma: PrismaClient, environmentId: string) =>
+  prisma.accessToken.create({ data: { environmentId, name: `tok-${unique()}` } });
+
+export const createStep = (prisma: PrismaClient, versionId: string) =>
+  prisma.step.create({ data: { versionId, type: 'tooltip' } });
+
+export const createBizCompany = (prisma: PrismaClient, environmentId: string) =>
+  prisma.bizCompany.create({ data: { environmentId, externalId: `co-${unique()}` } });
+
+export const createInvite = (prisma: PrismaClient, projectId: string, invitedByUserId: string) =>
+  prisma.invite.create({
+    data: {
+      projectId,
+      userId: invitedByUserId,
+      email: `invite-${unique()}@local`,
+      name: `pending-${unique()}`,
+      role: 'VIEWER' as any,
+    },
   });

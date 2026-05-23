@@ -13,18 +13,22 @@ import {
   type Seed,
 } from './endpoints';
 import {
+  createAccessToken,
   createAttribute,
+  createBizCompany,
   createBizUser,
   createContent,
   createEnvironment,
   createEvent,
   createIntegration,
   createIntegrationObjectMapping,
+  createInvite,
   createLocalization,
   createMembership,
   createProject,
   createSegment,
   createSession,
+  createStep,
   createTheme,
   createUser,
   createVersion,
@@ -97,6 +101,14 @@ describe('Permission authorization (HTTP e2e)', () => {
     const segment = await createSegment(prisma, project.id, environment.id);
     const integration = await createIntegration(prisma, environment.id);
     const mapping = await createIntegrationObjectMapping(prisma, integration.id);
+    const accessToken = await createAccessToken(prisma, environment.id);
+    const step = await createStep(prisma, version.id);
+    const bizCompany = await createBizCompany(prisma, environment.id);
+    // A removable, action-on-able member of project A — used by
+    // team.removeTeamMember / changeTeamMemberRole / activeUserProject.
+    const removable = await createUser(prisma);
+    await createMembership(prisma, removable.id, project.id, 'VIEWER');
+    const invite = await createInvite(prisma, project.id, seed.user_OWNER);
     Object.assign(seed, {
       environmentId: environment.id,
       contentId: content.id,
@@ -109,19 +121,41 @@ describe('Permission authorization (HTTP e2e)', () => {
       segmentId: segment.id,
       integrationId: integration.id,
       mappingId: mapping.id,
+      accessTokenId: accessToken.id,
+      stepId: step.id,
+      bizUserId: bizUser.id,
+      bizCompanyId: bizCompany.id,
+      removableUserId: removable.id,
+      inviteId: invite.id,
     });
   }, 60000);
 
   afterAll(async () => {
     if (prisma && seed.projectId) {
+      await prisma.attributeOnEvent.deleteMany({
+        where: { event: { projectId: seed.projectId } },
+      });
+      await prisma.bizEvent.deleteMany({
+        where: { bizUser: { environmentId: seed.environmentId } },
+      });
+      await prisma.invite.deleteMany({ where: { projectId: seed.projectId } });
+      await prisma.accessToken.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.integrationObjectMapping.deleteMany({
         where: { integrationId: seed.integrationId },
       });
       await prisma.integration.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.bizSession.deleteMany({ where: { contentId: seed.contentId } });
+      await prisma.bizUserOnSegment.deleteMany({ where: { segmentId: seed.segmentId } });
+      await prisma.bizCompanyOnSegment.deleteMany({ where: { segmentId: seed.segmentId } });
+      await prisma.bizUserOnCompany.deleteMany({
+        where: { bizUser: { environmentId: seed.environmentId } },
+      });
+      await prisma.bizCompany.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.bizUser.deleteMany({ where: { environmentId: seed.environmentId } });
+      await prisma.step.deleteMany({ where: { versionId: seed.versionId } });
       // findManyVersionLocations (allow direction) materializes these rows.
       await prisma.versionOnLocalization.deleteMany({ where: { versionId: seed.versionId } });
+      await prisma.contentOnEnvironment.deleteMany({ where: { contentId: seed.contentId } });
       await prisma.version.deleteMany({ where: { contentId: seed.contentId } });
       await prisma.content.deleteMany({ where: { projectId: seed.projectId } });
       await prisma.segment.deleteMany({ where: { projectId: seed.projectId } });
@@ -135,7 +169,13 @@ describe('Permission authorization (HTTP e2e)', () => {
         await prisma.userOnProject.deleteMany({ where: { projectId: seed.projectBId } });
       }
       await prisma.user.deleteMany({
-        where: { id: { in: ROLES.map((role) => seed[`user_${role}`]) } },
+        where: {
+          id: {
+            in: [...ROLES.map((role) => seed[`user_${role}`]), seed.removableUserId].filter(
+              (id): id is string => Boolean(id),
+            ),
+          },
+        },
       });
       await prisma.project.deleteMany({ where: { id: seed.projectId } });
       if (seed.projectBId) {

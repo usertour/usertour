@@ -193,7 +193,7 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:UpdateStepInput!,$s:String!){updateContentStep(data:$d,stepId:$s){__typename}}',
-    vars: (s) => ({ d: { contentId: s.contentId }, s: 'e2e-step' }),
+    vars: (s) => ({ d: { contentId: s.contentId }, s: s.stepId }),
   },
   {
     key: 'content.findManyVersionLocations',
@@ -266,7 +266,7 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'O',
     op: 'query',
     doc: 'query($a:String!,$e:String!){getAccessToken(accessTokenId:$a,environmentId:$e)}',
-    vars: (s) => ({ a: 'e2e', e: s.environmentId }),
+    vars: (s) => ({ a: s.accessTokenId, e: s.environmentId }),
   },
   {
     key: 'environments.createAccessToken',
@@ -280,7 +280,7 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'O',
     op: 'mutation',
     doc: 'mutation($a:String!,$e:String!){deleteAccessToken(accessTokenId:$a,environmentId:$e)}',
-    vars: (s) => ({ a: 'e2e', e: s.environmentId }),
+    vars: (s) => ({ a: s.accessTokenId, e: s.environmentId }),
   },
 
   // --- biz (scope: environment / segment) ---
@@ -357,42 +357,44 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:CreateBizUserOnSegment!){createBizUserOnSegment(data:$d){__typename}}',
-    vars: (s) => ({ d: { userOnSegment: [{ bizUserId: 'e2e', segmentId: s.segmentId }] } }),
+    vars: (s) => ({ d: { userOnSegment: [{ bizUserId: s.bizUserId, segmentId: s.segmentId }] } }),
   },
   {
     key: 'biz.deleteBizUserOnSegment',
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:DeleteBizUserOnSegment!){deleteBizUserOnSegment(data:$d){__typename}}',
-    vars: (s) => ({ d: { bizUserIds: ['e2e'], segmentId: s.segmentId } }),
+    vars: (s) => ({ d: { bizUserIds: [s.bizUserId], segmentId: s.segmentId } }),
   },
   {
     key: 'biz.deleteBizUser',
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:BizUserOrCompanyIdsInput!){deleteBizUser(data:$d){__typename}}',
-    vars: (s) => ({ d: { environmentId: s.environmentId, ids: ['e2e'] } }),
+    vars: (s) => ({ d: { environmentId: s.environmentId, ids: [s.bizUserId] } }),
   },
   {
     key: 'biz.deleteBizCompany',
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:BizUserOrCompanyIdsInput!){deleteBizCompany(data:$d){__typename}}',
-    vars: (s) => ({ d: { environmentId: s.environmentId, ids: ['e2e'] } }),
+    vars: (s) => ({ d: { environmentId: s.environmentId, ids: [s.bizCompanyId] } }),
   },
   {
     key: 'biz.createBizCompanyOnSegment',
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:CreateBizCompanyOnSegment!){createBizCompanyOnSegment(data:$d){__typename}}',
-    vars: (s) => ({ d: { companyOnSegment: [{ bizCompanyId: 'e2e', segmentId: s.segmentId }] } }),
+    vars: (s) => ({
+      d: { companyOnSegment: [{ bizCompanyId: s.bizCompanyId, segmentId: s.segmentId }] },
+    }),
   },
   {
     key: 'biz.deleteBizCompanyOnSegment',
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:DeleteBizCompanyOnSegment!){deleteBizCompanyOnSegment(data:$d){__typename}}',
-    vars: (s) => ({ d: { bizCompanyIds: ['e2e'], segmentId: s.segmentId } }),
+    vars: (s) => ({ d: { bizCompanyIds: [s.bizCompanyId], segmentId: s.segmentId } }),
   },
 
   // --- integration (all OWNER; scope: environment / integration) ---
@@ -798,21 +800,21 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'O',
     op: 'mutation',
     doc: 'mutation($d:RemoveTeamMemberInput!){removeTeamMember(data:$d)}',
-    vars: (s) => ({ d: { projectId: s.projectId, userId: 'e2e' } }),
+    vars: (s) => ({ d: { projectId: s.projectId, userId: s.removableUserId } }),
   },
   {
     key: 'team.changeTeamMemberRole',
     tier: 'O',
     op: 'mutation',
     doc: 'mutation($d:ChangeTeamMemberRoleInput!){changeTeamMemberRole(data:$d)}',
-    vars: (s) => ({ d: { projectId: s.projectId, role: 'ADMIN', userId: 'e2e' } }),
+    vars: (s) => ({ d: { projectId: s.projectId, role: 'ADMIN', userId: s.removableUserId } }),
   },
   {
     key: 'team.cancelInvite',
     tier: 'O',
     op: 'mutation',
     doc: 'mutation($d:CancelInviteInput!){cancelInvite(data:$d)}',
-    vars: (s) => ({ d: { inviteId: 'e2e', projectId: s.projectId } }),
+    vars: (s) => ({ d: { inviteId: s.inviteId, projectId: s.projectId } }),
   },
   {
     key: 'team.activeUserProject',

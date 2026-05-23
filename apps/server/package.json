@@ -34,6 +34,10 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --forceExit",
     "smoke:permissions": "ts-node test/smoke/permissions.ts",
+    "smoke:spot-check": "bash test/smoke/spot-check.sh",
+    "smoke:spot-check-prep": "ts-node test/smoke/prep-fixture.ts",
+    "smoke:spot-check-teardown": "ts-node test/smoke/teardown-fixture.ts",
+    "smoke:spot-check-gen": "ts-node test/smoke/gen-spot-check.ts",
     "start:db": "pnpm run migrate:deploy && pnpm run prisma:generate && pnpm run seed",
     "seed": "prisma db seed",
     "prepare": "pnpm run prisma:generate"
