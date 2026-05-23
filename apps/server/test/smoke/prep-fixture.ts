@@ -30,26 +30,26 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 
 import {
-  createAccessToken,
-  createAttribute,
-  createBizCompany,
-  createBizUser,
-  createContent,
-  createEnvironment,
-  createEvent,
-  createIntegration,
-  createIntegrationObjectMapping,
-  createInvite,
-  createLocalization,
-  createMembership,
-  createProject,
-  createSegment,
-  createSession,
-  createStep,
-  createSubscription,
-  createTheme,
-  createUser,
-  createVersion,
+  buildAccessToken,
+  buildAttribute,
+  buildBizCompany,
+  buildBizUser,
+  buildContent,
+  buildEnvironment,
+  buildEvent,
+  buildIntegration,
+  buildIntegrationObjectMapping,
+  buildInvite,
+  buildLocalization,
+  buildMembership,
+  buildProject,
+  buildSegment,
+  buildSession,
+  buildStep,
+  buildSubscription,
+  buildTheme,
+  buildUser,
+  buildVersion,
 } from '../e2e/factories';
 
 // ── tiny dotenv-with-${VAR}-expansion loader (no extra dep) ──────
@@ -102,114 +102,104 @@ const fixtureEmail = (role: string) => `smoke-fixture-${tag}-${role}@local`;
 const log = (msg: string) => console.error(`[smoke-prep] ${msg}`);
 
 async function seedProject(suffix: string, members: { role: string; email: string }[]) {
-  const project = await createProject(prisma, { name: fixtureName(suffix) });
+  const project = await buildProject(prisma, { name: fixtureName(suffix) });
   // BUSINESS plan = unlimited env + team-member limit; lets the spot-check
   // exercise createEnvironments / inviteTeamMember happy paths instead of
   // bouncing on HOBBY's HOBBY limit (env=1, members=1) — those product
   // rules are the service layer's responsibility to spec, not smoke's.
-  await createSubscription(prisma, project.id);
-  const environment = await createEnvironment(prisma, project.id, { name: `env-${suffix}` });
+  await buildSubscription(prisma, { projectId: project.id });
+  const projectId = project.id;
+
+  const environment = await buildEnvironment(prisma, { projectId, name: `env-${suffix}` });
+  const environmentId = environment.id;
   // Two extra envs so deleteEnvironments has per-role victims and never has
   // to fall back on the "last env" protection (E0022). One survives so the
   // last-env rule is still enforced for real production calls.
-  const environmentForOwnerDelete = await createEnvironment(prisma, project.id, {
+  const environmentForOwnerDelete = await buildEnvironment(prisma, {
+    projectId,
     name: `env-${suffix}-owner-victim`,
   });
-  const environmentForAdminDelete = await createEnvironment(prisma, project.id, {
+  const environmentForAdminDelete = await buildEnvironment(prisma, {
+    projectId,
     name: `env-${suffix}-admin-victim`,
   });
-  const content = await createContent(prisma, project.id, environment.id);
-  const version = await createVersion(prisma, content.id);
+  const content = await buildContent(prisma, { projectId, environmentId });
+  const version = await buildVersion(prisma, { contentId: content.id });
   // `bizUser` is the protected one — used by createBizUserOnSegment /
   // deleteBizUserOnSegment and as the FK target for the protected session
   // (read-only). The two `bizUserForXDelete` rows are dedicated victims so
   // OWNER and ADMIN don't both target the same row in biz.deleteBizUser.
-  const bizUser = await createBizUser(prisma, environment.id);
-  const bizUserForOwnerDelete = await createBizUser(prisma, environment.id);
-  const bizUserForAdminDelete = await createBizUser(prisma, environment.id);
-  const bizCompany = await createBizCompany(prisma, environment.id);
-  const bizCompanyForOwnerDelete = await createBizCompany(prisma, environment.id);
-  const bizCompanyForAdminDelete = await createBizCompany(prisma, environment.id);
+  const bizUser = await buildBizUser(prisma, { environmentId });
+  const bizUserForOwnerDelete = await buildBizUser(prisma, { environmentId });
+  const bizUserForAdminDelete = await buildBizUser(prisma, { environmentId });
+  const bizCompany = await buildBizCompany(prisma, { environmentId });
+  const bizCompanyForOwnerDelete = await buildBizCompany(prisma, { environmentId });
+  const bizCompanyForAdminDelete = await buildBizCompany(prisma, { environmentId });
   // Session used by analytics.querySessionDetail (read). The four sessions
   // below cover the deleteSession / endSession × OWNER / ADMIN matrix so
   // every (op, role) call has its own row to consume.
-  const session = await createSession(prisma, {
-    bizUserId: bizUser.id,
-    contentId: content.id,
-    versionId: version.id,
-  });
-  const sessionForOwnerDelete = await createSession(prisma, {
-    bizUserId: bizUser.id,
-    contentId: content.id,
-    versionId: version.id,
-  });
-  const sessionForAdminDelete = await createSession(prisma, {
-    bizUserId: bizUser.id,
-    contentId: content.id,
-    versionId: version.id,
-  });
-  const sessionForOwnerEnd = await createSession(prisma, {
-    bizUserId: bizUser.id,
-    contentId: content.id,
-    versionId: version.id,
-  });
-  const sessionForAdminEnd = await createSession(prisma, {
-    bizUserId: bizUser.id,
-    contentId: content.id,
-    versionId: version.id,
-  });
+  const sessionArgs = { bizUserId: bizUser.id, contentId: content.id, versionId: version.id };
+  const session = await buildSession(prisma, sessionArgs);
+  const sessionForOwnerDelete = await buildSession(prisma, sessionArgs);
+  const sessionForAdminDelete = await buildSession(prisma, sessionArgs);
+  const sessionForOwnerEnd = await buildSession(prisma, sessionArgs);
+  const sessionForAdminEnd = await buildSession(prisma, sessionArgs);
   // `theme` is what setDefaultTheme gets pointed at during the W block. The
   // two victims below are kept non-default so deleteTheme has a target it
   // can actually delete for each role.
-  const theme = await createTheme(prisma, project.id);
-  const themeForOwnerDelete = await createTheme(prisma, project.id);
-  const themeForAdminDelete = await createTheme(prisma, project.id);
+  const theme = await buildTheme(prisma, { projectId });
+  const themeForOwnerDelete = await buildTheme(prisma, { projectId });
+  const themeForAdminDelete = await buildTheme(prisma, { projectId });
   // `attribute` stays for updateAttribute / listAttributes (non-destructive).
   // The two victims below let OWNER and ADMIN both exercise deleteAttribute.
-  const attribute = await createAttribute(prisma, project.id);
-  const attributeForOwnerDelete = await createAttribute(prisma, project.id);
-  const attributeForAdminDelete = await createAttribute(prisma, project.id);
-  const event = await createEvent(prisma, project.id);
-  const eventForOwnerDelete = await createEvent(prisma, project.id);
-  const eventForAdminDelete = await createEvent(prisma, project.id);
+  const attribute = await buildAttribute(prisma, { projectId });
+  const attributeForOwnerDelete = await buildAttribute(prisma, { projectId });
+  const attributeForAdminDelete = await buildAttribute(prisma, { projectId });
+  const event = await buildEvent(prisma, { projectId });
+  const eventForOwnerDelete = await buildEvent(prisma, { projectId });
+  const eventForAdminDelete = await buildEvent(prisma, { projectId });
   // `localization` is what setDefaultLocalization gets pointed at during the
   // W block (which marks it as default). The two victims below are kept
   // non-default so deleteLocalization can succeed for OWNER and ADMIN
   // without hitting the "can't delete default" rule.
-  const localization = await createLocalization(prisma, project.id);
-  const localizationForOwnerDelete = await createLocalization(prisma, project.id);
-  const localizationForAdminDelete = await createLocalization(prisma, project.id);
+  const localization = await buildLocalization(prisma, { projectId });
+  const localizationForOwnerDelete = await buildLocalization(prisma, { projectId });
+  const localizationForAdminDelete = await buildLocalization(prisma, { projectId });
   // `segment` stays alive throughout the W block as the target for the four
   // OnSegment ops + updateSegment; the two victim segments below are what
   // OWNER and ADMIN each consume via biz.deleteSegment.
-  const segment = await createSegment(prisma, project.id, environment.id);
-  const segmentForOwnerDelete = await createSegment(prisma, project.id, environment.id);
-  const segmentForAdminDelete = await createSegment(prisma, project.id, environment.id);
-  const integration = await createIntegration(prisma, environment.id);
-  const mapping = await createIntegrationObjectMapping(prisma, integration.id);
-  const accessToken = await createAccessToken(prisma, environment.id);
-  const step = await createStep(prisma, version.id);
+  const segment = await buildSegment(prisma, { projectId, environmentId });
+  const segmentForOwnerDelete = await buildSegment(prisma, { projectId, environmentId });
+  const segmentForAdminDelete = await buildSegment(prisma, { projectId, environmentId });
+  const integration = await buildIntegration(prisma, { environmentId });
+  const mapping = await buildIntegrationObjectMapping(prisma, { integrationId: integration.id });
+  const accessToken = await buildAccessToken(prisma, { environmentId });
+  const step = await buildStep(prisma, { versionId: version.id });
 
   const users: Record<string, string> = {};
   for (const { role, email } of members) {
-    const user = await createUser(prisma, { email });
+    const user = await buildUser(prisma, { email });
     users[role] = user.id;
-    await createMembership(prisma, user.id, project.id, role);
+    await buildMembership(prisma, { userId: user.id, projectId, role: role as never });
   }
 
   // Two removable VIEWERs: the first one is what team.removeTeamMember
   // targets (and consumes), the second is what changeTeamMemberRole acts
   // on afterwards. Without the split, changeTeamMemberRole would always
   // see "user already removed" (ParamsError).
-  const removable = await createUser(prisma, { email: fixtureEmail(`${suffix}-removable`) });
-  await createMembership(prisma, removable.id, project.id, 'VIEWER');
-  const removableForChangeRole = await createUser(prisma, {
+  const removable = await buildUser(prisma, { email: fixtureEmail(`${suffix}-removable`) });
+  await buildMembership(prisma, { userId: removable.id, projectId, role: 'VIEWER' as never });
+  const removableForChangeRole = await buildUser(prisma, {
     email: fixtureEmail(`${suffix}-removable-changerole`),
   });
-  await createMembership(prisma, removableForChangeRole.id, project.id, 'VIEWER');
+  await buildMembership(prisma, {
+    userId: removableForChangeRole.id,
+    projectId,
+    role: 'VIEWER' as never,
+  });
 
   // A pending invite OWNER can cancel via team.cancelInvite.
-  const invite = users.OWNER ? await createInvite(prisma, project.id, users.OWNER) : null;
+  const invite = users.OWNER ? await buildInvite(prisma, { projectId, userId: users.OWNER }) : null;
 
   return {
     projectId: project.id,

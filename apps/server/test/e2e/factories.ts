@@ -1,150 +1,434 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 
 /**
- * Minimal fixture factories for e2e specs — each creates one row with sane
- * defaults plus optional overrides, returning the created record. Compose
- * them per spec; pass a unique tag to keep parallel specs from colliding and
- * to make cleanup easy (e.g. delete by projectId).
+ * Test fixture builders, written in the outline-style "recursive override"
+ * shape: every helper takes `(prisma, overrides?)`, fills missing parent FKs
+ * by recursively building them, and inherits sane defaults from a per-call
+ * `unique()` counter that keeps per-project unique columns (codeName /
+ * locale / name / externalId / …) from colliding when one project seeds
+ * multiple rows of the same kind.
+ *
+ * Usage shapes:
+ *
+ *   // bare — auto-builds project + environment + content + version + step
+ *   const step = await buildStep(prisma);
+ *
+ *   // share a single project across many resources (the prep-fixture case)
+ *   const project = await buildProject(prisma);
+ *   const environment = await buildEnvironment(prisma, { projectId: project.id });
+ *   const content = await buildContent(prisma, {
+ *     projectId: project.id,
+ *     environmentId: environment.id,
+ *   });
+ *
+ *   // role aliases — same buildUser body, different role default
+ *   const admin = await buildAdmin(prisma, { projectId: project.id });
+ *
+ * Pattern rules:
+ *   1. `overrides: Partial<Prisma.XUncheckedCreateInput> = {}` — caller fills only what
+ *      they care about, raw FK ids accepted directly (no `connect: { id }`
+ *      wrapping needed).
+ *   2. Each parent FK gets a `if (!overrides.xId) { … }` block that recursively
+ *      builds the parent. Always pass already-derived ids down the chain so a
+ *      single buildContent doesn't fork into two unrelated projects.
+ *   3. Defaults use the `unique()` counter (NOT faker) so failed tests are
+ *      deterministically reproducible. Trade-off: less random coverage; we
+ *      consciously favor debuggability.
  */
+
 let counter = 0;
 const unique = () => `e2e-${Date.now()}-${counter++}`;
 
-export const createProject = (prisma: PrismaClient, data: Record<string, any> = {}) =>
-  prisma.project.create({ data: { name: `proj-${unique()}`, ...data } });
+// ── root nodes (no parent FKs) ─────────────────────────────────────
 
-export const createUser = (prisma: PrismaClient, data: Record<string, any> = {}) =>
-  prisma.user.create({ data: { email: `${unique()}@test.local`, ...data } });
-
-export const createMembership = (
+export async function buildProject(
   prisma: PrismaClient,
-  userId: string,
-  projectId: string,
-  role: string,
-) =>
-  prisma.userOnProject.create({
-    data: { userId, projectId, role: role as any, actived: true },
+  overrides: Partial<Prisma.ProjectUncheckedCreateInput> = {},
+) {
+  return prisma.project.create({
+    data: { name: `proj-${unique()}`, ...overrides },
   });
+}
 
-export const createEnvironment = (
+export async function buildUser(
   prisma: PrismaClient,
-  projectId: string,
-  data: Record<string, any> = {},
-) => prisma.environment.create({ data: { projectId, name: `env-${unique()}`, ...data } });
-
-export const createContent = (
-  prisma: PrismaClient,
-  projectId: string,
-  environmentId: string,
-  data: Record<string, any> = {},
-) => prisma.content.create({ data: { projectId, environmentId, ...data } });
-
-export const createVersion = async (
-  prisma: PrismaClient,
-  contentId: string,
-  data: Record<string, any> = {},
-) => {
-  const version = await prisma.version.create({ data: { contentId, ...data } });
-  // Mirror the admin createContent flow: the freshly created version becomes
-  // the content's "currently being edited" version, so subsequent
-  // addContentSteps / updateContentStep / upsertVersionLocationData calls
-  // pass `contentVersionIsEditable` and exercise the real write path. Without
-  // this link, those mutations short-circuit on a ParamsError.
-  await prisma.content.update({
-    where: { id: contentId },
-    data: { editedVersionId: version.id },
+  overrides: Partial<Prisma.UserUncheckedCreateInput> = {},
+) {
+  return prisma.user.create({
+    data: { email: `${unique()}@test.local`, ...overrides },
   });
-  return version;
-};
+}
 
-export const createBizUser = (prisma: PrismaClient, environmentId: string) =>
-  // BizUser is unique on (environmentId, externalId); without a per-call id,
-  // seeding two BizUsers in the same env hits a P2002 dup. Mirror
-  // createBizCompany's shape.
-  prisma.bizUser.create({ data: { environmentId, externalId: `bu-${unique()}` } });
-
-export const createSession = (
-  prisma: PrismaClient,
-  args: { bizUserId: string; contentId: string; versionId: string },
-) => prisma.bizSession.create({ data: args });
-
-// Attribute / Event / Theme / Localization / Segment all carry per-project
-// unique constraints (codeName / name / locale). The factories give every
-// call a unique value so seeding multiple rows in one project doesn't hit
-// P2002.
-export const createAttribute = (prisma: PrismaClient, projectId: string) =>
-  prisma.attribute.create({ data: { projectId, codeName: `attr_${unique()}` } });
-
-export const createTheme = (prisma: PrismaClient, projectId: string) =>
-  prisma.theme.create({ data: { projectId, name: `theme-${unique()}` } });
-
-export const createEvent = (prisma: PrismaClient, projectId: string) =>
-  prisma.event.create({ data: { projectId, codeName: `evt_${unique()}` } });
-
-export const createLocalization = (prisma: PrismaClient, projectId: string) => {
-  const slug = unique().replace(/-/g, '_');
-  return prisma.localization.create({
-    data: { projectId, locale: slug, name: slug, code: slug },
-  });
-};
-
-export const createSegment = (prisma: PrismaClient, projectId: string, environmentId: string) =>
-  prisma.segment.create({ data: { projectId, environmentId, name: `seg-${unique()}` } });
-
-export const createIntegration = (prisma: PrismaClient, environmentId: string) =>
-  prisma.integration.create({ data: { provider: 'salesforce', environmentId } });
-
-export const createIntegrationObjectMapping = (prisma: PrismaClient, integrationId: string) =>
-  prisma.integrationObjectMapping.create({
-    data: { integrationId, sourceObjectType: 'account', destinationObjectType: 'company' },
-  });
-
-export const createAccessToken = (prisma: PrismaClient, environmentId: string) =>
-  prisma.accessToken.create({ data: { environmentId, name: `tok-${unique()}` } });
-
-export const createStep = (prisma: PrismaClient, versionId: string) =>
-  prisma.step.create({ data: { versionId, type: 'tooltip' } });
-
-export const createBizCompany = (prisma: PrismaClient, environmentId: string) =>
-  prisma.bizCompany.create({ data: { environmentId, externalId: `co-${unique()}` } });
-
-export const createInvite = (prisma: PrismaClient, projectId: string, invitedByUserId: string) =>
-  prisma.invite.create({
-    data: {
-      projectId,
-      userId: invitedByUserId,
-      email: `invite-${unique()}@local`,
-      name: `pending-${unique()}`,
-      role: 'VIEWER' as any,
-    },
-  });
+// ── one-level FKs ──────────────────────────────────────────────────
 
 /**
  * Seeds a BUSINESS-plan Subscription and links the project to it. BUSINESS
  * has `environmentLimit: 'unlimited'` and `teamMemberLimit: 'unlimited'`, so
- * every plan-gated mutation (createEnvironments / inviteTeamMember /…) gets a
- * clear runway in the permission spot-check. The project's `subscriptionId`
- * column is what `resolveProjectFeatures` keys on to find the subscription.
+ * every plan-gated mutation gets a clear runway in the permission spot-check.
+ * `planType` is **lowercase** to match the `PlanType` enum values in
+ * `@usertour/types` — anything else falls through to HOBBY's 1-env / 1-member
+ * limit. The project's `subscriptionId` column is what
+ * `resolveProjectFeatures` keys on, so we update it inline.
  */
-export const createSubscription = async (
+export async function buildSubscription(
   prisma: PrismaClient,
-  projectId: string,
-  // Lowercase to match the PlanType enum values in @usertour/types
-  // (the server stores them lowercase: 'hobby' / 'starter' / 'business' …).
-  // Anything else falls through `PLAN_FEATURES[planType] ?? HOBBY` and
-  // silently lands on HOBBY's 1-env / 1-member limit.
-  planType = 'business',
-) => {
-  const subscriptionId = `sub_e2e_${unique()}`;
+  overrides: Partial<Prisma.SubscriptionUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
   const subscription = await prisma.subscription.create({
     data: {
-      subscriptionId,
+      subscriptionId: `sub_e2e_${unique()}`,
       lookupKey: `lookup_e2e_${unique()}`,
-      planType,
+      planType: 'business',
       interval: 'monthly',
-      projectId,
       status: 'active',
+      ...overrides,
+      projectId: overrides.projectId,
     },
   });
-  await prisma.project.update({ where: { id: projectId }, data: { subscriptionId } });
+  await prisma.project.update({
+    where: { id: overrides.projectId },
+    data: { subscriptionId: subscription.subscriptionId },
+  });
   return subscription;
-};
+}
+
+export async function buildMembership(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.UserOnProjectUncheckedCreateInput> = {},
+) {
+  if (!overrides.userId) {
+    const user = await buildUser(prisma);
+    overrides.userId = user.id;
+  }
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  return prisma.userOnProject.create({
+    data: {
+      role: 'VIEWER',
+      actived: true,
+      ...overrides,
+      userId: overrides.userId,
+      projectId: overrides.projectId,
+    },
+  });
+}
+
+export async function buildEnvironment(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.EnvironmentUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  return prisma.environment.create({
+    data: { name: `env-${unique()}`, ...overrides, projectId: overrides.projectId },
+  });
+}
+
+export async function buildAttribute(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.AttributeUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  return prisma.attribute.create({
+    data: { codeName: `attr_${unique()}`, ...overrides, projectId: overrides.projectId },
+  });
+}
+
+export async function buildTheme(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.ThemeUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  return prisma.theme.create({
+    data: { name: `theme-${unique()}`, ...overrides, projectId: overrides.projectId },
+  });
+}
+
+export async function buildEvent(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.EventUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  return prisma.event.create({
+    data: { codeName: `evt_${unique()}`, ...overrides, projectId: overrides.projectId },
+  });
+}
+
+export async function buildLocalization(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.LocalizationUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  const slug = unique().replace(/-/g, '_');
+  return prisma.localization.create({
+    data: { locale: slug, name: slug, code: slug, ...overrides, projectId: overrides.projectId },
+  });
+}
+
+export async function buildSegment(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.SegmentUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  if (!overrides.environmentId) {
+    const environment = await buildEnvironment(prisma, { projectId: overrides.projectId });
+    overrides.environmentId = environment.id;
+  }
+  return prisma.segment.create({
+    data: {
+      name: `seg-${unique()}`,
+      ...overrides,
+      projectId: overrides.projectId,
+      environmentId: overrides.environmentId,
+    },
+  });
+}
+
+export async function buildContent(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.ContentUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  if (!overrides.environmentId) {
+    const environment = await buildEnvironment(prisma, { projectId: overrides.projectId });
+    overrides.environmentId = environment.id;
+  }
+  return prisma.content.create({
+    data: {
+      ...overrides,
+      projectId: overrides.projectId,
+      environmentId: overrides.environmentId,
+    },
+  });
+}
+
+/**
+ * Creates the Version and also links it as Content.editedVersionId — that's
+ * what the admin createContent flow does in production, and it's what makes
+ * later step / version-localization mutations pass the
+ * `contentVersionIsEditable` check.
+ */
+export async function buildVersion(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.VersionUncheckedCreateInput> = {},
+) {
+  if (!overrides.contentId) {
+    const content = await buildContent(prisma);
+    overrides.contentId = content.id;
+  }
+  const version = await prisma.version.create({
+    data: { ...overrides, contentId: overrides.contentId },
+  });
+  await prisma.content.update({
+    where: { id: overrides.contentId },
+    data: { editedVersionId: version.id },
+  });
+  return version;
+}
+
+export async function buildStep(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.StepUncheckedCreateInput> = {},
+) {
+  if (!overrides.versionId) {
+    const version = await buildVersion(prisma);
+    overrides.versionId = version.id;
+  }
+  return prisma.step.create({
+    data: { type: 'tooltip', ...overrides, versionId: overrides.versionId },
+  });
+}
+
+export async function buildBizUser(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.BizUserUncheckedCreateInput> = {},
+) {
+  if (!overrides.environmentId) {
+    const environment = await buildEnvironment(prisma);
+    overrides.environmentId = environment.id;
+  }
+  return prisma.bizUser.create({
+    data: { externalId: `bu-${unique()}`, ...overrides, environmentId: overrides.environmentId },
+  });
+}
+
+export async function buildBizCompany(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.BizCompanyUncheckedCreateInput> = {},
+) {
+  if (!overrides.environmentId) {
+    const environment = await buildEnvironment(prisma);
+    overrides.environmentId = environment.id;
+  }
+  return prisma.bizCompany.create({
+    data: { externalId: `co-${unique()}`, ...overrides, environmentId: overrides.environmentId },
+  });
+}
+
+/**
+ * Session FKs span three parents (bizUser, content, version). If only
+ * `versionId` is provided we derive `contentId` from it — the two must agree
+ * or the session is orphaned.
+ */
+export async function buildSession(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.BizSessionUncheckedCreateInput> = {},
+) {
+  if (!overrides.bizUserId) {
+    const bizUser = await buildBizUser(prisma);
+    overrides.bizUserId = bizUser.id;
+  }
+  if (!overrides.versionId) {
+    const version = await buildVersion(prisma);
+    overrides.versionId = version.id;
+    overrides.contentId ??= version.contentId;
+  }
+  if (!overrides.contentId) {
+    const version = await prisma.version.findUniqueOrThrow({
+      where: { id: overrides.versionId },
+      select: { contentId: true },
+    });
+    overrides.contentId = version.contentId;
+  }
+  return prisma.bizSession.create({
+    data: {
+      ...overrides,
+      bizUserId: overrides.bizUserId,
+      contentId: overrides.contentId,
+      versionId: overrides.versionId,
+    },
+  });
+}
+
+export async function buildIntegration(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.IntegrationUncheckedCreateInput> = {},
+) {
+  if (!overrides.environmentId) {
+    const environment = await buildEnvironment(prisma);
+    overrides.environmentId = environment.id;
+  }
+  return prisma.integration.create({
+    data: {
+      provider: 'salesforce',
+      ...overrides,
+      environmentId: overrides.environmentId,
+    },
+  });
+}
+
+export async function buildIntegrationObjectMapping(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.IntegrationObjectMappingUncheckedCreateInput> = {},
+) {
+  if (!overrides.integrationId) {
+    const integration = await buildIntegration(prisma);
+    overrides.integrationId = integration.id;
+  }
+  return prisma.integrationObjectMapping.create({
+    data: {
+      sourceObjectType: 'account',
+      destinationObjectType: 'company',
+      ...overrides,
+      integrationId: overrides.integrationId,
+    },
+  });
+}
+
+export async function buildAccessToken(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.AccessTokenUncheckedCreateInput> = {},
+) {
+  if (!overrides.environmentId) {
+    const environment = await buildEnvironment(prisma);
+    overrides.environmentId = environment.id;
+  }
+  return prisma.accessToken.create({
+    data: { name: `tok-${unique()}`, ...overrides, environmentId: overrides.environmentId },
+  });
+}
+
+export async function buildInvite(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.InviteUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  if (!overrides.userId) {
+    // `userId` here is the *creator* of the invite, not the invited person.
+    const user = await buildUser(prisma);
+    overrides.userId = user.id;
+  }
+  return prisma.invite.create({
+    data: {
+      email: `invite-${unique()}@local`,
+      name: `pending-${unique()}`,
+      role: 'VIEWER',
+      ...overrides,
+      projectId: overrides.projectId,
+      userId: overrides.userId,
+    },
+  });
+}
+
+// ── role-aliased user builders (sugar over buildUser + buildMembership) ──
+
+/**
+ * Builds a User + UserOnProject in a given project with the requested role in
+ * one shot. Mirrors outline's `buildAdmin` / `buildViewer` sugar — the common
+ * "I need an OWNER of this project" case is now a single line. If no project
+ * is passed, builds a fresh one.
+ */
+type RoleBuilderOverrides = Partial<Prisma.UserUncheckedCreateInput> & { projectId?: string };
+
+async function buildMember(
+  prisma: PrismaClient,
+  role: 'OWNER' | 'ADMIN' | 'VIEWER',
+  overrides: RoleBuilderOverrides = {},
+) {
+  const { projectId, ...userOverrides } = overrides;
+  const user = await buildUser(prisma, userOverrides);
+  const resolvedProjectId = projectId ?? (await buildProject(prisma)).id;
+  await buildMembership(prisma, {
+    userId: user.id,
+    projectId: resolvedProjectId,
+    role,
+  });
+  return user;
+}
+
+export const buildOwner = (prisma: PrismaClient, overrides?: RoleBuilderOverrides) =>
+  buildMember(prisma, 'OWNER', overrides);
+export const buildAdmin = (prisma: PrismaClient, overrides?: RoleBuilderOverrides) =>
+  buildMember(prisma, 'ADMIN', overrides);
+export const buildViewer = (prisma: PrismaClient, overrides?: RoleBuilderOverrides) =>
+  buildMember(prisma, 'VIEWER', overrides);

@@ -13,25 +13,25 @@ import {
   type Seed,
 } from './endpoints';
 import {
-  createAccessToken,
-  createAttribute,
-  createBizCompany,
-  createBizUser,
-  createContent,
-  createEnvironment,
-  createEvent,
-  createIntegration,
-  createIntegrationObjectMapping,
-  createInvite,
-  createLocalization,
-  createMembership,
-  createProject,
-  createSegment,
-  createSession,
-  createStep,
-  createTheme,
-  createUser,
-  createVersion,
+  buildAccessToken,
+  buildAttribute,
+  buildBizCompany,
+  buildBizUser,
+  buildContent,
+  buildEnvironment,
+  buildEvent,
+  buildIntegration,
+  buildIntegrationObjectMapping,
+  buildInvite,
+  buildLocalization,
+  buildMembership,
+  buildProject,
+  buildSegment,
+  buildSession,
+  buildStep,
+  buildTheme,
+  buildUser,
+  buildVersion,
 } from './factories';
 
 /**
@@ -65,50 +65,56 @@ describe('Permission authorization (HTTP e2e)', () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
 
-    const project = await createProject(prisma, { name: 'perm-e2e' });
-    seed.projectId = project.id;
+    const project = await buildProject(prisma, { name: 'perm-e2e' });
+    const projectId = project.id;
+    seed.projectId = projectId;
     for (const role of ROLES) {
-      const user = await createUser(prisma);
+      const user = await buildUser(prisma);
       seed[`user_${role}`] = user.id;
       token[role] = signToken(app, user.id);
       // NONE has no membership anywhere; ELSEWHERE belongs to a *different*
       // project (seeded below) — neither is a member of `project`.
       if (role !== 'NONE' && role !== 'ELSEWHERE') {
-        await createMembership(prisma, user.id, project.id, role);
+        await buildMembership(prisma, { userId: user.id, projectId, role: role as never });
       }
     }
 
     // Foreign project used only to give ELSEWHERE an OWNER membership *somewhere
     // else*, so cross-project deny tests exercise the IDOR shape where the user
     // is authenticated and has memberships, just not on the target project.
-    const projectB = await createProject(prisma, { name: 'perm-e2e-foreign' });
+    const projectB = await buildProject(prisma, { name: 'perm-e2e-foreign' });
     seed.projectBId = projectB.id;
-    await createMembership(prisma, seed.user_ELSEWHERE, projectB.id, 'OWNER');
+    await buildMembership(prisma, {
+      userId: seed.user_ELSEWHERE,
+      projectId: projectB.id,
+      role: 'OWNER' as never,
+    });
 
-    const environment = await createEnvironment(prisma, project.id, { name: 'e2e-env' });
-    const content = await createContent(prisma, project.id, environment.id);
-    const version = await createVersion(prisma, content.id);
-    const bizUser = await createBizUser(prisma, environment.id);
-    const session = await createSession(prisma, {
+    const environment = await buildEnvironment(prisma, { projectId, name: 'e2e-env' });
+    const environmentId = environment.id;
+    const content = await buildContent(prisma, { projectId, environmentId });
+    const version = await buildVersion(prisma, { contentId: content.id });
+    const bizUser = await buildBizUser(prisma, { environmentId });
+    const session = await buildSession(prisma, {
       bizUserId: bizUser.id,
       contentId: content.id,
       versionId: version.id,
     });
-    const attribute = await createAttribute(prisma, project.id);
-    const theme = await createTheme(prisma, project.id);
-    const event = await createEvent(prisma, project.id);
-    const localization = await createLocalization(prisma, project.id);
-    const segment = await createSegment(prisma, project.id, environment.id);
-    const integration = await createIntegration(prisma, environment.id);
-    const mapping = await createIntegrationObjectMapping(prisma, integration.id);
-    const accessToken = await createAccessToken(prisma, environment.id);
-    const step = await createStep(prisma, version.id);
-    const bizCompany = await createBizCompany(prisma, environment.id);
+    const attribute = await buildAttribute(prisma, { projectId });
+    const theme = await buildTheme(prisma, { projectId });
+    const event = await buildEvent(prisma, { projectId });
+    const localization = await buildLocalization(prisma, { projectId });
+    const segment = await buildSegment(prisma, { projectId, environmentId });
+    const integration = await buildIntegration(prisma, { environmentId });
+    const mapping = await buildIntegrationObjectMapping(prisma, { integrationId: integration.id });
+    const accessToken = await buildAccessToken(prisma, { environmentId });
+    const step = await buildStep(prisma, { versionId: version.id });
+    const bizCompany = await buildBizCompany(prisma, { environmentId });
     // A removable, action-on-able member of project A — used by
     // team.removeTeamMember / changeTeamMemberRole / activeUserProject.
-    const removable = await createUser(prisma);
-    await createMembership(prisma, removable.id, project.id, 'VIEWER');
-    const invite = await createInvite(prisma, project.id, seed.user_OWNER);
+    const removable = await buildUser(prisma);
+    await buildMembership(prisma, { userId: removable.id, projectId, role: 'VIEWER' as never });
+    const invite = await buildInvite(prisma, { projectId, userId: seed.user_OWNER });
     Object.assign(seed, {
       environmentId: environment.id,
       contentId: content.id,
