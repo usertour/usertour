@@ -74,7 +74,13 @@ export class AnalyticsResolver {
     return !!(await this.service.endSession(sessionId));
   }
 
-  @Query(() => BizSession)
+  // Nullable: the underlying service filters soft-deleted sessions, so a
+  // sessionId that exists but is `deleted=true` resolves to null. Same shape
+  // as content.getContent — declaring `BizSession!` made Apollo surface this
+  // as a generic 500 ISE for any authorized caller deep-linking into a
+  // soft-deleted session. The guard already authorizes only project members,
+  // so returning null leaks nothing.
+  @Query(() => BizSession, { nullable: true })
   @RequirePermission({ capability: Capability.AnalyticsRead, scope: ScopeKind.Session })
   async querySessionDetail(@Args('sessionId') sessionId: string) {
     return await this.service.querySessionDetail(sessionId);
