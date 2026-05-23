@@ -60,7 +60,12 @@ export class ContentResolver {
     );
   }
 
-  @Query(() => Content)
+  // Nullable: the underlying service filters soft-deleted rows, so a contentId
+  // that exists but is `deleted=true` resolves to null. Declaring the field as
+  // `Content!` made Apollo surface this as a generic 500 ISE for any caller
+  // hitting a soft-deleted content via deep-link/bookmark. The guard already
+  // authorizes only project members, so returning null leaks nothing.
+  @Query(() => Content, { nullable: true })
   @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
   async getContent(@Args() { contentId }: ContentIdArgs) {
     return await this.contentService.getContentById(contentId);

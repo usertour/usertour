@@ -364,6 +364,7 @@ type Content {
   environmentId: String!
   id: ID!
   name: String
+  projectId: String
   published: Boolean!
   publishedAt: DateTime!
   publishedVersion: Version
@@ -949,7 +950,7 @@ type Query {
   adminUsers(page: Int, pageSize: Int, query: String, role: String, status: String): AdminUserList!
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
-  getContent(contentId: String!): Content!
+  getContent(contentId: String!): Content
   getContentVersion(versionId: String!): Version!
   getIntegration(environmentId: String!, provider: String!): Integration!
   getIntegrationObjectMapping(id: String!): IntegrationObjectMapping!

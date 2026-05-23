@@ -60,6 +60,9 @@ export class Content extends BaseModel {
   environmentId: string;
 
   @Field(() => String, { nullable: true })
+  projectId?: string;
+
+  @Field(() => String, { nullable: true })
   editedVersionId?: string;
 
   @Field(() => Version, { nullable: true })
