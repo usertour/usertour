@@ -1,7 +1,9 @@
-import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { AttributesGuard } from './attributes.guard';
+import { Capability } from '@usertour/types';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { RequirePermission } from '@/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { AttributesService } from './attributes.service';
 import {
   CreateAttributeInput,
@@ -12,30 +14,30 @@ import {
 import { Attribute } from './models/attribute.model';
 
 @Resolver(() => Attribute)
-@UseGuards(AttributesGuard)
+@UseGuards(PermissionGuard)
 export class AttributesResolver {
   constructor(private service: AttributesService) {}
 
   @Mutation(() => Attribute)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.AttributeCreate, scope: ScopeKind.Attribute })
   async createAttribute(@Args('data') data: CreateAttributeInput) {
     return this.service.create(data);
   }
 
   @Mutation(() => Attribute)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.AttributeUpdate, scope: ScopeKind.Attribute })
   async updateAttribute(@Args('data') data: UpdateAttributeInput) {
     return await this.service.update(data);
   }
 
   @Mutation(() => Attribute)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.AttributeDelete, scope: ScopeKind.Attribute })
   async deleteAttribute(@Args('data') { id }: DeleteAttributeInput) {
     return await this.service.delete(id);
   }
 
   @Query(() => [Attribute])
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.AttributeRead, scope: ScopeKind.Attribute })
   async listAttributes(@Args() { projectId, bizType }: QueryAttributeInput) {
     return await this.service.list(projectId, bizType);
   }

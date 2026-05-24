@@ -69,8 +69,7 @@ export const SalesforceIntegration = () => {
   const handleConnect = useCallback(async () => {
     if (!authUrl) {
       toast({
-        title: 'Error',
-        description: 'Failed to get Salesforce auth URL',
+        title: 'Failed to get Salesforce auth URL',
         variant: 'destructive',
       });
       return;
@@ -90,8 +89,7 @@ export const SalesforceIntegration = () => {
       navigate('/project/1/settings/integrations');
     } catch {
       toast({
-        title: 'Error',
-        description: 'Failed to disconnect from Salesforce',
+        title: 'Failed to disconnect from Salesforce',
         variant: 'destructive',
       });
     } finally {

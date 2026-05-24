@@ -6,7 +6,7 @@ import {
   useLogoutMutation,
 } from '@usertour/hooks';
 import { removeAuthToken } from '@usertour/helpers';
-import { GlobalConfig, TeamMemberRole, UserProfile } from '@usertour/types';
+import { Capability, GlobalConfig, UserProfile } from '@usertour/types';
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { broadcastAuthSwitch } from '@/utils/auth-channel';
 
@@ -21,6 +21,10 @@ interface AppContextProps {
   signOutAndRedirect: (to?: string) => Promise<void>;
   projects: Project[];
   isViewOnly: boolean;
+  /** Capabilities the current user holds on the active project. */
+  capabilities: Capability[];
+  /** Whether the active-project role grants a capability. */
+  can: (capability: Capability) => boolean;
   globalConfig: GlobalConfig | undefined;
   globalConfigLoading: boolean;
   loading: boolean;
@@ -90,11 +94,17 @@ export const AppProvider = (props: AppProviderProps) => {
     data?.projects?.map((p: any) => ({
       role: p.role,
       actived: p.actived,
+      capabilities: p.capabilities ?? [],
       ...p.project,
     })) ?? [];
 
   const project: Project | null = projects.find((p: Project) => p.actived) ?? null;
-  const isViewOnly = !!(project && project.role === TeamMemberRole.VIEWER);
+  const capabilities: Capability[] =
+    (project as (Project & { capabilities?: Capability[] }) | null)?.capabilities ?? [];
+  const can = (capability: Capability) => capabilities.includes(capability);
+  // View-only mirrors the old role === VIEWER check: a VIEWER lacks every
+  // write capability, so "can't update content" is the equivalent gate.
+  const isViewOnly = !!project && !can(Capability.ContentUpdate);
 
   const value = {
     environment,
@@ -107,6 +117,8 @@ export const AppProvider = (props: AppProviderProps) => {
     signOutAndRedirect,
     projects,
     isViewOnly,
+    capabilities,
+    can,
     globalConfig,
     globalConfigLoading,
     loading,

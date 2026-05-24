@@ -101,8 +101,7 @@ const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigPr
   const handleConnect = useCallback(async () => {
     if (!authUrl) {
       toast({
-        title: 'Error',
-        description: 'Failed to get Salesforce auth URL',
+        title: 'Failed to get Salesforce auth URL',
         variant: 'destructive',
       });
       return;
@@ -182,8 +181,7 @@ export const IntegrationsListContent = () => {
         await refetch();
       } catch (error) {
         toast({
-          title: 'Error',
-          description: `Failed to ${enabled ? 'enable' : 'disable'} integration`,
+          title: `Failed to ${enabled ? 'enable' : 'disable'} integration`,
           variant: 'destructive',
         });
         throw error;

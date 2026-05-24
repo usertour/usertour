@@ -21,13 +21,10 @@ import {
   // PlugIcon,
   KeyIcon,
 } from '@usertour/icons';
-import { GlobalConfig, TeamMemberRole } from '@usertour/types';
+import { Capability, GlobalConfig } from '@usertour/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Constants
-const ALL_ROLES = [TeamMemberRole.ADMIN, TeamMemberRole.OWNER, TeamMemberRole.VIEWER] as const;
-const OWNER_ROLES = [TeamMemberRole.OWNER] as const;
-// const ADMIN_ROLES = [TeamMemberRole.ADMIN, TeamMemberRole.OWNER] as const;
 const ICON_CLASS_NAME = 'w-4 h-4';
 
 enum Mode {
@@ -44,7 +41,9 @@ enum SidebarNavItemType {
 interface SidebarNavItem {
   title: string;
   href: string;
-  role: readonly TeamMemberRole[];
+  /** Capability the active-project role must hold to see this item. Omit for items
+   *  that aren't project-scoped (e.g. personal Account settings → always visible). */
+  capability?: Capability;
   type: SidebarNavItemType;
   icon: React.ReactNode;
   mode: readonly Mode[];
@@ -103,7 +102,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Project',
     href: '/settings/general',
-    role: OWNER_ROLES,
+    capability: Capability.ProjectManage,
     type: SidebarNavItemType.GENERAL,
     icon: <ProjectIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.CLOUD, Mode.SELF_HOSTED],
@@ -111,7 +110,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Themes',
     href: '/settings/themes',
-    role: ALL_ROLES,
+    capability: Capability.ThemeRead,
     type: SidebarNavItemType.GENERAL,
     icon: <ColorIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.CLOUD, Mode.SELF_HOSTED],
@@ -119,7 +118,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Environments',
     href: '/settings/environments',
-    role: ALL_ROLES,
+    capability: Capability.EnvironmentRead,
     type: SidebarNavItemType.GENERAL,
     icon: <BoxIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.CLOUD, Mode.SELF_HOSTED],
@@ -127,7 +126,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Attributes',
     href: '/settings/attributes',
-    role: ALL_ROLES,
+    capability: Capability.AttributeRead,
     type: SidebarNavItemType.GENERAL,
     icon: <AttributeIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.CLOUD, Mode.SELF_HOSTED],
@@ -135,7 +134,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Events',
     href: '/settings/events',
-    role: ALL_ROLES,
+    capability: Capability.EventRead,
     type: SidebarNavItemType.GENERAL,
     icon: <FlashlightIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.CLOUD, Mode.SELF_HOSTED],
@@ -143,7 +142,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Team',
     href: '/settings/team',
-    role: OWNER_ROLES,
+    capability: Capability.TeamRead,
     type: SidebarNavItemType.GENERAL,
     icon: <TeamIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.CLOUD, Mode.SELF_HOSTED],
@@ -151,7 +150,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Billing',
     href: '/settings/billing',
-    role: OWNER_ROLES,
+    capability: Capability.BillingRead,
     type: SidebarNavItemType.GENERAL,
     icon: <BankCardIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.CLOUD],
@@ -159,7 +158,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Subscription',
     href: '/settings/subscription',
-    role: OWNER_ROLES,
+    capability: Capability.BillingRead,
     type: SidebarNavItemType.GENERAL,
     icon: <BankCardIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.SELF_HOSTED],
@@ -168,7 +167,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'Account',
     href: '/settings/account',
-    role: ALL_ROLES,
+    // Personal account settings — not project-scoped, always visible.
     type: SidebarNavItemType.GENERAL,
     icon: <AccountIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.CLOUD, Mode.SELF_HOSTED],
@@ -176,7 +175,7 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   {
     title: 'API',
     href: '/settings/api',
-    role: OWNER_ROLES,
+    capability: Capability.AccessTokenRead,
     type: SidebarNavItemType.DEVELOPER,
     icon: <KeyIcon className={ICON_CLASS_NAME} />,
     mode: [Mode.CLOUD, Mode.SELF_HOSTED],
@@ -184,23 +183,16 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   // {
   //   title: 'Integrations',
   //   href: '/settings/integrations',
-  //   role: OWNER_ROLES,
+  //   capability: Capability.IntegrationManage,
   //   type: SidebarNavItemType.DEVELOPER,
   //   icon: <PlugIcon className={ICON_CLASS_NAME} />,
-  // },
-  // {
-  //   title: 'Webhooks',
-  //   href: '/settings/webhooks',
-  //   role: ADMIN_ROLES,
-  //   type: SidebarNavItemType.DEVELOPER,
-  //   icon: <Webhook className={ICON_CLASS_NAME} />,
   // },
 ] as const;
 
 export const SettingsSidebarNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { project, globalConfig } = useAppContext();
+  const { project, globalConfig, can } = useAppContext();
 
   const isSelfHosted = globalConfig?.isSelfHostedMode;
   const currentMode = isSelfHosted ? Mode.SELF_HOSTED : Mode.CLOUD;
@@ -211,9 +203,9 @@ export const SettingsSidebarNav = () => {
       href: `/project/${project?.id}${item.href}`,
     }))
     .filter((item) => {
-      const projectRole = project?.role as TeamMemberRole | undefined;
-
-      if (!projectRole || !item.role.includes(projectRole)) {
+      // Project-scoped items gate on the active-project capability; items without
+      // a capability (personal Account settings) are always shown.
+      if (item.capability && !can(item.capability)) {
         return false;
       }
 

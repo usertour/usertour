@@ -364,6 +364,7 @@ type Content {
   environmentId: String!
   id: ID!
   name: String
+  projectId: String
   published: Boolean!
   publishedAt: DateTime!
   publishedVersion: Version
@@ -949,7 +950,7 @@ type Query {
   adminUsers(page: Int, pageSize: Int, query: String, role: String, status: String): AdminUserList!
   findManyVersionLocations(versionId: String!): [VersionOnLocalization!]!
   getAccessToken(accessTokenId: String!, environmentId: String!): String!
-  getContent(contentId: String!): Content!
+  getContent(contentId: String!): Content
   getContentVersion(versionId: String!): Version!
   getIntegration(environmentId: String!, provider: String!): Integration!
   getIntegrationObjectMapping(id: String!): IntegrationObjectMapping!
@@ -988,7 +989,7 @@ type Query {
   queryContentAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): Analytics!
   queryContentQuestionAnalytics(contentId: String!, endDate: String!, environmentId: String!, startDate: String!, timezone: String!): JSON!
   queryOembedInfo(url: String!): OEmbed!
-  querySessionDetail(sessionId: String!): BizSession!
+  querySessionDetail(sessionId: String!): BizSession
   querySessionsByExternalId(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: SessionQuery!, skip: Int): BizSessionConnection!
   queryTooltipTargetMissingSessions(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: TooltipTargetMissingQuery!, skip: Int): TooltipTargetMissingResponse!
   queryTrackerUsers(after: String, before: String, first: Int, last: Int, orderBy: AnalyticsOrder!, query: AnalyticsQuery!, skip: Int): TrackerUserConnection!
@@ -1358,6 +1359,7 @@ type User {
 
 type UserOnProject {
   actived: Boolean!
+  capabilities: [String!]!
 
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!

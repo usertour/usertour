@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateAttributeOnEventInput } from './dto/attributeOnEvent.input';
 import { CreateEventInput, UpdateEventInput } from './dto/events.input';
-import { ParamsError, UnknownError } from '@/common/errors';
+import { ParamsError, ResourceAlreadyExistsError, UnknownError } from '@/common/errors';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { PaginationConnection } from '@/common/openapi/pagination';
 import { Event, Prisma } from '@prisma/client';
@@ -44,7 +44,13 @@ export class EventsService {
 
         return createEvent;
       });
-    } catch (_) {
+    } catch (err) {
+      // (projectId, codeName) is unique — surface dup as a typed
+      // ResourceAlreadyExistsError instead of swallowing it as
+      // UnknownError. Mirrors the catch in attributes.service / localizations.service.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new ResourceAlreadyExistsError();
+      }
       throw new UnknownError();
     }
   }
