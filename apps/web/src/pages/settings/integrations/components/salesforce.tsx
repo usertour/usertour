@@ -83,8 +83,8 @@ export const SalesforceIntegration = () => {
       setIsDisconnecting(true);
       await disconnectIntegration(environmentId, INTEGRATION_PROVIDER);
       toast({
-        title: 'Success',
-        description: 'Successfully disconnected from Salesforce',
+        variant: 'success',
+        title: 'Successfully disconnected from Salesforce',
       });
       navigate('/project/1/settings/integrations');
     } catch {

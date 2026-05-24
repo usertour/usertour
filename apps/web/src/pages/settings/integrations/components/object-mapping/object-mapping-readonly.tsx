@@ -93,8 +93,8 @@ export const ObjectMappingReadonly = ({
 
       if (success) {
         toast({
-          title: 'Success',
-          description: 'Object mapping deleted successfully',
+          variant: 'success',
+          title: 'Object mapping deleted successfully',
         });
         onDelete?.(mapping.id);
         setShowDeleteDialog(false);

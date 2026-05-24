@@ -67,8 +67,8 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
       onClose();
       await refetch();
       toast({
-        title: 'Success',
-        description: 'API key created successfully',
+        variant: 'success',
+        title: 'API key created successfully',
       });
     },
     onError: (error) => {

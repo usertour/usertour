@@ -216,8 +216,8 @@ export function ObjectMappingDialog({
 
       if (result) {
         toast({
-          title: 'Success',
-          description: `Object mapping ${mode === 'edit' ? 'updated' : 'created'} successfully`,
+          variant: 'success',
+          title: `Object mapping ${mode === 'edit' ? 'updated' : 'created'} successfully`,
         });
         onSuccess?.();
         handleClose();
