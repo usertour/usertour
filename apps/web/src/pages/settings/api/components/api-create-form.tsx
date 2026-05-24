@@ -73,8 +73,7 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
     },
     onError: (error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create API key',
+        title: error.message || 'Failed to create API key',
         variant: 'destructive',
       });
     },
@@ -83,8 +82,7 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
   const onSubmit = async (values: FormValues) => {
     if (!environment) {
       toast({
-        title: 'Error',
-        description: 'Environment not found',
+        title: 'Environment not found',
         variant: 'destructive',
       });
       return;

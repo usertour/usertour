@@ -15,25 +15,26 @@ import { Logger } from '@nestjs/common';
 import { Invite } from './models/invite.model';
 import { Public } from '@/common/decorators/public.decorator';
 import { UseGuards } from '@nestjs/common';
-import { TeamGuard } from './team.guard';
 import { EmailConfigGuard } from '@/common/guards/email-config.guard';
-import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
-import { Roles } from '@/common/decorators/roles.decorator';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { RequirePermission } from '@/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { Capability } from '@usertour/types';
 
 @Resolver()
-@UseGuards(TeamGuard)
+@UseGuards(PermissionGuard)
 export class TeamResolver {
   private readonly logger = new Logger(TeamResolver.name);
   constructor(private teamService: TeamService) {}
 
   @Query(() => [Invite])
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.TeamRead, scope: ScopeKind.Project })
   async getInvites(@Args('projectId') projectId: string) {
     return await this.teamService.getInvites(projectId);
   }
 
   @Query(() => [UserOnProject])
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.TeamRead, scope: ScopeKind.Project })
   async getTeamMembers(@Args('projectId') projectId: string) {
     return this.teamService.getTeamMembers(projectId);
   }
@@ -45,7 +46,7 @@ export class TeamResolver {
   }
 
   @Mutation(() => Boolean)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.TeamManage, scope: ScopeKind.Project })
   @UseGuards(EmailConfigGuard)
   async inviteTeamMember(@UserEntity() user: User, @Args('data') data: InviteTeamMemberInput) {
     this.logger.log(`Inviting team member: ${user.id}`);
@@ -60,28 +61,28 @@ export class TeamResolver {
   }
 
   @Mutation(() => Boolean)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.TeamManage, scope: ScopeKind.Project })
   async removeTeamMember(@Args('data') data: RemoveTeamMemberInput) {
     await this.teamService.removeTeamMember(data.userId, data.projectId);
     return true;
   }
 
   @Mutation(() => Boolean)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.TeamManage, scope: ScopeKind.Project })
   async changeTeamMemberRole(@Args('data') data: ChangeTeamMemberRoleInput) {
     await this.teamService.changeTeamMemberRole(data.userId, data.projectId, data.role);
     return true;
   }
 
   @Mutation(() => Boolean)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.TeamManage, scope: ScopeKind.Project })
   async cancelInvite(@Args('data') data: CancelInviteInput) {
     await this.teamService.cancelInvite(data.projectId, data.inviteId);
     return true;
   }
 
   @Mutation(() => Boolean)
-  @Roles([RolesScopeEnum.OWNER, RolesScopeEnum.ADMIN, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.ProjectActivate, scope: ScopeKind.Project })
   async activeUserProject(@Args('data') data: ActiveUserProjectInput) {
     await this.teamService.activeUserProject(data.userId, data.projectId);
     return true;

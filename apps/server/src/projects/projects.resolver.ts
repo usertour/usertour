@@ -6,31 +6,30 @@ import { LicenseInfo } from './models/license-info.model';
 import { ProjectsService } from './projects.service';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { User } from '@/users/models/user.model';
-import { ProjectsGuard } from './projects.guard';
-import { Roles } from '@/common/decorators/roles.decorator';
-import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { RequirePermission } from '@/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { Capability } from '@usertour/types';
 
 @Resolver(() => Project)
+@UseGuards(PermissionGuard)
 export class ProjectsResolver {
   constructor(private projectsService: ProjectsService) {}
 
   @Query(() => ProjectConfigModel)
-  @UseGuards(ProjectsGuard)
-  @Roles([RolesScopeEnum.OWNER, RolesScopeEnum.ADMIN, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.ProjectRead, scope: ScopeKind.Project })
   async getProjectConfig(@Args('projectId') projectId: string) {
     return this.projectsService.getProjectConfig(projectId);
   }
 
   @Query(() => LicenseInfo, { nullable: true })
-  @UseGuards(ProjectsGuard)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.BillingRead, scope: ScopeKind.Project })
   async getProjectLicenseInfo(@Args('projectId') projectId: string) {
     return this.projectsService.getProjectLicenseInfo(projectId);
   }
 
   @Mutation(() => Project)
-  @UseGuards(ProjectsGuard)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.ProjectManage, scope: ScopeKind.Project })
   async updateProjectName(
     @UserEntity() user: User,
     @Args('projectId') projectId: string,
@@ -40,8 +39,7 @@ export class ProjectsResolver {
   }
 
   @Mutation(() => Project)
-  @UseGuards(ProjectsGuard)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.BillingManage, scope: ScopeKind.Project })
   async updateProjectLicense(
     @UserEntity() user: User,
     @Args('projectId') projectId: string,

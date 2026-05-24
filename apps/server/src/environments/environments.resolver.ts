@@ -1,49 +1,51 @@
-import { Roles, RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { RequirePermission } from '@/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Capability } from '@usertour/types';
 import { ProjectIdArgs } from './args/project-id.args';
 import {
   CreateEnvironmentInput,
   DeleteEnvironmentInput,
   UpdateEnvironmentInput,
 } from './dto/environment.input';
-import { EnvironmentsGuard } from './environments.guard';
 import { EnvironmentsService } from './environments.service';
 import { Environment } from './models/environment.model';
 import { AccessToken } from './dto/access-token.dto';
 import { CreateAccessTokenInput } from './dto/access-token.dto';
 
 @Resolver(() => Environment)
-@UseGuards(EnvironmentsGuard)
+@UseGuards(PermissionGuard)
 export class EnvironmentsResolver {
   constructor(private environmentsService: EnvironmentsService) {}
 
   @Mutation(() => Environment)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.EnvironmentManage, scope: ScopeKind.Project })
   async createEnvironments(@Args('data') newData: CreateEnvironmentInput) {
     return this.environmentsService.create(newData);
   }
 
   @Mutation(() => Environment)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.EnvironmentManage, scope: ScopeKind.Environment })
   async updateEnvironments(@Args('data') input: UpdateEnvironmentInput) {
     return this.environmentsService.update(input);
   }
 
   @Mutation(() => Environment)
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.EnvironmentManage, scope: ScopeKind.Environment })
   async deleteEnvironments(@Args('data') { id }: DeleteEnvironmentInput) {
     return await this.environmentsService.delete(id);
   }
 
   @Query(() => [Environment])
-  @Roles([RolesScopeEnum.ADMIN, RolesScopeEnum.OWNER, RolesScopeEnum.VIEWER])
+  @RequirePermission({ capability: Capability.EnvironmentRead, scope: ScopeKind.Project })
   userEnvironments(@Args() { projectId }: ProjectIdArgs) {
     return this.environmentsService.listEnvsByProjectId(projectId);
   }
 
   @Query(() => [AccessToken])
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
   async listAccessTokens(@Args('environmentId') environmentId: string) {
     const accessTokens = await this.environmentsService.findAllAccessTokens(environmentId);
     return accessTokens.map((accessToken) => ({
@@ -53,7 +55,7 @@ export class EnvironmentsResolver {
   }
 
   @Query(() => String)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
   async getAccessToken(
     @Args('environmentId') environmentId: string,
     @Args('accessTokenId') accessTokenId: string,
@@ -66,7 +68,7 @@ export class EnvironmentsResolver {
   }
 
   @Mutation(() => AccessToken)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
   async createAccessToken(
     @Args('environmentId') environmentId: string,
     @Args('input') input: CreateAccessTokenInput,
@@ -79,7 +81,7 @@ export class EnvironmentsResolver {
   }
 
   @Mutation(() => Boolean)
-  @Roles([RolesScopeEnum.OWNER])
+  @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
   async deleteAccessToken(
     @Args('environmentId') environmentId: string,
     @Args('accessTokenId') accessTokenId: string,

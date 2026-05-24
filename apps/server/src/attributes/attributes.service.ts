@@ -4,6 +4,7 @@ import { CreateAttributeInput, UpdateAttributeInput } from './dto/attribute.inpu
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ResourceAlreadyExistsError } from '@/common/errors';
 
 @Injectable()
 export class AttributesService {
@@ -13,9 +14,19 @@ export class AttributesService {
   ) {}
 
   async create(data: CreateAttributeInput) {
-    const created = await this.prisma.attribute.create({ data });
-    await this.cache.invalidateDeferred(this.cache.keys.attrs(created.projectId));
-    return created;
+    try {
+      const created = await this.prisma.attribute.create({ data });
+      await this.cache.invalidateDeferred(this.cache.keys.attrs(created.projectId));
+      return created;
+    } catch (err) {
+      // (projectId, bizType, codeName) is unique — surface dup as typed
+      // ResourceAlreadyExistsError instead of leaking the raw
+      // PrismaClientKnownRequestError as a generic 500 ISE.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new ResourceAlreadyExistsError();
+      }
+      throw err;
+    }
   }
 
   async update(data: UpdateAttributeInput) {

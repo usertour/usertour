@@ -23,6 +23,7 @@ import {
   QuestionMarkCircledIcon,
   ZoomInIcon,
 } from '@usertour/icons';
+import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteSessionMutation, useEndSessionMutation } from '@usertour/hooks';
 import { BizSession } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
@@ -60,14 +61,15 @@ const useSessionForm = (
         onSubmit(true);
         return;
       }
-    } catch (_) {
+    } catch (error) {
       onSubmit(false);
       toast({
         variant: 'destructive',
         title:
-          action === 'delete'
+          getErrorMessage(error) ||
+          (action === 'delete'
             ? t('sessionActions.toast.deleteFailed')
-            : t('sessionActions.toast.endFailed'),
+            : t('sessionActions.toast.endFailed')),
       });
     }
   };

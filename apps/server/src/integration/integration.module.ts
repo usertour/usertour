@@ -23,6 +23,7 @@ import { EnvironmentsModule } from '@/environments/environments.module';
 import { IntegrationResolver } from './integration.resolver';
 import { BizModule } from '@/biz/biz.module';
 import { IntegrationController } from './integration.controller';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -44,6 +45,7 @@ import { ConfigModule } from '@nestjs/config';
   providers: [
     IntegrationService,
     IntegrationResolver,
+    PermissionGuard,
     AmplitudeEventProcessor,
     HeapEventProcessor,
     HubspotEventProcessor,

@@ -621,8 +621,15 @@ export class ContentService {
       where: { id: version.contentId, deleted: false },
       include: { contentOnEnvironments: true },
     });
+    if (!contentItem) {
+      // Version exists but its content is soft-deleted — operating on the
+      // version is not allowed. Without this guard, the access on
+      // `contentItem.editedVersionId` below threw a TypeError that escaped
+      // the resolver as a generic 500.
+      throw new ParamsError();
+    }
 
-    const isPublished = contentItem?.contentOnEnvironments?.find(
+    const isPublished = contentItem.contentOnEnvironments?.find(
       (env) => env.published && env.publishedVersionId === versionId,
     );
 

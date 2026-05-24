@@ -16,6 +16,7 @@ export const getUserInfo = gql`
       projects {
         id
         role
+        capabilities
         actived
         project {
           id

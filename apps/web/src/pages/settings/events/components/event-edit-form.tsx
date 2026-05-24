@@ -131,12 +131,18 @@ export const EventEditForm = (props: EditFormProps) => {
 
         if (!ret.data?.updateEvent?.id) {
           showError('Update Event failed.');
+          return;
         }
+        toast({
+          variant: 'success',
+          title: 'The event has been successfully updated',
+        });
         onClose();
       } catch (error) {
         showError(getErrorMessage(error));
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     },
     [event.id, eventsOnAttributes, onClose, updateMutation],
   );
@@ -245,7 +251,7 @@ export const EventEditForm = (props: EditFormProps) => {
                 <FormField
                   control={form.control}
                   name="attributeIds"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
                       <FormLabel className="flex flex-row">
                         Event attributes
@@ -284,7 +290,6 @@ export const EventEditForm = (props: EditFormProps) => {
                       {selectAttributeStatus ? (
                         <div className="flex flex-row">
                           <Select
-                            {...field}
                             onValueChange={handleAttrValueChange}
                             value={selectedAttributeValue}
                           >

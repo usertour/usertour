@@ -177,8 +177,7 @@ export function ObjectMappingDialog({
   const handleContinue = () => {
     if (!salesforceObject || !usertourObject) {
       toast({
-        title: 'Error',
-        description: 'Please select both Salesforce and Usertour objects',
+        title: 'Please select both Salesforce and Usertour objects',
         variant: 'destructive',
       });
       return;
@@ -197,8 +196,7 @@ export function ObjectMappingDialog({
   const handleSaveMapping = useCallback(async () => {
     if (!integrationId || !mappingData) {
       toast({
-        title: 'Error',
-        description: 'Missing integration or mapping data',
+        title: 'Missing integration or mapping data',
         variant: 'destructive',
       });
       return;
@@ -227,8 +225,7 @@ export function ObjectMappingDialog({
     } catch (error) {
       console.error('Failed to save mapping:', error);
       toast({
-        title: 'Error',
-        description: `Failed to ${mode === 'edit' ? 'update' : 'create'} object mapping`,
+        title: `Failed to ${mode === 'edit' ? 'update' : 'create'} object mapping`,
         variant: 'destructive',
       });
     }
