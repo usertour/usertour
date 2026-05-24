@@ -1,129 +1,107 @@
-import { useEnvironmentListContext } from '@/contexts/environment-list-context';
-import { Environment } from '@usertour/types';
-import { DotsHorizontalIcon, StarIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { useState } from 'react';
+import { useAppContext } from '@/contexts/app-context';
+import { useEnvironmentListContext } from '@/contexts/environment-list-context';
+import { StarIcon } from '@radix-ui/react-icons';
+import { getErrorMessage } from '@usertour/helpers';
+import { useUpdateEnvironmentMutation } from '@usertour/hooks';
+import { Delete2Icon, EditIcon } from '@usertour/icons';
+import { Environment } from '@usertour/types';
+import { ResourceRowActions } from '@usertour/ui';
+import { useToast } from '@usertour/use-toast';
 import { EnvironmentDeleteForm } from './environment-delete-form';
 import { EnvironmentEditForm } from './environment-edit-form';
-import { useAppContext } from '@/contexts/app-context';
-import { useMutation } from '@apollo/client';
-import { updateEnvironments } from '@usertour/gql';
-import { useToast } from '@usertour/use-toast';
-import { getErrorMessage } from '@usertour/helpers';
-type EnvironmentListActionProps = {
+
+interface EnvironmentListActionProps {
   environment: Environment;
   environmentCount?: number;
-};
-export const EnvironmentListAction = (props: EnvironmentListActionProps) => {
-  const { environment, environmentCount = 0 } = props;
-  const [open, setOpen] = useState(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [isSettingPrimary, setIsSettingPrimary] = useState(false);
+}
+
+export const EnvironmentListAction = ({
+  environment,
+  environmentCount = 0,
+}: EnvironmentListActionProps) => {
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { refetch } = useEnvironmentListContext();
   const { isViewOnly } = useAppContext();
   const { toast } = useToast();
-  const [updateMutation] = useMutation(updateEnvironments);
+  const { invoke: updateEnvironment, loading: isSettingPrimary } = useUpdateEnvironmentMutation();
+
+  // Primary environments can't be deleted, and you can't delete the last
+  // remaining environment. View-only roles can't mutate either.
   const isDeleteDisabled = environmentCount <= 1 || isViewOnly || environment.isPrimary === true;
   const isNotPrimary = environment.isPrimary !== true;
-
-  const handleOpen = () => {
-    setOpen(true);
-  };
-  const handleOnClose = () => {
-    setOpen(false);
-    refetch();
-  };
-  const handleDeleteOpen = () => {
-    setOpenDeleteDialog(true);
-  };
-  const handleDeleteClose = () => {
-    setOpenDeleteDialog(false);
-    refetch();
-  };
 
   const handleSetPrimary = async () => {
     if (isViewOnly || isSettingPrimary) {
       return;
     }
-
-    setIsSettingPrimary(true);
     try {
-      const response = await updateMutation({
-        variables: {
-          id: environment.id,
-          name: environment.name,
-          isPrimary: true,
-        },
+      const success = await updateEnvironment({
+        id: environment.id,
+        name: environment.name,
+        isPrimary: true,
       });
-      if (response.data?.updateEnvironments?.id) {
-        toast({
-          variant: 'success',
-          title: 'Environment set as primary successfully.',
-        });
+      if (success) {
+        toast({ variant: 'success', title: 'Environment set as primary successfully.' });
         refetch();
       }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
     }
-    setIsSettingPrimary(false);
   };
+
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-            disabled={isViewOnly}
-          >
-            <DotsHorizontalIcon className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72">
-          <DropdownMenuItem onClick={handleOpen}>
-            <EditIcon className="w-6" width={12} height={12} />
-            Rename environment
-          </DropdownMenuItem>
-          {isNotPrimary && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleSetPrimary}
-                disabled={isViewOnly || isSettingPrimary}
-              >
-                <StarIcon className="w-4 h-4 mr-2" />
-                Make this the primary environment
-              </DropdownMenuItem>
-            </>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={handleDeleteOpen}
-            disabled={isDeleteDisabled}
-            className="text-destructive focus:bg-destructive/10 focus:text-destructive disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Delete2Icon className="w-4 h-4 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <EnvironmentEditForm environment={environment} isOpen={open} onClose={handleOnClose} />
+      <ResourceRowActions
+        disabled={isViewOnly}
+        contentClassName="w-72"
+        items={[
+          {
+            key: 'rename',
+            icon: <EditIcon className="w-6" width={12} height={12} />,
+            label: 'Rename environment',
+            onSelect: () => setEditOpen(true),
+          },
+          ...(isNotPrimary
+            ? [
+                {
+                  key: 'setPrimary',
+                  icon: <StarIcon className="w-4 h-4 mr-2" />,
+                  label: 'Make this the primary environment',
+                  onSelect: handleSetPrimary,
+                  disabled: isViewOnly || isSettingPrimary,
+                  separatorBefore: true,
+                },
+              ]
+            : []),
+          {
+            key: 'delete',
+            icon: <Delete2Icon className="w-4 h-4 mr-2" />,
+            label: 'Delete',
+            destructive: true,
+            disabled: isDeleteDisabled,
+            separatorBefore: true,
+            onSelect: () => setDeleteOpen(true),
+          },
+        ]}
+      />
+      <EnvironmentEditForm
+        environment={environment}
+        isOpen={editOpen}
+        onClose={() => {
+          setEditOpen(false);
+          refetch();
+        }}
+      />
       <EnvironmentDeleteForm
         data={environment}
-        open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
-        onSubmit={handleDeleteClose}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onSubmit={() => {
+          setDeleteOpen(false);
+          refetch();
+        }}
       />
     </>
   );

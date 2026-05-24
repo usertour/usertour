@@ -101,7 +101,7 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
   return (
     <>
       <Dialog open={visible} onOpenChange={onClose}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <DialogHeader>

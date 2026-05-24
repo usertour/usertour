@@ -1,34 +1,23 @@
 import { Event } from '@usertour/types';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
 import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteEventMutation } from '@usertour/hooks';
+import { DeleteConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
-import { LoadingButton } from '@/components/molecules/loading-button';
 
-export const EventDeleteForm = (props: {
+interface EventDeleteFormProps {
   data: Event;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
-}) => {
-  const { data, open, onOpenChange, onSubmit } = props;
+}
+
+export const EventDeleteForm = ({ data, open, onOpenChange, onSubmit }: EventDeleteFormProps) => {
   const { invoke: deleteEvent, loading } = useDeleteEventMutation();
   const { toast } = useToast();
 
-  const handleDeleteSubmit = async () => {
+  const handleDelete = async () => {
     if (!data?.id) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid event data',
-      });
+      toast({ variant: 'destructive', title: 'Invalid event data' });
       return;
     }
     try {
@@ -42,38 +31,24 @@ export const EventDeleteForm = (props: {
         onOpenChange(false);
         return;
       }
-      toast({
-        variant: 'destructive',
-        title: 'Failed to delete event',
-      });
+      toast({ variant: 'destructive', title: 'Failed to delete event' });
       onSubmit(false);
     } catch (error) {
       onSubmit(false);
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
     }
   };
 
   return (
-    <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete the event{' '}
-            <span className="font-bold text-foreground">{data.displayName}</span>.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <LoadingButton onClick={handleDeleteSubmit} loading={loading} variant="destructive">
-            Submit
-          </LoadingButton>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DeleteConfirmDialog
+      resourceLabel="event"
+      name={data.displayName}
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={handleDelete}
+      loading={loading}
+      confirmLabel="Submit"
+    />
   );
 };
 

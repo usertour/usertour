@@ -1,180 +1,126 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour/icons';
-import { useAppContext } from '@/contexts/app-context';
+import { useEffect } from 'react';
 import { useMutation } from '@apollo/client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { useAppContext } from '@/contexts/app-context';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { createLocalization } from '@usertour/gql';
 import { Input } from '@usertour/input';
-import { LocateItem, LocateSelect } from '@usertour/ui';
-import { getErrorMessage } from '@usertour/helpers';
+import { type LocateItem, LocateSelect, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { QuestionTooltip } from '@usertour/tooltip';
-import { useToast } from '@usertour/use-toast';
-import * as React from 'react';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-interface CreateFormProps {
+interface LocalizationCreateFormProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const formSchema = z.object({
-  locale: z
-    .string({
-      required_error: 'Please input locale.',
-    })
-    .max(20)
-    .min(2),
-  name: z
-    .string({
-      required_error: 'Please input name.',
-    })
-    .max(20)
-    .min(2),
-  code: z
-    .string({
-      required_error: 'Please input code.',
-    })
-    .max(20)
-    .min(2),
+const schema = z.object({
+  locale: z.string({ required_error: 'Please input locale.' }).max(20).min(2),
+  name: z.string({ required_error: 'Please input name.' }).max(20).min(2),
+  code: z.string({ required_error: 'Please input code.' }).max(20).min(2),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof schema>;
 
-const defaultValues: Partial<FormValues> = {};
-
-export const LocalizationCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
+export const LocalizationCreateForm = ({ isOpen, onClose }: LocalizationCreateFormProps) => {
   const [createMutation] = useMutation(createLocalization);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { project } = useAppContext();
-  const { toast } = useToast();
 
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
-    mode: 'onChange',
+  const state = useSettingsForm<FormValues>({
+    schema,
+    defaultValues: { locale: '', name: '', code: '' },
+    submit: async (values) => {
+      const result = await createMutation({
+        variables: { data: { ...values, projectId: project?.id } },
+      });
+      if (!result.data?.createLocalization?.id) {
+        throw new Error('Create Localization failed.');
+      }
+      onClose();
+    },
   });
 
   useEffect(() => {
-    form.reset();
+    if (isOpen) {
+      state.form.reset({ locale: '', name: '', code: '' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  async function handleOnSubmit(formValues: FormValues) {
-    setIsLoading(true);
-    try {
-      const data = {
-        ...formValues,
-        projectId: project?.id,
-      };
-      const ret = await createMutation({ variables: { data } });
-
-      if (!ret.data?.createLocalization?.id) {
-        showError('Create Localization failed.');
-      }
-      onClose();
-    } catch (error) {
-      showError(getErrorMessage(error));
-    }
-    setIsLoading(false);
-  }
-
   const handleOnSelect = (item: LocateItem) => {
-    form.setValue('name', `${item.language.name} (${item.country.code})`);
-    form.setValue('code', item.locale);
-    form.setValue('locale', item.locale);
+    state.form.setValue('name', `${item.language.name} (${item.country.code})`);
+    state.form.setValue('code', item.locale);
+    state.form.setValue('locale', item.locale);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="!w-auto">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleOnSubmit)} className="w-[450px]">
-            <DialogHeader>
-              <DialogTitle>Create New Localization</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col space-y-2 mt-4 mb-4">
-              <FormField
-                control={form.control}
-                name="locale"
-                render={() => (
-                  <FormItem>
-                    <FormLabel className="flex flex-row items-center">
-                      Locale
-                      <QuestionTooltip className="ml-1">
-                        A locale represents a user's language and region.
-                      </QuestionTooltip>
-                    </FormLabel>
-                    <LocateSelect popperContentClass="w-[450px]" onSelect={handleOnSelect} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex flex-row items-center">
-                      Name
-                      <QuestionTooltip className="ml-1">
-                        Human-readable name of the locale
-                      </QuestionTooltip>
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter display name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex flex-row items-center">
-                      Code
-                      <QuestionTooltip className="ml-1">
-                        The value that users of this locale must have in their locale_code attribute
-                        in your Usertour.js installation. It's important that this code matches
-                        exactly. If a user has a missing or invalid locale code, they will be
-                        regarded as having no locale, which means they'll see the flow in the base
-                        locale.
-                      </QuestionTooltip>
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter code name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Create Localization
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <SettingsDialogForm
+      title="Create New Localization"
+      open={isOpen}
+      onOpenChange={(next) => !next && onClose()}
+      state={state}
+      submitLabel="Create Localization"
+      contentClassName="!w-auto"
+    >
+      <div className="w-[450px] flex flex-col space-y-2">
+        <FormField
+          control={state.form.control}
+          name="locale"
+          render={() => (
+            <FormItem>
+              <FormLabel className="flex flex-row items-center">
+                Locale
+                <QuestionTooltip className="ml-1">
+                  A locale represents a user's language and region.
+                </QuestionTooltip>
+              </FormLabel>
+              <LocateSelect popperContentClass="w-[450px]" onSelect={handleOnSelect} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={state.form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex flex-row items-center">
+                Name
+                <QuestionTooltip className="ml-1">
+                  Human-readable name of the locale
+                </QuestionTooltip>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="Enter display name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={state.form.control}
+          name="code"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex flex-row items-center">
+                Code
+                <QuestionTooltip className="ml-1">
+                  The value that users of this locale must have in their locale_code attribute in
+                  your Usertour.js installation. It's important that this code matches exactly. If a
+                  user has a missing or invalid locale code, they will be regarded as having no
+                  locale, which means they'll see the flow in the base locale.
+                </QuestionTooltip>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="Enter code name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </SettingsDialogForm>
   );
 };
 

@@ -1,78 +1,25 @@
-import { useApiContext } from '@/contexts/api-context';
-import { AccessToken, useDeleteAccessTokenMutation, useGetAccessTokenQuery } from '@usertour/hooks';
-import { DotsHorizontalIcon, EyeOpenIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { Delete2Icon } from '@usertour/icons';
 import { useState } from 'react';
-import { useAppContext } from '@/contexts/app-context';
+import { EyeOpenIcon } from '@radix-ui/react-icons';
+import { Delete2Icon } from '@usertour/icons';
 import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
+  type AccessToken,
+  useDeleteAccessTokenMutation,
+  useGetAccessTokenQuery,
+} from '@usertour/hooks';
+import { DeleteConfirmDialog, ResourceRowActions } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
+import { useApiContext } from '@/contexts/api-context';
+import { useAppContext } from '@/contexts/app-context';
 import { ApiKeyDialog } from './api-key-dialog';
-import { LoadingButton } from '@/components/molecules/loading-button';
 
-// Type definitions
-type ApiListActionProps = {
+interface ApiListActionProps {
   token: AccessToken;
   environmentId: string;
-};
+}
 
-type DeleteDialogProps = {
-  token: AccessToken;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onDelete: () => Promise<void>;
-  isLoading: boolean;
-};
-
-/**
- * Delete confirmation dialog component
- */
-const DeleteDialog = ({ token, isOpen, onOpenChange, onDelete, isLoading }: DeleteDialogProps) => (
-  <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>
-          Delete API key <span className="font-bold text-foreground">{token.name}</span>
-        </AlertDialogTitle>
-        <AlertDialogDescription>
-          Are you sure you want to delete this API key? This action cannot be undone.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-        <LoadingButton
-          variant="destructive"
-          onClick={onDelete}
-          loading={isLoading}
-          className="min-w-[80px]"
-        >
-          Delete
-        </LoadingButton>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
-);
-
-/**
- * Component for managing API token actions (currently only delete)
- */
 export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isRevealDialogOpen, setIsRevealDialogOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [revealOpen, setRevealOpen] = useState(false);
   const [shouldFetchToken, setShouldFetchToken] = useState(false);
   const { refetch } = useApiContext();
   const { isViewOnly } = useAppContext();
@@ -80,14 +27,12 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
   const { data: fullToken, loading: isTokenLoading } = useGetAccessTokenQuery(
     environmentId,
     token.id,
-    {
-      skip: !shouldFetchToken,
-    },
+    { skip: !shouldFetchToken },
   );
   const { toast } = useToast();
 
   const handleReveal = () => {
-    setIsRevealDialogOpen(true);
+    setRevealOpen(true);
     setShouldFetchToken(true);
   };
 
@@ -95,61 +40,55 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
     try {
       const success = await deleteAccessToken(environmentId, token.id);
       if (success) {
-        toast({
-          variant: 'success',
-          title: 'API key deleted successfully',
-        });
-        setIsDeleteDialogOpen(false);
+        toast({ variant: 'success', title: 'API key deleted successfully' });
+        setDeleteOpen(false);
         refetch();
       } else {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to delete API key',
-        });
+        toast({ variant: 'destructive', title: 'Failed to delete API key' });
       }
     } catch {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to delete API key',
-      });
+      toast({ variant: 'destructive', title: 'Failed to delete API key' });
     }
   };
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
-            <DotsHorizontalIcon className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[200px]">
-          <DropdownMenuItem onClick={handleReveal}>
-            <EyeOpenIcon className="w-4 h-4 mr-2" />
-            Reveal API key
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setIsDeleteDialogOpen(true)}
-            disabled={isViewOnly}
-            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-          >
-            <Delete2Icon className="w-4 h-4 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <DeleteDialog
-        token={token}
-        isOpen={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onDelete={handleDelete}
-        isLoading={isDeleting}
+      <ResourceRowActions
+        items={[
+          {
+            key: 'reveal',
+            icon: <EyeOpenIcon className="w-4 h-4 mr-2" />,
+            label: 'Reveal API key',
+            onSelect: handleReveal,
+          },
+          {
+            key: 'delete',
+            icon: <Delete2Icon className="w-4 h-4 mr-2" />,
+            label: 'Delete',
+            destructive: true,
+            disabled: isViewOnly,
+            onSelect: () => setDeleteOpen(true),
+          },
+        ]}
+      />
+      <DeleteConfirmDialog
+        resourceLabel="API key"
+        title={
+          <>
+            Delete API key <span className="font-bold text-foreground">{token.name}</span>
+          </>
+        }
+        description="Are you sure you want to delete this API key? This action cannot be undone."
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleDelete}
+        loading={isDeleting}
       />
       <ApiKeyDialog
         token={fullToken || ''}
-        open={isRevealDialogOpen}
+        open={revealOpen}
         onOpenChange={(open) => {
-          setIsRevealDialogOpen(open);
+          setRevealOpen(open);
           if (!open) {
             setShouldFetchToken(false);
           }

@@ -1,94 +1,76 @@
+import { useState } from 'react';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
-import { useMutation } from '@apollo/client';
-import { DotsHorizontalIcon, StarFilledIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { setDefaultLocalization } from '@usertour/gql';
+import { StarFilledIcon } from '@radix-ui/react-icons';
 import { EditIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
+import { useSetDefaultLocalizationMutation } from '@usertour/hooks';
 import { Localization } from '@usertour/types';
+import { ResourceRowActions } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
 import { LocalizationDeleteForm } from './localization-delete-form';
 import { LocalizationEditForm } from './localization-edit-form';
 
-type LocalizationListActionProps = {
+interface LocalizationListActionProps {
   localization: Localization;
-};
-export const LocalizationListAction = (props: LocalizationListActionProps) => {
-  const { localization } = props;
-  const [open, setOpen] = useState(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const { refetch } = useLocalizationListContext();
-  const [setDefaultMutation] = useMutation(setDefaultLocalization);
-  const { toast } = useToast();
-  const handleOpen = () => {
-    setOpen(true);
-  };
-  const handleOnClose = () => {
-    setOpen(false);
-    refetch();
-  };
-  const handleDeleteClose = () => {
-    setOpenDeleteDialog(false);
-    refetch();
-  };
+}
 
-  const handleSetAsDefault = async () => {
+export const LocalizationListAction = ({ localization }: LocalizationListActionProps) => {
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const { refetch } = useLocalizationListContext();
+  const { invoke: setDefaultLocalization } = useSetDefaultLocalizationMutation();
+  const { toast } = useToast();
+
+  const handleSetDefault = async () => {
     try {
-      await setDefaultMutation({
-        variables: {
-          id: localization.id,
-        },
-      });
+      await setDefaultLocalization(localization.id);
       await refetch();
-      // onSubmit("setAsDefault");
       toast({
         variant: 'success',
         title: 'The localization has been successfully set as default',
       });
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
     }
   };
 
   return (
     <>
-      {
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
-              <DotsHorizontalIcon className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[200px]">
-            <DropdownMenuItem onClick={handleOpen}>
-              <EditIcon className="w-6" width={12} height={12} />
-              Edit localization
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSetAsDefault} disabled={localization.isDefault}>
-              <StarFilledIcon className="mr-1" width={15} height={15} />
-              Set as company default
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      }
-      <LocalizationEditForm localization={localization} isOpen={open} onClose={handleOnClose} />
+      <ResourceRowActions
+        align="start"
+        items={[
+          {
+            key: 'edit',
+            icon: <EditIcon className="w-6" width={12} height={12} />,
+            label: 'Edit localization',
+            onSelect: () => setEditOpen(true),
+          },
+          {
+            key: 'default',
+            icon: <StarFilledIcon className="mr-1" width={15} height={15} />,
+            label: 'Set as company default',
+            onSelect: handleSetDefault,
+            disabled: localization.isDefault,
+            separatorBefore: true,
+          },
+        ]}
+      />
+      <LocalizationEditForm
+        localization={localization}
+        isOpen={editOpen}
+        onClose={() => {
+          setEditOpen(false);
+          refetch();
+        }}
+      />
       <LocalizationDeleteForm
         data={localization}
-        open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
-        onSubmit={handleDeleteClose}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onSubmit={() => {
+          setDeleteOpen(false);
+          refetch();
+        }}
       />
     </>
   );

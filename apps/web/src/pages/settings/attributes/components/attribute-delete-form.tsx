@@ -1,43 +1,40 @@
 import { Attribute } from '@usertour/types';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@usertour/alert-dialog';
 import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
 import { useDeleteAttributeMutation } from '@usertour/hooks';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { DeleteConfirmDialog } from '@usertour/ui';
+import { useToast } from '@usertour/use-toast';
+import { useTranslation } from 'react-i18next';
 
-export const AttributeDeleteForm = (props: {
+interface AttributeDeleteFormProps {
   data: Attribute;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (success: boolean) => void;
-}) => {
-  const { data, open, onOpenChange, onSubmit } = props;
+}
+
+export const AttributeDeleteForm = ({
+  data,
+  open,
+  onOpenChange,
+  onSubmit,
+}: AttributeDeleteFormProps) => {
   const { invoke: deleteAttribute, loading: isDeleting } = useDeleteAttributeMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
-  const handleDeleteSubmit = async () => {
+  const handleDelete = async () => {
     if (!data) {
       return;
     }
-
     try {
       const success = await deleteAttribute(data.id);
       if (success) {
         toast({
           variant: 'success',
-          title: 'The attribute has been successfully deleted',
+          title: t('settings.attributes.deleteSuccess'),
         });
         onSubmit(true);
         onOpenChange(false);
-        return;
       }
     } catch (error) {
       onSubmit(false);
@@ -49,23 +46,15 @@ export const AttributeDeleteForm = (props: {
   };
 
   return (
-    <AlertDialog defaultOpen={open} open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete the attribute{' '}
-            <span className="font-bold text-foreground">{data.displayName}</span>.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <LoadingButton onClick={handleDeleteSubmit} variant="destructive" loading={isDeleting}>
-            Submit
-          </LoadingButton>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DeleteConfirmDialog
+      resourceLabel={t('settings.attributes.deleteResource')}
+      name={data.displayName}
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={handleDelete}
+      loading={isDeleting}
+      confirmLabel={t('settings.common.submit')}
+    />
   );
 };
 

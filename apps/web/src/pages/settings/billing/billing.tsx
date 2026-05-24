@@ -1,21 +1,19 @@
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { SettingsContent } from '../components/content';
+import { SettingsPage } from '@usertour/ui';
 import Pricing from './components/pricing';
-import { SettingsBillingHeader } from './components/billing-header';
-import { Separator } from '@usertour/separator';
 
 export const SettingsBilling = () => {
   const { project } = useAppContext();
+  const { t } = useTranslation();
   if (!project || !project.id) {
     return <></>;
   }
 
   return (
-    <SettingsContent>
-      <SettingsBillingHeader />
-      <Separator />
+    <SettingsPage title={t('settings.billing.title')}>
       <Pricing projectId={project.id} />
-    </SettingsContent>
+    </SettingsPage>
   );
 };
 

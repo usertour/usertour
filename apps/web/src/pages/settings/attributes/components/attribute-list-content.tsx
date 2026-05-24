@@ -1,96 +1,91 @@
-import { ListSkeleton } from '@/components/molecules/skeleton';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { Attribute } from '@usertour/types';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@usertour/table';
-import { useEffect, useState } from 'react';
 import { Badge } from '@usertour/badge';
 import { RiShieldCheckFill } from '@usertour/icons';
+import { ResourceListBody, type ResourceTableColumn } from '@usertour/ui';
 import { AttributeListAction } from './attribute-list-action';
 
 interface AttributeListContentProps {
   bizType: number;
 }
 
-export const AttributeListContent = (props: AttributeListContentProps) => {
-  const { bizType } = props;
+const DATA_TYPE_LABEL: Record<number, string> = {
+  1: 'Number',
+  2: 'String',
+  3: 'Boolean',
+  4: 'List',
+  5: 'DateTime',
+  6: 'RandomAB',
+  7: 'RandomNumber',
+};
+
+// Predefined-first ordering keeps system attributes grouped at the top
+// across all bizType tabs.
+const sortAttributes = (attributes: readonly Attribute[]) =>
+  [...attributes].sort((left, right) =>
+    left.predefined === right.predefined ? 0 : left.predefined ? -1 : 1,
+  );
+
+export const AttributeListContent = ({ bizType }: AttributeListContentProps) => {
   const { attributeList, loading } = useAttributeListContext();
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const { t } = useTranslation();
 
-  useEffect(() => {
-    if (attributeList) {
-      setAttributes(
-        attributeList
-          ?.filter((attr) => attr.bizType === bizType)
-          .sort((a, b) => (a.predefined === b.predefined ? 0 : a.predefined ? -1 : 1)),
-      );
-    }
-  }, [attributeList, bizType]);
+  const rows = useMemo(
+    () => sortAttributes((attributeList ?? []).filter((attr) => attr.bizType === bizType)),
+    [attributeList, bizType],
+  );
 
-  if (loading) {
-    return <ListSkeleton />;
-  }
+  const columns: ResourceTableColumn<Attribute>[] = [
+    {
+      header: t('settings.attributes.columns.displayName'),
+      className: 'truncate',
+      cell: (attribute) => (
+        <div className="flex flex-col">
+          <span className="flex items-center gap-1.5 truncate">
+            {attribute.displayName}
+            {attribute.predefined ? (
+              <Badge
+                variant="secondary"
+                className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
+              >
+                <RiShieldCheckFill className="h-3 w-3 text-foreground" />
+                {t('settings.attributes.systemBadge')}
+              </Badge>
+            ) : null}
+          </span>
+          {attribute.description ? (
+            <span className="text-xs text-muted-foreground truncate">{attribute.description}</span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      header: t('settings.attributes.columns.codeName'),
+      className: 'truncate',
+      cell: (attribute) => attribute.codeName,
+    },
+    {
+      header: t('settings.attributes.columns.dataType'),
+      headerClassName: 'w-28 hidden sm:table-cell',
+      className: 'hidden sm:table-cell',
+      cell: (attribute) => DATA_TYPE_LABEL[attribute.dataType] ?? '',
+    },
+    {
+      header: '',
+      headerClassName: 'w-20',
+      cell: (attribute) => <AttributeListAction attribute={attribute} />,
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <Table className="table-fixed min-w-2xl">
-        <TableHeader>
-          <TableRow>
-            <TableHead>Display name</TableHead>
-            <TableHead>Code name</TableHead>
-            <TableHead className="w-28 hidden sm:table-cell">Data type</TableHead>
-            <TableHead className="w-20" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {attributes ? (
-            attributes?.map((attribute: Attribute) => (
-              <TableRow className="cursor-pointer" key={attribute.id} onClick={() => {}}>
-                <TableCell className="truncate">
-                  <div className="flex flex-col">
-                    <span className="flex items-center gap-1.5 truncate">
-                      {attribute.displayName}
-                      {attribute.predefined && (
-                        <Badge
-                          variant="secondary"
-                          className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
-                        >
-                          <RiShieldCheckFill className="h-3 w-3 text-foreground" />
-                          System
-                        </Badge>
-                      )}
-                    </span>
-                    {attribute.description && (
-                      <span className="text-xs text-muted-foreground truncate">
-                        {attribute.description}
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="truncate">{attribute.codeName}</TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  {attribute.dataType === 1 && 'Number'}
-                  {attribute.dataType === 2 && 'String'}
-                  {attribute.dataType === 3 && 'Boolean'}
-                  {attribute.dataType === 4 && 'List'}
-                  {attribute.dataType === 5 && 'DateTime'}
-                  {attribute.dataType === 6 && 'RandomAB'}
-                  {attribute.dataType === 7 && 'RandomNumber'}
-                </TableCell>
-                <TableCell>
-                  <AttributeListAction attribute={attribute} />
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+    <ResourceListBody<Attribute>
+      columns={columns}
+      rows={rows}
+      loading={loading}
+      getRowKey={(attribute) => attribute.id}
+    />
   );
 };
 

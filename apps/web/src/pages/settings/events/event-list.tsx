@@ -1,20 +1,102 @@
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { EventListProvider } from '@/contexts/event-list-context';
-import { Separator } from '@usertour/separator';
-import { SettingsContent } from '../components/content';
-import { EventListContent } from './components/event-list-content';
-import { EventListHeader } from './components/event-list-header';
+import { EventListProvider, useEventListContext } from '@/contexts/event-list-context';
+import { EventCreateDialog } from '@/components/events/event-create-dialog';
+import { Badge } from '@usertour/badge';
+import { Button } from '@usertour/button';
+import { RiAddLine, RiShieldCheckFill } from '@usertour/icons';
+import { Event } from '@usertour/types';
+import { ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
+import { EventListAction } from './components/event-list-action';
+
+const sortEvents = (events: readonly Event[]) =>
+  [...events].sort((left, right) =>
+    left.predefined === right.predefined ? 0 : left.predefined ? -1 : 1,
+  );
+
+const NewEventButton = ({ onSuccess }: { onSuccess: () => void }) => {
+  const { isViewOnly } = useAppContext();
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)} disabled={isViewOnly}>
+        <RiAddLine className="mr-2 h-4 w-4" />
+        {t('settings.events.newButton')}
+      </Button>
+      <EventCreateDialog
+        isOpen={open}
+        onClose={() => {
+          setOpen(false);
+          onSuccess();
+        }}
+      />
+    </>
+  );
+};
+
+const EventsListPage = () => {
+  const { eventList, loading, isRefetching, refetch } = useEventListContext();
+  const { t } = useTranslation();
+
+  const rows = useMemo(() => sortEvents(eventList ?? []), [eventList]);
+
+  const columns: ResourceTableColumn<Event>[] = [
+    {
+      header: t('settings.events.columns.displayName'),
+      className: 'truncate',
+      cell: (event) => (
+        <div className="flex flex-col">
+          <span className="flex items-center gap-1.5 truncate">
+            {event.displayName}
+            {event.predefined ? (
+              <Badge
+                variant="secondary"
+                className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
+              >
+                <RiShieldCheckFill className="h-3 w-3 text-foreground" />
+                {t('settings.attributes.systemBadge')}
+              </Badge>
+            ) : null}
+          </span>
+          {event.description ? (
+            <span className="text-xs text-muted-foreground truncate">{event.description}</span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      header: t('settings.events.columns.codeName'),
+      className: 'truncate',
+      cell: (event) => event.codeName,
+    },
+    {
+      header: '',
+      headerClassName: 'w-20',
+      cell: (event) => <EventListAction event={event} />,
+    },
+  ];
+
+  return (
+    <ResourceListPage<Event>
+      title={t('settings.events.title')}
+      actions={<NewEventButton onSuccess={refetch} />}
+      columns={columns}
+      rows={rows}
+      loading={loading || isRefetching}
+      getRowKey={(event) => event.id}
+    />
+  );
+};
 
 export const SettingsEventsList = () => {
   const { project } = useAppContext();
   return (
-    <SettingsContent>
-      <EventListProvider projectId={project?.id}>
-        <EventListHeader />
-        <Separator />
-        <EventListContent />
-      </EventListProvider>
-    </SettingsContent>
+    <EventListProvider projectId={project?.id}>
+      <EventsListPage />
+    </EventListProvider>
   );
 };
 

@@ -1,14 +1,20 @@
 'use client';
 
+import { CaretSortIcon } from '@radix-ui/react-icons';
 import { SpinnerIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, AlertDescription, AlertTitle } from '@usertour/alert';
 import { Button } from '@usertour/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@usertour/dropdown-menu';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { Input } from '@usertour/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
 import { useInviteTeamMemberMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { TeamMemberRole } from '@usertour/types';
@@ -20,6 +26,11 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+
+const ROLE_OPTIONS = [
+  { value: TeamMemberRole.ADMIN, label: 'Admin' },
+  { value: TeamMemberRole.VIEWER, label: 'Viewer' },
+] as const;
 
 interface InviteDialogProps {
   isOpen: boolean;
@@ -100,7 +111,7 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
   if (!canInviteMembers) {
     return (
       <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Add Team Member</DialogTitle>
           </DialogHeader>
@@ -140,7 +151,7 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-xl" aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
@@ -178,23 +189,46 @@ export const MemberInviteDialog = ({ onClose, isOpen }: InviteDialogProps) => {
                   <FormField
                     control={form.control}
                     name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Role</FormLabel>
-                        <FormControl>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value={TeamMemberRole.ADMIN}>Admin</SelectItem>
-                              <SelectItem value={TeamMemberRole.VIEWER}>Viewer</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const selected = ROLE_OPTIONS.find((option) => option.value === field.value);
+                      return (
+                        <FormItem>
+                          <FormLabel>Role</FormLabel>
+                          {/* modal={false}: parent Dialog already traps
+                              focus; skipping the dropdown's own trap
+                              avoids the aria-hidden conflict on the
+                              still-focused trigger button. */}
+                          <DropdownMenu modal={false}>
+                            <FormControl>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="w-full justify-between font-normal"
+                                >
+                                  {selected?.label ?? 'Select a role'}
+                                  <CaretSortIcon className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                            </FormControl>
+                            <DropdownMenuContent
+                              align="start"
+                              className="w-[--radix-dropdown-menu-trigger-width]"
+                            >
+                              {ROLE_OPTIONS.map((option) => (
+                                <DropdownMenuItem
+                                  key={option.value}
+                                  onSelect={() => field.onChange(option.value)}
+                                >
+                                  {option.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
                 </div>
               </div>

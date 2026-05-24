@@ -1,115 +1,71 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour/icons';
-import { Environment } from '@usertour/types';
-import { useMutation } from '@apollo/client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { updateEnvironments } from '@usertour/gql';
-import { Input } from '@usertour/input';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import * as React from 'react';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { useUpdateEnvironmentMutation } from '@usertour/hooks';
+import { Input } from '@usertour/input';
+import { Environment } from '@usertour/types';
+import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
-interface EditFormProps {
+interface EnvironmentEditFormProps {
   isOpen: boolean;
   environment: Environment;
   onClose: () => void;
 }
 
-const formSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Please input your environment name.',
-    })
-    .max(20)
-    .min(1),
+const schema = z.object({
+  name: z.string({ required_error: 'Please input your environment name.' }).max(20).min(1),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof schema>;
 
-export const EnvironmentEditForm = (props: EditFormProps) => {
-  const { onClose, isOpen, environment } = props;
-  const [updateMutation] = useMutation(updateEnvironments);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { toast } = useToast();
+export const EnvironmentEditForm = ({ environment, isOpen, onClose }: EnvironmentEditFormProps) => {
+  const { invoke: updateEnvironment } = useUpdateEnvironmentMutation();
 
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const state = useSettingsForm<FormValues>({
+    schema,
     defaultValues: { name: environment.name },
-    mode: 'onChange',
-  });
-
-  useEffect(() => {
-    form.reset({ name: environment.name });
-  }, [isOpen]);
-
-  async function handleOnSubmit(formValues: FormValues) {
-    setIsLoading(true);
-    try {
-      const data = { name: formValues.name, id: environment.id };
-      const response = await updateMutation({ variables: data });
-      if (response.data?.updateEnvironments?.id) {
+    submit: async ({ name }) => {
+      const success = await updateEnvironment({ id: environment.id, name });
+      if (success) {
         onClose();
       }
-    } catch (error) {
-      showError(getErrorMessage(error));
+    },
+  });
+
+  // Re-seed the form whenever the dialog re-opens against a different
+  // environment record.
+  useEffect(() => {
+    if (isOpen) {
+      state.form.reset({ name: environment.name });
     }
-    setIsLoading(false);
-  }
+    // intentionally not depending on `state.form` — reset identity is stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, environment]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleOnSubmit)}>
-            <DialogHeader>
-              <DialogTitle>Rename Environment </DialogTitle>
-            </DialogHeader>
-            <div>
-              <div className="space-y-4 py-2 pb-4 pt-4">
-                <div className="space-y-2">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Environment name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter environment name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Submit
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <SettingsDialogForm
+      title="Rename Environment"
+      open={isOpen}
+      onOpenChange={(next) => !next && onClose()}
+      state={state}
+      submitLabel="Submit"
+    >
+      <FormField
+        control={state.form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Environment name</FormLabel>
+            <FormControl>
+              <Input placeholder="Enter environment name" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </SettingsDialogForm>
   );
 };
 

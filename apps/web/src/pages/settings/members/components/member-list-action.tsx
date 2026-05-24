@@ -1,133 +1,108 @@
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Button } from '@usertour/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@usertour/dropdown-menu';
-import { Delete2Icon, EditIcon } from '@usertour/icons';
 import { useState } from 'react';
-import type { TeamMember } from '@usertour/types';
-import { TeamMemberRole } from '@usertour/types';
-import { CancelInviteDialog } from './member-cancel-dialog';
+import { ArrowLeftRightIcon } from 'lucide-react';
 import { useAppContext } from '@/contexts/app-context';
 import { useMemberContext } from '@/contexts/member-context';
+import { Delete2Icon, EditIcon } from '@usertour/icons';
+import { type TeamMember, TeamMemberRole } from '@usertour/types';
+import { ResourceRowActions, type ResourceRowActionItem } from '@usertour/ui';
+import { CancelInviteDialog } from './member-cancel-dialog';
 import { MemberChangeRoleDialog } from './member-change-role-dialog';
 import { MemberRemoveDialog } from './member-remove-dialog';
 import { TransferOwnerDialog } from './member-transfer-owner-dialog';
-import { ArrowLeftRightIcon } from 'lucide-react';
 
-type MemberListActionProps = {
+interface MemberListActionProps {
   data: TeamMember;
-};
+}
 
-export const MemberListAction = (props: MemberListActionProps) => {
-  const { data } = props;
-  const [open, setOpen] = useState(false);
+export const MemberListAction = ({ data }: MemberListActionProps) => {
   const { project } = useAppContext();
   const { refetch } = useMemberContext();
-  const [openChangeRoleDialog, setOpenChangeRoleDialog] = useState(false);
-  const [openRemoveDialog, setOpenRemoveDialog] = useState(false);
-  const [openTransferOwnerDialog, setOpenTransferOwnerDialog] = useState(false);
+  const [cancelInviteOpen, setCancelInviteOpen] = useState(false);
+  const [changeRoleOpen, setChangeRoleOpen] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [transferOwnerOpen, setTransferOwnerOpen] = useState(false);
+
+  const projectId = project?.id as string;
+  const isOwner = data.role === TeamMemberRole.OWNER;
+
+  const items: ResourceRowActionItem[] = data.isInvite
+    ? [
+        {
+          key: 'cancelInvite',
+          icon: <Delete2Icon className="w-6" width={16} height={16} />,
+          label: 'Cancel invite',
+          destructive: true,
+          onSelect: () => setCancelInviteOpen(true),
+        },
+      ]
+    : [
+        {
+          key: 'changeRole',
+          icon: <EditIcon className="w-6" width={16} height={16} />,
+          label: 'Change role',
+          disabled: isOwner,
+          onSelect: () => setChangeRoleOpen(true),
+        },
+        {
+          key: 'transferOwner',
+          icon: <ArrowLeftRightIcon className="w-6" width={16} height={16} />,
+          label: 'Transfer ownership to this user',
+          disabled: isOwner,
+          onSelect: () => setTransferOwnerOpen(true),
+        },
+        {
+          key: 'remove',
+          icon: <Delete2Icon className="w-6" width={16} height={16} />,
+          label: 'Remove member',
+          destructive: true,
+          disabled: isOwner,
+          separatorBefore: true,
+          onSelect: () => setRemoveOpen(true),
+        },
+      ];
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex h-8 w-8 p-0 data-[state=open]:bg-muted">
-            <DotsHorizontalIcon className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-[200px]">
-          {data.isInvite && (
-            <DropdownMenuItem
-              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-              onClick={() => setOpen(true)}
-            >
-              <Delete2Icon className="w-6" width={16} height={16} />
-              <span>Cancel invite</span>
-            </DropdownMenuItem>
-          )}
-          {!data.isInvite && (
-            <>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                disabled={data.role === TeamMemberRole.OWNER}
-                onClick={() => setOpenChangeRoleDialog(true)}
-              >
-                <EditIcon className="w-6" width={16} height={16} />
-                Change role
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                disabled={data.role === TeamMemberRole.OWNER}
-                onClick={() => setOpenTransferOwnerDialog(true)}
-              >
-                <ArrowLeftRightIcon className="w-6" width={16} height={16} />
-                Transfer ownership to this user
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-                disabled={data.role === TeamMemberRole.OWNER}
-                onClick={() => setOpenRemoveDialog(true)}
-              >
-                <Delete2Icon className="w-6" width={16} height={16} />
-                Remove member
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <ResourceRowActions items={items} contentClassName="min-w-[200px]" />
       <CancelInviteDialog
-        projectId={project?.id as string}
+        projectId={projectId}
         data={data}
-        isOpen={open}
+        isOpen={cancelInviteOpen}
         onSuccess={() => {
-          setOpen(false);
+          setCancelInviteOpen(false);
           refetch();
         }}
-        onCancel={() => {
-          setOpen(false);
-        }}
+        onCancel={() => setCancelInviteOpen(false)}
       />
       <MemberChangeRoleDialog
-        projectId={project?.id as string}
-        isOpen={openChangeRoleDialog}
+        projectId={projectId}
+        isOpen={changeRoleOpen}
         data={data}
         onSuccess={() => {
-          setOpenChangeRoleDialog(false);
+          setChangeRoleOpen(false);
           refetch();
         }}
-        onCancel={() => {
-          setOpenChangeRoleDialog(false);
-        }}
+        onCancel={() => setChangeRoleOpen(false)}
       />
       <MemberRemoveDialog
-        projectId={project?.id as string}
-        isOpen={openRemoveDialog}
+        projectId={projectId}
+        isOpen={removeOpen}
         data={data}
         onSuccess={() => {
-          setOpenRemoveDialog(false);
+          setRemoveOpen(false);
           refetch();
         }}
-        onCancel={() => {
-          setOpenRemoveDialog(false);
-        }}
+        onCancel={() => setRemoveOpen(false)}
       />
       <TransferOwnerDialog
-        projectId={project?.id as string}
-        isOpen={openTransferOwnerDialog}
+        projectId={projectId}
+        isOpen={transferOwnerOpen}
         data={data}
         onSuccess={() => {
-          setOpenTransferOwnerDialog(false);
+          setTransferOwnerOpen(false);
           window.location.reload();
         }}
-        onCancel={() => {
-          setOpenTransferOwnerDialog(false);
-        }}
+        onCancel={() => setTransferOwnerOpen(false)}
       />
     </>
   );

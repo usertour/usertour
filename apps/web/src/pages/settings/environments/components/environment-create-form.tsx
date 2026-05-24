@@ -1,91 +1,63 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour/icons';
-import { useAppContext } from '@/contexts/app-context';
-import { useEnvironmentLimit } from '@/hooks/use-plan-limits';
-import { useMutation } from '@apollo/client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { createEnvironments } from '@usertour/gql';
-import { Input } from '@usertour/input';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import * as React from 'react';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Alert, AlertDescription, AlertTitle } from '@usertour/alert';
 import { AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '@/contexts/app-context';
+import { useEnvironmentLimit } from '@/hooks/use-plan-limits';
+import { Alert, AlertDescription, AlertTitle } from '@usertour/alert';
+import { Button } from '@usertour/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { useCreateEnvironmentMutation } from '@usertour/hooks';
+import { Input } from '@usertour/input';
+import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
+import { z } from 'zod';
 
-interface CreateFormProps {
+interface EnvironmentCreateFormProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const formSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Please input your environment name.',
-    })
-    .max(20)
-    .min(1),
+const schema = z.object({
+  name: z.string({ required_error: 'Please input your environment name.' }).max(20).min(1),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof schema>;
 
-const defaultValues: Partial<FormValues> = {
-  name: '',
-};
-
-export const EnvironmentCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
-  const [createMutation] = useMutation(createEnvironments);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+export const EnvironmentCreateForm = ({ isOpen, onClose }: EnvironmentCreateFormProps) => {
+  const { invoke: createEnvironment } = useCreateEnvironmentMutation();
   const { project } = useAppContext();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const { canUseMore } = useEnvironmentLimit();
-  const isLimit = !canUseMore;
 
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
-    mode: 'onChange',
+  const state = useSettingsForm<FormValues>({
+    schema,
+    defaultValues: { name: '' },
+    submit: async ({ name }) => {
+      if (!project?.id) {
+        return;
+      }
+      const id = await createEnvironment({ name, projectId: project.id });
+      if (id) {
+        onClose();
+      }
+    },
   });
 
+  // The dialog can be reopened back-to-back; reset to defaults each open
+  // so a previous create attempt doesn't seed the next one.
   useEffect(() => {
-    form.reset();
+    if (isOpen) {
+      state.form.reset({ name: '' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  async function handleOnSubmit(formValues: FormValues) {
-    setIsLoading(true);
-    try {
-      const data = { name: formValues.name, projectId: project?.id };
-      const ret = await createMutation({ variables: data });
-
-      if (!ret.data?.createEnvironments?.id) {
-        showError('Create environment failed.');
-      }
-      onClose();
-    } catch (error) {
-      showError(getErrorMessage(error));
-    }
-    setIsLoading(false);
-  }
-
-  if (isLimit) {
+  if (!canUseMore) {
     return (
-      <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-        <DialogContent className="max-w-xl">
+      <Dialog open={isOpen} onOpenChange={(next) => !next && onClose()}>
+        <DialogContent className="max-w-xl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Create New Environment</DialogTitle>
           </DialogHeader>
@@ -124,43 +96,28 @@ export const EnvironmentCreateForm = ({ onClose, isOpen }: CreateFormProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-xl">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleOnSubmit)}>
-            <DialogHeader>
-              <DialogTitle>Create New Environment</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2 pb-4 pt-4">
-              <div className="space-y-2">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Environment name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter environment name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Submit
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <SettingsDialogForm
+      title="Create New Environment"
+      open={isOpen}
+      onOpenChange={(next) => !next && onClose()}
+      state={state}
+      submitLabel="Submit"
+      contentClassName="max-w-xl"
+    >
+      <FormField
+        control={state.form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Environment name</FormLabel>
+            <FormControl>
+              <Input placeholder="Enter environment name" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </SettingsDialogForm>
   );
 };
 

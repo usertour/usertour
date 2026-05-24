@@ -1,16 +1,11 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour/icons';
+import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@apollo/client';
 import { ListSkeletonCount } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
-import { Event } from '@usertour/types';
-import { Attribute } from '@usertour/types';
-import { useMutation, useQuery } from '@apollo/client';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@usertour/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
 import {
-  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -18,340 +13,247 @@ import {
   FormLabel,
   FormMessage,
 } from '@usertour/form';
-import { listAttributeOnEvents, updateEvent } from '@usertour/gql';
-import { PlusIcon } from '@usertour/icons';
-import { CloseIcon } from '@usertour/icons';
+import { listAttributeOnEvents } from '@usertour/gql';
+import { useUpdateEventMutation } from '@usertour/hooks';
+import { CloseIcon, PlusIcon } from '@usertour/icons';
 import { Input } from '@usertour/input';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@usertour/select';
-import { getErrorMessage } from '@usertour/helpers';
 import { QuestionTooltip } from '@usertour/tooltip';
+import { type Attribute, type Event } from '@usertour/types';
+import { SelectPopover, SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
-import * as React from 'react';
-import { useCallback, useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { ScrollArea } from '@usertour/scroll-area';
 
-interface EditFormProps {
+interface EventEditFormProps {
   isOpen: boolean;
   event: Event;
   onClose: () => void;
 }
 
-const formSchema = z.object({
-  displayName: z
-    .string({
-      required_error: 'Please input display name.',
-    })
-    .max(20)
-    .min(2),
-  codeName: z
-    .string({
-      required_error: 'Please input code name.',
-    })
-    .max(20)
-    .min(2),
+const schema = z.object({
+  displayName: z.string({ required_error: 'Please input display name.' }).max(20).min(2),
+  codeName: z.string({ required_error: 'Please input code name.' }).max(20).min(2),
   description: z.string().min(0).max(100),
-  attributeIds: z.array(z.string()).optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof schema>;
 
-export const EventEditForm = (props: EditFormProps) => {
-  const { onClose, isOpen, event } = props;
-  const [updateMutation] = useMutation(updateEvent);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+const toFormValues = (event: Event): FormValues => ({
+  displayName: event.displayName,
+  codeName: event.codeName,
+  description: event.description ?? '',
+});
+
+export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) => {
+  const { invoke: updateEvent } = useUpdateEventMutation();
   const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);
   const [eventsOnAttributes, setEventsOnAttributes] = useState<Attribute[]>([]);
-  const [selectAttributeStatus, setSelectAttributeStatus] = useState<boolean>(false);
-  const [selectedAttributeValue, setSelectedAttributeValue] = useState<string>('');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedAttributeValue, setSelectedAttributeValue] = useState('');
   const { attributeList } = useAttributeListContext();
+  const { toast } = useToast();
 
   const {
-    data: attributeOnEvents,
-    loading,
+    data: attributeOnEventsData,
+    loading: loadingEventAttrs,
     refetch,
   } = useQuery(listAttributeOnEvents, {
     variables: { eventId: event.id },
   });
-  const { toast } = useToast();
 
   useEffect(() => {
-    const attributeOnEventsData = attributeOnEvents?.listAttributeOnEvents;
-
-    if (attributeOnEventsData) {
-      const currentAttributeIds = attributeOnEventsData.map(
-        (item: { attributeId: string }) => item.attributeId,
-      );
-      if (attributeList) {
-        const matchedItems = attributeList.filter((item) => currentAttributeIds.includes(item.id));
-        setEventAttrs(attributeList.filter((attr) => attr.bizType === 4));
-        setEventsOnAttributes(matchedItems);
-      }
+    const rows = attributeOnEventsData?.listAttributeOnEvents;
+    if (!rows || !attributeList) {
+      return;
     }
-  }, [attributeOnEvents, attributeList]);
+    const currentIds = new Set(rows.map((row: { attributeId: string }) => row.attributeId));
+    setEventAttrs(attributeList.filter((attr) => attr.bizType === 4));
+    setEventsOnAttributes(attributeList.filter((attr) => currentIds.has(attr.id)));
+  }, [attributeOnEventsData, attributeList]);
 
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      ...event,
-      attributeIds: [],
+  const state = useSettingsForm<FormValues>({
+    schema,
+    defaultValues: toFormValues(event),
+    submit: async (values) => {
+      const success = await updateEvent({
+        ...values,
+        id: event.id,
+        attributeIds: eventsOnAttributes.map((attr) => attr.id),
+      });
+      if (!success) {
+        throw new Error('Update Event failed.');
+      }
+      onClose();
     },
-    mode: 'onChange',
+    successMessage: 'The event has been successfully updated',
   });
 
   useEffect(() => {
-    form.reset({
-      ...event,
-    });
-    setSelectAttributeStatus(false);
-    refetch();
-  }, [isOpen, event, form]);
+    if (isOpen) {
+      state.form.reset(toFormValues(event));
+      setSelectMode(false);
+      refetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, event]);
 
-  const handleOnSubmit = useCallback(
-    async (formValues: FormValues) => {
-      setIsLoading(true);
-      try {
-        const attributeIds = eventsOnAttributes.map((item) => item.id);
-
-        const data = {
-          ...formValues,
-          id: event.id,
-          attributeIds,
-        };
-
-        const ret = await updateMutation({ variables: { data } });
-
-        if (!ret.data?.updateEvent?.id) {
-          showError('Update Event failed.');
-          return;
-        }
-        toast({
-          variant: 'success',
-          title: 'The event has been successfully updated',
-        });
-        onClose();
-      } catch (error) {
-        showError(getErrorMessage(error));
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [event.id, eventsOnAttributes, onClose, updateMutation],
-  );
-
-  const handleAttrValueChange = useCallback(
-    (value: string) => {
-      const exists = eventsOnAttributes.some((item) => item.id === value);
-      const foundItem = eventAttrs.find((item) => item.id === value);
-      if (!exists) {
-        foundItem &&
-          setEventsOnAttributes((pre) => {
-            return [...pre, { ...foundItem }];
-          });
-        setSelectAttributeStatus(false);
-        setSelectedAttributeValue(value);
-      } else {
+  const handleAttributeSelect = useCallback(
+    (attributeId: string) => {
+      const exists = eventsOnAttributes.some((attr) => attr.id === attributeId);
+      if (exists) {
         toast({
           variant: 'warning',
           title: 'That attribute is already associated with the event.',
         });
         setSelectedAttributeValue('');
+        return;
+      }
+      const found = eventAttrs.find((attr) => attr.id === attributeId);
+      if (found) {
+        setEventsOnAttributes((prev) => [...prev, { ...found }]);
+        setSelectMode(false);
+        setSelectedAttributeValue(attributeId);
       }
     },
-    [
-      eventsOnAttributes,
-      eventAttrs,
-      setEventsOnAttributes,
-      setSelectAttributeStatus,
-      setSelectedAttributeValue,
-    ],
+    [eventsOnAttributes, eventAttrs, toast],
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-5xl">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleOnSubmit)}>
-            <DialogHeader>
-              <DialogTitle>Edit Event</DialogTitle>
-            </DialogHeader>
-            <div className="flex mt-4 mb-4 ">
-              <div className="flex flex-col mr-6 w-2/3 space-y-2">
-                <div className="flex flex-row justify-between">
-                  <FormField
-                    control={form.control}
-                    name="displayName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex flex-row">
-                          Display name
-                          <QuestionTooltip className="ml-1">
-                            Human-friendly name shown across the Usertour dashboard. e.g. "User
-                            signed up".
-                          </QuestionTooltip>
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter display name" className="w-72" {...field} />
-                        </FormControl>
-                        <FormDescription>Can be changed later</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="codeName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex flex-row">
-                          Code name
-                          <QuestionTooltip className="ml-1">
-                            Code-friendly identifier used throughout Usertour to reference this
-                            event. e.g. "user_signed_up".
-                          </QuestionTooltip>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter code name"
-                            className="w-72"
-                            disabled={true}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>Can NOT be changed later</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+    <SettingsDialogForm
+      title="Edit Event"
+      open={isOpen}
+      onOpenChange={(next) => !next && onClose()}
+      state={state}
+      submitLabel="Save Event"
+      contentClassName="max-w-5xl"
+    >
+      <div className="flex">
+        <div className="flex flex-col mr-6 w-2/3 space-y-2">
+          <div className="flex flex-row justify-between">
+            <FormField
+              control={state.form.control}
+              name="displayName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex flex-row">
+                    Display name
+                    <QuestionTooltip className="ml-1">
+                      Human-friendly name shown across the Usertour dashboard. e.g. "User signed
+                      up".
+                    </QuestionTooltip>
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter display name" className="w-72" {...field} />
+                  </FormControl>
+                  <FormDescription>Can be changed later</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={state.form.control}
+              name="codeName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex flex-row">
+                    Code name
+                    <QuestionTooltip className="ml-1">
+                      Code-friendly identifier used throughout Usertour to reference this event.
+                      e.g. "user_signed_up".
+                    </QuestionTooltip>
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter code name" className="w-72" disabled {...field} />
+                  </FormControl>
+                  <FormDescription>Can NOT be changed later</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={state.form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Input placeholder="Optional description" className="w-full" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex flex-col w-1/3">
+          <FormItem>
+            <FormLabel className="flex flex-row">
+              Event attributes
+              <QuestionTooltip className="ml-1">
+                Attributes included in this event's payload schema. e.g. "plan_name", "price".
+              </QuestionTooltip>
+            </FormLabel>
+            <hr className="border-t" />
+            {loadingEventAttrs && <ListSkeletonCount count={1} />}
+            {eventsOnAttributes.map((attr, index) => (
+              <div
+                key={attr.id}
+                className="relative group border-b hover:bg-muted"
+                style={{ marginTop: 0 }}
+              >
+                <div className="p-2 text-sm">{attr.displayName}</div>
+                <div className="absolute top-1/2 right-2 -translate-y-1/2 hidden group-hover:flex items-center">
+                  <Button
+                    variant="ghost"
+                    className="mr-1 w-6 h-6 p-1 rounded cursor-pointer"
+                    onClick={() =>
+                      setEventsOnAttributes((prev) => prev.filter((_, idx) => idx !== index))
+                    }
+                  >
+                    <CloseIcon width={16} height={16} />
+                  </Button>
                 </div>
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Optional description" className="w-full" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
+            ))}
 
-              <div className="flex flex-col w-1/3">
-                <FormField
-                  control={form.control}
-                  name="attributeIds"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel className="flex flex-row">
-                        Event attributes
-                        <QuestionTooltip className="ml-1">
-                          Attributes included in this event's payload schema. e.g. "plan_name",
-                          "price".
-                        </QuestionTooltip>
-                      </FormLabel>
-                      <hr className="border-t" />
-                      {loading && <ListSkeletonCount count={1} />}
-                      {eventsOnAttributes.map((eventsOnAttribute, i) => {
-                        return (
-                          <div
-                            className="relative group border-b hover:bg-muted"
-                            key={i}
-                            style={{ marginTop: '0' }}
-                          >
-                            <div className="p-2 text-sm">{eventsOnAttribute.displayName}</div>
-                            <div className="absolute top-1/2 right-2 transform -translate-y-1/2 hidden group-hover:flex items-center justify-center">
-                              <Button
-                                variant={'ghost'}
-                                className="mr-1 w-6 h-6 p-1 rounded cursor-pointer"
-                                onClick={() =>
-                                  setEventsOnAttributes((prev) =>
-                                    prev.filter((_, index) => index !== i),
-                                  )
-                                }
-                              >
-                                <CloseIcon width={16} height={16} />
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {selectAttributeStatus ? (
-                        <div className="flex flex-row">
-                          <Select
-                            onValueChange={handleAttrValueChange}
-                            value={selectedAttributeValue}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <span className="text-gray-500">
-                                  {selectedAttributeValue ? '' : 'Select an attribute'}
-                                </span>
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="w-full" withoutPortal>
-                              <ScrollArea className="h-72">
-                                {eventAttrs.map((eventAttrs) => {
-                                  return (
-                                    <SelectItem value={`${eventAttrs.id}`} key={eventAttrs.id}>
-                                      {eventAttrs.displayName}
-                                    </SelectItem>
-                                  );
-                                })}
-                              </ScrollArea>
-                            </SelectContent>
-                          </Select>
-
-                          <Button
-                            variant="ghost"
-                            className="px-0.5 ml-1 h-fit "
-                            onClick={() => setSelectAttributeStatus(false)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <div
-                          className="h-8 text-primary items-center flex flex-row justify-center rounded-md text-sm font-medium cursor-pointer"
-                          onClick={() => {
-                            setSelectedAttributeValue('');
-                            setSelectAttributeStatus(true);
-                          }}
-                        >
-                          <PlusIcon width={16} height={16} />
-                          Add attribute
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            {selectMode ? (
+              <div className="flex flex-row">
+                <SelectPopover
+                  className="w-full"
+                  contentClassName="w-[--radix-popover-trigger-width]"
+                  placeholder="Select an attribute"
+                  value={selectedAttributeValue}
+                  options={eventAttrs.map((attr) => ({
+                    value: attr.id,
+                    name: attr.displayName,
+                  }))}
+                  onValueChange={handleAttributeSelect}
                 />
+                <Button
+                  variant="ghost"
+                  className="px-0.5 ml-1 h-fit"
+                  onClick={() => setSelectMode(false)}
+                >
+                  Cancel
+                </Button>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Save Event
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+            ) : (
+              <div
+                className="h-8 text-primary items-center flex flex-row justify-center rounded-md text-sm font-medium cursor-pointer"
+                onClick={() => {
+                  setSelectedAttributeValue('');
+                  setSelectMode(true);
+                }}
+              >
+                <PlusIcon width={16} height={16} />
+                Add attribute
+              </div>
+            )}
+            <FormMessage />
+          </FormItem>
+        </div>
+      </div>
+    </SettingsDialogForm>
   );
 };
 

@@ -1,32 +1,31 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour/icons';
-import { Attribute } from '@usertour/types';
-import { useMutation } from '@apollo/client';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { CaretSortIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
-import { updateAttribute } from '@usertour/gql';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@usertour/dropdown-menu';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { useUpdateAttributeMutation } from '@usertour/hooks';
 import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
 import { Input } from '@usertour/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
-import { getErrorMessage } from '@usertour/helpers';
 import { QuestionTooltip } from '@usertour/tooltip';
-import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { useToast } from '@usertour/use-toast';
-import * as React from 'react';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { type Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
+import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { z } from 'zod';
 
-interface EditFormProps {
+interface AttributeEditFormProps {
   isOpen: boolean;
   attribute: Attribute;
   onClose: () => void;
 }
 
-const formSchema = z.object({
+const schema = z.object({
   dataType: z.enum([
     String(BizAttributeTypes.Number),
     String(BizAttributeTypes.String),
@@ -40,254 +39,232 @@ const formSchema = z.object({
     String(AttributeBizTypes.Membership),
     String(AttributeBizTypes.Event),
   ]),
-  displayName: z
-    .string({
-      required_error: 'Please input display name.',
-    })
-    .max(20)
-    .min(2),
-  codeName: z
-    .string({
-      required_error: 'Please input code name.',
-    })
-    .max(20)
-    .min(2),
+  displayName: z.string({ required_error: 'Please input display name.' }).max(20).min(2),
+  codeName: z.string({ required_error: 'Please input code name.' }).max(20).min(2),
   description: z.string().min(0).max(100),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof schema>;
 
-export const AttributeEditForm = (props: EditFormProps) => {
-  const { onClose, isOpen, attribute } = props;
-  const [updateMutation] = useMutation(updateAttribute);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { toast } = useToast();
+// Option metadata for the locked Object type display + the editable
+// Data type dropdown. Kept inline so the JSX below stays readable.
+const BIZ_TYPE_OPTIONS = [
+  {
+    value: String(AttributeBizTypes.User),
+    label: 'User',
+    icon: <UserIcon width={16} height={16} />,
+  },
+  {
+    value: String(AttributeBizTypes.Company),
+    label: 'Company',
+    icon: <CompanyIcon width={16} height={16} />,
+  },
+  {
+    value: String(AttributeBizTypes.Membership),
+    label: 'Company Membership',
+    icon: <UserIcon2 width={16} height={16} />,
+  },
+  {
+    value: String(AttributeBizTypes.Event),
+    label: 'Event',
+    icon: <EventIcon2 width={16} height={16} />,
+  },
+] as const;
 
-  const showError = (title: string) => {
-    toast({
-      variant: 'destructive',
-      title,
-    });
-  };
+const DATA_TYPE_OPTIONS = [
+  { value: String(BizAttributeTypes.Number), label: 'Number' },
+  { value: String(BizAttributeTypes.String), label: 'String' },
+  { value: String(BizAttributeTypes.Boolean), label: 'Boolean' },
+  { value: String(BizAttributeTypes.DateTime), label: 'DateTime' },
+  { value: String(BizAttributeTypes.List), label: 'List' },
+] as const;
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      ...attribute,
-      bizType: String(attribute.bizType),
-      dataType: String(attribute.dataType),
+const toFormValues = (attribute: Attribute): FormValues => ({
+  bizType: String(attribute.bizType) as FormValues['bizType'],
+  dataType: String(attribute.dataType) as FormValues['dataType'],
+  displayName: attribute.displayName,
+  codeName: attribute.codeName,
+  description: attribute.description ?? '',
+});
+
+export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditFormProps) => {
+  const { invoke: updateAttribute } = useUpdateAttributeMutation();
+  const { t } = useTranslation();
+
+  const state = useSettingsForm<FormValues>({
+    schema,
+    defaultValues: toFormValues(attribute),
+    submit: async (values) => {
+      const success = await updateAttribute({
+        id: attribute.id,
+        bizType: Number.parseInt(values.bizType, 10),
+        dataType: Number.parseInt(values.dataType, 10),
+        codeName: values.codeName,
+        displayName: values.displayName,
+        description: values.description,
+      });
+      if (!success) {
+        throw new Error('Update attribute failed.');
+      }
+      onClose();
     },
-    mode: 'onChange',
+    successMessage: t('settings.attributes.updateSuccess'),
   });
 
   useEffect(() => {
-    form.reset({
-      ...attribute,
-      bizType: String(attribute.bizType),
-      dataType: String(attribute.dataType),
-    });
-  }, [isOpen, attribute, form]);
-
-  const handleOnSubmit = React.useCallback(
-    async (formValues: FormValues) => {
-      setIsLoading(true);
-      try {
-        const data = {
-          id: attribute.id,
-          bizType: Number.parseInt(formValues.bizType),
-          dataType: Number.parseInt(formValues.dataType),
-          codeName: formValues.codeName,
-          displayName: formValues.displayName,
-          description: formValues.description,
-        };
-        const ret = await updateMutation({ variables: { data } });
-
-        if (!ret.data?.updateAttribute?.id) {
-          showError('Update attribute failed.');
-          return;
-        }
-        toast({
-          variant: 'success',
-          title: 'The attribute has been successfully updated',
-        });
-        onClose();
-      } catch (error) {
-        showError(getErrorMessage(error));
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [attribute],
-  );
+    if (isOpen) {
+      state.form.reset(toFormValues(attribute));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, attribute]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleOnSubmit)}>
-            <DialogHeader>
-              <DialogTitle>Edit attribute</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col space-y-2 mt-4 mb-4">
-              <div className="flex flex-row justify-between">
-                <FormField
-                  control={form.control}
-                  name="bizType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex flex-row">
-                        Object type
-                        <QuestionTooltip className="inline ml-1">
-                          The entity this attribute belongs to: User, Company, Membership, or Event.
-                        </QuestionTooltip>
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={true}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-72">
-                            <SelectValue placeholder="Select an object type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="w-72">
-                          <SelectItem value={String(AttributeBizTypes.User)}>
-                            <div className="flex flex-row">
-                              <UserIcon width={16} height={16} className="mr-1" />
-                              User
-                            </div>
-                          </SelectItem>
-                          <SelectItem value={String(AttributeBizTypes.Company)}>
-                            <div className="flex flex-row">
-                              <CompanyIcon width={16} height={16} className="mr-1" />
-                              Company
-                            </div>
-                          </SelectItem>
-                          <SelectItem value={String(AttributeBizTypes.Membership)}>
-                            <div className="flex flex-row">
-                              <UserIcon2 width={16} height={16} className="mr-1" />
-                              Company Membership
-                            </div>
-                          </SelectItem>
-                          <SelectItem value={String(AttributeBizTypes.Event)}>
-                            <div className="flex flex-row">
-                              <EventIcon2 width={16} height={16} className="mr-1" />
-                              Event
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="dataType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex flex-row">
-                        Data type
-                        <QuestionTooltip className="inline ml-1">
-                          The value type stored in this attribute. Determines serialization and
-                          filter operators.
-                        </QuestionTooltip>
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="w-72">
-                            <SelectValue placeholder="Select a data type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="w-72">
-                          <SelectItem value={String(BizAttributeTypes.Number)}>Number</SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.String)}>String</SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.Boolean)}>Boolean</SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.DateTime)}>
-                            DateTime
-                          </SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.List)}>List</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="flex flex-row justify-between">
-                <FormField
-                  control={form.control}
-                  name="displayName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex flex-row">
-                        Display name
-                        <QuestionTooltip className="inline ml-1">
-                          Human-friendly name shown across the Usertour dashboard. e.g. "Billing
-                          Plan".
-                        </QuestionTooltip>
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter display name" className="w-72" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="codeName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex flex-row">
-                        Code name
-                        <QuestionTooltip className="inline ml-1">
-                          Code-friendly identifier used throughout Usertour to reference this
-                          attribute. e.g. "billing_plan".
-                        </QuestionTooltip>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter code name"
-                          className="w-72"
-                          disabled={true}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
+    <SettingsDialogForm
+      title={t('settings.attributes.editTitle')}
+      open={isOpen}
+      onOpenChange={(next) => !next && onClose()}
+      state={state}
+      submitLabel={t('settings.attributes.saveButton')}
+      contentClassName="max-w-2xl"
+    >
+      <div className="flex flex-col space-y-2">
+        <div className="flex flex-row justify-between">
+          <FormField
+            control={state.form.control}
+            name="bizType"
+            render={({ field }) => {
+              const selected = BIZ_TYPE_OPTIONS.find((option) => option.value === field.value);
+              // Object type is locked once the attribute exists — show it
+              // as a disabled trigger that never opens a menu.
+              return (
+                <FormItem>
+                  <FormLabel className="flex flex-row">
+                    Object type
+                    <QuestionTooltip className="inline ml-1">
+                      The entity this attribute belongs to: User, Company, Membership, or Event.
+                    </QuestionTooltip>
+                  </FormLabel>
+                  <FormControl>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled
+                      className="w-72 justify-between font-normal"
+                    >
+                      <span className="flex items-center gap-1">
+                        {selected?.icon}
+                        {selected?.label ?? 'Select an object type'}
+                      </span>
+                      <CaretSortIcon className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+          <FormField
+            control={state.form.control}
+            name="dataType"
+            render={({ field }) => {
+              const selected = DATA_TYPE_OPTIONS.find((option) => option.value === field.value);
+              return (
+                <FormItem>
+                  <FormLabel className="flex flex-row">
+                    Data type
+                    <QuestionTooltip className="inline ml-1">
+                      The value type stored in this attribute. Determines serialization and filter
+                      operators.
+                    </QuestionTooltip>
+                  </FormLabel>
+                  {/* modal={false}: outer Dialog already provides the
+                      focus trap, so the dropdown skips its own — avoids
+                      cascading aria-hidden onto the (still-focused)
+                      trigger button. */}
+                  <DropdownMenu modal={false}>
                     <FormControl>
-                      <Input placeholder="Optional description" className="w-full" {...field} />
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-72 justify-between font-normal"
+                        >
+                          {selected?.label ?? 'Select a data type'}
+                          <CaretSortIcon className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onClose()}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Save Attribute
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                    <DropdownMenuContent align="start" className="w-72">
+                      {DATA_TYPE_OPTIONS.map((option) => (
+                        <DropdownMenuItem
+                          key={option.value}
+                          onSelect={() => field.onChange(option.value)}
+                        >
+                          {option.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+        </div>
+        <div className="flex flex-row justify-between">
+          <FormField
+            control={state.form.control}
+            name="displayName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex flex-row">
+                  Display name
+                  <QuestionTooltip className="inline ml-1">
+                    Human-friendly name shown across the Usertour dashboard. e.g. "Billing Plan".
+                  </QuestionTooltip>
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter display name" className="w-72" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={state.form.control}
+            name="codeName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex flex-row">
+                  Code name
+                  <QuestionTooltip className="inline ml-1">
+                    Code-friendly identifier used throughout Usertour to reference this attribute.
+                    e.g. "billing_plan".
+                  </QuestionTooltip>
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter code name" className="w-72" disabled {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={state.form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Input placeholder="Optional description" className="w-full" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </SettingsDialogForm>
   );
 };
 

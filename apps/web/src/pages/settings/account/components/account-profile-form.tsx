@@ -1,102 +1,54 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour/icons';
-import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '@/contexts/app-context';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { updateUser } from '@usertour/gql';
 import { Input } from '@usertour/input';
-import { Separator } from '@usertour/separator';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
-const accountFormSchema = z.object({
+const profileSchema = z.object({
   name: z
     .string()
-    .min(2, {
-      message: 'Name must be at least 2 characters.',
-    })
-    .max(30, {
-      message: 'Name must not be longer than 30 characters.',
-    }),
+    .min(2, { message: 'Name must be at least 2 characters.' })
+    .max(30, { message: 'Name must not be longer than 30 characters.' }),
 });
 
-type AccountFormValues = z.infer<typeof accountFormSchema>;
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export const AccountProfileForm = () => {
-  const { userInfo: user, refetch } = useAppContext();
+  const { userInfo, refetch } = useAppContext();
   const [updateMutation] = useMutation(updateUser);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const form = useForm<AccountFormValues>({
-    resolver: zodResolver(accountFormSchema),
-    defaultValues: { name: user?.name },
-  });
-  const { toast } = useToast();
+  const { t } = useTranslation();
 
-  const onSubmit = async (data: AccountFormValues) => {
-    if (!data.name) {
-      return;
-    }
-    try {
-      setIsLoading(true);
-      await updateMutation({
-        variables: {
-          name: data.name,
-          avatarUrl: '',
-        },
-      });
+  const state = useSettingsForm<ProfileFormValues>({
+    schema: profileSchema,
+    defaultValues: { name: userInfo?.name ?? '' },
+    submit: async ({ name }) => {
+      await updateMutation({ variables: { name, avatarUrl: '' } });
       await refetch();
-      setIsLoading(false);
-      toast({
-        variant: 'success',
-        title: 'The profile name has been successfully updated',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-      setIsLoading(false);
-    }
-  };
+    },
+    successMessage: t('settings.account.profile.successToast'),
+  });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-row justify-between items-center h-10">
-        <h3 className="text-xl font-semibold tracking-tight">Profile</h3>
-        {/* <p className="text-sm text-muted-foreground">
-          Update your profile name.
-        </p> */}
-      </div>
-      <Separator />
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button type="submit" disabled={form.watch('name') === user?.name}>
-            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Save
-          </Button>
-        </form>
-      </Form>
-    </div>
+    <SettingsFormSection title={t('settings.account.profile.title')} state={state}>
+      <FormField
+        control={state.form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('settings.account.profile.nameLabel')}</FormLabel>
+            <FormControl>
+              <Input placeholder={t('settings.account.profile.namePlaceholder')} {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </SettingsFormSection>
   );
 };
 

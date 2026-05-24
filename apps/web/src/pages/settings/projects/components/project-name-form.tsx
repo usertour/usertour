@@ -1,38 +1,28 @@
 'use client';
 
-import { SpinnerIcon } from '@usertour/icons';
-import { useAppContext } from '@/contexts/app-context';
 import { useMutation } from '@apollo/client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@usertour/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '@/contexts/app-context';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { updateProjectName } from '@usertour/gql';
 import { Input } from '@usertour/input';
 import { Separator } from '@usertour/separator';
 import { Skeleton } from '@usertour/skeleton';
-import { getErrorMessage } from '@usertour/helpers';
-import { useToast } from '@usertour/use-toast';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { SettingsFormSection, useSettingsForm } from '@usertour/ui';
 import * as z from 'zod';
 
-const projectNameFormSchema = z.object({
+const projectNameSchema = z.object({
   name: z
     .string()
-    .min(2, {
-      message: 'Project name must be at least 2 characters.',
-    })
-    .max(30, {
-      message: 'Project name must not be longer than 30 characters.',
-    }),
+    .min(2, { message: 'Project name must be at least 2 characters.' })
+    .max(30, { message: 'Project name must not be longer than 30 characters.' }),
 });
 
-type ProjectNameFormValues = z.infer<typeof projectNameFormSchema>;
+type ProjectNameValues = z.infer<typeof projectNameSchema>;
 
-// Skeleton component that matches the form structure
 const ProjectNameFormSkeleton = () => (
   <div className="space-y-6">
-    <div className="flex flex-row justify-between items-center h-10">
+    <div className="flex h-10 flex-row items-center justify-between">
       <Skeleton className="h-8 w-48" />
     </div>
     <Separator />
@@ -49,75 +39,49 @@ const ProjectNameFormSkeleton = () => (
 export const ProjectNameForm = () => {
   const { project, refetch, loading } = useAppContext();
   const [updateMutation] = useMutation(updateProjectName);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const form = useForm<ProjectNameFormValues>({
-    resolver: zodResolver(projectNameFormSchema),
-    defaultValues: { name: project?.name },
-  });
-  const { toast } = useToast();
+  const { t } = useTranslation();
 
-  const onSubmit = async (data: ProjectNameFormValues) => {
-    if (!data.name || !project?.id) {
-      return;
-    }
-    try {
-      setIsLoading(true);
-      await updateMutation({
-        variables: {
-          projectId: project.id,
-          name: data.name,
-        },
-      });
+  const state = useSettingsForm<ProjectNameValues>({
+    schema: projectNameSchema,
+    defaultValues: { name: project?.name ?? '' },
+    submit: async ({ name }) => {
+      if (!project?.id) {
+        return;
+      }
+      await updateMutation({ variables: { projectId: project.id, name } });
       await refetch();
-      toast({
-        variant: 'success',
-        title: 'The project name has been successfully updated',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: getErrorMessage(error),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const isFormDisabled = isLoading || form.watch('name') === project?.name;
+    },
+    successMessage: t('settings.project.successToast'),
+  });
 
   if (loading) {
     return <ProjectNameFormSkeleton />;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-row justify-between items-center h-10">
-        <h3 className="text-xl font-semibold tracking-tight">Project Name</h3>
-      </div>
-      <Separator />
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Project Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your project name" {...field} disabled={isLoading} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button type="submit" disabled={isFormDisabled}>
-            {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Saving...' : 'Save'}
-          </Button>
-        </form>
-      </Form>
-    </div>
+    <SettingsFormSection
+      title={t('settings.project.title')}
+      state={state}
+      submitLabel={t('settings.common.save')}
+    >
+      <FormField
+        control={state.form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('settings.project.nameLabel')}</FormLabel>
+            <FormControl>
+              <Input
+                placeholder={t('settings.project.namePlaceholder')}
+                {...field}
+                disabled={state.isSubmitting}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </SettingsFormSection>
   );
 };
 
