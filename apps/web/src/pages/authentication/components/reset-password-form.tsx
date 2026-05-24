@@ -39,9 +39,7 @@ export const ResetPasswordForm = ({ onBack, onSuccess, fixedEmail }: ResetPasswo
   const schema = useMemo(
     () =>
       z.object({
-        email: z
-          .string({ required_error: t('auth.errors.invalidEmail') })
-          .email(t('auth.errors.invalidEmail')),
+        email: z.string().email(t('auth.errors.invalidEmail')),
       }),
     [t],
   );

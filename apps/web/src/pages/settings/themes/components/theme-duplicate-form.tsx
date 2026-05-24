@@ -32,12 +32,7 @@ interface ThemeDuplicateFormProps {
 }
 
 const formSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Please enter your theme name.',
-    })
-    .max(30)
-    .min(1),
+  name: z.string().max(30).min(1),
 });
 
 type FormValues = z.infer<typeof formSchema>;

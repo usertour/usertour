@@ -29,12 +29,7 @@ interface SelectorDialogProps {
 }
 
 const formSchema = z.object({
-  buildUrl: z
-    .string({
-      required_error: "buildUrl can't empty.",
-    })
-    .max(100)
-    .min(1),
+  buildUrl: z.string().max(100).min(1),
 });
 
 type FormValues = z.infer<typeof formSchema>;

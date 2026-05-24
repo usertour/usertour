@@ -37,11 +37,7 @@ interface ContentEditFormProps {
 }
 
 const formSchema = z.object({
-  buildUrl: z
-    .string({
-      required_error: 'Please enter a URL.',
-    })
-    .min(1),
+  buildUrl: z.string().min(1),
   type: z.string(),
 });
 

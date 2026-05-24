@@ -21,7 +21,7 @@ interface EnvironmentCreateFormProps {
 }
 
 const schema = z.object({
-  name: z.string({ required_error: 'Please input your environment name.' }).max(20).min(1),
+  name: z.string().max(20).min(1),
 });
 
 type FormValues = z.infer<typeof schema>;

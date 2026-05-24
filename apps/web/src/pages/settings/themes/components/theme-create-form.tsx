@@ -49,12 +49,7 @@ export const ThemeCreateForm = ({ onDialogClose, onClose, isOpen }: CreateFormPr
   const formSchema = useMemo(
     () =>
       z.object({
-        name: z
-          .string({
-            required_error: t('themes.createForm.name.required'),
-          })
-          .max(30)
-          .min(1),
+        name: z.string().max(30).min(1),
         isDefault: z.boolean(),
       }),
     [t],

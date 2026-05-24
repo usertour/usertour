@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.0.2",
-    "react-hook-form": "^7.44.2",
+    "react-hook-form": "^7.55.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@usertour/tailwind": "workspace:*",
     "@usertour/label": "workspace:*"

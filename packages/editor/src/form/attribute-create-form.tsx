@@ -63,18 +63,8 @@ const formSchema = z.object({
     String(AttributeBizTypes.Membership),
     String(AttributeBizTypes.Event),
   ]),
-  displayName: z
-    .string({
-      required_error: 'Please input display name.',
-    })
-    .max(20)
-    .min(2),
-  codeName: z
-    .string({
-      required_error: 'Please input code name.',
-    })
-    .max(20)
-    .min(2),
+  displayName: z.string().max(20).min(2),
+  codeName: z.string().max(20).min(2),
   description: z.string({}).max(100),
 });
 

@@ -67,7 +67,7 @@ const EmptyState = () => {
     () =>
       z.object({
         name: z
-          .string({ required_error: t('auth.selectProject.empty.nameRequired') })
+          .string()
           .trim()
           .min(1, { message: t('auth.selectProject.empty.nameRequired') })
           .max(80),

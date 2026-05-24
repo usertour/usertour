@@ -18,9 +18,9 @@ interface LocalizationEditFormProps {
 }
 
 const schema = z.object({
-  locale: z.string({ required_error: 'Please input locale.' }).max(20).min(2),
-  name: z.string({ required_error: 'Please input name.' }).max(20).min(2),
-  code: z.string({ required_error: 'Please input code.' }).max(20).min(2),
+  locale: z.string().max(20).min(2),
+  name: z.string().max(20).min(2),
+  code: z.string().max(20).min(2),
 });
 
 type FormValues = z.infer<typeof schema>;

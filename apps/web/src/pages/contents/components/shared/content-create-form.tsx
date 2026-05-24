@@ -25,12 +25,7 @@ interface ContentCreateFormProps {
 }
 
 const formSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Please enter the name.',
-    })
-    .max(30)
-    .min(1),
+  name: z.string().max(30).min(1),
 });
 
 type FormValues = z.infer<typeof formSchema>;

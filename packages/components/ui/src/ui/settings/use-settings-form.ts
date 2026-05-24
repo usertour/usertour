@@ -13,7 +13,11 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
 
 export interface UseSettingsFormOptions<TValues extends FieldValues> {
-  schema: ZodType<TValues>;
+  // Input == Output: form values feed in raw, schema returns the same shape.
+  // Zod 4's `ZodType` is `<Output, Input>` with Input defaulting to `unknown`,
+  // which would force the resolver to widen `Resolver<unknown, …, TValues>`
+  // and clash with `useForm<TValues>`'s `Resolver<TValues, …, TValues>`.
+  schema: ZodType<TValues, TValues>;
   defaultValues: DefaultValues<TValues>;
   /**
    * Called with the validated form values. Throwing — or returning a

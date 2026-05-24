@@ -38,9 +38,7 @@ interface MemberChangeRoleDialogProps {
 }
 
 const formSchema = z.object({
-  role: z.string({
-    required_error: 'Please select your Member role.',
-  }),
+  role: z.string(),
 });
 
 type FormValues = z.infer<typeof formSchema>;

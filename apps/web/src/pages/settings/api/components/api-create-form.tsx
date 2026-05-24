@@ -35,12 +35,7 @@ interface CreateTokenResponse {
 }
 
 const formSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Please input token name.',
-    })
-    .max(50)
-    .min(2),
+  name: z.string().max(50).min(2),
 });
 
 type FormValues = z.infer<typeof formSchema>;

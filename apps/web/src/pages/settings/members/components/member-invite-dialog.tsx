@@ -40,20 +40,9 @@ interface InviteDialogProps {
 }
 
 const formSchema = z.object({
-  name: z
-    .string({
-      required_error: 'Please input your Member name.',
-    })
-    .max(20)
-    .min(1),
-  email: z
-    .string({
-      required_error: 'Please input your Member email.',
-    })
-    .email(),
-  role: z.string({
-    required_error: 'Please select your Member role.',
-  }),
+  name: z.string().max(20).min(1),
+  email: z.string().email(),
+  role: z.string(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
