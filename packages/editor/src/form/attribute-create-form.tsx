@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { CaretSortIcon } from '@radix-ui/react-icons';
 import { Button } from '@usertour/button';
 import {
   Dialog,
@@ -10,6 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@usertour/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@usertour/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -21,7 +28,6 @@ import {
 } from '@usertour/form';
 import { CompanyIcon, EventIcon2, SpinnerIcon, UserIcon, UserIcon2 } from '@usertour/icons';
 import { Input } from '@usertour/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@usertour/select';
 import { CreateAttributeMutationVariables, useCreateAttributeMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { QuestionTooltip } from '@usertour/tooltip';
@@ -72,6 +78,38 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+// Picker option metadata for the bizType and dataType DropdownMenus.
+const BIZ_TYPE_OPTIONS = [
+  {
+    value: String(AttributeBizTypes.User),
+    label: 'User',
+    icon: <UserIcon width={16} height={16} />,
+  },
+  {
+    value: String(AttributeBizTypes.Company),
+    label: 'Company',
+    icon: <CompanyIcon width={16} height={16} />,
+  },
+  {
+    value: String(AttributeBizTypes.Membership),
+    label: 'Company Membership',
+    icon: <UserIcon2 width={16} height={16} />,
+  },
+  {
+    value: String(AttributeBizTypes.Event),
+    label: 'Event',
+    icon: <EventIcon2 width={16} height={16} />,
+  },
+] as const;
+
+const DATA_TYPE_OPTIONS = [
+  { value: String(BizAttributeTypes.Number), label: 'Number' },
+  { value: String(BizAttributeTypes.String), label: 'String' },
+  { value: String(BizAttributeTypes.Boolean), label: 'Boolean' },
+  { value: String(BizAttributeTypes.DateTime), label: 'DateTime' },
+  { value: String(BizAttributeTypes.List), label: 'List' },
+] as const;
 
 export const AttributeCreateForm = ({
   onOpenChange,
@@ -140,7 +178,7 @@ export const AttributeCreateForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl" style={{ zIndex: zIndex }}>
+      <DialogContent className="max-w-2xl" style={{ zIndex: zIndex }} aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
@@ -151,90 +189,103 @@ export const AttributeCreateForm = ({
                 <FormField
                   control={form.control}
                   name="bizType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex flex-row">
-                        Object type
-                        <QuestionTooltip className="ml-1">
-                          The entity this attribute belongs to: User, Company, Membership, or Event.
-                        </QuestionTooltip>
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={disabledFields.includes('bizType')}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-72">
-                            <SelectValue placeholder="Select an object type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="w-72">
-                          <SelectItem value={String(AttributeBizTypes.User)}>
-                            <div className="flex flex-row">
-                              <UserIcon width={16} height={16} className="mr-1" />
-                              User
-                            </div>
-                          </SelectItem>
-                          <SelectItem value={String(AttributeBizTypes.Company)}>
-                            <div className="flex flex-row">
-                              <CompanyIcon width={16} height={16} className="mr-1" />
-                              Company
-                            </div>
-                          </SelectItem>
-                          <SelectItem value={String(AttributeBizTypes.Membership)}>
-                            <div className="flex flex-row">
-                              <UserIcon2 width={16} height={16} className="mr-1" />
-                              Company Membership
-                            </div>
-                          </SelectItem>
-                          <SelectItem value={String(AttributeBizTypes.Event)}>
-                            <div className="flex flex-row">
-                              <EventIcon2 width={16} height={16} className="mr-1" />
-                              Event
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const selected = BIZ_TYPE_OPTIONS.find(
+                      (option) => option.value === field.value,
+                    );
+                    const isDisabled = disabledFields.includes('bizType');
+                    return (
+                      <FormItem>
+                        <FormLabel className="flex flex-row">
+                          Object type
+                          <QuestionTooltip className="ml-1">
+                            The entity this attribute belongs to: User, Company, Membership, or
+                            Event.
+                          </QuestionTooltip>
+                        </FormLabel>
+                        {/* modal={false}: outer Dialog already traps focus,
+                            so the dropdown skips its own trap and avoids
+                            cascading aria-hidden onto its focused trigger. */}
+                        <DropdownMenu modal={false}>
+                          <FormControl>
+                            <DropdownMenuTrigger asChild disabled={isDisabled}>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="w-72 justify-between font-normal"
+                              >
+                                <span className="flex items-center gap-1">
+                                  {selected?.icon}
+                                  {selected?.label ?? 'Select an object type'}
+                                </span>
+                                <CaretSortIcon className="h-4 w-4 opacity-50" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                          </FormControl>
+                          <DropdownMenuContent align="start" className="w-72">
+                            {BIZ_TYPE_OPTIONS.map((option) => (
+                              <DropdownMenuItem
+                                key={option.value}
+                                onSelect={() => field.onChange(option.value)}
+                              >
+                                <span className="flex items-center gap-1">
+                                  {option.icon}
+                                  {option.label}
+                                </span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
                 <FormField
                   control={form.control}
                   name="dataType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex flex-row">
-                        Data type
-                        <QuestionTooltip className="ml-1">
-                          The value type stored in this attribute. Determines serialization and
-                          filter operators.
-                        </QuestionTooltip>
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={disabledFields.includes('dataType')}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-72">
-                            <SelectValue placeholder="Select a data type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="w-72">
-                          <SelectItem value={String(BizAttributeTypes.Number)}>Number</SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.String)}>String</SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.Boolean)}>Boolean</SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.DateTime)}>
-                            DateTime
-                          </SelectItem>
-                          <SelectItem value={String(BizAttributeTypes.List)}>List</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const selected = DATA_TYPE_OPTIONS.find(
+                      (option) => option.value === field.value,
+                    );
+                    const isDisabled = disabledFields.includes('dataType');
+                    return (
+                      <FormItem>
+                        <FormLabel className="flex flex-row">
+                          Data type
+                          <QuestionTooltip className="ml-1">
+                            The value type stored in this attribute. Determines serialization and
+                            filter operators.
+                          </QuestionTooltip>
+                        </FormLabel>
+                        <DropdownMenu modal={false}>
+                          <FormControl>
+                            <DropdownMenuTrigger asChild disabled={isDisabled}>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="w-72 justify-between font-normal"
+                              >
+                                {selected?.label ?? 'Select a data type'}
+                                <CaretSortIcon className="h-4 w-4 opacity-50" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                          </FormControl>
+                          <DropdownMenuContent align="start" className="w-72">
+                            {DATA_TYPE_OPTIONS.map((option) => (
+                              <DropdownMenuItem
+                                key={option.value}
+                                onSelect={() => field.onChange(option.value)}
+                              >
+                                {option.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
               <div className="flex flex-row justify-between">

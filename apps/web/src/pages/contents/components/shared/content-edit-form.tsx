@@ -150,7 +150,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleOnSubmit)}>
               <DialogHeader>

@@ -171,7 +171,7 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent className="max-w-5xl">
+      <DialogContent className="max-w-5xl" aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>

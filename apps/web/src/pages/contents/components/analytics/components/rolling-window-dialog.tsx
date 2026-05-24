@@ -32,7 +32,7 @@ export const RollingWindowDialog = ({ currentValue, onUpdate }: RollingWindowDia
           <SettingsIcon className="w-4 h-4 text-muted-foreground" />
         </button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <div className="py-4">
           <div className="space-y-4">
             <div className="flex flex-col gap-2">

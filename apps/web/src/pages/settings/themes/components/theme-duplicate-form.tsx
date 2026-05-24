@@ -86,7 +86,7 @@ export const ThemeDuplicateForm = (props: ThemeDuplicateFormProps) => {
 
   return (
     <Dialog defaultOpen={true} open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>

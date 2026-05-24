@@ -112,7 +112,7 @@ export const ThemeCreateForm = ({ onDialogClose, onClose, isOpen }: CreateFormPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onDialogClose()}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>

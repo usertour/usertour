@@ -118,7 +118,7 @@ export const ContentCreateForm = ({ onClose, isOpen, contentType }: ContentCreat
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>

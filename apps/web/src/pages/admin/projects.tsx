@@ -249,7 +249,7 @@ const AddProjectMemberDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && handleClose()}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Add Member</DialogTitle>
         </DialogHeader>
@@ -477,7 +477,7 @@ const MemberAction = ({
 
       {/* Change Role Dialog */}
       <Dialog open={changeRoleOpen} onOpenChange={(op) => !op && setChangeRoleOpen(false)}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Change team member role</DialogTitle>
           </DialogHeader>
@@ -506,7 +506,7 @@ const MemberAction = ({
 
       {/* Transfer Ownership Dialog */}
       <Dialog open={transferOpen} onOpenChange={(op) => !op && setTransferOpen(false)}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Transfer account ownership</DialogTitle>
           </DialogHeader>
@@ -528,7 +528,7 @@ const MemberAction = ({
 
       {/* Remove Member Dialog */}
       <Dialog open={removeOpen} onOpenChange={(op) => !op && setRemoveOpen(false)}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Confirm</DialogTitle>
           </DialogHeader>
@@ -565,7 +565,7 @@ const ProjectMembersModal = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{projectName} Members</DialogTitle>
           </DialogHeader>
@@ -771,7 +771,7 @@ const CreateProjectDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(op) => !op && onClose()}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
         </DialogHeader>
