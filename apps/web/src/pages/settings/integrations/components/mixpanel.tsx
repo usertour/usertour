@@ -47,13 +47,16 @@ const SyncCohortsCard = ({ config }: SyncCohortsCardProps) => {
   const { toast } = useToast();
   const [_, copyToClipboard] = useCopyToClipboard();
   const integrationConfig = (integration?.config as MixpanelIntegrationConfig) ?? {};
+  // SyncCohortsCard already has access to `useTranslation` via the outer
+  // file's import.
+  const { t } = useTranslation();
 
   const webhookUrl = `${globalConfig?.apiUrl}/api/mixpanel_webhook/${integration?.accessToken}`;
 
   const handleCopy = useCallback(() => {
     copyToClipboard(webhookUrl);
-    toast({ title: 'Webhook URL copied to clipboard' });
-  }, [webhookUrl, copyToClipboard, toast]);
+    toast({ title: t('settings.integrations.mixpanelCohorts.webhookCopiedToast') });
+  }, [webhookUrl, copyToClipboard, toast, t]);
 
   const hasChanges =
     !!integration &&
@@ -82,14 +85,20 @@ const SyncCohortsCard = ({ config }: SyncCohortsCardProps) => {
             className="data-[state=unchecked]:bg-input"
             disabled={isLoading}
           />
-          <Label className="text-sm">Cohort sync from Mixpanel</Label>
+          <Label className="text-sm">
+            {t('settings.integrations.mixpanelCohorts.toggleLabel')}
+          </Label>
         </CardTitle>
-        <CardDescription>Configure cohort synchronization settings</CardDescription>
+        <CardDescription>
+          {t('settings.integrations.mixpanelCohorts.configureSettings')}
+        </CardDescription>
       </CardHeader>
       {integrationConfig.syncCohorts ? (
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="link">Webhook URL</Label>
+            <Label htmlFor="link">
+              {t('settings.integrations.mixpanelCohorts.webhookUrlLabel')}
+            </Label>
             <div className="relative flex-1">
               <Input id="link" defaultValue={webhookUrl} readOnly className="h-9 pr-10" />
               <Button
@@ -105,10 +114,12 @@ const SyncCohortsCard = ({ config }: SyncCohortsCardProps) => {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <p className="text-sm">Mixpanel User ID Property (for cohort sync) :</p>
+            <p className="text-sm">
+              {t('settings.integrations.mixpanelCohorts.userIdPropertyLabel')}
+            </p>
             <Input
               type="text"
-              placeholder="Type Mixpanel User ID Property here"
+              placeholder={t('settings.integrations.mixpanelCohorts.userIdPropertyPlaceholder')}
               value={integrationConfig.mixpanelUserIdProperty ?? ''}
               onChange={(event) =>
                 integration &&
@@ -125,7 +136,7 @@ const SyncCohortsCard = ({ config }: SyncCohortsCardProps) => {
             onClick={() => save()}
           >
             {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Save
+            {t('settings.integrations.mixpanelCohorts.save')}
           </Button>
         </CardContent>
       ) : null}
@@ -190,8 +201,8 @@ export const MixpanelIntegration = () => {
       />
       <ExportEventsCard
         providerName={PROVIDER_NAME}
-        keyLabel="Project Token :"
-        keyPlaceholder="Type Project Token here"
+        keyLabel={t('settings.integrations.providerCard.mixpanelKeyLabel')}
+        keyPlaceholder={t('settings.integrations.providerCard.mixpanelKeyPlaceholder')}
         integration={config.integration}
         currentIntegration={config.currentIntegration}
         setLocal={config.setLocal}

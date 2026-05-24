@@ -9,6 +9,7 @@ import {
   DialogClose,
 } from '@usertour/dialog';
 import { useCallback, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   useListIntegrationsQuery,
   useUpdateIntegrationMutation,
@@ -44,11 +45,12 @@ const IntegrationCard = ({
   loading,
   isEnabled,
 }: IntegrationCardProps) => {
+  const { t } = useTranslation();
   const buttonText = useMemo(() => {
     if (loading) return '';
-    if (integration.needsConnect && !isEnabled) return 'Connect';
-    return 'Manage';
-  }, [integration.needsConnect, isEnabled, loading]);
+    if (integration.needsConnect && !isEnabled) return t('settings.integrations.list.connect');
+    return t('settings.integrations.list.manage');
+  }, [integration.needsConnect, isEnabled, loading, t]);
 
   return (
     <li className="cursor-default rounded-lg border border-input px-4 py-6 text-sm">
@@ -72,7 +74,9 @@ const IntegrationCard = ({
         {isSyncing && (
           <div className="flex items-center gap-1 ml-2">
             <CircleIcon className="w-3 h-3 text-success" />
-            <span className="text-xs text-muted-foreground">Connected</span>
+            <span className="text-xs text-muted-foreground">
+              {t('settings.integrations.list.connected')}
+            </span>
           </div>
         )}
       </div>
@@ -84,6 +88,7 @@ const IntegrationCard = ({
 const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigProps) => {
   const { environment } = useAppContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const currentIntegration = useMemo(
     () => integrationsData?.find((i: IntegrationModel) => i.provider === integration.provider),
     [integrationsData, integration.provider],
@@ -101,14 +106,14 @@ const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigPr
   const handleConnect = useCallback(async () => {
     if (!authUrl) {
       toast({
-        title: 'Failed to get Salesforce auth URL',
+        title: t('settings.integrations.salesforce.authUrlFailedToast'),
         variant: 'destructive',
       });
       return;
     }
 
     window.location.href = authUrl;
-  }, [authUrl, toast]);
+  }, [authUrl, toast, t]);
 
   return (
     <DialogContent className="max-w-xl">
@@ -127,23 +132,25 @@ const SalesforceConfig = ({ integration, integrationsData }: IntegrationConfigPr
               />
             </div>
           </div>
-          <div className="mt-4 text-center text-lg/6 font-semibold">Connect {integration.name}</div>
+          <div className="mt-4 text-center text-lg/6 font-semibold">
+            {t('settings.integrations.salesforce.connectTitle', { name: integration.name })}
+          </div>
         </DialogTitle>
         <DialogDescription className="mt-2 text-center">
           {integration.description}
         </DialogDescription>
       </DialogHeader>
       <div className="text-sm text-muted-foreground">
-        Connect your Salesforce account to Usertour to enable real-time synchronization. Once
-        connected, you can sync Salesforce fields with Usertour, stream Usertour events into
-        Salesforce as Timeline Events, and use these events to trigger automated workflows.
+        {t('settings.integrations.salesforce.connectBody')}
       </div>
       <DialogFooter>
         <DialogClose>
-          <Button variant="outline">Cancel</Button>
+          <Button variant="outline">{t('settings.common.cancel')}</Button>
         </DialogClose>
         <Button onClick={handleConnect} disabled={loadingAuthUrl}>
-          {loadingAuthUrl ? 'Loading...' : 'Connect to Salesforce'}
+          {loadingAuthUrl
+            ? t('settings.integrations.salesforce.loading')
+            : t('settings.integrations.salesforce.connectButton')}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -163,6 +170,7 @@ export const IntegrationsListContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const environmentId = environment?.id || '';
   const {
@@ -181,13 +189,15 @@ export const IntegrationsListContent = () => {
         await refetch();
       } catch (error) {
         toast({
-          title: `Failed to ${enabled ? 'enable' : 'disable'} integration`,
+          title: enabled
+            ? t('settings.integrations.enableFailedToast')
+            : t('settings.integrations.disableFailedToast'),
           variant: 'destructive',
         });
         throw error;
       }
     },
-    [environmentId, updateIntegration, refetch, toast],
+    [environmentId, updateIntegration, refetch, toast, t],
   );
 
   const handleOnClick = useCallback(

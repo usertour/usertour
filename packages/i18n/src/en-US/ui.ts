@@ -437,6 +437,18 @@ const translations = {
     },
     integrations: {
       title: 'Integrations for {{environment}}',
+      headerBody:
+        'With integrations, you can stream Usertour-generated events to other external providers.',
+      headerEnvironmentNote:
+        'Note that integrations are tied to a single environment - you are currently looking at {{environment}} environment.',
+      headerDocs: 'Read the Integrations documentation.',
+      list: {
+        connect: 'Connect',
+        manage: 'Manage',
+        connected: 'Connected',
+      },
+      enableFailedToast: 'Failed to enable integration',
+      disableFailedToast: 'Failed to disable integration',
       providerCard: {
         // {{provider}} resolves to the provider's display name
         // (e.g. "Mixpanel", "Heap"). The headline is the toggle label
@@ -451,8 +463,33 @@ const translations = {
         save: 'Save',
         savedToast: 'Settings saved successfully',
         saveFailedToast: 'Failed to save settings',
+        // Per-provider overrides for the key input label / placeholder.
+        // Used by Heap (App ID), Mixpanel (Project Token), Segment (Write Key).
+        heapKeyLabel: 'Heap App ID :',
+        heapKeyPlaceholder: 'Type Heap App ID here',
+        mixpanelKeyLabel: 'Project Token :',
+        mixpanelKeyPlaceholder: 'Type Project Token here',
+        segmentKeyLabel: 'Write Key :',
+        segmentKeyPlaceholder: 'Type Write Key here',
       },
       providerHeaderReadGuide: 'Read the {{provider}} guide',
+      salesforce: {
+        connectTitle: 'Connect {{name}}',
+        connectBody:
+          'Connect your Salesforce account to Usertour to enable real-time synchronization. Once connected, you can sync Salesforce fields with Usertour, stream Usertour events into Salesforce as Timeline Events, and use these events to trigger automated workflows.',
+        connectButton: 'Connect to Salesforce',
+        loading: 'Loading...',
+        authUrlFailedToast: 'Failed to get Salesforce auth URL',
+      },
+      mixpanelCohorts: {
+        toggleLabel: 'Cohort sync from Mixpanel',
+        configureSettings: 'Configure cohort synchronization settings',
+        webhookUrlLabel: 'Webhook URL',
+        webhookCopiedToast: 'Webhook URL copied to clipboard',
+        userIdPropertyLabel: 'Mixpanel User ID Property (for cohort sync) :',
+        userIdPropertyPlaceholder: 'Type Mixpanel User ID Property here',
+        save: 'Save',
+      },
     },
   },
   twoFactor: {

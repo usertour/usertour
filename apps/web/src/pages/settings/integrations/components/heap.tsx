@@ -43,8 +43,8 @@ export const HeapIntegration = () => {
       />
       <ExportEventsCard
         providerName={PROVIDER_NAME}
-        keyLabel="Heap App ID :"
-        keyPlaceholder="Type Heap App ID here"
+        keyLabel={t('settings.integrations.providerCard.heapKeyLabel')}
+        keyPlaceholder={t('settings.integrations.providerCard.heapKeyPlaceholder')}
         integration={config.integration}
         currentIntegration={config.currentIntegration}
         setLocal={config.setLocal}

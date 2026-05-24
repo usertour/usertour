@@ -44,8 +44,8 @@ export const SegmentIntegration = () => {
       />
       <ExportEventsCard
         providerName={PROVIDER_NAME}
-        keyLabel="Write Key :"
-        keyPlaceholder="Type Write Key here"
+        keyLabel={t('settings.integrations.providerCard.segmentKeyLabel')}
+        keyPlaceholder={t('settings.integrations.providerCard.segmentKeyPlaceholder')}
         integration={config.integration}
         currentIntegration={config.currentIntegration}
         setLocal={config.setLocal}

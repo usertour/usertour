@@ -15,17 +15,16 @@ export const IntegrationsListHeader = () => {
           </h3>
         </div>
         <div className="text-sm text-muted-foreground">
-          With integrations, you can stream Usertour-generated events to other external providers.{' '}
+          {t('settings.integrations.headerBody')} <br />
+          {t('settings.integrations.headerEnvironmentNote', { environment: environment?.name })}{' '}
           <br />
-          Note that integrations are tied to a single environment - you are currently looking at{' '}
-          <span className="font-bold text-foreground">{environment?.name}</span> environment. <br />
           <a
             href="https://docs.usertour.io/api-reference/introduction"
             className="text-primary"
             target="_blank"
             rel="noreferrer"
           >
-            <span>Read the Integrations documentation.</span>
+            <span>{t('settings.integrations.headerDocs')}</span>
             <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
           </a>
         </div>

@@ -422,6 +422,16 @@ const translations = {
     },
     integrations: {
       title: '{{environment}} 环境的集成',
+      headerBody: '通过集成,您可以把 Usertour 产生的事件推送到外部服务商。',
+      headerEnvironmentNote: '集成与单个环境绑定 —— 您当前正在查看 {{environment}} 环境。',
+      headerDocs: '阅读集成文档。',
+      list: {
+        connect: '连接',
+        manage: '管理',
+        connected: '已连接',
+      },
+      enableFailedToast: '启用集成失败',
+      disableFailedToast: '停用集成失败',
       providerCard: {
         headline: '将事件从 Usertour 推送到 {{provider}}',
         tooltip: '开启后,Usertour 产生的事件会持续推送到您的 {{provider}} 项目。',
@@ -432,8 +442,31 @@ const translations = {
         save: '保存',
         savedToast: '设置已保存',
         saveFailedToast: '保存设置失败',
+        heapKeyLabel: 'Heap App ID:',
+        heapKeyPlaceholder: '请输入 Heap App ID',
+        mixpanelKeyLabel: '项目 Token:',
+        mixpanelKeyPlaceholder: '请输入项目 Token',
+        segmentKeyLabel: 'Write Key:',
+        segmentKeyPlaceholder: '请输入 Write Key',
       },
       providerHeaderReadGuide: '阅读 {{provider}} 集成指南',
+      salesforce: {
+        connectTitle: '连接 {{name}}',
+        connectBody:
+          '把 Salesforce 账号连接到 Usertour 以启用实时同步。连接后可以同步 Salesforce 字段、把 Usertour 事件作为 Timeline Event 推到 Salesforce,并用这些事件触发自动化工作流。',
+        connectButton: '连接到 Salesforce',
+        loading: '加载中…',
+        authUrlFailedToast: '获取 Salesforce 授权地址失败',
+      },
+      mixpanelCohorts: {
+        toggleLabel: '从 Mixpanel 同步分群',
+        configureSettings: '配置分群同步',
+        webhookUrlLabel: 'Webhook URL',
+        webhookCopiedToast: 'Webhook URL 已复制到剪贴板',
+        userIdPropertyLabel: 'Mixpanel 用户 ID 属性(用于分群同步):',
+        userIdPropertyPlaceholder: '请输入 Mixpanel 用户 ID 属性',
+        save: '保存',
+      },
     },
   },
   twoFactor: {
