@@ -11,7 +11,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteContentMutation } from '@usertour/hooks';
 import { Content, ContentDataType } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { LoadingButton } from '@usertour/ui';
 import { useCallback } from 'react';
 import { getContentTypeMeta } from './content-type-meta';
 

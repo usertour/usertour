@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
 import { useCallback } from 'react';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { LoadingButton } from '@usertour/ui';
 import { useRemoveCompaniesFromSegment } from '@/hooks/use-remove-companies-from-segment';
 import { memo } from 'react';
 

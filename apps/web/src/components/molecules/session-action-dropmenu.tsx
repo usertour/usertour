@@ -8,7 +8,7 @@ import {
   AlertDialogContent,
   AlertDialogFooter,
 } from '@usertour/alert-dialog';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { LoadingButton } from '@usertour/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,

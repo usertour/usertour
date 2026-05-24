@@ -11,7 +11,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
 import { Segment } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { LoadingButton } from '@usertour/ui';
 import { useDeleteSegmentMutation } from '@usertour/hooks';
 import { memo, useCallback } from 'react';
 

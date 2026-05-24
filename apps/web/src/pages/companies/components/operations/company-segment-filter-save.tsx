@@ -16,7 +16,7 @@ import { Segment } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { LoadingButton } from '@usertour/ui';
 
 export const CompanySegmentFilterSave = (props: { currentSegment?: Segment }) => {
   const { currentSegment } = props;

@@ -35,7 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@usertour/alert-dialog';
-import { LoadingButton } from '../../../../../components/molecules/loading-button';
+import { LoadingButton } from '@usertour/ui';
 import { ObjectMappingDialog } from './object-mapping-dialog';
 import { Switch } from '@usertour/switch';
 

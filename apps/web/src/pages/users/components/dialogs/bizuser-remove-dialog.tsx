@@ -11,7 +11,7 @@ import { useRemoveUsersFromSegment } from '@/hooks/use-remove-users-from-segment
 import { Segment } from '@usertour/types';
 import { useCallback } from 'react';
 import { memo } from 'react';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { LoadingButton } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@usertour/use-toast';
 

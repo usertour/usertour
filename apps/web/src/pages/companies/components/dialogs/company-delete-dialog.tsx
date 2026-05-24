@@ -10,7 +10,7 @@ import {
 } from '@usertour/alert-dialog';
 import { useToast } from '@usertour/use-toast';
 import { useCallback } from 'react';
-import { LoadingButton } from '@/components/molecules/loading-button';
+import { LoadingButton } from '@usertour/ui';
 import { useDeleteCompany } from '@/hooks/use-delete-company';
 import { memo } from 'react';
 
