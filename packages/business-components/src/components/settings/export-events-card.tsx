@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@usertour/card';
 import { Input } from '@usertour/input';
 import { Label } from '@usertour/label';
@@ -73,6 +74,7 @@ export const ExportEventsCard = ({
   region,
   extraFields,
 }: ExportEventsCardProps) => {
+  const { t } = useTranslation();
   const config = (integration?.config as { exportEvents?: boolean; region?: string }) ?? {};
 
   const hasChanges =
@@ -104,22 +106,28 @@ export const ExportEventsCard = ({
             disabled={isLoading}
           />
           <Label className="text-sm">
-            {headline ?? `Stream events from Usertour to ${providerName}`}
+            {headline ??
+              t('settings.integrations.providerCard.headline', { provider: providerName })}
           </Label>
           <QuestionTooltip>
-            {tooltip ??
-              `When enabled, Usertour-generated events will be continuously streamed into your ${providerName} project.`}
+            {tooltip ?? t('settings.integrations.providerCard.tooltip', { provider: providerName })}
           </QuestionTooltip>
         </CardTitle>
-        <CardDescription>Configure event streaming settings</CardDescription>
+        <CardDescription>
+          {t('settings.integrations.providerCard.configureSettings')}
+        </CardDescription>
       </CardHeader>
       {config.exportEvents ? (
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <p className="text-sm">{keyLabel ?? 'API Key :'}</p>
+            <p className="text-sm">
+              {keyLabel ?? t('settings.integrations.providerCard.apiKeyLabel')}
+            </p>
             <Input
               type="text"
-              placeholder={keyPlaceholder ?? 'Type API Key here'}
+              placeholder={
+                keyPlaceholder ?? t('settings.integrations.providerCard.apiKeyPlaceholder')
+              }
               value={integration?.key ?? ''}
               onChange={(event) => integration && setLocal({ key: event.target.value })}
               disabled={isLoading}
@@ -127,7 +135,7 @@ export const ExportEventsCard = ({
           </div>
           {region ? (
             <div className="flex flex-col gap-1">
-              <p className="text-sm">Region:</p>
+              <p className="text-sm">{t('settings.integrations.providerCard.regionLabel')}</p>
               <Select
                 value={config.region ?? region.defaultValue}
                 onValueChange={(value) =>
@@ -155,7 +163,7 @@ export const ExportEventsCard = ({
             onClick={() => save()}
             loading={isLoading}
           >
-            Save
+            {t('settings.integrations.providerCard.save')}
           </LoadingButton>
         </CardContent>
       ) : null}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   ExportEventsCard,
   ExportEventsCardSkeleton,
@@ -12,11 +13,13 @@ interface HubSpotIntegrationConfig {
 }
 
 const INTEGRATION_PROVIDER = 'hubspot' as const;
+const PROVIDER_NAME = 'HubSpot';
 const DOCS_HREF = 'https://docs.usertour.io/how-to-guides/environments/';
 
 export const HubSpotIntegration = () => {
   const config = useIntegrationConfig<HubSpotIntegrationConfig>(INTEGRATION_PROVIDER);
   const info = integrations.find((entry) => entry.provider === INTEGRATION_PROVIDER);
+  const { t } = useTranslation();
 
   if (config.isDataLoading) {
     return (
@@ -31,12 +34,15 @@ export const HubSpotIntegration = () => {
     <>
       <IntegrationProviderHeader
         imagePath={info?.imagePath ?? ''}
-        name={info?.name ?? 'HubSpot'}
+        name={info?.name ?? PROVIDER_NAME}
         description={info?.description}
-        docs={{ href: DOCS_HREF, label: 'Read the HubSpot guide' }}
+        docs={{
+          href: DOCS_HREF,
+          label: t('settings.integrations.providerHeaderReadGuide', { provider: PROVIDER_NAME }),
+        }}
       />
       <ExportEventsCard
-        providerName="HubSpot"
+        providerName={PROVIDER_NAME}
         integration={config.integration}
         currentIntegration={config.currentIntegration}
         setLocal={config.setLocal}

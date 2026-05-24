@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   ExportEventsCard,
   ExportEventsCardSkeleton,
@@ -13,11 +14,13 @@ interface SegmentIntegrationConfig {
 }
 
 const INTEGRATION_PROVIDER = 'segment' as const;
+const PROVIDER_NAME = 'Segment';
 const DOCS_HREF = 'https://docs.usertour.io/how-to-guides/environments/';
 
 export const SegmentIntegration = () => {
   const config = useIntegrationConfig<SegmentIntegrationConfig>(INTEGRATION_PROVIDER);
   const info = integrations.find((entry) => entry.provider === INTEGRATION_PROVIDER);
+  const { t } = useTranslation();
 
   if (config.isDataLoading) {
     return (
@@ -32,12 +35,15 @@ export const SegmentIntegration = () => {
     <>
       <IntegrationProviderHeader
         imagePath={info?.imagePath ?? ''}
-        name={info?.name ?? 'Segment'}
+        name={info?.name ?? PROVIDER_NAME}
         description={info?.description}
-        docs={{ href: DOCS_HREF, label: 'Read the Segment guide' }}
+        docs={{
+          href: DOCS_HREF,
+          label: t('settings.integrations.providerHeaderReadGuide', { provider: PROVIDER_NAME }),
+        }}
       />
       <ExportEventsCard
-        providerName="Segment"
+        providerName={PROVIDER_NAME}
         keyLabel="Write Key :"
         keyPlaceholder="Type Write Key here"
         integration={config.integration}

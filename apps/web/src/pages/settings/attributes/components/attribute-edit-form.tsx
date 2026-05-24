@@ -47,36 +47,48 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 // Option metadata for the locked Object type display + the editable
-// Data type dropdown. Kept inline so the JSX below stays readable.
+// Data type dropdown. Labels resolve at render time via i18n.
 const BIZ_TYPE_OPTIONS = [
   {
     value: String(AttributeBizTypes.User),
-    label: 'User',
+    labelKey: 'settings.attributes.form.bizTypes.user',
     icon: <UserIcon width={16} height={16} />,
   },
   {
     value: String(AttributeBizTypes.Company),
-    label: 'Company',
+    labelKey: 'settings.attributes.form.bizTypes.company',
     icon: <CompanyIcon width={16} height={16} />,
   },
   {
     value: String(AttributeBizTypes.Membership),
-    label: 'Company Membership',
+    labelKey: 'settings.attributes.form.bizTypes.membership',
     icon: <UserIcon2 width={16} height={16} />,
   },
   {
     value: String(AttributeBizTypes.Event),
-    label: 'Event',
+    labelKey: 'settings.attributes.form.bizTypes.event',
     icon: <EventIcon2 width={16} height={16} />,
   },
 ] as const;
 
 const DATA_TYPE_OPTIONS = [
-  { value: String(BizAttributeTypes.Number), label: 'Number' },
-  { value: String(BizAttributeTypes.String), label: 'String' },
-  { value: String(BizAttributeTypes.Boolean), label: 'Boolean' },
-  { value: String(BizAttributeTypes.DateTime), label: 'DateTime' },
-  { value: String(BizAttributeTypes.List), label: 'List' },
+  {
+    value: String(BizAttributeTypes.Number),
+    labelKey: 'settings.attributes.form.dataTypes.number',
+  },
+  {
+    value: String(BizAttributeTypes.String),
+    labelKey: 'settings.attributes.form.dataTypes.string',
+  },
+  {
+    value: String(BizAttributeTypes.Boolean),
+    labelKey: 'settings.attributes.form.dataTypes.boolean',
+  },
+  {
+    value: String(BizAttributeTypes.DateTime),
+    labelKey: 'settings.attributes.form.dataTypes.dateTime',
+  },
+  { value: String(BizAttributeTypes.List), labelKey: 'settings.attributes.form.dataTypes.list' },
 ] as const;
 
 const toFormValues = (attribute: Attribute): FormValues => ({
@@ -139,9 +151,9 @@ export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditF
               return (
                 <FormItem>
                   <FormLabel className="flex flex-row">
-                    Object type
+                    {t('settings.attributes.form.bizTypeLabel')}
                     <QuestionTooltip className="inline ml-1">
-                      The entity this attribute belongs to: User, Company, Membership, or Event.
+                      {t('settings.attributes.form.bizTypeTooltip')}
                     </QuestionTooltip>
                   </FormLabel>
                   <FormControl>
@@ -153,7 +165,9 @@ export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditF
                     >
                       <span className="flex items-center gap-1">
                         {selected?.icon}
-                        {selected?.label ?? 'Select an object type'}
+                        {selected
+                          ? t(selected.labelKey)
+                          : t('settings.attributes.form.bizTypePlaceholder')}
                       </span>
                       <CaretSortIcon className="h-4 w-4 opacity-50" />
                     </Button>
@@ -171,10 +185,9 @@ export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditF
               return (
                 <FormItem>
                   <FormLabel className="flex flex-row">
-                    Data type
+                    {t('settings.attributes.form.dataTypeLabel')}
                     <QuestionTooltip className="inline ml-1">
-                      The value type stored in this attribute. Determines serialization and filter
-                      operators.
+                      {t('settings.attributes.form.dataTypeTooltip')}
                     </QuestionTooltip>
                   </FormLabel>
                   {/* modal={false}: outer Dialog already provides the
@@ -189,7 +202,9 @@ export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditF
                           variant="outline"
                           className="w-72 justify-between font-normal"
                         >
-                          {selected?.label ?? 'Select a data type'}
+                          {selected
+                            ? t(selected.labelKey)
+                            : t('settings.attributes.form.dataTypePlaceholder')}
                           <CaretSortIcon className="h-4 w-4 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -200,7 +215,7 @@ export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditF
                           key={option.value}
                           onSelect={() => field.onChange(option.value)}
                         >
-                          {option.label}
+                          {t(option.labelKey)}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -218,13 +233,17 @@ export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditF
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex flex-row">
-                  Display name
+                  {t('settings.attributes.form.displayNameLabel')}
                   <QuestionTooltip className="inline ml-1">
-                    Human-friendly name shown across the Usertour dashboard. e.g. "Billing Plan".
+                    {t('settings.attributes.form.displayNameTooltip')}
                   </QuestionTooltip>
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter display name" className="w-72" {...field} />
+                  <Input
+                    placeholder={t('settings.attributes.form.displayNamePlaceholder')}
+                    className="w-72"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -236,14 +255,18 @@ export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditF
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex flex-row">
-                  Code name
+                  {t('settings.attributes.form.codeNameLabel')}
                   <QuestionTooltip className="inline ml-1">
-                    Code-friendly identifier used throughout Usertour to reference this attribute.
-                    e.g. "billing_plan".
+                    {t('settings.attributes.form.codeNameTooltip')}
                   </QuestionTooltip>
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter code name" className="w-72" disabled {...field} />
+                  <Input
+                    placeholder={t('settings.attributes.form.codeNamePlaceholder')}
+                    className="w-72"
+                    disabled
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -255,9 +278,13 @@ export const AttributeEditForm = ({ attribute, isOpen, onClose }: AttributeEditF
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>{t('settings.common.description')}</FormLabel>
               <FormControl>
-                <Input placeholder="Optional description" className="w-full" {...field} />
+                <Input
+                  placeholder={t('settings.common.descriptionPlaceholder')}
+                  className="w-full"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

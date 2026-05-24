@@ -1,4 +1,5 @@
 import { useMutation } from '@apollo/client';
+import { useTranslation } from 'react-i18next';
 import { StarFilledIcon } from '@radix-ui/react-icons';
 import {
   DropdownMenu,
@@ -28,6 +29,7 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
   const [openDelete, setOpenDelete] = useState(false);
   const [openDuplicate, setOpenDuplicate] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleOnClick = () => {
     setOpenDelete(true);
@@ -51,7 +53,7 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
       onSubmit('setAsDefault');
       toast({
         variant: 'success',
-        title: 'The theme has been successfully set as default',
+        title: t('settings.themes.setDefaultSuccess'),
       });
     } catch (error) {
       toast({
@@ -70,12 +72,12 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
         <DropdownMenuContent align="end" className="z-[101]">
           <DropdownMenuItem onClick={handleSetAsDefault} disabled={theme.isDefault}>
             <StarFilledIcon className="mr-1" width={15} height={15} />
-            Set as company default
+            {t('settings.themes.setDefaultMenuItem')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleDuplicateOpen}>
             <CopyIcon className="mr-1" width={15} height={15} />
-            Duplicate theme
+            {t('settings.themes.duplicateMenuItem')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -84,7 +86,7 @@ export const ThemeEditDropdownMenu = (props: ThemeEditDropdownMenuProps) => {
             disabled={theme.isSystem || theme.isDefault}
           >
             <Delete2Icon className="mr-1" />
-            Delete theme
+            {t('settings.themes.deleteMenuItem')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

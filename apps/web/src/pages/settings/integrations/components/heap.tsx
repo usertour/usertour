@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   ExportEventsCard,
   ExportEventsCardSkeleton,
@@ -12,11 +13,13 @@ interface HeapIntegrationConfig {
 }
 
 const INTEGRATION_PROVIDER = 'heap' as const;
+const PROVIDER_NAME = 'Heap';
 const DOCS_HREF = 'https://docs.usertour.io/how-to-guides/environments/';
 
 export const HeapIntegration = () => {
   const config = useIntegrationConfig<HeapIntegrationConfig>(INTEGRATION_PROVIDER);
   const info = integrations.find((entry) => entry.provider === INTEGRATION_PROVIDER);
+  const { t } = useTranslation();
 
   if (config.isDataLoading) {
     return (
@@ -31,12 +34,15 @@ export const HeapIntegration = () => {
     <>
       <IntegrationProviderHeader
         imagePath={info?.imagePath ?? ''}
-        name={info?.name ?? 'Heap'}
+        name={info?.name ?? PROVIDER_NAME}
         description={info?.description}
-        docs={{ href: DOCS_HREF, label: 'Read the Heap guide' }}
+        docs={{
+          href: DOCS_HREF,
+          label: t('settings.integrations.providerHeaderReadGuide', { provider: PROVIDER_NAME }),
+        }}
       />
       <ExportEventsCard
-        providerName="Heap"
+        providerName={PROVIDER_NAME}
         keyLabel="Heap App ID :"
         keyPlaceholder="Type Heap App ID here"
         integration={config.integration}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useListIntegrationsQuery, useUpdateIntegrationMutation } from '@usertour/hooks';
 import type { IntegrationModel } from '@usertour/types';
 import { useToast } from '@usertour/use-toast';
@@ -39,6 +40,7 @@ export function useIntegrationConfig<TConfig>(
   } = useListIntegrationsQuery(environmentId);
   const { invoke: updateIntegration } = useUpdateIntegrationMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
 
   const currentIntegration = integrations?.find(
@@ -76,15 +78,18 @@ export function useIntegrationConfig<TConfig>(
             ...(configPatch ?? {}),
           },
         });
-        toast({ title: 'Settings saved successfully' });
+        toast({ title: t('settings.integrations.providerCard.savedToast') });
         await refetch();
       } catch {
-        toast({ title: 'Failed to save settings', variant: 'destructive' });
+        toast({
+          title: t('settings.integrations.providerCard.saveFailedToast'),
+          variant: 'destructive',
+        });
       } finally {
         setIsLoading(false);
       }
     },
-    [environmentId, integration, provider, updateIntegration, toast, refetch],
+    [environmentId, integration, provider, updateIntegration, toast, refetch, t],
   );
 
   return {

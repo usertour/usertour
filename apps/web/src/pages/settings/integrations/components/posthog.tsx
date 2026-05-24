@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   ExportEventsCard,
   ExportEventsCardSkeleton,
@@ -13,11 +14,13 @@ interface PosthogIntegrationConfig {
 }
 
 const INTEGRATION_PROVIDER = 'posthog' as const;
+const PROVIDER_NAME = 'PostHog';
 const DOCS_HREF = 'https://docs.usertour.io/how-to-guides/environments/';
 
 export const PosthogIntegration = () => {
   const config = useIntegrationConfig<PosthogIntegrationConfig>(INTEGRATION_PROVIDER);
   const info = integrations.find((entry) => entry.provider === INTEGRATION_PROVIDER);
+  const { t } = useTranslation();
 
   if (config.isDataLoading) {
     return (
@@ -32,12 +35,15 @@ export const PosthogIntegration = () => {
     <>
       <IntegrationProviderHeader
         imagePath={info?.imagePath ?? ''}
-        name={info?.name ?? 'PostHog'}
+        name={info?.name ?? PROVIDER_NAME}
         description={info?.description}
-        docs={{ href: DOCS_HREF, label: 'Read the PostHog guide' }}
+        docs={{
+          href: DOCS_HREF,
+          label: t('settings.integrations.providerHeaderReadGuide', { provider: PROVIDER_NAME }),
+        }}
       />
       <ExportEventsCard
-        providerName="PostHog"
+        providerName={PROVIDER_NAME}
         integration={config.integration}
         currentIntegration={config.currentIntegration}
         setLocal={config.setLocal}

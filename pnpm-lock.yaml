@@ -1402,6 +1402,9 @@ importers:
       react-hook-form:
         specifier: ^7.44.2
         version: 7.53.1(react@18.2.0)
+      react-i18next:
+        specifier: ^15.6.0
+        version: 15.6.1(i18next@25.3.2(typescript@5.3.3))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.3.3)
       react-use:
         specifier: ^17.4.0
         version: 17.5.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)

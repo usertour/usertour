@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentLimit } from '@/hooks/use-plan-limits';
@@ -30,6 +31,7 @@ export const EnvironmentCreateForm = ({ isOpen, onClose }: EnvironmentCreateForm
   const { project } = useAppContext();
   const navigate = useNavigate();
   const { canUseMore } = useEnvironmentLimit();
+  const { t } = useTranslation();
 
   const state = useSettingsForm<FormValues>({
     schema,
@@ -59,14 +61,13 @@ export const EnvironmentCreateForm = ({ isOpen, onClose }: EnvironmentCreateForm
       <Dialog open={isOpen} onOpenChange={(next) => !next && onClose()}>
         <DialogContent className="max-w-xl" aria-describedby={undefined}>
           <DialogHeader>
-            <DialogTitle>Create New Environment</DialogTitle>
+            <DialogTitle>{t('settings.environments.createTitle')}</DialogTitle>
           </DialogHeader>
           <Alert className="bg-primary/10 border-primary/5">
             <AlertCircle className="h-4 w-4 !text-primary" />
-            <AlertTitle>Maximum environments reached</AlertTitle>
+            <AlertTitle>{t('settings.environments.limitTitle')}</AlertTitle>
             <AlertDescription>
-              You have reached the maximum number of environments allowed on your current plan. To
-              add more environments, you'll have to{' '}
+              {t('settings.environments.limitDescriptionPrefix')}
               <Button
                 variant="link"
                 className="p-0 h-auto font-normal inline"
@@ -75,7 +76,7 @@ export const EnvironmentCreateForm = ({ isOpen, onClose }: EnvironmentCreateForm
                   navigate(`/project/${project?.id}/settings/billing`);
                 }}
               >
-                Upgrade your plan
+                {t('settings.environments.upgradeLink')}
               </Button>
             </AlertDescription>
           </Alert>
@@ -87,7 +88,7 @@ export const EnvironmentCreateForm = ({ isOpen, onClose }: EnvironmentCreateForm
                 navigate(`/project/${project?.id}/settings/billing`);
               }}
             >
-              Upgrade
+              {t('settings.environments.upgrade')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -97,11 +98,11 @@ export const EnvironmentCreateForm = ({ isOpen, onClose }: EnvironmentCreateForm
 
   return (
     <SettingsDialogForm
-      title="Create New Environment"
+      title={t('settings.environments.createTitle')}
       open={isOpen}
       onOpenChange={(next) => !next && onClose()}
       state={state}
-      submitLabel="Submit"
+      submitLabel={t('settings.common.submit')}
       contentClassName="max-w-xl"
     >
       <FormField
@@ -109,9 +110,9 @@ export const EnvironmentCreateForm = ({ isOpen, onClose }: EnvironmentCreateForm
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Environment name</FormLabel>
+            <FormLabel>{t('settings.environments.nameLabel')}</FormLabel>
             <FormControl>
-              <Input placeholder="Enter environment name" {...field} />
+              <Input placeholder={t('settings.environments.namePlaceholder')} {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

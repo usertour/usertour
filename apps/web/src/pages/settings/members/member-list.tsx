@@ -57,7 +57,7 @@ const MemberListPage = () => {
     {
       header: t('settings.team.columns.role'),
       headerClassName: 'w-28',
-      cell: (member) => member.role,
+      cell: (member) => t(`settings.team.roles.${member.role.toLowerCase()}`, member.role),
     },
     {
       header: '',

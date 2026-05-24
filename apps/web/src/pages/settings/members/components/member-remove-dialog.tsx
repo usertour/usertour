@@ -15,6 +15,7 @@ import { useRemoveTeamMemberMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface MemberRemoveDialogProps {
   projectId: string;
@@ -28,6 +29,7 @@ export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
   const { onSuccess, onCancel, isOpen, data, projectId } = props;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { invoke } = useRemoveTeamMemberMutation();
 
   const showError = (title: string) => {
@@ -57,16 +59,18 @@ export const MemberRemoveDialog = (props: MemberRemoveDialogProps) => {
     <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Confirm </DialogTitle>
+          <DialogTitle>{t('settings.team.remove.title')}</DialogTitle>
         </DialogHeader>
-        <DialogDescription>Confirm removing member, {data.email}?</DialogDescription>
+        <DialogDescription>
+          {t('settings.team.remove.description', { email: data.email })}
+        </DialogDescription>
         <DialogFooter>
           <Button variant="outline" type="button" onClick={onCancel}>
-            Canel
+            {t('settings.team.remove.cancelButton')}
           </Button>
           <Button type="submit" disabled={isLoading} onClick={handleOnSubmit}>
             {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Remove member
+            {t('settings.team.remove.confirmButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   ExportEventsCard,
   ExportEventsCardSkeleton,
@@ -13,11 +14,13 @@ interface AmplitudeIntegrationConfig {
 }
 
 const INTEGRATION_PROVIDER = 'amplitude' as const;
+const PROVIDER_NAME = 'Amplitude';
 const DOCS_HREF = 'https://docs.usertour.io/how-to-guides/environments/';
 
 export const AmplitudeIntegration = () => {
   const config = useIntegrationConfig<AmplitudeIntegrationConfig>(INTEGRATION_PROVIDER);
   const info = integrations.find((entry) => entry.provider === INTEGRATION_PROVIDER);
+  const { t } = useTranslation();
 
   if (config.isDataLoading) {
     return (
@@ -32,12 +35,15 @@ export const AmplitudeIntegration = () => {
     <>
       <IntegrationProviderHeader
         imagePath={info?.imagePath ?? ''}
-        name={info?.name ?? 'Amplitude'}
+        name={info?.name ?? PROVIDER_NAME}
         description={info?.description}
-        docs={{ href: DOCS_HREF, label: 'Read the Amplitude guide' }}
+        docs={{
+          href: DOCS_HREF,
+          label: t('settings.integrations.providerHeaderReadGuide', { provider: PROVIDER_NAME }),
+        }}
       />
       <ExportEventsCard
-        providerName="Amplitude"
+        providerName={PROVIDER_NAME}
         integration={config.integration}
         currentIntegration={config.currentIntegration}
         setLocal={config.setLocal}

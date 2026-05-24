@@ -8,6 +8,7 @@ import { ScaledPreviewContainer } from '@usertour/ui';
 import { Theme } from '@usertour/types';
 import { PREVIEW_BASIC } from '@usertour/constants';
 import { memo, MouseEvent, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@usertour/button';
@@ -26,6 +27,7 @@ export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
   const { project, isViewOnly } = useAppContext();
   const { globalStyle, themeSetting } = useSettingsStyles(theme.settings);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const handleOnClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
       const el = containerRef.current as any;
@@ -55,7 +57,7 @@ export const ThemeListPreview = memo((props: ThemeListPreviewProps) => {
             </span>
             {theme.isDefault && (
               <span className="bg-primary px-1.5 py-0.5 rounded text-sm font-normal text-primary-foreground">
-                Default
+                {t('settings.themes.defaultBadge')}
               </span>
             )}
           </div>

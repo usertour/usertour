@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { useUpdateEnvironmentMutation } from '@usertour/hooks';
 import { Input } from '@usertour/input';
@@ -22,6 +23,7 @@ type FormValues = z.infer<typeof schema>;
 
 export const EnvironmentEditForm = ({ environment, isOpen, onClose }: EnvironmentEditFormProps) => {
   const { invoke: updateEnvironment } = useUpdateEnvironmentMutation();
+  const { t } = useTranslation();
 
   const state = useSettingsForm<FormValues>({
     schema,
@@ -46,20 +48,20 @@ export const EnvironmentEditForm = ({ environment, isOpen, onClose }: Environmen
 
   return (
     <SettingsDialogForm
-      title="Rename Environment"
+      title={t('settings.environments.editTitle')}
       open={isOpen}
       onOpenChange={(next) => !next && onClose()}
       state={state}
-      submitLabel="Submit"
+      submitLabel={t('settings.common.submit')}
     >
       <FormField
         control={state.form.control}
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Environment name</FormLabel>
+            <FormLabel>{t('settings.environments.nameLabel')}</FormLabel>
             <FormControl>
-              <Input placeholder="Enter environment name" {...field} />
+              <Input placeholder={t('settings.environments.namePlaceholder')} {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

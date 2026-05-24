@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@apollo/client';
+import { useTranslation } from 'react-i18next';
 import { ListSkeletonCount } from '@/components/molecules/skeleton';
 import { useAttributeListContext } from '@/contexts/attribute-list-context';
 import { Button } from '@usertour/button';
@@ -45,6 +46,7 @@ const toFormValues = (event: Event): FormValues => ({
 
 export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) => {
   const { invoke: updateEvent } = useUpdateEventMutation();
+  const { t } = useTranslation();
   const [eventAttrs, setEventAttrs] = useState<Attribute[]>([]);
   const [eventsOnAttributes, setEventsOnAttributes] = useState<Attribute[]>([]);
   const [selectMode, setSelectMode] = useState(false);
@@ -102,7 +104,7 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
       if (exists) {
         toast({
           variant: 'warning',
-          title: 'That attribute is already associated with the event.',
+          title: t('settings.events.attributeAlreadyAssociated'),
         });
         setSelectedAttributeValue('');
         return;
@@ -114,16 +116,16 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
         setSelectedAttributeValue(attributeId);
       }
     },
-    [eventsOnAttributes, eventAttrs, toast],
+    [eventsOnAttributes, eventAttrs, toast, t],
   );
 
   return (
     <SettingsDialogForm
-      title="Edit Event"
+      title={t('settings.events.editTitle')}
       open={isOpen}
       onOpenChange={(next) => !next && onClose()}
       state={state}
-      submitLabel="Save Event"
+      submitLabel={t('settings.events.saveButton')}
       contentClassName="max-w-5xl"
     >
       <div className="flex">
@@ -135,16 +137,19 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex flex-row">
-                    Display name
+                    {t('settings.events.form.displayNameLabel')}
                     <QuestionTooltip className="ml-1">
-                      Human-friendly name shown across the Usertour dashboard. e.g. "User signed
-                      up".
+                      {t('settings.events.form.displayNameTooltip')}
                     </QuestionTooltip>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter display name" className="w-72" {...field} />
+                    <Input
+                      placeholder={t('settings.events.form.displayNamePlaceholder')}
+                      className="w-72"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormDescription>Can be changed later</FormDescription>
+                  <FormDescription>{t('settings.common.changeableLater')}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -155,16 +160,20 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex flex-row">
-                    Code name
+                    {t('settings.events.form.codeNameLabel')}
                     <QuestionTooltip className="ml-1">
-                      Code-friendly identifier used throughout Usertour to reference this event.
-                      e.g. "user_signed_up".
+                      {t('settings.events.form.codeNameTooltip')}
                     </QuestionTooltip>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter code name" className="w-72" disabled {...field} />
+                    <Input
+                      placeholder={t('settings.events.form.codeNamePlaceholder')}
+                      className="w-72"
+                      disabled
+                      {...field}
+                    />
                   </FormControl>
-                  <FormDescription>Can NOT be changed later</FormDescription>
+                  <FormDescription>{t('settings.common.notChangeableLater')}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -175,9 +184,13 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel>{t('settings.common.description')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Optional description" className="w-full" {...field} />
+                  <Input
+                    placeholder={t('settings.common.descriptionPlaceholder')}
+                    className="w-full"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -188,9 +201,9 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
         <div className="flex flex-col w-1/3">
           <FormItem>
             <FormLabel className="flex flex-row">
-              Event attributes
+              {t('settings.events.form.attributesLabel')}
               <QuestionTooltip className="ml-1">
-                Attributes included in this event's payload schema. e.g. "plan_name", "price".
+                {t('settings.events.form.attributesTooltip')}
               </QuestionTooltip>
             </FormLabel>
             <hr className="border-t" />
@@ -221,7 +234,7 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
                 <SelectPopover
                   className="w-full"
                   contentClassName="w-[--radix-popover-trigger-width]"
-                  placeholder="Select an attribute"
+                  placeholder={t('settings.events.form.attributesPlaceholder')}
                   value={selectedAttributeValue}
                   options={eventAttrs.map((attr) => ({
                     value: attr.id,
@@ -234,7 +247,7 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
                   className="px-0.5 ml-1 h-fit"
                   onClick={() => setSelectMode(false)}
                 >
-                  Cancel
+                  {t('settings.common.cancel')}
                 </Button>
               </div>
             ) : (
@@ -246,7 +259,7 @@ export const EventEditForm = ({ event, isOpen, onClose }: EventEditFormProps) =>
                 }}
               >
                 <PlusIcon width={16} height={16} />
-                Add attribute
+                {t('settings.events.form.addAttribute')}
               </div>
             )}
             <FormMessage />

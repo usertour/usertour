@@ -20,11 +20,13 @@ import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
+// Owner is granted via the transfer-ownership flow, not this dialog.
 const ROLE_OPTIONS = [
-  { value: TeamMemberRole.ADMIN, label: 'Admin' },
-  { value: TeamMemberRole.VIEWER, label: 'Viewer' },
+  { value: TeamMemberRole.ADMIN, i18nKey: 'settings.team.roles.admin' },
+  { value: TeamMemberRole.VIEWER, i18nKey: 'settings.team.roles.viewer' },
 ] as const;
 
 interface MemberChangeRoleDialogProps {
@@ -48,6 +50,7 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
   const { invoke } = useChangeTeamMemberRoleMutation();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const showError = (title: string) => {
     toast({
@@ -94,7 +97,7 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleOnSubmit)}>
             <DialogHeader>
-              <DialogTitle>Change team member role</DialogTitle>
+              <DialogTitle>{t('settings.team.changeRole.title')}</DialogTitle>
             </DialogHeader>
             <div>
               <div className="space-y-4 py-2 pb-4 pt-4">
@@ -106,7 +109,7 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
                       const selected = ROLE_OPTIONS.find((option) => option.value === field.value);
                       return (
                         <FormItem>
-                          <FormLabel>Role</FormLabel>
+                          <FormLabel>{t('settings.team.changeRole.roleLabel')}</FormLabel>
                           {/* modal={false}: parent Dialog already traps
                               focus; skipping the dropdown's own trap
                               avoids the aria-hidden conflict on the
@@ -119,7 +122,9 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
                                   variant="outline"
                                   className="w-full justify-between font-normal"
                                 >
-                                  {selected?.label ?? 'Select a role'}
+                                  {selected
+                                    ? t(selected.i18nKey)
+                                    : t('settings.team.changeRole.rolePlaceholder')}
                                   <CaretSortIcon className="h-4 w-4 opacity-50" />
                                 </Button>
                               </DropdownMenuTrigger>
@@ -133,7 +138,7 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
                                   key={option.value}
                                   onSelect={() => field.onChange(option.value)}
                                 >
-                                  {option.label}
+                                  {t(option.i18nKey)}
                                 </DropdownMenuItem>
                               ))}
                             </DropdownMenuContent>
@@ -148,11 +153,11 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={onCancel}>
-                Cancel
+                {t('settings.common.cancel')}
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                Change role
+                {t('settings.team.changeRole.submit')}
               </Button>
             </DialogFooter>
           </form>

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from 'react-use';
 import { Copy } from 'lucide-react';
 import {
@@ -28,6 +29,7 @@ interface MixpanelIntegrationConfig {
 }
 
 const INTEGRATION_PROVIDER = 'mixpanel' as const;
+const PROVIDER_NAME = 'Mixpanel';
 const DOCS_HREF = 'https://docs.usertour.io/how-to-guides/environments/';
 
 /**
@@ -163,6 +165,7 @@ const SyncCohortsCardSkeleton = () => (
 export const MixpanelIntegration = () => {
   const config = useIntegrationConfig<MixpanelIntegrationConfig>(INTEGRATION_PROVIDER);
   const info = integrations.find((entry) => entry.provider === INTEGRATION_PROVIDER);
+  const { t } = useTranslation();
 
   if (config.isDataLoading) {
     return (
@@ -178,12 +181,15 @@ export const MixpanelIntegration = () => {
     <>
       <IntegrationProviderHeader
         imagePath={info?.imagePath ?? ''}
-        name={info?.name ?? 'Mixpanel'}
+        name={info?.name ?? PROVIDER_NAME}
         description={info?.description}
-        docs={{ href: DOCS_HREF, label: 'Read the Mixpanel guide' }}
+        docs={{
+          href: DOCS_HREF,
+          label: t('settings.integrations.providerHeaderReadGuide', { provider: PROVIDER_NAME }),
+        }}
       />
       <ExportEventsCard
-        providerName="Mixpanel"
+        providerName={PROVIDER_NAME}
         keyLabel="Project Token :"
         keyPlaceholder="Type Project Token here"
         integration={config.integration}

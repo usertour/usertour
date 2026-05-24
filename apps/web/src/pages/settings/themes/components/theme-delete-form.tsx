@@ -3,6 +3,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { Theme } from '@usertour/types';
 import { DeleteConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface ThemeDeleteFormProps {
   data: Theme;
@@ -14,6 +15,7 @@ interface ThemeDeleteFormProps {
 export const ThemeDeleteForm = ({ data, open, onOpenChange, onSubmit }: ThemeDeleteFormProps) => {
   const { invoke: deleteTheme, loading } = useDeleteThemeMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleDelete = async () => {
     if (!data) {
@@ -24,7 +26,7 @@ export const ThemeDeleteForm = ({ data, open, onOpenChange, onSubmit }: ThemeDel
       if (success) {
         toast({
           variant: 'success',
-          title: 'The theme has been successfully deleted',
+          title: t('settings.themes.deleteSuccess'),
         });
         onSubmit(true);
         onOpenChange(false);
@@ -37,8 +39,8 @@ export const ThemeDeleteForm = ({ data, open, onOpenChange, onSubmit }: ThemeDel
 
   return (
     <DeleteConfirmDialog
-      resourceLabel="theme"
-      description="This action cannot be undone. This will permanently delete the theme and all its variations."
+      resourceLabel={t('settings.themes.deleteResource')}
+      description={t('settings.themes.deleteDescription')}
       open={open}
       onOpenChange={onOpenChange}
       onConfirm={handleDelete}

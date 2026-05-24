@@ -15,6 +15,7 @@ import { useChangeTeamMemberRoleMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface EditFormProps {
   projectId: string;
@@ -28,6 +29,7 @@ export const TransferOwnerDialog = (props: EditFormProps) => {
   const { onSuccess, onCancel, isOpen, data, projectId } = props;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { invoke } = useChangeTeamMemberRoleMutation();
 
   const showError = (title: string) => {
@@ -57,15 +59,14 @@ export const TransferOwnerDialog = (props: EditFormProps) => {
     <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Transfer account ownership</DialogTitle>
+          <DialogTitle>{t('settings.team.transferOwner.title')}</DialogTitle>
         </DialogHeader>
         <DialogDescription>
-          Only one user can be the owner of your Usertour account. Once you transfer ownership, you
-          can't undo it. Confirm transferring account ownership to {data.name}?
+          {t('settings.team.transferOwner.description', { name: data.name })}
         </DialogDescription>
         <DialogFooter>
           <Button variant="outline" type="button" onClick={onCancel}>
-            Cancel
+            {t('settings.team.transferOwner.cancelButton')}
           </Button>
           <Button
             type="submit"
@@ -74,7 +75,7 @@ export const TransferOwnerDialog = (props: EditFormProps) => {
             onClick={handleOnSubmit}
           >
             {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Transfer account ownership
+            {t('settings.team.transferOwner.confirmButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -3,6 +3,7 @@ import { Button } from '@usertour/button';
 import { Input } from '@usertour/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@usertour/dialog';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@usertour/use-toast';
 import { CreateAccessToken } from '@usertour/gql';
 import { useAppContext } from '@/contexts/app-context';
@@ -53,6 +54,7 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
   const { environment } = useAppContext();
   const { refetch } = useApiContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -105,7 +107,7 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <DialogHeader>
-                <DialogTitle>New API key</DialogTitle>
+                <DialogTitle>{t('settings.api.createTitle')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <FormField
@@ -113,11 +115,11 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Key Name</FormLabel>
+                      <FormLabel>{t('settings.api.createNameLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter key name" {...field} />
+                        <Input placeholder={t('settings.api.createNamePlaceholder')} {...field} />
                       </FormControl>
-                      <FormDescription>Can be changed later</FormDescription>
+                      <FormDescription>{t('settings.common.changeableLater')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -125,11 +127,11 @@ export const ApiCreateForm = ({ visible, onClose }: ApiCreateFormProps) => {
               </div>
               <DialogFooter>
                 <Button variant="outline" type="button" onClick={onClose} disabled={creating}>
-                  Cancel
+                  {t('settings.common.cancel')}
                 </Button>
                 <Button type="submit" disabled={creating}>
                   {creating && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                  {creating ? 'Creating...' : 'Create'}
+                  {creating ? t('settings.api.creating') : t('settings.api.createButton')}
                 </Button>
               </DialogFooter>
             </form>

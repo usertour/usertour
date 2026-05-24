@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useMutation } from '@apollo/client';
+import { useTranslation } from 'react-i18next';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@usertour/form';
 import { updateLocalization } from '@usertour/gql';
 import { Input } from '@usertour/input';
@@ -36,6 +37,7 @@ export const LocalizationEditForm = ({
   onClose,
 }: LocalizationEditFormProps) => {
   const [updateMutation] = useMutation(updateLocalization);
+  const { t } = useTranslation();
 
   const state = useSettingsForm<FormValues>({
     schema,
@@ -60,11 +62,11 @@ export const LocalizationEditForm = ({
 
   return (
     <SettingsDialogForm
-      title="Rename Localization"
+      title={t('settings.localizations.editTitle')}
       open={isOpen}
       onOpenChange={(next) => !next && onClose()}
       state={state}
-      submitLabel="Save Localization"
+      submitLabel={t('settings.localizations.saveButton')}
       contentClassName="max-w-2xl"
     >
       <div className="flex flex-col space-y-2">
@@ -74,9 +76,9 @@ export const LocalizationEditForm = ({
           render={() => (
             <FormItem>
               <FormLabel className="flex flex-row items-center">
-                Locale
+                {t('settings.localizations.form.localeLabel')}
                 <QuestionTooltip className="ml-1">
-                  A locale represents a user's language and region.
+                  {t('settings.localizations.form.localeTooltip')}
                 </QuestionTooltip>
               </FormLabel>
               <LocateSelect
@@ -98,13 +100,13 @@ export const LocalizationEditForm = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="flex flex-row items-center">
-                Name
+                {t('settings.localizations.form.nameLabel')}
                 <QuestionTooltip className="ml-1">
-                  Human-readable name of the locale
+                  {t('settings.localizations.form.nameTooltip')}
                 </QuestionTooltip>
               </FormLabel>
               <FormControl>
-                <Input placeholder="Enter display name" {...field} />
+                <Input placeholder={t('settings.localizations.form.namePlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -116,16 +118,13 @@ export const LocalizationEditForm = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="flex flex-row items-center">
-                Code
+                {t('settings.localizations.form.codeLabel')}
                 <QuestionTooltip className="ml-1">
-                  The value that users of this locale must have in their locale_code attribute in
-                  your Usertour.js installation. It's important that this code matches exactly. If a
-                  user has a missing or invalid locale code, they will be regarded as having no
-                  locale, which means they'll see the flow in the base locale.
+                  {t('settings.localizations.form.codeTooltip')}
                 </QuestionTooltip>
               </FormLabel>
               <FormControl>
-                <Input placeholder="Enter code name" {...field} />
+                <Input placeholder={t('settings.localizations.form.codePlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

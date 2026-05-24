@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeftRightIcon } from 'lucide-react';
 import { useAppContext } from '@/contexts/app-context';
 import { useMemberContext } from '@/contexts/member-context';
@@ -17,6 +18,7 @@ interface MemberListActionProps {
 export const MemberListAction = ({ data }: MemberListActionProps) => {
   const { project } = useAppContext();
   const { refetch } = useMemberContext();
+  const { t } = useTranslation();
   const [cancelInviteOpen, setCancelInviteOpen] = useState(false);
   const [changeRoleOpen, setChangeRoleOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
@@ -30,7 +32,7 @@ export const MemberListAction = ({ data }: MemberListActionProps) => {
         {
           key: 'cancelInvite',
           icon: <Delete2Icon className="w-6" width={16} height={16} />,
-          label: 'Cancel invite',
+          label: t('settings.team.cancelInviteMenuItem'),
           destructive: true,
           onSelect: () => setCancelInviteOpen(true),
         },
@@ -39,21 +41,21 @@ export const MemberListAction = ({ data }: MemberListActionProps) => {
         {
           key: 'changeRole',
           icon: <EditIcon className="w-6" width={16} height={16} />,
-          label: 'Change role',
+          label: t('settings.team.changeRoleMenuItem'),
           disabled: isOwner,
           onSelect: () => setChangeRoleOpen(true),
         },
         {
           key: 'transferOwner',
           icon: <ArrowLeftRightIcon className="w-6" width={16} height={16} />,
-          label: 'Transfer ownership to this user',
+          label: t('settings.team.transferOwnerMenuItem'),
           disabled: isOwner,
           onSelect: () => setTransferOwnerOpen(true),
         },
         {
           key: 'remove',
           icon: <Delete2Icon className="w-6" width={16} height={16} />,
-          label: 'Remove member',
+          label: t('settings.team.removeMenuItem'),
           destructive: true,
           disabled: isOwner,
           separatorBefore: true,

@@ -15,6 +15,7 @@ import { useCancelInviteMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/use-toast';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface EditFormProps {
   projectId: string;
@@ -28,6 +29,7 @@ export const CancelInviteDialog = (props: EditFormProps) => {
   const { onSuccess, onCancel, isOpen, data, projectId } = props;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { invoke } = useCancelInviteMutation();
 
   const showError = (title: string) => {
@@ -57,16 +59,18 @@ export const CancelInviteDialog = (props: EditFormProps) => {
     <Dialog open={isOpen} onOpenChange={(op) => !op && onCancel()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Confirm </DialogTitle>
+          <DialogTitle>{t('settings.team.cancelInvite.title')}</DialogTitle>
         </DialogHeader>
-        <DialogDescription>Confirm canceling invite to {data.email}?</DialogDescription>
+        <DialogDescription>
+          {t('settings.team.cancelInvite.description', { email: data.email })}
+        </DialogDescription>
         <DialogFooter>
           <Button variant="outline" type="button" onClick={onCancel}>
-            No, do nothing
+            {t('settings.team.cancelInvite.cancelButton')}
           </Button>
           <Button type="submit" disabled={isLoading} onClick={handleOnSubmit}>
             {isLoading && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Yes, cancel invite
+            {t('settings.team.cancelInvite.confirmButton')}
           </Button>
         </DialogFooter>
       </DialogContent>
