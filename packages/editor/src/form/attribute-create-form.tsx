@@ -124,13 +124,18 @@ export const AttributeCreateForm = ({
       const result = await invoke(data);
       if (!result?.id) {
         showError('Create Attribute failed.');
-      } else {
-        onSuccess?.(result);
+        return;
       }
+      onSuccess?.(result);
+      toast({
+        variant: 'success',
+        title: 'The attribute has been successfully created',
+      });
     } catch (error) {
       showError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   return (

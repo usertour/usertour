@@ -104,12 +104,18 @@ export const AttributeEditForm = (props: EditFormProps) => {
 
         if (!ret.data?.updateAttribute?.id) {
           showError('Update attribute failed.');
+          return;
         }
+        toast({
+          variant: 'success',
+          title: 'The attribute has been successfully updated',
+        });
         onClose();
       } catch (error) {
         showError(getErrorMessage(error));
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     },
     [attribute],
   );

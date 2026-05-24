@@ -122,18 +122,23 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
       const ret = await createMutation({ variables: { data } });
       if (!ret.data?.createEvent?.id) {
         showError('Create Event failed.');
-      } else {
-        onCreated?.({
-          id: ret.data.createEvent.id,
-          displayName: ret.data.createEvent.displayName,
-          codeName: ret.data.createEvent.codeName,
-        });
+        return;
       }
+      onCreated?.({
+        id: ret.data.createEvent.id,
+        displayName: ret.data.createEvent.displayName,
+        codeName: ret.data.createEvent.codeName,
+      });
+      toast({
+        variant: 'success',
+        title: 'The event has been successfully created',
+      });
       onClose();
     } catch (error) {
       showError(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   const handleAttrValueChange = useCallback(
@@ -235,7 +240,7 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
                 <FormField
                   control={form.control}
                   name="attributeIds"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
                       <FormLabel className="flex flex-row">
                         Event attributes
@@ -274,7 +279,6 @@ export const EventCreateDialog = ({ onClose, isOpen, onCreated }: CreateFormProp
                       {selectAttributeStatus ? (
                         <div className="flex flex-row">
                           <Select
-                            {...field}
                             onValueChange={handleAttrValueChange}
                             value={selectedAttributeValue}
                           >
