@@ -12,6 +12,7 @@ import {
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
   createAttribute,
+  createEnvironments,
   deleteAttribute,
   deleteContent,
   deleteEnvironments,
@@ -31,8 +32,12 @@ import {
   querySessionDetail,
   querySessionsByExternalId,
   removeTeamMember,
+  setDefaultLocalization,
+  updateAttribute,
   updateContent,
   updateContentVersion,
+  updateEnvironments,
+  updateEvent,
   updateSegment,
   createCheckoutSession,
   createPortalSession,
@@ -801,6 +806,79 @@ export const useDeleteEnvironmentsMutation = () => {
   const invoke = async (id: string): Promise<boolean> => {
     const response = await mutation({ variables: { id } });
     return !!response.data?.deleteEnvironments?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export interface CreateEnvironmentInput {
+  name: string;
+  projectId: string;
+}
+
+export const useCreateEnvironmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(createEnvironments);
+  const invoke = async (input: CreateEnvironmentInput): Promise<string | undefined> => {
+    const response = await mutation({ variables: input });
+    return response.data?.createEnvironments?.id as string | undefined;
+  };
+  return { invoke, loading, error };
+};
+
+export interface UpdateEnvironmentInput {
+  id: string;
+  name?: string;
+  isPrimary?: boolean;
+}
+
+export const useUpdateEnvironmentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateEnvironments);
+  const invoke = async (input: UpdateEnvironmentInput): Promise<boolean> => {
+    const response = await mutation({ variables: input });
+    return !!response.data?.updateEnvironments?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export interface UpdateAttributeInput {
+  id: string;
+  bizType: number;
+  dataType: number;
+  codeName: string;
+  displayName: string;
+  description: string;
+}
+
+export const useUpdateAttributeMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateAttribute);
+  const invoke = async (data: UpdateAttributeInput): Promise<boolean> => {
+    const response = await mutation({ variables: { data } });
+    return !!response.data?.updateAttribute?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export interface UpdateEventInput {
+  id: string;
+  displayName: string;
+  codeName: string;
+  description: string;
+  attributeIds: string[];
+}
+
+export const useUpdateEventMutation = () => {
+  const [mutation, { loading, error }] = useMutation(updateEvent);
+  const invoke = async (data: UpdateEventInput): Promise<boolean> => {
+    const response = await mutation({ variables: { data } });
+    return !!response.data?.updateEvent?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useSetDefaultLocalizationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(setDefaultLocalization);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.setDefaultLocalization?.id;
   };
   return { invoke, loading, error };
 };

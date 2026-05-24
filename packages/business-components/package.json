@@ -44,6 +44,7 @@
     "@usertour/scroll-area": "workspace:^",
     "@usertour/select": "workspace:^",
     "@usertour/separator": "workspace:^",
+    "@usertour/skeleton": "workspace:^",
     "@usertour/hooks": "workspace:^",
     "@usertour/widget": "workspace:^",
     "@usertour/helpers": "workspace:^",
