@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocalizationListContext } from '@/contexts/localization-list-context';
 import { StarFilledIcon } from '@radix-ui/react-icons';
 import { EditIcon } from '@usertour/icons';
@@ -20,6 +21,7 @@ export const LocalizationListAction = ({ localization }: LocalizationListActionP
   const { refetch } = useLocalizationListContext();
   const { invoke: setDefaultLocalization } = useSetDefaultLocalizationMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleSetDefault = async () => {
     try {
@@ -27,7 +29,7 @@ export const LocalizationListAction = ({ localization }: LocalizationListActionP
       await refetch();
       toast({
         variant: 'success',
-        title: 'The localization has been successfully set as default',
+        title: t('settings.localizations.setDefaultSuccess'),
       });
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -42,13 +44,13 @@ export const LocalizationListAction = ({ localization }: LocalizationListActionP
           {
             key: 'edit',
             icon: <EditIcon className="w-6" width={12} height={12} />,
-            label: 'Edit localization',
+            label: t('settings.localizations.editMenuItem'),
             onSelect: () => setEditOpen(true),
           },
           {
             key: 'default',
             icon: <StarFilledIcon className="mr-1" width={15} height={15} />,
-            label: 'Set as company default',
+            label: t('settings.localizations.setDefaultMenuItem'),
             onSelect: handleSetDefault,
             disabled: localization.isDefault,
             separatorBefore: true,

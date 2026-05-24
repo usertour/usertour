@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentListContext } from '@/contexts/environment-list-context';
 import { StarIcon } from '@radix-ui/react-icons';
@@ -25,6 +26,7 @@ export const EnvironmentListAction = ({
   const { refetch } = useEnvironmentListContext();
   const { isViewOnly } = useAppContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { invoke: updateEnvironment, loading: isSettingPrimary } = useUpdateEnvironmentMutation();
 
   // Primary environments can't be deleted, and you can't delete the last
@@ -43,7 +45,7 @@ export const EnvironmentListAction = ({
         isPrimary: true,
       });
       if (success) {
-        toast({ variant: 'success', title: 'Environment set as primary successfully.' });
+        toast({ variant: 'success', title: t('settings.environments.setPrimarySuccess') });
         refetch();
       }
     } catch (error) {
@@ -60,7 +62,7 @@ export const EnvironmentListAction = ({
           {
             key: 'rename',
             icon: <EditIcon className="w-6" width={12} height={12} />,
-            label: 'Rename environment',
+            label: t('settings.environments.renameMenuItem'),
             onSelect: () => setEditOpen(true),
           },
           ...(isNotPrimary
@@ -68,7 +70,7 @@ export const EnvironmentListAction = ({
                 {
                   key: 'setPrimary',
                   icon: <StarIcon className="w-4 h-4 mr-2" />,
-                  label: 'Make this the primary environment',
+                  label: t('settings.environments.setPrimaryMenuItem'),
                   onSelect: handleSetPrimary,
                   disabled: isViewOnly || isSettingPrimary,
                   separatorBefore: true,
@@ -78,7 +80,7 @@ export const EnvironmentListAction = ({
           {
             key: 'delete',
             icon: <Delete2Icon className="w-4 h-4 mr-2" />,
-            label: 'Delete',
+            label: t('settings.environments.deleteMenuItem'),
             destructive: true,
             disabled: isDeleteDisabled,
             separatorBefore: true,

@@ -3,6 +3,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteEventMutation } from '@usertour/hooks';
 import { DeleteConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface EventDeleteFormProps {
   data: Event;
@@ -14,10 +15,11 @@ interface EventDeleteFormProps {
 export const EventDeleteForm = ({ data, open, onOpenChange, onSubmit }: EventDeleteFormProps) => {
   const { invoke: deleteEvent, loading } = useDeleteEventMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleDelete = async () => {
     if (!data?.id) {
-      toast({ variant: 'destructive', title: 'Invalid event data' });
+      toast({ variant: 'destructive', title: t('settings.events.invalidData') });
       return;
     }
     try {
@@ -25,13 +27,13 @@ export const EventDeleteForm = ({ data, open, onOpenChange, onSubmit }: EventDel
       if (success) {
         toast({
           variant: 'success',
-          title: 'The event has been successfully deleted',
+          title: t('settings.events.deleteSuccess'),
         });
         onSubmit(true);
         onOpenChange(false);
         return;
       }
-      toast({ variant: 'destructive', title: 'Failed to delete event' });
+      toast({ variant: 'destructive', title: t('settings.events.deleteFailure') });
       onSubmit(false);
     } catch (error) {
       onSubmit(false);
@@ -41,13 +43,13 @@ export const EventDeleteForm = ({ data, open, onOpenChange, onSubmit }: EventDel
 
   return (
     <DeleteConfirmDialog
-      resourceLabel="event"
+      resourceLabel={t('settings.events.deleteResource')}
       name={data.displayName}
       open={open}
       onOpenChange={onOpenChange}
       onConfirm={handleDelete}
       loading={loading}
-      confirmLabel="Submit"
+      confirmLabel={t('settings.common.submit')}
     />
   );
 };

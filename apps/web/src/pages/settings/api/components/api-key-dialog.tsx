@@ -5,6 +5,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@usertour/dialog';
+import { useTranslation } from 'react-i18next';
 import { ApiCopyButton } from './api-copy-button';
 
 interface ApiKeyDialogProps {
@@ -17,20 +18,23 @@ interface ApiKeyDialogProps {
 
 export const ApiKeyDialog = ({
   token,
-  title = 'API Key',
-  description = 'Please copy your API key now.',
+  title,
+  description,
   open,
   onOpenChange,
 }: ApiKeyDialogProps) => {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{title ?? t('settings.api.columns.key')}</DialogTitle>
+          <DialogDescription>
+            {description ?? t('settings.api.keyDialogDescription')}
+          </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
-          <span className="text-sm text-muted-foreground">API key</span>
+          <span className="text-sm text-muted-foreground">{t('settings.api.columns.key')}</span>
           <div className="flex items-center gap-2 p-4 bg-muted rounded-md">
             <code className="text-sm flex-1">{token}</code>
             <ApiCopyButton token={token} />

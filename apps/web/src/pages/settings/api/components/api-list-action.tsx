@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { EyeOpenIcon } from '@radix-ui/react-icons';
 import { Delete2Icon } from '@usertour/icons';
 import {
@@ -30,6 +31,7 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
     { skip: !shouldFetchToken },
   );
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleReveal = () => {
     setRevealOpen(true);
@@ -40,14 +42,14 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
     try {
       const success = await deleteAccessToken(environmentId, token.id);
       if (success) {
-        toast({ variant: 'success', title: 'API key deleted successfully' });
+        toast({ variant: 'success', title: t('settings.api.deleteSuccess') });
         setDeleteOpen(false);
         refetch();
       } else {
-        toast({ variant: 'destructive', title: 'Failed to delete API key' });
+        toast({ variant: 'destructive', title: t('settings.api.deleteFailure') });
       }
     } catch {
-      toast({ variant: 'destructive', title: 'Failed to delete API key' });
+      toast({ variant: 'destructive', title: t('settings.api.deleteFailure') });
     }
   };
 
@@ -58,13 +60,13 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
           {
             key: 'reveal',
             icon: <EyeOpenIcon className="w-4 h-4 mr-2" />,
-            label: 'Reveal API key',
+            label: t('settings.api.revealMenuItem'),
             onSelect: handleReveal,
           },
           {
             key: 'delete',
             icon: <Delete2Icon className="w-4 h-4 mr-2" />,
-            label: 'Delete',
+            label: t('settings.api.deleteMenuItem'),
             destructive: true,
             disabled: isViewOnly,
             onSelect: () => setDeleteOpen(true),
@@ -72,13 +74,9 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
         ]}
       />
       <DeleteConfirmDialog
-        resourceLabel="API key"
-        title={
-          <>
-            Delete API key <span className="font-bold text-foreground">{token.name}</span>
-          </>
-        }
-        description="Are you sure you want to delete this API key? This action cannot be undone."
+        resourceLabel={t('settings.api.deleteResource')}
+        title={t('settings.api.deleteTitle', { name: token.name })}
+        description={t('settings.api.deleteDescription')}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleDelete}
@@ -93,7 +91,7 @@ export const ApiListAction = ({ token, environmentId }: ApiListActionProps) => {
             setShouldFetchToken(false);
           }
         }}
-        description={isTokenLoading ? 'Loading...' : undefined}
+        description={isTokenLoading ? t('settings.api.keyDialogLoading') : undefined}
       />
     </>
   );

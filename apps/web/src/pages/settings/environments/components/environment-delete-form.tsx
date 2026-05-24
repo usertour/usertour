@@ -3,6 +3,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteEnvironmentsMutation } from '@usertour/hooks';
 import { DeleteConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface EnvironmentDeleteFormProps {
   data: Environment;
@@ -19,10 +20,11 @@ export const EnvironmentDeleteForm = ({
 }: EnvironmentDeleteFormProps) => {
   const { invoke: deleteEnvironment, loading } = useDeleteEnvironmentsMutation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleDelete = async () => {
     if (!data?.id) {
-      toast({ variant: 'destructive', title: 'Invalid environment data' });
+      toast({ variant: 'destructive', title: t('settings.environments.invalidData') });
       return;
     }
     try {
@@ -30,12 +32,12 @@ export const EnvironmentDeleteForm = ({
       if (success) {
         toast({
           variant: 'success',
-          title: 'The environment has been successfully deleted',
+          title: t('settings.environments.deleteSuccess'),
         });
         onSubmit(true);
         onOpenChange(false);
       } else {
-        toast({ variant: 'destructive', title: 'Failed to delete environment' });
+        toast({ variant: 'destructive', title: t('settings.environments.deleteFailure') });
         onSubmit(false);
       }
     } catch (error) {
@@ -46,13 +48,13 @@ export const EnvironmentDeleteForm = ({
 
   return (
     <DeleteConfirmDialog
-      resourceLabel="environment"
+      resourceLabel={t('settings.environments.deleteResource')}
       name={data.name}
       open={open}
       onOpenChange={onOpenChange}
       onConfirm={handleDelete}
       loading={loading}
-      confirmLabel="Submit"
+      confirmLabel={t('settings.common.submit')}
     />
   );
 };

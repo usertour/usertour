@@ -5,6 +5,7 @@ import { Localization } from '@usertour/types';
 import { DeleteConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface LocalizationDeleteFormProps {
   data: Localization;
@@ -22,6 +23,7 @@ export const LocalizationDeleteForm = ({
   const [deleteMutation] = useMutation(deleteLocalization);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleDelete = async () => {
     if (!data) {
@@ -33,7 +35,7 @@ export const LocalizationDeleteForm = ({
       if (result.data?.deleteLocalization?.id) {
         toast({
           variant: 'success',
-          title: 'The localization has been successfully deleted',
+          title: t('settings.localizations.deleteSuccess'),
         });
         onSubmit(true);
         onOpenChange(false);
@@ -48,13 +50,13 @@ export const LocalizationDeleteForm = ({
 
   return (
     <DeleteConfirmDialog
-      resourceLabel="localization"
+      resourceLabel={t('settings.localizations.deleteResource')}
       name={data.name}
       open={open}
       onOpenChange={onOpenChange}
       onConfirm={handleDelete}
       loading={loading}
-      confirmLabel="Submit"
+      confirmLabel={t('settings.common.submit')}
     />
   );
 };

@@ -144,6 +144,8 @@ const translations = {
       saveButton: 'Save Event',
       updateSuccess: 'The event has been successfully updated',
       attributeAlreadyAssociated: 'That attribute is already associated with the event.',
+      invalidData: 'Invalid event data',
+      deleteFailure: 'Failed to delete event',
       form: {
         displayNameLabel: 'Display name',
         displayNameTooltip:
@@ -177,6 +179,8 @@ const translations = {
       deleteMenuItem: 'Delete',
       deleteResource: 'environment',
       deleteSuccess: 'The environment has been successfully deleted',
+      deleteFailure: 'Failed to delete environment',
+      invalidData: 'Invalid environment data',
       setPrimarySuccess: 'Environment set as primary successfully.',
       createTitle: 'Create New Environment',
       editTitle: 'Rename Environment',
@@ -232,6 +236,10 @@ const translations = {
       deleteDescription:
         'This action cannot be undone. This will permanently delete the theme and all its variations.',
       deleteSuccess: 'The theme has been successfully deleted',
+      duplicateSuccess: 'The theme has been successfully created',
+      duplicateTitle: 'Create New Theme',
+      duplicateNameLabel: 'Theme name',
+      duplicateNamePlaceholder: 'Enter theme name',
     },
     team: {
       title: 'Team',
@@ -423,12 +431,16 @@ const translations = {
       },
       revealMenuItem: 'Reveal API key',
       deleteMenuItem: 'Delete',
+      deleteResource: 'API key',
       empty: 'No API keys found.',
       deleteTitle: 'Delete API key {{name}}',
       deleteDescription:
         'Are you sure you want to delete this API key? This action cannot be undone.',
       deleteSuccess: 'API key deleted successfully',
       deleteFailure: 'Failed to delete API key',
+      tokenCopiedToast: 'Token copied to clipboard',
+      keyDialogDescription: 'Please copy your API key now.',
+      keyDialogLoading: 'Loading...',
       createTitle: 'New API key',
       createNameLabel: 'Key Name',
       createNamePlaceholder: 'Enter key name',

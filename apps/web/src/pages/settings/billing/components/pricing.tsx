@@ -325,11 +325,9 @@ const PlanCard = (props: PlanCardProps) => {
             <span className="align-baseline text-2xl font-semibold text-zinc-950 dark:text-white">
               {isYearly ? plan.yearlyPrice : plan.price}
             </span>
-            {plan.price !== 'Custom Pricing' && (
-              <span className="align-baseline text-sm text-zinc-950/50 dark:text-white/50">
-                {t('settings.billing.perMonth')}
-              </span>
-            )}
+            <span className="align-baseline text-sm text-zinc-950/50 dark:text-white/50">
+              {t('settings.billing.perMonth')}
+            </span>
           </p>
           <p className="mt-4 line-clamp-3 min-h-[40px] max-w-full text-sm text-zinc-950/70 dark:text-white/50">
             {plan.description}
