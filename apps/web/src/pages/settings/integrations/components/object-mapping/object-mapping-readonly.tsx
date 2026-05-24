@@ -100,16 +100,14 @@ export const ObjectMappingReadonly = ({
         setShowDeleteDialog(false);
       } else {
         toast({
-          title: 'Error',
-          description: 'Failed to delete object mapping',
+          title: 'Failed to delete object mapping',
           variant: 'destructive',
         });
       }
     } catch (error) {
       console.error('Failed to delete mapping:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete object mapping',
+        title: 'Failed to delete object mapping',
         variant: 'destructive',
       });
     }
