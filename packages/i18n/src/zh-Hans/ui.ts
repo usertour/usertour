@@ -284,9 +284,9 @@ const translations = {
       transferOwner: {
         title: '转让账号所有权',
         description:
-          'Usertour 账号只能有一个所有者。一旦转让,不可撤销。确认要将账号所有权转让给 {{name}} 吗?',
+          '确定要将所有权转给 <strong>{{name}}</strong> 吗?你将失去所有者权限,且操作不可撤销。',
         cancelButton: '取消',
-        confirmButton: '转让账号所有权',
+        confirmButton: '转让所有权',
       },
     },
     billing: {

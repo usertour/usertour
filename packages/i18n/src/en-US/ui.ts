@@ -302,9 +302,9 @@ const translations = {
       transferOwner: {
         title: 'Transfer account ownership',
         description:
-          "Only one user can be the owner of your Usertour account. Once you transfer ownership, you can't undo it. Confirm transferring account ownership to {{name}}?",
+          "Make <strong>{{name}}</strong> the new owner? You'll lose your owner privileges and won't be able to undo this.",
         cancelButton: 'Cancel',
-        confirmButton: 'Transfer account ownership',
+        confirmButton: 'Transfer ownership',
       },
     },
     billing: {
