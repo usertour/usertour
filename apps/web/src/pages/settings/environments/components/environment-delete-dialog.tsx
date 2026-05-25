@@ -3,7 +3,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useDeleteEnvironmentsMutation } from '@usertour/hooks';
 import { DeleteConfirmDialog } from '@usertour/ui';
 import { useToast } from '@usertour/use-toast';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 interface EnvironmentDeleteDialogProps {
   data: Environment;
@@ -48,13 +48,23 @@ export const EnvironmentDeleteDialog = ({
 
   return (
     <DeleteConfirmDialog
-      resourceLabel={t('settings.environments.deleteResource')}
-      name={data.name}
+      title={t('settings.common.deleteConfirm.title')}
+      description={
+        <Trans
+          i18nKey="settings.common.deleteConfirm.description"
+          values={{
+            resource: t('settings.environments.deleteResource'),
+            name: data.name,
+          }}
+          components={{ strong: <strong className="font-bold text-foreground" /> }}
+        />
+      }
+      confirmLabel={t('settings.common.deleteConfirm.confirm')}
+      cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}
       onConfirm={handleDelete}
       loading={loading}
-      confirmLabel={t('settings.common.submit')}
     />
   );
 };

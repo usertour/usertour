@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { EyeOpenIcon } from '@radix-ui/react-icons';
 import { Delete2Icon } from '@usertour/icons';
 import {
@@ -74,9 +74,16 @@ export const ApiRowActions = ({ token, environmentId }: ApiRowActionsProps) => {
         ]}
       />
       <DeleteConfirmDialog
-        resourceLabel={t('settings.api.deleteResource')}
-        title={t('settings.api.deleteTitle', { name: token.name })}
-        description={t('settings.api.deleteDescription')}
+        title={t('settings.common.deleteConfirm.title')}
+        description={
+          <Trans
+            i18nKey="settings.common.deleteConfirm.description"
+            values={{ resource: t('settings.api.deleteResource'), name: token.name }}
+            components={{ strong: <strong className="font-bold text-foreground" /> }}
+          />
+        }
+        confirmLabel={t('settings.common.deleteConfirm.confirm')}
+        cancelLabel={t('settings.common.cancel')}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={handleDelete}

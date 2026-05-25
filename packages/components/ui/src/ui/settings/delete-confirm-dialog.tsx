@@ -11,31 +11,14 @@ import {
 import { LoadingButton } from '../loading-button';
 
 export interface DeleteConfirmDialogProps {
-  /**
-   * Resource type singular, used in the default description copy
-   * ("permanently delete the {resourceLabel} {name}"). Pass a label that
-   * reads naturally inline: "attribute", "event", "localization", "API key".
-   */
-  resourceLabel: string;
-  /**
-   * Display name of the specific record being deleted — rendered emphasised
-   * inside the description. Ignored when `description` is provided.
-   */
-  name?: ReactNode;
-  /**
-   * Override for the entire description block. Use when the default
-   * "This action cannot be undone..." copy doesn't fit (e.g. delete that
-   * also disables an integration).
-   */
-  description?: ReactNode;
-  /**
-   * Override for the title. Defaults to "Are you absolutely sure?".
-   */
-  title?: ReactNode;
-  /**
-   * Confirm button label. Defaults to "Delete".
-   */
+  /** Localised dialog title. */
+  title: ReactNode;
+  /** Localised description body. Consumers compose this with their own resource/name copy. */
+  description: ReactNode;
+  /** Localised confirm-button label. Defaults to 'Delete' as a non-translated fallback. */
   confirmLabel?: ReactNode;
+  /** Localised cancel-button label. Defaults to 'Cancel' as a non-translated fallback. */
+  cancelLabel?: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void | Promise<void>;
@@ -43,16 +26,15 @@ export interface DeleteConfirmDialogProps {
 }
 
 /**
- * Standard destructive confirmation dialog used across Settings list pages
- * and elsewhere. Wraps the AlertDialog primitive with the shared
- * "permanently delete X" copy and a `LoadingButton` confirm action.
+ * Destructive confirmation shell wrapping AlertDialog + LoadingButton.
+ * The primitive deliberately holds no copy of its own — every string is
+ * supplied by the consumer so the surrounding i18n layer owns translation.
  */
 export const DeleteConfirmDialog = ({
-  resourceLabel,
-  name,
-  description,
   title,
+  description,
   confirmLabel,
+  cancelLabel,
   open,
   onOpenChange,
   onConfirm,
@@ -62,24 +44,11 @@ export const DeleteConfirmDialog = ({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{title ?? 'Are you absolutely sure?'}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {description ?? (
-              <>
-                This action cannot be undone. This will permanently delete the {resourceLabel}
-                {name ? (
-                  <>
-                    {' '}
-                    <span className="font-bold text-foreground">{name}</span>
-                  </>
-                ) : null}
-                .
-              </>
-            )}
-          </AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{cancelLabel ?? 'Cancel'}</AlertDialogCancel>
           <LoadingButton variant="destructive" onClick={onConfirm} loading={loading}>
             {confirmLabel ?? 'Delete'}
           </LoadingButton>

@@ -68,7 +68,12 @@ const AlertDialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Title
     ref={ref}
-    className={cn('text-lg font-semibold', className)}
+    // overflow-wrap:anywhere lets unbroken tokens (e.g. a long API-key
+    // name interpolated into the title) wrap mid-character instead of
+    // overflowing the dialog. Prefers word boundaries first, falls back
+    // to any character — safer than `break-all` which would split
+    // ordinary English titles too aggressively.
+    className={cn('text-lg font-semibold [overflow-wrap:anywhere]', className)}
     {...props}
   />
 ));
@@ -80,7 +85,10 @@ const AlertDialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Description
     ref={ref}
-    className={cn('text-sm text-muted-foreground', className)}
+    // Same overflow-wrap rationale as AlertDialogTitle — names rendered
+    // inline (resource-name in the default delete copy) can be a single
+    // unbroken token without wrap opportunities.
+    className={cn('text-sm text-muted-foreground [overflow-wrap:anywhere]', className)}
     {...props}
   />
 ));

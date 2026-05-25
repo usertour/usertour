@@ -31,6 +31,9 @@ const translations = {
       predefinedTooltip: "Predefined {{resource}} can't be edited.",
       deleteConfirm: {
         title: 'Are you absolutely sure?',
+        description:
+          'This action cannot be undone. This will permanently delete the {{resource}} <strong>{{name}}</strong>.',
+        confirm: 'Delete',
       },
       description: 'Description',
       descriptionPlaceholder: 'Optional description',
@@ -232,7 +235,6 @@ const translations = {
       setDefaultSuccess: 'The theme has been successfully set as default',
       duplicateMenuItem: 'Duplicate theme',
       deleteMenuItem: 'Delete theme',
-      deleteResource: 'theme',
       deleteDescription:
         'This action cannot be undone. This will permanently delete the theme and all its variations.',
       deleteSuccess: 'The theme has been successfully deleted',
@@ -433,9 +435,6 @@ const translations = {
       deleteMenuItem: 'Delete',
       deleteResource: 'API key',
       empty: 'No API keys found.',
-      deleteTitle: 'Delete API key {{name}}',
-      deleteDescription:
-        'Are you sure you want to delete this API key? This action cannot be undone.',
       deleteSuccess: 'API key deleted successfully',
       deleteFailure: 'Failed to delete API key',
       tokenCopiedToast: 'Token copied to clipboard',
